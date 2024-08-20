@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e3f7129d-a7cc-4b52-a5a8-8098344aa0d9",
+		"_postman_id": "c2e4152e-4233-43ae-8e7c-c2e682ade9f8",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "31066048"
@@ -12327,6 +12327,1072 @@
 				}
 			],
 			"description": "Multiple tests validating the proper handling of layout fields when saving content types",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "System Action Mappings",
+			"item": [
+				{
+					"name": "Create",
+					"item": [
+						{
+							"name": "Create ContentType without systemActionMappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing content type id\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity[0].systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType1{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Test to validate the content type is created without `systemActionMappings`."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Validates the content type and `systemActionMappings` were created as expected."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Cleanup"
+							},
+							"response": []
+						},
+						{
+							"name": "Create ContentType with empty systemActionMappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing content type id\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity[0].systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType2{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t],\n    \"systemActionMappings\": {},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Test to validate the content type is created with empty `systemActionMappings`."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Validates the content type and `systemActionMappings` were created as expected."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Cleanup"
+							},
+							"response": []
+						},
+						{
+							"name": "Create ContentType with systemActionMappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing content type id\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings exist\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity[0]).to.have.property('systemActionMappings');",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings contain 'NEW' and 'ARCHIVE'\", function () {",
+											"    var systemActionMappings = pm.response.json().entity[0].systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.have.property('NEW');",
+											"    pm.expect(systemActionMappings).to.have.property('ARCHIVE');",
+											"});",
+											"",
+											"pm.test(\"Validate workflowAction.id inside 'NEW' and 'ARCHIVE'\", function () {",
+											"    var systemActionMappings = pm.response.json().entity[0].systemActionMappings;",
+											"    ",
+											"    pm.expect(systemActionMappings.NEW.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"    pm.expect(systemActionMappings.ARCHIVE.workflowAction.id).to.eql(\"4da13a42-5d59-480c-ad8f-94a3adf809fe\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType3{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t],\n    \"systemActionMappings\" : {\n        \"NEW\" : \"b9d89c80-3d88-4311-8365-187323c96436\",\n        \"ARCHIVE\": \"4da13a42-5d59-480c-ad8f-94a3adf809fe\"\n    },\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Test to validate the content type is created with `systemActionMappings`."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings exist\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity).to.have.property('systemActionMappings');",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings contain 'NEW' and 'ARCHIVE'\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.have.property('NEW');",
+											"    pm.expect(systemActionMappings).to.have.property('ARCHIVE');",
+											"});",
+											"",
+											"pm.test(\"Validate workflowAction.id inside 'NEW' and 'ARCHIVE'\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    ",
+											"    pm.expect(systemActionMappings.NEW.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"    pm.expect(systemActionMappings.ARCHIVE.workflowAction.id).to.eql(\"4da13a42-5d59-480c-ad8f-94a3adf809fe\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Validates the content type and `systemActionMappings` were created as expected."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Cleanup"
+							},
+							"response": []
+						}
+					],
+					"description": "Folder to encapsulate multiple tests to validate the proper creation and handling of `systemActionMappings`."
+				},
+				{
+					"name": "Update",
+					"item": [
+						{
+							"name": "Create ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing content type id\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity[0].systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType1{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Simple creation to sep up the data for the update tests."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Validates the content type and `systemActionMappings` were created as expected."
+							},
+							"response": []
+						},
+						{
+							"name": "Update without systemActionMappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type without `systemActionMappings`."
+							},
+							"response": []
+						},
+						{
+							"name": "Update with empty systemActionMappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"systemActionMappings\": {},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type with emtpy `systemActionMappings`."
+							},
+							"response": []
+						},
+						{
+							"name": "Update with systemActionMappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings exist\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity).to.have.property('systemActionMappings');",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.have.property('NEW');",
+											"    pm.expect(systemActionMappings).to.have.property('ARCHIVE');",
+											"});",
+											"",
+											"pm.test(\"Validate workflowAction.id\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    ",
+											"    pm.expect(systemActionMappings.NEW.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"    pm.expect(systemActionMappings.ARCHIVE.workflowAction.id).to.eql(\"4da13a42-5d59-480c-ad8f-94a3adf809fe\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"systemActionMappings\" : {\n        \"NEW\" : \"b9d89c80-3d88-4311-8365-187323c96436\",\n        \"ARCHIVE\": \"4da13a42-5d59-480c-ad8f-94a3adf809fe\"\n    },\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type with `systemActionMappings`."
+							},
+							"response": []
+						},
+						{
+							"name": "Update without systemActionMappings again",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings exist\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity).to.have.property('systemActionMappings');",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.have.property('NEW');",
+											"    pm.expect(systemActionMappings).to.have.property('ARCHIVE');",
+											"});",
+											"",
+											"pm.test(\"Validate workflowAction.id\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    ",
+											"    pm.expect(systemActionMappings.NEW.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"    pm.expect(systemActionMappings.ARCHIVE.workflowAction.id).to.eql(\"4da13a42-5d59-480c-ad8f-94a3adf809fe\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type without `systemActionMappings` existing mappings should be unaffected."
+							},
+							"response": []
+						},
+						{
+							"name": "Update with empty systemActionMappings again",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"systemActionMappings\": {},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type with empty `systemActionMappings` removing all existing mappings."
+							},
+							"response": []
+						},
+						{
+							"name": "Update with systemActionMappings adding mappings again",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings exist\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity).to.have.property('systemActionMappings');",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.have.property('NEW');",
+											"    pm.expect(systemActionMappings).to.have.property('ARCHIVE');",
+											"});",
+											"",
+											"pm.test(\"Validate workflowAction.id\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    ",
+											"    pm.expect(systemActionMappings.NEW.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"    pm.expect(systemActionMappings.ARCHIVE.workflowAction.id).to.eql(\"4da13a42-5d59-480c-ad8f-94a3adf809fe\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"systemActionMappings\" : {\n        \"NEW\" : \"b9d89c80-3d88-4311-8365-187323c96436\",\n        \"ARCHIVE\": \"4da13a42-5d59-480c-ad8f-94a3adf809fe\"\n    },\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type with `systemActionMappings` adding mappings again as previous test deleted existing mappings."
+							},
+							"response": []
+						},
+						{
+							"name": "Update with systemActionMappings adding more mappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings exist\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity).to.have.property('systemActionMappings');",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.have.property('NEW');",
+											"    pm.expect(systemActionMappings).to.have.property('ARCHIVE');",
+											"    pm.expect(systemActionMappings).to.have.property('PUBLISH');",
+											"});",
+											"",
+											"pm.test(\"Validate workflowAction.id\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    ",
+											"    pm.expect(systemActionMappings.NEW.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"    pm.expect(systemActionMappings.ARCHIVE.workflowAction.id).to.eql(\"4da13a42-5d59-480c-ad8f-94a3adf809fe\");",
+											"    pm.expect(systemActionMappings.PUBLISH.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"systemActionMappings\" : {\n        \"NEW\" : \"b9d89c80-3d88-4311-8365-187323c96436\",\n        \"ARCHIVE\": \"4da13a42-5d59-480c-ad8f-94a3adf809fe\",\n        \"PUBLISH\": \"b9d89c80-3d88-4311-8365-187323c96436\"\n    },\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type with `systemActionMappings` adding extra mappings to the existing ones."
+							},
+							"response": []
+						},
+						{
+							"name": "Update by removing systemActionMappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings exist\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity).to.have.property('systemActionMappings');",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.not.have.property('NEW');",
+											"    pm.expect(systemActionMappings).to.have.property('ARCHIVE');",
+											"    pm.expect(systemActionMappings).to.have.property('PUBLISH');",
+											"});",
+											"",
+											"pm.test(\"Validate workflowAction.id\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    ",
+											"    pm.expect(systemActionMappings.ARCHIVE.workflowAction.id).to.eql(\"4da13a42-5d59-480c-ad8f-94a3adf809fe\");",
+											"    pm.expect(systemActionMappings.PUBLISH.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"systemActionMappings\" : {\n        \"ARCHIVE\": \"4da13a42-5d59-480c-ad8f-94a3adf809fe\",\n        \"PUBLISH\": \"b9d89c80-3d88-4311-8365-187323c96436\"\n    },\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type by removing one `systemActionMappings`."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Cleanup"
+							},
+							"response": []
+						}
+					],
+					"description": "Folder to encapsulate multiple tests to validate the proper update and handling of `systemActionMappings`."
+				}
+			],
+			"description": "Group of tests to cover the most common operations on the content type `systemActionMappings`.",
 			"event": [
 				{
 					"listen": "prerequest",
