@@ -1,7 +1,6 @@
 package com.dotcms.ai.workflow;
 
 
-import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
@@ -78,12 +77,12 @@ public class DotEmbeddingsActionlet extends WorkFlowActionlet {
                 UtilMethods.isSet(params.get(OpenAIParams.DOT_EMBEDDING_INDEX.key).getValue()) ? params.get(
                         OpenAIParams.DOT_EMBEDDING_INDEX.key).getValue() : "default";
 
-        final Map<String, List<Field>> typesAndfields = EmbeddingsAPI.impl().parseTypesAndFields(
+        final Map<String, List<Field>> typesAndfields = APILocator.getDotAIAPI().getEmbeddingsAPI().parseTypesAndFields(
                 params.get(OpenAIParams.DOT_EMBEDDING_TYPES_FIELDS.key).getValue());
 
         List<Field> fields = typesAndfields.getOrDefault(type.variable(), List.of());
 
-        EmbeddingsAPI.impl().generateEmbeddingsForContent(contentlet, fields, indexName);
+        APILocator.getDotAIAPI().getEmbeddingsAPI().generateEmbeddingsForContent(contentlet, fields, indexName);
 
     }
 

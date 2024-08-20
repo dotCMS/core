@@ -1,16 +1,21 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { PasswordModule } from 'primeng/password';
 
-export default {
+const PasswordTemplate = `<input type="password" pPassword />`;
+
+const meta: Meta = {
     title: 'PrimeNG/Form/Password',
     parameters: {
         docs: {
             description: {
                 component:
                     'Password displays strength indicator for password fields: https://primeng.org/password'
+            },
+            source: {
+                code: PasswordTemplate
             }
         }
     },
@@ -18,26 +23,14 @@ export default {
         moduleMetadata({
             imports: [PasswordModule, BrowserAnimationsModule]
         })
-    ]
-} as Meta;
-
-const PasswordTemplate = `<input type="password" pPassword />`;
-
-const Template: Story<unknown> = (props: never) => {
-    const template = PasswordTemplate;
-
-    return {
-        props,
-        template
-    };
+    ],
+    render: (args) => ({
+        props: args,
+        template: PasswordTemplate
+    })
 };
+export default meta;
 
-export const Basic: Story = Template.bind({});
+type Story = StoryObj;
 
-Basic.parameters = {
-    docs: {
-        source: {
-            code: PasswordTemplate
-        }
-    }
-};
+export const Basic: Story = {};

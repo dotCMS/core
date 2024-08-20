@@ -69,6 +69,15 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
 
@@ -113,8 +122,14 @@ import static com.dotcms.util.DotPreconditions.checkNotNull;
  * @version 4.2
  * @since Oct 6, 2017
  */
+
+
 @Path("/v1/page")
-@Tag(name = "Page")
+@Tag(name = "Page", 
+        description = "Endpoints that operate on pages",
+        externalDocs = @ExternalDocumentation(description = "Additional Page API information", 
+                                                url = "https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas"))
+
 public class PageResource {
 
     private final PageResourceHelper pageResourceHelper;
@@ -401,13 +416,40 @@ public class PageResource {
      */
     @NoCache
     @POST
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{pageId}/layout")
-    public Response saveLayout(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @PathParam("pageId") final String pageId,
-            @QueryParam("variantName") final String variantNameParam,
-            final PageForm form) throws DotSecurityException {
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "postPageLayoutHTMLLink",
+        summary = "Links template and page",
+        description = "Takes a saved template and links it to an HTML page.\n\n" +
+                    "Any pages with a template already linked will update with the new link.\n\n" +
+                    "Otherwise a new template will be created without making any changes to previous templates.\n\n" +
+                    "Returns the rendered page.\n\n",
+        tags = {"Page"},
+        responses = {
+                @ApiResponse(responseCode = "200", description = "Page template linked to HTML and saved successfully",
+                        content = @Content(mediaType = "application/json", 
+                                schema = @Schema(implementation = ResponseEntityView.class)
+                                )
+                        ),
+                @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
+                @ApiResponse(responseCode = "404", description = "Page not found")
+                })
+    public Response saveLayout(
+                @Context final HttpServletRequest request,
+                @Context final HttpServletResponse response,
+                @PathParam("pageId") @Parameter(description = "ID for the page will link to") final String pageId,
+                @QueryParam("variantName") final String variantNameParam,
+                @RequestBody(description = "POST body consists of a JSON object containing " + 
+                                        "one property called 'PageForm', which contains information " +
+                                        "about the layout of a page's template ",
+                                required = true,
+                                content = @Content(
+                                        schema = @Schema(implementation = PageForm.class)
+                                        )
+                                )
+                final PageForm form) 
+                throws DotSecurityException {                
 
         final String variantName = UtilMethods.isSet(variantNameParam) ? variantNameParam :
                 VariantAPI.DEFAULT_VARIANT.name();
@@ -459,8 +501,35 @@ public class PageResource {
     @NoCache
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes({MediaType.APPLICATION_JSON})
     @Path("/layout")
-    public Response saveLayout(@Context final HttpServletRequest request, @Context final HttpServletResponse response, final PageForm form) throws DotDataException {
+    @Operation(operationId = "postPageLayout",
+                summary = "Saves a page template",
+                description = "Handles saving of a page template using provided data. " +
+                                "Method processes the request and returns HTTP response indicating a complete save operation.",
+                tags = {"Page"},
+                responses = {
+                        @ApiResponse(responseCode = "200", description = "Page template saved successfully",
+                                content = @Content(mediaType = "application/json", 
+                                        schema = @Schema(implementation = ResponseEntityView.class)
+                                        )
+                                ),
+                        @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
+                        @ApiResponse(responseCode = "404", description = "Page not found")
+                })
+    public Response saveLayout(
+                @Context final HttpServletRequest request, 
+                @Context final HttpServletResponse response, 
+                @RequestBody(description = "POST body consists of a JSON object containing " + 
+                                        "one property called 'PageForm', which contains a " +
+                                        "template layout for the page",
+                                required = true,
+                                content = @Content(
+                                        schema = @Schema(implementation = PageForm.class)
+                                        )
+                                )
+                final PageForm form) 
+                throws DotDataException {
 
         final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();

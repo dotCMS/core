@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
@@ -22,14 +22,15 @@ import { DotTemplateItem, DotTemplateState, DotTemplateStore } from './store/dot
     providers: [DotTemplateStore]
 })
 export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
-    vm$ = this.store.vm$;
-    didTemplateChanged$ = this.store.didTemplateChanged$;
+    readonly #store = inject(DotTemplateStore);
+
+    vm$ = this.#store.vm$;
+    didTemplateChanged$ = this.#store.didTemplateChanged$;
 
     form: UntypedFormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
-        private store: DotTemplateStore,
         private fb: UntypedFormBuilder,
         private dialogService: DialogService,
         private dotMessageService: DotMessageService,
@@ -75,9 +76,9 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 onSave: (value: DotTemplateItem) => {
                     // If it is a template Desing, save entire template
                     if (value.type === 'design') {
-                        this.store.saveTemplate(value);
+                        this.#store.saveTemplate(value);
                     } else {
-                        this.store.saveProperties(value);
+                        this.#store.saveProperties(value);
                     }
                 }
             }
@@ -91,7 +92,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateCreateEditComponent
      */
     saveAndPublishTemplate(template: DotTemplate): void {
-        this.store.saveAndPublishTemplate({
+        this.#store.saveAndPublishTemplate({
             ...this.form.value,
             ...this.formatTemplateItem(template)
         });
@@ -104,7 +105,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateCreateEditComponent
      */
     updateWorkingTemplate(template: DotTemplate): void {
-        this.store.updateWorkingTemplate({
+        this.#store.updateWorkingTemplate({
             ...this.form.value,
             ...this.formatTemplateItem(template)
         });
@@ -117,7 +118,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateCreateEditComponent
      */
     saveTemplate(template: DotTemplate): void {
-        this.store.saveTemplate({
+        this.#store.saveTemplate({
             ...this.form.value,
             ...this.formatTemplateItem(template)
         });
@@ -129,7 +130,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateCreateEditComponent
      */
     cancelTemplate() {
-        this.store.goToTemplateList();
+        this.#store.goToTemplateList();
     }
 
     /**
@@ -139,7 +140,8 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateBuilderComponent
      */
     onCustomEvent($event: CustomEvent): void {
-        this.store.goToEditTemplate($event.detail.data.id, $event.detail.data.inode);
+        const { data } = $event.detail;
+        this.#store.goToEditTemplate(data.id, data.inode);
     }
 
     private createTemplate(): void {
@@ -151,7 +153,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
             data: {
                 template: this.form.value,
                 onSave: (value: DotTemplateItem) => {
-                    this.store.createTemplate(value);
+                    this.#store.createTemplate(value);
                 }
             }
         });
@@ -232,7 +234,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 })
             )
             .subscribe(() => {
-                this.store.goToTemplateList();
+                this.#store.goToTemplateList();
             });
     }
 

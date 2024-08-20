@@ -40,7 +40,7 @@ export const UVEStore = signalStore(
 
                 const isLayoutDisabled = !page?.canEdit || !templateDrawed;
 
-                const languageId = response?.viewAs.language.id;
+                const languageId = response?.viewAs.language?.id;
                 const translatedLanguages = languages();
                 const errorCode = error();
 
@@ -55,7 +55,7 @@ export const UVEStore = signalStore(
                         languages: translatedLanguages
                     },
                     seoParams: {
-                        siteId: response?.site.identifier,
+                        siteId: response?.site?.identifier,
                         languageId: response?.viewAs.language.id,
                         currentUrl,
                         requestHostName

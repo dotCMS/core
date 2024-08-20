@@ -1,11 +1,10 @@
 {
 	"info": {
-		"_postman_id": "4a5eb0ca-8dc7-4659-b5fe-fb89cbc0f08f",
+		"_postman_id": "2f32e966-26c7-4f31-bd5c-3a474c504310",
 		"name": "GraphQL",
-		"description": "This suite verifies that the GraphQL REST Endpoint is working as expected.\n\n[GraphQL](https://graphql.org/) is an open query language which allows you to perform real-type dynamic queries which specify exactly what data you want, and in what order. The dotCMS GraphQL content delivery API has a number of advantages over querying content via REST:\n\n- A single endpoint to query all content: `api/v1/graphql`.\n    \n- Self documenting via schema introspection.\n    \n- No over-fetching of data (e.g. unneeded fields).\n    \n- No need for multiple requests to get combined data.\n    \n- Client control over both the query and the data received.",
+		"description": "This suite verifies that the GraphQL REST Endpoint is working as expected.\n\n[GraphQL](https://graphql.org/) is an open query language which allows you to perform real-type dynamic queries which specify exactly what data you want, and in what order. The dotCMS GraphQL content delivery API has a number of advantages over querying content via REST:\n\n- A single endpoint to query all content: `api/v1/graphql`.\n    \n- Self documenting via schema introspection.\n    \n- No over-fetching of data (e.g. unneeded fields).\n    \n- No need for multiple requests to get combined data.\n    \n- Client control over both the query and the data received.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "10041132",
-		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/dot3~4b54255a-c61a-4ce4-b605-fe26ebdfdd91/collection/10041132-4a5eb0ca-8dc7-4659-b5fe-fb89cbc0f08f?action=share&source=collection_link&creator=10041132"
+		"_exporter_id": "31066048"
 	},
 	"item": [
 		{
@@ -2753,6 +2752,101 @@
 					]
 				},
 				{
+					"name": "Checking Exception Messages",
+					"item": [
+						{
+							"name": "invalidateSession",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/logout",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"logout"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GivenRequestByURI_Page_EditMode_WithoutAuth",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Response contains errors and correct error message\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData)",
+											"    pm.expect(jsonData.errors, 'FAILED:[jsonData.errors]').to.be.an('array').that.is.not.empty;",
+											"",
+											"    var error = jsonData.errors[0];",
+											"    pm.expect(error.message, 'FAILED:[error.message]').to.equal(\"Exception while fetching data (/page) : Unauthorized: You do not have the necessary permissions to request this page in edit mode.\");",
+											"});",
+											"",
+											"pm.test(\"Page data is null\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.data.page, 'FAILED:[jsonData.data.page]').to.be.null;",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "{\n    page(url: \"/myCoolPageWithDotAsset\", pageMode: \"WORKING\") {\n    title\n  }\n}\n\n",
+										"variables": ""
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
 					"name": "pre_ImportBundleWithMexicoPageAndRule",
 					"event": [
 						{
@@ -5110,9 +5204,10 @@
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentTypeVariable\", jsonData.entity[0].variable);",
-									"pm.collectionVariables.set(\"relFieldVariable\", jsonData.entity[0].fields[1].variable);"
+									"pm.collectionVariables.set(\"relFieldVariable\", jsonData.entity[0].fields[3].variable);"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -9259,14 +9354,15 @@
 									"pm.test(\"Status code should be 200\", function() {",
 									"    pm.response.to.have.status(200);",
 									"});",
-									"pm.test(\"Content Type should have 2 fields\", function() {",
-									"    pm.expect(contentType.fields.length).to.eql(2);",
+									"pm.test(\"Content Type should have 4 fields\", function() {",
+									"    pm.expect(contentType.fields.length).to.eql(4);",
 									"});",
 									"pm.test(\"Content Type has a Story_block_field\", function() {",
-									"    pm.expect(contentType.fields[1].fieldType).to.eql(\"Story-Block\");",
+									"    pm.expect(contentType.fields[3].fieldType).to.eql(\"Story-Block\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -9920,10 +10016,11 @@
 									"});",
 									"",
 									"pm.test(\"Fields check\", function () {",
-									"    pm.expect(jsonData.entity[0].fields.length).to.eql(2);",
+									"    pm.expect(jsonData.entity[0].fields.length).to.eql(4);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -10101,14 +10198,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Storing content type id\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
 									"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+									"});",
+									"",
+									"// Test to validate that the entity name is equal to \"content type\"",
+									"pm.test(\"Entity name is equal to 'content type'\", function () {",
+									"    pm.response.json().entity.forEach(function(entity) {",
+									"        pm.expect(entity.name).to.equal('Test Content Type');",
+									"    });",
 									"});"
 								],
 								"type": "text/javascript",
@@ -10168,8 +10268,11 @@
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
+									"// Test to validate that the entity name is equal to \"Test Content Type\"",
+									"pm.test(\"Entity name is equal to 'Test Content Type'\", function () {",
+									"    var entityName = pm.response.json().entity.name;",
+									"    pm.expect(entityName).to.equal('Test Content Type');",
+									"    ",
 									"});",
 									"",
 									"// Preparing the data for the next test",
@@ -10210,16 +10313,18 @@
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var currentCount = pm.collectionVariables.get(\"contentCount\");",
 									"if (currentCount > 1){",
 									"    currentCount = currentCount - 1;",
 									"    pm.collectionVariables.set(\"contentCount\", currentCount);",
 									"    postman.setNextRequest(\"Save test content for pagination\");",
-									"}"
+									"}",
+									"",
+									"// Test to validate if the name is equal to 'Test content 22'",
+									"pm.test(\"Validate we are returning a valid ID'\", function () {",
+									"    var entity = jsonData.entity;",
+									"    pm.expect(entity.identifier).to.not.be.null;",
+									"});"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -11156,8 +11261,9 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
+									"pm.test(\"Errors array in the response should be empty\", function () {",
+									"    var responseData = pm.response.json();",
+									"    pm.expect(responseData.errors).to.be.an('array').that.is.empty;",
 									"});"
 								],
 								"type": "text/javascript",
@@ -11185,7 +11291,31 @@
 					"response": []
 				}
 			],
-			"description": "Collection with a number of tests to validate the pagination fields in collection queries"
+			"description": "Collection with a number of tests to validate the pagination fields in collection queries",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			]
 		}
 	],
 	"event": [

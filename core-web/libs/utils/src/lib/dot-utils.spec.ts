@@ -1,7 +1,7 @@
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { EMPTY_CONTENTLET } from '@dotcms/utils-testing';
 
-import { getImageAssetUrl, ellipsizeText } from './dot-utils';
+import { getImageAssetUrl, ellipsizeText, getRunnableLink } from './dot-utils';
 
 describe('Dot Utils', () => {
     describe('getImageAssetUrl', () => {
@@ -120,5 +120,180 @@ describe('Ellipsize Text Utility', () => {
         const text = 'This is a longer text that needs truncation';
         const truncated = 'This is a...';
         expect(ellipsizeText(text, 15)).toEqual(truncated);
+    });
+});
+
+describe('Dot Utils', () => {
+    describe('getRunnableLink', () => {
+        it('should replace {requestHostName} with the actual requestHostName in WAVE URL', () => {
+            const url =
+                'https://wave.webaim.org/report#/{requestHostName}{currentUrl}{urlSearchParams}';
+            const params: DotPageToolUrlParams = {
+                currentUrl: '',
+                requestHostName: 'my-site',
+                siteId: '',
+                languageId: 1
+            };
+
+            expect(getRunnableLink(url, params)).toEqual(
+                'https://wave.webaim.org/report#/my-site?language_id=1'
+            );
+        });
+
+        it('should replace {currentUrl} and {requestHostName} in WAVE URL and append query parameters', () => {
+            const url =
+                'https://wave.webaim.org/report#/{requestHostName}{currentUrl}{urlSearchParams}';
+            const params: DotPageToolUrlParams = {
+                currentUrl: '/current-page',
+                requestHostName: 'my-site',
+                siteId: '50a79decd9e21702cb2f52fc4935a52b',
+                languageId: 1
+            };
+
+            expect(getRunnableLink(url, params)).toEqual(
+                'https://wave.webaim.org/report#/my-site/current-page?host_id=50a79decd9e21702cb2f52fc4935a52b&language_id=1'
+            );
+        });
+
+        it('should replace {requestHostName} and append query parameters in Mozilla Observatory URL', () => {
+            const url =
+                'https://developer.mozilla.org/en-US/observatory/analyze?host={requestHostName}';
+            const params: DotPageToolUrlParams = {
+                currentUrl: '',
+                requestHostName: 'my-site',
+                siteId: '50a79decd9e21702cb2f52fc4935a52b',
+                languageId: 1
+            };
+
+            expect(getRunnableLink(url, params)).toEqual(
+                'https://developer.mozilla.org/en-US/observatory/analyze?host=my-site'
+            );
+        });
+
+        it('should replace {requestHostName}, {currentUrl} and append query parameters in Security Headers URL', () => {
+            const url =
+                'https://securityheaders.com/?q={requestHostName}{currentUrl}{urlSearchParams}&followRedirects=on';
+            const params: DotPageToolUrlParams = {
+                currentUrl: '/current-page',
+                requestHostName: 'my-site',
+                siteId: '50a79decd9e21702cb2f52fc4935a52b',
+                languageId: 1
+            };
+
+            expect(getRunnableLink(url, params)).toEqual(
+                'https://securityheaders.com/?q=my-site/current-page?host_id=50a79decd9e21702cb2f52fc4935a52b&language_id=1&followRedirects=on'
+            );
+        });
+
+        it('should handle empty URL correctly', () => {
+            const url = '';
+            const params: DotPageToolUrlParams = {
+                currentUrl: '',
+                requestHostName: '',
+                siteId: '',
+                languageId: 1
+            };
+
+            expect(getRunnableLink(url, params)).toEqual('');
+        });
+        it('should replace {requestHostName} with the actual requestHostName', () => {
+            const url = 'https://example.com/{requestHostName}/page';
+            const params: DotPageToolUrlParams = {
+                currentUrl: '',
+                requestHostName: 'my-site',
+                siteId: '',
+                languageId: 1
+            };
+
+            expect(getRunnableLink(url, params)).toEqual('https://example.com/my-site/page');
+        });
+
+        it('should replace {currentUrl} with the actual currentUrl', () => {
+            const url = 'https://example.com{currentUrl}/page';
+            const params: DotPageToolUrlParams = {
+                currentUrl: '/current-page',
+                requestHostName: '',
+                siteId: '',
+                languageId: 1
+            };
+
+            expect(getRunnableLink(url, params)).toEqual('https://example.com/current-page/page');
+        });
+
+        it('should append query parameters when siteId and languageId are provided', () => {
+            const url = 'https://example.com/page{urlSearchParams}';
+            const params: DotPageToolUrlParams = {
+                currentUrl: '',
+                requestHostName: '',
+                siteId: '123',
+                languageId: 456
+            };
+
+            expect(getRunnableLink(url, params)).toEqual(
+                'https://example.com/page?host_id=123&language_id=456'
+            );
+        });
+
+        it('should replace all placeholders and append query parameters correctly', () => {
+            const url = 'https://example.com/{requestHostName}{currentUrl}{urlSearchParams}';
+            const params: DotPageToolUrlParams = {
+                currentUrl: '/current-page',
+                requestHostName: 'my-site',
+                siteId: '123',
+                languageId: 456
+            };
+
+            expect(getRunnableLink(url, params)).toEqual(
+                'https://example.com/my-site/current-page?host_id=123&language_id=456'
+            );
+        });
+
+        it('should handle empty URL correctly', () => {
+            const url = '';
+            const params: DotPageToolUrlParams = {
+                currentUrl: '',
+                requestHostName: '',
+                siteId: '',
+                languageId: 1
+            };
+
+            expect(getRunnableLink(url, params)).toEqual('');
+        });
+
+        it('should handle null currentUrl and requestHostName', () => {
+            const url = 'https://example.com/{requestHostName}{currentUrl}{urlSearchParams}';
+            const params: DotPageToolUrlParams = {
+                currentUrl: null, // Handle null by substituting with empty string
+                requestHostName: null, // Handle null by substituting with empty string
+                siteId: '',
+                languageId: 1
+            };
+
+            expect(getRunnableLink(url, params)).toEqual('https://example.com/?language_id=1');
+        });
+
+        it('should handle null siteId and languageId', () => {
+            const url = 'https://example.com/page{urlSearchParams}';
+            const params: DotPageToolUrlParams = {
+                currentUrl: '',
+                requestHostName: '',
+                siteId: null, // Handle null by not appending the query parameter
+                languageId: null // Handle null by not appending the query parameter
+            };
+
+            expect(getRunnableLink(url, params)).toEqual('https://example.com/page');
+        });
+
+        it('should handle all parameters as null or empty', () => {
+            const url = 'https://example.com/{requestHostName}{currentUrl}{urlSearchParams}';
+            const params: DotPageToolUrlParams = {
+                currentUrl: null, // Handle null by substituting with empty string
+                requestHostName: null, // Handle null by substituting with empty string
+                siteId: null, // Handle null by not appending the query parameter
+                languageId: null // Handle null by not appending the query parameter
+            };
+
+            expect(getRunnableLink(url, params)).toEqual('https://example.com/');
+        });
     });
 });

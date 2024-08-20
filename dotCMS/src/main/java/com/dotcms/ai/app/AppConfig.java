@@ -5,15 +5,20 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The AppConfig class provides a configuration for the AI application.
@@ -21,17 +26,24 @@ import java.util.stream.Collectors;
  */
 public class AppConfig implements Serializable {
 
-    private static final String OPEN_AI_EMBEDDINGS_URL_KEY = "OPEN_AI_EMBEDDINGS_URL";
+    private static final String AI_API_URL_KEY = "AI_API_URL";
+    private static final String AI_IMAGE_API_URL_KEY = "AI_IMAGE_API_URL";
+    private static final String AI_EMBEDDINGS_API_URL_KEY = "AI_EMBEDDINGS_API_URL";
+    private static final String AI_DEBUG_LOGGER_KEY = "AI_DEBUG_LOGGER";
+    private static final String SYSTEM_HOST = "System Host";
+    private static final AtomicReference<AppConfig> SYSTEM_HOST_CONFIG = new AtomicReference<>();
+    private static final boolean DEBUG_LOGGING = Config.getBooleanProperty(AI_DEBUG_LOGGER_KEY, false);
+
     public static final Pattern SPLITTER = Pattern.compile("\\s?,\\s?");
 
     private final String host;
+    private final String apiKey;
     private final transient AIModel model;
     private final transient AIModel imageModel;
     private final transient AIModel embeddingsModel;
     private final String apiUrl;
     private final String apiImageUrl;
     private final String apiEmbeddingsUrl;
-    private final String apiKey;
     private final String rolePrompt;
     private final String textPrompt;
     private final String imagePrompt;
@@ -41,23 +53,29 @@ public class AppConfig implements Serializable {
 
     public AppConfig(final String host, final Map<String, Secret> secrets) {
         this.host = host;
+        if (SYSTEM_HOST.equalsIgnoreCase(host)) {
+            setSystemHostConfig(this);
+        }
 
         final AIAppUtil aiAppUtil = AIAppUtil.get();
-        AIModels.get().loadModels(
-                this.host,
-                List.of(
-                        aiAppUtil.createTextModel(secrets),
-                        aiAppUtil.createImageModel(secrets),
-                        aiAppUtil.createEmbeddingsModel(secrets)));
+        apiKey = aiAppUtil.discoverSecret(secrets, AppKeys.API_KEY);
+        apiUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_URL, AI_API_URL_KEY);
+        apiImageUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_IMAGE_URL, AI_IMAGE_API_URL_KEY);
+        apiEmbeddingsUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_EMBEDDINGS_URL, AI_EMBEDDINGS_API_URL_KEY);
+
+        if (!secrets.isEmpty() || isEnabled()) {
+            AIModels.get().loadModels(
+                    this.host,
+                    List.of(
+                            aiAppUtil.createTextModel(secrets),
+                            aiAppUtil.createImageModel(secrets),
+                            aiAppUtil.createEmbeddingsModel(secrets)));
+        }
 
         model = resolveModel(AIModelType.TEXT);
         imageModel = resolveModel(AIModelType.IMAGE);
         embeddingsModel = resolveModel(AIModelType.EMBEDDINGS);
 
-        apiUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_URL);
-        apiImageUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_IMAGE_URL);
-        apiEmbeddingsUrl = discoverEmbeddingsApiUrl(secrets);
-        apiKey = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
         rolePrompt = aiAppUtil.discoverSecret(secrets, AppKeys.ROLE_PROMPT);
         textPrompt = aiAppUtil.discoverSecret(secrets, AppKeys.TEXT_PROMPT);
         imagePrompt = aiAppUtil.discoverSecret(secrets, AppKeys.IMAGE_PROMPT);
@@ -66,18 +84,36 @@ public class AppConfig implements Serializable {
 
         configValues = secrets.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        Logger.debug(getClass(), () -> "apiUrl: " + apiUrl);
-        Logger.debug(getClass(), () -> "apiImageUrl: " + apiImageUrl);
-        Logger.debug(getClass(), () -> "embeddingsUrl: " + apiEmbeddingsUrl);
-        Logger.debug(getClass(), () -> "apiKey: " + apiKey);
-        Logger.debug(getClass(), () -> "model: " + model);
-        Logger.debug(getClass(), () -> "imageModel: " + imageModel);
-        Logger.debug(getClass(), () -> "embeddingsModel: " + embeddingsModel);
-        Logger.debug(getClass(), () -> "rolePrompt: " + rolePrompt);
-        Logger.debug(getClass(), () -> "textPrompt: " + textPrompt);
-        Logger.debug(getClass(), () -> "imagePrompt: " + imagePrompt);
-        Logger.debug(getClass(), () -> "imageSize: " + imageSize);
-        Logger.debug(getClass(), () -> "listerIndexer: " + listenerIndexer);
+        Logger.debug(this, this::toString);
+    }
+
+    /**
+     * Retrieves the system host configuration.
+     *
+     * @return the system host configuration
+     */
+    public static AppConfig getSystemHostConfig() {
+        if (Objects.isNull(SYSTEM_HOST_CONFIG.get())) {
+            setSystemHostConfig(ConfigService.INSTANCE.config());
+        }
+        return SYSTEM_HOST_CONFIG.get();
+    }
+
+    /**
+     * Prints a specific error message to the log, based on the {@link AppKeys#DEBUG_LOGGING}
+     * property instead of the usual Log4j configuration.
+     *
+     * @param clazz   The {@link Class} to log the message for.
+     * @param message The {@link Supplier} with the message to log.
+     */
+    public static void debugLogger(final Class<?> clazz, final Supplier<String> message) {
+        if (getSystemHostConfig().getConfigBoolean(AppKeys.DEBUG_LOGGING) || DEBUG_LOGGING) {
+            Logger.info(clazz, message.get());
+        }
+    }
+
+    public static void setSystemHostConfig(final AppConfig systemHostConfig) {
+        AppConfig.SYSTEM_HOST_CONFIG.set(systemHostConfig);
     }
 
     /**
@@ -251,7 +287,7 @@ public class AppConfig implements Serializable {
      * @param type the type of the model to find
      */
     public AIModel resolveModel(final AIModelType type) {
-        return AIModels.get().findModel(host, type).orElse(AIModels.NOOP_MODEL);
+        return AIModels.get().findModel(host, type).orElse(AIModel.NOOP_MODEL);
     }
 
     /**
@@ -260,33 +296,52 @@ public class AppConfig implements Serializable {
      * @param modelName the name of the model to find
      */
     public AIModel resolveModelOrThrow(final String modelName) {
-        return AIModels.get()
+        final AIModel aiModel = AIModels.get()
                 .findModel(host, modelName)
                 .orElseThrow(() -> {
                     final String supported = String.join(", ", AIModels.get().getOrPullSupportedModels());
                     return new DotRuntimeException(
                             "Unable to find model: [" + modelName + "]. Only [" + supported + "] are supported ");
                 });
+
+        if (!aiModel.isOperational()) {
+            debugLogger(
+                    AppConfig.class,
+                    () -> String.format(
+                            "Resolved model [%s] is not operational, avoiding its usage",
+                            aiModel.getCurrentModel()));
+            throw new DotRuntimeException(String.format("Model [%s] is not operational", aiModel.getCurrentModel()));
+        }
+
+        return aiModel;
     }
 
     /**
-     * Prints a specific error message to the log, based on the {@link AppKeys#DEBUG_LOGGING}
-     * property instead of the usual Log4j configuration.
+     * Checks if the configuration is enabled.
      *
-     * @param clazz   The {@link Class} to log the message for.
-     * @param message The {@link Supplier} with the message to log.
+     * @return true if the configuration is enabled, false otherwise
      */
-    public static void debugLogger(final Class<?> clazz, final Supplier<String> message) {
-        if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
-            Logger.info(clazz, message.get());
-        }
+    public boolean isEnabled() {
+        return Stream.of(apiUrl, apiImageUrl, apiEmbeddingsUrl, apiKey).allMatch(StringUtils::isNotBlank);
     }
 
-    private String discoverEmbeddingsApiUrl(final Map<String, Secret> secrets) {
-        final String url = AIAppUtil.get().discoverEnvSecret(secrets, AppKeys.API_EMBEDDINGS_URL);
-        return StringUtils.isBlank(url)
-                ? Config.getStringProperty(OPEN_AI_EMBEDDINGS_URL_KEY, "https://api.openai.com/v1/embeddings")
-                : url;
+    @Override
+    public String toString() {
+        return "AppConfig{\n" +
+                "  host='" + host + "',\n" +
+                "  apiKey='" + Optional.ofNullable(apiKey).map(key -> "*****").orElse(StringPool.BLANK) + "',\n" +
+                "  model=" + model + "',\n" +
+                "  imageModel=" + imageModel + "',\n" +
+                "  embeddingsModel=" + embeddingsModel + "',\n" +
+                "  apiUrl='" + apiUrl + "',\n" +
+                "  apiImageUrl='" + apiImageUrl + "',\n" +
+                "  apiEmbeddingsUrl='" + apiEmbeddingsUrl + "',\n" +
+                "  rolePrompt='" + rolePrompt + "',\n" +
+                "  textPrompt='" + textPrompt + "',\n" +
+                "  imagePrompt='" + imagePrompt + "',\n" +
+                "  imageSize='" + imageSize + "',\n" +
+                "  listenerIndexer='" + listenerIndexer + "'\n" +
+                '}';
     }
 
 }

@@ -5,6 +5,8 @@ import static com.dotcms.util.CollectionsUtils.list;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.layout.FieldLayout;
+import com.dotcms.contenttype.model.field.layout.FieldUtil;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -14,20 +16,27 @@ import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.workflow.form.WorkflowSystemActionForm;
+import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
+import io.vavr.Tuple2;
 import java.io.Serializable;
 import java.net.URISyntaxException;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -114,13 +123,171 @@ public class ContentTypeHelper implements Serializable {
             );
         }
 
-        if (null != updatedContentTypeBuilder) {
-            final var updatedContentType = updatedContentTypeBuilder.build();
-            updatedContentType.constructWithFields(contentType.fields());
-            return updatedContentType;
+        // Sort and fix the content type fields
+        return sortAndFixContentTypeFields(contentType, updatedContentTypeBuilder);
+    }
+
+    /**
+     * This method processes the workflow action mappings for a given content type. It adds or
+     * updates the mappings based on the formSystemActionMappings parameter. If isNew is false, it
+     * also checks for mappings that need to be deleted.
+     *
+     * @param contentType              The content type for which the mappings need to be
+     *                                 processed.
+     * @param user                     The user performing the action.
+     * @param formSystemActionMappings The list of system action mappings to be added or updated.
+     * @param isNew                    A flag indicating whether the content type is new or not.
+     * @return The updated version of the action mappings for the given content type.
+     * @throws DotDataException     If there is an issue with the data storage.
+     * @throws DotSecurityException If there is a security violation.
+     */
+    @WrapInTransaction
+    public List<SystemActionWorkflowActionMapping> processWorkflowActionMapping(
+            final ContentType contentType, final User user,
+            final List<Tuple2<SystemAction, String>> formSystemActionMappings, final boolean isNew)
+            throws DotDataException, DotSecurityException {
+
+        // If not mapping was sent at all by the user, we should ignore this processing,
+        // nothing to do.
+        if (null != formSystemActionMappings) {
+
+            // Add/update the given mappings
+            saveSystemActions(formSystemActionMappings, contentType, user);
+
+            // Compare to identify what needs to be deleted
+            if (!isNew) {
+                deleteSystemActionsIfNecessary(formSystemActionMappings, contentType, user);
+            }
         }
 
-        return contentType;
+        // Regarding what we do, we need to return the updated version of the action mappings
+        return WorkflowHelper.getInstance().findSystemActionsByContentType(contentType, user);
+    }
+
+    /**
+     * Saves the system actions for a given list of system action mappings.
+     *
+     * @param formSystemActionMappings a list of tuples containing system actions and workflow
+     *                                 action IDs
+     * @param contentType              the content type to save the system actions for
+     * @param user                     the user performing the action
+     * @throws DotDataException     if there is an error accessing the data
+     * @throws DotSecurityException if the user does not have permission to perform the action
+     */
+    private void saveSystemActions(
+            final List<Tuple2<SystemAction, String>> formSystemActionMappings,
+            final ContentType contentType, final User user)
+            throws DotDataException, DotSecurityException {
+
+        final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
+
+        // Now we add/update the given mappings
+        for (final Tuple2<WorkflowAPI.SystemAction, String> tuple2 : formSystemActionMappings) {
+
+            final WorkflowAPI.SystemAction systemAction = tuple2._1;
+            final String workflowActionId = tuple2._2;
+            if (UtilMethods.isSet(workflowActionId)) {
+
+                Logger.warn(this, "Saving the system action: " + systemAction +
+                        ", for content type: " + contentType.variable()
+                        + ", with the workflow action: "
+                        + workflowActionId);
+
+                workflowHelper.mapSystemActionToWorkflowAction(
+                        new WorkflowSystemActionForm.Builder().
+                                systemAction(systemAction).
+                                actionId(workflowActionId).
+                                contentTypeVariable(contentType.variable()).build(),
+                        user
+                );
+            }
+        }
+    }
+
+    /**
+     * Deletes system actions if necessary, comparing given system actions with the existing ones.
+     *
+     * @param formSystemActionMappings a list of tuple containing system actions and their
+     *                                 respective IDs
+     * @param contentType              the content type
+     * @param user                     the user performing the operation
+     * @throws DotDataException     if there is an error accessing the data
+     * @throws DotSecurityException if there is an error with security permissions
+     */
+    private void deleteSystemActionsIfNecessary(
+            final List<Tuple2<SystemAction, String>> formSystemActionMappings,
+            final ContentType contentType, final User user)
+            throws DotDataException, DotSecurityException {
+
+        final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
+
+        // Handle a special case where having the system action name without an ID implies we
+        // want to delete the mapping.
+        for (final Tuple2<WorkflowAPI.SystemAction, String> tuple2 : formSystemActionMappings) {
+
+            final WorkflowAPI.SystemAction systemAction = tuple2._1;
+            final String workflowActionId = tuple2._2;
+
+            if (UtilMethods.isNotSet(workflowActionId) && UtilMethods.isSet(systemAction)) {
+                deleteSystemAction(
+                        systemAction, contentType, user
+                );
+            }
+        }
+
+        // Getting the existing mappings
+        final var existingSystemActionMappings = workflowHelper.findSystemActionsByContentType(
+                contentType, user
+        );
+
+        // Comparing existing mappings with the mappings in the form to decide whether
+        //  they should be deleted.
+        for (final var existingSystemActionMapping : existingSystemActionMappings) {
+
+            var found = false;
+
+            for (final Tuple2<SystemAction, String> formMappingData : formSystemActionMappings) {
+
+                if (existingSystemActionMapping.getSystemAction().name().
+                        equalsIgnoreCase(formMappingData._1().name())) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+
+                // Was not found in the user request, needs to be deleted.
+                deleteSystemAction(
+                        existingSystemActionMapping.getSystemAction(), contentType, user
+                );
+            }
+
+        }
+    }
+
+    /**
+     * Deletes a system action for a specific content type and user.
+     *
+     * @param systemAction The system action to be deleted.
+     * @param contentType  The content type associated with the system action.
+     * @param user         The user performing the deletion.
+     * @throws DotDataException     if there is an issue with the data layer.
+     * @throws DotSecurityException if there is a security violation.
+     */
+    private void deleteSystemAction(final SystemAction systemAction, final ContentType contentType,
+            final User user) throws DotDataException, DotSecurityException {
+
+        final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
+
+        Logger.warn(this, "Deleting the system action: " + systemAction +
+                ", for content type: " + contentType.variable());
+
+        final var mappingDeleted = workflowHelper.deleteSystemAction(
+                systemAction, contentType, user
+        );
+
+        Logger.warn(this, "Deleted the system action mapping: " + mappingDeleted);
     }
 
     /**
@@ -341,6 +508,99 @@ public class ContentTypeHelper implements Serializable {
         } else {
             return ContentTypeBuilder.builder(contentType).detailPage(pageDetail);
         }
+    }
+
+    /**
+     * Prepares the content type fields by ordering them based on the sort order. If
+     * updatedContentTypeBuilder is provided, it constructs a new ContentType with the ordered
+     * fields and returns the new instance. If updatedContentTypeBuilder is null, it constructs a
+     * new ContentTypeBuilder with the original contentType and constructs a new ContentType with
+     * the ordered fields. If there are no fields, it returns the original contentType.
+     *
+     * @param contentType               The content type to prepare.
+     * @param updatedContentTypeBuilder The updated content type builder, or null.
+     * @return The prepared content type.
+     */
+    private ContentType sortAndFixContentTypeFields(final ContentType contentType,
+            final ContentTypeBuilder updatedContentTypeBuilder) {
+
+        if (null != contentType.fields()) {
+
+            // Ordering the fields
+            final var orderedFields = contentType.fields().stream().
+                    sorted(Comparator.comparing(Field::sortOrder)).
+                    collect(Collectors.toList());
+            final var sortOrderFix = FieldUtil.fixSortOrder(orderedFields);
+            final var fixedFields = sortOrderFix.getNewFields();
+
+            if (!contentType.fields().equals(fixedFields)) {
+                if (null != updatedContentTypeBuilder) {
+                    final var updatedContentType = updatedContentTypeBuilder.build();
+                    updatedContentType.constructWithFields(fixedFields);
+
+                    return updatedContentType;
+                } else {
+                    final var contentTypeBuilder = ContentTypeBuilder.builder(contentType);
+                    final var updatedContentType = contentTypeBuilder.build();
+                    updatedContentType.constructWithFields(fixedFields);
+
+                    return contentType;
+                }
+            }
+        }
+
+        if (null != updatedContentTypeBuilder) {
+            return updatedContentTypeBuilder.build();
+        } else {
+            return contentType;
+        }
+    }
+
+    /**
+     * Fixes the layout of a content type if necessary.
+     *
+     * @param contentTypeId The ID of the content type to fix the layout for.
+     * @param user          The user performing the operation.
+     * @return The fixed content type, or the original content type if no fixes were necessary.
+     * @throws DotDataException     If an error occurs in the data layer.
+     * @throws DotSecurityException If the user doesn't have permission to perform the operation.
+     */
+    public ContentType fixLayoutIfNecessary(final String contentTypeId, final User user)
+            throws DotDataException, DotSecurityException {
+
+        // Looking for the most recent version of the content type and fields
+        final var contentTypeAPI = APILocator.getContentTypeAPI(user, true);
+        final var contentType = contentTypeAPI.find(contentTypeId);
+
+        // Verifying if the layout is valid to fix it if necessary
+        final FieldLayout fieldLayout = new FieldLayout(contentType);
+        if (!fieldLayout.isValidate()) {
+
+            // Fixing the layout
+            APILocator.getContentTypeFieldLayoutAPI().fixLayout(fieldLayout, user);
+
+            // Return an updated content type with the fixed layout fields
+            final var fixedContentType = contentTypeAPI.find(contentTypeId);
+            return setFields(contentType, fixedContentType.fields());
+        }
+
+        return contentType;
+    }
+
+    /**
+     * Sets the fields of the given content type and returns the updated content type.
+     *
+     * @param contentType The content type to update.
+     * @param fields      The list of fields to set for the content type.
+     * @return The updated content type with the new fields.
+     */
+    private ContentType setFields(final ContentType contentType, final List<Field> fields) {
+
+        final var contentTypeBuilder = ContentTypeBuilder.builder(contentType);
+        final var updatedContentType = contentTypeBuilder.build();
+        updatedContentType.constructWithFields(fields);
+
+        return updatedContentType;
     }
 
     /**
