@@ -9,14 +9,15 @@
         "lint": "next lint"
     },
     "dependencies": {
-        "@dotcms/client": "0.0.1-alpha.26",
-        "@dotcms/react": "0.0.1-alpha.26",
-        "@dotcms/experiments": "0.0.1-alpha.26",
+        "@dotcms/client": "0.0.1-alpha.31",
+        "@dotcms/react": "0.0.1-alpha.31",
+        "@dotcms/experiments": "0.0.1-alpha.31",
         "next": "14.1.1",
         "react": "^18",
         "react-dom": "^18"
     },
     "devDependencies": {
+        "@tailwindcss/typography": "^0.5.13",
         "autoprefixer": "^10",
         "eslint": "^8",
         "eslint-config-next": "14.0.4",

@@ -9,9 +9,9 @@
             type="button"></button>
     </div>
     <div *ngIf="isEditorVisible" class="field mb-0" [@enterAnimation]>
-        <label class="block" data-testId="label">{{
-            'message.containers.create.' + label | dm
-        }}</label>
+        <label class="block" data-testId="label">
+            {{ 'message.containers.create.' + label | dm }}
+        </label>
         <dot-textarea-content
             (blur)="onTouched()"
             (input)="onTouched()"

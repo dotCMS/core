@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, input, Output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -9,6 +8,8 @@ import { debounceTime, distinctUntilChanged, filter, tap } from 'rxjs/operators'
 
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { CategoryFieldViewMode } from '../../models/dot-category-field.models';
+
 export const DEBOUNCE_TIME = 300;
 
 const MINIMUM_CHARACTERS = 3;
@@ -16,7 +17,7 @@ const MINIMUM_CHARACTERS = 3;
 @Component({
     selector: 'dot-category-field-search',
     standalone: true,
-    imports: [CommonModule, DotMessagePipe, InputTextModule, ReactiveFormsModule],
+    imports: [DotMessagePipe, InputTextModule, ReactiveFormsModule],
     templateUrl: './dot-category-field-search.component.html',
     styleUrl: './dot-category-field-search.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -33,7 +34,7 @@ export class DotCategoryFieldSearchComponent {
     /**
      * Represent a EventEmitter to notify we want change the mode to `list`.
      */
-    @Output() changeMode = new EventEmitter<string>();
+    @Output() changeMode = new EventEmitter<CategoryFieldViewMode>();
 
     /**
      * Represents the boolean variable isLoading.

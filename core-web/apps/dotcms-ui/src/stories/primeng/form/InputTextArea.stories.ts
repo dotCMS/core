@@ -1,4 +1,4 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
@@ -6,7 +6,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { InputTextareaModule } from 'primeng/inputtextarea';
 
-export default {
+const meta: Meta = {
     title: 'PrimeNG/Form/InputTextArea',
     component: InputTextareaModule,
     parameters: {
@@ -22,7 +22,10 @@ export default {
             imports: [BrowserModule, BrowserAnimationsModule, InputTextareaModule, FormsModule]
         })
     ]
-} as Meta;
+};
+export default meta;
+
+type Story = StoryObj;
 
 const InputTextAreaTemplate = `
 <div class="flex flex-column gap-3">
@@ -41,8 +44,19 @@ const InputTextAreaTemplate = `
         <textarea pInputTextarea [rows]="5" [cols]="30" placeholder="Disabled" disabled></textarea>
     </div>
 </div>
-
 `;
+
+export const Basic: Story = {
+    parameters: {
+        source: {
+            code: InputTextAreaTemplate
+        }
+    },
+    render: (args) => ({
+        props: args,
+        template: InputTextAreaTemplate
+    })
+};
 
 const InputTextAreaTemplateAutoRezise = `
 <div class="flex flex-column gap-3">
@@ -81,43 +95,16 @@ const InputTextAreaTemplateAutoRezise = `
         ></textarea>
     </div>
 </div>
-
 `;
 
-const MainTextArea: Story<unknown> = (props: never) => {
-    const template = InputTextAreaTemplate;
-
-    return {
-        props,
-        template
-    };
-};
-
-const AutoResizeTextArea: Story<unknown> = (props: never) => {
-    const template = InputTextAreaTemplateAutoRezise;
-
-    return {
-        props,
-        template
-    };
-};
-
-export const Basic: Story = MainTextArea.bind({});
-
-export const AutoRezise: Story = AutoResizeTextArea.bind({});
-
-Basic.parameters = {
-    docs: {
-        source: {
-            code: InputTextAreaTemplate
-        }
-    }
-};
-
-AutoRezise.parameters = {
-    docs: {
+export const AutoRezise: Story = {
+    parameters: {
         source: {
             code: InputTextAreaTemplateAutoRezise
         }
-    }
+    },
+    render: (args) => ({
+        props: args,
+        template: InputTextAreaTemplateAutoRezise
+    })
 };

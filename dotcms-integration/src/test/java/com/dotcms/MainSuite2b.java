@@ -1,10 +1,12 @@
 package com.dotcms;
 
+import com.dotcms.ai.app.AIModelsTest;
 import com.dotcms.ai.listener.EmbeddingContentListenerTest;
 import com.dotcms.ai.viewtool.AIViewToolTest;
 import com.dotcms.ai.viewtool.CompletionsToolTest;
 import com.dotcms.ai.viewtool.EmbeddingsToolTest;
 import com.dotcms.ai.viewtool.SearchToolTest;
+import com.dotcms.ai.workflow.OpenAIContentPromptActionletTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.bayesian.BayesianAPIImplIT;
@@ -299,6 +301,7 @@ import org.junit.runners.Suite.SuiteClasses;
         SearchToolTest.class,
         EmbeddingsToolTest.class,
         CompletionsToolTest.class,
+        AIModelsTest.class,
         TimeMachineAPITest.class,
         Task240513UpdateContentTypesSystemFieldTest.class,
         PruneTimeMachineBackupJobTest.class,
@@ -307,7 +310,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ITConfigTest.class,
         Task240530AddDotAIPortletToLayoutTest.class,
         EmbeddingContentListenerTest.class,
-        Task240606AddVariableColumnToWorkflowTest.class
+        Task240606AddVariableColumnToWorkflowTest.class,
+        OpenAIContentPromptActionletTest.class
 })
 
 public class MainSuite2b {

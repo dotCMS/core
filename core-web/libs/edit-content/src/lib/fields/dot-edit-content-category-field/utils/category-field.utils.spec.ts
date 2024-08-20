@@ -6,9 +6,11 @@ import {
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
     getSelectedFromContentlet,
+    removeEmptyArrays,
     removeItemByKey,
     transformCategories,
-    updateChecked
+    updateChecked,
+    getMenuItemsFromKeyParentPath
 } from './category-field.utils';
 
 import {
@@ -177,7 +179,8 @@ describe('CategoryFieldUtils', () => {
             const item: DotCategoryFieldKeyValueObj = {
                 key: CATEGORY_LEVEL_1[1].key,
                 value: CATEGORY_LEVEL_1[1].categoryName,
-                inode: CATEGORY_LEVEL_1[1].inode
+                inode: CATEGORY_LEVEL_1[1].inode,
+                path: ''
             };
 
             const expected: DotCategoryFieldKeyValueObj[] = [...storedSelected, item];
@@ -540,6 +543,41 @@ describe('CategoryFieldUtils', () => {
 
             expect(result).toEqual([]);
         });
+
+        //
+        it('should build the breadcrumb according to categories', () => {
+            const array: DotCategory[][] = [
+                [
+                    {
+                        key: '1',
+                        inode: 'inode1',
+                        categoryName: 'Category 1',
+                        childrenCount: 0,
+                        active: true,
+                        categoryVelocityVarName: '',
+                        description: null,
+                        iDate: 0,
+                        identifier: null,
+                        keywords: null,
+                        modDate: 0,
+                        owner: '',
+                        sortOrder: 0,
+                        type: ''
+                    }
+                ]
+            ];
+            const result = getMenuItemsFromKeyParentPath(array, keyParentPath);
+            expect(result).toEqual([
+                {
+                    key: '1',
+                    inode: 'inode1',
+                    value: 'Category 1',
+                    hasChildren: false,
+                    clicked: false,
+                    path: ''
+                }
+            ]);
+        });
     });
     describe('transformSelectedCategories', () => {
         it('should return an empty array if contentlet is not provided', () => {
@@ -582,6 +620,21 @@ describe('CategoryFieldUtils', () => {
                 CATEGORY_FIELD_MOCK,
                 contentletWithEmptyCategories
             );
+            expect(result).toEqual([]);
+        });
+
+        it('should return the same array if there are no empty arrays', () => {
+            const array: DotCategory[][] = [
+                [{ key: '1', categoryName: 'Category 1' } as DotCategory],
+                [{ key: '2', categoryName: 'Category 2' } as DotCategory]
+            ];
+            const result = removeEmptyArrays(array);
+            expect(result).toEqual(array);
+        });
+
+        it('should return an empty array if all arrays are empty', () => {
+            const array: DotCategory[][] = [[], [], []];
+            const result = removeEmptyArrays(array);
             expect(result).toEqual([]);
         });
     });

@@ -2,8 +2,7 @@
     *ngIf="selectOptions.length > 1"
     [(ngModel)]="selected"
     [options]="selectOptions"
-    class="textarea-content__select-field">
-</p-selectButton>
+    class="textarea-content__select-field"></p-selectButton>
 <textarea
     *ngIf="selected === 'plain'"
     (keydown.enter)="onKeyEnter($event)"

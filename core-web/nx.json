@@ -1,8 +1,4 @@
 {
-    "affected": {
-        "defaultBase": "master"
-    },
-    "npmScope": "dotcms",
     "tasksRunnerOptions": {
         "default": {
             "runner": "nx/tasks-runners/default",
@@ -13,7 +9,6 @@
         }
     },
     "cli": {
-        "defaultCollection": "@nx/angular",
         "packageManager": "yarn"
     },
     "defaultProject": "dotcms-ui",
@@ -168,5 +163,7 @@
                 "serveStaticTargetName": "serve-static"
             }
         }
-    ]
+    ],
+    "defaultBase": "master",
+    "ignorePatterns": ["**/node_modules"]
 }

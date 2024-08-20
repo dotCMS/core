@@ -37,12 +37,12 @@ export type DotcmsPageProps = {
  * @param {DotcmsPageProps} props - The properties for the DotCMS page.
  * @returns {JSX.Element} - A JSX element that represents the layout for a DotCMS page.
  */
-export function DotcmsLayout({ pageContext, config }: DotcmsPageProps): JSX.Element {
-    const { isInsideEditor } = useDotcmsEditor(config);
+export function DotcmsLayout(dotPageProps: DotcmsPageProps): JSX.Element {
+    const pageContext = useDotcmsEditor(dotPageProps);
 
     return (
-        <PageProvider pageContext={{ ...pageContext, isInsideEditor }}>
-            {pageContext.pageAsset.layout?.body.rows.map((row, index) => (
+        <PageProvider pageContext={pageContext}>
+            {pageContext.pageAsset?.layout?.body.rows.map((row, index) => (
                 <Row key={index} row={row} />
             ))}
         </PageProvider>

@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 
 import { graphqlToPageEntity, getPageRequestParams } from "@dotcms/client";
-import { MyPage } from "@/components/my-page";
+import { MyGraphQLPage } from "@/components/graphql-page";
 
-import { getGraphQLPageData } from "@/utils/gql";
+import { getGraphQLPageData, getGraphQLPageQuery } from "@/utils/gql";
 import { client } from "@/utils/dotcmsClient";
 
 const getPath = (params) => {
@@ -29,7 +29,7 @@ export async function generateMetadata({ params, searchParams }) {
 
     try {
         const data = await client.page.get(pageRequestParams);
-        const page = data.entity?.page;
+        const page = data?.page;
         const title = page?.friendlyName || page?.title;
 
         return {
@@ -54,7 +54,8 @@ export default async function Home({ searchParams, params }) {
         languageId: searchParams.language_id,
     });
 
-    const data = await getGraphQLPageData(pageRequestParams);
+    const query = getGraphQLPageQuery(pageRequestParams);
+    const data = await getGraphQLPageData(query);
     const pageAsset = graphqlToPageEntity(data);
 
     // GraphQL returns null if the page is not found
@@ -63,5 +64,5 @@ export default async function Home({ searchParams, params }) {
         notFound();
     }
 
-    return <MyPage nav={nav.entity.children} pageAsset={pageAsset}></MyPage>;
+    return <MyGraphQLPage nav={nav.entity.children} pageAsset={pageAsset} query={query} />;
 }

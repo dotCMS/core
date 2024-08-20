@@ -3,9 +3,9 @@
         <dot-content-type-selector
             (selected)="changeContentTypeSelector($event)"></dot-content-type-selector>
         <input
-            (input)="handleQueryFilter($event.target.value)"
             (keydown.arrowdown)="focusFirstRow()"
             #gf
+            (input)="handleQueryFilter(gf.value)"
             pInputText
             placeholder="{{ 'Type-to-filter' | dm }}"
             type="text"
@@ -92,19 +92,16 @@
                 </td>
                 <td [ngStyle]="{ 'text-align': vm.tableColumns[0].textAlign }">
                     {{ rowData.name }}
-                    <ng-container *ngIf="rowData.path"
-                        >-
-                        <span class="container-listing__path">{{
-                            rowData.path
-                        }}</span></ng-container
-                    >
+                    <ng-container *ngIf="rowData.path">
+                        -
+                        <span class="container-listing__path">{{ rowData.path }}</span>
+                    </ng-container>
                 </td>
                 <td [ngStyle]="{ 'text-align': vm.tableColumns[1].textAlign }">
                     <dot-state-icon
                         [labels]="vm.stateLabels"
                         [state]="getContainerState(rowData)"
-                        size="14px">
-                    </dot-state-icon>
+                        size="14px"></dot-state-icon>
                 </td>
                 <td [ngStyle]="{ 'text-align': vm.tableColumns[2].textAlign }">
                     {{ rowData.friendlyName }}
@@ -118,8 +115,7 @@
                         [attr.data-testid]="rowData.identifier"
                         [actions]="setContainerActions(rowData)"
                         [item]="rowData"
-                        class="listing-datatable__action-button">
-                    </dot-action-menu-button>
+                        class="listing-datatable__action-button"></dot-action-menu-button>
                 </td>
             </tr>
         </ng-template>

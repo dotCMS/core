@@ -1,13 +1,13 @@
 package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiKeys;
+import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.EncodingUtil;
-import com.dotcms.ai.util.OpenAIModel;
 import com.dotcms.ai.util.OpenAIRequest;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.mock.request.FakeHttpRequest;
@@ -32,6 +32,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * This class implements the CompletionsAPI interface and provides the specific logic for interacting with the AI service.
@@ -40,18 +41,17 @@ import java.util.Map;
  */
 public class CompletionsAPIImpl implements CompletionsAPI {
 
-    private final Lazy<AppConfig> config;
+    private final AppConfig config;
+    private final Lazy<AppConfig> defaultConfig;
 
-    final Lazy<AppConfig> defaultConfig =
-            Lazy.of(() -> ConfigService.INSTANCE.config(
-                    Try.of(() -> WebAPILocator
-                                    .getHostWebAPI()
-                                    .getCurrentHostNoThrow(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
-                            .getOrElse(APILocator.systemHost()))
-    );
-
-    public CompletionsAPIImpl(final Lazy<AppConfig> config) {
-        this.config = (config != null) ? config : defaultConfig;
+    public CompletionsAPIImpl(final AppConfig config) {
+        defaultConfig =
+                Lazy.of(() -> ConfigService.INSTANCE.config(
+                        Try.of(() -> WebAPILocator
+                                        .getHostWebAPI()
+                                        .getCurrentHostNoThrow(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
+                                .getOrElse(APILocator.systemHost())));
+        this.config = Optional.ofNullable(config).orElse(defaultConfig.get());
     }
 
     @Override
@@ -60,7 +60,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                              final String modelIn,
                              final float temperature,
                              final int maxTokens) {
-        final OpenAIModel model = OpenAIModel.resolveModel(modelIn);
+        final AIModel model = config.resolveModelOrThrow(modelIn);
         final JSONObject json = new JSONObject();
 
         json.put(AiKeys.TEMPERATURE, temperature);
@@ -70,7 +70,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
             json.put(AiKeys.MAX_TOKENS, maxTokens);
         }
 
-        json.put(AiKeys.MODEL, model.modelName);
+        json.put(AiKeys.MODEL, model.getCurrentModel());
 
         return raw(json);
     }
@@ -78,7 +78,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     @Override
     public JSONObject summarize(final CompletionsForm summaryRequest) {
         final EmbeddingsDTO searcher = EmbeddingsDTO.from(summaryRequest).build();
-        final List<EmbeddingsDTO> localResults = EmbeddingsAPI.impl().getEmbeddingResults(searcher);
+        final List<EmbeddingsDTO> localResults = APILocator.getDotAIAPI().getEmbeddingsAPI().getEmbeddingResults(searcher);
 
         // send all this as a json blob to OpenAI
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
@@ -89,12 +89,12 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         json.put(AiKeys.STREAM, false);
         final String openAiResponse =
                 Try.of(() -> OpenAIRequest.doRequest(
-                        config.get().getApiUrl(),
+                        config.getApiUrl(),
                         HttpMethod.POST,
-                        config.get().getApiKey(),
+                        config,
                         json))
                 .getOrElseThrow(DotRuntimeException::new);
-        final JSONObject dotCMSResponse = EmbeddingsAPI.impl().reduceChunksToContent(searcher, localResults);
+        final JSONObject dotCMSResponse = APILocator.getDotAIAPI().getEmbeddingsAPI().reduceChunksToContent(searcher, localResults);
         dotCMSResponse.put(AiKeys.OPEN_AI_RESPONSE, new JSONObject(openAiResponse));
 
         return dotCMSResponse;
@@ -103,25 +103,25 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     @Override
     public void summarizeStream(final CompletionsForm summaryRequest, final OutputStream out) {
         final EmbeddingsDTO searcher = EmbeddingsDTO.from(summaryRequest).build();
-        final List<EmbeddingsDTO> localResults = EmbeddingsAPI.impl().getEmbeddingResults(searcher);
+        final List<EmbeddingsDTO> localResults = APILocator.getDotAIAPI().getEmbeddingsAPI().getEmbeddingResults(searcher);
 
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
         json.put(AiKeys.STREAM, true);
-        OpenAIRequest.doPost(config.get().getApiUrl(), config.get().getApiKey(), json, out);
+        OpenAIRequest.doPost(config.getApiUrl(), config, json, out);
     }
 
     @Override
     public JSONObject raw(final JSONObject json) {
-        if (config.get().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
+        if (config.getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
             Logger.info(this.getClass(), "OpenAI request:" + json.toString(2));
         }
 
         final String response = OpenAIRequest.doRequest(
-                config.get().getApiUrl(),
+                config.getApiUrl(),
                 HttpMethod.POST,
-                config.get().getApiKey(),
+                config,
                 json);
-        if (config.get().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
+        if (config.getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
             Logger.info(this.getClass(), "OpenAI response:" + response);
         }
 
@@ -138,7 +138,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     public void rawStream(final CompletionsForm promptForm, final OutputStream out) {
         final JSONObject json = buildRequestJson(promptForm);
         json.put(AiKeys.STREAM, true);
-        OpenAIRequest.doRequest(config.get().getApiUrl(), HttpMethod.POST, config.get().getApiKey(), json, out);
+        OpenAIRequest.doRequest(config.getApiUrl(), HttpMethod.POST, config, json, out);
     }
 
     private void buildMessages(final String systemPrompt, final String userPrompt, final JSONObject json) {
@@ -151,7 +151,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     private JSONObject buildRequestJson(final CompletionsForm form, final List<EmbeddingsDTO> searchResults) {
-        final OpenAIModel model = OpenAIModel.resolveModel(form.model);
+        final AIModel model = config.resolveModelOrThrow(form.model);
         // aggregate matching results into text
         final StringBuilder supportingContent = new StringBuilder();
         searchResults.forEach(s -> supportingContent.append(s.extractedText).append(" "));
@@ -162,7 +162,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final int systemPromptTokens = countTokens(systemPrompt);
         textPrompt = reduceStringToTokenSize(
                 textPrompt,
-                model.maxTokens - form.responseLengthTokens - systemPromptTokens);
+                model.getMaxTokens() - form.responseLengthTokens - systemPromptTokens);
 
         final JSONObject json = new JSONObject();
         json.put(AiKeys.STREAM, form.stream);
@@ -171,7 +171,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         buildMessages(systemPrompt, textPrompt, json);
 
         if (UtilMethods.isSet(form.model)) {
-            json.put(AiKeys.MODEL, model.modelName);
+            json.put(AiKeys.MODEL, model.getCurrentModel());
         }
 
         json.put(AiKeys.MAX_TOKENS, form.responseLengthTokens);
@@ -184,7 +184,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
             throw new DotRuntimeException("no prompt or supporting content to summarize found");
         }
 
-        final String resolvedPrompt = config.get().getConfig(key);
+        final String resolvedPrompt = config.getConfig(key);
         final HttpServletRequest requestProxy = new FakeHttpRequest("localhost", "/").request();
         final HttpServletResponse responseProxy = new BaseResponse().response();
 
@@ -204,8 +204,8 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     private int countTokens(final String testString) {
-        return EncodingUtil.registry
-                .getEncodingForModel(config.get().getConfig(AppKeys.MODEL))
+        return EncodingUtil.get().registry
+                .getEncodingForModel(config.getModel().getCurrentModel())
                 .map(enc -> enc.countTokens(testString))
                 .orElseThrow(() -> new DotRuntimeException("Encoder not found"));
     }
@@ -244,20 +244,19 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     private JSONObject buildRequestJson(final CompletionsForm form) {
-        final int maxTokenSize = OpenAIModel.resolveModel(config.get().getConfig(AppKeys.MODEL)).maxTokens;
+        final AIModel aiModel = config.getModel();
         final int promptTokens = countTokens(form.prompt);
 
         final JSONArray messages = new JSONArray();
         final String textPrompt = reduceStringToTokenSize(
                 form.prompt,
-                maxTokenSize - form.responseLengthTokens - promptTokens);
+                aiModel.getMaxTokens() - form.responseLengthTokens - promptTokens);
 
         messages.add(Map.of(AiKeys.ROLE, AiKeys.USER, AiKeys.CONTENT, textPrompt));
 
         final JSONObject json = new JSONObject();
         json.put(AiKeys.MESSAGES, messages);
-        json.putIfAbsent(AiKeys.MODEL, config.get().getConfig(AppKeys.MODEL));
-
+        json.putIfAbsent(AiKeys.MODEL, config.getModel().getCurrentModel());
         json.put(AiKeys.TEMPERATURE, form.temperature);
         json.put(AiKeys.MAX_TOKENS, form.responseLengthTokens);
         json.put(AiKeys.STREAM, form.stream);

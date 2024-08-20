@@ -1,21 +1,18 @@
 package com.dotcms.ai.workflow;
 
-import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
-import com.dotcms.ai.util.OpenAIThreadPool;
-import com.dotcms.api.system.event.message.MessageSeverity;
-import com.dotcms.api.system.event.message.MessageType;
-import com.dotcms.api.system.event.message.SystemMessageEventUtil;
-import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.MultiKeyValue;
+import com.dotmarketing.portlets.workflows.model.MultiSelectionWorkflowActionletParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.google.common.collect.ImmutableList;
-import io.vavr.control.Try;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 @Actionlet(onlyBatch = true)
 public class OpenAIAutoTagActionlet extends WorkFlowActionlet {
@@ -43,9 +40,7 @@ public class OpenAIAutoTagActionlet extends WorkFlowActionlet {
         return List.of(
                 overwriteParameter,
                 limitTagsToHost,
-
-                new WorkflowActionletParameter(OpenAIParams.RUN_DELAY.key, "Update the content asynchronously, after X seconds. O means run in-process", "5", true),
-                new WorkflowActionletParameter(OpenAIParams.MODEL.key, "The AI model to use, defaults to " + ConfigService.INSTANCE.config().getConfig(AppKeys.MODEL), ConfigService.INSTANCE.config().getConfig(AppKeys.MODEL), false),
+                new WorkflowActionletParameter(OpenAIParams.MODEL.key, "The AI model to use, defaults to " + ConfigService.INSTANCE.config().getModel().getCurrentModel(), ConfigService.INSTANCE.config().getModel().getCurrentModel(), false),
                 new WorkflowActionletParameter(OpenAIParams.TEMPERATURE.key, "The AI temperature for the response.  Between .1 and 2.0.", ".1", false)
         );
     }
@@ -62,28 +57,10 @@ public class OpenAIAutoTagActionlet extends WorkFlowActionlet {
 
 
     @Override
-    public void executeAction(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
-        int delay = Try.of(() -> Integer.parseInt(params.get(OpenAIParams.RUN_DELAY.key).getValue())).getOrElse(5);
+    public void executeAction(final WorkflowProcessor processor,
+                              final Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
-
-        Runnable task = new AsyncWorkflowRunnerWrapper(new OpenAIAutoTagRunner(processor, params));
-        if (delay > 0) {
-            OpenAIThreadPool.schedule(task, delay, TimeUnit.SECONDS);
-
-            final SystemMessageBuilder message = new SystemMessageBuilder().setMessage(
-                            "Content being tagged in the background")
-                    .setLife(5000)
-                    .setType(MessageType.SIMPLE_MESSAGE)
-                    .setSeverity(MessageSeverity.SUCCESS);
-
-            SystemMessageEventUtil.getInstance()
-                    .pushMessage(message.create(), List.of(processor.getUser().getUserId()));
-
-        } else {
-            task.run();
-        }
-
-
+        new OpenAIAutoTagRunner(processor, params).run();
     }
 
 

@@ -52,7 +52,7 @@
 }
 
 .results-seo-tool__search-title {
-    font-size: $font-size-lg;
+    font-size: $font-size-lmd;
     text-decoration: none;
 }
 
@@ -74,7 +74,7 @@
     display: flex;
     gap: $spacing-3;
     align-items: center;
-    font-size: $font-size-lg;
+    font-size: $font-size-lmd;
     color: $black;
 }
 
@@ -164,7 +164,6 @@
         span {
             display: flex;
             align-items: center;
-            padding-left: $spacing-0;
         }
     }
 

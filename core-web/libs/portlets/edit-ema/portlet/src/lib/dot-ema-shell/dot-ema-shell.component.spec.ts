@@ -48,22 +48,19 @@ import {
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotEmaShellComponent } from './dot-ema-shell.component';
-import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import {
-    DEFAULT_PERSONA,
-    PAGE_RESPONSE_BY_LANGUAGE_ID,
-    PAYLOAD_MOCK,
-    WINDOW
-} from '../shared/consts';
+import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
+import { PAGE_RESPONSE_BY_LANGUAGE_ID, PAYLOAD_MOCK } from '../shared/mocks';
+import { UVEStore } from '../store/dot-uve.store';
 
 describe('DotEmaShellComponent', () => {
     let spectator: SpectatorRouting<DotEmaShellComponent>;
-    let store: EditEmaStore;
+    let store: SpyObject<InstanceType<typeof UVEStore>>;
+
     let siteService: SiteServiceMock;
     let confirmationService: SpyObject<ConfirmationService>;
     let confirmationServiceSpy: jest.SpyInstance;
@@ -95,7 +92,7 @@ describe('DotEmaShellComponent', () => {
         declarations: [MockComponent(DotEmaDialogComponent)],
         componentProviders: [
             MessageService,
-            EditEmaStore,
+            UVEStore,
             ConfirmationService,
             DotActionUrlService,
             DotMessageService,
@@ -140,6 +137,9 @@ describe('DotEmaShellComponent', () => {
                     get({ language_id }) {
                         return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id];
                     },
+                    getClientPage({ language_id }, _clientConfig) {
+                        return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id];
+                    },
                     save() {
                         return of({});
                     },
@@ -176,7 +176,7 @@ describe('DotEmaShellComponent', () => {
                 ]
             });
             siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
-            store = spectator.inject(EditEmaStore, true);
+            store = spectator.inject(UVEStore, true);
             router = spectator.inject(Router, true);
             confirmationService = spectator.inject(ConfirmationService, true);
             jest.spyOn(store, 'load');
@@ -210,38 +210,67 @@ describe('DotEmaShellComponent', () => {
                     {
                         icon: 'pi-file',
                         label: 'editema.editor.navbar.content',
-                        href: 'content'
+                        href: 'content',
+                        id: 'content'
                     },
                     {
                         icon: 'pi-table',
                         label: 'editema.editor.navbar.layout',
                         href: 'layout',
                         isDisabled: false,
-                        tooltip: null
+                        tooltip: null,
+                        id: 'layout'
                     },
                     {
                         icon: 'pi-sliders-h',
                         label: 'editema.editor.navbar.rules',
                         href: `rules/123`,
-                        isDisabled: false
+                        isDisabled: false,
+                        id: 'rules'
                     },
                     {
                         iconURL: 'experiments',
                         label: 'editema.editor.navbar.experiments',
                         href: 'experiments/123',
-                        isDisabled: false
+                        isDisabled: false,
+                        id: 'experiments'
                     },
                     {
                         icon: 'pi-th-large',
                         label: 'editema.editor.navbar.page-tools',
-                        action: expect.any(Function)
+                        id: 'page-tools'
                     },
                     {
                         icon: 'pi-ellipsis-v',
                         label: 'editema.editor.navbar.properties',
-                        action: expect.any(Function)
+                        id: 'properties'
                     }
                 ]);
+            });
+
+            it('should trigger action when the page-tool item is clicked', () => {
+                const pageToolsSpy = jest.spyOn(spectator.component.pageTools, 'toggleDialog');
+
+                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
+
+                spectator.triggerEventHandler(navBar, 'action', 'page-tools');
+
+                expect(pageToolsSpy).toHaveBeenCalled();
+            });
+
+            it('should trigger action when the properties item is clicked', () => {
+                const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+
+                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
+
+                spectator.triggerEventHandler(navBar, 'action', 'properties');
+
+                expect(dialogSpy).toHaveBeenCalledWith({
+                    contentType: undefined,
+                    identifier: '123',
+                    inode: '123',
+                    title: 'hello world'
+                });
             });
         });
 
@@ -642,6 +671,21 @@ describe('DotEmaShellComponent', () => {
                 expect(confirmationServiceSpy).not.toHaveBeenCalled();
             });
 
+            it('should not trigger the confirmation service if the page dont have current language', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 3,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+
+                expect(confirmationServiceSpy).not.toHaveBeenCalled();
+            });
+
             it("should trigger the confirmation service if the page isn't translated to the current language", fakeAsync(() => {
                 spectator.triggerNavigation({
                     url: [],
@@ -709,9 +753,7 @@ describe('DotEmaShellComponent', () => {
                 });
 
                 spectator.detectChanges();
-
                 const dialog = spectator.component.dialog;
-
                 const translatePageSpy = jest.spyOn(dialog, 'translatePage');
 
                 tick(1000);
@@ -825,15 +867,7 @@ describe('DotEmaShellComponent', () => {
 
                 expect(router.navigate).not.toHaveBeenCalled();
 
-                expect(reloadSpy).toHaveBeenLastCalledWith({
-                    params: {
-                        language_id: 2,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
-                        clientHost: undefined,
-                        variantName: undefined
-                    }
-                });
+                expect(reloadSpy).toHaveBeenCalled();
             }));
 
             it('should open a dialog to create the page and do nothing when the user creates the page correctly with SAVE_PAGE', fakeAsync(() => {
@@ -954,103 +988,10 @@ describe('DotEmaShellComponent', () => {
 
             it('should reload content from dialog', () => {
                 const reloadSpy = jest.spyOn(store, 'reload');
-                const queryParams = {
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                    language_id: 1,
-                    url: 'index',
-                    variantName: undefined
-                };
 
                 spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
 
-                expect(reloadSpy).toHaveBeenCalledWith({
-                    params: queryParams
-                });
-            });
-        });
-    });
-
-    describe('with advance template', () => {
-        beforeEach(() => {
-            spectator = createComponent({
-                providers: [
-                    {
-                        provide: DotPageApiService,
-                        useValue: {
-                            get() {
-                                return of({
-                                    page: {
-                                        title: 'hello world',
-                                        identifier: '123',
-                                        inode: '123',
-                                        canEdit: true,
-                                        canRead: true
-                                    },
-                                    viewAs: {
-                                        language: {
-                                            id: 1,
-                                            language: 'English',
-                                            countryCode: 'US',
-                                            languageCode: 'EN',
-                                            country: 'United States'
-                                        },
-                                        persona: DEFAULT_PERSONA
-                                    },
-                                    site: mockSites[0],
-                                    template: { drawed: false }
-                                });
-                            },
-                            save() {
-                                return of({});
-                            },
-                            getPersonas() {
-                                return of({
-                                    entity: [DEFAULT_PERSONA],
-                                    pagination: {
-                                        totalEntries: 1,
-                                        perPage: 10,
-                                        page: 1
-                                    }
-                                });
-                            }
-                        }
-                    },
-                    {
-                        provide: DotLicenseService,
-                        useValue: {
-                            isEnterprise: () => of(true),
-                            canAccessEnterprisePortlet: () => of(true)
-                        }
-                    }
-                ]
-            });
-
-            spectator.triggerNavigation({
-                url: [],
-                queryParams: {
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
-                },
-                data: {
-                    data: {
-                        url: 'http://localhost:3000'
-                    }
-                }
-            });
-        });
-
-        describe('DOM', () => {
-            it('should have nav bar with layout disabled and tooltip', () => {
-                const navBarComponent = spectator.query(EditEmaNavigationBarComponent);
-
-                expect(navBarComponent.items).toContainEqual({
-                    icon: 'pi-table',
-                    label: 'editema.editor.navbar.layout',
-                    href: 'layout',
-                    isDisabled: true,
-                    tooltip: 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
-                });
+                expect(reloadSpy).toHaveBeenCalled();
             });
         });
     });

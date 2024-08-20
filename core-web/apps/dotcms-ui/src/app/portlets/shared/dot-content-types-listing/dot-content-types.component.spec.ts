@@ -288,7 +288,7 @@ describe('DotContentTypesPortletComponent', () => {
         ).toEqual([
             {
                 label: 'Delete',
-                icon: 'delete'
+                icon: 'pi pi-trash'
             }
         ]);
     });

@@ -1,24 +1,24 @@
-<ng-container *ngIf="vm$ | async as vm; else noContent">
-    <p-messages
-        *ngIf="vm?.contentType?.metadata?.[featuredFlagContentKEY]"
-        class="topBar"
-        styleClass="p-message-border-y"
-        severity="success"
-        data-testId="topBar">
-        <ng-template pTemplate>
-            <i class="pi pi-info-circle"></i>
-            <div>
-                <span [innerHTML]="('edit.content.layout.beta.message' | dm) + ' '"></span>
-                <a
-                    [routerLink]="'/content-types-angular/edit/' + vm.contentType.variable"
-                    data-testId="content-type"
-                    >{{ 'edit.content.layout.beta.message.switch' | dm }}</a
-                >
-                <span>{{ ' ' }}{{ 'edit.content.layout.beta.message.needed' | dm }}</span>
-            </div>
-        </ng-template>
-    </p-messages>
-
+@if (vm$ | async; as vm) {
+    @if (vm?.contentType?.metadata?.[featuredFlagContentKEY]) {
+        <p-messages
+            class="topBar"
+            styleClass="p-message-border-y"
+            severity="success"
+            data-testId="topBar">
+            <ng-template pTemplate>
+                <i class="pi pi-info-circle"></i>
+                <div>
+                    <span [innerHTML]="('edit.content.layout.beta.message' | dm) + ' '"></span>
+                    <a
+                        [routerLink]="'/content-types-angular/edit/' + vm.contentType.variable"
+                        data-testId="content-type">
+                        {{ 'edit.content.layout.beta.message.switch' | dm }}
+                    </a>
+                    <span>{{ ' ' }}{{ 'edit.content.layout.beta.message.needed' | dm }}</span>
+                </div>
+            </ng-template>
+        </p-messages>
+    }
     <dot-edit-content-toolbar
         (actionFired)="
             fireWorkflowAction({
@@ -35,8 +35,8 @@
         [contentlet]="vm.contentlet"
         [contentType]="vm.contentType"
         class="sidebar" />
-</ng-container>
-
-<ng-template #noContent>{{ 'edit.content.layout.no.content.to.show ' | dm }}</ng-template>
+} @else {
+    {{ 'edit.content.layout.no.content.to.show ' | dm }}
+}
 
 <p-toast></p-toast>

@@ -46,30 +46,34 @@ import { DotActionButtonComponent } from '../_common/dot-action-button/dot-actio
 
 @Component({
     selector: 'dot-empty-state',
-    template: `<h1>Im empty</h1>`
+    template: `
+        <h1>Im empty</h1>
+    `
 })
 class EmptyMockComponent {}
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-listing-data-table
-        (rowWasClicked)="rowWasClicked($event)"
-        (selectedItems)="selectedItems($event)"
-        [columns]="columns"
-        [url]="url"
-        [actionHeaderOptions]="actionHeaderOptions"
-        [buttonActions]="buttonActions"
-        [sortOrder]="sortOrder"
-        [sortField]="sortField"
-        [multipleSelection]="multipleSelection"
-        [paginationPerPage]="paginationPerPage"
-        [actions]="actions"
-        [dataKey]="dataKey"
-        [checkbox]="checkbox"
-        [mapItems]="mapItems"
-        [paginatorExtraParams]="paginatorExtraParams">
-        <dot-empty-state></dot-empty-state>
-    </dot-listing-data-table>`
+    template: `
+        <dot-listing-data-table
+            (rowWasClicked)="rowWasClicked($event)"
+            (selectedItems)="selectedItems($event)"
+            [columns]="columns"
+            [url]="url"
+            [actionHeaderOptions]="actionHeaderOptions"
+            [buttonActions]="buttonActions"
+            [sortOrder]="sortOrder"
+            [sortField]="sortField"
+            [multipleSelection]="multipleSelection"
+            [paginationPerPage]="paginationPerPage"
+            [actions]="actions"
+            [dataKey]="dataKey"
+            [checkbox]="checkbox"
+            [mapItems]="mapItems"
+            [paginatorExtraParams]="paginatorExtraParams">
+            <dot-empty-state></dot-empty-state>
+        </dot-listing-data-table>
+    `
 })
 class TestHostComponent {
     @Input() columns: DataTableColumn[];

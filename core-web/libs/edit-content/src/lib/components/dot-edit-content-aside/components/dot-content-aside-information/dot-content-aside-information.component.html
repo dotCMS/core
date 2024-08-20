@@ -1,16 +1,16 @@
 <div class="content-aside__information">
     <div class="content-aside__status">
-        <p-chip
-            *ngIf="contentlet | contentletStatus as status"
-            [styleClass]="'p-chip-sm ' + status.classes"
-            [label]="status.label" />
-        <dot-copy-button
-            *ngIf="contentlet?.inode as inode"
-            [copy]="inode"
-            [tooltipText]="'ID: ' + inode"
-            [label]="'ID: ' + (inode | slice: -10)"
-            data-testId="inode"
-            aria-label="Copy ID" />
+        @if (contentlet | contentletStatus; as status) {
+            <p-chip [styleClass]="'p-chip-sm ' + status.classes" [label]="status.label" />
+        }
+        @if (contentlet?.inode; as inode) {
+            <dot-copy-button
+                [copy]="inode"
+                [tooltipText]="'ID: ' + inode"
+                [label]="'ID: ' + (inode | slice: -10)"
+                data-testId="inode"
+                aria-label="Copy ID" />
+        }
     </div>
     <div class="content-aside__metadata">
         <a
@@ -22,9 +22,10 @@
             <span class="sidebar-card__label">{{ contentType.name }}</span>
         </a>
         <button class="sidebar-card" data-testId="references-button" aria-label="References">
-            <span class="sidebar-card__header"
-                >{{ 'References' | dm }} <i class="pi pi-eye" aria-hidden="true"></i
-            ></span>
+            <span class="sidebar-card__header">
+                {{ 'References' | dm }}
+                <i class="pi pi-eye" aria-hidden="true"></i>
+            </span>
         </button>
         <div class="content-history__container" data-testId="history-container">
             @if (loading) {
@@ -44,12 +45,14 @@
                         data-testId="publish-history"
                         aria-label="Publish History">
                         <span class="content-history__title">{{ 'Published' | dm }}</span>
-                        <span *ngIf="contentlet?.publishUserName" class="content-history__author">{{
-                            contentlet?.publishUserName
-                        }}</span>
-                        <span class="content-history__date">{{
-                            contentlet?.publishDate | dotRelativeDate: 'MM/dd/yyyy' : null
-                        }}</span>
+                        @if (contentlet?.publishUserName) {
+                            <span class="content-history__author">
+                                {{ contentlet?.publishUserName }}
+                            </span>
+                        }
+                        <span class="content-history__date">
+                            {{ contentlet?.publishDate | dotRelativeDate: 'MM/dd/yyyy' : null }}
+                        </span>
                     </button>
                 }
                 @if (contentlet?.modDate) {
@@ -61,9 +64,9 @@
                         aria-label="Modification History">
                         <span class="content-history__title">{{ 'Modified' | dm }}</span>
                         <span class="content-history__author">{{ contentlet?.modUserName }}</span>
-                        <span class="content-history__date">{{
-                            contentlet?.modDate | dotRelativeDate: 'MM/dd/yyyy' : null
-                        }}</span>
+                        <span class="content-history__date">
+                            {{ contentlet?.modDate | dotRelativeDate: 'MM/dd/yyyy' : null }}
+                        </span>
                     </button>
                 }
                 <button
@@ -73,12 +76,12 @@
                     data-testId="create-history"
                     aria-label="Creation History">
                     <span class="content-history__title">{{ 'Created' | dm }}</span>
-                    <span class="content-history__author">{{
-                        contentlet?.ownerName || 'You'
-                    }}</span>
-                    <span class="content-history__date">{{
-                        contentlet?.createDate | dotRelativeDate: 'MM/dd/yyyy' : null
-                    }}</span>
+                    <span class="content-history__author">
+                        {{ contentlet?.ownerName || 'You' }}
+                    </span>
+                    <span class="content-history__date">
+                        {{ contentlet?.createDate | dotRelativeDate: 'MM/dd/yyyy' : null }}
+                    </span>
                 </button>
             }
         </div>

@@ -47,6 +47,10 @@
             width: $icon-lg-box;
             font-size: $icon-lg;
         }
+
+        .p-icon-wrapper {
+            color: $color-palette-primary-500;
+        }
     }
 
     .p-button:enabled.p-datepicker-trigger .pi {
@@ -119,7 +123,7 @@
                 .p-datepicker-year,
                 .p-datepicker-month,
                 .p-datepicker-decade {
-                    font-size: $font-size-lg;
+                    font-size: $font-size-lmd;
                     font-family: $font-default;
                     font-weight: $font-weight-regular-bold;
                     color: inherit;
@@ -238,7 +242,7 @@ p-calendar.p-calendar-clearable {
     }
 
     .p-calendar-clear-icon {
-        margin-top: -12px;
+        margin-top: -0.438rem;
         color: $color-palette-gray-500;
         width: $icon-lg-box;
         font-size: $icon-lg;

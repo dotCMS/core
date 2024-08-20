@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { SkeletonModule } from 'primeng/skeleton';
@@ -6,22 +5,20 @@ import { SkeletonModule } from 'primeng/skeleton';
 @Component({
     selector: 'dot-category-field-list-skeleton',
     standalone: true,
-    imports: [CommonModule, SkeletonModule],
+    imports: [SkeletonModule],
     template: `
-        <ul class="m-0 p-1 list-none">
+        <ul class="m-0 p-1 list-none fadein animation-duration-500">
             @for (_ of $rows(); track $index) {
-            <li class="flex">
-                <p-skeleton size="1rem" styleClass="mr-2"></p-skeleton>
-                <div style="flex: 1">
-                    <p-skeleton width="100%"></p-skeleton>
-                </div>
-            </li>
+                <li class="flex">
+                    <p-skeleton size="1rem" styleClass="mr-2"></p-skeleton>
+                    <div style="flex: 1">
+                        <p-skeleton width="100%"></p-skeleton>
+                    </div>
+                </li>
             }
         </ul>
     `,
     styles: `
-
-
         li {
             min-height: 40px;
             align-content: center;

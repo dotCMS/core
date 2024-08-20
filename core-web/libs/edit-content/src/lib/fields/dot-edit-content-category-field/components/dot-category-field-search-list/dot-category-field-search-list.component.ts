@@ -1,16 +1,16 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
     Component,
+    computed,
     effect,
     ElementRef,
-    EventEmitter,
+    inject,
     input,
     OnDestroy,
-    Output,
+    output,
     signal,
     ViewChild
 } from '@angular/core';
@@ -22,8 +22,11 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { debounceTime } from 'rxjs/operators';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
+import { CATEGORY_FIELD_EMPTY_MESSAGES } from '../../../../models/dot-edit-content-field.constant';
 import {
     DotCategoryFieldKeyValueObj,
     DotTableHeaderCheckboxSelectEvent,
@@ -31,19 +34,25 @@ import {
 } from '../../models/dot-category-field.models';
 import { DotTableSkeletonComponent } from '../dot-table-skeleton/dot-table-skeleton.component';
 
+/**
+ * Represents a search list component for category field.
+ */
 @Component({
     selector: 'dot-category-field-search-list',
     standalone: true,
     imports: [
-        CommonModule,
         TableModule,
         SkeletonModule,
         DotTableSkeletonComponent,
         DotMessagePipe,
-        TooltipModule
+        TooltipModule,
+        DotEmptyContainerComponent
     ],
     templateUrl: './dot-category-field-search-list.component.html',
     styleUrl: './dot-category-field-search-list.component.scss',
+    host: {
+        '[class.category-field__search-list--empty]': '$tableIsEmpty()'
+    },
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDestroy {
@@ -52,49 +61,69 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
      * viewport to use in the virtual scroll
      */
     @ViewChild('tableContainer', { static: false }) tableContainer!: ElementRef;
+
     /**
      * The scrollHeight variable represents a signal with a default value of '0px'.
      * It can be used to track and manipulate the height of a scrollable element.
      */
     $scrollHeight = signal<string>('0px');
+
     /**
      * Represents the categories found with the filter
      */
-    categories = input.required<DotCategoryFieldKeyValueObj[]>();
+    $categories = input.required<DotCategoryFieldKeyValueObj[]>({ alias: 'categories' });
 
     /**
      * Represent the selected items in the store
      */
-    selected = input.required<DotCategoryFieldKeyValueObj[]>();
+    $selected = input.required<DotCategoryFieldKeyValueObj[]>({ alias: 'selected' });
+
     /**
-     * EventEmitter for emit the selected category(ies).
+     * Represents the current state of the component.
      */
-    @Output() itemChecked = new EventEmitter<
-        DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]
-    >();
+    $status = input.required<ComponentStatus>({ alias: 'status' });
+
     /**
-     * EventEmitter that emits events to remove a selected item(s).
+     * Output for emit the selected category(ies).
      */
-    @Output() removeItem = new EventEmitter<string | string[]>();
+    itemChecked = output<DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]>();
+
     /**
-     * Represents a variable indicating if the component is in loading state.
+     * Output that emits events to remove a selected item(s).
      */
-    isLoading = input.required<boolean>();
+    removeItem = output<string | string[]>();
 
     /**
      * Model of the items selected
      */
     itemsSelected: DotCategoryFieldKeyValueObj[];
+
     /**
      * Represents an array of temporary selected items.
      */
     temporarySelectedAll: string[] = [];
 
+    /**
+     * Flag indicating whether the table is empty.
+     */
+    $tableIsEmpty = computed(() => !this.$isLoading() && this.$categories().length === 0);
+
+    /**
+     * A computed variable that represents the loading status of a component.
+     */
+    $isLoading = computed(() => this.$status() === ComponentStatus.LOADING);
+
+    /**
+     * Gets the computed value of $emptyOrErrorMessage.
+     */
+    $emptyOrErrorMessage = computed(() => this.getMessageConfig());
+
+    #messageService = inject(DotMessageService);
+
     readonly #effectRef = effect(() => {
         // Todo: find a better way to update this
-        this.itemsSelected = this.selected();
+        this.itemsSelected = this.$selected();
     });
-
     readonly #resize$ = new Subject<ResizeObserverEntry>();
     readonly #resizeObserver = new ResizeObserver((entries) => this.#resize$.next(entries[0]));
 
@@ -133,8 +162,8 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
      */
     onHeaderCheckboxToggle({ checked }: DotTableHeaderCheckboxSelectEvent): void {
         if (checked) {
-            const values = this.categories().map((item) => item.key);
-            this.itemChecked.emit(this.categories());
+            const values = this.$categories().map((item) => item.key);
+            this.itemChecked.emit(this.$categories());
             this.temporarySelectedAll = [...values];
         } else {
             this.removeItem.emit(this.temporarySelectedAll);
@@ -161,5 +190,23 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
             const containerHeight = this.tableContainer.nativeElement.clientHeight;
             this.$scrollHeight.set(`${containerHeight}px`);
         }
+    }
+
+    /**
+     * Retrieves the message configuration based on the current component status.
+     *
+     * @private
+     * @returns {PrincipalConfiguration | null} Returns the message configuration, or null if no configuration is found.
+     */
+    private getMessageConfig(): PrincipalConfiguration | null {
+        const configKey =
+            this.$status() === ComponentStatus.ERROR ? ComponentStatus.ERROR : 'noResults';
+        const { title, icon, subtitle } = CATEGORY_FIELD_EMPTY_MESSAGES[configKey];
+
+        return {
+            title: this.#messageService.get(title),
+            icon: icon,
+            subtitle: this.#messageService.get(subtitle)
+        };
     }
 }

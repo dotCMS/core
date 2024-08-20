@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "6a8b5049-c7fd-42c0-8591-cbd3ee1424c1",
+		"_postman_id": "c2e4152e-4233-43ae-8e7c-c2e682ade9f8",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "31066048"
@@ -20,7 +20,7 @@
 									"",
 									"pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
 									"pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
-									"pm.collectionVariables.set(\"contentTypeFieldID\", jsonData.entity[0].fields[0].id);",
+									"pm.collectionVariables.set(\"contentTypeFieldID\", jsonData.entity[0].fields[2].id);",
 									"",
 									"pm.test(\"Status code should be ok 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -34,7 +34,8 @@
 									"    pm.expect(jsonData.entity[0].sortOrder).to.eql(3);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -389,21 +390,22 @@
 									"",
 									"pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
 									"pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
-									"pm.collectionVariables.set(\"contentTypeFieldID\", jsonData.entity[0].fields[0].id);",
+									"pm.collectionVariables.set(\"contentTypeFieldID\", jsonData.entity[0].fields[2].id);",
 									"",
 									"pm.test(\"Status code should be ok 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"pm.test(\"fields check\", function () {",
-									"    pm.expect(jsonData.entity[0].fields.length).to.eql(2);",
+									"    pm.expect(jsonData.entity[0].fields.length).to.eql(4);",
 									"});",
 									"",
 									"pm.test(\"description check\", function () {",
 									"    pm.expect(jsonData.entity[0].description).to.eql('THE DESCRIPTION');",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -473,14 +475,15 @@
 									"",
 									"",
 									"pm.test(\"fields check\", function () {",
-									"    pm.expect(jsonData.entity.fields.length).to.eql(2);",
+									"    pm.expect(jsonData.entity.fields.length).to.eql(4);",
 									"});",
 									"",
 									"pm.test(\"description check\", function () {",
 									"    pm.expect(jsonData.entity.description).to.eql('THE DESCRIPTION');",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -665,6 +668,28 @@
 					},
 					"response": []
 				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
 			]
 		},
 		{
@@ -683,14 +708,15 @@
 									"pm.test(\"Status code should be 200\", function() {",
 									"    pm.response.to.have.status(200);",
 									"});",
-									"pm.test(\"Content Type should have 2 fields\", function() {",
-									"    pm.expect(contentType.fields.length).to.eql(2);",
+									"pm.test(\"Content Type should have 4 fields\", function() {",
+									"    pm.expect(contentType.fields.length).to.eql(4);",
 									"});",
 									"pm.test(\"Content Type has a Story_block_field\", function() {",
-									"    pm.expect(contentType.fields[1].fieldType).to.eql(\"Story-Block\");",
+									"    pm.expect(contentType.fields[3].fieldType).to.eql(\"Story-Block\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -4033,7 +4059,7 @@
 									"",
 									"pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
 									"pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
-									"pm.collectionVariables.set(\"contentTypeFieldID\", jsonData.entity[0].fields[0].id);",
+									"pm.collectionVariables.set(\"contentTypeFieldID\", jsonData.entity[0].fields[2].id);",
 									"",
 									"pm.test(\"Status code should be ok 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4044,10 +4070,11 @@
 									"});",
 									"",
 									"pm.test(\"Fields check\", function () {",
-									"    pm.expect(jsonData.entity[0].fields.length).to.eql(2);",
+									"    pm.expect(jsonData.entity[0].fields.length).to.eql(4);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -6890,7 +6917,7 @@
 													"    var jsonData = pm.response.json();",
 													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
 													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
-													"    pm.collectionVariables.set(\"contentTypeField1Id\", jsonData.entity[0].fields[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeField1Id\", jsonData.entity[0].fields[2].id);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -7631,8 +7658,8 @@
 													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
 													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
 													"",
-													"    pm.collectionVariables.set(\"contentTypeField1Id\", jsonData.entity[0].fields[0].id);",
-													"    pm.collectionVariables.set(\"contentTypeField1Variable\", jsonData.entity[0].fields[0].variable);",
+													"    pm.collectionVariables.set(\"contentTypeField1Id\", jsonData.entity[0].fields[2].id);",
+													"    pm.collectionVariables.set(\"contentTypeField1Variable\", jsonData.entity[0].fields[2].variable);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -7686,8 +7713,8 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -7755,7 +7782,7 @@
 							"description": "This test creates the Content Type with a field with a not existing field id in the body."
 						},
 						{
-							"name": "Multiple update permutations Copy",
+							"name": "Multiple update permutations",
 							"item": [
 								{
 									"name": "Create ContentType",
@@ -7772,8 +7799,8 @@
 													"    var jsonData = pm.response.json();",
 													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
 													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
-													"    pm.collectionVariables.set(\"contentTypeField1Id\", jsonData.entity[0].fields[0].id);",
-													"    pm.collectionVariables.set(\"contentTypeField1Variable\", jsonData.entity[0].fields[0].variable);",
+													"    pm.collectionVariables.set(\"contentTypeField1Id\", jsonData.entity[0].fields[2].id);",
+													"    pm.collectionVariables.set(\"contentTypeField1Variable\", jsonData.entity[0].fields[2].variable);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -7827,8 +7854,8 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -7873,8 +7900,8 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -7929,9 +7956,9 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
-													"    pm.expect(jsonData.entity.fields[0].contentTypeId).to.eql(contentTypeId);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].contentTypeId).to.eql(contentTypeId);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -7985,8 +8012,8 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -8040,8 +8067,8 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -8095,8 +8122,8 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -8150,8 +8177,8 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -9010,7 +9037,7 @@
 													"    var jsonData = pm.response.json();",
 													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
 													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
-													"    pm.collectionVariables.set(\"contentTypeField1Id\", jsonData.entity[0].fields[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeField1Id\", jsonData.entity[0].fields[2].id);",
 													"});",
 													"",
 													"pm.test(\"Validate response\", function () {",
@@ -10476,7 +10503,7 @@
 													"    var jsonData = pm.response.json();",
 													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
 													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
-													"    pm.collectionVariables.set(\"contentTypeField1Id\", jsonData.entity[0].fields[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeField1Id\", jsonData.entity[0].fields[2].id);",
 													"});",
 													"",
 													"pm.test(\"Validate response\", function () {",
@@ -11190,6 +11217,2182 @@
 				}
 			],
 			"description": "Testing the diferent scenarios for saving workflows in a Content Type",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Layout fields",
+			"item": [
+				{
+					"name": "Create",
+					"item": [
+						{
+							"name": "Create ContentType without layout fields",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing content type id\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+											"});",
+											"",
+											"pm.test(\"Validate fields size\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity[0].fields;",
+											"    pm.expect(3).to.eql(fields.length);",
+											"});",
+											"",
+											"pm.test(\"Validate fields\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity[0].fields;",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableRowField\").to.eql(fields[0].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[1].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[2].clazz);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Test to validate the layout fields are created even if not layout fields are sent."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate fields size\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(3).to.eql(fields.length);",
+											"});",
+											"",
+											"pm.test(\"Validate fields\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableRowField\").to.eql(fields[0].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[1].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[2].clazz);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Validates the content type and fields were created as expected."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Cleanup"
+							},
+							"response": []
+						},
+						{
+							"name": "Create ContentType with layout fields",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing content type id\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+											"});",
+											"",
+											"pm.test(\"Validate fields size\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity[0].fields;",
+											"    pm.expect(3).to.eql(fields.length);",
+											"});",
+											"",
+											"pm.test(\"Validate fields\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity[0].fields;",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableRowField\").to.eql(fields[0].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[1].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[2].clazz);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"testContentType{{$timestamp}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldType\": \"Row\",\n            \"fieldTypeLabel\": \"Row\",\n            \"fixed\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Row Field\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 0,\n            \"unique\": false\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 1,\n            \"unique\": false\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"name\"\n        }\n    ],\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Test to validate the layout fields are respected when sent in the request."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate fields size\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(3).to.eql(fields.length);",
+											"});",
+											"",
+											"pm.test(\"Validate fields\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableRowField\").to.eql(fields[0].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[1].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[2].clazz);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Validates the content type and fields were created as expected."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Cleanup"
+							},
+							"response": []
+						},
+						{
+							"name": "Create ContentType with wrong layout",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing content type id\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+											"});",
+											"",
+											"pm.test(\"Validate fields size\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity[0].fields;",
+											"    pm.expect(4).to.eql(fields.length);",
+											"});",
+											"",
+											"pm.test(\"Validate fields\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity[0].fields;",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableRowField\").to.eql(fields[0].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[1].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[2].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[3].clazz);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"testContentType{{$timestamp}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 10,\n            \"unique\": false\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"name\"\n        }\n    ],\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Test to validate the layout is fixed even if the layout in the body is wrong."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate fields size\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(4).to.eql(fields.length);",
+											"});",
+											"",
+											"pm.test(\"Validate fields\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableRowField\").to.eql(fields[0].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[1].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[2].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[3].clazz);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Validates the content type and fields were created as expected."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Cleanup"
+							},
+							"response": []
+						}
+					],
+					"description": "Folder to encapsulate multiple tests to validate the proper creation and handling of layout fields."
+				},
+				{
+					"name": "Update",
+					"item": [
+						{
+							"name": "Create ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing content type id\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+											"    pm.collectionVariables.set(\"contentTypeField1Id\", jsonData.entity[0].fields[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeField1Variable\", jsonData.entity[0].fields[0].variable);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Simple creation to sep up the data for the update tests."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate fields size\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(3).to.eql(fields.length);",
+											"});",
+											"",
+											"pm.test(\"Validate fields\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableRowField\").to.eql(fields[0].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[1].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[2].clazz);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Validates the content type and fields were created as expected."
+							},
+							"response": []
+						},
+						{
+							"name": "Update fields exceeding maximum columns",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate fields size\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(11).to.eql(fields.length);",
+											"});",
+											"",
+											"pm.test(\"Validate fields\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableRowField\").to.eql(fields[0].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[1].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[2].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[3].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[4].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[5].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[6].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[7].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[8].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[9].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[10].clazz);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Row\",\n            \"fieldTypeLabel\": \"Row\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Row Field1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 0,\n            \"unique\": false,\n            \"variable\": \"rowField1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"columnField1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name1\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"name1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field2\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 3,\n            \"unique\": false,\n            \"variable\": \"columnField2\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name2\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 4,\n            \"unique\": false,\n            \"variable\": \"name2\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field3\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 5,\n            \"unique\": false,\n            \"variable\": \"columnField3\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name3\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 6,\n            \"unique\": false,\n            \"variable\": \"name3\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field4\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 7,\n            \"unique\": false,\n            \"variable\": \"columnField4\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name4\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 8,\n            \"unique\": false,\n            \"variable\": \"name4\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field5\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 9,\n            \"unique\": false,\n            \"variable\": \"columnField5\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name5\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 10,\n            \"unique\": false,\n            \"variable\": \"name5\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field6\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 11,\n            \"unique\": false,\n            \"variable\": \"columnField6\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name6\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 12,\n            \"unique\": false,\n            \"variable\": \"name6\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates the fields exceeding maximum ammounts of columns per row."
+							},
+							"response": []
+						},
+						{
+							"name": "Update fields exceeding maximum columns with multiple rows",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate fields size\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(22).to.eql(fields.length);",
+											"});",
+											"",
+											"pm.test(\"Validate fields\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableRowField\").to.eql(fields[0].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[1].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[2].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[3].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[4].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[5].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[6].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[7].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[8].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[9].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[10].clazz);",
+											"",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableRowField\").to.eql(fields[11].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[12].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[13].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[14].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[15].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[16].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[17].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[18].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[19].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[20].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[21].clazz);    ",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Row\",\n            \"fieldTypeLabel\": \"Row\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Row Field1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 0,\n            \"unique\": false,\n            \"variable\": \"rowField1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"columnField1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name1\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"name1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field2\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 3,\n            \"unique\": false,\n            \"variable\": \"columnField2\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name2\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 4,\n            \"unique\": false,\n            \"variable\": \"name2\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field3\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 5,\n            \"unique\": false,\n            \"variable\": \"columnField3\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name3\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 6,\n            \"unique\": false,\n            \"variable\": \"name3\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field4\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 7,\n            \"unique\": false,\n            \"variable\": \"columnField4\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name4\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 8,\n            \"unique\": false,\n            \"variable\": \"name4\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field5\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 9,\n            \"unique\": false,\n            \"variable\": \"columnField5\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name5\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 10,\n            \"unique\": false,\n            \"variable\": \"name5\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field6\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 11,\n            \"unique\": false,\n            \"variable\": \"columnField6\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name6\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 12,\n            \"unique\": false,\n            \"variable\": \"name6\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Row\",\n            \"fieldTypeLabel\": \"Row\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Row Field2\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 13,\n            \"unique\": false,\n            \"variable\": \"rowField2\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field11\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 14,\n            \"unique\": false,\n            \"variable\": \"columnField11\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name11\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 15,\n            \"unique\": false,\n            \"variable\": \"name11\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field22\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 16,\n            \"unique\": false,\n            \"variable\": \"columnField22\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name22\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 17,\n            \"unique\": false,\n            \"variable\": \"name22\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field33\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 18,\n            \"unique\": false,\n            \"variable\": \"columnField33\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name33\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 19,\n            \"unique\": false,\n            \"variable\": \"name33\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field44\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 20,\n            \"unique\": false,\n            \"variable\": \"columnField44\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name44\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 21,\n            \"unique\": false,\n            \"variable\": \"name44\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field55\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 22,\n            \"unique\": false,\n            \"variable\": \"columnField55\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name55\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 23,\n            \"unique\": false,\n            \"variable\": \"name55\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field66\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 24,\n            \"unique\": false,\n            \"variable\": \"columnField66\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name66\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 25,\n            \"unique\": false,\n            \"variable\": \"name66\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates the fields exceeding maximum ammounts of columns per row."
+							},
+							"response": []
+						},
+						{
+							"name": "Update fields validating order is respected",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate fields size\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(11).to.eql(fields.length);",
+											"});",
+											"",
+											"pm.test(\"Validate fields type order\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableRowField\").to.eql(fields[0].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[1].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[2].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[3].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[4].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[5].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[6].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[7].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[8].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[9].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[10].clazz);",
+											"});",
+											"",
+											"pm.test(\"Validate fields order\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(\"rowField1\").to.eql(fields[0].variable);",
+											"    pm.expect(\"columnField1\").to.eql(fields[1].variable);",
+											"    pm.expect(\"name1\").to.eql(fields[2].variable);",
+											"    pm.expect(\"columnField2\").to.eql(fields[3].variable);",
+											"    pm.expect(\"name2\").to.eql(fields[4].variable);",
+											"    pm.expect(\"columnField3\").to.eql(fields[5].variable);",
+											"    pm.expect(\"name3\").to.eql(fields[6].variable);",
+											"    pm.expect(\"columnField4\").to.eql(fields[7].variable);",
+											"    pm.expect(\"name4\").to.eql(fields[8].variable);",
+											"    pm.expect(\"name5\").to.eql(fields[9].variable);",
+											"    pm.expect(\"name6\").to.eql(fields[10].variable);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Row\",\n            \"fieldTypeLabel\": \"Row\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Row Field1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 0,\n            \"unique\": false,\n            \"variable\": \"rowField1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"columnField1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name1\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"name1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field2\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 3,\n            \"unique\": false,\n            \"variable\": \"columnField2\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name2\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 4,\n            \"unique\": false,\n            \"variable\": \"name2\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field3\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 5,\n            \"unique\": false,\n            \"variable\": \"columnField3\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name3\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 6,\n            \"unique\": false,\n            \"variable\": \"name3\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field4\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 7,\n            \"unique\": false,\n            \"variable\": \"columnField4\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name4\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 8,\n            \"unique\": false,\n            \"variable\": \"name4\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name5\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 9,\n            \"unique\": false,\n            \"variable\": \"name5\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name6\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 10,\n            \"unique\": false,\n            \"variable\": \"name6\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates the fields validating the given order is respected."
+							},
+							"response": []
+						},
+						{
+							"name": "Update fields changing order",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate fields size\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(11).to.eql(fields.length);",
+											"});",
+											"",
+											"pm.test(\"Validate fields type order\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableRowField\").to.eql(fields[0].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[1].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[2].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[3].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[4].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[5].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[6].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[7].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[8].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[9].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[10].clazz);",
+											"});",
+											"",
+											"pm.test(\"Validate fields order\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(\"rowField1\").to.eql(fields[0].variable);",
+											"    pm.expect(\"columnField1\").to.eql(fields[1].variable);",
+											"    pm.expect(\"name1\").to.eql(fields[2].variable);",
+											"    pm.expect(\"columnField2\").to.eql(fields[3].variable);",
+											"    pm.expect(\"name2\").to.eql(fields[4].variable);",
+											"    pm.expect(\"columnField3\").to.eql(fields[5].variable);",
+											"    pm.expect(\"name3\").to.eql(fields[6].variable);",
+											"    pm.expect(\"columnField4\").to.eql(fields[7].variable);",
+											"    pm.expect(\"name6\").to.eql(fields[8].variable);",
+											"    pm.expect(\"name4\").to.eql(fields[9].variable);",
+											"    pm.expect(\"name5\").to.eql(fields[10].variable);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Row\",\n            \"fieldTypeLabel\": \"Row\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Row Field1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 0,\n            \"unique\": false,\n            \"variable\": \"rowField1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"columnField1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name1\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"name1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field2\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 3,\n            \"unique\": false,\n            \"variable\": \"columnField2\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name2\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 4,\n            \"unique\": false,\n            \"variable\": \"name2\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field3\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 5,\n            \"unique\": false,\n            \"variable\": \"columnField3\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name3\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 6,\n            \"unique\": false,\n            \"variable\": \"name3\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field4\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 7,\n            \"unique\": false,\n            \"variable\": \"columnField4\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name4\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 9,\n            \"unique\": false,\n            \"variable\": \"name4\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name5\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 10,\n            \"unique\": false,\n            \"variable\": \"name5\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name6\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 8,\n            \"unique\": false,\n            \"variable\": \"name6\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates the fields changing the order of the fields"
+							},
+							"response": []
+						},
+						{
+							"name": "Update fields changing order again",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate fields size\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(11).to.eql(fields.length);",
+											"});",
+											"",
+											"pm.test(\"Validate fields type order\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableRowField\").to.eql(fields[0].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[1].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[2].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[3].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[4].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[5].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[6].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[7].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[8].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[9].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[10].clazz);",
+											"});",
+											"",
+											"pm.test(\"Validate fields order\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(\"rowField1\").to.eql(fields[0].variable);",
+											"    pm.expect(\"columnField1\").to.eql(fields[1].variable);",
+											"    pm.expect(\"name1\").to.eql(fields[2].variable);",
+											"    pm.expect(\"columnField2\").to.eql(fields[3].variable);",
+											"    pm.expect(\"name3\").to.eql(fields[4].variable);",
+											"    pm.expect(\"columnField3\").to.eql(fields[5].variable);",
+											"    pm.expect(\"name2\").to.eql(fields[6].variable);",
+											"    pm.expect(\"columnField4\").to.eql(fields[7].variable);",
+											"    pm.expect(\"name6\").to.eql(fields[8].variable);",
+											"    pm.expect(\"name4\").to.eql(fields[9].variable);",
+											"    pm.expect(\"name5\").to.eql(fields[10].variable);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Row\",\n            \"fieldTypeLabel\": \"Row\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Row Field1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 0,\n            \"unique\": false,\n            \"variable\": \"rowField1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"columnField1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name1\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"name1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field2\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 3,\n            \"unique\": false,\n            \"variable\": \"columnField2\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name2\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 6,\n            \"unique\": false,\n            \"variable\": \"name2\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field3\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 5,\n            \"unique\": false,\n            \"variable\": \"columnField3\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name3\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 4,\n            \"unique\": false,\n            \"variable\": \"name3\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field4\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 7,\n            \"unique\": false,\n            \"variable\": \"columnField4\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name4\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 9,\n            \"unique\": false,\n            \"variable\": \"name4\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name5\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 10,\n            \"unique\": false,\n            \"variable\": \"name5\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name6\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 8,\n            \"unique\": false,\n            \"variable\": \"name6\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates the fields changing the order of the fields"
+							},
+							"response": []
+						},
+						{
+							"name": "Update fields removing column",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate fields size\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(10).to.eql(fields.length);",
+											"});",
+											"",
+											"pm.test(\"Validate fields type order\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableRowField\").to.eql(fields[0].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[1].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[2].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[3].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[4].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableColumnField\").to.eql(fields[5].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[6].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[7].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[8].clazz);",
+											"    pm.expect(\"com.dotcms.contenttype.model.field.ImmutableTextField\").to.eql(fields[9].clazz);",
+											"});",
+											"",
+											"pm.test(\"Validate fields order\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var fields = jsonData.entity.fields;",
+											"    pm.expect(\"rowField1\").to.eql(fields[0].variable);",
+											"    pm.expect(\"columnField1\").to.eql(fields[1].variable);",
+											"    pm.expect(\"name1\").to.eql(fields[2].variable);",
+											"    pm.expect(\"columnField2\").to.eql(fields[3].variable);",
+											"    pm.expect(\"name3\").to.eql(fields[4].variable);",
+											"    pm.expect(\"columnField3\").to.eql(fields[5].variable);",
+											"    pm.expect(\"name2\").to.eql(fields[6].variable);",
+											"    pm.expect(\"name6\").to.eql(fields[7].variable);",
+											"    pm.expect(\"name4\").to.eql(fields[8].variable);",
+											"    pm.expect(\"name5\").to.eql(fields[9].variable);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Row\",\n            \"fieldTypeLabel\": \"Row\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Row Field1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 0,\n            \"unique\": false,\n            \"variable\": \"rowField1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"columnField1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name1\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"name1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field2\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 3,\n            \"unique\": false,\n            \"variable\": \"columnField2\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name2\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 6,\n            \"unique\": false,\n            \"variable\": \"name2\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"Column Field3\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 5,\n            \"unique\": false,\n            \"variable\": \"columnField3\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name3\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 4,\n            \"unique\": false,\n            \"variable\": \"name3\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name4\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 9,\n            \"unique\": false,\n            \"variable\": \"name4\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name5\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 10,\n            \"unique\": false,\n            \"variable\": \"name5\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Name6\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 8,\n            \"unique\": false,\n            \"variable\": \"name6\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates the fields removing a column an validating the layout is correct."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Cleanup"
+							},
+							"response": []
+						}
+					],
+					"description": "Folder to encapsulate multiple tests to validate the proper update and handling of layout fields."
+				}
+			],
+			"description": "Multiple tests validating the proper handling of layout fields when saving content types",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "System Action Mappings",
+			"item": [
+				{
+					"name": "Create",
+					"item": [
+						{
+							"name": "Create ContentType without systemActionMappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing content type id\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity[0].systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType1{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Test to validate the content type is created without `systemActionMappings`."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Validates the content type and `systemActionMappings` were created as expected."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Cleanup"
+							},
+							"response": []
+						},
+						{
+							"name": "Create ContentType with empty systemActionMappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing content type id\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity[0].systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType2{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t],\n    \"systemActionMappings\": {},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Test to validate the content type is created with empty `systemActionMappings`."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Validates the content type and `systemActionMappings` were created as expected."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Cleanup"
+							},
+							"response": []
+						},
+						{
+							"name": "Create ContentType with systemActionMappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing content type id\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings exist\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity[0]).to.have.property('systemActionMappings');",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings contain 'NEW' and 'ARCHIVE'\", function () {",
+											"    var systemActionMappings = pm.response.json().entity[0].systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.have.property('NEW');",
+											"    pm.expect(systemActionMappings).to.have.property('ARCHIVE');",
+											"});",
+											"",
+											"pm.test(\"Validate workflowAction.id inside 'NEW' and 'ARCHIVE'\", function () {",
+											"    var systemActionMappings = pm.response.json().entity[0].systemActionMappings;",
+											"    ",
+											"    pm.expect(systemActionMappings.NEW.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"    pm.expect(systemActionMappings.ARCHIVE.workflowAction.id).to.eql(\"4da13a42-5d59-480c-ad8f-94a3adf809fe\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType3{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t],\n    \"systemActionMappings\" : {\n        \"NEW\" : \"b9d89c80-3d88-4311-8365-187323c96436\",\n        \"ARCHIVE\": \"4da13a42-5d59-480c-ad8f-94a3adf809fe\"\n    },\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Test to validate the content type is created with `systemActionMappings`."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings exist\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity).to.have.property('systemActionMappings');",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings contain 'NEW' and 'ARCHIVE'\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.have.property('NEW');",
+											"    pm.expect(systemActionMappings).to.have.property('ARCHIVE');",
+											"});",
+											"",
+											"pm.test(\"Validate workflowAction.id inside 'NEW' and 'ARCHIVE'\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    ",
+											"    pm.expect(systemActionMappings.NEW.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"    pm.expect(systemActionMappings.ARCHIVE.workflowAction.id).to.eql(\"4da13a42-5d59-480c-ad8f-94a3adf809fe\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Validates the content type and `systemActionMappings` were created as expected."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Cleanup"
+							},
+							"response": []
+						}
+					],
+					"description": "Folder to encapsulate multiple tests to validate the proper creation and handling of `systemActionMappings`."
+				},
+				{
+					"name": "Update",
+					"item": [
+						{
+							"name": "Create ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing content type id\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity[0].systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType1{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Simple creation to sep up the data for the update tests."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Validates the content type and `systemActionMappings` were created as expected."
+							},
+							"response": []
+						},
+						{
+							"name": "Update without systemActionMappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type without `systemActionMappings`."
+							},
+							"response": []
+						},
+						{
+							"name": "Update with empty systemActionMappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"systemActionMappings\": {},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type with emtpy `systemActionMappings`."
+							},
+							"response": []
+						},
+						{
+							"name": "Update with systemActionMappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings exist\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity).to.have.property('systemActionMappings');",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.have.property('NEW');",
+											"    pm.expect(systemActionMappings).to.have.property('ARCHIVE');",
+											"});",
+											"",
+											"pm.test(\"Validate workflowAction.id\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    ",
+											"    pm.expect(systemActionMappings.NEW.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"    pm.expect(systemActionMappings.ARCHIVE.workflowAction.id).to.eql(\"4da13a42-5d59-480c-ad8f-94a3adf809fe\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"systemActionMappings\" : {\n        \"NEW\" : \"b9d89c80-3d88-4311-8365-187323c96436\",\n        \"ARCHIVE\": \"4da13a42-5d59-480c-ad8f-94a3adf809fe\"\n    },\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type with `systemActionMappings`."
+							},
+							"response": []
+						},
+						{
+							"name": "Update without systemActionMappings again",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings exist\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity).to.have.property('systemActionMappings');",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.have.property('NEW');",
+											"    pm.expect(systemActionMappings).to.have.property('ARCHIVE');",
+											"});",
+											"",
+											"pm.test(\"Validate workflowAction.id\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    ",
+											"    pm.expect(systemActionMappings.NEW.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"    pm.expect(systemActionMappings.ARCHIVE.workflowAction.id).to.eql(\"4da13a42-5d59-480c-ad8f-94a3adf809fe\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type without `systemActionMappings` existing mappings should be unaffected."
+							},
+							"response": []
+						},
+						{
+							"name": "Update with empty systemActionMappings again",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings is empty\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.be.an('object').that.is.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"systemActionMappings\": {},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type with empty `systemActionMappings` removing all existing mappings."
+							},
+							"response": []
+						},
+						{
+							"name": "Update with systemActionMappings adding mappings again",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings exist\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity).to.have.property('systemActionMappings');",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.have.property('NEW');",
+											"    pm.expect(systemActionMappings).to.have.property('ARCHIVE');",
+											"});",
+											"",
+											"pm.test(\"Validate workflowAction.id\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    ",
+											"    pm.expect(systemActionMappings.NEW.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"    pm.expect(systemActionMappings.ARCHIVE.workflowAction.id).to.eql(\"4da13a42-5d59-480c-ad8f-94a3adf809fe\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"systemActionMappings\" : {\n        \"NEW\" : \"b9d89c80-3d88-4311-8365-187323c96436\",\n        \"ARCHIVE\": \"4da13a42-5d59-480c-ad8f-94a3adf809fe\"\n    },\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type with `systemActionMappings` adding mappings again as previous test deleted existing mappings."
+							},
+							"response": []
+						},
+						{
+							"name": "Update with systemActionMappings adding more mappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings exist\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity).to.have.property('systemActionMappings');",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.have.property('NEW');",
+											"    pm.expect(systemActionMappings).to.have.property('ARCHIVE');",
+											"    pm.expect(systemActionMappings).to.have.property('PUBLISH');",
+											"});",
+											"",
+											"pm.test(\"Validate workflowAction.id\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    ",
+											"    pm.expect(systemActionMappings.NEW.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"    pm.expect(systemActionMappings.ARCHIVE.workflowAction.id).to.eql(\"4da13a42-5d59-480c-ad8f-94a3adf809fe\");",
+											"    pm.expect(systemActionMappings.PUBLISH.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"systemActionMappings\" : {\n        \"NEW\" : \"b9d89c80-3d88-4311-8365-187323c96436\",\n        \"ARCHIVE\": \"4da13a42-5d59-480c-ad8f-94a3adf809fe\",\n        \"PUBLISH\": \"b9d89c80-3d88-4311-8365-187323c96436\"\n    },\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type with `systemActionMappings` adding extra mappings to the existing ones."
+							},
+							"response": []
+						},
+						{
+							"name": "Update by removing systemActionMappings",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings exist\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity).to.have.property('systemActionMappings');",
+											"});",
+											"",
+											"pm.test(\"Validate systemActionMappings\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    pm.expect(systemActionMappings).to.not.have.property('NEW');",
+											"    pm.expect(systemActionMappings).to.have.property('ARCHIVE');",
+											"    pm.expect(systemActionMappings).to.have.property('PUBLISH');",
+											"});",
+											"",
+											"pm.test(\"Validate workflowAction.id\", function () {",
+											"    var systemActionMappings = pm.response.json().entity.systemActionMappings;",
+											"    ",
+											"    pm.expect(systemActionMappings.ARCHIVE.workflowAction.id).to.eql(\"4da13a42-5d59-480c-ad8f-94a3adf809fe\");",
+											"    pm.expect(systemActionMappings.PUBLISH.workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"{{contentTypeVariable}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n        }\n    ],\n    \"systemActionMappings\" : {\n        \"ARCHIVE\": \"4da13a42-5d59-480c-ad8f-94a3adf809fe\",\n        \"PUBLISH\": \"b9d89c80-3d88-4311-8365-187323c96436\"\n    },\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Updates a content type by removing one `systemActionMappings`."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Cleanup"
+							},
+							"response": []
+						}
+					],
+					"description": "Folder to encapsulate multiple tests to validate the proper update and handling of `systemActionMappings`."
+				}
+			],
+			"description": "Group of tests to cover the most common operations on the content type `systemActionMappings`.",
 			"event": [
 				{
 					"listen": "prerequest",

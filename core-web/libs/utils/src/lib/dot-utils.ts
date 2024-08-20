@@ -41,34 +41,42 @@ export function generateDotFavoritePageUrl(params: {
 }
 
 /**
- * Get the query parameter separator
- * @param url
- * @returns
- */
-export function getQueryParameterSeparator(url: string): string {
-    const regex = /[?&]/;
-
-    return url.match(regex) ? '&' : '?';
-}
-
-/**
- * This method is used to get the runnable link for the tool
- * @param url
- * @returns
+ * Generates a runnable link by replacing placeholders in the base URL and appending query parameters.
+ *
+ * This function takes a base URL that may contain placeholders for the request host name and current URL,
+ * and it replaces these placeholders with actual values. Additionally, it appends optional query parameters
+ * based on the properties in the `currentPageUrlParams` object.
+ *
+ * @param url - The base URL for the tool, which may contain placeholders such as `{requestHostName}` and `{currentUrl}`.
+ * @param currentPageUrlParams - An object containing values to replace in the base URL and to add as query parameters:
+ *   - `currentUrl` (optional): The URL to replace the `{currentUrl}` placeholder in the base URL.
+ *   - `requestHostName` (optional): The host name to replace the `{requestHostName}` placeholder in the base URL.
+ *   - `siteId` (optional): The site ID to include as a query parameter (`host_id`).
+ *   - `languageId` (optional): The language ID to include as a query parameter (`language_id`).
+ *
+ * @returns A string representing the constructed URL with placeholders replaced and query parameters appended.
  */
 export function getRunnableLink(url: string, currentPageUrlParams: DotPageToolUrlParams): string {
+    // If URL is empty, return an empty string
+    if (!url) return '';
+    // Destructure properties from currentPageUrlParams
     const { currentUrl, requestHostName, siteId, languageId } = currentPageUrlParams;
 
-    url = url
-        .replace('{requestHostName}', requestHostName ?? '')
-        .replace('{currentUrl}', currentUrl ?? '')
-        .replace('{siteId}', siteId ? `${getQueryParameterSeparator(url)}host_id=${siteId}` : '')
-        .replace(
-            '{languageId}',
-            languageId ? `${getQueryParameterSeparator(url)}language_id=${String(languageId)}` : ''
-        );
+    // Create a URLSearchParams object to manage query parameters
+    const pageParams = new URLSearchParams();
 
-    return url;
+    // Append site ID and language ID as query parameters if they are provided
+    if (siteId) pageParams.append('host_id', siteId);
+    if (languageId) pageParams.append('language_id', String(languageId));
+
+    // Replace placeholders in the base URL with actual values and append query parameters if they exist
+    const finalUrl = url
+        .replace(/{requestHostName}/g, requestHostName ?? '')
+        .replace(/{currentUrl}/g, currentUrl ?? '')
+        .replace(/{urlSearchParams}/g, pageParams.toString() ? `?${pageParams.toString()}` : '');
+
+    // Create a URL object from the finalUrl and return its fully qualified and normalized form.
+    return new URL(finalUrl).toString();
 }
 
 /**
@@ -93,4 +101,25 @@ export function getImageAssetUrl(contentlet: DotCMSContentlet): string {
         default:
             return contentlet?.asset || '';
     }
+}
+
+/**
+ * This method is used to truncate a text with ellipsis.
+ * It ensures that the text is truncated at the nearest word boundary.
+ * @param text - The text to be truncated.
+ * @param limit - The maximum length of the truncated text.
+ * @returns The truncated text with ellipsis if it exceeds the limit, otherwise the original text.
+ */
+export function ellipsizeText(text: string, limit: number): string {
+    if (!text || typeof text !== 'string' || limit <= 0 || isNaN(limit)) {
+        return '';
+    }
+
+    if (text.length <= limit) {
+        return text;
+    }
+
+    const truncated = text.slice(0, limit);
+
+    return truncated.slice(0, truncated.lastIndexOf(' ')) + '...';
 }

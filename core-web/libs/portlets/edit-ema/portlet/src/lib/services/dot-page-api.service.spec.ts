@@ -22,7 +22,7 @@ describe('DotPageApiService', () => {
                 .subscribe();
 
             spectator.expectOne(
-                '/api/v1/page/json/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                '/api/v1/page/json/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&depth=0&mode=EDIT_MODE',
                 HttpMethod.GET
             );
         });
@@ -39,7 +39,7 @@ describe('DotPageApiService', () => {
                 .subscribe();
 
             spectator.expectOne(
-                '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&depth=0&mode=EDIT_MODE',
                 HttpMethod.GET
             );
         });
@@ -91,8 +91,55 @@ describe('DotPageApiService', () => {
             .subscribe();
 
         spectator.expectOne(
-            '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+            '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&depth=0&mode=EDIT_MODE',
             HttpMethod.GET
         );
+    });
+
+    it('should get the page using graphql', () => {
+        const query = 'query { ... }';
+        spectator.service.getGraphQLPage(query).subscribe();
+
+        const { request } = spectator.expectOne('/api/v1/graphql', HttpMethod.POST);
+        const requestHeaders = request.headers;
+
+        expect(request.body).toEqual({ query });
+        expect(requestHeaders.get('dotcachettl')).toBe('0');
+        expect(requestHeaders.get('Content-Type')).toEqual('application/json');
+    });
+
+    describe('getClientPage', () => {
+        const baseParams = {
+            url: '///test-url///',
+            language_id: 'en',
+            'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+        };
+
+        it('should get the page using graphql if the client send a query', () => {
+            const query = 'query { ... }';
+            spectator.service.getClientPage(baseParams, { query }).subscribe();
+
+            const { request } = spectator.expectOne('/api/v1/graphql', HttpMethod.POST);
+            const requestHeaders = request.headers;
+
+            expect(request.body).toEqual({ query });
+            expect(requestHeaders.get('dotcachettl')).toBe('0');
+            expect(requestHeaders.get('Content-Type')).toEqual('application/json');
+        });
+
+        it('should get the page using the page api if the client does not send a query', () => {
+            spectator.service
+                .getClientPage(baseParams, {
+                    params: {
+                        depth: '1'
+                    }
+                })
+                .subscribe();
+
+            spectator.expectOne(
+                '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&depth=1&mode=EDIT_MODE',
+                HttpMethod.GET
+            );
+        });
     });
 });

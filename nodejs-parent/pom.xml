@@ -34,13 +34,14 @@
                             <goal>install-node-and-yarn</goal>
                         </goals>
                         <!-- optional: default phase is "generate-resources" -->
-                        <phase>generate-resources</phase>
+                        <phase>validate</phase>
                     </execution>
                     <execution>
                         <id>config yarn timeout</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
+                        <phase>validate</phase>
                         <configuration>
                             <arguments>config set network-timeout 6000000</arguments>
                         </configuration>
@@ -50,6 +51,7 @@
                         <goals>
                             <goal>yarn</goal>
                         </goals>
+                        <phase>validate</phase>
                         <configuration>
                             <arguments>config set registry https://dotcms-npm.b-cdn.net</arguments>
                         </configuration>
