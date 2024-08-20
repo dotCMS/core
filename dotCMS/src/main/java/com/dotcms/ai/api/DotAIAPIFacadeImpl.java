@@ -69,7 +69,7 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
         public ImageAPI getImageAPI(final Object... initArguments) {
             if (Objects.nonNull(initArguments) && initArguments.length >= 4
                     && initArguments[0] instanceof AppConfig
-                    && initArguments[1] instanceof User
+                    && (Objects.isNull(initArguments[1]) || initArguments[1] instanceof User)
             ) {
 
                 final AppConfig config = (AppConfig) initArguments[0];
