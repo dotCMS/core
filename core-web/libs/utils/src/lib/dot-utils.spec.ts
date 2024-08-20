@@ -159,7 +159,7 @@ describe('Dot Utils', () => {
             const url = 'https://developer.mozilla.org/en-US/observatory/analyze?host={domainName}';
             const params: DotPageToolUrlParams = {
                 currentUrl: '',
-                requestHostName: 'https://my-site.com:80',
+                requestHostName: 'http://my-site.com:80',
                 siteId: '50a79decd9e21702cb2f52fc4935a52b',
                 languageId: 1
             };
@@ -297,7 +297,7 @@ describe('Dot Utils', () => {
             expect(getRunnableLink(url, params)).toEqual('https://example.com/');
         });
 
-        it('should remove port in requestHostName and respect https protocol', () => {
+        it('should and respect https protocol and port in requestHostName', () => {
             const url = 'https://example.com/{requestHostName}{currentUrl}{urlSearchParams}';
             const params: DotPageToolUrlParams = {
                 currentUrl: '/current-page',
@@ -307,11 +307,11 @@ describe('Dot Utils', () => {
             };
 
             expect(getRunnableLink(url, params)).toEqual(
-                'https://example.com/https://my-site.com/current-page?host_id=123&language_id=456'
+                'https://example.com/https://my-site.com:4200/current-page?host_id=123&language_id=456'
             );
         });
 
-        it('should remove port in requestHostName and respect http protocol', () => {
+        it('should and respect http protocol and port in requestHostName', () => {
             const url = 'https://example.com/{requestHostName}{currentUrl}{urlSearchParams}';
             const params: DotPageToolUrlParams = {
                 currentUrl: '/current-page',
@@ -321,7 +321,7 @@ describe('Dot Utils', () => {
             };
 
             expect(getRunnableLink(url, params)).toEqual(
-                'https://example.com/http://my-site.com/current-page?host_id=123&language_id=456'
+                'https://example.com/http://my-site.com:4200/current-page?host_id=123&language_id=456'
             );
         });
 
@@ -336,6 +336,34 @@ describe('Dot Utils', () => {
 
             expect(getRunnableLink(url, params)).toEqual(
                 'https://example.com/my-site.com/current-page?host_id=123&language_id=456'
+            );
+        });
+
+        it('should remove port in requestHostName given https protocol and 443 port ', () => {
+            const url = 'https://example.com/{requestHostName}{currentUrl}{urlSearchParams}';
+            const params: DotPageToolUrlParams = {
+                currentUrl: '/current-page',
+                requestHostName: 'https://my-site.com:443',
+                siteId: '123',
+                languageId: 456
+            };
+
+            expect(getRunnableLink(url, params)).toEqual(
+                'https://example.com/https://my-site.com/current-page?host_id=123&language_id=456'
+            );
+        });
+
+        it('should remove port in requestHostName given http protocol and 80 port ', () => {
+            const url = 'https://example.com/{requestHostName}{currentUrl}{urlSearchParams}';
+            const params: DotPageToolUrlParams = {
+                currentUrl: '/current-page',
+                requestHostName: 'http://my-site.com:80',
+                siteId: '123',
+                languageId: 456
+            };
+
+            expect(getRunnableLink(url, params)).toEqual(
+                'https://example.com/http://my-site.com/current-page?host_id=123&language_id=456'
             );
         });
     });
