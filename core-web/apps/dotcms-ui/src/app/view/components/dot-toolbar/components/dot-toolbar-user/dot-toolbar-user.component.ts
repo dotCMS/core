@@ -3,9 +3,9 @@ import {
     ChangeDetectionStrategy,
     Component,
     OnInit,
-    ViewChild,
     inject,
-    signal
+    signal,
+    viewChild
 } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
@@ -40,19 +40,19 @@ export class DotToolbarUserComponent implements OnInit {
     readonly store = inject(DotToolbarUserStore);
 
     vm$ = this.store.vm$;
-    @ViewChild('menu') menu: Menu;
+    $menu = viewChild<Menu>('menu');
     $showMask = signal<boolean>(false);
 
     ngOnInit(): void {
         this.store.init();
     }
 
-    toggleMenu(event: CustomEvent): void {
-        this.menu.toggle(event);
-        this.toggleMask();
+    toggleMenu(event: Event): void {
+        this.$menu().toggle(event);
+        this.$showMask.update((value) => !value);
     }
 
-    toggleMask(): void {
-        this.$showMask.update((value) => !value);
+    hideMask(): void {
+        this.$showMask.update(() => false);
     }
 }
