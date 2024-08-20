@@ -60,7 +60,6 @@ describe('DotSiteSelectorDirective', () => {
         });
 
         it('should get sites list with filter', fakeAsync(() => {
-
             const event: DropdownFilterEvent = {
                 filter: 'demo',
                 originalEvent: createFakeEvent('click')
