@@ -14,7 +14,6 @@ import Navigation from "./layout/navigation";
 import Footer from "./layout/footer/footer";
 
 // Mapping of components to DotCMS content types
-// Mapping of components to DotCMS content types
 const componentsMap = {
   webPageContent: WebPageContent,
   Banner: Banner,
@@ -23,7 +22,7 @@ const componentsMap = {
   Image: ImageComponent,
   calendarEvent: CalendarEvent,
   CallToAction: CallToAction,
-  // CustomNoComponent: CustomNoComponent,
+  CustomNoComponent: CustomNoComponent,
 };
 
 export function MyPage({ pageAsset, nav }: any) {
