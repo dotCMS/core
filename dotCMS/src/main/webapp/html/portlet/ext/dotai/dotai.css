@@ -281,7 +281,6 @@
 
 
 input[type="text"] {
-    font-size: 1rem;
     padding: 10px;
     margin-top: -10px;
     border-color: var(--color-palette-primary-op-20);
@@ -298,7 +297,6 @@ input[type="text"]:focus {
 }
 
 input[type="number"] {
-    font-size: 1rem;
     padding: 10px;
     min-width: 100px;
     margin-top: -10px;
@@ -337,7 +335,6 @@ input[type="radio"]:hover {
 }
 
 textarea {
-    font-size: 1rem;
     padding: 10px;
     margin-top: -10px;
     border-color: var(--color-palette-primary-op-20);
@@ -353,7 +350,6 @@ textarea:focus {
 }
 
 select {
-    font-size: 1rem;
     padding: 10px;
     margin-top: -10px;
     border-color: var(--color-palette-primary-op-20);
@@ -370,7 +366,6 @@ select:focus {
 }
 
 .button {
-    font-size: 1rem;
     padding: 20px 40px;
     border: 1px solid #9D9D9D;
     border-radius: .25em;
