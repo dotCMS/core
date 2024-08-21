@@ -9,7 +9,7 @@ import org.glassfish.jersey.server.spi.Container;
 /**
  * A new Reloader will get created on each reload there can only be one container at a time
  */
-class ContainerReloader extends AbstractContainerLifecycleListener {
+public class ContainerReloader extends AbstractContainerLifecycleListener {
 
     private static final ContainerReloader INSTANCE = new ContainerReloader();
 

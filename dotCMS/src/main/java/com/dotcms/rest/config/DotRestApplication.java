@@ -1,6 +1,10 @@
 package com.dotcms.rest.config;
 
-import com.dotcms.ai.rest.*;
+import com.dotcms.ai.rest.CompletionsResource;
+import com.dotcms.ai.rest.EmbeddingsResource;
+import com.dotcms.ai.rest.ImageResource;
+import com.dotcms.ai.rest.SearchResource;
+import com.dotcms.ai.rest.TextResource;
 import com.dotcms.contenttype.model.field.FieldTypeResource;
 import com.dotcms.rendering.js.JsResource;
 import com.dotcms.rest.AuditPublishingResource;
@@ -125,12 +129,12 @@ import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
-
-import javax.ws.rs.core.Application;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.ws.rs.ApplicationPath;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
+import org.glassfish.jersey.server.ResourceConfig;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -160,7 +164,16 @@ import java.util.concurrent.ConcurrentHashMap;
 				@Tag(name = "Content Report")
 		}
 )
-public class DotRestApplication extends Application {
+
+@ApplicationPath("/api")
+public class DotRestApplication extends ResourceConfig {
+
+	public DotRestApplication() {
+		registerClasses(INTERNAL_CLASSES).
+		registerClasses(PROVIDER_CLASSES).
+		registerClasses(customClasses.keySet());
+		property("jersey.config.server.tracing", "ALL");
+	}
 
 	/**
 	 * these are system resources and should never change
@@ -316,9 +329,10 @@ public class DotRestApplication extends Application {
 	 * @param clazz the class ot add
 	 */
 	public static synchronized void addClass(Class<?> clazz) {
-		if(clazz==null)return;
-		if (Boolean.TRUE.equals(customClasses.computeIfAbsent(clazz,c -> true)))
-		{
+		if(clazz==null){
+			return;
+		}
+		if (Boolean.TRUE.equals(customClasses.computeIfAbsent(clazz,c -> true))) {
 			ContainerReloader.getInstance().reload();
 		}
 	}
@@ -332,16 +346,6 @@ public class DotRestApplication extends Application {
 		if(customClasses.remove(clazz) != null){
 			ContainerReloader.getInstance().reload();
 		}
-	}
-
-	@Override
-	public Set<Class<?>> getClasses() {
-		return ImmutableSet.<Class<?>>builder()
-				.addAll(customClasses.keySet())
-				.addAll(INTERNAL_CLASSES)
-				.addAll(PROVIDER_CLASSES)
-				.build();
-
 	}
 
 }
