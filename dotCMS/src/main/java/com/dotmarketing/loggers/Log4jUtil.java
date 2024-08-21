@@ -28,15 +28,6 @@ public class Log4jUtil {
     private final static String LOG4J_CONTEXT_SELECTOR = "Log4jContextSelector";
 
     /**
-     * Configure default system properties
-     */
-    public static void configureDefaultSystemProperties () {
-        if(!UtilMethods.isSet(System.getProperty(LOG4J_CONTEXT_SELECTOR))) {
-            System.setProperty(LOG4J_CONTEXT_SELECTOR, "org.apache.logging.log4j.core.async.AsyncLoggerContextSelector");
-        }
-    }
-
-    /**
      * Creates a ConsoleAppender in order to add it to the root logger
      */
     public static void createAndAddConsoleAppender () {
@@ -126,33 +117,6 @@ public class Log4jUtil {
     public static void shutdown(LoggerContext context) {
         //Shutting down log4j in order to avoid memory leaks
         Configurator.shutdown(context);
-    }
-
-    /**
-     * Initialises/reconfigures log4j based on a given log4j configuration file
-     *
-     * @param log4jConfigFilePath
-     */
-    public static void initializeFromPath ( String log4jConfigFilePath ) {
-
-        if ( log4jConfigFilePath != null ) {
-
-            try {
-
-                configureDefaultSystemProperties();
-                LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
-
-                if ( !loggerContext.isInitialized() || loggerContext.isStopped() ) {
-                	Configurator.initialize(null, log4jConfigFilePath);
-                } else {
-                    loggerContext.setConfigLocation(URI.create(log4jConfigFilePath));
-                    loggerContext.reconfigure();
-                }
-            } catch ( Exception e ) {
-                LogManager.getLogger().error("Error initializing log for " + log4jConfigFilePath + " configuration file.", e);
-            }
-            LogManager.getLogger().info("Async Logger enabled: "+ AsyncLoggerContextSelector.isSelected());
-        }
     }
 
     /**
