@@ -1,6 +1,6 @@
 import useImageSrc from "../hooks/useImageSrc";
 
-const dateFormatOptions: DateTimeFormatOptions = {
+const dateFormatOptions: Intl.DateTimeFormatOptions = {
   year: "numeric",
   month: "long",
   day: "numeric",
