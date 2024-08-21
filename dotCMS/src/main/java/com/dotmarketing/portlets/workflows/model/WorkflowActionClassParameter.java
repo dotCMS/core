@@ -33,6 +33,14 @@ public class WorkflowActionClassParameter implements Serializable {
 	public void setKey(String key) {
 		this.key = key;
 	}
+
+	public WorkflowActionClassParameter(){
+	}
+
+	public WorkflowActionClassParameter(final String value){
+		this.value = value;
+	}
+
 	public String getValue() {
 		if(UtilMethods.isSet(value)){
 			return value;

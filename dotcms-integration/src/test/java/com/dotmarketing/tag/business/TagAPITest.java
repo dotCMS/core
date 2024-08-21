@@ -6,7 +6,6 @@ import com.dotcms.datagen.TagDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -22,15 +21,24 @@ import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.IntStream;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test the functionality of TagAPI class
@@ -970,6 +978,70 @@ public class TagAPITest extends IntegrationTestBase {
 
 		assertEquals(personaTag.getTagName(), fetchedTags.get(0).getTagName());
 		assertEquals(personaTag.getTagId(), fetchedTags.get(0).getTagId());
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#findTopTags(String)}
+	 * Given scenario: Save 200 times a couple tags to highlight on the top ten
+	 * Expected result: The top tags should be not null, not empty and contain the tags saved
+	 */
+	@Test
+	public void findTopTags_should_be_not_null_not_empty_and_contains_one_popular_tags() throws Exception{
+
+		final String tagvalue1 = "mytesttag1";
+
+		final Tag tag1 = Try.of(()->APILocator.getTagAPI().saveTag(tagvalue1, testUser.getUserId(), defaultHostId)).getOrNull();
+		IntStream.range(0, 100).forEach($ -> {
+
+			try {
+				final Contentlet contentAsset = new Contentlet();
+				ContentType contentType = TestDataUtils.getWikiLikeContentType();
+				contentAsset.setStructureInode(contentType.id());
+				contentAsset.setHost(defaultHostId);
+				contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
+				String name = "testtagapi" + UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
+				contentAsset.setProperty(WIKI_TITLE_VARNAME, name);
+				contentAsset.setProperty(WIKI_URL_VARNAME, name);
+				contentAsset.setProperty(WIKI_BYLINEL_VARNAME, "test");
+				contentAsset.setProperty(WIKI_STORY_VARNAME, "test");
+				contentAsset.setLanguageId(langAPI.getDefaultLanguage().getId());
+				final Contentlet savedContentAsset = conAPI.checkin(contentAsset, testUser, false);
+				APILocator.getContentletAPI().publish(savedContentAsset, testUser, false);
+				tagAPI.addContentletTagInode(tagvalue1, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+			} catch (Exception e) {
+				Logger.error(this, e.getMessage(), e);
+			}
+		});
+
+		final Set<String> topTagsSet = APILocator.getTagAPI().findTopTags(defaultHostId);
+
+		assertNotNull("The top tags should be not null",topTagsSet);
+		assertFalse("The top tags should be not empty", topTagsSet.isEmpty());
+		assertTrue("The mytesttag1 should be on the top ten", topTagsSet.contains(tagvalue1));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#findTopTags(String)}
+	 * Given scenario: pass site id as a null
+	 * Expected result: Expecting {@link IllegalArgumentException} to be thrown
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	public void findTopTags_on_null_throw_exception() throws Exception{
+
+			APILocator.getTagAPI().findTopTags(null);
+			fail("should not reach this section");
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#findTopTags(String)}
+	 * Given scenario: pass site id as an empty string
+	 * Expected result: Expecting {@link IllegalArgumentException} to be thrown
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	public void findTopTags_on_empty_throw_exception() throws Exception{
+
+		APILocator.getTagAPI().findTopTags("");
+		fail("should not reach this section");
 	}
 
 }

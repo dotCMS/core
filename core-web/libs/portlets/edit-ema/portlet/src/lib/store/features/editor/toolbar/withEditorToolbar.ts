@@ -17,9 +17,10 @@ import { InfoOptions } from '../../../../shared/models';
 import {
     createFavoritePagesURL,
     createPageApiUrlWithQueryParams,
-    createPureURL,
+    createFullURL,
     getIsDefaultVariant,
-    sanitizeURL
+    sanitizeURL,
+    computePageIsLocked
 } from '../../../../utils';
 import { UVEState } from '../../../models';
 import { EditorToolbarState, ToolbarProps } from '../models';
@@ -56,8 +57,11 @@ export function withEditorToolbar() {
                 }/${pageAPIQueryParams}`;
 
                 const isExperimentRunning = experiment?.status === DotExperimentStatus.RUNNING;
-                const shouldShowUnlock =
-                    pageAPIResponse?.page.locked && pageAPIResponse?.page.canLock;
+                const isPageLocked = computePageIsLocked(
+                    pageAPIResponse?.page,
+                    store.currentUser()
+                );
+                const shouldShowUnlock = isPageLocked && pageAPIResponse?.page.canLock;
 
                 const unlockButton = {
                     inode: pageAPIResponse?.page.inode,
@@ -67,20 +71,22 @@ export function withEditorToolbar() {
                 const shouldShowInfoDisplay =
                     !getIsDefaultVariant(pageAPIResponse?.viewAs.variantId) ||
                     !store.canEditPage() ||
-                    pageAPIResponse?.page.locked ||
+                    isPageLocked ||
                     !!store.device() ||
                     !!store.socialMedia();
 
                 const bookmarksUrl = createFavoritePagesURL({
                     languageId: Number(params?.language_id),
                     pageURI: url,
-                    siteId: pageAPIResponse?.site.identifier
+                    siteId: pageAPIResponse?.site?.identifier
                 });
+                const clientHost = `${params?.clientHost ?? window.location.origin}`;
+                const siteId = pageAPIResponse?.site?.identifier;
 
                 return {
                     bookmarksUrl,
-                    copyUrl: createPureURL(params),
-                    apiUrl: `${window.location.origin}${pageAPI}`,
+                    copyUrl: createFullURL(params, siteId),
+                    apiUrl: pageAPI,
                     currentLanguage: pageAPIResponse?.viewAs.language,
                     urlContentMap: store.isEditState()
                         ? (pageAPIResponse?.urlContentMap ?? null)
@@ -90,7 +96,7 @@ export function withEditorToolbar() {
                     unlockButton: shouldShowUnlock ? unlockButton : null,
                     showInfoDisplay: shouldShowInfoDisplay,
                     deviceSelector: {
-                        apiLink: `${params?.clientHost ?? window.location.origin}${pageAPI}`,
+                        apiLink: `${clientHost}${pageAPI}`,
                         hideSocialMedia: !store.isTraditionalPage()
                     },
                     personaSelector: {

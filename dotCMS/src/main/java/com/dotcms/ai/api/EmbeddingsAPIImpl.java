@@ -10,12 +10,12 @@ import com.dotcms.ai.db.EmbeddingsFactory;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.ai.util.EncodingUtil;
 import com.dotcms.ai.util.OpenAIRequest;
-import com.dotcms.ai.util.OpenAIThreadPool;
 import com.dotcms.ai.util.VelocityContextFactory;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
@@ -133,7 +133,8 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
     @Override
     public void shutdown() {
-        Try.run(OpenAIThreadPool::shutdown);
+
+        Try.run(()->DotConcurrentFactory.getInstance().shutdown(OPEN_AI_THREAD_POOL_KEY));
     }
 
     @Override
@@ -187,7 +188,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             return false;
         }
 
-        OpenAIThreadPool.submit(new EmbeddingsRunner(this, contentlet, parsed.get(), indexName));
+        DotConcurrentFactory.getInstance().getSubmitter(OPEN_AI_THREAD_POOL_KEY).submit(new EmbeddingsRunner(this, contentlet, parsed.get(), indexName));
 
         return true;
     }
@@ -253,7 +254,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             reducedResults.putIfAbsent(result.inode,contentObject);
         }
 
-        final long count = EmbeddingsAPI.impl().countEmbeddings(searcher);
+        final long count = APILocator.getDotAIAPI().getEmbeddingsAPI().countEmbeddings(searcher);
         final JSONObject map = new JSONObject();
         map.put(AiKeys.TIME_TO_EMBEDDINGS, System.currentTimeMillis() - startTime + "ms");
         map.put(AiKeys.TOTAL, searchResults.size());
@@ -327,7 +328,10 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             return cachedEmbeddings;
         }
 
-        final List<Integer> tokens = EncodingUtil.ENCODING.get().encode(content);
+        final List<Integer> tokens = EncodingUtil.get()
+                .getEncoding()
+                .map(encoding -> encoding.encode(content))
+                .orElse(List.of());
         if (tokens.isEmpty()) {
             debugLogger(this.getClass(), () -> String.format("No tokens for content ID '%s' were encoded: %s", contentId, content));
             return Tuple.of(0, List.of());

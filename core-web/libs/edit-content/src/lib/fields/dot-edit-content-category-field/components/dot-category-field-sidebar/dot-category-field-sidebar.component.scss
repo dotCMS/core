@@ -1,5 +1,17 @@
 @use "variables" as *;
 
+:host ::ng-deep .p-breadcrumb {
+    > ul > li {
+        &:last-child a {
+            pointer-events: none;
+            .p-menuitem-text {
+                color: $black;
+                font-weight: $font-weight-bold;
+            }
+        }
+    }
+}
+
 .category-field__header {
     align-items: center;
     flex-wrap: wrap;
@@ -8,7 +20,7 @@
 }
 
 .category-field__header-title {
-    font-size: $font-size-lg;
+    font-size: $font-size-lmd;
     font-weight: $font-weight-medium-bold;
     margin: 0;
 }
@@ -41,7 +53,6 @@
     flex: 0 0 25%;
     gap: $spacing-1;
     padding: $spacing-3;
-    padding-right: 0;
     &.empty {
         padding-left: 0;
     }
@@ -57,7 +68,7 @@
 
 .category-field__selected-categories-list {
     overflow-y: auto;
-    scrollbar-gutter: stable;
+    scrollbar-gutter: auto;
 }
 
 :host ::ng-deep .p-sidebar-content {
@@ -76,6 +87,6 @@
 
     p {
         text-align: center;
-        font-size: $font-size-smd;
+        font-size: $font-size-sm;
     }
 }

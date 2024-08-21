@@ -4,6 +4,7 @@ import {
     Component,
     ElementRef,
     EventEmitter,
+    inject,
     Input,
     OnDestroy,
     OnInit,
@@ -35,6 +36,8 @@ import { DotFormModel } from '@models/dot-form/dot-form.model';
 export class DotPushPublishFormComponent
     implements OnInit, OnDestroy, DotFormModel<DotPushPublishDialogData, DotPushPublishData>
 {
+    readonly #dotMessageService = inject(DotMessageService);
+
     dateFieldMinDate = new Date();
     form: UntypedFormGroup;
     pushActions: SelectItem[];
@@ -44,7 +47,7 @@ export class DotPushPublishFormComponent
     assetIdentifier: string;
     localTimezone: string;
     showTimezonePicker = false;
-    changeTimezoneActionLabel = this.dotMessageService.get('Change');
+    changeTimezoneActionLabel = this.#dotMessageService.get('Change');
 
     @Input() data: DotPushPublishDialogData;
 
@@ -60,7 +63,6 @@ export class DotPushPublishFormComponent
     constructor(
         private dotPushPublishFiltersService: DotPushPublishFiltersService,
         private dotParseHtmlService: DotParseHtmlService,
-        private dotMessageService: DotMessageService,
         private dotcmsConfigService: DotcmsConfigService,
         private httpErrorManagerService: DotHttpErrorManagerService,
         public fb: UntypedFormBuilder
@@ -114,8 +116,8 @@ export class DotPushPublishFormComponent
         this.showTimezonePicker = !this.showTimezonePicker;
 
         this.changeTimezoneActionLabel = this.showTimezonePicker
-            ? this.dotMessageService.get('hide')
-            : this.dotMessageService.get('Change');
+            ? this.#dotMessageService.get('hide')
+            : this.#dotMessageService.get('Change');
     }
 
     private setPreviousDayToMinDate() {
@@ -261,18 +263,18 @@ export class DotPushPublishFormComponent
     private getPushPublishActions(): SelectItem[] {
         return [
             {
-                label: this.dotMessageService.get('contenttypes.content.push_publish.action.push'),
+                label: this.#dotMessageService.get('contenttypes.content.push_publish.action.push'),
                 value: 'publish'
             },
             {
-                label: this.dotMessageService.get(
+                label: this.#dotMessageService.get(
                     'contenttypes.content.push_publish.action.remove'
                 ),
                 value: 'expire',
                 disabled: this.isRestrictedOrCategory()
             },
             {
-                label: this.dotMessageService.get(
+                label: this.#dotMessageService.get(
                     'contenttypes.content.push_publish.action.pushremove'
                 ),
                 value: 'publishexpire',

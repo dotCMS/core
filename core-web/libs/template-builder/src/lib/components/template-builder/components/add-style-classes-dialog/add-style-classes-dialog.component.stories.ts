@@ -1,4 +1,4 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { of } from 'rxjs';
 
 import { AsyncPipe, NgIf } from '@angular/common';
@@ -22,7 +22,7 @@ import {
     MOCK_STYLE_CLASSES_FILE
 } from '../../utils/mocks';
 
-export default {
+const meta: Meta<AddStyleClassesDialogComponent> = {
     title: 'Library/Template Builder/Components/Add Style Classes',
     component: AddStyleClassesDialogComponent,
     decorators: [
@@ -62,10 +62,9 @@ export default {
             ]
         })
     ]
-} as Meta<AddStyleClassesDialogComponent>;
+};
+export default meta;
 
-const Template: Story<AddStyleClassesDialogComponent> = (args: AddStyleClassesDialogComponent) => ({
-    props: args
-});
+type Story = StoryObj<AddStyleClassesDialogComponent>;
 
-export const Primary = Template.bind({});
+export const Primary: Story = {};

@@ -236,7 +236,7 @@ public class ContentToStringUtil {
      *
      * @return An {@link Optional} with the appended Strings from each field value.
      */
-    public Optional<String> parseFields(@NotNull final Contentlet contentlet, @NotNull final List<Field> fields) {
+    public Optional<String>     parseFields(@NotNull final Contentlet contentlet, @NotNull final List<Field> fields) {
         if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
             return Optional.empty();
         }

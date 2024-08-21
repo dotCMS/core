@@ -9,7 +9,8 @@ import {
     removeEmptyArrays,
     removeItemByKey,
     transformCategories,
-    updateChecked
+    updateChecked,
+    getMenuItemsFromKeyParentPath
 } from './category-field.utils';
 
 import {
@@ -178,7 +179,8 @@ describe('CategoryFieldUtils', () => {
             const item: DotCategoryFieldKeyValueObj = {
                 key: CATEGORY_LEVEL_1[1].key,
                 value: CATEGORY_LEVEL_1[1].categoryName,
-                inode: CATEGORY_LEVEL_1[1].inode
+                inode: CATEGORY_LEVEL_1[1].inode,
+                path: ''
             };
 
             const expected: DotCategoryFieldKeyValueObj[] = [...storedSelected, item];
@@ -540,6 +542,41 @@ describe('CategoryFieldUtils', () => {
             const result = transformCategories(categories, keyParentPath);
 
             expect(result).toEqual([]);
+        });
+
+        //
+        it('should build the breadcrumb according to categories', () => {
+            const array: DotCategory[][] = [
+                [
+                    {
+                        key: '1',
+                        inode: 'inode1',
+                        categoryName: 'Category 1',
+                        childrenCount: 0,
+                        active: true,
+                        categoryVelocityVarName: '',
+                        description: null,
+                        iDate: 0,
+                        identifier: null,
+                        keywords: null,
+                        modDate: 0,
+                        owner: '',
+                        sortOrder: 0,
+                        type: ''
+                    }
+                ]
+            ];
+            const result = getMenuItemsFromKeyParentPath(array, keyParentPath);
+            expect(result).toEqual([
+                {
+                    key: '1',
+                    inode: 'inode1',
+                    value: 'Category 1',
+                    hasChildren: false,
+                    clicked: false,
+                    path: ''
+                }
+            ]);
         });
     });
     describe('transformSelectedCategories', () => {

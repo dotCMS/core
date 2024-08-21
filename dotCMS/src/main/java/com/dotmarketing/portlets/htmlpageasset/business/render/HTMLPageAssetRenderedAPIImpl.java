@@ -377,9 +377,9 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 context.getPageMode().respectAnonPerms);
 
         if (!doesUserHavePermission) {
-            final String message = String.format("User: %s does not have permissions %s for object %s",
+            final String message = String.format("User: %s does not have permissions %s for page %s",
                     context.getUser(),
-                    PermissionLevel.READ, htmlPageAsset);
+                    PermissionLevel.READ, htmlPageAsset.getURI());
             throw new DotSecurityException(message);
         }
     }

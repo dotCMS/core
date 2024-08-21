@@ -13,3 +13,9 @@
     display: flex;
     transition: transform $basic-speed ease-in;
 }
+
+.dot-wizard__footer {
+    display: flex;
+    justify-content: end;
+    gap: $spacing-1;
+}

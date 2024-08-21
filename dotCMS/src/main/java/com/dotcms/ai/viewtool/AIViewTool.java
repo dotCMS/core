@@ -3,10 +3,10 @@ package com.dotcms.ai.viewtool;
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
-import com.dotcms.ai.service.OpenAIChatService;
-import com.dotcms.ai.service.OpenAIChatServiceImpl;
-import com.dotcms.ai.service.OpenAIImageService;
-import com.dotcms.ai.service.OpenAIImageServiceImpl;
+import com.dotcms.ai.api.ChatAPI;
+import com.dotcms.ai.api.OpenAIChatAPIImpl;
+import com.dotcms.ai.api.ImageAPI;
+import com.dotcms.ai.api.OpenAIImageAPIImpl;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.json.JSONObject;
@@ -14,7 +14,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -29,8 +28,8 @@ public class AIViewTool implements ViewTool {
 
     private ViewContext context;
     private AppConfig config;
-    private OpenAIChatService chatService;
-    private OpenAIImageService imageService;
+    private ChatAPI chatService;
+    private ImageAPI imageService;
 
     @Override
     public void init(final Object obj) {
@@ -46,9 +45,7 @@ public class AIViewTool implements ViewTool {
      * @return true if AI is enabled, false otherwise
      */
     public boolean isAiEnabled() {
-        return Optional.ofNullable(config)
-                .map(appConfig -> StringUtils.isNotBlank(appConfig.getApiKey()))
-                .orElse(false);
+        return Optional.ofNullable(config).map(AppConfig::isEnabled).orElse(false);
     }
 
     /**
@@ -130,13 +127,13 @@ public class AIViewTool implements ViewTool {
     }
 
     @VisibleForTesting
-    OpenAIChatService chatService() {
-        return new OpenAIChatServiceImpl(config);
+    ChatAPI chatService() {
+        return APILocator.getDotAIAPI().getChatAPI(config);
     }
 
     @VisibleForTesting
-    OpenAIImageService imageService() {
-        return new OpenAIImageServiceImpl(config, user(), APILocator.getHostAPI(), APILocator.getTempFileAPI());
+    ImageAPI imageService() {
+        return APILocator.getDotAIAPI().getImageAPI(config, user(), APILocator.getHostAPI(), APILocator.getTempFileAPI());
     }
 
     private <P extends Object> Try<JSONObject> generate(final P prompt, final Function<P, JSONObject> serviceCall) {

@@ -42,7 +42,7 @@ public class AIAppUtil {
     public AIModel createTextModel(final Map<String, Secret> secrets) {
         return AIModel.builder()
                 .withType(AIModelType.TEXT)
-                .withNames(discoverSecret(secrets, AppKeys.TEXT_MODEL_NAMES))
+                .withNames(splitDiscoveredSecret(secrets, AppKeys.TEXT_MODEL_NAMES))
                 .withTokensPerMinute(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_TOKENS_PER_MINUTE))
                 .withApiPerMinute(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_API_PER_MINUTE))
                 .withMaxTokens(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_MAX_TOKENS))
@@ -59,7 +59,7 @@ public class AIAppUtil {
     public AIModel createImageModel(final Map<String, Secret> secrets) {
         return AIModel.builder()
                 .withType(AIModelType.IMAGE)
-                .withNames(discoverSecret(secrets, AppKeys.IMAGE_MODEL_NAMES))
+                .withNames(splitDiscoveredSecret(secrets, AppKeys.IMAGE_MODEL_NAMES))
                 .withTokensPerMinute(discoverIntSecret(secrets, AppKeys.IMAGE_MODEL_TOKENS_PER_MINUTE))
                 .withApiPerMinute(discoverIntSecret(secrets, AppKeys.IMAGE_MODEL_API_PER_MINUTE))
                 .withMaxTokens(discoverIntSecret(secrets, AppKeys.IMAGE_MODEL_MAX_TOKENS))
@@ -117,7 +117,7 @@ public class AIAppUtil {
      * @return the list of split secret values
      */
     public List<String> splitDiscoveredSecret(final Map<String, Secret> secrets, final AppKeys key) {
-        return Arrays.stream(discoverSecret(secrets, key).split(","))
+        return Arrays.stream(Optional.ofNullable(discoverSecret(secrets, key)).orElse(StringPool.BLANK).split(","))
                 .map(String::trim)
                 .map(String::toLowerCase)
                 .collect(Collectors.toList());
@@ -144,22 +144,21 @@ public class AIAppUtil {
     }
 
     /**
-     * Resolves an environment-specific secret value from the provided secrets map using the specified key.
-     * If the secret is not found, it attempts to discover the value from environment variables.
+     * Resolves a secret value from the provided secrets map using the specified key and environment variable.
+     * If the secret is not found in the secrets map, it attempts to discover the value from the environment variable.
      *
      * @param secrets the map of secrets
      * @param key the key to look up the secret
-     * @return the resolved environment-specific secret value or an empty string if not found
+     * @param envVar the environment variable name to look up if the secret is not found in the secrets map
+     * @return the resolved secret value or the value from the environment variable if the secret is not found
      */
-    public String discoverEnvSecret(final Map<String, Secret> secrets, final AppKeys key) {
-        final String secret = discoverSecret(secrets, key, StringPool.BLANK);
-        if (UtilMethods.isSet(secret)) {
-            return secret;
-        }
-
+    public String discoverEnvSecret(final Map<String, Secret> secrets, final AppKeys key, final String envVar) {
         return Optional
-                .ofNullable(AppsUtil.discoverEnvVarValue(AppKeys.APP_KEY, key.key, null))
-                .orElse(StringPool.BLANK);
+                .ofNullable(AppsUtil.discoverEnvVarValue(AppKeys.APP_KEY, key.key, envVar))
+                .orElseGet(() -> {
+                    final String secret = discoverSecret(secrets, key);
+                    return UtilMethods.isSet(secret) ? secret : null;
+                });
     }
 
     private int toInt(final String value) {

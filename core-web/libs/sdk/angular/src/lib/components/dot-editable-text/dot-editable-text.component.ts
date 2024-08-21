@@ -116,7 +116,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      * @memberof DotEditableTextComponent
      */
     get editor() {
-        return this.editorComponent.editor;
+        return this.editorComponent?.editor;
     }
 
     /**
@@ -170,6 +170,9 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
 
     ngOnChanges() {
         this.content = this.contentlet[this.fieldName] || '';
+        if (this.editor) {
+            this.editor.setContent(this.content, { format: this.format });
+        }
     }
 
     /**

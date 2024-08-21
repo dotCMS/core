@@ -5,6 +5,7 @@ import {
     Component,
     EventEmitter,
     HostListener,
+    inject,
     OnDestroy,
     OnInit,
     Output,
@@ -28,6 +29,9 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     styleUrls: ['./dot-pages-listing-panel.component.scss']
 })
 export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterViewInit {
+    readonly store = inject(DotPageStore);
+    readonly #dotMessageService = inject(DotMessageService);
+
     @ViewChild('cm') cm: ContextMenu;
     @ViewChild('table') table: Table;
     @Output() goToUrl = new EventEmitter<string>();
@@ -40,16 +44,11 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
     vm$: Observable<DotPagesState> = this.store.vm$;
 
     dotStateLabels = {
-        archived: this.dotMessageService.get('Archived'),
-        published: this.dotMessageService.get('Published'),
-        revision: this.dotMessageService.get('Revision'),
-        draft: this.dotMessageService.get('Draft')
+        archived: this.#dotMessageService.get('Archived'),
+        published: this.#dotMessageService.get('Published'),
+        revision: this.#dotMessageService.get('Revision'),
+        draft: this.#dotMessageService.get('Draft')
     };
-
-    constructor(
-        private store: DotPageStore,
-        private dotMessageService: DotMessageService
-    ) {}
 
     ngOnInit() {
         this.store.actionMenuDomId$

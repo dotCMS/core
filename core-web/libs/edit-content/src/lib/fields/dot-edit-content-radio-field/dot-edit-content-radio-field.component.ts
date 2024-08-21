@@ -1,4 +1,3 @@
-import { NgFor } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
@@ -12,7 +11,7 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 @Component({
     selector: 'dot-edit-content-radio-field',
     standalone: true,
-    imports: [NgFor, RadioButtonModule, ReactiveFormsModule, DotFieldRequiredDirective],
+    imports: [RadioButtonModule, ReactiveFormsModule, DotFieldRequiredDirective],
     templateUrl: './dot-edit-content-radio-field.component.html',
     styleUrls: ['./dot-edit-content-radio-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

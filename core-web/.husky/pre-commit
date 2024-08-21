@@ -1,29 +1,119 @@
 #!/usr/bin/env bash
+
+# Color definitions
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
 # This script is used as a pre-commit hook for a Git repository.
 # It performs operations such as formatting and linting on staged files.
 
-. "$(dirname "$0")/_/husky.sh"  # Source the husky.sh script
+# Source husky script
+. "$(dirname "$0")/_/husky.sh" || {
+    echo "Failed to source husky.sh"
+    exit 1
+}
 
-error_occurred=false
+check_sdk_client_affected() {
+    local YARN_EXEC="${root_dir}/installs/node/yarn/dist/bin/yarn"
+
+    local affected_projects=$(npx nx show projects --affected)
+    echo "Affected projects: $affected_projects"
+    if echo "$affected_projects" | grep -q "sdk-client"; then
+        echo "Building sdk-client"
+        if ! $YARN_EXEC nx run sdk-client:build:js; then
+            echo "Failed to build sdk-client"
+            has_errors=true
+        fi
+    fi
+
+    file_to_remove="${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/package.json"
+    dir_to_remove="${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/libs"
+
+    # Check if the file exists, then delete it
+    if [ -f "$file_to_remove" ]; then
+        rm "$file_to_remove"
+        echo "Removed $file_to_remove"
+    else
+        echo "$file_to_remove does not exist"
+    fi
+
+    # Check if the directory exists, then delete it
+    if [ -d "$dir_to_remove" ]; then
+        rm -r "$dir_to_remove"
+        echo "Removed directory $dir_to_remove"
+    else
+        echo "$dir_to_remove does not exist"
+    fi
+
+    if ! git add "${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/sdk-editor.js"; then
+        echo "Failed to stage computed sdk-client.js"
+        exit 1
+    fi
+}
+
+check_sdkman() {
+    SDKMAN_INIT="$HOME/.sdkman/bin/sdkman-init.sh"
+
+    # Check if sdkman-init.sh exists and is readable
+    if [[ -s "$SDKMAN_INIT" ]]; then
+        source "$SDKMAN_INIT" # Source sdkman to make sdk command available
+        echo "${GREEN}SDKMAN! sourced from $SDKMAN_INIT${NC}"
+
+        # Optionally check if sdk command is available
+        if command -v sdk >/dev/null 2>&1; then
+            echo "${GREEN}SDKMAN! is installed and functional.${NC}"
+        else
+            echo "${RED}SDKMAN! command is not available. Please check the installation.${NC}"
+            exit 1
+        fi
+    else
+        echo "${RED}SDKMAN! not found at $SDKMAN_INIT. Please install SDKMAN! first.${NC}"
+        echo "${RED}You can install this and other required utilities from${NC} https://github.com/dotCMS/dotcms-utilities"
+        exit 1
+    fi
+}
+
+has_errors=false
 
 # Perform fix operations on the staged files
-perform_fixes() {
+perform_frontend_fixes() {
     local files="$1"
     local add_to_index="$2"
     local file
 
-    YARN_EXEC="${root_dir}/installs/node/yarn/dist/bin/yarn"
-    NODE_EXEC="${root_dir}/installs/node/node"
+    local NODE_EXEC="${root_dir}/installs/node/node"
+    local YARN_EXEC="${root_dir}/installs/node/yarn/dist/bin/yarn"
+
+    # Check if Yarn and Node executables are present
+    if [[ ! -x "$YARN_EXEC" || ! -x "$NODE_EXEC" ]]; then
+        echo "Yarn or Node executables are missing."
+        exit 1
+    fi
 
     echo "Yarn version: $($YARN_EXEC --version 2>/dev/null)"
     echo "Node version: $($NODE_EXEC --version)"
+    $YARN_EXEC config set registry https://dotcms-npm.b-cdn.net
+
+    # Check if yarn.lock is present
+    if ! $YARN_EXEC install; then
+        echo "Failed to install dependencies with yarn install"
+        echo "Please run 'yarn install' to update the lockfile and make sure you commit this with any package.json changes."
+        has_errors=true
+        return 1
+    else
+        echo "Completed yarn install adding yarn.lock if it was modified"
+        git add "${root_dir}/core-web/yarn.lock"
+    fi
 
     if ! $YARN_EXEC nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
-        error_occurred=true
+        has_errors=true
     fi
 
     if ! $YARN_EXEC nx format:write; then
-        error_occurred=true
+        has_errors=true
     fi
 
     if [ "$add_to_index" = "true" ]; then
@@ -35,7 +125,7 @@ perform_fixes() {
         for file in $files; do
             if echo "$modified_files" | grep -Fxq "$file"; then
                 if ! git add -- "${root_dir}/${file}"; then
-                    error_occurred=true
+                    has_errors=true
                 fi
             else
                 unmatched_files+=("$file")
@@ -58,22 +148,46 @@ perform_fixes() {
     fi
 }
 
-# Function to run yarn install with --frozen-lockfile and handle failure
-run_yarn_install_frozen_lockfile() {
-    if ! yarn install --frozen-lockfile; then
-        echo "Failed to install dependencies with --frozen-lockfile."
-        echo "Please run 'yarn install' to update the lockfile and make sure you commit this with any package.json changes."
-        exit 1
+restore_untracked_files() {
+    if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ] && [ "$(ls -A "${temp_dir}")" ]; then
+        echo "Restoring untracked files..."
+        # Copy each file back from the temporary directory while maintaining the directory structure
+        find "${temp_dir}" -type f -exec sh -c '
+            for file; do
+                temp_dir='"${temp_dir}"'
+                root_dir='"${root_dir}"'
+                rel_path="${file#${temp_dir}/}"  # Extract the relative path by removing the temp directory prefix
+                dest_dir="$(dirname "${rel_path}")"  # Determine the destination directory based on the relative path
+                full_dest_path="${root_dir}/${rel_path}"  # Construct the full destination path
+                mkdir -p "${root_dir}/${dest_dir}"  # Ensure the destination directory exists
+                cp "${file}" "${full_dest_path}"  # Copy the file to the destination directory
+            done
+        ' sh {} +
+
+    fi
+
+    # Clean up temporary directory
+    if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ]; then
+        rm -rf "${temp_dir}"
     fi
 }
 
 original_pwd=${PWD}
 root_dir="$(git rev-parse --show-toplevel)"
 
+
+
+# Check for sdkman before running other initializations
+
 # This will ensure that the correct version of node and yarn is installed
 # from core-web/pom.xml and .nvmrc files are updated
-cd "${root_dir}" || exit
-echo "Initializing maven, node and yarn versions"
+cd "${root_dir}" || exit 1
+
+check_sdkman
+
+echo "Setting up Java"
+sdk env install
+echo "Initializing Maven, Node, and Yarn versions"
 if ! ./mvnw validate -pl :dotcms-core --am -q; then
     echo "Failed to run './mvnw validate -pl :dotcms-core --am'"
     echo "Please run the following command to see the detailed output:"
@@ -85,85 +199,79 @@ fi
 
 
 core_web_dir="${root_dir}/core-web"
-cd "${core_web_dir}" || exit
-
-yarn config set registry https://dotcms-npm.b-cdn.net
-run_yarn_install_frozen_lockfile
+cd "${core_web_dir}" || exit 1
 
 staged_files=$(git diff --cached --name-only)
 modified_files=$(git diff --name-only)
 
 untracked_files=$(printf "%s\n%s" "$staged_files" "$modified_files" | sort | uniq -d)
 
+if [ -n "${staged_files}" ]; then
+    # Check if there are any staged files in the core-web directory
+    core_web_files_staged=$(echo "$staged_files" | grep -E '^core-web/' || true )
 
+    # Determine if untracked files should be backed up
+    backup_untracked=true # Default to false if not set
+fi
 
-# Only create a temporary directory if there are untracked files
-if [ -n "${untracked_files}" ]; then
+echo ${core_web_files_staged}
+
+# Only create a temporary directory if there are untracked files and backup_untracked is true
+if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ]; then
     temp_dir=$(mktemp -d)
     if [ ! -d "${temp_dir}" ]; then
         echo "Failed to create temporary directory."
         exit 1
     fi
+    echo "Created temporary directory ${temp_dir}"
+
+
+    for file in $untracked_files; do
+        if echo "${staged_files}" | grep -q "^${file}$"; then
+            mkdir -p "${temp_dir}/$(dirname "${file}")"  # Ensure the directory structure exists in the temp directory
+            cp "${root_dir}/${file}" "${temp_dir}/${file}"  # Copy the file to the temp directory, preserving the directory structure
+            echo "Backing up ${file} to ${temp_dir}/${file}"
+            # Restore the original file state in the repo, removing unstaged changes
+            git restore "${root_dir}/${file}"  # Using relative path relative to current directory
+        fi
+    done
+
+    # Set trap to ensure restore_untracked_files is called on exit
+    trap restore_untracked_files EXIT
+
+    for file in $untracked_files; do
+            if echo "${staged_files}" | grep -q "^${file}$"; then
+                git restore "${root_dir}/${file}"  # Using relative path relative to current directory
+            fi
+    done
+
+    echo "Backed up workspace to ${temp_dir}"
+fi
+# Run fixes on staged files
+if [ -n "$core_web_files_staged" ]; then
+    perform_frontend_fixes "${core_web_files_staged}" true
+    errors=$?  # Capture the return value from perform_frontend_fixes
+fi
+# Restore untracked files if necessary
+restore_untracked_files
+
+## Running fixes on untracked files
+core_web_files_untracked=$(echo "untracked_files" | grep -E '^core-web/' || true )
+if [ -n "$core_web_files_untracked" ]; then
+    perform_frontend_fixes "${core_web_files_untracked}" false
 fi
 
-current_subdir=$(basename "$(pwd)")  # Get the current subdirectory
-
-# Convert paths if necessary (adjust this logic based on your exact directory structure)
-for file in $untracked_files; do
-    relative_path="${file#${current_subdir}/}"  # Construct the path relative to the current directory
-
-    if echo "${staged_files}" | grep -q "^${file}$"; then
-        mkdir -p "${temp_dir}/$(dirname "${file}")"  # Ensure the directory structure exists in the temp directory
-        cp "${root_dir}/${file}" "${temp_dir}/${file}"  # Copy the file to the temp directory, preserving the directory structure
-        echo "Backing up ${file} to ${temp_dir}/${file}"
-        # Restore the original file state in the repo, removing unstaged changes
-        git checkout -- "${relative_path}"  # Using relative path relative to current directory
-    fi
-done
-
-echo "Backed up workspace to ${temp_dir}"
-
-# Perform operations on staged files and capture the error count
-if [ -n "${staged_files}" ]; then
-    perform_fixes "${staged_files}" true
-    errors=$?  # Capture the return value from perform_fixes
-fi
-
-# Check if the temporary directory is not empty
-if [ -n "${untracked_files}" ] && [ "$(ls -A "${temp_dir}")" ]; then
-    echo "Restoring untracked files..."
-    # Copy each file back from the temporary directory while maintaining the directory structure
-    find "${temp_dir}" -type f -exec sh -c '
-        for file; do
-            temp_dir='"${temp_dir}"'
-            root_dir='"${root_dir}"'
-            rel_path="${file#${temp_dir}/}"  # Extract the relative path by removing the temp directory prefix
-            dest_dir="$(dirname "${rel_path}")"  # Determine the destination directory based on the relative path
-            full_dest_path="${root_dir}/${rel_path}"  # Construct the full destination path
-            mkdir -p "${root_dir}/${dest_dir}"  # Ensure the destination directory exists
-            cp "${file}" "${full_dest_path}"  # Copy the file to the destination directory
-        done
-    ' sh {} +
-
-    # After restoring, perform actions like formatting on the originally staged files
-    if [ -n "${staged_files}" ]; then
-      perform_fixes "${untracked_files}" false
-    fi
-fi
-
-# After restoring files and before exiting, check if there were any errors
-if [ -n "${untracked_files}" ]; then
-    rm -r "${temp_dir}"
-fi
+# Check if sdk-client is affected
+check_sdk_client_affected
 
 # Restore original working directory
-cd "${original_pwd}" || exit  # Exit if the directory does not exist
+cd "${original_pwd}" || exit 1  # Exit if the directory does not exist
 
 # Final check before exiting
-if [ "$error_occurred" = true ]; then
-    echo "Checks failed.  force commit with --no-verify option if bypass required"
+if [ "$has_errors" = true ]; then
+    echo "Checks failed. Force commit with --no-verify option if bypass required."
     exit 1  # Change the exit code to reflect that an error occurred
 else
-    echo "Commit checks completed OK"
+    echo "Commit checks completed successfully."
     exit 0  # No errors, exit normally
 fi

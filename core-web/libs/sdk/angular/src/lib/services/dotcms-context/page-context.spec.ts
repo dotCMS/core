@@ -5,6 +5,10 @@ import { TestBed } from '@angular/core/testing';
 import { PageContextService } from './page-context.service';
 
 import { DotCMSPageAsset, DotCMSPageComponent } from '../../models';
+import { PageResponseMock } from '../../utils/testing.utils';
+
+const initialPageAssetMock = {} as DotCMSPageAsset;
+const initialComponentsMock = {} as DotCMSPageComponent;
 
 describe('PageContextService', () => {
     let spectator: SpectatorService<PageContextService>;
@@ -18,33 +22,59 @@ describe('PageContextService', () => {
         service = spectator.service;
     });
 
-    it('should be created', () => {
-        expect(service).toBeTruthy();
+    it('should set the context', () => {
+        service.setContext(initialPageAssetMock, initialComponentsMock);
+
+        expect(service.context).toEqual({
+            components: initialComponentsMock,
+            pageAsset: initialPageAssetMock,
+            isInsideEditor: false
+        });
     });
 
-    it('should set the context', () => {
-        const pageAssetMock = {} as DotCMSPageAsset;
-        const componentsMock = {} as DotCMSPageComponent;
+    it('should set the page asset in the context', () => {
+        service.setContext(initialPageAssetMock, initialComponentsMock);
 
-        service.setContext(pageAssetMock, componentsMock);
+        const newPageAssetMock = PageResponseMock as unknown as DotCMSPageAsset;
 
-        expect(service.pageContextValue).toEqual({
-            components: componentsMock,
-            pageAsset: pageAssetMock,
+        service.setPageAsset(newPageAssetMock);
+
+        expect(service.context).toEqual({
+            components: initialComponentsMock,
+            pageAsset: newPageAssetMock,
             isInsideEditor: false
         });
     });
 
     it('should return the context', () => {
-        const pageAssetMock = {} as DotCMSPageAsset;
-        const componentsMock = {} as DotCMSPageComponent;
+        service.setContext(initialPageAssetMock, initialComponentsMock);
 
-        service.setContext(pageAssetMock, componentsMock);
-
-        expect(service.pageContextValue).toEqual({
-            components: componentsMock,
-            pageAsset: pageAssetMock,
+        expect(service.context).toEqual({
+            components: initialComponentsMock,
+            pageAsset: initialPageAssetMock,
             isInsideEditor: false
+        });
+    });
+
+    it('should return the context as an observable', (done) => {
+        service.setContext(initialPageAssetMock, initialComponentsMock);
+
+        service.contextObs$.subscribe((context) => {
+            expect(context).toEqual({
+                components: initialComponentsMock,
+                pageAsset: initialPageAssetMock,
+                isInsideEditor: false
+            });
+            done();
+        });
+    });
+
+    it('should return the page asset as an observable', (done) => {
+        service.setContext(initialPageAssetMock, initialComponentsMock);
+
+        service.currentPage$.subscribe((pageAsset) => {
+            expect(pageAsset).toEqual(initialPageAssetMock);
+            done();
         });
     });
 });

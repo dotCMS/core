@@ -1,11 +1,86 @@
 {
 	"info": {
-		"_postman_id": "7e9f91c0-35bf-4908-9f25-ba12d1dbf773",
+		"_postman_id": "45540605-95ba-4b50-adba-254915172f48",
 		"name": "AI",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "11174695"
 	},
 	"item": [
+		{
+			"name": "pre",
+			"item": [
+				{
+					"name": "dotAI App",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"apiKey\": {\n    \"value\": \"some-api-key-1a2bc3\"\n  },\n  \"textModelNames\": {\n    \"value\": \"gpt-4o\"\n  },\n  \"textModelMaxTokens\": {\n    \"value\":\"16384\"\n  },\n  \"imageModelNames\": {\n    \"value\": \"dall-e-3\"\n  },\n  \"imageSize\": {\n    \"value\": \"1024x1024\"\n  },\n  \"imageModelMaxTokens\": {\n    \"value\":\"0\"\n  },\n  \"embeddingsModelNames\": {\n    \"value\": \"text-embedding-ada-002\"\n  },\n  \"embeddingsModelMaxTokens\": {\n    \"value\":\"8191\"\n  },\n  \"listenerIndexer\": {\n    \"value\": \"{\\\"default\\\":\\\"blog,dotcmsdocumentation,feature,ProductBriefs,news,report.file,builds,casestudy\\\",\\\"documentation\\\":\\\"dotcmsdocumentation\\\"}\"\n  }\n}\n"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/dotAI/SYSTEM_HOST",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"dotAI",
+								"SYSTEM_HOST"
+							]
+						},
+						"description": "This tests the endpoint that brings back one specific App/integration given the App-key followed by the site-id"
+					},
+					"response": []
+				}
+			]
+		},
 		{
 			"name": "Generative",
 			"item": [
@@ -3065,7 +3140,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test('Status code should be ok 20', function () {",
+									"pm.test('Status code should be ok 200', function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
@@ -3270,7 +3345,10 @@
 									"    pm.expect(jsonData).to.have.property(\"apiUrl\");",
 									"    pm.expect(jsonData).to.have.property(\"availableModels\");",
 									"    pm.expect(jsonData.availableModels).to.be.an(\"array\");",
-									"    pm.expect(jsonData.availableModels.length).is.greaterThan(0);",
+									"    pm.expect(jsonData.availableModels.length).equals(3);",
+									"    pm.expect(jsonData.availableModels.find(model => model.type === 'TEXT')).is.not.undefined",
+									"    pm.expect(jsonData.availableModels.find(model => model.type === 'IMAGE')).is.not.undefined",
+									"    pm.expect(jsonData.availableModels.find(model => model.type === 'EMBEDDINGS')).is.not.undefined",
 									"    pm.expect(jsonData[\"com.dotcms.ai.completion.default.temperature\"]).to.equal(\"1\");",
 									"    pm.expect(jsonData[\"com.dotcms.ai.debug.logging\"]).to.equal(\"false\");",
 									"    pm.expect(jsonData.embeddingsModelNames).to.equal(\"text-embedding-ada-002\");",
@@ -3374,6 +3452,10 @@
 		},
 		{
 			"key": "seoText",
+			"value": ""
+		},
+		{
+			"key": "key",
 			"value": ""
 		}
 	]
