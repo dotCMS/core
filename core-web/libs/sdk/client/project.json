@@ -8,6 +8,8 @@
             "executor": "@nx/js:tsc",
             "outputs": ["{options.outputPath}"],
             "options": {
+                "generateExportsField": true,
+                "clean": true,
                 "outputPath": "dist/libs/sdk/client",
                 "main": "libs/sdk/client/src/index.ts",
                 "tsConfig": "libs/sdk/client/tsconfig.lib.json",
