@@ -16,11 +16,13 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import javax.ws.rs.ext.Provider;
 
 
 /**
  * @author Geoff M. Granum
  */
+@Provider
 public class CorsFilter implements ContainerResponseFilter {
 
 

@@ -1,0 +1,62 @@
+### Creating the site
+< {%
+    const hostName="test4"
+    client.global.set("hostName", hostName)
+%}
+POST localhost:8080/api/v1/site
+Content-Type: application/json
+Authorization: Basic admin@dotcms.com admin
+
+{
+  "siteName":"{{hostName}}"
+}
+> {%
+    client.global.set("siteId", response.body.entity.identifier);
+%}
+
+### Publishing the site
+PUT localhost:8080/api/v1/site/{{siteId}}/_publish
+Content-Type: application/json
+Authorization: Basic admin@dotcms.com admin
+
+### Pushing the content in en-us
+PUT localhost:8080/api/v1/assets
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+Authorization: Basic admin@dotcms.com admin
+
+--WebAppBoundary
+Content-Disposition: form-data; name="detail"
+Content-Type: application/json
+
+{
+  "assetPath":"//{{hostName}}/folder1/1.png",
+  "language":"en-us",
+  "live":true
+}
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="1.png"
+Content-Type: application/json
+
+< /Users/fabrizzioaraya/Downloads/images/tetsujin.jpg
+--WebAppBoundary--
+
+### Pushing the same content in es-es
+PUT localhost:8080/api/v1/assets
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+Authorization: Basic admin@dotcms.com admin
+
+--WebAppBoundary
+Content-Disposition: form-data; name="detail"
+Content-Type: application/json
+
+{
+  "assetPath":"//{{hostName}}/folder1/1.png",
+  "language":"es-es",
+  "live":true
+}
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="1.png"
+Content-Type: application/json
+
+< /Users/fabrizzioaraya/Downloads/images/tetsujin.jpg
+--WebAppBoundary--

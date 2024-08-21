@@ -1397,6 +1397,37 @@
             </exclusions>
         </dependency>
 
+        <!-- Weld CDI -->
+
+        <!--
+        <dependency>
+            <groupId>org.jboss.weld.servlet</groupId>
+            <artifactId>weld-servlet-shaded</artifactId>
+            <version>3.1.9.Final</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.hk2.external</groupId>
+            <artifactId>bean-validator</artifactId>
+            <version>2.5.0-b06</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.hk2</groupId>
+            <artifactId>hk2-locator</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.weld.se</groupId>
+            <artifactId>weld-se-shaded</artifactId>
+            <scope>test</scope>
+        </dependency>
+       -->
+        <dependency>
+            <groupId>io.smallrye</groupId>
+            <artifactId>jandex</artifactId>
+            <version>3.0.5</version>
+        </dependency>
 
     </dependencies>
     <dependencyManagement>

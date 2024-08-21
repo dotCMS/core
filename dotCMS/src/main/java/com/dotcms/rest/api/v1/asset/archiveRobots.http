@@ -1,0 +1,35 @@
+### TESTING THE ARCHIVE OF A ROBOTS.TXT FILE
+### Creating the site
+< {%
+    const hostName="test12"
+    client.global.set("hostName", hostName)
+%}
+POST localhost:8080/api/v1/site
+Content-Type: application/json
+Authorization: Basic admin@dotcms.com admin
+
+{
+  "siteName":"{{hostName}}"
+}
+> {%
+    client.global.set("siteId", response.body.entity.identifier);
+%}
+
+### Publishing the site
+PUT localhost:8080/api/v1/site/{{siteId}}/_publish
+Content-Type: application/json
+Authorization: Basic admin@dotcms.com admin
+
+### Archiving the robots.txt file - It exist after the creation of the site - 404 error
+POST localhost:8080/api/v1/assets/_archive
+Content-Type: application/json
+Authorization: Basic admin@dotcms.com admin
+
+{
+  "assetPath":"//{{hostName}}/robots.txt"
+}
+
+###
+#{
+#  "message": " Asset [robots.txt] not found"
+#}

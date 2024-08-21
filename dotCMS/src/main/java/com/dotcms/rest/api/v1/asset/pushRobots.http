@@ -1,0 +1,47 @@
+### TESTING THE PUSH OF A ROBOTS.TXT FILE
+### Creating the site
+< {%
+    const hostName="test33"
+    client.global.set("hostName", hostName)
+%}
+POST localhost:8080/api/v1/site
+Content-Type: application/json
+Authorization: Basic admin@dotcms.com admin
+
+{
+  "siteName":"{{hostName}}"
+}
+> {%
+    client.global.set("siteId", response.body.entity.identifier);
+%}
+
+### Publishing the site
+PUT localhost:8080/api/v1/site/{{siteId}}/_publish
+Content-Type: application/json
+Authorization: Basic admin@dotcms.com admin
+
+### Pushing the robots.txt - 500 Error
+PUT localhost:8080/api/v1/assets
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+Authorization: Basic admin@dotcms.com admin
+
+--WebAppBoundary
+Content-Disposition: form-data; name="detail"
+Content-Type: application/json
+
+{
+  "assetPath":"//{{hostName}}/robots.txt",
+  "language":"en_us",
+  "live":true
+}
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="robots.txt"
+Content-Type: application/json
+
+< /Users/fabrizzioaraya/Downloads/robots.txt
+--WebAppBoundary--
+
+###
+# {
+#  "message": "ERROR: duplicate key value violates unique constraint \"identifier_parent_path_asset_name_host_inode_key\"\n  Detail: Key (parent_path, asset_name, host_inode)=(/, robots.txt, SYSTEM_HOST) already exists."
+#}
