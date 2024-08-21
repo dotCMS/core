@@ -44,7 +44,6 @@ const getPageData = async (): Promise<{
 
 const { pageAsset, nav, error } = await getPageData();
 
-
 if (!error) {
     const { vanityUrl } = pageAsset as {
         vanityUrl?: {

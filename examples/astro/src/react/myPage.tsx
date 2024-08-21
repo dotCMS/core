@@ -1,29 +1,12 @@
 import { DotcmsLayout } from "@dotcms/react";
 
 import { usePageAsset } from "./hooks/usePageAsset";
-import Activity from "./content-types/activity";
-import Banner from "./content-types/banner";
-import CalendarEvent from "./content-types/calendarEvent";
-import CallToAction from "./content-types/callToAction";
-import { CustomNoComponent } from "./content-types/empty";
-import ImageComponent from "./content-types/image";
-import Product from "./content-types/product";
-import WebPageContent from "./content-types/webPageContent";
 import Header from "./layout/header";
 import Navigation from "./layout/navigation";
 import Footer from "./layout/footer/footer";
+import componentsMap from "./content-types";
 
-// Mapping of components to DotCMS content types
-const componentsMap = {
-  webPageContent: WebPageContent,
-  Banner: Banner,
-  Activity: Activity,
-  Product: Product,
-  Image: ImageComponent,
-  calendarEvent: CalendarEvent,
-  CallToAction: CallToAction,
-  CustomNoComponent: CustomNoComponent,
-};
+
 
 export function MyPage({ pageAsset, nav }: any) {
   pageAsset = usePageAsset(pageAsset);
