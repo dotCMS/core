@@ -26,6 +26,7 @@ public class AsyncWorkflowRunnerWrapper implements Runnable {
 
     public static final int MAX_RESCHEDULES = 720;
     private static final Set<String> RUNNING_CONTENT = ConcurrentHashMap.newKeySet();
+
     private final AsyncWorkflowRunner asyncWorkflowRunner;
     private final String contentletKey;
     private int rescheduled;
@@ -35,10 +36,10 @@ public class AsyncWorkflowRunnerWrapper implements Runnable {
 
     }
 
-    AsyncWorkflowRunnerWrapper(AsyncWorkflowRunner runner, int runNumber) {
+    AsyncWorkflowRunnerWrapper(final AsyncWorkflowRunner runner, final int runNumber) {
         this.asyncWorkflowRunner = runner;
-        this.contentletKey = Try.of(
-                        () -> asyncWorkflowRunner.getIdentifier() + asyncWorkflowRunner.getLanguage())
+        this.contentletKey = Try
+                .of(() -> asyncWorkflowRunner.getIdentifier() + asyncWorkflowRunner.getLanguage())
                 .getOrElseThrow(DotRuntimeException::new);
         if (UtilMethods.isEmpty(asyncWorkflowRunner.getIdentifier())) {
             throw new DotRuntimeException(
@@ -48,8 +49,8 @@ public class AsyncWorkflowRunnerWrapper implements Runnable {
     }
 
     public String getSessionId() {
-        return Try.of(
-                        () -> HttpServletRequestThreadLocal.INSTANCE.getRequest().getSession().getId())
+        return Try
+                .of(() -> HttpServletRequestThreadLocal.INSTANCE.getRequest().getSession().getId())
                 .getOrElse("unknown");
     }
 
@@ -61,6 +62,7 @@ public class AsyncWorkflowRunnerWrapper implements Runnable {
             if (!runningNow) {
                 return;
             }
+
             LocalTransaction.wrap(asyncWorkflowRunner::runInternal);
             HibernateUtil.commitTransaction();
         } catch (BadAIJsonFormatException e) {
@@ -71,8 +73,7 @@ public class AsyncWorkflowRunnerWrapper implements Runnable {
             OpenAIThreadPool.schedule(
                     new AsyncWorkflowRunnerWrapper(asyncWorkflowRunner, ++rescheduled), 5,
                     TimeUnit.SECONDS);
-        } catch (
-                Throwable e) { //NOSONAR - catches throwable because a throwable destroys the whole thread pool.
+        } catch (Throwable e) { //NOSONAR - catches throwable because a throwable destroys the whole thread pool.
             Logger.warn(this.getClass(), e.getMessage());
             if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
                 Logger.warn(this.getClass(), e.getMessage(), e);
@@ -85,7 +86,7 @@ public class AsyncWorkflowRunnerWrapper implements Runnable {
         }
     }
 
-    synchronized boolean shouldRunNow() {
+    private synchronized boolean shouldRunNow() {
         if (!RUNNING_CONTENT.contains(contentletKey)) {
             RUNNING_CONTENT.add(contentletKey);
             return true;
@@ -93,7 +94,6 @@ public class AsyncWorkflowRunnerWrapper implements Runnable {
         runLater();
         return false;
     }
-
 
     private void runLater() {
         if (rescheduled > MAX_RESCHEDULES) {

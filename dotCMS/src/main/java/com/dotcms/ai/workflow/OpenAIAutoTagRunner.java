@@ -5,10 +5,7 @@ import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.ai.util.VelocityContextFactory;
-import com.dotcms.api.system.event.message.MessageSeverity;
-import com.dotcms.api.system.event.message.MessageType;
-import com.dotcms.api.system.event.message.SystemMessageEventUtil;
-import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
@@ -33,30 +30,35 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * The OpenAIAutoTagRunner class is responsible for running workflows that automatically tag content using OpenAI.
+ * It implements the AsyncWorkflowRunner interface and overrides its methods to provide the functionality needed.
+ * This class is designed to handle long-running tasks in a separate thread and needs to be serialized to a persistent storage.
+ */
 public class OpenAIAutoTagRunner implements AsyncWorkflowRunner {
 
     static final String DOT_AI_TAGGED="dot:autoTagged";
     static final String SYSTEM_PROMPT_TAGGING_FREEFORM = "Generate up to 25 SEO keywords that best match the user's text. Return your answer as RFC8259 compliant JSON that follows this format:\n" + "{\n" + "\"keywords\":[\"keyword1\", \"keyword2\", \"keyword3\"]\n" + "}";
     static final String SYSTEM_PROMPT_TAGGING_CONSTRAIN = "Given this list of keywords: \n\n\n$!{constrainTags}\n\n\nwhich of these keywords best describe the user's text?  Return your answer as RFC8259 compliant JSON that follows this format:\n" + "{\n" + "\"keywords\":[\"keyword1\", \"keyword2\", \"keyword3\"]\n" + "}";
     static final String SELECT_TOP_TAGS =
-              "select distinct(tagname), count(tinode) from " +
-                      "( " +
-                      "   select lower(tagname), tag_inode.inode as tinode " +
-                      "   from  " +
-                      "   tag, tag_inode  " +
-                      "   where  " +
-                      "   tag.tag_id=tag_inode.tag_id  " +
-                      "   and tag.host_id=? " +
-                      "UNION ALL " +
-                      "   select lower(tagname), tag_inode.inode as tinode " +
-                      "   from  " +
-                      "   tag, tag_inode  " +
-                      "   where  " +
-                      "   tag.tag_id=tag_inode.tag_id  " +
-                      ") as foo  " +
-                      "group by lower(tagname)  " +
-                      "order by count(tinode) desc " +
-                      "limit 1000";
+            "select distinct(tagname), count(tinode) from " +
+                    "( " +
+                    "   select lower(tagname), tag_inode.inode as tinode " +
+                    "   from  " +
+                    "   tag, tag_inode  " +
+                    "   where  " +
+                    "   tag.tag_id=tag_inode.tag_id  " +
+                    "   and tag.host_id=? " +
+                    "UNION ALL " +
+                    "   select lower(tagname), tag_inode.inode as tinode " +
+                    "   from  " +
+                    "   tag, tag_inode  " +
+                    "   where  " +
+                    "   tag.tag_id=tag_inode.tag_id  " +
+                    ") as foo  " +
+                    "group by lower(tagname)  " +
+                    "order by count(tinode) desc " +
+                    "limit 1000";
 
     final String identifier;
     final long language;
@@ -67,9 +69,7 @@ public class OpenAIAutoTagRunner implements AsyncWorkflowRunner {
     final String model;
     final float temperature;
 
-
-
-    OpenAIAutoTagRunner(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params) {
+    OpenAIAutoTagRunner(final WorkflowProcessor processor, final Map<String, WorkflowActionClassParameter> params) {
         this(
                 processor.getContentlet(),
                 processor.getUser(),
@@ -81,8 +81,14 @@ public class OpenAIAutoTagRunner implements AsyncWorkflowRunner {
         );
     }
 
+    OpenAIAutoTagRunner(final Contentlet contentlet,
+                        final User user,
+                        final boolean overwriteField,
+                        final boolean limitTags,
+                        final int runDelay,
+                        final String model,
+                        final float temperature) {
 
-    OpenAIAutoTagRunner(Contentlet contentlet, User user, boolean overwriteField, boolean limitTags, int runDelay, String model, float temperature) {
         if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
             throw new DotRuntimeException("Content must be saved and have an identifier before running AI Content Prompt");
         }
@@ -113,35 +119,30 @@ public class OpenAIAutoTagRunner implements AsyncWorkflowRunner {
 
     @Override
     public void runInternal() {
-
-
         final Contentlet workingContentlet = getLatest(identifier, language, user);
-        if(UtilMethods.isEmpty(workingContentlet::getIdentifier)){
+        if (UtilMethods.isEmpty(workingContentlet::getIdentifier)){
             return;
         }
 
-        final Optional<Field> fieldToTry = workingContentlet.getContentType().fields(TagField.class).stream().findFirst();
-
         Logger.info(this.getClass(), "Running OpenAI Auto Tag Content for : " + workingContentlet.getTitle());
 
-        Optional<String> contentToTag = ContentToStringUtil.impl.get().turnContentletIntoString(workingContentlet);
-
+        final Optional<String> contentToTag = ContentToStringUtil.impl.get().turnContentletIntoString(workingContentlet);
         if (contentToTag.isEmpty()) {
             Logger.info(this.getClass(), "No content found to auto tag, returning :" + workingContentlet.getTitle());
             return;
         }
 
+        final Optional<Field> fieldToTry = workingContentlet.getContentType().fields(TagField.class).stream().findFirst();
         if (fieldToTry.isEmpty()) {
             Logger.info(this.getClass(), "No tag field found to auto tag, returning :" + workingContentlet.getTitle());
             return;
         }
 
-
-        boolean contentNeedsSaving = false;
+        boolean contentNeedsSaving;
         try {
             final String response = openAIRequest(workingContentlet, contentToTag.get());
             final List<String> tags = new ArrayList<>();
-            JSONArray tryArray = parseJsonResponse(response);
+            final JSONArray tryArray = parseJsonResponse(response);
 
             if (this.limitTags) {
                 List<String> constrainTags = findTopTags(workingContentlet);
@@ -153,74 +154,60 @@ public class OpenAIAutoTagRunner implements AsyncWorkflowRunner {
                 return;
             }
 
-
-
-
             tryArray.add(DOT_AI_TAGGED);
             tryArray.forEach(t -> tags.add((String) t));
+
             final Contentlet contentToSave = checkoutLatest(identifier, language, user);
             contentNeedsSaving = setProperty(contentToSave, fieldToTry.get(), tags);
-
 
             if (!contentNeedsSaving) {
                 Logger.warn(this.getClass(), "Nothing to save for OpenAI response: " + response);
                 return;
             }
+
             saveContentlet(contentToSave, user);
-
-
         } catch (Exception e) {
-            final SystemMessageBuilder message = new SystemMessageBuilder().setMessage("Error:" + e.getMessage()).setLife(5000).setType(MessageType.SIMPLE_MESSAGE).setSeverity(MessageSeverity.ERROR);
-
-            SystemMessageEventUtil.getInstance().pushMessage(message.create(), List.of(user.getUserId()));
-            Logger.warn(this.getClass(), "Error:" + e.getMessage(), e);
-            throw new DotRuntimeException(e);
+            handleError(e, user);
         }
     }
 
-
-
-    private String openAIRequest(Contentlet workingContentlet, String contentToTag) throws Exception {
-        Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
-        String systemPrompt = this.limitTags ? SYSTEM_PROMPT_TAGGING_CONSTRAIN : SYSTEM_PROMPT_TAGGING_FREEFORM;
-        List<String> constrainTags = this.limitTags ? findTopTags(workingContentlet) : List.of();
+    private String openAIRequest(final Contentlet workingContentlet, final String contentToTag) throws Exception {
+        final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
+        final String systemPrompt = this.limitTags ? SYSTEM_PROMPT_TAGGING_CONSTRAIN : SYSTEM_PROMPT_TAGGING_FREEFORM;
+        final List<String> constrainTags = this.limitTags ? findTopTags(workingContentlet) : List.of();
         ctx.put("constrainTags", String.join("\n", constrainTags));
 
         final String parsedSystemPrompt = VelocityUtil.eval(systemPrompt, ctx);
-
         final String parsedContentPrompt = VelocityUtil.eval(contentToTag, ctx);
 
 
-        JSONObject openAIResponse = CompletionsAPI.impl().prompt(parsedSystemPrompt, parsedContentPrompt, model, temperature, 2000);
+        final JSONObject openAIResponse = CompletionsAPI
+                .impl()
+                .prompt(parsedSystemPrompt, parsedContentPrompt, model, temperature, 2000);
 
         return openAIResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
-
     }
 
-    private JSONArray parseJsonResponse(String responseIn) {
+    private JSONArray parseJsonResponse(final String responseIn) {
         Logger.debug(this.getClass(),"---- response ----- \n" + responseIn + "\n/---- response -----");
         final String response = responseIn.replaceAll("\\R+", " ");
         final String finalResponse = response.substring(response.indexOf("{"), response.lastIndexOf("}") + 1);
         return Try.of(() -> new JSONObject(finalResponse).getJSONArray("keywords")).getOrElseThrow(BadAIJsonFormatException::new);
     }
 
-    private boolean setProperty(Contentlet contentlet, Field field, List<String> tagList) {
-
-
-        String existingTags = contentlet.getStringProperty(field.variable());
+    private boolean setProperty(final Contentlet contentlet, final Field field, final List<String> tagList) {
+        final String existingTags = contentlet.getStringProperty(field.variable());
 
         if (overwriteField || UtilMethods.isEmpty(existingTags)) {
-            String tags = String.join(",", tagList);
+            final String tags = String.join(",", tagList);
             Logger.debug(this.getClass(), "setting field:" + field.variable() + " to " + tags);
             contentlet.setProperty(field.variable(), tags);
             return true;
-        }
-        else if(!existingTags.contains(DOT_AI_TAGGED)){
-            String tags = String.join(",", tagList) + ", " + existingTags;
+        } else if(!existingTags.contains(DOT_AI_TAGGED)){
+            final String tags = String.join(",", tagList) + ", " + existingTags;
             contentlet.setProperty(field.variable(), tags);
             return true;
-        }
-        else if(existingTags.contains(DOT_AI_TAGGED)){
+        } else if(existingTags.contains(DOT_AI_TAGGED)){
             Logger.info(this.getClass(), "Already autotagged, skipping");
             return false;
         }
@@ -229,10 +216,10 @@ public class OpenAIAutoTagRunner implements AsyncWorkflowRunner {
         return false;
     }
 
-
-    List<String> findTopTags(Contentlet contentlet) {
-        try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
-            List<Map<String, Object>> results = new DotConnect()
+    @CloseDBIfOpened
+    private List<String> findTopTags(final Contentlet contentlet) {
+        try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+            final List<Map<String, Object>> results = new DotConnect()
                     .setSQL(SELECT_TOP_TAGS)
                     .addParam(contentlet.getHost())
                     .loadObjectResults(conn);
@@ -241,6 +228,5 @@ public class OpenAIAutoTagRunner implements AsyncWorkflowRunner {
             throw new DotRuntimeException(e);
         }
     }
-
 
 }

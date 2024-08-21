@@ -8,6 +8,7 @@ import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -17,25 +18,20 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Map;
 
+/**
+ * This class is a ViewTool that provides functionality related to completions.
+ * It interacts with the CompletionsAPI to perform operations such as summarizing and raw processing.
+ */
 public class CompletionsTool implements ViewTool {
 
     private final HttpServletRequest request;
     private final Host host;
-    private final AppConfig app;
-    private final ViewContext context;
+    private final AppConfig config;
 
-
-    /**
-     * $ai.completions
-     *
-     * @param initData
-     */
     CompletionsTool(Object initData) {
-        this.context = (ViewContext) initData;
         this.request = ((ViewContext) initData).getRequest();
-        this.host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(this.request);
-        this.app = ConfigService.INSTANCE.config(this.host);
-
+        this.host = host();
+        this.config = config();
     }
 
     @Override
@@ -43,70 +39,106 @@ public class CompletionsTool implements ViewTool {
         // unneeded because of constructor
     }
 
-
+    /**
+     * Returns the configuration for the CompletionsTool.
+     * @return A map containing the configuration.
+     */
     public Map<String, String> getConfig() {
         return Map.of(
                 AppKeys.COMPLETION_ROLE_PROMPT.key,
-                this.app.getConfig(AppKeys.COMPLETION_ROLE_PROMPT),
+                this.config.getConfig(AppKeys.COMPLETION_ROLE_PROMPT),
                 AppKeys.COMPLETION_TEXT_PROMPT.key,
-                this.app.getConfig(AppKeys.COMPLETION_TEXT_PROMPT),
+                this.config.getConfig(AppKeys.COMPLETION_TEXT_PROMPT),
                 AppKeys.MODEL.key,
-                this.app.getConfig(AppKeys.MODEL)
-        );
-
+                this.config.getConfig(AppKeys.MODEL));
     }
 
-    public Object summarize(String prompt) {
+    /**
+     * Summarizes the given prompt using the default index.
+     * @param prompt The prompt to summarize.
+     * @return The summarized object.
+     */
+    public Object summarize(final String prompt) {
         return summarize(prompt, "default");
     }
 
-    public Object summarize(String prompt, String indexName) {
-        CompletionsForm form = new CompletionsForm.Builder().indexName(indexName).prompt(prompt).build();
-
+    /**
+     * Summarizes the given prompt using the specified index.
+     * @param prompt The prompt to summarize.
+     * @param indexName The name of the index to use.
+     * @return The summarized object.
+     */
+    public Object summarize(final String prompt, final String indexName) {
+        final CompletionsForm form = new CompletionsForm.Builder().indexName(indexName).prompt(prompt).build();
         try {
-            return CompletionsAPI.impl().summarize(form);
+            return CompletionsAPI.impl(config).summarize(form);
         } catch (Exception e) {
             return handleException(e);
-
         }
     }
 
-    public Map<String, Object> handleException(Exception e) {
+    /**
+     * Handles exceptions that occur during the execution of the tool.
+     * @param e The exception to handle.
+     * @return A map containing the error message and stack trace.
+     */
+    private Map<String, Object> handleException(final Exception e) {
         try (StringWriter out = new StringWriter()) {
-            PrintWriter writer = new PrintWriter(out);
+            final PrintWriter writer = new PrintWriter(out);
             e.printStackTrace(writer);
             return Map.of("error", e.getMessage(), "stackTrace", out.toString());
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-
     }
 
+    /**
+     * Processes the given prompt in raw format.
+     * @param prompt The prompt to process.
+     * @return The processed object.
+     */
     public Object raw(String prompt) {
         try {
             return raw(new JSONObject(prompt));
         } catch (Exception e) {
             return handleException(e);
         }
-
     }
 
-    public Object raw(JSONObject prompt) {
+    /**
+     * Processes the given prompt in raw format.
+     * @param prompt The prompt to process.
+     * @return The processed object.
+     */
+    public Object raw(final JSONObject prompt) {
         try {
-            return CompletionsAPI.impl().raw(prompt);
+            return CompletionsAPI.impl(config).raw(prompt);
         } catch (Exception e) {
             return handleException(e);
         }
-
     }
 
-    public Object raw(Map prompt) {
+    /**
+     * Processes the given prompt in raw format.
+     * @param prompt The prompt to process.
+     * @return The processed object.
+     */
+    public Object raw(final Map prompt) {
         try {
             return raw(new JSONObject(prompt));
         } catch (Exception e) {
             return handleException(e);
         }
+    }
 
+    @VisibleForTesting
+    Host host() {
+        return WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(this.request);
+    }
+
+    @VisibleForTesting
+    AppConfig config() {
+        return ConfigService.INSTANCE.config(this.host);
     }
 
 }

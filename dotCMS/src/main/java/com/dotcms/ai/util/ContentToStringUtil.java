@@ -205,7 +205,7 @@ public class ContentToStringUtil {
 
     }
 
-    public Optional<String> parseFields(@NotNull Contentlet contentlet, @NotNull List<Field> fields) {
+    public Optional<String> parseFields(@NotNull final Contentlet contentlet, @NotNull final List<Field> fields) {
         if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
             return Optional.empty();
         }
@@ -228,8 +228,6 @@ public class ContentToStringUtil {
         }
 
         return Optional.of(builder.toString());
-
-
     }
 
     private Optional<String> parseField(@NotNull Contentlet contentlet, @NotNull Field field) {

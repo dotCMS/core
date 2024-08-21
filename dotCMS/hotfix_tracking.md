@@ -42,3 +42,4 @@ This maintenance release includes the following code fixes:
 36. https://github.com/dotCMS/core/issues/29079 : fileAsset Required Error while importing FileAsset through CSV #29079
 37. https://github.com/dotCMS/core/issues/29209 : Wrong url when exporting file asset #29209
 38. https://github.com/dotCMS/core/issues/29222 : Telemetry: not getting data after last release of the plugin #29222
+39. https://github.com/dotCMS/core/issues/27959 : Integration tests for AI Viewtools #27959

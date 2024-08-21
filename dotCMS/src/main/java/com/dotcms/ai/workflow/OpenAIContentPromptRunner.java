@@ -5,37 +5,32 @@ import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.ai.util.VelocityContextFactory;
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.api.system.event.UserSessionBean;
-import com.dotcms.api.system.event.Visibility;
-import com.dotcms.api.system.event.message.MessageSeverity;
-import com.dotcms.api.system.event.message.MessageType;
-import com.dotcms.api.system.event.message.SystemMessageEventUtil;
-import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotmarketing.business.APILocator;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * The OpenAIContentPromptRunner class is responsible for running workflows that generate content prompts using OpenAI.
+ * It implements the AsyncWorkflowRunner interface and overrides its methods to provide the functionality needed.
+ * This class is designed to handle long-running tasks in a separate thread and needs to be serialized to a persistent storage.
+ */
 public class OpenAIContentPromptRunner implements AsyncWorkflowRunner {
-
 
     final String identifier;
     final long language;
@@ -47,7 +42,9 @@ public class OpenAIContentPromptRunner implements AsyncWorkflowRunner {
     final String model;
     final float temperature;
 
-    OpenAIContentPromptRunner(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params) {
+    OpenAIContentPromptRunner(final WorkflowProcessor processor,
+                              final Map<String, WorkflowActionClassParameter> params) {
+
         this(
                 processor.getContentlet(),
                 processor.getUser(),
@@ -56,13 +53,27 @@ public class OpenAIContentPromptRunner implements AsyncWorkflowRunner {
                 params.get(OpenAIParams.FIELD_TO_WRITE.key).getValue(),
                 Try.of(() -> Integer.parseInt(params.get(OpenAIParams.RUN_DELAY.key).getValue())).getOrElse(5),
                 params.get(OpenAIParams.MODEL.key).getValue(),
-                Try.of(() -> Float.parseFloat(params.get(OpenAIParams.TEMPERATURE.key).getValue())).getOrElse(ConfigService.INSTANCE.config().getConfigFloat(AppKeys.COMPLETION_TEMPERATURE))
+                Try.of(() ->
+                                Float.parseFloat(
+                                        params
+                                                .get(OpenAIParams.TEMPERATURE.key)
+                                                .getValue()))
+                        .getOrElse(ConfigService.INSTANCE.config().getConfigFloat(AppKeys.COMPLETION_TEMPERATURE))
         );
     }
 
-    OpenAIContentPromptRunner(Contentlet contentlet, User user, String prompt, boolean overwriteField, String fieldToWrite, int runDelay, String model, float temperature) {
+    OpenAIContentPromptRunner(final Contentlet contentlet,
+                              final User user,
+                              final String prompt,
+                              final boolean overwriteField,
+                              final String fieldToWrite,
+                              final int runDelay,
+                              final String model,
+                              final float temperature) {
+
         if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
-            throw new DotRuntimeException("Content must be saved and have an identifier before running AI Content Prompt");
+            throw new DotRuntimeException(
+                    "Content must be saved and have an identifier before running AI Content Prompt");
         }
         this.identifier = contentlet.getIdentifier();
         this.language = contentlet.getLanguageId();
@@ -97,16 +108,15 @@ public class OpenAIContentPromptRunner implements AsyncWorkflowRunner {
             Logger.info(OpenAIContentPromptActionlet.class, "no prompt found");
             return;
         }
+
         final Contentlet workingContentlet = getLatest(identifier, language, user);
-
         final ContentType type = workingContentlet.getContentType();
-
 
         Logger.info(this.getClass(), "Running OpenAI Modify Content for : " + workingContentlet.getTitle());
 
         final Optional<Field> fieldToTry = Try.of(() -> type.fieldMap().get(this.fieldToWrite)).toJavaOptional();
 
-        boolean contentNeedsSaving = false;
+        boolean contentNeedsSaving;
         try {
             final String response = openAIRequest(workingContentlet);
             final Contentlet contentToSave = checkoutLatest(identifier, language, user);
@@ -121,34 +131,31 @@ public class OpenAIContentPromptRunner implements AsyncWorkflowRunner {
                 Logger.warn(this.getClass(), "Nothing to save for OpenAI response: " + response);
                 return;
             }
+
             saveContentlet(contentToSave, user);
         } catch (Exception e) {
-            final SystemMessageBuilder message = new SystemMessageBuilder().setMessage("Error:" + e.getMessage()).setLife(5000).setType(MessageType.SIMPLE_MESSAGE).setSeverity(MessageSeverity.ERROR);
-
-            SystemMessageEventUtil.getInstance().pushMessage(message.create(), List.of(user.getUserId()));
-            Logger.warn(this.getClass(), "Error:" + e.getMessage(), e);
-            throw new DotRuntimeException(e);
+            handleError(e, user);
         }
     }
 
-    private String openAIRequest(Contentlet workingContentlet) throws Exception {
-        Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
-
+    private String openAIRequest(final Contentlet workingContentlet) throws Exception {
+        final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
         final String parsedPrompt = VelocityUtil.eval(prompt, ctx);
-
-        JSONObject openAIResponse = CompletionsAPI.impl().raw(buildRequest(parsedPrompt, model, temperature));
+        final JSONObject openAIResponse = CompletionsAPI.impl().raw(buildRequest(parsedPrompt, model, temperature));
 
         try {
-            return openAIResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message")
+            return openAIResponse
+                    .getJSONArray("choices")
+                    .getJSONObject(0)
+                    .getJSONObject("message")
                     .getString("content");
-        }
-        catch (Exception e){
+        } catch (Exception e){
             Logger.warn(this.getClass(), "unable to parse json:" + e.getMessage(), e);
             throw new BadAIJsonFormatException(e.getMessage(),e);
         }
     }
 
-    private boolean setProperty(Contentlet contentlet, String fieldVar, String value) {
+    private boolean setProperty(final Contentlet contentlet, final String fieldVar, final String value) {
         if (value == null) {
             return false;
         }
@@ -159,32 +166,32 @@ public class OpenAIContentPromptRunner implements AsyncWorkflowRunner {
 
         if (overwriteField || UtilMethods.isEmpty(contentlet.getStringProperty(fieldVar))) {
             Logger.debug(this.getClass(), "setting field:" + fieldVar + " to " + value);
-            value = cleanHTML(value);
-            contentlet.setProperty(fieldVar, value);
+            final String cleanValue = cleanHTML(value);
+            contentlet.setProperty(fieldVar, cleanValue);
             return true;
         }
+
         Logger.info(this.getClass(), "field :" + fieldVar + " already set, skipping");
         return false;
     }
 
-    private JSONObject parseJsonResponse(String responseIn) throws BadAIJsonFormatException {
-        String response = responseIn.replaceAll("\\R+", " ");
-        response = response.substring(response.indexOf("{"), response.lastIndexOf("}") + 1);
-        String finalResponse = response;
-        return Try.of(() -> new JSONObject(finalResponse)).onFailure(
-                e -> {
-                    Logger.warn(this.getClass(), e.getMessage());
-                    Logger.warn(this.getClass(), "initial response:\n" + responseIn);
-                    Logger.warn(this.getClass(), "final response:\n" + responseIn);
-
-                }).getOrElseThrow(e->new BadAIJsonFormatException(e));
+    private JSONObject parseJsonResponse(final String responseIn) throws BadAIJsonFormatException {
+        final String response = responseIn.replaceAll("\\R+", StringPool.SPACE);
+        final String finalResponse = response.substring(response.indexOf("{"), response.lastIndexOf("}") + 1);
+        return Try.of(() -> new JSONObject(finalResponse))
+                .onFailure(
+                        e -> {
+                            Logger.warn(this.getClass(), e.getMessage());
+                            Logger.warn(this.getClass(), "initial response:\n" + responseIn);
+                            Logger.warn(this.getClass(), "final response:\n" + responseIn);
+                        })
+                .getOrElseThrow(BadAIJsonFormatException::new);
     }
 
-
-    private boolean setJsonProperties(Contentlet contentlet, JSONObject json) {
+    private boolean setJsonProperties(final Contentlet contentlet, final JSONObject json) {
         Logger.info(this.getClass(), "Setting json:\n" + json.toString(2));
         boolean contentNeedsSaving = false;
-        for (Map.Entry entry : (Set<Map.Entry>) json.getAsMap().entrySet()) {
+        for (final Map.Entry entry : (Set<Map.Entry>) json.getAsMap().entrySet()) {
             if (setProperty(contentlet, entry.getKey().toString(), (String) entry.getValue())) {
                 contentNeedsSaving = true;
             }
@@ -192,26 +199,28 @@ public class OpenAIContentPromptRunner implements AsyncWorkflowRunner {
         return contentNeedsSaving;
     }
 
-    private JSONObject buildRequest(String prompt, String model, float temperature) {
-        JSONArray messages = new JSONArray();
+    private JSONObject buildRequest(final String prompt, final String model, final float temperature) {
+        final JSONArray messages = new JSONArray();
         messages.add(Map.of("role", "user", "content", prompt));
-        JSONObject json = new JSONObject();
+
+        final JSONObject json = new JSONObject();
         json.put("messages", messages);
         json.put("model", model);
         json.put("temperature", temperature);
         json.put("stream", false);
         Logger.debug(this.getClass(), "Open AI Request:\n" + json.toString(2));
+
         return json;
     }
 
-    private String cleanHTML(String text) {
+    private String cleanHTML(final String text) {
         if (ContentToStringUtil.impl.get().isHtml(text)) {
-            text = text.replaceAll("\\s+", " ");
-            text = text.replaceAll("\\>\\s+\\<", "><");
+            return text
+                    .replaceAll("\\s+", " ")
+                    .replaceAll("\\>\\s+\\<", "><");
         }
+
         return text;
-
     }
-
 
 }
