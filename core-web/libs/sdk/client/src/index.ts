@@ -1,4 +1,4 @@
-import { DotCmsClient } from './lib/client/sdk-js-client';
+import { ClientConfig, DotCmsClient } from './lib/client/sdk-js-client';
 import { CUSTOMER_ACTIONS, postMessageToEditor } from './lib/editor/models/client.model';
 import {
     CustomClientParams,
@@ -25,5 +25,6 @@ export {
     EditorConfig,
     initEditor,
     updateNavigation,
-    destroyEditor
+    destroyEditor,
+    ClientConfig
 };
