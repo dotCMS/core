@@ -179,7 +179,7 @@ export interface DotPage {
     live: boolean;
     liveInode?: string;
     stInode?: string;
-    working: boolean;
+    working?: boolean;
     workingInode?: string;
 }
 
