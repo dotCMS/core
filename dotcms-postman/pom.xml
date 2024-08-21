@@ -20,6 +20,9 @@
         <clean.docker.volumes>true</clean.docker.volumes>
         <buildDocker>true</buildDocker>
         <docker.base.image>tomcat:9.0.74-jdk11</docker.base.image>
+        <docker.image.wiremock>${ext.docker.image.wiremock}</docker.image.wiremock>
+        <docker.wm.volume>./src/test/resources</docker.wm.volume>
+        <docker.wm.volume.internal>/home/wiremock</docker.wm.volume.internal>
         <testdata.dir>${project.build.directory}/testdata</testdata.dir>
         <it.test.fork-folder.prefix>${project.build.directory}/testdata/fork-</it.test.fork-folder.prefix>
         <it.test.fork-folder>${it.test.fork-folder.prefix}</it.test.fork-folder>
@@ -29,6 +32,8 @@
         <skip.npm.install>false</skip.npm.install>
         <postman.server.url>http://localhost:${tomcat.port}</postman.server.url>
         <postman.collection.dir>src/main/resources/postman</postman.collection.dir>
+        <wiremock.port>50505</wiremock.port>
+        <wiremock.api.key>${ext.wiremock.api.key}</wiremock.api.key>
         <!-- Some tests e.g. in ApiToken_Resource.postman_collection currently fail unless docker external port is same as internal -->
         <tomcat.port>8080</tomcat.port>
         <docker.jacoco.skip>false</docker.jacoco.skip>
@@ -97,6 +102,23 @@
                     <follow>true</follow>
                     <skip>${postman.test.skip}</skip>
                     <imagesMap>
+                        <wiremock>
+                            <name>${docker.image.wiremock}</name>
+                            <run>
+                                <ports>
+                                    <port>wiremock.port:8080</port>
+                                </ports>
+                                <volumes>
+                                    <bind>
+                                        <volume>${docker.wm.volume}:${docker.wm.volume.internal}</volume>
+                                    </bind>
+                                </volumes>
+                                <log>
+                                    <prefix>WireMock:</prefix>
+                                    <color>green</color>
+                                </log>
+                            </run>
+                        </wiremock>
                         <dotcms>
                             <run>
                                 <env>
@@ -109,7 +131,14 @@
                                     <JVM_ENDPOINT_TEST_PASS>obfuscate_me</JVM_ENDPOINT_TEST_PASS>
                                     <DOT_ENABLE_SCRIPTING>true</DOT_ENABLE_SCRIPTING>
                                     <DOT_ANNOUNCEMENTS_BASE_URL>http://localhost:8080</DOT_ANNOUNCEMENTS_BASE_URL>
+                                    <DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>true</DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>
+                                    <DOT_APP_AI_PARAM_API_URL>http://wm:8080/c</DOT_APP_AI_PARAM_API_URL>
+                                    <DOT_APP_AI_PARAM_API_IMAGE_URL>http://wm:8080/i</DOT_APP_AI_PARAM_API_IMAGE_URL>
+                                    <DOT_APP_AI_PARAM_API_KEY>${wiremock.api.key}</DOT_APP_AI_PARAM_API_KEY>
                                 </env>
+                                <links combine.children="append">
+                                    <link>wiremock:wm</link>
+                                </links>
                             </run>
                         </dotcms>
                     </imagesMap>

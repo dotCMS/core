@@ -1,0 +1,506 @@
+{
+  "info": {
+    "_postman_id": "aa4d25f0-c62e-47ea-924c-d2f51d25e6db",
+    "name": "AI",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "11174695",
+    "_collection_link": "https://codigami.postman.co/workspace/dotcms2~bd48d5e8-9590-4fc6-96fc-68937fcf781b/collection/11174695-aa4d25f0-c62e-47ea-924c-d2f51d25e6db?action=share&source=collection_link&creator=11174695"
+  },
+  "item": [
+    {
+      "name": "Generative",
+      "item": [
+        {
+          "name": "Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should be ok 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Type is returned', function () {",
+                  "    pm.expect(jsonData.type, 'Type is \"image\"').equals('image');",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/image/test",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "image",
+                "test"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Text",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should be ok 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Text is generated', function () {",
+                  "    pm.expect(jsonData.choices, 'Choices are included in dotAI response').not.undefined;",
+                  "    pm.expect(jsonData.choices, 'Choices are included in dotAI respons are not empty').not.empty;",
+                  "    pm.expect(jsonData.choices[0].text).contains('The theory of relativity, developed by Albert Einstein, consists of')",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"prompt\": \"What is the theory of relativity?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/text/generate",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "text",
+                "generate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Text",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should be ok 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Text is generated', function () {",
+                  "    pm.expect(jsonData.choices, 'Choices are included in dotAI response').not.undefined;",
+                  "    pm.expect(jsonData.choices, 'Choices are included in dotAI respons are not empty').not.empty;",
+                  "    pm.expect(jsonData.choices[0].text).contains('The theory of relativity, developed by Albert Einstein, consists of')",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/text/generate?prompt=What%20is%20the%20theory%20of%20relativity%3F",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "text",
+                "generate"
+              ],
+              "query": [
+                {
+                  "key": "prompt",
+                  "value": "What%20is%20the%20theory%20of%20relativity%3F"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Text without prompt",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should be 500', function () {",
+                  "    pm.response.to.have.status(500);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Error message is returned', function () {",
+                  "    pm.expect(jsonData.message, 'Error message is included in response').equals('query/prompt cannot be null');",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/text/generate",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "text",
+                "generate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should be ok 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Image is generated', function () {",
+                  "    pm.expect(jsonData.revised_prompt, 'Field revised_prompt is included in dotAI response').not.null;",
+                  "    pm.expect(jsonData.url, 'Field url is included in dotAI response').not.null;",
+                  "    pm.expect(jsonData.tempFileName, 'Field tempFileName is included in dotAI response').not.null;",
+                  "    pm.expect(jsonData.tempFile, 'Field tempFile is included in dotAI response').not.null;",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"prompt\": \"Generate image of a turtle training for a marathon\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/image/generate",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "image",
+                "generate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should be ok 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Image is generated', function () {",
+                  "    pm.expect(jsonData.revised_prompt, 'Field revised_prompt is included in dotAI response').not.null;",
+                  "    pm.expect(jsonData.url, 'Field url is included in dotAI response').not.null;",
+                  "    pm.expect(jsonData.tempFileName, 'Field tempFileName is included in dotAI response').not.null;",
+                  "    pm.expect(jsonData.tempFile, 'Field tempFile is included in dotAI response').not.null;",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/image/generate?prompt=Image%20of%20a%20robot%20painting%20the%20sixteen%20chapel",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "image",
+                "generate"
+              ],
+              "query": [
+                {
+                  "key": "prompt",
+                  "value": "Image%20of%20a%20robot%20painting%20the%20sixteen%20chapel"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Image without prompt",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should be 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Error message is returned', function () {",
+                  "    pm.expect(jsonData.error, 'Error message is included in response').equals('`prompt` is required');",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/image/generate",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "image",
+                "generate"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "contentTypeID",
+      "value": ""
+    },
+    {
+      "key": "contentTypeVAR",
+      "value": ""
+    },
+    {
+      "key": "contentTypeFieldID",
+      "value": ""
+    },
+    {
+      "key": "contentTypeId",
+      "value": ""
+    },
+    {
+      "key": "contentTypeVar",
+      "value": ""
+    },
+    {
+      "key": "announcementDate",
+      "value": ""
+    }
+  ]
+}

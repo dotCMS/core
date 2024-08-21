@@ -34,6 +34,7 @@
 
         <docker.base.image>tomcat:9.0.74-jdk11</docker.base.image>
         <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
+        <docker.image.wiremock>${ext.docker.image.wiremock}</docker.image.wiremock>
 
 
         <felix.base.dir>${project.build.directory}/core-war/WEB-INF/felix</felix.base.dir>

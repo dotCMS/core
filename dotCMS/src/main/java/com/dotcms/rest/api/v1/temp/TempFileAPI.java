@@ -46,6 +46,7 @@ import com.liferay.portal.util.WebKeys;
 import com.liferay.util.Encryptor;
 import com.liferay.util.StringPool;
 
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 public class TempFileAPI {
@@ -61,8 +62,8 @@ public class TempFileAPI {
 
   private static final String WHO_CAN_USE_TEMP_FILE = "whoCanUse.tmp";
   private static final String TEMP_RESOURCE_BY_URL_ADMIN_ONLY="TEMP_RESOURCE_BY_URL_ADMIN_ONLY";
-  
-  
+
+  private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
 
   /**
    * Returns an empty TempFile of a unique id and file handle that can be used to write and access a
@@ -216,7 +217,7 @@ public class TempFileAPI {
       /**
        * If url requested is on a private subnet, block by default
        */
-      if(IPUtils.isIpPrivateSubnet(url.getHost())) {
+    if(IPUtils.isIpPrivateSubnet(url.getHost()) && !Optional.ofNullable(allowAccessToPrivateSubnets.get()).map(Boolean::booleanValue).orElse(false)) {
           throw new DotRuntimeException("Unable to load file by url:" + url);
       }
       

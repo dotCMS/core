@@ -44,3 +44,4 @@ This maintenance release includes the following code fixes:
 38. https://github.com/dotCMS/core/issues/29222 : Telemetry: not getting data after last release of the plugin #29222
 39. https://github.com/dotCMS/core/issues/27959 : Integration tests for AI Viewtools #27959
 40. https://github.com/dotCMS/core/pull/28781
+41. https://github.com/dotCMS/core/issues/28719 : Write Postman Tests for Generative AI Endpoints #28719

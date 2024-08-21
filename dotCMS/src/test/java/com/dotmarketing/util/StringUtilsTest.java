@@ -436,4 +436,27 @@ public class StringUtilsTest {
         String actualOutput = StringUtils.hashText(input);
         assertEquals(64, actualOutput.length());
     }
+
+    /**
+     * Given a text input
+     * When calling the joinOneCharElements method
+     * Then verify that one-length elements in an underscore delimited String are joined together in the new string.
+     */
+    @Test
+    public void testJoinOneCharElements() {
+        String input = "a_b_c_d_e_f";
+        String expectedOutput = "abcdef";
+        String actualOutput = StringUtils.joinOneCharElements(input);
+        assertEquals(expectedOutput, actualOutput);
+
+        input = "abc_def_ghi";
+        expectedOutput = "abc_def_ghi";
+        actualOutput = StringUtils.joinOneCharElements(input);
+        assertEquals(expectedOutput, actualOutput);
+
+        input = "";
+        expectedOutput = "";
+        actualOutput = StringUtils.joinOneCharElements(input);
+        assertEquals(expectedOutput, actualOutput);
+    }
 }

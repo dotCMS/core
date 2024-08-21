@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
  *
  * @author vico
  */
-public class CompletionsToolTest implements AiTest {
+public class CompletionsToolTest {
 
     private static AppConfig config;
     private static WireMockServer wireMockServer;
