@@ -105,10 +105,6 @@ public class InitServlet extends HttpServlet {
 
         Logger.info(this, "");
 
-        String classPath = config.getServletContext().getRealPath("/WEB-INF/lib");
-
-        //new PluginLoader().loadPlugins(config.getServletContext().getRealPath("/"),classPath);
-
         int mc = Config.getIntProperty("lucene_max_clause_count", 4096);
         BooleanQuery.setMaxClauseCount(mc);
 
