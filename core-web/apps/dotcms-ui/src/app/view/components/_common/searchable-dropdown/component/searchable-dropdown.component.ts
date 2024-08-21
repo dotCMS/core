@@ -22,7 +22,7 @@ import {
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { PrimeTemplate } from 'primeng/api';
-import { DataView } from 'primeng/dataview';
+import { DataView, DataViewLazyLoadEvent } from 'primeng/dataview';
 import { OverlayPanel } from 'primeng/overlaypanel';
 
 import { debounceTime, tap } from 'rxjs/operators';
@@ -51,7 +51,7 @@ export class SearchableDropdownComponent
     @Input()
     data: Record<string, unknown>[];
 
-    @Input() action: (action: unknown) => void;
+    @Input() action: (event: Event) => void;
 
     @Input()
     labelPropertyName: string | string[];
@@ -261,13 +261,17 @@ export class SearchableDropdownComponent
      * @param {PaginationEvent} event
      * @memberof SearchableDropdownComponent
      */
-    paginate(event: PaginationEvent): void {
-        const paginationEvent = Object.assign({}, event);
+    paginate(event: DataViewLazyLoadEvent): void {
+        const paginationEvent = {
+            first: event.first,
+            rows: event.rows,
+            filter: ''
+        };
         if (this.searchInput) {
             paginationEvent.filter = this.searchInput.nativeElement.value;
         }
 
-        this.pageChange.emit(paginationEvent);
+        this.pageChange.emit(paginationEvent as PaginationEvent);
     }
 
     /**
@@ -423,7 +427,7 @@ export class SearchableDropdownComponent
         this.setLabel();
     }
 
-    private getValueLabelPropertyName(): string {
+    public getValueLabelPropertyName(): string {
         return Array.isArray(this.labelPropertyName)
             ? this.labelPropertyName[0]
             : this.labelPropertyName;
