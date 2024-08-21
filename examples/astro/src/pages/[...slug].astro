@@ -33,7 +33,7 @@ const getPageData = async (): Promise<{
     const nav = await client.nav.get({
       path: "/",
       depth: 2,
-      languageId: Number(pageRequestParams.language_id),
+      languageId: pageRequestParams.language_id,
     });
 
     return { pageAsset, nav };
@@ -68,8 +68,7 @@ if (!error) {
     <Error error={error} />
   </Layout>
 ) : (
-
 <Layout title={pageAsset.title}>
-  <MyPage client:load pageAsset={pageAsset} nav={nav.entity?.children} />
+  <MyPage client:load pageAsset={pageAsset} nav={nav.entity.children} />
 </Layout>
 )}
