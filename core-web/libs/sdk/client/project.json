@@ -5,15 +5,16 @@
     "projectType": "library",
     "targets": {
         "build": {
-            "executor": "@nx/js:tsc",
+            "executor": "@nx/rollup:rollup",
             "outputs": ["{options.outputPath}"],
             "options": {
+                "format": ["esm", "cjs"],
+                "compiler": "tsc",
                 "generateExportsField": true,
-                "clean": true,
+                "assets": [{ "input": ".", "output": ".", "glob": "*.md" }],
                 "outputPath": "dist/libs/sdk/client",
                 "main": "libs/sdk/client/src/index.ts",
-                "tsConfig": "libs/sdk/client/tsconfig.lib.json",
-                "assets": ["libs/sdk/client/*.md"]
+                "tsConfig": "libs/sdk/client/tsconfig.lib.json"
             }
         },
         "build:js": {
