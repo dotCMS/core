@@ -5,8 +5,8 @@ import com.dotcms.ai.Marshaller;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.model.AIImageRequestDTO;
-import com.dotcms.ai.service.OpenAIImageService;
-import com.dotcms.ai.service.OpenAIImageServiceImpl;
+import com.dotcms.ai.api.ImageAPI;
+import com.dotcms.ai.api.OpenAIImageAPIImpl;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -113,7 +113,7 @@ public class ImageResource {
                     .build();
         }
 
-        final OpenAIImageService service = new OpenAIImageServiceImpl(
+        final ImageAPI service = APILocator.getDotAIAPI().getImageAPI(
                 config,
                 user,
                 APILocator.getHostAPI(),
