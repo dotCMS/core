@@ -3,8 +3,9 @@
         <p-splitButton
             (onClick)="action[0].command()"
             [disabled]="loading"
-            [styleClass]="sizeClass + (!first ? ' p-button-outlined' : '')"
+            [styleClass]="sizeClass"
             [model]="action | slice: 1"
+            [outlined]="!first"
             [label]="action[0].label" />
     } @else {
         <p-button
