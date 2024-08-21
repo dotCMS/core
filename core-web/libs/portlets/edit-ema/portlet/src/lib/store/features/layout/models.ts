@@ -6,6 +6,7 @@ export interface LayoutProps {
     template: {
         identifier: string;
         themeId: string;
+        anonymous: boolean;
     };
     pageId: string;
 }
