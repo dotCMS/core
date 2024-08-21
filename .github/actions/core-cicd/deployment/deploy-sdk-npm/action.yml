@@ -48,33 +48,42 @@ runs:
       shell: bash
 
     - name: 'Valitate version'
+      id: validate_version
       run: |
         echo "::group::Validating version"
         publish=false
-        
-        CURRENT_VERSION=$(npm view '@dotcms/client' version)
+
+        NPM_INFO=$(npm view '@dotcms/client' --json)
+        VERSIONS=$(echo "$NPM_INFO" | jq '.versions')
+        CURRENT_VERSION=$(echo "$NPM_INFO" | jq -r '.version')
+
         NEXT_VERSION=${{ steps.next_version.outputs.next_version }}
 
         base_number=$(echo "$CURRENT_VERSION" | grep -oE '[0-9]+$')
         next_number=$((base_number + 1))
-        prefix=$(echo "$CURRENT_VERSION" | grep -oE '^[^-]+-[^-]+')
+        prefix=$(echo "$CURRENT_VERSION" | sed -E 's/[0-9]+$//')
 
-        EXPECTED_VERSION="$prefix.$next_number"
+        EXPECTED_VERSION="$prefix$next_number"
 
-        if [ "$CURRENT_VERSION" == "$NEXT_VERSION" ]; then
+        NEXT_VERSION_EXISTS=$(echo "$VERSIONS" | jq --arg item "$NEXT_VERSION" -r '.[] | select(. == $item)')
+
+        echo "::notice::EXPECTED VERSION: $EXPECTED_VERSION"
+        echo "::notice::NEXT VERSION: $NEXT_VERSION"
+
+        if [ -n "$NEXT_VERSION_EXISTS" ]; then
           echo "Version $NEXT_VERSION already exists in NPM registry"
-        elif [[ "$CURRENT_VERSION" != "$EXPECTED_VERSION" ]]; then
+        elif [[ "$NEXT_VERSION" != "$EXPECTED_VERSION" ]]; then
           echo "Version $NEXT_VERSION is not the expected version."
         else
           publish=true
         fi
-
+        echo "::notice::PUBLISH: $publish"
         echo "publish=$publish" >> $GITHUB_OUTPUT
         echo "::endgroup::"
       shell: bash
 
     - name: 'Publishing sdk into NPM registry'
-      if: ${{ steps.next_version.outputs.publish == 'true' }}
+      if: ${{ steps.validate_version.outputs.publish == 'true' }}
       working-directory: ${{ github.workspace }}/core-web/libs/sdk/
       env:
         NEXT_VERSION: ${{ steps.next_version.outputs.next_version }}
