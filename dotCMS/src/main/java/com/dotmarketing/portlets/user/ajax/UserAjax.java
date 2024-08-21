@@ -202,7 +202,7 @@ public class UserAjax {
 			if (localTransaction) {
 				HibernateUtil.rollbackTransaction();
 			}
-			throw new DotDataException(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"User-Info-Save-Failed : " + e.getMessage()),"User-Info-Save-Failed",e);
+			throw new DotDataException(LanguageUtil.get(uWebAPI.getLoggedInUser(request), e.getMessage()),"User-Info-Save-Failed",e);
 
 		}
 
