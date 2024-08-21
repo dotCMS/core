@@ -108,19 +108,7 @@ public class CreateJsonWebTokenResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(operationId = "postAuthenticateApiToken",
-                summary = "Creates a JSON web token",
-                description = "Takes a user ID and verifies that user is authenticated.\n\n" +
-                                "If user has proper permissions, a JSON web token will be created.\n\n" +
-                                "The system will also notify the user when their token is set to expire.\n\n",
-                tags = {"Authentication"},
-                responses = {
-                    @ApiResponse(responseCode = "200", description = "JSON web token created",
-                        content = @Content(mediaType = "application/JSON",
-                            schema = @Schema(implementation = ResponseEntityView.class)
-                        ))
-                }
-                )
+    @Deprecated
     public final Response getApiToken(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response,
                                          final CreateTokenForm createTokenForm) {

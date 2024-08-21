@@ -44,6 +44,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -107,10 +108,11 @@ public class AuthenticationResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes({MediaType.APPLICATION_JSON})
     @Operation(operationId = "postAuthentication",
                 summary = "Verifies user or application authentication",
-                description = "Takes a user ID and checks if the user has permissions in the system.\n\n" +
-                                "If the user is authenticated they will be prompted to log in and a session is created.\n\n" +
+                description = "Takes a user's login ID and password and checks them against the user rolls.\n\n" +
+                                "If the user is found and authenticated, a session is created.\n\n" +
                                 "Otherwise the system will return an 'authentication failed' message.\n\n",
                 tags = {"Authentication"},
                 responses = {
@@ -125,9 +127,14 @@ public class AuthenticationResource implements Serializable {
     public final Response authentication(
                                    @Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
-                                   @RequestBody(description = "POST body returns a JSON object containing a user's\n\n" +
-                                                                "authentication status. Authenticated users will asked \n\n" +
-                                                                "to input their credentials.\n\n",
+                                   @RequestBody(description = "This method takes a user's credentials and language preferences to authenticate them.\n\n" +
+                                                                "Requires a POST body consisting of a JSON object containing the following properties:\n\n" + 
+                                                                "| **Property** | **Value** | **Description**                               |\n" +
+                                                                "|--------------|-----------|-----------------------------------------------|\n" +
+                                                                "| `userId`     | String    | **Required.** ID of user attempting to log in |\n" +
+                                                                "| `password`   | String    | User password                                 |\n" +
+                                                                "| `language`   | String    | Preferred language for user                   |\n" +
+                                                                "| `country`    | String    | Country where user is located                 |\n",
                                                 required = true,
                                                 content = @Content(
                                                     schema = @Schema(implementation = AuthenticationForm.class)
