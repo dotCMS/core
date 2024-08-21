@@ -106,10 +106,6 @@
         -->
 
         <dependency>
-            <groupId>com.dotcms</groupId>
-            <artifactId>ant-tooling</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.aopalliance-repackaged</artifactId>
         </dependency>
