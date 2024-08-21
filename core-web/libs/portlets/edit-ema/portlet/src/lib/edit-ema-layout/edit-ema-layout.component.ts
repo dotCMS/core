@@ -143,8 +143,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      *
      * @private
      * @template T
-     * // To not get the error of the type with DotPageRender and DotPageApiResponse
-     * @param {T=unkonwm} page
+     * @param {T=unkonwm} page // To avoid getting type error with DotPageRender and DotPageApiResponse
      * @memberof EditEmaLayoutComponent
      */
     private handleSuccessSaveTemplate<T = unknown>(page: T): void {

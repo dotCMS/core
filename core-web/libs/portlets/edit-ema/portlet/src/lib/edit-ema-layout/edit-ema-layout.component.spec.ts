@@ -22,6 +22,7 @@ import {
     DotRouterService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import { DotPageRender } from '@dotcms/dotcms-models';
 import { TemplateBuilderComponent, TemplateBuilderModule } from '@dotcms/template-builder';
 import {
     DotExperimentsServiceMock,
@@ -33,7 +34,35 @@ import { EditEmaLayoutComponent } from './edit-ema-layout.component';
 
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
+import { UVE_STATUS } from '../shared/enums';
 import { UVEStore } from '../store/dot-uve.store';
+
+const PAGE_RESPONSE = {
+    containers: {},
+    page: {
+        identifier: 'test'
+    },
+    template: {
+        theme: 'testTheme'
+    },
+    layout: {
+        body: {
+            rows: [
+                {
+                    columns: [
+                        {
+                            containers: [
+                                {
+                                    identifier: 'test'
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+};
 
 describe('EditEmaLayoutComponent', () => {
     let spectator: Spectator<EditEmaLayoutComponent>;
@@ -72,32 +101,7 @@ describe('EditEmaLayoutComponent', () => {
                 provide: DotPageApiService,
                 useValue: {
                     get: () => {
-                        return of({
-                            containers: {},
-                            page: {
-                                identifier: 'test'
-                            },
-                            template: {
-                                theme: 'testTheme'
-                            },
-                            layout: {
-                                body: {
-                                    rows: [
-                                        {
-                                            columns: [
-                                                {
-                                                    containers: [
-                                                        {
-                                                            identifier: 'test'
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                }
-                            }
-                        });
+                        return of(PAGE_RESPONSE);
                     }
                 }
             },
@@ -136,7 +140,7 @@ describe('EditEmaLayoutComponent', () => {
         spectator = createComponent();
         component = spectator.component;
         dotRouter = spectator.inject(DotRouterService);
-        store = spectator.inject(UVEStore);
+        store = spectator.inject(UVEStore, true);
         layoutService = spectator.inject(DotPageLayoutService);
         messageService = spectator.inject(MessageService);
 
@@ -166,12 +170,18 @@ describe('EditEmaLayoutComponent', () => {
         });
 
         it('should trigger a save after 5 secs', fakeAsync(() => {
-            const layoutServiceSave = jest.spyOn(layoutService, 'save');
+            const layoutServiceSave = jest
+                .spyOn(layoutService, 'save')
+                .mockReturnValue(of(PAGE_RESPONSE as unknown as DotPageRender));
+            const updatePageResponseSpy = jest.spyOn(store, 'updatePageResponse');
+            const setUveStatusSpy = jest.spyOn(store, 'setUveStatus');
 
             templateBuilder.templateChange.emit();
             tick(5000);
 
             expect(layoutServiceSave).toHaveBeenCalled();
+            expect(updatePageResponseSpy).toHaveBeenCalledWith(PAGE_RESPONSE);
+            expect(setUveStatusSpy).toHaveBeenCalledWith(UVE_STATUS.LOADING);
 
             expect(addMock).toHaveBeenNthCalledWith(1, {
                 severity: 'info',

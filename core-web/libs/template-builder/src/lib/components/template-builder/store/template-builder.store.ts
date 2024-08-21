@@ -397,11 +397,11 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             {
                 newRows,
                 templateIdentifier,
-                isAnonymousTemplate
+                isAnonymousTemplate = false
             }: {
                 newRows: DotGridStackWidget[];
                 templateIdentifier: string;
-                isAnonymousTemplate: boolean;
+                isAnonymousTemplate?: boolean;
             }
         ) => {
             const { rows: oldRows } = state;
