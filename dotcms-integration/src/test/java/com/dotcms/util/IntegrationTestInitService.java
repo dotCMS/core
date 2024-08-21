@@ -1,5 +1,6 @@
 package com.dotcms.util;
 
+import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.config.DotInitializationService;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -74,6 +75,7 @@ public class IntegrationTestInitService {
                 Config.setProperty("NETWORK_CACHE_FLUSH_DELAY", (long) 0);
                 // Init other dotCMS services.
                 DotInitializationService.getInstance().initialize();
+                EmbeddingsAPI.impl().initEmbeddingsTable();
             }
         } catch (Exception e) {
             Logger.error(this, "Error initializing Integration Test Init Service", e);

@@ -1,5 +1,9 @@
 package com.dotcms;
 
+import com.dotcms.ai.viewtool.AIViewToolTest;
+import com.dotcms.ai.viewtool.CompletionsToolTest;
+import com.dotcms.ai.viewtool.EmbeddingsToolTest;
+import com.dotcms.ai.viewtool.SearchToolTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.bayesian.BayesianAPIImplIT;
@@ -288,7 +292,11 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240112AddMetadataColumnToStructureTableTest.class,
         Task240513UpdateContentTypesSystemFieldTest.class,
         Task240530AddDotAIPortletToLayoutTest.class,
-        EmailActionletTest.class
+        EmailActionletTest.class,
+        AIViewToolTest.class,
+        SearchToolTest.class,
+        EmbeddingsToolTest.class,
+        CompletionsToolTest.class
 })
 
 public class MainSuite2b {

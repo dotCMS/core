@@ -422,4 +422,18 @@ public class StringUtilsTest {
         assertArrayEquals(StringUtils.BLANK_CHARS, StringUtils.defensiveCopy(null)); // Check if the content is equal
     }
 
+    /**
+     * Given a text as input
+     * When the method hashText is invoked
+     * Then it returns the SHA-256 hash of the input text
+     *
+     * @return The SHA-256 hash of the input text
+     */
+    @Test
+    public void testHashText() {
+        String input = "Hello, World!";
+        String expectedOutput = "315F5BDB76D078C43B8AC0064E4A0164612B1FCE77C869345BFC94C75894EDD3"; // This is the SHA-256 hash of "Hello, World!"
+        String actualOutput = StringUtils.hashText(input);
+        assertEquals(64, actualOutput.length());
+    }
 }
