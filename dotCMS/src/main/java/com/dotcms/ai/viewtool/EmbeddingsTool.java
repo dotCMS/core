@@ -24,9 +24,9 @@ import java.util.Map;
  */
 public class EmbeddingsTool implements ViewTool {
 
-    final private HttpServletRequest request;
-    final private Host host;
-    final private AppConfig appConfig;
+    private final HttpServletRequest request;
+    private final Host host;
+    private final AppConfig appConfig;
 
     /**
      * Constructor for the EmbeddingsTool class.
@@ -69,10 +69,15 @@ public class EmbeddingsTool implements ViewTool {
      */
     public List<Float> generateEmbeddings(final String prompt) {
         int tokens = countTokens(prompt);
-        int maxTokens = OpenAIModel.resolveModel(ConfigService.INSTANCE.config(host).getConfig(AppKeys.EMBEDDINGS_MODEL)).maxTokens;
+        int maxTokens = OpenAIModel
+                .resolveModel(ConfigService.INSTANCE.config(host).getConfig(AppKeys.EMBEDDINGS_MODEL))
+                .maxTokens;
         if (tokens > maxTokens) {
-            Logger.warn(EmbeddingsTool.class, "Prompt is too long.  Maximum prompt size is " + maxTokens + " tokens (roughly ~" + maxTokens * .75 + " words).  Your prompt was " + tokens + " tokens ");
+            Logger.warn(
+                    EmbeddingsTool.class,
+                    "Prompt is too long.  Maximum prompt size is " + maxTokens + " tokens (roughly ~" + maxTokens * .75 + " words).  Your prompt was " + tokens + " tokens ");
         }
+
         return EmbeddingsAPI.impl().pullOrGenerateEmbeddings(prompt)._2;
     }
 

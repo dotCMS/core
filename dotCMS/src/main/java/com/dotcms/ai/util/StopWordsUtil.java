@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  */
 public class StopWordsUtil {
 
-    // twitter stopwords - stopwords_twitter.txt
+    // twitter stop words - stopwords_twitter.txt
     private final static Lazy<TreeSet<String>> STOP_WORDS = Lazy.of(() ->
             new TreeSet<>(new ImmutableSet.Builder<String>()
                     .add(
@@ -69,7 +69,7 @@ public class StopWordsUtil {
                             "yep", "yet", "you", "your", "yours", "yourself", "yourselves", "yr", "za", "tre")
                     .build()));
 
-    private static final Lazy<StopWordsUtil> STOP_WORDS_UTILS = Lazy.of(StopWordsUtil::new);
+    private static final Lazy<StopWordsUtil> STOP_WORDS_UTIL = Lazy.of(StopWordsUtil::new);
 
     /**
      * Returns the singleton instance of the StopWordsUtil class.
@@ -78,7 +78,7 @@ public class StopWordsUtil {
      * @return the singleton instance of the StopWordsUtil class
      */
     public static StopWordsUtil get(){
-        return STOP_WORDS_UTILS.get();
+        return STOP_WORDS_UTIL.get();
     }
 
     private StopWordsUtil() {}

@@ -1,6 +1,6 @@
 package com.dotcms.ai.util;
 
-
+import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -14,6 +14,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
+import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.MediaType;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class OpenAIRequest {
 
-    private static final ConcurrentHashMap<OpenAIModel,Long> lastRestCall = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<OpenAIModel, Long> lastRestCall = new ConcurrentHashMap<>();
 
     private OpenAIRequest() {}
 
@@ -66,7 +67,7 @@ public class OpenAIRequest {
                               final String openAiAPIKey,
                               final JSONObject json,
                               final OutputStream out) {
-        doRequest(urlIn,"post",openAiAPIKey,json,out);
+        doRequest(urlIn, HttpMethod.POST, openAiAPIKey, json, out);
     }
 
     /**
@@ -82,7 +83,7 @@ public class OpenAIRequest {
                              final String openAiAPIKey,
                              final JSONObject json,
                              final OutputStream out) {
-        doRequest(urlIn,"get",openAiAPIKey,json,out);
+        doRequest(urlIn, HttpMethod.GET, openAiAPIKey,json,out);
     }
 
     /**
@@ -106,7 +107,7 @@ public class OpenAIRequest {
             Logger.debug(OpenAIRequest.class, "posting:" + json);
         }
 
-        final OpenAIModel model = OpenAIModel.resolveModel(json.optString("model"));
+        final OpenAIModel model = OpenAIModel.resolveModel(json.optString(AiKeys.MODEL));
         final long sleep = lastRestCall.computeIfAbsent(model, m -> 0L)
                 + model.minIntervalBetweenCalls()
                 - System.currentTimeMillis();
@@ -157,20 +158,19 @@ public class OpenAIRequest {
     }
 
     private static HttpUriRequest resolveMethod(final String method, final String urlIn) {
-        if ("post".equalsIgnoreCase(method)) {
-            return new HttpPost(urlIn);
+        switch(method) {
+            case HttpMethod.POST:
+                return new HttpPost(urlIn);
+            case HttpMethod.PUT:
+                return new HttpPut(urlIn);
+            case HttpMethod.DELETE:
+                return new HttpDelete(urlIn);
+            case "patch":
+                return new HttpPatch(urlIn);
+            case HttpMethod.GET:
+            default:
+                return new HttpGet(urlIn);
         }
-        if ("put".equalsIgnoreCase(method)) {
-            return new HttpPut(urlIn);
-        }
-        if ("delete".equalsIgnoreCase(method)) {
-            return new HttpDelete(urlIn);
-        }
-        if ("patch".equalsIgnoreCase(method)) {
-            return new HttpPatch(urlIn);
-        }
-
-        return  new HttpGet(urlIn);
     }
 
 }

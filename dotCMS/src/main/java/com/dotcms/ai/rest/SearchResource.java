@@ -1,5 +1,6 @@
 package com.dotcms.ai.rest;
 
+import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.rest.forms.CompletionsForm;
@@ -30,25 +31,44 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Call
+ * The SearchResource class provides REST endpoints for interacting with the AI search service.
+ * It includes methods for searching content based on a given query and finding related content.
  */
 @Path("/v1/ai/search")
 public class SearchResource {
 
+    /**
+     * Handles GET requests to test the response of the search service.
+     *
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @return a Response object containing the test response
+     */
     @GET
     @JSONP
     @Path("/test")
     @Produces(MediaType.APPLICATION_JSON)
-    public final Response testResponse(@Context final HttpServletRequest request, @Context final HttpServletResponse response) {
+    public final Response testResponse(@Context final HttpServletRequest request,
+                                       @Context final HttpServletResponse response) {
 
-        Response.ResponseBuilder builder = Response.ok(Map.of("type", "search"), MediaType.APPLICATION_JSON);
+        Response.ResponseBuilder builder = Response.ok(Map.of(AiKeys.TYPE, AiKeys.SEARCH), MediaType.APPLICATION_JSON);
         return builder.build();
     }
 
+    /**
+     * Handles GET requests to search content based on a given query.
+     *
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @param query the query to search content from
+     * @return a Response object containing the search results
+     * @throws IOException if an I/O error occurs
+     */
     @GET
     @JSONP
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
-    public final Response searchByGet(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+    public final Response searchByGet(@Context final HttpServletRequest request,
+                                      @Context final HttpServletResponse response,
                                       @QueryParam("query") String query,
                                       @DefaultValue("1000") @QueryParam("searchLimit") int searchLimit,
                                       @DefaultValue("0") @QueryParam("searchOffset") int searchOffset,
@@ -59,10 +79,9 @@ public class SearchResource {
                                       @DefaultValue("false") @QueryParam("stream") boolean stream,
                                       @DefaultValue("1024") @QueryParam("responseLength") int responseLength,
                                       @DefaultValue("<=>") @QueryParam("operator") String operator,
-                                      @QueryParam("language") String language) throws DotDataException, DotSecurityException, IOException {
+                                      @QueryParam("language") String language) {
 
-
-        CompletionsForm form = new CompletionsForm.Builder()
+        final CompletionsForm form = new CompletionsForm.Builder()
                 .prompt(query)
                 .searchLimit(searchLimit)
                 .site(site)
@@ -79,94 +98,142 @@ public class SearchResource {
         return searchByPost(request, response, form);
     }
 
+    /**
+     * Handles POST requests to search content based on a given query.
+     *
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @param form the form data containing the query
+     * @return a Response object containing the search results
+     */
     @POST
     @JSONP
     @Produces(MediaType.APPLICATION_JSON)
     public final Response searchByPost(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response,
-                                       CompletionsForm form
+                                       final CompletionsForm form) {
 
-    ) throws DotDataException, DotSecurityException, IOException {
+        final User user = new WebResource.InitBuilder(request, response)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(true)
+                .init()
+                .getUser();
 
-        User user = new WebResource.InitBuilder(request, response).requiredBackendUser(true).requiredFrontendUser(true).init().getUser();
+        final EmbeddingsDTO searcher = EmbeddingsDTO.from(form).withUser(user).build();
 
-        EmbeddingsDTO searcher = EmbeddingsDTO.from(form).withUser(user).build();
-
-
-        return Response.ok(EmbeddingsAPI.impl().searchForContent(searcher).toString(), MediaType.APPLICATION_JSON).build();
-
-
+        return Response.ok(
+                EmbeddingsAPI.impl().searchForContent(searcher).toString(),
+                MediaType.APPLICATION_JSON).build();
     }
 
+    /**
+     * Handles GET requests to find related content based on a given identifier or inode.
+     *
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @param language the language id
+     * @param identifier the identifier of the content
+     * @param inode the inode of the content
+     * @return a Response object containing the related content
+     * @throws IOException if an I/O error occurs
+     */
     @GET
     @JSONP
     @Path("/related")
     @Produces(MediaType.APPLICATION_JSON)
     public final Response relatedByGet(@Context final HttpServletRequest request,
-                                           @Context final HttpServletResponse response,
-                                           @QueryParam("language") long language,
-                                           @QueryParam("identifier") String identifier,
-                                           @QueryParam("inode") String inode,
-                                           @QueryParam("indexName") String indexName,
-                                           @QueryParam("fieldVar") String fieldVar) throws DotDataException, DotSecurityException, IOException {
+                                       @Context final HttpServletResponse response,
+                                       @QueryParam("language") final long language,
+                                       @QueryParam("identifier") final String identifier,
+                                       @QueryParam("inode") final String inode,
+                                       @QueryParam("indexName") final String indexName,
+                                       @QueryParam("fieldVar") final String fieldVar)
+            throws DotDataException, DotSecurityException {
 
-
-
-        return relatedByPost(request, response, new JSONObject(Map.of("language", language, "identifier", identifier, "inode", inode, "indexName", indexName, "fieldVar", fieldVar)));
-
+        return relatedByPost(
+                request,
+                response,
+                new JSONObject(
+                        Map.of(
+                                AiKeys.LANGUAGE, language,
+                                AiKeys.IDENTIFIER, identifier,
+                                AiKeys.INODE, inode,
+                                AiKeys.INDEX_NAME, indexName,
+                                AiKeys.FIELD_VAR, fieldVar)));
     }
 
+    /**
+     * Handles POST requests to find related content based on a given identifier or inode.
+     *
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @param json the JSON object containing the identifier or inode
+     * @return a Response object containing the related content
+     * @throws IOException if an I/O error occurs
+     */
     @POST
     @JSONP
     @Path("/related")
     @Produces(MediaType.APPLICATION_JSON)
     public final Response relatedByPost(@Context final HttpServletRequest request,
-                                            @Context final HttpServletResponse response,
-                                            JSONObject json
+                                        @Context final HttpServletResponse response,
+                                        final JSONObject json)
+            throws DotDataException, DotSecurityException {
 
+        final String fieldVar = json.optString(AiKeys.FIELD_VAR);
+        final String indexName = json.optString(AiKeys.INDEX_NAME, AiKeys.DEFAULT);
+        final String inode = json.optString(AiKeys.INODE);
+        final String identifier = json.optString(AiKeys.IDENTIFIER);
+        final long language = json.optLong(AiKeys.LANGUAGE, APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
+        final User user = new WebResource.InitBuilder(request, response).requiredBackendUser(true)
+                .requiredFrontendUser(true)
+                .init()
+                .getUser();
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final Contentlet contentlet =
+                (UtilMethods.isSet(inode))
+                        ? APILocator.getContentletAPI().find(inode, user, true)
+                        : APILocator
+                        .getContentletAPI()
+                        .findContentletByIdentifier(
+                                identifier,
+                                !user.isBackendUser(),
+                                language,
+                                user,
+                                true);
 
-    ) throws DotDataException, DotSecurityException, IOException {
-        final String fieldVar = json.optString("fieldVar");
-        final String indexName = json.optString("indexName", "default");
-        final String inode = json.optString("inode");
-        final String identifier = json.optString("identifier");
-        final long language = json.optLong("language", APILocator.getLanguageAPI().getDefaultLanguage().getId());
-
-        User user = new WebResource.InitBuilder(request, response).requiredBackendUser(true).requiredFrontendUser(true).init().getUser();
-
-
-        Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-
-
-        Contentlet contentlet = (UtilMethods.isSet(inode)) ? APILocator.getContentletAPI().find(inode, user, true)
-                : APILocator.getContentletAPI().findContentletByIdentifier(identifier, !user.isBackendUser(), language, user, true);
-
-        if (UtilMethods.isEmpty(() -> contentlet.getIdentifier())) {
-            Logger.warn(this.getClass(), "unable to find matching contentlet for id:" + identifier + " inode:" + inode + " language:" + language);
+        if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
+            Logger.warn(
+                    this.getClass(),
+                    "unable to find matching contentlet for id:" + identifier + " inode:" + inode + " language:" + language);
             return Response.status(404).build();
         }
 
-        Field fieldToTry = contentlet.getContentType().fieldMap().get(fieldVar);
-        List<Field> fields = fieldToTry == null ? ContentToStringUtil.impl.get().guessWhatFieldsToIndex(contentlet) : List.of(fieldToTry);
+        final Field fieldToTry = contentlet.getContentType().fieldMap().get(fieldVar);
+        final List<Field> fields = fieldToTry == null
+                ? ContentToStringUtil.impl.get().guessWhatFieldsToIndex(contentlet)
+                : List.of(fieldToTry);
 
-
-        Optional<String> contentToRelate = ContentToStringUtil.impl.get().parseFields(contentlet, fields);
+        final Optional<String> contentToRelate = ContentToStringUtil.impl.get().parseFields(contentlet, fields);
         if (contentToRelate.isEmpty()) {
-            Logger.warn(this.getClass(), "unable to find matching content for id:" + identifier + " inode:" + inode + " language:" + language);
+            Logger.warn(
+                    this.getClass(),
+                    "unable to find matching content for id:" + identifier + " inode:" + inode + " language:" + language);
             return Response.status(404).build();
         }
-        EmbeddingsDTO searcher = new EmbeddingsDTO.Builder().withQuery(contentToRelate.get())
+
+        final EmbeddingsDTO searcher = new EmbeddingsDTO.Builder()
+                .withQuery(contentToRelate.get())
                 .withIndexName(indexName)
                 .withExcludeIndentifiers(new String[]{contentlet.getIdentifier()})
                 .withUser(user)
                 .withLimit(50)
                 .build();
 
-        return Response.ok(EmbeddingsAPI.impl(host).searchForContent(searcher).toString(), MediaType.APPLICATION_JSON).build();
-
-
+        return Response
+                .ok(EmbeddingsAPI.impl(host).searchForContent(searcher).toString(), MediaType.APPLICATION_JSON)
+                .build();
     }
-
 
 }

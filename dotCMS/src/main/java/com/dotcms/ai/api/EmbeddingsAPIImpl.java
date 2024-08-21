@@ -1,5 +1,6 @@
 package com.dotcms.ai.api;
 
+import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
@@ -40,6 +41,7 @@ import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
 
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.HttpMethod;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,8 +63,6 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                                             .getConfigInteger(AppKeys.EMBEDDINGS_CACHE_TTL_SECONDS)))
                     .maximumSize(ConfigService.INSTANCE.config().getConfigInteger(AppKeys.EMBEDDINGS_CACHE_SIZE))
                     .build();
-    private static final String CACHE = "cache";
-    private static final String MATCHES = "matches";
 
     final AppConfig config;
 
@@ -82,7 +82,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                                 deleteQuery,
                                 limit,
                                 newOffset,
-                                "moddate",
+                                AiKeys.MODDATE,
                                 user,
                                 false);
                 if (searchResults.isEmpty()) {
@@ -233,30 +233,30 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                     result.inode,
                     dtoToContentJson(result, searcher.user));
 
-            contentObject.getAsMap().computeIfAbsent("title", k -> result.title);
+            contentObject.getAsMap().computeIfAbsent(AiKeys.TITLE, k -> result.title);
 
-            final JSONArray matches = contentObject.optJSONArray(MATCHES) == null
+            final JSONArray matches = contentObject.optJSONArray(AiKeys.MATCHES) == null
                     ? new JSONArray()
-                    : contentObject.optJSONArray(MATCHES);
+                    : contentObject.optJSONArray(AiKeys.MATCHES);
             final JSONObject match = new JSONObject();
-            match.put("distance", result.threshold);
-            match.put("extractedText", UtilMethods.truncatify(result.extractedText, 255));
+            match.put(AiKeys.DISTANCE, result.threshold);
+            match.put(AiKeys.EXTRACTED_TEXT, UtilMethods.truncatify(result.extractedText, 255));
             matches.add(match);
-            contentObject.put(MATCHES, matches);
+            contentObject.put(AiKeys.MATCHES, matches);
             reducedResults.putIfAbsent(result.inode,contentObject);
         }
 
         final long count = EmbeddingsAPI.impl().countEmbeddings(searcher);
         final JSONObject map = new JSONObject();
-        map.put("timeToEmbeddings", System.currentTimeMillis() - startTime + "ms");
-        map.put("total", searchResults.size());
-        map.put("query", searcher.query);
-        map.put("threshold", searcher.threshold);
-        map.put("dotCMSResults", reducedResults.values());
-        map.put("operator", searcher.operator);
-        map.put("offset", searcher.offset);
-        map.put("limit", searcher.limit);
-        map.put("count", count);
+        map.put(AiKeys.TIME_TO_EMBEDDINGS, System.currentTimeMillis() - startTime + "ms");
+        map.put(AiKeys.TOTAL, searchResults.size());
+        map.put(AiKeys.QUERY, searcher.query);
+        map.put(AiKeys.THRESHOLD, searcher.threshold);
+        map.put(AiKeys.DOT_CMS_RESULTS, reducedResults.values());
+        map.put(AiKeys.OPERATOR, searcher.operator);
+        map.put(AiKeys.OFFSET, searcher.offset);
+        map.put(AiKeys.LIMIT, searcher.limit);
+        map.put(AiKeys.COUNT, count);
 
         return map;
     }
@@ -269,7 +269,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         final JSONObject reducedResults = reduceChunksToContent(searcher, searchResults);
 
         final long totalTime = System.currentTimeMillis() - startTime;
-        reducedResults.put("timeToEmbeddings", totalTime + "ms");
+        reducedResults.put(AiKeys.TIME_TO_EMBEDDINGS, totalTime + "ms");
 
         return reducedResults;
     }
@@ -328,7 +328,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         final Tuple3<String, Integer, List<Float>> dbEmbeddings =
                 EmbeddingsFactory.impl.get().searchExistingEmbeddings(content);
         if (dbEmbeddings != null && !dbEmbeddings._3.isEmpty()) {
-            if (!CACHE.equalsIgnoreCase(dbEmbeddings._1)) {
+            if (!AiKeys.CACHE.equalsIgnoreCase(dbEmbeddings._1)) {
                 saveEmbeddingsForCache(content, Tuple.of(dbEmbeddings._2, dbEmbeddings._3));
             }
             EMBEDDING_CACHE.put(hashed, Tuple.of(dbEmbeddings._2, dbEmbeddings._3));
@@ -362,37 +362,38 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
     private JSONObject dtoToContentJson(final EmbeddingsDTO dto, final User user) {
         return Try.of(() ->
-                ContentResource.contentletToJSON(
-                        APILocator.getContentletAPI().find(dto.inode, user, true),
-                        HttpServletRequestThreadLocal.INSTANCE.getRequest(),
-                        HttpServletResponseThreadLocal.INSTANCE.getResponse(),
-                        "false",
-                        user,
-                        false)
-        ).andThenTry(() ->
-                new JSONObject(APILocator.getContentletAPI().find(dto.inode, user, true).getMap())
-        ).andThenTry(() ->
-                new JSONObject(Map.of("inode", dto.inode,
-                        "identifier", dto.identifier,
-                        "title", dto.title,
-                        "language", dto.language,
-                        "index", dto.indexName,
-                        "contentType", new JSONArray(dto.contentType)))
-
-        ).getOrElse(JSONObject::new);
+                        ContentResource.contentletToJSON(
+                                APILocator.getContentletAPI().find(dto.inode, user, true),
+                                HttpServletRequestThreadLocal.INSTANCE.getRequest(),
+                                HttpServletResponseThreadLocal.INSTANCE.getResponse(),
+                                "false",
+                                user,
+                                false)
+                ).andThenTry(() ->
+                        new JSONObject(APILocator.getContentletAPI().find(dto.inode, user, true).getMap())
+                ).andThenTry(() ->
+                        new JSONObject(
+                                Map.of(
+                                        AiKeys.INODE, dto.inode,
+                                        AiKeys.IDENTIFIER, dto.identifier,
+                                        AiKeys.TITLE, dto.title,
+                                        AiKeys.LANGUAGE, dto.language,
+                                        AiKeys.INDEX, dto.indexName,
+                                        AiKeys.CONTENT_TYPE, new JSONArray(dto.contentType))))
+                .getOrElse(JSONObject::new);
     }
 
     private void saveEmbeddingsForCache(final String content, final Tuple2<Integer, List<Float>> embeddings) {
         final EmbeddingsDTO embeddingsDTO = new EmbeddingsDTO.Builder()
-                .withContentType(CACHE)
+                .withContentType(AiKeys.CACHE)
                 .withTokenCount(embeddings._1)
-                .withInode(CACHE)
+                .withInode(AiKeys.CACHE)
                 .withLanguage(0)
-                .withTitle(CACHE)
-                .withIdentifier(CACHE)
-                .withHost(CACHE)
+                .withTitle(AiKeys.CACHE)
+                .withIdentifier(AiKeys.CACHE)
+                .withHost(AiKeys.CACHE)
                 .withExtractedText(content)
-                .withIndexName(CACHE)
+                .withIndexName(AiKeys.CACHE)
                 .withEmbeddings(embeddings._2)
                 .build();
 
@@ -401,17 +402,17 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
     private List<Float> sendTokensToOpenAI(@NotNull final List<Integer> tokens) {
         final JSONObject json = new JSONObject();
-        json.put("model", config.getConfig(AppKeys.EMBEDDINGS_MODEL));
-        json.put("input", tokens);
+        json.put(AiKeys.MODEL, config.getConfig(AppKeys.EMBEDDINGS_MODEL));
+        json.put(AiKeys.INPUT, tokens);
 
         final String responseString = OpenAIRequest.doRequest(
                 Config.getStringProperty("OPEN_AI_EMBEDDINGS_URL", "https://api.openai.com/v1/embeddings"),
-                "post",
+                HttpMethod.POST,
                 getAPIKey(),
                 json);
-        final JSONObject data = (JSONObject) new JSONObject(responseString).getJSONArray("data").get(0);
+        final JSONObject data = (JSONObject) new JSONObject(responseString).getJSONArray(AiKeys.DATA).get(0);
 
-        return (List<Float>) data.getJSONArray("embedding").stream().map(val -> {
+        return (List<Float>) data.getJSONArray(AiKeys.EMBEDDING).stream().map(val -> {
             double x = (double) val;
             return (float) x;
         }).collect(Collectors.toList());
