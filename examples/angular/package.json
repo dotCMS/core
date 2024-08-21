@@ -19,7 +19,7 @@
     "@angular/platform-browser-dynamic": "^17.1.0",
     "@angular/router": "^17.1.0",
     "@dotcms/angular": "0.0.1-alpha.31",
-    "@dotcms/client": "file:../../core-web/dist/libs/sdk/client/dotcms-client-0.0.1-alpha.31.tgz",
+    "@dotcms/client": "0.0.1-alpha.31",
     "@tinymce/tinymce-angular": "^8.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
