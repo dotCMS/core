@@ -179,6 +179,8 @@ export interface DotPage {
     live: boolean;
     liveInode?: string;
     stInode?: string;
+    working: boolean;
+    workingInode?: string;
 }
 
 export interface DotDeviceWithIcon extends DotDevice {
