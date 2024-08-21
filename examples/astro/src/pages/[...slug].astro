@@ -1,8 +1,9 @@
 ---
-import { client } from '../utils/client';
-import Layout from '../layouts/Layout.astro';
-import { getPageRequestParams } from '@dotcms/client';
-import { MyPage } from '../react/myPage';
+import { client } from "../utils/client";
+import Layout from "../layouts/Layout.astro";
+import Error from "../components/Error.astro";
+import { getPageRequestParams } from "@dotcms/client";
+import { MyPage } from "../react/myPage";
 
 const params = Astro.params;
 
@@ -10,49 +11,65 @@ const params = Astro.params;
 const searchParams: Record<string, string> = {};
 
 Astro.url.searchParams.forEach((value, key) => {
-    searchParams[key] = value;
+  searchParams[key] = value;
 });
 
-const getPageData = async (): Promise<{ pageAsset: any; nav: any; error?: any }> => {
-    // WE NEED TYPES
-    try {
-        const path = params?.slug || '/';
-        const pageRequestParams = getPageRequestParams({
-            path,
-            params: searchParams
-        });
-        const pageAsset = await client.page.get(pageRequestParams as any); // WE NEED TO FIX THIS
-        const nav = await client.nav.get({
-            path: '/',
-            depth: 2,
-            languageId: Number(searchParams.language_id)
-        });
+const getPageData = async (): Promise<{
+  pageAsset: any;
+  nav: any;
+  error?: any;
+}> => {
+  // WE NEED TYPES
+  try {
+    const path = params?.slug || "/";
 
-        return { pageAsset, nav };
-    } catch (error) {
-        return { pageAsset: null, nav: null, error };
-    }
+    const pageRequestParams = getPageRequestParams({
+      path,
+      params: searchParams,
+    });
+
+    const pageAsset = await client.page.get(pageRequestParams as any); // WE NEED TO FIX THIS
+
+    const nav = await client.nav.get({
+      path: "/",
+      depth: 2,
+      languageId: Number(pageRequestParams.language_id),
+    });
+
+    return { pageAsset, nav };
+} catch (error) {
+    return { pageAsset: null, nav: null, error };
+}
 };
 
 const { pageAsset, nav, error } = await getPageData();
 
-if (error) {
-    return Astro.redirect('/error');
-}
 
-const { vanityUrl } = pageAsset as {
-    vanityUrl?: { forwardTo: string; temporaryRedirect: boolean; permanentRedirect: boolean };
-}; // WE NEED TYPES
+if (!error) {
+    const { vanityUrl } = pageAsset as {
+        vanityUrl?: {
+            forwardTo: string;
+            temporaryRedirect: boolean;
+            permanentRedirect: boolean;
+            response: number
+        };
+    }; // WE NEED TYPES
 
-if (vanityUrl) {
-    if (vanityUrl.temporaryRedirect) {
-        Astro.redirect(vanityUrl.forwardTo, 302);
-    } else if (vanityUrl.permanentRedirect) {
-        Astro.redirect(vanityUrl.forwardTo, 301);
+    if (vanityUrl && ( vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
+        return  Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
+
     }
 }
 ---
 
+
+{error ? (
+  <Layout title="Error">
+    <Error error={error} />
+  </Layout>
+) : (
+
 <Layout title={pageAsset.title}>
-    <MyPage client:load pageAsset={pageAsset} nav={nav} />
+  <MyPage client:load pageAsset={pageAsset} nav={nav.entity?.children} />
 </Layout>
+)}
