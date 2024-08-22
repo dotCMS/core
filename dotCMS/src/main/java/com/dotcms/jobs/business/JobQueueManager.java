@@ -30,16 +30,13 @@ import java.util.function.Consumer;
  * <pre>{@code
  *     public static void main(String[] args) {
  *
- *         // Set up your DataSource (e.g., using HikariCP)
- *         DataSource dataSource = setupDataSource();
- *
  *         // Create the job queue
- *         JobQueue jobQueue = new PostgresJobQueue(dataSource);
+ *         JobQueue jobQueue = new PostgresJobQueue();
  *
  *         // Create and start the job queue manager
  *         JobQueueManager jobQueueManager = new JobQueueManager(jobQueue, 5); // 5 threads
  *
- *         // Set up a retry strategy for content import jobs
+ *         //(Optional) Set up a retry strategy for content import jobs
  *         RetryStrategy contentImportRetryStrategy = new ExponentialBackoffRetryStrategy(5000, 300000, 2.0, 3);
  *         contentImportRetryStrategy.addRetryableException(IOException.class);
  *         jobQueueManager.setRetryStrategy("contentImport", contentImportRetryStrategy);
@@ -50,7 +47,7 @@ import java.util.function.Consumer;
  *         // Start the job queue manager
  *         jobQueueManager.start();
  *
- *         // Create a content import job
+ *         // Create a content import job (dummy example)
  *         Map<String, Object> jobParameters = new HashMap<>();
  *         jobParameters.put("filePath", "/path/to/import/file.csv");
  *         jobParameters.put("contentType", "Article");
@@ -63,12 +60,6 @@ import java.util.function.Consumer;
  *
  *         // When shutting down the application
  *         jobQueueManager.stop();
- *     }
- *
- *     private static DataSource setupDataSource() {
- *         // Set up and return a DataSource (e.g., using HikariCP)
- *         // This is just a placeholder
- *         return null;
  *     }
  * }</pre>
  */
