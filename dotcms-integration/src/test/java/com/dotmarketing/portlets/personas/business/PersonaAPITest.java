@@ -328,5 +328,9 @@ public class PersonaAPITest {
       }
       return false;
     });
+
+    APILocator.getContentletAPI().destroy(newPersona, APILocator.systemUser(), false);
+
+
   }
 }
