@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
@@ -26,11 +25,9 @@ public interface AbstractJob {
 
     JobState state();
 
-    @Nullable
-    LocalDateTime createdAt();
+    Optional<LocalDateTime> createdAt();
 
-    @Nullable
-    LocalDateTime updatedAt();
+    Optional<LocalDateTime> updatedAt();
 
     Optional<LocalDateTime> completedAt();
 
@@ -38,11 +35,9 @@ public interface AbstractJob {
 
     Map<String, Object> parameters();
 
-    @Nullable
-    Throwable lastException();
+    Optional<Throwable> lastException();
 
-    @Nullable
-    com.dotcms.jobs.business.error.ErrorDetail errorDetail();
+    Optional<com.dotcms.jobs.business.error.ErrorDetail> errorDetail();
 
     @Default
     default int retryCount() {

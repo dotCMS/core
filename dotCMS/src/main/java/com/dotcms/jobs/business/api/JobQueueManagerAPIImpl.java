@@ -84,8 +84,39 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private final Map<String, RetryStrategy> retryStrategies;
     private final RetryStrategy defaultRetryStrategy;
 
+    // The number of threads to use for job processing.
     static final int DEFAULT_THREAD_POOL_SIZE = Config.getIntProperty(
             "JOB_QUEUE_THREAD_POOL_SIZE", 10
+    );
+
+    // The number of failures that will cause the circuit to open
+    static final int DEFAULT_CIRCUIT_BREAKER_FAILURE_THRESHOLD = Config.getIntProperty(
+            "DEFAULT_CIRCUIT_BREAKER_FAILURE_THRESHOLD", 5
+    );
+
+    // The time in milliseconds after which to attempt to close the circuit
+    static final int DEFAULT_CIRCUIT_BREAKER_RESET_TIMEOUT = Config.getIntProperty(
+            "DEFAULT_CIRCUIT_BREAKER_RESET_TIMEOUT", 60000
+    );
+
+    // The initial delay between retries in milliseconds
+    static final int DEFAULT_RETRY_STRATEGY_INITIAL_DELAY = Config.getIntProperty(
+            "DEFAULT_RETRY_STRATEGY_INITIAL_DELAY", 1000
+    );
+
+    // The maximum delay between retries in milliseconds
+    static final int DEFAULT_RETRY_STRATEGY_MAX_DELAY = Config.getIntProperty(
+            "DEFAULT_RETRY_STRATEGY_MAX_DELAY", 60000
+    );
+
+    // The factor by which the delay increases with each retry
+    static final float DEFAULT_RETRY_STRATEGY_BACK0FF_FACTOR = Config.getFloatProperty(
+            "DEFAULT_RETRY_STRATEGY_BACK0FF_FACTOR", 2.0f
+    );
+
+    // The maximum number of retry attempts allowed
+    static final int DEFAULT_RETRY_STRATEGY_MAX_RETRIES = Config.getIntProperty(
+            "DEFAULT_RETRY_STRATEGY_MAX_RETRIES", 5
     );
 
     /**
@@ -106,17 +137,12 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      */
     @VisibleForTesting
     public JobQueueManagerAPIImpl(JobQueue jobQueue, int threadPoolSize) {
-        this.jobQueue = jobQueue;
-        this.threadPoolSize = threadPoolSize;
-        this.processors = new ConcurrentHashMap<>();
-        this.jobWatchers = new ConcurrentHashMap<>();
-        this.retryStrategies = new ConcurrentHashMap<>();
-        this.defaultRetryStrategy = new ExponentialBackoffRetryStrategy(
-                1000, 60000, 2.0, 5
+        this(jobQueue, threadPoolSize,
+                new CircuitBreaker(
+                        DEFAULT_CIRCUIT_BREAKER_FAILURE_THRESHOLD,
+                        DEFAULT_CIRCUIT_BREAKER_RESET_TIMEOUT
+                )
         );
-        this.circuitBreaker = new CircuitBreaker(
-                5, 60000
-        ); // 5 failures within 1 minute
     }
 
     /**
@@ -134,7 +160,10 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         this.jobWatchers = new ConcurrentHashMap<>();
         this.retryStrategies = new ConcurrentHashMap<>();
         this.defaultRetryStrategy = new ExponentialBackoffRetryStrategy(
-                1000, 60000, 2.0, 5
+                DEFAULT_RETRY_STRATEGY_INITIAL_DELAY,
+                DEFAULT_RETRY_STRATEGY_MAX_DELAY,
+                DEFAULT_RETRY_STRATEGY_BACK0FF_FACTOR,
+                DEFAULT_RETRY_STRATEGY_MAX_RETRIES
         );
         this.circuitBreaker = circuitBreaker;
     }
@@ -535,7 +564,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      */
     private boolean canRetry(final Job job) {
         final RetryStrategy retryStrategy = retryStrategy(job.queueName());
-        return retryStrategy.shouldRetry(job, job.lastException());
+        return retryStrategy.shouldRetry(job, job.lastException().orElse(null));
     }
 
     /**
