@@ -1,5 +1,3 @@
-import { of } from 'rxjs';
-
 import {
     AfterContentInit,
     Component,
@@ -9,24 +7,19 @@ import {
     EventEmitter,
     Input,
     Output,
-    TemplateRef,
     ViewChild
 } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { PrimeTemplate } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
 import { DotGlobalMessageComponent } from '@components/_common/dot-global-message/dot-global-message.component';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
-import {
-    DotEventsService,
-    DotMessageService,
-    DotPropertiesService,
-    DotRouterService
-} from '@dotcms/data-access';
+import { DotEventsService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotLayout, DotTemplate, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
@@ -98,12 +91,12 @@ export class TabViewMockComponent {
 })
 export class TabPanelMockComponent implements AfterContentInit {
     @Input() header: string;
-    @ContentChild(TemplateRef) container;
+    @ContentChild(PrimeTemplate) container;
     contentTemplate;
 
     ngAfterContentInit() {
-        if (this.container.elementRef.nativeElement.textContent === 'container') {
-            this.contentTemplate = this.container;
+        if (this.container.name === 'content') {
+            this.contentTemplate = this.container.template;
         }
     }
 }
@@ -127,7 +120,6 @@ describe('DotTemplateBuilderComponent', () => {
     let component: DotTemplateBuilderComponent;
     let fixture: ComponentFixture<DotTemplateBuilderComponent>;
     let de: DebugElement;
-    let dotPropertiesService: DotPropertiesService;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -157,12 +149,6 @@ describe('DotTemplateBuilderComponent', () => {
                         code: 'Code'
                     })
                 },
-                {
-                    provide: DotPropertiesService,
-                    useValue: {
-                        getFeatureFlag: () => of(false)
-                    }
-                },
                 DotEventsService,
                 {
                     provide: DotRouterService,
@@ -177,7 +163,6 @@ describe('DotTemplateBuilderComponent', () => {
         de = fixture.debugElement;
         component = fixture.componentInstance;
 
-        dotPropertiesService = TestBed.inject(DotPropertiesService);
         spyOn(component.save, 'emit');
         spyOn(component.updateTemplate, 'emit');
         spyOn(component.cancel, 'emit');
@@ -207,7 +192,6 @@ describe('DotTemplateBuilderComponent', () => {
                 theme: '123',
                 live: true
             };
-            spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(true));
             fixture.detectChanges();
         });
 
