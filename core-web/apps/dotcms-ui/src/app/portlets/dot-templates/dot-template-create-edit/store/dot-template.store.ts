@@ -17,7 +17,6 @@ import {
     withLatestFrom
 } from 'rxjs/operators';
 
-import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import {
@@ -265,7 +264,6 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         private dotRouterService: DotRouterService,
         private activatedRoute: ActivatedRoute,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotEditLayoutService: DotEditLayoutService,
         private templateContainersCacheService: DotTemplateContainersCacheService,
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotMessageService: DotMessageService

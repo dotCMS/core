@@ -6,7 +6,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import {
@@ -73,7 +72,6 @@ const cacheSetSpy = jasmine.createSpy();
 
 const BASIC_PROVIDERS = [
     DotTemplateStore,
-    DotEditLayoutService,
     {
         provide: DotHttpErrorManagerService,
         useValue: {
