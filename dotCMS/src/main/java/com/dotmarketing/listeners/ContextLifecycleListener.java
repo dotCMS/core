@@ -7,21 +7,15 @@ import com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint;
 import com.dotcms.util.AsciiArt;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.reindex.ReindexThread;
-import com.dotmarketing.loggers.Log4jUtil;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 
-import java.io.Serializable;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.CDI;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.websocket.server.ServerContainer;
-import java.io.File;
-import org.apache.logging.log4j.core.async.BasicAsyncLoggerContextSelector;
 
 /**
  *
@@ -63,39 +57,7 @@ public class ContextLifecycleListener implements ServletContextListener {
 
         ByteBuddyFactory.init();
 
-        BeanManager beanManager = CDI.current().getBeanManager();
-        if (beanManager != null) {
-            beanManager.fireEvent(new StartupEvent());
-            Logger.info(this,"beanManager fired StartupEvent.");
-        } else {
-            Logger.error(this,"beanManager is null.  Cannot fire startup event.");
-        }
-
-
 		Config.setMyApp(arg0.getServletContext());
-
-
-        String path = null;
-		try {
-
-            String contextPath = Config.CONTEXT.getRealPath("/");
-            if ( !contextPath.endsWith( File.separator ) ) {
-                contextPath += File.separator;
-            }
-			File file = new File(contextPath + "WEB-INF" + File.separator + "log4j" + File.separator + "log4j2.xml");
-			path = file.toURI().toString();
-
-        } catch (Exception e) {
-			Logger.error(this,e.getMessage(),e);
-		}
-
-		// Do not reconfigure if using global configuration.  Remove this if we move
-        // a full global configuration
-        if (System.getProperty("Log4jContextSelector").equals(BasicAsyncLoggerContextSelector.class.getName()))
-            Log4jUtil.initializeFromPath(path);
-        else
-            Logger.debug(this, "Reinitializing configuration from "+path);
-
 
         installWebSocket(arg0.getServletContext());
 	}
@@ -114,7 +76,4 @@ public class ContextLifecycleListener implements ServletContextListener {
         }
     }
 
-
-    public static class StartupEvent implements Serializable {
-    }
 }

@@ -1,4 +1,4 @@
-package com.dotcms.ai.service;
+package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
@@ -12,11 +12,11 @@ import javax.ws.rs.HttpMethod;
 import java.util.List;
 import java.util.Map;
 
-public class OpenAIChatServiceImpl implements OpenAIChatService {
+public class OpenAIChatAPIImpl implements ChatAPI {
 
     private final AppConfig config;
 
-    public OpenAIChatServiceImpl(final AppConfig appConfig) {
+    public OpenAIChatAPIImpl(final AppConfig appConfig) {
         this.config = appConfig;
     }
 
@@ -47,7 +47,7 @@ public class OpenAIChatServiceImpl implements OpenAIChatService {
     }
 
     @VisibleForTesting
-    String doRequest(final String urlIn, final JSONObject json) {
+    public String doRequest(final String urlIn, final JSONObject json) {
         return OpenAIRequest.doRequest(urlIn, HttpMethod.POST, config, json);
     }
 

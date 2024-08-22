@@ -43,7 +43,7 @@ describe('DotPageToolsSeoComponent', () => {
     beforeEach(() => {
         pageToolUrlParamsTest = {
             currentUrl: '/blogTest',
-            requestHostName: 'localhost',
+            requestHostName: 'http://localhost',
             siteId: '123',
             languageId: 1
         };
