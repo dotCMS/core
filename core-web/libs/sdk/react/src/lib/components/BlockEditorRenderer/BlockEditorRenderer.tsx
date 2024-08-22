@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BlockQuote, CodeBlock } from './blocks/Code';
+import { DotContent } from './blocks/Contentlet';
 import { DotCMSImage } from './blocks/Image';
 import { BulletList, ListItem, OrderedList } from './blocks/Lists';
 import { Bold, Heading, Italic, Paragraph, Strike, TextBlock, Underline } from './blocks/Texts';
@@ -19,23 +20,23 @@ export interface ContentNode<T = Record<string, string>> {
 }
 
 //TODO: Use this to centralize the block types
-const Blocks: Record<string, any> = {
-    paragraph: Paragraph,
-    heading: Heading,
-    text: TextBlock,
-    bold: Bold,
-    italic: Italic,
-    strike: Strike,
-    underline: Underline,
-    bulletList: BulletList,
-    orderedList: OrderedList,
-    listItem: ListItem,
-    blockquote: BlockQuote,
-    codeBlock: CodeBlock,
-    hardBreak: () => <br />,
-    horizontalRule: () => <hr />,
-    dotImage: DotCMSImage
-};
+// const Blocks: Record<string, any> = {
+//     paragraph: Paragraph,
+//     heading: Heading,
+//     text: TextBlock,
+//     bold: Bold,
+//     italic: Italic,
+//     strike: Strike,
+//     underline: Underline,
+//     bulletList: BulletList,
+//     orderedList: OrderedList,
+//     listItem: ListItem,
+//     blockquote: BlockQuote,
+//     codeBlock: CodeBlock,
+//     hardBreak: () => <br />,
+//     horizontalRule: () => <hr />,
+//     dotImage: DotCMSImage
+// };
 
 type CustomRenderer = Record<string, React.FC<any>>;
 interface BlockEditorRendererProps {
@@ -190,6 +191,15 @@ const BlockEditorItem = ({
 
                     case 'dotImage':
                         return <DotCMSImage key={index} {...node.attrs} />;
+
+                    case 'dotContent':
+                        return (
+                            <DotContent
+                                key={index}
+                                {...node.attrs}
+                                customRenderers={customRenderers}
+                            />
+                        );
 
                     default:
                         return <div key={index}>Unknown Block Type: {node.type}</div>;
