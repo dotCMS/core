@@ -268,11 +268,13 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			throw new DotStateException("Content -> FileAsset Copy Failed :" + e.getMessage(), e);
 		}
 		fileAsset.setHost(con.getHost());
+		Contentlet originalContentlet = null;
 		if(UtilMethods.isSet(con.getFolder())){
 			try{
 				final Identifier ident = APILocator.getIdentifierAPI().find(con);
 				final Host host = APILocator.getHostAPI().find(con.getHost(), APILocator.systemUser() , false);
 				final Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), host, APILocator.systemUser(), false);
+				originalContentlet = APILocator.getContentletAPI().find(con.getInode(), APILocator.systemUser(), false);
 				fileAsset.setFolder(folder.getInode());
 			}catch(Exception e){
 				try{
@@ -285,7 +287,9 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		}
 
 		fileAsset.setVariantId(con.getVariantId());
-		this.contentletCache.add(fileAsset);
+		if (null != originalContentlet && !originalContentlet.isDotAsset()){
+			this.contentletCache.add(fileAsset);
+		}
 		return fileAsset;
 	}
 	
