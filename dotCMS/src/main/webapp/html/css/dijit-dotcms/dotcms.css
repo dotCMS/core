@@ -3844,7 +3844,7 @@
   color: #ffffff;
   line-height: 2.5rem;
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1rem;
 }
 .dijitDropDownActionButton .dijitButtonNode {
   height: 2.5rem;
@@ -8829,7 +8829,7 @@ Styles for commons fields along the backend
 
 .lineDividerTitle {
   color: #6c7389;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   border-bottom: 1px solid #d1d4db;
   padding-bottom: 1rem;
   margin: 3rem 0 1.5rem;
@@ -9358,7 +9358,7 @@ dd .buttonCaption {
 }
 .calendar-events .portlet-toolbar__info {
   flex: 1 0 auto;
-  font-size: 1.25rem;
+  font-size: 1rem;
   justify-content: center;
 }
 
@@ -10141,7 +10141,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .nameText {
   align-self: center;
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: normal;
 }
 
@@ -10259,7 +10259,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .fullUserName {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: bold;
   margin-bottom: 0.5rem;
   padding-bottom: 0;
@@ -11234,6 +11234,7 @@ legend,
 input,
 button,
 textarea,
+select,
 p,
 blockquote,
 th,

@@ -309,20 +309,17 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     }
 
     private createTranslatePageUrl(page: DotPage, newLanguage: number | string) {
-        const isLive = page.live;
-        const pageLiveInode = page.liveInode;
-        const iNode = page.inode;
-        const stInode = page.stInode;
-
+        const { working, workingInode, inode } = page;
+        const pageInode = working ? workingInode : inode;
         const queryParams = new URLSearchParams({
             p_p_id: 'content',
             p_p_action: '1',
             p_p_state: 'maximized',
             angularCurrentPortlet: 'edit-page',
-            _content_sibbling: isLive ? pageLiveInode : iNode,
+            _content_sibbling: pageInode,
             _content_cmd: 'edit',
             p_p_mode: 'view',
-            _content_sibblingStructure: isLive ? pageLiveInode : stInode,
+            _content_sibblingStructure: pageInode,
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             inode: '',
             lang: newLanguage.toString(),
