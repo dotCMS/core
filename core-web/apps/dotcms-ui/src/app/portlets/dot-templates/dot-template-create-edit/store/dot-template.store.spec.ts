@@ -204,7 +204,8 @@ describe('DotTemplateStore', () => {
             const state = {
                 original: template,
                 working: template,
-                apiLink: ''
+                apiLink: '',
+                didTemplateChanged: false
             };
 
             service.vm$.subscribe((res) => {
@@ -296,7 +297,8 @@ describe('DotTemplateStore', () => {
             const state = {
                 original: template,
                 working: template,
-                apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working'
+                apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working',
+                didTemplateChanged: false
             };
 
             service.vm$.subscribe((res) => {

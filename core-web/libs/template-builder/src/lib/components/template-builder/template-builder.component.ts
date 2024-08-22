@@ -250,7 +250,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 opacity: '1'
             };
             this.cd.detectChanges();
-        }, 250);
+        }, 350);
 
         this.grid = GridStack.init(gridOptions).on('change', (_: Event, nodes: GridStackNode[]) => {
             this.store.moveRow(nodes as DotGridStackWidget[]);

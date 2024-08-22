@@ -30,7 +30,7 @@ import { isEqual } from '@dotcms/utils';
 
 type DotTemplateType = 'design' | 'advanced';
 
-interface DotTemplateItemDesign {
+export interface DotTemplateItemDesign {
     containers?: DotContainerMap;
     drawed?: boolean;
     friendlyName: string;
@@ -60,6 +60,10 @@ export interface DotTemplateState {
     original: DotTemplateItem;
     working: DotTemplateItem;
     apiLink: string;
+}
+
+export interface VM extends DotTemplateState {
+    didTemplateChanged: boolean;
 }
 
 const EMPTY_TEMPLATE = {
@@ -96,11 +100,12 @@ export const EMPTY_TEMPLATE_ADVANCED: DotTemplateItemadvanced = {
 
 @Injectable()
 export class DotTemplateStore extends ComponentStore<DotTemplateState> {
-    readonly vm$ = this.select(({ working, original, apiLink }: DotTemplateState) => {
+    readonly vm$ = this.select<VM>(({ working, original, apiLink }: DotTemplateState): VM => {
         return {
             working,
             original,
-            apiLink
+            apiLink,
+            didTemplateChanged: !isEqual(working, original)
         };
     });
 

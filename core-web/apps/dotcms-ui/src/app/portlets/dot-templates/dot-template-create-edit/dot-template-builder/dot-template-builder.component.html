@@ -2,23 +2,30 @@
     <p-tabPanel
         [header]="item.type === 'advanced' ? ('code' | dm) : ('design' | dm)"
         data-testId="builder">
-        <ng-container *ngIf="item.type === 'advanced'; else elseBlock">
-            <dot-template-advanced
-                (updateTemplate)="updateTemplate.emit($event)"
-                (save)="save.emit($event)"
-                (cancel)="cancel.emit()"
-                [didTemplateChanged]="didTemplateChanged"
-                [body]="item.body"></dot-template-advanced>
-        </ng-container>
-        <ng-template #elseBlock>
-            <dotcms-template-builder-lib
-                (templateChange)="onTemplateItemChange($event)"
-                [layout]="item.layout"
-                [template]="{ themeId: item.theme ?? item.themeId, identifier: item.identifier }"
-                [containerMap]="item.containers"
-                data-testId="new-template-builder">
-                <dot-global-message toolbar-left></dot-global-message>
-            </dotcms-template-builder-lib>
+        <ng-template pTemplate="content">
+            @switch (item.type) {
+                @case ('advanced') {
+                    <dot-template-advanced
+                        (updateTemplate)="updateTemplate.emit($event)"
+                        (save)="save.emit($event)"
+                        (cancel)="cancel.emit()"
+                        [didTemplateChanged]="didTemplateChanged"
+                        [body]="item.body"></dot-template-advanced>
+                }
+                @case ('design') {
+                    <dotcms-template-builder-lib
+                        (templateChange)="onTemplateItemChange($event)"
+                        [layout]="item.layout"
+                        [template]="{
+                            themeId: item.theme ?? item.themeId,
+                            identifier: item.identifier
+                        }"
+                        [containerMap]="item.containers"
+                        data-testId="new-template-builder">
+                        <dot-global-message toolbar-left></dot-global-message>
+                    </dotcms-template-builder-lib>
+                }
+            }
         </ng-template>
     </p-tabPanel>
     <p-tabPanel [header]="'Permissions' | dm">
