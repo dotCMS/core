@@ -94,7 +94,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                 }
                 newOffset += limit;
 
-                for(final ContentletSearch row : searchResults){
+                for(final ContentletSearch row : searchResults) {
                     final String esId = row.getId();
                     final Builder dto = new EmbeddingsDTO.Builder().withIdentifier(row.getIdentifier());
 
@@ -152,7 +152,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             return false;
         }
 
-        OpenAIThreadPool.submit(new EmbeddingsRunner(this, contentlet, content.get(), indexName));
+        EmbeddingsCallStrategy.resolveStrategy().embed(this, contentlet, content.get(), indexName);
 
         return true;
     }
@@ -303,7 +303,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
     @Override
     @WrapInTransaction
     public void initEmbeddingsTable() {
-        EmbeddingsFactory.impl.get();
+        EmbeddingsFactory.impl.get().initVector();
     }
 
     @WrapInTransaction

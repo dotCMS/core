@@ -70,7 +70,7 @@ class EmbeddingsRunner implements Runnable {
                 if (totalTokens < splitAtTokens) {
                     buffer.append(sentence.trim()).append(" ");
                 } else {
-                    save(buffer);
+                    saveEmbedding(buffer.toString());
                     buffer.setLength(0);
                     buffer.append(sentence.trim()).append(" ");
                     totalTokens = tokenCount;
@@ -78,7 +78,7 @@ class EmbeddingsRunner implements Runnable {
             }
 
             if (buffer.toString().split("\\s+").length > 0) {
-                save(buffer);
+                saveEmbedding(buffer.toString());
             }
         } catch (Exception e) {
             if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
@@ -89,18 +89,13 @@ class EmbeddingsRunner implements Runnable {
         }
     }
 
-    private void save(StringBuilder buffer) {
-        saveEmbedding(buffer.toString().trim(), contentlet, indexName);
-    }
-
-    private void saveEmbedding(@NotNull final String content,
-                               @NotNull final Contentlet contentlet,
-                               final String indexName) {
-        if (UtilMethods.isEmpty(content)) {
+    private void saveEmbedding(@NotNull final String initial) {
+        if (UtilMethods.isEmpty(initial)) {
             return;
         }
 
-        if (embeddingsAPI.embeddingExists(contentlet.getInode(), indexName, content)) {
+        final String normalizedContent = initial.trim();
+        if (embeddingsAPI.embeddingExists(contentlet.getInode(), indexName, normalizedContent)) {
             Logger.info(
                     this.getClass(),
                     "embedding already exists for content:"
@@ -110,9 +105,9 @@ class EmbeddingsRunner implements Runnable {
             return;
         }
 
-        final Tuple2<Integer, List<Float>> embeddings = embeddingsAPI.pullOrGenerateEmbeddings(content);
+        final Tuple2<Integer, List<Float>> embeddings = embeddingsAPI.pullOrGenerateEmbeddings(normalizedContent);
         if (embeddings._2.isEmpty()) {
-            Logger.info(this.getClass(), "NO TOKENS for " + contentlet.getContentType().variable() + " content:" + content);
+            Logger.info(this.getClass(), "NO TOKENS for " + contentlet.getContentType().variable() + " content:" + normalizedContent);
             return;
         }
 
@@ -124,7 +119,7 @@ class EmbeddingsRunner implements Runnable {
                 .withTitle(contentlet.getTitle())
                 .withIdentifier(contentlet.getIdentifier())
                 .withHost(contentlet.getHost())
-                .withExtractedText(content)
+                .withExtractedText(normalizedContent)
                 .withIndexName(indexName)
                 .withEmbeddings(embeddings._2).build();
 
