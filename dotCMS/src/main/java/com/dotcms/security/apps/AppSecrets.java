@@ -20,7 +20,7 @@ public class AppSecrets implements Serializable {
 
     @JsonCreator
     private AppSecrets(@JsonProperty("key") final String key,
-            @JsonProperty("secrets") final Map<String, Secret> secrets) {
+                       @JsonProperty("secrets") final Map<String, Secret> secrets) {
         this.key = key;
         this.secrets = null == secrets ? new HashMap<>() : secrets ;
     }
@@ -48,7 +48,7 @@ public class AppSecrets implements Serializable {
             return false;
         }
         final AppSecrets that = (AppSecrets) object;
-        return key.equals(that.key) && this.secrets.equals(that.secrets); //areEqual(this.secrets, that.secrets);
+        return key.equals(that.key) && this.secrets.equals(that.secrets);
     }
 
     public static Builder builder(){
@@ -62,7 +62,7 @@ public class AppSecrets implements Serializable {
 
     public static class Builder {
 
-        private final Map<String,Secret> secretMap = new HashMap<>();
+        private final Map<String, Secret> secretMap = new HashMap<>();
         private String key;
 
         public AppSecrets build(){
@@ -107,6 +107,11 @@ public class AppSecrets implements Serializable {
             return withSecret(name, String.valueOf(value));
         }
 
+        public Builder withSecrets(final Map<String, Secret> secrets) {
+            secretMap.putAll(secrets);
+            return this;
+        }
+
     }
 
     /**
@@ -115,16 +120,16 @@ public class AppSecrets implements Serializable {
      * @return
      */
     public static AppSecrets empty(){
-      return new Builder().build();
+        return new Builder().build();
     }
 
     @Override
     public String toString() {
         final List<String> stringsList = secrets.entrySet().stream()
                 .map(entry -> {
-                   final String name = entry.getKey();
-                   final Secret secret = entry.getValue();
-                   return "{ name: " + name + " , type: " + secret.getType() + ", hidden: " + secret.isHidden() + "}";
+                    final String name = entry.getKey();
+                    final Secret secret = entry.getValue();
+                    return "{ name: " + name + " , type: " + secret.getType() + ", hidden: " + secret.isHidden() + "}";
                 }).collect(Collectors.toList());
 
         return String.format("AppSecrets{key= `%s` secrets=`%s` }",key, stringsList);

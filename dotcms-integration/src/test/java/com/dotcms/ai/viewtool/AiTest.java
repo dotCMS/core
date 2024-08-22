@@ -60,7 +60,7 @@ public interface AiTest {
         return Map.copyOf(all);
     }
 
-    private static Map<String, Secret> appConfigMap(final WireMockServer wireMockServer) {
+    static Map<String, Secret> appConfigMap(final WireMockServer wireMockServer) {
         return Map.of(
                 AppKeys.API_URL.key,
                 Secret.builder()
@@ -84,6 +84,12 @@ public interface AiTest {
                 Secret.builder().withType(Type.STRING).withValue(IMAGE_MODEL.toCharArray()).build(),
 
                 AppKeys.IMAGE_SIZE.key,
-                Secret.builder().withType(Type.SELECT).withValue(IMAGE_SIZE.toCharArray()).build());
+                Secret.builder().withType(Type.SELECT).withValue(IMAGE_SIZE.toCharArray()).build(),
+
+                AppKeys.LISTENER_INDEXER.key,
+                Secret.builder()
+                        .withType(Type.STRING)
+                        .withValue("{\"default\":\"blog\"}".toCharArray())
+                        .build());
     }
 }

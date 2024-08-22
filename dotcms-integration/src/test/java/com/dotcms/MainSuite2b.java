@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.ai.listener.EmbeddingContentListenerTest;
 import com.dotcms.ai.viewtool.AIViewToolTest;
 import com.dotcms.ai.viewtool.CompletionsToolTest;
 import com.dotcms.ai.viewtool.EmbeddingsToolTest;
@@ -296,7 +297,8 @@ import org.junit.runners.Suite.SuiteClasses;
         AIViewToolTest.class,
         SearchToolTest.class,
         EmbeddingsToolTest.class,
-        CompletionsToolTest.class
+        CompletionsToolTest.class,
+        EmbeddingContentListenerTest.class
 })
 
 public class MainSuite2b {

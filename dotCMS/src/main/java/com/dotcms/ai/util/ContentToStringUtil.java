@@ -16,6 +16,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.felix.framework.OSGISystem;
@@ -145,7 +146,7 @@ public class ContentToStringUtil {
 
     public List<Field> guessWhatFieldsToIndex(@NotNull Contentlet contentlet) {
 
-        List<Field> embedMe = new ArrayList<>();
+        final List<Field> embedMe = new ArrayList<>();
         if (contentlet.isFileAsset()) {
             File fileAsset = Try.of(() -> contentlet.getBinary("fileAsset")).getOrNull();
             if (shouldIndex(fileAsset)) {
@@ -168,8 +169,7 @@ public class ContentToStringUtil {
         contentlet.getContentType()
                 .fields()
                 .stream().filter(f -> !ignoreUrlMapFields.contains("{" + f.variable() + "}"))
-                .filter(f -> f instanceof StoryBlockField || f instanceof WysiwygField || f instanceof BinaryField ||  f instanceof TextAreaField || f instanceof FileField)
-                .forEach(embedMe::add);
+                .filter(f -> f instanceof StoryBlockField || f instanceof WysiwygField || f instanceof BinaryField ||  f instanceof TextAreaField || f instanceof FileField);
 
         if (!embedMe.isEmpty()) {
             return embedMe;

@@ -248,6 +248,16 @@ public class TestDataUtils {
                                 .type(DateField.class)
                                 .next()
                 );
+                fields.add(
+                        new FieldDataGen()
+                                .name("seo")
+                                .velocityVarName("seo")
+                                .defaultValue(null)
+                                .dataType(DataTypes.LONG_TEXT)
+                                .searchable(true)
+                                .indexed(true)
+                                .next()
+                );
 
                 //Category field
                 final Collection<Category> topLevelCategories = APILocator.getCategoryAPI()
@@ -1239,6 +1249,23 @@ public class TestDataUtils {
         }
     }
 
+    public static Contentlet withEmbeddings(final boolean persist,
+                                            final long languageId,
+                                            final String contentTypeId,
+                                            final String text) {
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
+                .languageId(languageId)
+                .setProperty("title", "blogContent")
+                .setProperty("urlTitle", "blogContent")
+                .setProperty("author", "systemUser")
+                .setProperty("sysPublishDate", new Date())
+                .setProperty("body", "blogBody")
+                .setProperty("seo", text);
+
+        return getBlogContent(persist, null, contentletDataGen);
+    }
+
     public static Contentlet getBlogContent(Boolean persist, long languageId) {
         return getBlogContent(persist, languageId, null, null);
     }
@@ -1262,6 +1289,12 @@ public class TestDataUtils {
                 .setProperty("author", "systemUser")
                 .setProperty("sysPublishDate", new Date())
                 .setProperty("body", "blogBody");
+        return getBlogContent(persist, site, contentletDataGen);
+    }
+
+    public static Contentlet getBlogContent(final boolean persist,
+                                            final Host site,
+                                            ContentletDataGen contentletDataGen) {
 
         if (null != site) {
             contentletDataGen = contentletDataGen.host(site)

@@ -45,3 +45,4 @@ This maintenance release includes the following code fixes:
 39. https://github.com/dotCMS/core/issues/27959 : Integration tests for AI Viewtools #27959
 40. https://github.com/dotCMS/core/pull/28781
 41. https://github.com/dotCMS/core/issues/28719 : Write Postman Tests for Generative AI Endpoints #28719
+42. https://github.com/dotCMS/core/issues/28770 : dotAI: register EmbeddingContentListener #28770
