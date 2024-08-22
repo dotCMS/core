@@ -41,6 +41,12 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
     .p-dropdown-label {
         padding-right: $spacing-1;
         @include truncate-text;
+
+        &:focus,
+        &:enabled:focus {
+            outline: 0 none;
+            box-shadow: none;
+        }
     }
 
     &:has(.p-dropdown-clear-icon) {
