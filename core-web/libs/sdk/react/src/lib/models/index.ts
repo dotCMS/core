@@ -96,7 +96,7 @@ export interface ContentNode<T = Record<string, string>> {
     text?: string;
 }
 
-interface Mark {
+export interface Mark {
     type: string;
     attrs: Record<string, string>;
 }
