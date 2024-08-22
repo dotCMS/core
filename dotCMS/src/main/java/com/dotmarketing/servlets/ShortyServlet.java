@@ -521,8 +521,10 @@ public class ShortyServlet extends HttpServlet {
                 final String inode = live ? contentletVersionInfo.get().getLiveInode()
                         : contentletVersionInfo.get().getWorkingInode();
 
-                final Contentlet  imageContentlet = APILocator.getContentletAPI()
+                final Contentlet imageContentlet = APILocator.getContentletAPI()
                         .find(inode, APILocator.systemUser(), false);
+
+                validateContentlet(imageContentlet, live, inode);
 
                 final String fieldVar = imageContentlet.isDotAsset() ?
                         DotAssetContentType.ASSET_FIELD_VAR : FILE_ASSET_DEFAULT;
@@ -536,6 +538,12 @@ public class ShortyServlet extends HttpServlet {
                 .append(StringPool.FORWARD_SLASH).append(field.variable()).toString();
     }
 
+    private void validateContentlet(Contentlet contentlet, boolean live, String inode) throws DotDataException {
+        if (contentlet == null) {
+            String versionType = live ? PageMode.LIVE.name() : PageMode.WORKING.name();
+            throw new DotDataException(String.format("No contentlet found for %s inode %s", versionType, inode));
+        }
+    }
 
     protected final Optional<Field> resolveField(final Contentlet contentlet, final String tryField) {
 
