@@ -6,19 +6,13 @@
 package com.dotmarketing.util;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.system.logger.ChangeLoggerLevelEvent;
-import com.dotcms.rest.api.v1.system.logger.LoggerView;
-import com.dotmarketing.business.APILocator;
 import com.liferay.util.StringPool;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -26,7 +20,6 @@ import org.apache.velocity.servlet.VelocityServlet;
 import org.apache.velocity.tools.view.tools.ViewTool;
 import com.dotcms.business.expiring.ExpiringMap;
 import com.dotcms.business.expiring.ExpiringMapBuilder;
-import com.dotmarketing.loggers.Log4jUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
@@ -35,16 +28,10 @@ import com.google.common.base.Objects;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
-import javax.ws.rs.core.Response;
-
 /**
  * @author David Torres
  */
 public class Logger {
-
-    static {
-        Log4jUtil.configureDefaultSystemProperties();
-    }
 
     /**
      * Caffeine Cache is going to be much more performant concurrently than a hashmap
