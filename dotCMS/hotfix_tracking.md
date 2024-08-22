@@ -48,3 +48,4 @@ This maintenance release includes the following code fixes:
 42. https://github.com/dotCMS/core/issues/28770 : dotAI: register EmbeddingContentListener #28770
 43. https://github.com/dotCMS/core/pull/28929 : Fixing issues detected by Sonar #28929
 44. https://github.com/dotCMS/core/issues/28721 : Write Postman Tests for Embeddings AI Endpoints #28721
+45. https://github.com/dotCMS/core/issues/28720 : Write Postman Tests for Search AI Endpoints #28720

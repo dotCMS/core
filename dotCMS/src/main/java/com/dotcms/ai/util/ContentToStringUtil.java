@@ -229,7 +229,7 @@ public class ContentToStringUtil {
             return Optional.empty();
         }
 
-        return Optional.of(builder.toString());
+        return Optional.of(builder.toString().trim());
     }
 
     private Optional<String> parseField(@NotNull Contentlet contentlet, @NotNull Field field) {

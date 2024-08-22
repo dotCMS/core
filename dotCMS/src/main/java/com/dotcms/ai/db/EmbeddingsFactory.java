@@ -326,7 +326,7 @@ public class EmbeddingsFactory {
      * @param dto the DTO to get parameters from
      * @return a list of parameters
      */
-    List<Object> appendParams(final StringBuilder sql, final EmbeddingsDTO dto) {
+    private List<Object> appendParams(final StringBuilder sql, final EmbeddingsDTO dto) {
         final List<Object> params = new ArrayList<>();
 
         appendParam(sql, UtilMethods::isSet, params, INODE_KEY, EQUALS_OPERATOR, null, dto.inode);
@@ -335,9 +335,12 @@ public class EmbeddingsFactory {
         appendParams(sql, params, INODE_KEY, NOT_EQUALS_OPERATOR, null, dto.excludeInodes);
         appendParam(sql, lang -> lang > 0, params, "language", EQUALS_OPERATOR, null, dto.language);
 
-        if (UtilMethods.isSet(dto.contentType)) {
+        if (UtilMethods.isSet(dto.contentType) && dto.contentType.length > 0) {
             sql.append(" and ( false ");
-            appendParams(sql, params, "lower(content_type)", EQUALS_OPERATOR, LOWER_FN, dto.contentType);
+            Arrays.stream(dto.contentType).forEach(ct -> {
+                sql.append(" OR lower(content_type)=lower(?)");
+                params.add(ct);
+            });
             sql.append(") ") ;
         }
 

@@ -5,6 +5,7 @@ import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.ContentToStringUtil;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.beans.Host;
@@ -186,7 +187,8 @@ public class SearchResource {
         final String identifier = json.optString(AiKeys.IDENTIFIER);
         final long language = json.optLong(AiKeys.LANGUAGE, APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
-        final User user = new WebResource.InitBuilder(request, response).requiredBackendUser(true)
+        final User user = new WebResource.InitBuilder(request, response)
+                .requiredBackendUser(true)
                 .requiredFrontendUser(true)
                 .init()
                 .getUser();
@@ -203,11 +205,9 @@ public class SearchResource {
                                 user,
                                 true);
 
-        if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
-            Logger.warn(
-                    this.getClass(),
-                    "unable to find matching contentlet for id:" + identifier + " inode:" + inode + " language:" + language);
-            return Response.status(404).build();
+        if (!UtilMethods.isSet(contentlet) || UtilMethods.isEmpty(contentlet::getIdentifier)) {
+            Logger.warn(this.getClass(), getFailMessage(identifier, inode, language));
+            throw new NotFoundInDbException("contentlet not found");
         }
 
         final Field fieldToTry = contentlet.getContentType().fieldMap().get(fieldVar);
@@ -220,7 +220,7 @@ public class SearchResource {
             Logger.warn(
                     this.getClass(),
                     "unable to find matching content for id:" + identifier + " inode:" + inode + " language:" + language);
-            return Response.status(404).build();
+            throw new NotFoundInDbException("content not found");
         }
 
         final EmbeddingsDTO searcher = new EmbeddingsDTO.Builder()
@@ -234,6 +234,10 @@ public class SearchResource {
         return Response
                 .ok(EmbeddingsAPI.impl(host).searchForContent(searcher).toString(), MediaType.APPLICATION_JSON)
                 .build();
+    }
+
+    private static String getFailMessage(final String identifier, final String inode, final long language) {
+        return "unable to find matching contentlet for id:" + identifier + " inode:" + inode + " language:" + language;
     }
 
 }
