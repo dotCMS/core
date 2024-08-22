@@ -29,14 +29,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import javax.servlet.ServletContext;
-
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import org.apache.commons.io.FileUtils;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.felix.main.AutoProcessor;
 import org.apache.felix.main.Main;
-import org.apache.poi.ss.formula.functions.T;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -50,8 +47,7 @@ import org.osgi.framework.launch.Framework;
 public class OSGIUtil {
 
     //List of jar prefixes of the jars to be included in the osgi-extra-generated.conf file
-    private List<String> dotCMSJarPrefixes = ImmutableList
-            .copyOf(CollectionsUtils.list("dotcms", "ee-"));
+    private List<String> dotCMSJarPrefixes = ImmutableList.of("dotcms", "ee-");
 
     private static final String WEB_INF_FOLDER = "/WEB-INF";
     private static final String FELIX_BASE_DIR = "felix.base.dir";
@@ -72,20 +68,20 @@ public class OSGIUtil {
     private String FELIX_EXTRA_PACKAGES_FILE_GENERATED;
     public String FELIX_EXTRA_PACKAGES_FILE;
 
-    private static OSGIUtil instance;
-
     public static OSGIUtil getInstance() {
-        if (instance == null) {
-            instance = new OSGIUtil();
-        }
-        return instance;
+        return OSGIUtilHolder.instance;
+    }
+
+    private static class OSGIUtilHolder{
+        private static OSGIUtil instance = new OSGIUtil();
     }
 
     private OSGIUtil () {
+        this.servletContext = Config.CONTEXT;
     }
 
     private Framework felixFramework;
-    private ServletContext servletContext;
+    final private ServletContext servletContext;
 
     /**
      * Initializes the OSGi framework
@@ -93,11 +89,9 @@ public class OSGIUtil {
      * @return Framework
      */
     public Framework initializeFramework() {
-        if (servletContext != null) {
-            return initializeFramework(servletContext);
-        }
 
-        throw new IllegalArgumentException("In order to initialize the OSGI framework a ServletContextEvent must be set.");
+        return initializeFramework(servletContext);
+
     }
 
     /**
@@ -125,7 +119,7 @@ public class OSGIUtil {
         felixProps.put("felix.fileinstall.log.level", "3");
         felixProps.put("org.osgi.framework.startlevel.beginning", "2");
         felixProps.put("org.osgi.framework.storage.clean", "onFirstInit");
-        felixProps.put("felix.log.level", "4");
+        felixProps.put("felix.log.level", "3");
         felixProps.put("felix.fileinstall.disableNio2", "true");
         felixProps.put("gosh.args", "--noi");
 
@@ -143,11 +137,12 @@ public class OSGIUtil {
      * @param context The servlet context
      * @return Framework
      */
-    public Framework initializeFramework(ServletContext context) {
+    public synchronized Framework initializeFramework(ServletContext context) {
 
+        if(felixFramework!=null) {
+            return felixFramework;
+        }
         long start = System.currentTimeMillis();
-
-        servletContext = context;
 
         if (null == Config.CONTEXT) {
             Config.setMyApp(servletContext);
@@ -206,8 +201,12 @@ public class OSGIUtil {
 
             // Start the framework.
             felixFramework.start();
+
+            startProxyServlet() ;
+
             Logger.info(this, () -> "osgi felix framework started");
         } catch (Exception ex) {
+            felixFramework=null;
             Logger.error(this, "Could not create framework: " + ex);
             throw new RuntimeException(ex);
         }
@@ -217,6 +216,32 @@ public class OSGIUtil {
                 String.valueOf(System.currentTimeMillis() - start));
 
         return felixFramework;
+    }
+
+    private boolean startProxyServlet() {
+        if (Config.getBooleanProperty("felix.felix.enable.osgi.proxyservlet", false)) {
+            if (OSGIProxyServlet.bundleContext == null) {
+
+                final Object bundleContext = servletContext.getAttribute(BundleContext.class.getName());
+                if (bundleContext instanceof BundleContext) {
+
+                    OSGIProxyServlet.bundleContext = (BundleContext) bundleContext;
+
+                    try {
+                        OSGIProxyServlet.tracker = new DispatcherTracker(OSGIProxyServlet.bundleContext, null,
+                                OSGIProxyServlet.servletConfig);
+                        OSGIProxyServlet.tracker.open();
+                    } catch (Exception e) {
+                        Logger.error(OSGIUtil.class, "Error loading HttpService.", e);
+                        return false;
+                    }
+
+
+                }
+            }
+        }
+        return true;
+
     }
 
     /**
@@ -277,11 +302,13 @@ public class OSGIUtil {
             }
         } catch (Exception e) {
             Logger.warn(this, "Error while stopping felix!", e);
+        } finally {
+            felixFramework = null;
         }
     }
 
     public Boolean isInitialized() {
-        return null != felixFramework && felixFramework.getState() == Bundle.ACTIVE;
+        return null != felixFramework ;
     }
 
     /**
@@ -674,3 +701,4 @@ public class OSGIUtil {
     }
 
 }
+

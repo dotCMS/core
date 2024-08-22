@@ -68,6 +68,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.felix.framework.OSGIUtil;
 import org.apache.felix.framework.OSGIUtils;
 
 /**
@@ -868,7 +869,7 @@ public class ImportExportUtil {
         }
 
         //Initializing felix
-        OSGIUtils.initializeOsgi(Config.CONTEXT);
+        OSGIUtil.getInstance().initializeFramework();
 
         //Reindexing the recently added content
         conAPI.refreshAllContent();
@@ -1741,3 +1742,4 @@ public class ImportExportUtil {
     }
 
 }
+

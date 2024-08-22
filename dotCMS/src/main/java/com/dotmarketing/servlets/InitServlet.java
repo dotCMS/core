@@ -242,7 +242,7 @@ public class InitServlet extends HttpServlet {
         System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
 
         //Initializing felix
-        OSGIUtils.initializeOsgi(config.getServletContext());
+        OSGIUtil.getInstance().initializeFramework();
 
         // Record how long it took to start us up.
         try{
@@ -435,3 +435,4 @@ public class InitServlet extends HttpServlet {
     }
 
 }
+
