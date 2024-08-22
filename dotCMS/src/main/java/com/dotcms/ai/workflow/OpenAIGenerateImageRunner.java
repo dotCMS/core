@@ -1,8 +1,7 @@
 package com.dotcms.ai.workflow;
 
-import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.api.ImageAPI;
-import com.dotcms.ai.api.OpenAIImageAPIImpl;
+import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.VelocityContextFactory;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
@@ -28,6 +27,7 @@ import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -120,15 +120,15 @@ public class OpenAIGenerateImageRunner implements Runnable {
                     .onFailure(e -> Logger.warn(OpenAIGenerateImageRunner.class, "error generating image:" + e))
                     .getOrElse(JSONObject::new);
 
-            final String tempFile = resp.optString("response");
-            if (UtilMethods.isEmpty(tempFile)) {
+            final String tempFile = resp.optString("tempFile");
+            if (UtilMethods.isEmpty(tempFile) && !new File(tempFile).exists()) {
                 Logger.warn(
                         this.getClass(),
                         "Unable to generate image for contentlet: " + workingContentlet.getTitle());
                 return;
             }
 
-            contentlet.setProperty(fieldToTry.get().variable(), tempFile);
+            contentlet.setProperty(fieldToTry.get().variable(), new File(tempFile));
         } catch (Exception e) {
             handleError(e, user);
         } finally{
