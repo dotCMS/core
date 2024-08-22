@@ -2,14 +2,15 @@
     <p-tabPanel
         [header]="item.type === 'advanced' ? ('code' | dm) : ('design' | dm)"
         data-testId="builder">
-        @if (item.type === 'advanced') {
+        <ng-container *ngIf="item.type === 'advanced'; else elseBlock">
             <dot-template-advanced
                 (updateTemplate)="updateTemplate.emit($event)"
                 (save)="save.emit($event)"
                 (cancel)="cancel.emit()"
                 [didTemplateChanged]="didTemplateChanged"
                 [body]="item.body"></dot-template-advanced>
-        } @else {
+        </ng-container>
+        <ng-template #elseBlock>
             <dotcms-template-builder-lib
                 (templateChange)="onTemplateItemChange($event)"
                 [layout]="item.layout"
@@ -18,7 +19,7 @@
                 data-testId="new-template-builder">
                 <dot-global-message toolbar-left></dot-global-message>
             </dotcms-template-builder-lib>
-        }
+        </ng-template>
     </p-tabPanel>
     <p-tabPanel [header]="'Permissions' | dm">
         <ng-template pTemplate="content">
