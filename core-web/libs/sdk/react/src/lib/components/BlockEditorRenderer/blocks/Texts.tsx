@@ -1,7 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-// import { useContext } from "react";
-// import { PageContext } from "../../../contexts/PageContext";
 import { BlockProps, Mark } from '../../../models';
 
 type HeadingProps = BlockProps & { level?: string };
@@ -30,19 +27,26 @@ export const Heading = ({ level, children }: HeadingProps) => {
 };
 
 const nodeMarks: Record<string, React.FC<BlockProps | LinkProps | HeadingProps>> = {
-  link: Link,
-  bold: Bold,
-  underline: Underline,
-  italic: Italic,
-  strike: Strike
+    link: Link,
+    bold: Bold,
+    underline: Underline,
+    italic: Italic,
+    strike: Strike
 };
 
+//TODO: Type this later
 export const TextBlock = (props: any) => {
     const { marks = [], text } = props;
     const mark = marks[0] || { type: '', attrs: {} };
     const newProps = { ...props, marks: marks.slice(1) };
     const Component = nodeMarks[mark?.type];
-    
+
+    // To avoid the warning: "Warning: Invalid DOM property `class`. Did you mean `className`?"
+    if (mark.attrs) {
+        mark.attrs.className = mark.attrs.class;
+        delete mark.attrs.class;
+    }
+
     if (!Component) {
         return text;
     }

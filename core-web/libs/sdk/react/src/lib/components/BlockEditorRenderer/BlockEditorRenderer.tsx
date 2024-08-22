@@ -4,7 +4,21 @@ import { DotCMSImage } from './blocks/Image';
 import { BulletList, ListItem, OrderedList } from './blocks/Lists';
 import { Bold, Heading, Italic, Paragraph, Strike, TextBlock, Underline } from './blocks/Texts';
 
-//TODO: Uncomment later
+//TODO: Move this to models later
+interface Mark {
+    type: string;
+    attrs: Record<string, string>;
+}
+
+export interface ContentNode<T = Record<string, string>> {
+    type: string;
+    content: ContentNode[];
+    attrs?: T;
+    marks?: Mark[];
+    text?: string;
+}
+
+//TODO: Use this to centralize the block types
 const Blocks: Record<string, any> = {
     paragraph: Paragraph,
     heading: Heading,
@@ -19,33 +33,49 @@ const Blocks: Record<string, any> = {
     blockquote: BlockQuote,
     codeBlock: CodeBlock,
     hardBreak: () => <br />,
-    horizontalRule: () => <hr />
-    // dotImage: DotCMSImage
+    horizontalRule: () => <hr />,
+    dotImage: DotCMSImage
 };
 
+type CustomRenderer = Record<string, React.FC<any>>;
 interface BlockEditorRendererProps {
-    blocks: any;
-    customRenderers?: Record<string, React.FC>;
+    blocks: { content: ContentNode[] };
+    customRenderers?: CustomRenderer;
     className?: string;
     style?: React.CSSProperties;
 }
 
-const BlockEditorItem = ({ content, customRenderers }: { content: any; customRenderers: any }) => {
-    if (!Array.isArray(content)) {
-        console.log(content);
-        
-        return null;
-    }
-
+const BlockEditorItem = ({
+    content,
+    customRenderers
+}: {
+    content: ContentNode[];
+    customRenderers?: CustomRenderer;
+}) => {
     return (
         // eslint-disable-next-line react/jsx-no-useless-fragment
         <>
-            {content?.map((node: any, index: number) => {
+            {content?.map((node: ContentNode, index: number) => {
+                const CustomRendererComponent = customRenderers?.[node.type];
+                if (CustomRendererComponent) {
+                    return (
+                        <CustomRendererComponent key={index} {...node.attrs} content={node.content}>
+                            <BlockEditorItem
+                                content={node.content}
+                                customRenderers={customRenderers}
+                            />
+                        </CustomRendererComponent>
+                    );
+                }
+
                 switch (node.type) {
                     case 'paragraph':
                         return (
                             <Paragraph key={index}>
-                                <BlockEditorItem content={node} customRenderers={customRenderers} />
+                                <BlockEditorItem
+                                    content={node.content}
+                                    customRenderers={customRenderers}
+                                />
                             </Paragraph>
                         );
 
@@ -143,8 +173,6 @@ const BlockEditorItem = ({ content, customRenderers }: { content: any; customRen
                         );
 
                     case 'codeBlock':
-                        console.log('codeBlock node: ', node);
-
                         return (
                             <CodeBlock key={index} language={node.attrs?.language}>
                                 <BlockEditorItem
@@ -161,7 +189,7 @@ const BlockEditorItem = ({ content, customRenderers }: { content: any; customRen
                         return <hr key={index} />;
 
                     case 'dotImage':
-                        return <DotCMSImage alt="" key={index} {...node.attrs} />;
+                        return <DotCMSImage key={index} {...node.attrs} />;
 
                     default:
                         return <div key={index}>Unknown Block Type: {node.type}</div>;
@@ -171,8 +199,15 @@ const BlockEditorItem = ({ content, customRenderers }: { content: any; customRen
     );
 };
 
-export const BlockEditorRenderer = (props: BlockEditorRendererProps) => {
-    const { blocks, customRenderers } = props;
-
-    return <BlockEditorItem content={blocks.content} customRenderers={customRenderers} />;
+export const BlockEditorRenderer = ({
+    blocks,
+    customRenderers,
+    className,
+    style
+}: BlockEditorRendererProps) => {
+    return (
+        <div className={className} style={style}>
+            <BlockEditorItem content={blocks.content} customRenderers={customRenderers} />
+        </div>
+    );
 };
