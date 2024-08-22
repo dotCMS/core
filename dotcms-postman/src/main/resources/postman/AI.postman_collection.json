@@ -1,10 +1,9 @@
 {
   "info": {
-    "_postman_id": "0cc4fb1f-3947-4eb8-a7c2-65b28ff8e9e7",
+    "_postman_id": "0d99325f-2e9a-49d7-a096-6770084ffa49",
     "name": "AI",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "11174695",
-    "_collection_link": "https://codigami.postman.co/workspace/dotcms~e3711525-51bb-47dd-b4c3-2cd73fa0cecf/collection/11174695-0cc4fb1f-3947-4eb8-a7c2-65b28ff8e9e7?action=share&source=collection_link&creator=11174695"
+    "_exporter_id": "11174695"
   },
   "item": [
     {
@@ -2249,7 +2248,8 @@
                   "    pm.expect(matchedResult.contentType, 'Result must have the same content type var').equals(seoContentTypeVar);",
                   "    pm.expect(matchedResult.seo, 'Result must have the same SEO').equals(seoText);",
                   "});",
-                  ""
+                  "",
+                  "pm.collectionVariables.clear();"
                 ],
                 "type": "text/javascript",
                 "packages": {}
@@ -2330,6 +2330,1005 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Completions",
+      "item": [
+        {
+          "name": "Create Content Type - Completions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should be ok 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "const seoContentTypeId = jsonData.entity[0].id;",
+                  "pm.collectionVariables.set('seoContentTypeId', seoContentTypeId);",
+                  "const seoContentTypeVar = jsonData.entity[0].variable;",
+                  "pm.collectionVariables.set('seoContentTypeVar', seoContentTypeVar);",
+                  "",
+                  "const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]');",
+                  "const seoIndex = parseInt(pm.collectionVariables.get('seoIndex')) || 0;",
+                  "const currentSeo = seos[seoIndex];",
+                  "if (currentSeo) {",
+                  "    currentSeo.seoContentTypeId = seoContentTypeId;",
+                  "    currentSeo.seoContentTypeVar = seoContentTypeVar;",
+                  "    pm.collectionVariables.set('seoText', currentSeo.text);",
+                  "    pm.collectionVariables.set('seos', JSON.stringify(seos, null, 2));",
+                  "}",
+                  "",
+                  "console.log('seoIndex', seoIndex);",
+                  "console.log('currentSeo', JSON.stringify(currentSeo, null, 2));",
+                  "",
+                  "postman.setNextRequest('Add Field to Content Type - Completions');",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const seoIndex = parseInt(pm.collectionVariables.get('seoIndex')) || 0;",
+                  "",
+                  " if (seoIndex === 0) {",
+                  "    pm.collectionVariables.clear();",
+                  " }",
+                  " pm.collectionVariables.set('seoIndex', seoIndex);",
+                  "",
+                  "const initialSeos = [",
+                  "    {",
+                  "        id: 'streamming-music',",
+                  "        text: 'How has streaming changed the music industry and affected the way artists release and promote their music?'",
+                  "    },",
+                  "    {",
+                  "        id: 'emerging-technologies',",
+                  "        text: 'How are emerging technologies like blockchain and the Internet of Things (IoT) shaping the future of smart cities?'",
+                  "    },",
+                  "    {",
+                  "        id: 'sports-data-analytics',",
+                  "        text: 'How has data analytics transformed the strategies and performance of professional sports teams?'",
+                  "    },",
+                  "    {",
+                  "        id: 'medical-research',",
+                  "        text: 'What recent breakthroughs in medical research have the potential to significantly impact public health?'",
+                  "    }",
+                  "];",
+                  "",
+                  "const collectionSeos = pm.collectionVariables.get('seos');",
+                  "const seos = collectionSeos ? JSON.parse(collectionSeos) : initialSeos;",
+                  "pm.collectionVariables.set('seoId', seos[seoIndex].id);",
+                  "const seosJson = JSON.stringify(seos, null, 2);",
+                  "pm.collectionVariables.set('seos', seosJson);",
+                  "console.log('seos', seosJson);",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"defaultType\":false,\n    \"icon\":null,\n    \"fixed\":false,\n    \"system\":false,\n    \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\":\"\",\n    \"host\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"folder\":\"SYSTEM_FOLDER\",\n    \"name\":\"{{seoId}}-ContentType\",\n    \"systemActionMappings\":{\"NEW\":\"\"},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Field to Content Type - Completions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should be ok 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "postman.setNextRequest('Create Contentlet - Completions');"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "packages": {},
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"layout\":[\n        {\"divider\":{\n            \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"contentTypeId\":\"{{seoContentTypeId}}\",\n            \"dataType\":\"SYSTEM\",\n            \"fieldContentTypeProperties\":[],\n            \"fieldType\":\"Row\",\n            \"fieldTypeLabel\":\"Row\",\n            \"fieldVariables\":[],\n            \"fixed\":false,\n            \"iDate\":1667572217000,\n            \"indexed\":false,\n            \"listed\":false,\n            \"modDate\":1667572217000,\n            \"name\":\"Row Field\",\n            \"readOnly\":false,\n            \"required\":false,\n            \"searchable\":false,\n            \"sortOrder\":-1,\n            \"unique\":false},\n            \"columns\":[\n                {\n                    \"columnDivider\":{\n                        \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n                        \"contentTypeId\":\"{{seoContentTypeId}}\",\n                        \"dataType\":\"SYSTEM\",\n                        \"fieldContentTypeProperties\":[],\n                        \"fieldType\":\"Column\",\n                        \"fieldTypeLabel\":\"Column\",\n                        \"fieldVariables\":[],\n                        \"fixed\":false,\n                        \"iDate\":1667572217000,\n                        \"indexed\":false,\n                        \"listed\":false,\n                        \"modDate\":1667572217000,\n                        \"name\":\"Column Field\",\n                        \"readOnly\":false,\n                        \"required\":false,\n                        \"searchable\":false,\n                        \"sortOrder\":-1,\n                        \"unique\":false\n                    },\n                    \"fields\":[\n                        {\n                            \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                            \"name\":\"seo\",\n                            \"dataType\":\"TEXT\",\n                            \"regexCheck\":\"\",\n                            \"defaultValue\":\"\",\n                            \"hint\":\"\",\n                            \"required\":false,\n                            \"searchable\":false,\n                            \"indexed\":false,\n                            \"listed\":false,\n                            \"unique\":false,\n                            \"id\":null\n                        }\n                    ]\n                }\n            ]\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v3/contenttype/{{seoContentTypeId}}/fields/move",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v3",
+                "contenttype",
+                "{{seoContentTypeId}}",
+                "fields",
+                "move"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Contentlet - Completions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be ok 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]');",
+                  "",
+                  "let seoIndex = parseInt(pm.collectionVariables.get('seoIndex')) || 0;",
+                  "console.log('seoIndex', seoIndex);",
+                  "",
+                  "const currentSeo = seos[seoIndex];",
+                  "if (currentSeo) {",
+                  "    if (!currentSeo.contentlets) {",
+                  "        currentSeo.contentlets = [];",
+                  "    }",
+                  "",
+                  "    const contentlet = {};",
+                  "    contentlet.identifier = jsonData.entity.identifier;",
+                  "    contentlet.inode = jsonData.entity.inode;",
+                  "    currentSeo.contentlets.push(contentlet);",
+                  "    console.log('currentSeo', JSON.stringify(currentSeo, null, 2));",
+                  "    pm.collectionVariables.set('seos', JSON.stringify(seos, null, 2));",
+                  "}",
+                  "",
+                  "seoIndex++;",
+                  "pm.collectionVariables.set('seoIndex', seoIndex);",
+                  "console.log('New seoIndex', seoIndex);",
+                  "let nextRequest = null;",
+                  "if (seoIndex < seos.length) {",
+                  "    console.log('Continuing with next SEO');",
+                  "    nextRequest = 'Create Content Type - Completions'",
+                  "} else {",
+                  "    console.log('SEO loading done');",
+                  "    pm.collectionVariables.set('seoIndex', null);",
+                  "    pm.collectionVariables.set('seoId', null);",
+                  "    pm.collectionVariables.set('seoContentTypeId', null);",
+                  "    pm.collectionVariables.set('seoContentTypeVar', null);",
+                  "    pm.collectionVariables.set('seoText', null);",
+                  "    nextRequest = 'Create Embeddings - Completions';",
+                  "}",
+                  "postman.setNextRequest(nextRequest);",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"content_{{seoId}}\",\n        \"languageId\" : 1,\n        \"stInode\": \"{{seoContentTypeId}}\",\n        \"seo\": \"{{seoText}}\"\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workflow",
+                "actions",
+                "default",
+                "fire",
+                "PUBLISH"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Embeddings - Completions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should be ok 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]');",
+                  "let seoIndex = parseInt(pm.collectionVariables.get('seoIndex')) || 0;",
+                  "const currentSeo = seos[seoIndex];",
+                  "if (currentSeo) {",
+                  "    if (!currentSeo.embedded) {",
+                  "        currentSeo.embedded = jsonData.totalToEmbed > 0;",
+                  "    }",
+                  "    ",
+                  "    console.log('currentSeo', JSON.stringify(currentSeo, null, 2));",
+                  "    pm.collectionVariables.set('seos', JSON.stringify(seos, null, 2));",
+                  "}",
+                  "",
+                  "seoIndex++;",
+                  "pm.collectionVariables.set('seoIndex', seoIndex);",
+                  "console.log('New seoIndex', seoIndex);",
+                  "let nextRequest = null;",
+                  "if (seoIndex < seos.length) {",
+                  "    console.log('Continuing with next SEO');",
+                  "    nextRequest = 'Create Embeddings - Completions';",
+                  "} else {",
+                  "    console.log('Embeddings creation done');",
+                  "    pm.collectionVariables.set('seoIndex', null);",
+                  "    pm.collectionVariables.set('seoId', null);",
+                  "    pm.collectionVariables.set('seoContentTypeVar', null);",
+                  "    pm.collectionVariables.set('seoContentTypeId', null);",
+                  "    pm.collectionVariables.set('seoText', null);",
+                  "    nextRequest = 'Summarize from Content without prompt';",
+                  "}",
+                  "postman.setNextRequest(nextRequest);",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]') || 0;",
+                  "const seoIndex = parseInt(pm.collectionVariables.get('seoIndex')) || 0;",
+                  "const currentSeo = seos[seoIndex];",
+                  "if (currentSeo) {",
+                  "    pm.collectionVariables.set('seoContentTypeVar', currentSeo.seoContentTypeVar);",
+                  "}",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"query\": \"+contentType:{{seoContentTypeVar}}\",\n    \"fields\": \"seo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/embeddings",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "embeddings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Summarize from Content without prompt",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should be ok 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Error message is returned', function () {",
+                  "    pm.expect(jsonData.message).equals('query/prompt cannot be null');",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/completions",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "completions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Summarize from Content",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should be ok 20', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Response contains expected data', function () {",
+                  "    pm.expect(jsonData).to.have.property('timeToEmbeddings');",
+                  "    pm.expect(jsonData).to.have.property('total');",
+                  "    pm.expect(jsonData).to.have.property('query');",
+                  "    pm.expect(jsonData).to.have.property('threshold');",
+                  "    pm.expect(jsonData).to.have.property('dotCMSResults');",
+                  "    pm.expect(jsonData).to.have.property('operator');",
+                  "    pm.expect(jsonData).to.have.property('offset');",
+                  "    pm.expect(jsonData).to.have.property('limit');",
+                  "    pm.expect(jsonData).to.have.property('count');",
+                  "    pm.expect(jsonData).to.have.property('openAiResponse');",
+                  "    pm.expect(jsonData).to.have.property('totalTime');",
+                  "});",
+                  "",
+                  "pm.test('dotCMSResults has results', function () {",
+                  "    pm.expect(jsonData.dotCMSResults).to.be.an('array');",
+                  "    pm.expect(jsonData.dotCMSResults.length).greaterThan(0);",
+                  "    ",
+                  "    const result = jsonData.dotCMSResults.find(res => !!res.matches.find(match => match.distance === 0));",
+                  "    pm.expect(result).not.undefined;",
+                  "    pm.expect(result).to.have.property('hostName');",
+                  "    pm.expect(result).to.have.property('modDate');",
+                  "    pm.expect(result).to.have.property('publishDate');",
+                  "    pm.expect(result).to.have.property('title');",
+                  "    pm.expect(result).to.have.property('baseType');",
+                  "    pm.expect(result).to.have.property('inode');",
+                  "    pm.expect(result).to.have.property('archived');",
+                  "    pm.expect(result).to.have.property('ownerName');",
+                  "    pm.expect(result).to.have.property('host');",
+                  "    pm.expect(result).to.have.property('working');",
+                  "    pm.expect(result).to.have.property('seo');",
+                  "    pm.expect(result.seo).equals('How has streaming changed the music industry and affected the way artists release and promote their music?');",
+                  "    pm.expect(result).to.have.property('locked');",
+                  "    pm.expect(result).to.have.property('stInode');",
+                  "    pm.expect(result).to.have.property('contentType');",
+                  "    pm.expect(result).to.have.property('live');",
+                  "    pm.expect(result).to.have.property('owner');",
+                  "    pm.expect(result).to.have.property('identifier');",
+                  "    pm.expect(result).to.have.property('publishUserName');",
+                  "    pm.expect(result).to.have.property('publishUser');",
+                  "    pm.expect(result).to.have.property('languageId');",
+                  "    pm.expect(result).to.have.property('creationDate');",
+                  "    pm.expect(result).to.have.property('url');",
+                  "    pm.expect(result).to.have.property('titleImage');",
+                  "    pm.expect(result).to.have.property('modUserName');",
+                  "    pm.expect(result).to.have.property('hasLiveVersion');",
+                  "    pm.expect(result).to.have.property('folder');",
+                  "    pm.expect(result).to.have.property('hasTitleImage');",
+                  "    pm.expect(result).to.have.property('sortOrder');",
+                  "    pm.expect(result).to.have.property('modUser');",
+                  "    pm.expect(result).to.have.property('__icon__');",
+                  "    pm.expect(result).to.have.property('contentTypeIcon');",
+                  "    pm.expect(result).to.have.property('variant');",
+                  "    pm.expect(result).to.have.property('matches');",
+                  "});",
+                  "",
+                  "// Check if openAiResponse contains specific keys",
+                  "pm.test('openAiResponse contains specific keys', function () {",
+                  "    pm.expect(jsonData.openAiResponse).to.have.property('id');",
+                  "    pm.expect(jsonData.openAiResponse).to.have.property('object');",
+                  "    pm.expect(jsonData.openAiResponse).to.have.property('created');",
+                  "    pm.expect(jsonData.openAiResponse).to.have.property('model');",
+                  "    pm.expect(jsonData.openAiResponse).to.have.property('choices');",
+                  "    pm.expect(jsonData.openAiResponse).to.have.property('usage');",
+                  "    pm.expect(jsonData.openAiResponse).to.have.property('system_fingerprint');",
+                  "});",
+                  "",
+                  "pm.test('Each item in openAiResponse.choices contains specific keys', function () {",
+                  "    pm.expect(jsonData.openAiResponse.choices).to.be.an('array');",
+                  "    jsonData.openAiResponse.choices.forEach(function(choice) {",
+                  "        pm.expect(choice).to.have.property('index');",
+                  "        pm.expect(choice).to.have.property('message');",
+                  "        pm.expect(choice).to.have.property('logprobs');",
+                  "        pm.expect(choice).to.have.property('finish_reason');",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test('usage contains specific keys', function () {",
+                  "    pm.expect(jsonData.openAiResponse.usage).to.have.property('prompt_tokens');",
+                  "    pm.expect(jsonData.openAiResponse.usage).to.have.property('completion_tokens');",
+                  "    pm.expect(jsonData.openAiResponse.usage).to.have.property('total_tokens');",
+                  "});",
+                  "",
+                  "pm.test('query matches expected value', function () {",
+                  "    pm.expect(jsonData.query).to.equal('How has streaming changed the music industry and affected the way artists release and promote their music?');",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const seos = JSON.parse(pm.collectionVariables.get('seos'));",
+                  "pm.collectionVariables.set('seoText', seos[0].text);",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"responseLengthTokens\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/completions",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "completions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Summarize from Content Stream",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should be ok 20', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const seos = JSON.parse(pm.collectionVariables.get('seos'));",
+                  "pm.collectionVariables.set('seoText', seos[1].text);",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"responseLengthTokens\": 1,\n    \"stream\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/completions",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "completions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Raw Prompt",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should be ok 20', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response contains expected data\", function () {",
+                  "    pm.expect(jsonData).to.have.property(\"id\");",
+                  "    pm.expect(jsonData).to.have.property(\"object\");",
+                  "    pm.expect(jsonData).to.have.property(\"created\");",
+                  "    pm.expect(jsonData).to.have.property(\"model\");",
+                  "    pm.expect(jsonData).to.have.property(\"choices\");",
+                  "    pm.expect(jsonData).to.have.property(\"usage\");",
+                  "    pm.expect(jsonData).to.have.property(\"system_fingerprint\");",
+                  "    pm.expect(jsonData).to.have.property(\"totalTime\");",
+                  "    pm.expect(parseInt(jsonData.totalTime.replace(\"ms\", \"\"))).to.be.below(400000);",
+                  "    pm.expect(jsonData.model).to.equal(\"gpt-3.5-turbo-16k-0613\");",
+                  "    pm.expect(jsonData.choices[0].message.content).to.equal(\"Data\");",
+                  "});",
+                  "",
+                  "pm.test(\"Each item in choices contains specific keys\", function () {",
+                  "    pm.expect(jsonData.choices).to.be.an(\"array\");",
+                  "    jsonData.choices.forEach(function(choice) {",
+                  "        pm.expect(choice).to.have.property(\"index\");",
+                  "        pm.expect(choice).to.have.property(\"message\");",
+                  "        pm.expect(choice).to.have.property(\"logprobs\");",
+                  "        pm.expect(choice).to.have.property(\"finish_reason\");",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test(\"message contains role and content\", function () {",
+                  "    jsonData.choices.forEach(function(choice) {",
+                  "        pm.expect(choice.message).to.have.property(\"role\");",
+                  "        pm.expect(choice.message).to.have.property(\"content\");",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test(\"usage contains specific keys\", function () {",
+                  "    pm.expect(jsonData.usage).to.have.property(\"prompt_tokens\");",
+                  "    pm.expect(jsonData.usage).to.have.property(\"completion_tokens\");",
+                  "    pm.expect(jsonData.usage).to.have.property(\"total_tokens\");",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const seos = JSON.parse(pm.collectionVariables.get('seos'));",
+                  "pm.collectionVariables.set('seoText', seos[2].text);",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"responseLengthTokens\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/completions/rawPrompt",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "completions",
+                "rawPrompt"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Raw Prompt Stream",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should be ok 20', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains expected data\", function () {",
+                  "    pm.expect(pm.response.body).not.equals('')",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const seos = JSON.parse(pm.collectionVariables.get('seos'));",
+                  "pm.collectionVariables.set('seoText', seos[3].text);",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"responseLengthTokens\": 1,\n    \"stream\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/completions/rawPrompt",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "completions",
+                "rawPrompt"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Config",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response contains properties\", function () {",
+                  "    pm.expect(jsonData).to.have.property(\"apiImageUrl\");",
+                  "    pm.expect(jsonData).to.have.property(\"apiKey\");",
+                  "    pm.expect(jsonData).to.have.property(\"apiUrl\");",
+                  "    pm.expect(jsonData).to.have.property(\"availableModels\");",
+                  "    pm.expect(jsonData.availableModels).to.be.an(\"array\");",
+                  "    const expectedModels = [\"gpt-3.5-turbo\", \"gpt-3.5-turbo-16k\", \"gpt-4\", \"gpt-4-1106-preview\", \"gpt-4-turbo-preview\"];",
+                  "    expectedModels.forEach(function(model) {",
+                  "        pm.expect(jsonData.availableModels).to.include(model);",
+                  "    });",
+                  "    pm.expect(jsonData[\"com.dotcms.ai.completion.default.temperature\"]).to.equal(\"1\");",
+                  "    pm.expect(jsonData[\"com.dotcms.ai.debug.logging\"]).to.equal(\"false\");",
+                  "    pm.expect(jsonData[\"com.dotcms.ai.embeddings.model\"]).to.equal(\"text-embedding-ada-002\");",
+                  "    pm.expect(jsonData.imageModel).to.equal(\"dall-e-3\");",
+                  "    pm.expect(jsonData.textPrompt).to.include(\"Descriptive writing style\");",
+                  "    pm.expect(jsonData.rolePrompt).to.include(\"dotCMSbot\");",
+                  "    pm.expect(jsonData.apiImageUrl).to.match(/^https?:\\/\\/.+/);",
+                  "    pm.expect(jsonData.apiUrl).to.match(/^https?:\\/\\/.+/);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/completions/config",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "completions",
+                "config"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [
@@ -2364,10 +3363,6 @@
       "value": ""
     },
     {
-      "key": "seos",
-      "value": ""
-    },
-    {
       "key": "seoContentTypeId",
       "value": ""
     },
@@ -2376,15 +3371,11 @@
       "value": ""
     },
     {
+      "key": "seos",
+      "value": ""
+    },
+    {
       "key": "seoText",
-      "value": ""
-    },
-    {
-      "key": "identifier",
-      "value": ""
-    },
-    {
-      "key": "inode",
       "value": ""
     }
   ]
