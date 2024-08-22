@@ -43,6 +43,7 @@ This maintenance release includes the following code fixes:
 37. https://github.com/dotCMS/core/issues/29209 : Wrong url when exporting file asset #29209
 38. https://github.com/dotCMS/core/issues/29222 : Telemetry: not getting data after last release of the plugin #29222
 39. https://github.com/dotCMS/core/issues/27959 : Integration tests for AI Viewtools #27959
-40. https://github.com/dotCMS/core/pull/28781
+40. https://github.com/dotCMS/core/pull/28781 : Extracting logic to truncate first 400 chars from prompt. #28781
 41. https://github.com/dotCMS/core/issues/28719 : Write Postman Tests for Generative AI Endpoints #28719
 42. https://github.com/dotCMS/core/issues/28770 : dotAI: register EmbeddingContentListener #28770
+43. https://github.com/dotCMS/core/pull/28929 : Fixing issues detected by Sonar #28929
