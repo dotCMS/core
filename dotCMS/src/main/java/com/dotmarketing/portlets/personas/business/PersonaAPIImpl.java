@@ -481,6 +481,8 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
 
 
 
+
+
     return findPersonaByTag(identifier, user, respectFrontEndRoles).orElseGet(null);
   }
 
@@ -514,7 +516,7 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
         .append(" +").append(PERSONA_KEY_TAG).append(":").append(personaTag);
 
     final List<Contentlet> contentlets =
-        APILocator.getContentletAPI().search(query.toString(), -1, 0, StringPool.BLANK, user, respectFrontEndRoles);
+        APILocator.getContentletAPI().search(query.toString(), 1, 0, StringPool.BLANK, user, respectFrontEndRoles);
     final Optional<Contentlet> persona = null != contentlets ? contentlets.stream().findFirst() : Optional.empty();
     return persona.isPresent() ? Optional.ofNullable(fromContentlet(persona.get())) : Optional.empty();
   }
