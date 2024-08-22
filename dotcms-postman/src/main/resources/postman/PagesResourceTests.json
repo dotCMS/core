@@ -2350,7 +2350,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"page_to_test_content_with_image_related\",\n        \"languageId\" : 1,\n        \"stInode\": \"c541abb1-69b3-4bc5-8430-5e09e5239cc8\",\n        \"url\": \"page_to_test_content_with_image_related\",\n        \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"cachettl\": 0,\n        \"friendlyName\": \"friendlyName\"\n    }\n}",
+									"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"page_to_test_content_with_image_related\",\n        \"languageId\" : 1,\n        \"stInode\": \"c541abb1-69b3-4bc5-8430-5e09e5239cc8\",\n        \"url\": \"page_to_test_content_with_image_related\",\n        \"hostFolder\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"cachettl\": 0,\n        \"friendlyName\": \"friendlyName\"\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
