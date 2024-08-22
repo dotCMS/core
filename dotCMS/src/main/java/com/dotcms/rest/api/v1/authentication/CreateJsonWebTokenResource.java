@@ -32,6 +32,7 @@ import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.LocaleUtil;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -109,6 +110,7 @@ public class CreateJsonWebTokenResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Deprecated
+    @Hidden
     public final Response getApiToken(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response,
                                          final CreateTokenForm createTokenForm) {
