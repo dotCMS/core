@@ -57,12 +57,15 @@ jobs:
               -H "Authorization: Bearer $ACCESS_TOKEN"
           }
           mkdir -p starter && cd starter
+          DATE=$(date +'%Y%m%d')
           if [[ "$STARTER_TYPE" == "empty" ]]; then
             echo "::debug::Empty Starter: downloading from [${{ env.EMPTY_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
-            RESPONSE=$(download_starter ${{ env.EMPTY_STARTER_URL }} ${{ env.EMPTY_STARTER_TOKEN }} empty_$(date +'%Y%m%d').zip)            
+            FILENAME="empty_${DATE}.zip"
+            RESPONSE=$(download_starter ${{ env.EMPTY_STARTER_URL }} ${{ env.EMPTY_STARTER_TOKEN }} $FILENAME)            
           else
             echo "::debut::Full Starter: downloading from [${{ env.FULL_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
-            RESPONSE=$(download_starter ${{ env.FULL_STARTER_URL }} ${{ env.FULL_STARTER_TOKEN }} $(date +'%Y%m%d').zip)             
+            FILENAME="${DATE}.zip"
+            RESPONSE=$(download_starter ${{ env.FULL_STARTER_URL }} ${{ env.FULL_STARTER_TOKEN }} $FILENAME)             
           fi                    
           echo "::notice::Status Code: $RESPONSE" 
           if [[ "$RESPONSE" != "200" ]]; then
@@ -70,7 +73,7 @@ jobs:
             exit 1
           fi
           ls -ltrh
-          # echo "::endgroup::"
+          echo "::endgroup::"
 
       - name: 'Upload artifacts'
         id: upload-artifacts
@@ -149,12 +152,74 @@ jobs:
           echo "::notice::Changelog: ${{ github.event.inputs.changelog }}"
           echo "::endgroup::"
 
-  send-notification:
-    if: ${{ github.event.inputs.dry-run == 'false' }}
+  update-pom:
+    if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == false }}
     needs: [ deploy-artifacts ]
     runs-on: ubuntu-20.04
     environment: trunk
+    outputs:
+      pull-request-url: ${{ steps.create-pull-request.outputs.pull-request-url }}
     steps:
+      - uses: actions/checkout@v4
+      
+      - name: 'Update pom.xml'
+        id: update-pom
+        working-directory: ${{ github.workspace }}/parent
+        env:
+          FILENAME: ${{ needs.deploy-artifacts.outputs.filename }}
+        run: |
+          echo "::group::Update pom.xml"
+          echo "Updating pom.xml"
+        
+          VERSION="${FILENAME%.*}"
+          
+          # Create an auxiliary branch for versioning updates
+          AUXILIARY_BRANCH=update-starter-version-${VERSION}-${{ github.run_id }}
+
+          sed -i "s/<starter.deploy.version>.*<\/starter.deploy.version>/<starter.deploy.version>${VERSION}<\/starter.deploy.version>/" pom.xml
+
+          POM=$(cat pom.xml)
+          echo "POM file: ${POM}"
+
+          echo auxiliary-branch=${AUXILIARY_BRANCH} >> $GITHUB_OUTPUT
+          echo starter-version=${VERSION} >> $GITHUB_OUTPUT
+          echo "::notice::Auxiliary Branch: ${AUXILIARY_BRANCH}"
+          echo "::endgroup::"      
+
+      - name: 'Create Pull Request'
+        id: create-pull-request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.update-pom.outputs.auxiliary-branch }}
+          commit-message: "📦 Publishing an Empty Starter version [${{ steps.update-pom.outputs.starter-version }}]"
+          title: 'Update starter.deploy.version to [${{ steps.update-pom.outputs.starter-version }}]'
+          body: >
+            This PR was created automatically to update the **starter.deploy.version** in pom.xml to [**${{ steps.update-pom.outputs.starter-version }}**].
+          labels: |
+            empty-starter
+            automated pr          
+        
+  send-notification:
+    needs: [ deploy-artifacts, update-pom ]
+    runs-on: ubuntu-20.04
+    environment: trunk
+    if: always() && github.event.inputs.dry-run == false
+    steps:
+      - name: Compose Message
+        id: compose-message
+        run: |
+          echo "::group::Compose Message"
+          BASE_MESSAGE="> :large_green_circle: *Attention dotters:* a new Starter published!\n \n>This automated script is happy to announce that a new *_${{ env.STARTER_TYPE }} starter_* :package: \`${{ needs.deploy-artifacts.outputs.filename }}\` is now available on \`ARTIFACTORY\` :frog:!\n \n> \n>:link: ${{ needs.deploy-artifacts.outputs.url }}\n>*Changelog* \n>\`\`\`${{ github.event.inputs.changelog }}\`\`\`"
+          if [ "$STARTER_TYPE" == "empty" ]; then
+            PR_ALERT="\n \n> \n> :bangbang: Approvals required to apply the latest version of *_Empty Starter_* to the project. \n \n> :globe_with_meridians: ${{ needs.update-pom.outputs.pull-request-url }}"  
+          fi  
+          MESSAGE=${BASE_MESSAGE}${PR_ALERT}
+          
+          echo "Message: ${MESSAGE}"
+          echo "message=${MESSAGE}" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
+          
       - name: Slack Notification
         uses: slackapi/slack-github-action@v1.26.0
         with:
@@ -166,10 +231,10 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "> :large_green_circle: *Attention dotters:* a new Starter published!\n \n>This automated script is happy to announce that a new *_${{ env.STARTER_TYPE }}_* :package: `${{ needs.deploy-artifacts.outputs.filename }}` is now available on `ARTIFACTORY` :frog:!\n \n>:link:${{ needs.deploy-artifacts.outputs.url }}\n>*Changelog* \n>```${{ github.event.inputs.changelog }}```"
+                    "text": "${{ steps.compose-message.outputs.message }}"
                   }
                 }
               ]
             }
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }} 
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
