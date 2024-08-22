@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { of as observableOf, of } from 'rxjs';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
@@ -326,7 +325,7 @@ describe('DotEditLayoutDesignerComponent', () => {
             themeSelector = fixture.debugElement.query(
                 By.css('dot-theme-selector')
             ).componentInstance;
-            const mockTheme = _.cloneDeep(mockDotThemes[0]);
+            const mockTheme = structuredClone(mockDotThemes[0]);
             themeSelector.selected.emit(mockTheme);
             expect(component.changeThemeHandler).toHaveBeenCalledWith(mockTheme);
         });

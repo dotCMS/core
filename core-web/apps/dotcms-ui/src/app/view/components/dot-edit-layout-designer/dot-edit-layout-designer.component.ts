@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { Observable, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -38,6 +37,7 @@ import {
     DotTemplateDesigner,
     DotTheme
 } from '@dotcms/dotcms-models';
+import { isEqual } from '@dotcms/utils';
 
 type TemplateDesignerForm = {
     title: FormControl<string | null>;
@@ -209,7 +209,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
 
     private setFormValue(layout: DotLayout): void {
         const currentLayout = this.form.get('layout').value;
-        if (_.isEqual(currentLayout, layout)) {
+        if (isEqual(currentLayout, layout)) {
             return;
         }
 
@@ -246,7 +246,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
         });
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.disablePublish = false;
-            if (!_.isEqual(this.form.value, this.initialFormValue)) {
+            if (!isEqual(this.form.value, this.initialFormValue)) {
                 this.updateTemplate.emit(this.form.value as DotTemplateDesigner);
             }
         });

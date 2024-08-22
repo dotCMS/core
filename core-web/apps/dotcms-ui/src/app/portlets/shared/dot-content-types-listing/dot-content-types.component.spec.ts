@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, of as observableOf, throwError as observableThrowError } from 'rxjs';
+import { Observable, of, throwError as observableThrowError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
@@ -82,14 +82,14 @@ class MockDotBaseTypeSelectorComponent {
 @Injectable()
 class MockDotLicenseService {
     isEnterprise(): Observable<boolean> {
-        return observableOf(true);
+        return of(true);
     }
 }
 
 @Injectable()
 class MockDotHttpErrorManagerService {
     handle(_err: ResponseView): Observable<DotHttpErrorHandled> {
-        return observableOf({
+        return of({
             redirected: false,
             status: HttpCode.BAD_REQUEST
         });
@@ -193,7 +193,7 @@ describe('DotContentTypesPortletComponent', () => {
         );
 
         spyOn(dotContentletService, 'getAllContentTypes').and.returnValue(
-            observableOf([
+            of([
                 { name: 'CONTENT', label: 'Content', types: [] },
                 { name: 'WIDGET', label: 'Widget', types: [] },
                 { name: 'FORM', label: 'Form', types: [] }
@@ -254,7 +254,7 @@ describe('DotContentTypesPortletComponent', () => {
             conf.accept();
         });
 
-        spyOn(crudService, 'delete').and.returnValue(observableOf(mockContentType));
+        spyOn(crudService, 'delete').and.returnValue(of(mockContentType));
         comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
 
         fixture.detectChanges();
@@ -275,7 +275,7 @@ describe('DotContentTypesPortletComponent', () => {
     });
 
     it('should have ONLY remove action because is community license', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(false));
+        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
 
         fixture.detectChanges();
         expect(
@@ -294,7 +294,7 @@ describe('DotContentTypesPortletComponent', () => {
     });
 
     it('should have remove and add to bundle actions if is not community license and no publish environments are created', () => {
-        spyOn(pushPublishService, 'getEnvironments').and.returnValue(observableOf([]));
+        spyOn(pushPublishService, 'getEnvironments').and.returnValue(of([]));
         fixture.detectChanges();
 
         expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
@@ -477,9 +477,10 @@ describe('DotContentTypesPortletComponent', () => {
 
     describe('filterBy', () => {
         beforeEach(() => {
-            router.data = observableOf({
+            router.queryParams = of({
                 filterBy: 'FORM'
             });
+
             fixture.detectChanges();
         });
 
@@ -489,7 +490,7 @@ describe('DotContentTypesPortletComponent', () => {
         });
 
         it('should set filterBy params', () => {
-            fixture.detectChanges();
+            // fixture.detectChanges();
             expect(comp.filterBy).toBe('Form');
             expect(comp.listing.paginatorService.extraParams.get('type')).toBe('Form');
             expect(comp.actionHeaderOptions.primary.model).toBe(null);

@@ -1,5 +1,4 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import * as _ from 'lodash';
 import { Observable, of, zip } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -28,6 +27,7 @@ import {
     DotGlobalMessageService
 } from '@dotcms/data-access';
 import { DotContainerMap, DotLayout, DotTemplate } from '@dotcms/dotcms-models';
+import { isEqual } from '@dotcms/utils';
 
 type DotTemplateType = 'design' | 'advanced';
 
@@ -106,7 +106,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
     });
 
     readonly didTemplateChanged$: Observable<boolean> = this.select(
-        ({ original, working }: DotTemplateState) => !_.isEqual(original, working)
+        ({ original, working }: DotTemplateState) => !isEqual(original, working)
     );
 
     readonly updateBody = this.updater<string>((state: DotTemplateState, body: string) => ({

@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
@@ -106,7 +105,7 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
 
     private getApps(apps: DotApp[]): void {
         this.apps = apps;
-        this.appsCopy = _.cloneDeep(apps);
+        this.appsCopy = structuredClone(apps);
         setTimeout(() => {
             this.attachFilterEvents();
         }, 0);
