@@ -1,7 +1,6 @@
 import { Subject } from 'rxjs';
 
 import {
-    ChangeDetectionStrategy,
     Component,
     EventEmitter,
     inject,
@@ -24,8 +23,7 @@ export const AUTOSAVE_DEBOUNCE_TIME = 5000;
 @Component({
     selector: 'dot-template-builder',
     templateUrl: './dot-template-builder.component.html',
-    styleUrls: ['./dot-template-builder.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./dot-template-builder.component.scss']
 })
 export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     readonly #dotRouterService = inject(DotRouterService);

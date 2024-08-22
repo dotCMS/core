@@ -14,7 +14,7 @@
             <dotcms-template-builder-lib
                 (templateChange)="onTemplateItemChange($event)"
                 [layout]="item.layout"
-                [template]="{ themeId: item.theme }"
+                [template]="{ themeId: item.theme ?? item.themeId, identifier: item.identifier }"
                 [containerMap]="item.containers"
                 data-testId="new-template-builder">
                 <dot-global-message toolbar-left></dot-global-message>
