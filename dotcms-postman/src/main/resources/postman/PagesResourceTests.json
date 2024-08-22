@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "2fa7d41d-397b-4ca0-9f16-4828c4a4a17a",
+		"_postman_id": "7a488c87-858e-4edd-8722-c38e4071afdf",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "36473486"
@@ -2331,21 +2331,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [],
 								"body": {
@@ -2397,21 +2382,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [],
 								"body": {
@@ -7330,6 +7300,42 @@
 		},
 		{
 			"key": "p2IdMovingLayoutBUG",
+			"value": ""
+		},
+		{
+			"key": "relatedContentTypeVarName",
+			"value": ""
+		},
+		{
+			"key": "relationshipContentTypeId",
+			"value": ""
+		},
+		{
+			"key": "relationshipContentTypeName",
+			"value": ""
+		},
+		{
+			"key": "relationshipContentTypeVarName",
+			"value": ""
+		},
+		{
+			"key": "imageContentIdentifier",
+			"value": ""
+		},
+		{
+			"key": "contentImgIdentifier",
+			"value": ""
+		},
+		{
+			"key": "contentRelationshipIdentifier",
+			"value": ""
+		},
+		{
+			"key": "page_id",
+			"value": ""
+		},
+		{
+			"key": "page_name",
 			"value": ""
 		}
 	]
