@@ -473,7 +473,15 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
     final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
         APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontEndRoles);
 
-    return UtilMethods.isSet(contentlet) ? fromContentlet(contentlet) : null;
+
+    if(contentlet != null) {
+      return fromContentlet(contentlet);
+    }
+
+
+
+
+    return findPersonaByTag(identifier, user, respectFrontEndRoles).orElseGet(null);
   }
 
   @Override
