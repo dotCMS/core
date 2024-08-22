@@ -479,11 +479,7 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
     }
 
 
-
-
-
-
-    return findPersonaByTag(identifier, user, respectFrontEndRoles).orElseGet(null);
+    return findPersonaByTag(identifier, user, respectFrontEndRoles).orElseGet(()->null);
   }
 
   @Override
@@ -511,6 +507,10 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
   @Override
   public Optional<Persona> findPersonaByTag(final String personaTag, final User user, final boolean respectFrontEndRoles)
       throws DotSecurityException, DotDataException {
+
+    if(UtilMethods.isEmpty(personaTag)){
+      return Optional.empty();
+    }
 
     final StringBuilder query = new StringBuilder(" +baseType:").append(BaseContentType.PERSONA.getType())
         .append(" +").append(PERSONA_KEY_TAG).append(":").append(personaTag);
