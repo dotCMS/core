@@ -312,7 +312,7 @@ public class UserAjax {
 		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
-			throw new DotDataException(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"User-Info-Save-Failed " + e.getMessage()),"User-Info-Save-Failed",e);
+			throw new DotDataException(LanguageUtil.get(uWebAPI.getLoggedInUser(request), e.getMessage()),"User-Info-Save-Failed",e);
 
 		}
 
