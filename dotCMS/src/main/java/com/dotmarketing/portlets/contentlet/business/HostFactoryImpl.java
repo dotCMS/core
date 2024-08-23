@@ -189,8 +189,14 @@ public class HostFactoryImpl implements HostFactory {
 
     @Override
     public Host bySiteName(final String siteName) {
-        Host site = siteCache.get(siteName);
-        if (null == site || !UtilMethods.isSet(site.getIdentifier())) {
+        Host site;
+        final Host cachedSiteByName = siteCache.getByName(siteName);;
+        if (UtilMethods.isSet(() -> cachedSiteByName.getIdentifier())) {
+            if (HostCache.CACHE_404_HOST.equals(cachedSiteByName.getIdentifier())) {
+                return null;
+            }
+            site = cachedSiteByName;
+        } else {
             final DotConnect dc = new DotConnect();
             final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE)
                     .append(WHERE);
@@ -200,6 +206,7 @@ public class HostFactoryImpl implements HostFactory {
             try {
                 final List<Map<String, String>> dbResults = dc.loadResults();
                 if (dbResults.isEmpty()) {
+                    siteCache.add404HostByName(siteName);
                     return null;
                 }
                 final String siteInode = dbResults.get(0).get("inode");
@@ -227,8 +234,14 @@ public class HostFactoryImpl implements HostFactory {
 
     @Override
     public Host byAlias(String alias) {
-        Host site = this.siteCache.getHostByAlias(alias);
-        if (null == site) {
+        Host site = null;
+        Host cachedSiteByAlias = this.siteCache.getHostByAlias(alias);
+        if (UtilMethods.isSet(() -> cachedSiteByAlias.getIdentifier())) {
+            if (HostCache.CACHE_404_HOST.equals(cachedSiteByAlias.getIdentifier())) {
+                return null;
+            }
+            site = cachedSiteByAlias;
+        } else {
             final DotConnect dc = new DotConnect();
             final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE_AND_ALIASES)
                     .append(WHERE)
@@ -248,6 +261,7 @@ public class HostFactoryImpl implements HostFactory {
             try {
                 final List<Map<String, String>> dbResults = dc.loadResults();
                 if (dbResults.isEmpty()) {
+                    siteCache.addHostAlias(alias, HostCache.cache404Contentlet);
                     return null;
                 }
                 if (dbResults.size() == 1) {
@@ -335,7 +349,7 @@ public class HostFactoryImpl implements HostFactory {
 
     @Override
     public Host findSystemHost(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        Host systemHost = this.siteCache.get(Host.SYSTEM_HOST);
+        Host systemHost = this.siteCache.getById(Host.SYSTEM_HOST);
         if (null != systemHost) {
             return systemHost;
         }
@@ -408,6 +422,10 @@ public class HostFactoryImpl implements HostFactory {
                 site = new Host(siteAsContentlet);
                 this.siteCache.add(site);
             }
+        }
+        if (null == site && !Host.SYSTEM_HOST.equals(id)) {
+            this.siteCache.add404HostById(id);
+            Logger.warn(HostAPIImpl.class, String.format("Site with id '%s' not found", id));
         }
         return site;
     }

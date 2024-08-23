@@ -111,6 +111,7 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
         //This does always assume we're getting a fileAsset we don't want to miss a dotAsset
         final Contentlet incoming = fileAsContentOptional.get();
         if(incoming.isDotAsset()){
+            incoming.setProperty(FileAssetAPI.BINARY_FIELD, Try.of(()->incoming.getBinary("asset")).getOrNull());
             fileAsset = convertToFileAsset(incoming, fileAssetAPI);
         } else {
             fileAsset = fileAssetAPI.fromContentlet(incoming);
