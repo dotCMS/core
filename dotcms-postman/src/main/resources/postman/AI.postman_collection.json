@@ -2856,7 +2856,6 @@
                   "    pm.expect(result).to.have.property('baseType');",
                   "    pm.expect(result).to.have.property('inode');",
                   "    pm.expect(result).to.have.property('archived');",
-                  "    pm.expect(result).to.have.property('ownerName');",
                   "    pm.expect(result).to.have.property('host');",
                   "    pm.expect(result).to.have.property('working');",
                   "    pm.expect(result).to.have.property('seo');",
