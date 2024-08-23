@@ -6,7 +6,7 @@ export const usePageAsset = (currentPageAsset: DotCMSPageAsset | undefined) => {
   const [pageAsset, setPageAsset] = useState<DotCMSPageAsset | undefined>();
 
   useEffect(() => {
-    client.editor.on("changes", (page: unknown) => {
+    client.editor.on("changes", (page) => {
       if (!page) {
         return;
       }
