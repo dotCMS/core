@@ -23,6 +23,17 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.vavr.control.Try;
 import org.glassfish.jersey.internal.util.Base64;
 import org.glassfish.jersey.server.JSONP;
@@ -63,6 +74,11 @@ import static java.util.Collections.EMPTY_MAP;
  * Endpoint to handle Api Tokens
  */
 @Path("/v1/apitoken")
+@Tag(name = "Api Tokens", 
+    description = "Endpoints that handle operations related to Api Tokens",
+    externalDocs = @ExternalDocumentation(description = "Additional Api Token information",
+                                                    url = "https://www.dotcms.com/docs/latest/rest-api-authentication#APIToken"))
+
 public class ApiTokenResource implements Serializable {
 
     private final ApiTokenAPI tokenApi;
@@ -87,6 +103,13 @@ public class ApiTokenResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "getApiTokens",
+                summary = "Gets api tokens from a user's ID",
+                description = "Takes a user ID and returns a list of Api Tokens associated with the ID.\n\n" +
+                                "The list of tokens also includes any tokens that have been revoked.\n\n",
+                tags = {"Api Tokens"},
+                )
     public final Response getApiTokens(
             @Context final HttpServletRequest request, 
             @Context final HttpServletResponse response,
