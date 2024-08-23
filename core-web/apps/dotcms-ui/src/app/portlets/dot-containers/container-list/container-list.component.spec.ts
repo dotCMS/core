@@ -1,3 +1,4 @@
+import { createFakeEvent } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -388,7 +389,9 @@ describe('ContainerListComponent', () => {
 
             comp.handleActionMenuOpen({} as MouseEvent);
 
-            menu.model[0].command();
+            menu.model[0].command({
+                originalEvent: createFakeEvent('click')
+            });
             expect(dotContainersService.publish).toHaveBeenCalledWith([
                 '123Published',
                 '123Unpublish',
@@ -464,7 +467,7 @@ describe('ContainerListComponent', () => {
         it('should fetch containers with offset when table emits onPage', () => {
             spyOn(store, 'getContainersWithOffset');
 
-            table.onPage.emit({ first: 10 });
+            table.onPage.emit({ first: 10, rows: 10 });
 
             expect(store.getContainersWithOffset).toHaveBeenCalledWith(10);
         });

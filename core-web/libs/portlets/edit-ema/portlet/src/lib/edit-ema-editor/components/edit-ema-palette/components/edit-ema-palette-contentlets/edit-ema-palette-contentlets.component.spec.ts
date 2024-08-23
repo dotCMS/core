@@ -55,9 +55,10 @@ describe('EditEmaPaletteContentletsComponent', () => {
 
     it('should emit paginate event with filter on onPaginate', () => {
         const spy = jest.spyOn(spectator.component.paginate, 'emit');
+        // TODO: Check this
+        spectator.setInput('contentlets', { contentVarName: 'sample' });
         spectator.triggerEventHandler(Paginator, 'onPageChange', {
-            page: 1,
-            contentVarName: 'sample'
+            page: 1
         });
         expect(spy).toHaveBeenCalledWith({ page: 1, contentVarName: 'sample' });
     });

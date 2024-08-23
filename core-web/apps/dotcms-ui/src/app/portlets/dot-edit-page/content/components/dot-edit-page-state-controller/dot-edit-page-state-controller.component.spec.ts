@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { createFakeEvent } from '@ngneat/spectator';
 import * as _ from 'lodash';
 import { of } from 'rxjs';
 
@@ -582,14 +583,18 @@ describe('DotEditPageStateControllerComponent', () => {
         });
 
         it("should change the mode when the user clicks on the 'Edit' option", () => {
-            component.menuItems[0].command();
+            component.menuItems[0].command({
+                originalEvent: createFakeEvent('click')
+            });
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
         });
 
         it("should call editContentlet when clicking on the 'ContentType Content' option", () => {
             spyOn(editContentletService, 'edit');
-            component.menuItems[1].command();
+            component.menuItems[1].command({
+                originalEvent: createFakeEvent('click')
+            });
             expect(editContentletService.edit).toHaveBeenCalledWith({
                 data: {
                     inode: '123'

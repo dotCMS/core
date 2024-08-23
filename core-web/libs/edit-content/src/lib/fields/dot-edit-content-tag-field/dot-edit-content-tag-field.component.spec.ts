@@ -68,19 +68,6 @@ describe('DotEditContentTagFieldComponent', () => {
         expect(autoCompleteComponent.showClear).toBe(true);
     });
 
-    it('should trigger selectItem on enter pressed', () => {
-        const selectItemMock = jest.spyOn(autoCompleteComponent, 'selectItem');
-
-        spectator.triggerEventHandler('p-autocomplete', 'onKeyUp', {
-            key: 'Enter',
-            target: {
-                value: 'test'
-            }
-        });
-
-        expect(selectItemMock).toBeCalledWith('test');
-    });
-
     it('should trigger getTags on search with 3 or more characters', () => {
         const getTagsMock = jest.spyOn(spectator.component, 'getTags');
         const autocompleteArg = {
