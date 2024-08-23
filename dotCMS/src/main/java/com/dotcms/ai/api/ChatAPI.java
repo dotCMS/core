@@ -1,8 +1,8 @@
-package com.dotcms.ai.service;
+package com.dotcms.ai.api;
 
 import com.dotmarketing.util.json.JSONObject;
 
-public interface OpenAIChatService {
+public interface ChatAPI {
 
     /**
      * Returns a JSONObject with the results of the text generation given the provided prompt
