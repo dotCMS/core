@@ -1,6 +1,6 @@
 package com.dotcms.api;
 
-import static org.awaitility.Awaitility.await;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.client.model.RestClientFactory;
