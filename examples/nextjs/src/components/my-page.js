@@ -39,7 +39,7 @@ const componentsMap = {
     calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
     // CustomNoComponent: CustomNoComponent,
-    BlockEditorPage: BlogWithBlockEditor
+    BlockEditorItem: BlogWithBlockEditor
 };
 
 export function MyPage({ pageAsset, nav }) {

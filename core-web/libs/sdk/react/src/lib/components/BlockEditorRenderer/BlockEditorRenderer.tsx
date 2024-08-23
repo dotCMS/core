@@ -3,7 +3,9 @@ import { BlockQuote, CodeBlock } from './blocks/Code';
 import { DotContent } from './blocks/Contentlet';
 import { DotCMSImage } from './blocks/Image';
 import { BulletList, ListItem, OrderedList } from './blocks/Lists';
+import { TableRenderer } from './blocks/Table';
 import { Bold, Heading, Italic, Paragraph, Strike, TextBlock, Underline } from './blocks/Texts';
+import { DotCMSVideo } from './blocks/Video';
 
 //TODO: Move this to models later
 interface Mark {
@@ -39,14 +41,14 @@ export interface ContentNode<T = Record<string, string>> {
 // };
 
 type CustomRenderer = Record<string, React.FC<any>>;
-interface BlockEditorRendererProps {
+export interface BlockEditorRendererProps {
     blocks: { content: ContentNode[] };
     customRenderers?: CustomRenderer;
     className?: string;
     style?: React.CSSProperties;
 }
 
-const BlockEditorItem = ({
+export const BlockEditorItem = ({
     content,
     customRenderers
 }: {
@@ -72,7 +74,7 @@ const BlockEditorItem = ({
                 switch (node.type) {
                     case 'paragraph':
                         return (
-                            <Paragraph key={index}>
+                            <Paragraph key={index} attrs={node.attrs}>
                                 <BlockEditorItem
                                     content={node.content}
                                     customRenderers={customRenderers}
@@ -192,6 +194,18 @@ const BlockEditorItem = ({
                     case 'dotImage':
                         return <DotCMSImage key={index} {...node.attrs} />;
 
+                    case 'dotVideo':
+                        return <DotCMSVideo key={index} {...node.attrs} />;
+
+                    case 'table':
+                        return (
+                            <TableRenderer
+                                key={index}
+                                content={node.content}
+                                blockEditorItem={BlockEditorItem}
+                            />
+                        );
+
                     case 'dotContent':
                         return (
                             <DotContent
@@ -202,7 +216,7 @@ const BlockEditorItem = ({
                         );
 
                     default:
-                        return <div key={index}>Unknown Block Type: {node.type}</div>;
+                        return <div key={index}>Unknown Block Type {node.type}</div>;
                 }
             })}
         </>

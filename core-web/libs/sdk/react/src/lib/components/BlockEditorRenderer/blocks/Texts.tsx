@@ -3,6 +3,7 @@ import { BlockProps, Mark } from '../../../models';
 
 type HeadingProps = BlockProps & { level?: string };
 type LinkProps = BlockProps & { attrs?: Mark['attrs'] };
+type ParagraphProps = BlockProps & { attrs?: Mark['attrs'] };
 
 export const Bold = ({ children }: BlockProps) => <strong>{children}</strong>;
 
@@ -12,8 +13,8 @@ export const Strike = ({ children }: BlockProps) => <s>{children}</s>;
 
 export const Underline = ({ children }: BlockProps) => <u>{children}</u>;
 
-export const Paragraph = ({ children }: BlockProps) => {
-    return <p>{children}</p>;
+export const Paragraph = ({ children, attrs }: ParagraphProps) => {
+    return <p style={attrs}>{children}</p>;
 };
 
 export const Link = ({ children, attrs }: LinkProps) => {
@@ -26,12 +27,18 @@ export const Heading = ({ level, children }: HeadingProps) => {
     return <Tag>{children}</Tag>;
 };
 
+export const Superscript = ({ children }: BlockProps) => <sup>{children}</sup>;
+
+export const Subscript = ({ children }: BlockProps) => <sub>{children}</sub>;
+
 const nodeMarks: Record<string, React.FC<BlockProps | LinkProps | HeadingProps>> = {
     link: Link,
     bold: Bold,
     underline: Underline,
     italic: Italic,
-    strike: Strike
+    strike: Strike,
+    superscript: Superscript,
+    subscript: Subscript
 };
 
 //TODO: Type this later
