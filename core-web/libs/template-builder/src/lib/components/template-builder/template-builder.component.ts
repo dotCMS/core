@@ -236,10 +236,11 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     ngOnChanges(changes: SimpleChanges) {
         if (!changes.layout?.firstChange && changes.layout?.currentValue) {
             const parsedRows = parseFromDotObjectToGridStack(changes.layout.currentValue.body);
+            const currentTemplate = changes.template?.currentValue;
             this.store.updateOldRows({
                 newRows: parsedRows,
-                templateIdentifier:
-                    changes.template?.currentValue.identifier || this.template.identifier
+                templateIdentifier: currentTemplate?.identifier || this.template.identifier,
+                isAnonymousTemplate: currentTemplate?.anonymous || this.template.anonymous // We createa a custom template for the page
             });
         }
     }
