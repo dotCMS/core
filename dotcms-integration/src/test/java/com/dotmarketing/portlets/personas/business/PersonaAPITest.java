@@ -10,10 +10,13 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UtilMethods;
 import java.util.List;
 
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.awaitility.Awaitility;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -289,6 +292,45 @@ public class PersonaAPITest {
       }
     }
   }
-  
-  
+
+
+  /**
+   * Method to test: {@link PersonaAPI#find(String identifier,com.liferay.portal.model.User user, boolean respectFrontendRoles)}
+   * When: finding a persona
+   * Should: the persona should be resolved by id or by keytag
+   */
+  @Test
+  public void test_personas_test_resolve_by_keytag() throws Exception {
+
+    ContentType customPersonaType = new ContentTypeDataGen()
+            .host(host)
+            .baseContentType(BaseContentType.PERSONA).nextPersisted();
+
+    final Contentlet newPersona = new ContentletDataGen(customPersonaType.id())
+            .host(host)
+            .setProperty("name", "AnotherPersona" + System.currentTimeMillis())
+            .setProperty("keyTag", "AnotherPersona" + System.currentTimeMillis())
+            .nextPersisted();
+
+    Contentlet personaById = personaAPI.find(newPersona.getIdentifier(), APILocator.systemUser(), true);
+
+
+    assertTrue(UtilMethods.isSet(()->personaById.getIdentifier()));
+
+
+    Awaitility.await().atMost(15, TimeUnit.SECONDS).pollInterval(2, TimeUnit.SECONDS).until(() -> {
+      try {
+        Contentlet personaByKeyTag = personaAPI.find(newPersona.getStringProperty("keyTag"), APILocator.systemUser(), true);
+        assert(personaById.getIdentifier().equals(personaByKeyTag.getIdentifier()));
+        return true;
+      } catch (Exception e) {
+        // ignore
+      }
+      return false;
+    });
+
+    APILocator.getContentletAPI().destroy(newPersona, APILocator.systemUser(), false);
+
+
+  }
 }
