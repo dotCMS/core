@@ -5,6 +5,7 @@ public class AiKeys {
     public static final String PROMPT = "prompt";
     public static final String ORIGINAL_PROMPT = "originalPrompt";
     public static final String MESSAGES = "messages";
+    public static final String MESSAGE = "message";
     public static final String ROLE = "role";
     public static final String CONTENT = "content";
     public static final String MODEL = "model";

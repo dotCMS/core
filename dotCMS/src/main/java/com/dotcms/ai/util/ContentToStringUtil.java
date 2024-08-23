@@ -3,7 +3,13 @@ package com.dotcms.ai.util;
 
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TextAreaField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.viewtools.MarkdownTool;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMap;
@@ -25,9 +31,16 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.dotcms.ai.app.AppConfig.debugLogger;
+import static com.liferay.util.StringPool.BLANK;
 
 
 /**
@@ -141,48 +154,47 @@ public class ContentToStringUtil {
     /**
      * This method will index the first long_text field that has been marked as indexed
      *
-     * @param contentlet
-     * @return
+     * @param contentlet The {@link Contentlet} whose fields will be analyzed.
+     *
+     * @return A list of fields to index.
      */
-
-
     public List<Field> guessWhatFieldsToIndex(@NotNull Contentlet contentlet) {
-
+        // HTML Pages are not indexed based on fields, instead they will be rendered to be parsed
+        if (Boolean.TRUE.equals(contentlet.isHTMLPage())) {
+            return List.of();
+        }
         final List<Field> embedMe = new ArrayList<>();
         if (contentlet.isFileAsset()) {
-            File fileAsset = Try.of(() -> contentlet.getBinary(FILE_ASSET_KEY)).getOrNull();
+            final File fileAsset = Try.of(() -> contentlet.getBinary(FILE_ASSET_KEY)).getOrNull();
             if (shouldIndex(fileAsset)) {
                 embedMe.add(contentlet.getContentType().fieldMap().get(FILE_ASSET_KEY));
             }
         }
         if (contentlet.isDotAsset()) {
-            File asset = Try.of(() -> contentlet.getBinary(ASSET_KEY)).getOrNull();
+            final File asset = Try.of(() -> contentlet.getBinary(ASSET_KEY)).getOrNull();
             if (shouldIndex(asset)) {
                 embedMe.add(contentlet.getContentType().fieldMap().get(ASSET_KEY));
             }
         }
-        // pages are not indexed based on fields, instead they will be rendered to be parsed
-        if (Boolean.TRUE.equals(contentlet.isHTMLPage())) {
-            return List.of();
-        }
-
-        final String ignoreUrlMapFields = (contentlet.getContentType().urlMapPattern() != null) ? contentlet.getContentType().urlMapPattern() : "";
-
-        contentlet.getContentType()
-                .fields()
-                .stream().filter(f -> !ignoreUrlMapFields.contains("{" + f.variable() + "}"))
-                .filter(f -> f instanceof StoryBlockField || f instanceof WysiwygField || f instanceof BinaryField ||  f instanceof TextAreaField || f instanceof FileField);
-
         if (!embedMe.isEmpty()) {
             return embedMe;
         }
+        final String ignoreUrlMapFields = (contentlet.getContentType().urlMapPattern() != null) ? contentlet.getContentType().urlMapPattern() : BLANK;
 
-        return contentlet.getContentType()
+        contentlet.getContentType()
                 .fields()
-                .stream().filter(f -> !ignoreUrlMapFields.contains("{" + f.variable() + "}"))
+                .stream().filter(f -> null != ignoreUrlMapFields && !ignoreUrlMapFields.contains("{" + f.variable() + "}"))
+                .filter(f -> f instanceof StoryBlockField || f instanceof WysiwygField || f instanceof BinaryField ||  f instanceof TextAreaField || f instanceof FileField);
+
+        final List<Field> indexableFields = contentlet.getContentType()
+                .fields()
+                .stream().filter(f -> null != ignoreUrlMapFields && !ignoreUrlMapFields.contains("{" + f.variable() + "}"))
                 .filter(f ->
                         f.dataType().equals(DataTypes.LONG_TEXT)
                 ).collect(Collectors.toUnmodifiableList());
+        debugLogger(this.getClass(), () -> String.format("Found %d indexable field(s) for Contentlet ID '%s': %s",
+                indexableFields.size(), contentlet.getIdentifier(), indexableFields.stream().map(Field::variable).collect(Collectors.toSet())));
+        return indexableFields;
     }
 
     private boolean shouldIndex(File file) {
@@ -226,6 +238,8 @@ public class ContentToStringUtil {
         }
 
         if (builder.length() < ConfigService.INSTANCE.config().getConfigInteger(AppKeys.EMBEDDINGS_MINIMUM_TEXT_LENGTH_TO_INDEX)) {
+            debugLogger(this.getClass(), () -> String.format("Parseable fields for Contentlet ID " +
+                    "'%s' don't meet the minimum length requirement. Skipping indexing.", contentlet.getIdentifier()));
             return Optional.empty();
         }
 

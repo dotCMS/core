@@ -50,3 +50,4 @@ This maintenance release includes the following code fixes:
 44. https://github.com/dotCMS/core/issues/28721 : Write Postman Tests for Embeddings AI Endpoints #28721
 45. https://github.com/dotCMS/core/issues/28720 : Write Postman Tests for Search AI Endpoints #28720
 46. https://github.com/dotCMS/core/issues/28722 : Write Postman Tests for Completions AI Endpoints #28722
+47. https://github.com/dotCMS/core/issues/28990 : dotAI throws Text Embedding Error #28990

@@ -5,6 +5,7 @@ import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.util.EncodingUtil;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -14,6 +15,9 @@ import javax.validation.constraints.NotNull;
 import java.text.BreakIterator;
 import java.util.List;
 import java.util.Locale;
+
+import static com.dotcms.ai.app.AppConfig.debugLogger;
+import static com.liferay.util.StringPool.SPACE;
 
 /**
  * The EmbeddingsRunner class is responsible for generating embeddings for a specific contentlet.
@@ -53,7 +57,7 @@ class EmbeddingsRunner implements Runnable {
                 embeddingsAPI.deleteEmbedding(deleteOldVersions);
             }
 
-            final String cleanContent = String.join(" ", content.trim().split("\\s+"));
+            final String cleanContent = String.join(SPACE, this.content.trim().split("\\s+"));
             final int splitAtTokens = embeddingsAPI.config.getConfigInteger(AppKeys.EMBEDDINGS_SPLIT_AT_TOKENS);
 
             // split into sentences
@@ -68,46 +72,54 @@ class EmbeddingsRunner implements Runnable {
                 totalTokens += tokenCount;
 
                 if (totalTokens < splitAtTokens) {
-                    buffer.append(sentence.trim()).append(" ");
+                    buffer.append(sentence.trim()).append(SPACE);
                 } else {
                     saveEmbedding(buffer.toString());
                     buffer.setLength(0);
-                    buffer.append(sentence.trim()).append(" ");
+                    buffer.append(sentence.trim()).append(SPACE);
                     totalTokens = tokenCount;
                 }
             }
 
             if (buffer.toString().split("\\s+").length > 0) {
-                saveEmbedding(buffer.toString());
+                debugLogger(this.getClass(), () -> String.format("Saving embeddings for contentlet ID '%s'", this.contentlet.getIdentifier()));
+                this.saveEmbedding(buffer.toString());
+                debugLogger(this.getClass(), () -> String.format("Embeddings for contentlet ID '%s' were saved", this.contentlet.getIdentifier()));
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
+            final String errorMsg = String.format("Failed to generate embeddings for contentlet ID " +
+                    "'%s': %s", contentlet.getIdentifier(), ExceptionUtil.getErrorMessage(e));
             if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
-                Logger.warn(this.getClass(), "unable to embed content:" + contentlet.getIdentifier() + " error:" + e.getMessage(), e);
+                Logger.warn(this.getClass(), errorMsg, e);
             } else {
-                Logger.warnAndDebug(this.getClass(), "unable to embed content:" + contentlet.getIdentifier() + " error:" + e.getMessage(), e);
+                Logger.warnAndDebug(this.getClass(), errorMsg, e);
             }
         }
     }
 
+    /**
+     * Takes the tokenized content of a given Contentlet and pulls or generates its respective
+     * embeddings.
+     *
+     * @param initial The content to generate embeddings for.
+     */
     private void saveEmbedding(@NotNull final String initial) {
         if (UtilMethods.isEmpty(initial)) {
             return;
         }
 
         final String normalizedContent = initial.trim();
-        if (embeddingsAPI.embeddingExists(contentlet.getInode(), indexName, normalizedContent)) {
-            Logger.info(
-                    this.getClass(),
-                    "embedding already exists for content:"
-                            + contentlet.getTitle()
-                            + ", inode:"
-                            + contentlet.getInode());
+        if (this.embeddingsAPI.embeddingExists(this.contentlet.getInode(), this.indexName, normalizedContent)) {
+            Logger.info(this, String.format("Embedding already exists for content " +
+                    "'%s' with Inode '%s'", this.contentlet.getTitle(), this.contentlet.getInode()));
             return;
         }
 
-        final Tuple2<Integer, List<Float>> embeddings = embeddingsAPI.pullOrGenerateEmbeddings(normalizedContent);
+        final Tuple2<Integer, List<Float>> embeddings =
+                this.embeddingsAPI.pullOrGenerateEmbeddings(this.contentlet.getIdentifier(), normalizedContent);
         if (embeddings._2.isEmpty()) {
-            Logger.info(this.getClass(), "NO TOKENS for " + contentlet.getContentType().variable() + " content:" + normalizedContent);
+            Logger.info(this.getClass(), String.format("No tokens for Content Type " +
+                    "'%s'. Normalized content: %s", this.contentlet.getContentType().variable(), normalizedContent));
             return;
         }
 

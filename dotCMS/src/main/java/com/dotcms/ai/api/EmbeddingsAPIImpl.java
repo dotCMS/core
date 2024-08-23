@@ -4,9 +4,9 @@ import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
-import com.dotcms.ai.db.EmbeddingsFactory;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.db.EmbeddingsDTO.Builder;
+import com.dotcms.ai.db.EmbeddingsFactory;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.ai.util.EncodingUtil;
 import com.dotcms.ai.util.OpenAIRequest;
@@ -18,11 +18,13 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rest.ContentResource;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.exception.DotCorruptedDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
@@ -30,10 +32,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
@@ -52,7 +56,21 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.dotcms.ai.app.AppConfig.debugLogger;
+import static com.liferay.util.StringPool.BLANK;
+
+/**
+ * Implementation class for the {@link EmbeddingsAPI} interface.
+ * <p>Embeddings are used to convert text into a form that can be processed by machine learning
+ * algorithms.</p>
+ *
+ * @author Daniel Silva
+ * @since Mar 27th, 2024
+ */
 class EmbeddingsAPIImpl implements EmbeddingsAPI {
+
+    private static final Lazy<String> OPEN_AI_EMBEDDINGS_URL = Lazy.of(()
+            -> Config.getStringProperty("OPEN_AI_EMBEDDINGS_URL", "https://api.openai.com/v1/embeddings"));
 
     private static final Cache<String, Tuple2<Integer, List<Float>>> EMBEDDING_CACHE =
             Caffeine.newBuilder()
@@ -141,14 +159,8 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
         final Optional<String> content = ContentToStringUtil.impl.get().parseFields(contentlet, fields);
         if (content.isEmpty() || UtilMethods.isEmpty(content.get())) {
-            Logger.info(
-                    EmbeddingsAPIImpl.class,
-                    "No valid fields to embed for:"
-                            + contentlet.getContentType().variable()
-                            + " id:"
-                            + contentlet.getIdentifier()
-                            + " title:"
-                            + contentlet.getTitle());
+            Logger.warn(this, String.format("No valid fields to embed for Contentlet ID '%s' of type " +
+                    "'%s' with title '%s'", contentlet.getIdentifier(), contentlet.getContentType().variable(), contentlet.getTitle()));
             return false;
         }
 
@@ -302,9 +314,14 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         EmbeddingsFactory.impl.get().initVector();
     }
 
-    @WrapInTransaction
     @Override
     public Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(@NotNull final String content) {
+        return pullOrGenerateEmbeddings("N/A", content);
+    }
+
+    @WrapInTransaction
+    @Override
+    public Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(final String contentId, @NotNull final String content) {
         if (UtilMethods.isEmpty(content)) {
             return Tuple.of(0, List.of());
         }
@@ -317,7 +334,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
         final List<Integer> tokens = EncodingUtil.encoding.get().encode(content);
         if (tokens.isEmpty()) {
-            Logger.debug(this.getClass(), "NO TOKENS for " + content);
+            debugLogger(this.getClass(), () -> String.format("No tokens for content ID '%s' were encoded: %s", contentId, content));
             return Tuple.of(0, List.of());
         }
 
@@ -331,7 +348,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             return Tuple.of(dbEmbeddings._2, dbEmbeddings._3);
         }
 
-        final Tuple2<Integer, List<Float>> openAiEmbeddings = Tuple.of(tokens.size(), sendTokensToOpenAI(tokens));
+        final Tuple2<Integer, List<Float>> openAiEmbeddings = Tuple.of(tokens.size(), this.sendTokensToOpenAI(contentId, tokens));
         saveEmbeddingsForCache(content, openAiEmbeddings);
         EMBEDDING_CACHE.put(hashed, openAiEmbeddings);
 
@@ -396,26 +413,80 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         saveEmbeddings(embeddingsDTO);
     }
 
-    private List<Float> sendTokensToOpenAI(@NotNull final List<Integer> tokens) {
+    /**
+     * Posts the specified list of tokens to the OpenAI Embeddings Endpoint and returns the
+     * resulting embeddings. Such tokens are the encoded data of a given Contentlet.
+     *
+     * @param contentId The ID of the Contentlet that will be sent to the OpenAI Endpoint.
+     * @param tokens    The encoded data of a Contentlet.
+     *
+     * @return A {@link List} of {@link Float} values representing the embeddings.
+     */
+    private List<Float> sendTokensToOpenAI(final String contentId, @NotNull final List<Integer> tokens) {
         final JSONObject json = new JSONObject();
         json.put(AiKeys.MODEL, config.getConfig(AppKeys.EMBEDDINGS_MODEL));
         json.put(AiKeys.INPUT, tokens);
-
+        debugLogger(this.getClass(), () -> String.format("Content tokens for content ID '%s': %s", contentId, tokens));
         final String responseString = OpenAIRequest.doRequest(
-                Config.getStringProperty("OPEN_AI_EMBEDDINGS_URL", "https://api.openai.com/v1/embeddings"),
+                OPEN_AI_EMBEDDINGS_URL.get(),
                 HttpMethod.POST,
-                getAPIKey(),
+                this.config.getApiKey(),
                 json);
-        final JSONObject data = (JSONObject) new JSONObject(responseString).getJSONArray(AiKeys.DATA).get(0);
-
-        return (List<Float>) data.getJSONArray(AiKeys.EMBEDDING).stream().map(val -> {
-            double x = (double) val;
-            return (float) x;
-        }).collect(Collectors.toList());
+        debugLogger(this.getClass(), () -> String.format("OpenAI Response for content ID '%s': %s",
+                contentId, responseString.replace("\n", BLANK)));
+        final JSONObject jsonResponse = Try.of(() -> new JSONObject(responseString)).getOrElseThrow(e -> {
+            Logger.error(this, "OpenAI Response String is not a valid JSON", e);
+            debugLogger(this.getClass(), () -> String.format("Invalid JSON Response: %s", responseString));
+            return new DotCorruptedDataException(e);
+        });
+        if (jsonResponse.containsKey(AiKeys.ERROR)) {
+            final String errorMsg = jsonResponse.getJSONObject(AiKeys.ERROR).getString(AiKeys.MESSAGE);
+            throw new DotRuntimeException(errorMsg);
+        }
+        final JSONObject data = this.getDataFromOpenAIResponse(contentId, jsonResponse);
+        return this.getEmbeddingsFromJSON(contentId, data);
     }
 
-    private String getAPIKey() {
-        return config.getApiKey();
+    /**
+     * Retrieves the data attribute from the OpenAI JSON response.
+     *
+     * @param contentId    The ID of the Contentlet that the JSON response belongs to.
+     * @param jsonResponse The JSON response from OpenAI as a {@link JSONObject}.
+     *
+     * @return The data attribute from the JSON response in the form of a {@link JSONObject}.
+     */
+    private JSONObject getDataFromOpenAIResponse(final String contentId, final JSONObject jsonResponse) {
+        try {
+            return (JSONObject) jsonResponse.getJSONArray(AiKeys.DATA).get(0);
+        } catch (final JSONException e) {
+            Logger.error(this, String.format("Failed to read 'data' attribute from JSON response to content ID '%s'. Received: " +
+                    "< %s >. Error cause: %s", contentId, jsonResponse.getString(AiKeys.DATA), ExceptionUtil.getErrorMessage(e)), e);
+            throw e;
+        }
+    }
+
+    /**
+     * Extracts the embeddings from the OpenAI JSON response.
+     *
+     * @param contentId The ID of the Contentlet that the JSON response belongs to.
+     * @param data      The {@link JSONObject} containing the embeddings.
+     *
+     * @return A {@link List} of {@link Float} values representing the embeddings.
+     */
+    @SuppressWarnings("unchecked")
+    private List<Float> getEmbeddingsFromJSON(final String contentId, final JSONObject data) {
+        try {
+            return (List<Float>) data.getJSONArray(AiKeys.EMBEDDING).stream().map(val -> {
+
+                final Double x = (Double) val;
+                return x.floatValue();
+
+            }).collect(Collectors.toList());
+        } catch (final JSONException e) {
+            Logger.error(this, String.format("Failed to read 'embedding' attribute from JSON response to content ID '%s'. Received: " +
+                    "< %s >. Error cause: %s", contentId, data.getString(AiKeys.EMBEDDING), ExceptionUtil.getErrorMessage(e)), e);
+            throw e;
+        }
     }
 
     private EmbeddingsDTO getSearcher(EmbeddingsDTO searcher) {

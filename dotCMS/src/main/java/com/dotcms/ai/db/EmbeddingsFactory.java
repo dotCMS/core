@@ -198,7 +198,8 @@ public class EmbeddingsFactory {
      * @param embeddings the embeddings to save
      */
     public void saveEmbeddings(final EmbeddingsDTO embeddings) {
-        Logger.info(EmbeddingsFactory.class, "Saving embeddings for content:" + embeddings.title);
+        Logger.info(EmbeddingsFactory.class, String.format("Saving embeddings for content with Inode '%s': %s",
+                embeddings.inode, embeddings.title));
 
         final PGvector vector = new PGvector(ArrayUtils.toPrimitive(embeddings.embeddings));
         try (final Connection conn = getPGVectorConnection();
