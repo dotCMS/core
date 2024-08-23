@@ -1409,7 +1409,6 @@
 
         <!-- Weld CDI -->
 
-        <!--
         <dependency>
             <groupId>org.jboss.weld.servlet</groupId>
             <artifactId>weld-servlet-shaded</artifactId>
@@ -1432,7 +1431,9 @@
             <artifactId>weld-se-shaded</artifactId>
             <scope>test</scope>
         </dependency>
-       -->
+
+        <!-- Weld CDI -->
+
         <dependency>
             <groupId>io.smallrye</groupId>
             <artifactId>jandex</artifactId>
