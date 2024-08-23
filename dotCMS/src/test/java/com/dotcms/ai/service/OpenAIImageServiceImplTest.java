@@ -1,5 +1,7 @@
 package com.dotcms.ai.service;
 
+import com.dotcms.ai.api.ImageAPI;
+import com.dotcms.ai.api.OpenAIImageAPIImpl;
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModelType;
 import com.dotcms.ai.app.AppConfig;
@@ -37,7 +39,7 @@ public class OpenAIImageServiceImplTest {
     private HostAPI hostApi;
     private TempFileAPI tempFileApi;
     private AIImageRequestDTO.Builder dtoBuilder;
-    private OpenAIImageService service;
+    private ImageAPI service;
 
     @Before
     public void setUp() {
@@ -112,7 +114,7 @@ public class OpenAIImageServiceImplTest {
         final JSONObject jsonObject = prepareJsonObject("Hello World!");
 
         final StopWordsUtil stopWordsUtil = mock(StopWordsUtil.class);
-        OpenAIImageServiceImpl.setStopWordsUtil(stopWordsUtil);
+        OpenAIImageAPIImpl.setStopWordsUtil(stopWordsUtil);
         when(stopWordsUtil.removeStopWords(anyString())).thenThrow(RuntimeException.class);
 
         final JSONObject result = service.sendRequest(jsonObject);
@@ -197,21 +199,21 @@ public class OpenAIImageServiceImplTest {
         assertTrue(result.containsKey("tempFile"));
     }
 
-    private OpenAIImageService prepareService(final String response,
-                                              final User user) {
-        return new OpenAIImageServiceImpl(config, user, hostApi, tempFileApi) {
+    private ImageAPI prepareService(final String response,
+                                    final User user) {
+        return new OpenAIImageAPIImpl(config, user, hostApi, tempFileApi) {
             @Override
-            String doRequest(final String urlIn, final JSONObject json) {
+            public String doRequest(final String urlIn, final JSONObject json) {
                 return response;
             }
 
             @Override
-            User getUser() {
+            public User getUser() {
                 return user;
             }
 
             @Override
-            AIImageRequestDTO.Builder getDtoBuilder() {
+            public AIImageRequestDTO.Builder getDtoBuilder() {
                 return dtoBuilder;
             }
         };

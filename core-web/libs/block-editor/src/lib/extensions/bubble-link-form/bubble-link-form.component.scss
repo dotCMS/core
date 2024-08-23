@@ -38,7 +38,7 @@
         .url-container {
             cursor: pointer;
             white-space: nowrap;
-            font-size: $dot-editor-size;
+            font-size: $font-size-md;
             width: 100%;
             word-wrap: normal;
             display: flex;
@@ -52,7 +52,7 @@
             display: flex;
             gap: 0.2 * $dot-editor-size;
             min-width: 100%;
-            font-size: $dot-editor-size;
+            font-size: $font-size-md;
 
             .checkbox-container {
                 cursor: pointer;

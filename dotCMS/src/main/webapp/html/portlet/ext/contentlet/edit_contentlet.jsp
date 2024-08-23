@@ -108,8 +108,6 @@
 <% } %>
 
 <script type="text/javascript">
-
-	var binaryFieldCallbacksMap = {} // This is a map to store the callbacks for the binary fields, used to reload them when we publish or save a contentlet, look on dotCMS/src/main/webapp/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp on saveContentCallback function
 	const relationsLoadedMap = {};
 
 	function waitForRelation() {
