@@ -1,17 +1,32 @@
-// Replacement for lodash.isEmpty
-// https://gist.github.com/inPhoenix/45a9f9e2568126d206f1125caebcd122
-export const isEmpty = (value: unknown): boolean => {
+/**
+ * Check if a value is empty
+ *
+ * Replacement for lodash.isEmpty
+ * https://gist.github.com/inPhoenix/45a9f9e2568126d206f1125caebcd122
+ * @export
+ * @param {unknown} value
+ * @return {*}  {boolean}
+ */
+export function isEmpty(value: unknown): boolean {
     return (
         value == null || // From standard.js: Always use === - but obj == null is allowed to check null || undefined
         (typeof value === 'object' && Object.keys(value).length === 0) || // This catches arrays and objects
         (typeof value === 'string' && value.trim().length === 0)
     );
-};
+}
 
-// Replacement for lodash.isEqual
-// https://gist.github.com/jsjain/a2ba5d40f20e19f734a53c0aad937fbb
+/**
+ * Check if two objects are equal
+ *
+ * Replacement for lodash.isEqual
+ * https://gist.github.com/jsjain/a2ba5d40f20e19f734a53c0aad937fbb
+ * @export
+ * @param {*} first
+ * @param {*} second
+ * @return {*}  {boolean}
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const isEqual = (first: any, second: any): boolean => {
+export function isEqual(first: any, second: any): boolean {
     if (first === second) {
         return true;
     }
@@ -85,16 +100,26 @@ export const isEqual = (first: any, second: any): boolean => {
     }
 
     return first === second;
-};
+}
 
-// Replacement for lodash.camelCase
-// https://stackoverflow.com/questions/2970525/converting-a-string-with-spaces-into-camel-case
-export const camelCase = (str = '') => {
+/**
+ * Convert a string to camel case
+ * This function does not handle special characters
+ *
+ * Replacement for lodash.camelCase
+ * https://stackoverflow.com/questions/2970525/converting-a-string-with-spaces-into-camel-case
+ *
+ * @export
+ * @param {string} [str='']
+ * @return {*}
+ */
+export function camelCase(str = ''): string {
     return (
         str
+            ?.trim()
             ?.replace(/(?:^\w|[A-Z]|\b\w)/g, function (word, index) {
                 return index === 0 ? word.toLowerCase() : word.toUpperCase();
             })
             .replace(/\s+/g, '') ?? ''
     );
-};
+}

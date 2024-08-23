@@ -3,4 +3,4 @@ export * from './lib/dot-utils';
 export * from './lib/services/dot-loading-indicator.service';
 
 export * from './lib/shared/const';
-export * from './lib/shared/functions';
+export * from './lib/shared/lodash/functions';
