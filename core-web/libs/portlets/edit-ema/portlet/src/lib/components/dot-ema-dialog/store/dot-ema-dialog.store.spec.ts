@@ -245,40 +245,82 @@ describe('DotEmaDialogStoreService', () => {
         });
     });
 
-    it('should update the state to show dialog for a translation', () => {
-        spectator.service.translatePage({
-            page: {
-                inode: '123',
-                liveInode: '1234',
-                stInode: '12345',
-                live: true,
-                title: 'test'
-            } as DotPage,
-            newLanguage: 2
+    describe('Dialog for translation', () => {
+        it('should update the state to show dialog for a translation', () => {
+            spectator.service.translatePage({
+                page: {
+                    inode: '123',
+                    liveInode: '1234',
+                    stInode: '12345',
+                    live: true,
+                    title: 'test'
+                } as DotPage,
+                newLanguage: 2
+            });
+
+            const queryParams = new URLSearchParams({
+                p_p_id: 'content',
+                p_p_action: '1',
+                p_p_state: 'maximized',
+                angularCurrentPortlet: 'edit-page',
+                _content_sibbling: '123',
+                _content_cmd: 'edit',
+                p_p_mode: 'view',
+                _content_sibblingStructure: '123',
+                _content_struts_action: '/ext/contentlet/edit_contentlet',
+                inode: '',
+                lang: '2',
+                populateaccept: 'true',
+                reuseLastLang: 'true'
+            });
+
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state).toEqual({
+                    url: LAYOUT_URL + '?' + queryParams.toString(),
+                    status: DialogStatus.LOADING,
+                    header: 'test',
+                    type: 'content'
+                });
+            });
         });
 
-        const queryParams = new URLSearchParams({
-            p_p_id: 'content',
-            p_p_action: '1',
-            p_p_state: 'maximized',
-            angularCurrentPortlet: 'edit-page',
-            _content_sibbling: '1234',
-            _content_cmd: 'edit',
-            p_p_mode: 'view',
-            _content_sibblingStructure: '1234',
-            _content_struts_action: '/ext/contentlet/edit_contentlet',
-            inode: '',
-            lang: '2',
-            populateaccept: 'true',
-            reuseLastLang: 'true'
-        });
+        it('should update the state to show dialog for a translation with working inode', () => {
+            spectator.service.translatePage({
+                page: {
+                    inode: '123',
+                    liveInode: '1234',
+                    stInode: '12345',
+                    live: true,
+                    title: 'test',
+                    working: true,
+                    workingInode: '56789'
+                } as DotPage,
+                newLanguage: 2
+            });
 
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state).toEqual({
-                url: LAYOUT_URL + '?' + queryParams.toString(),
-                status: DialogStatus.LOADING,
-                header: 'test',
-                type: 'content'
+            const queryParams = new URLSearchParams({
+                p_p_id: 'content',
+                p_p_action: '1',
+                p_p_state: 'maximized',
+                angularCurrentPortlet: 'edit-page',
+                _content_sibbling: '56789',
+                _content_cmd: 'edit',
+                p_p_mode: 'view',
+                _content_sibblingStructure: '56789',
+                _content_struts_action: '/ext/contentlet/edit_contentlet',
+                inode: '',
+                lang: '2',
+                populateaccept: 'true',
+                reuseLastLang: 'true'
+            });
+
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state).toEqual({
+                    url: LAYOUT_URL + '?' + queryParams.toString(),
+                    status: DialogStatus.LOADING,
+                    header: 'test',
+                    type: 'content'
+                });
             });
         });
     });
