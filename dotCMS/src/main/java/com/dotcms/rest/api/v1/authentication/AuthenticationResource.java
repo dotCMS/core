@@ -217,9 +217,8 @@ public class AuthenticationResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(operationId = "getLogInUser",
                 summary = "Retrieves user data",
-                description = "Provides information about any users that are currently " +
-                                "in a session. This retrieved data will be formatted into " +
-                                "a JSON response body.",
+                description = "Provides information about any users that are currently in a session.\n\n" +
+                                "This retrieved data will be formatted into a JSON response body.\n\n",
                 tags = {"Authentication"},
                 responses = {
                     @ApiResponse(responseCode = "200", description = "User data successfully collected",
