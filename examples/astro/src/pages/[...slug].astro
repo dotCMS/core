@@ -1,9 +1,10 @@
 ---
-import { client } from '../utils/client';
+import { getPageData } from '../utils/client';
 import Layout from '../layouts/Layout.astro';
 import Error from '../components/Error.astro';
-import { getPageRequestParams } from '@dotcms/client';
+
 import { MyPage } from '../react/myPage';
+import type { DotCMSPageAsset } from '../types';
 
 const params = Astro.params;
 
@@ -14,45 +15,10 @@ Astro.url.searchParams.forEach((value, key) => {
     searchParams[key] = value;
 });
 
-const getPageData = async (): Promise<{
-    pageAsset: any;
-    nav: any;
-    error?: any;
-}> => {
-    // WE NEED TYPES
-    try {
-        const path = params?.slug || '/';
-
-        const pageRequestParams = getPageRequestParams({
-            path,
-            params: searchParams
-        });
-
-        const pageAsset = await client.page.get(pageRequestParams as any); // WE NEED TO FIX THIS
-
-        const nav = await client.nav.get({
-            path: '/',
-            depth: 2,
-            languageId: pageRequestParams.language_id
-        });
-
-        return { pageAsset, nav };
-    } catch (error) {
-        return { pageAsset: null, nav: null, error };
-    }
-};
-
-const { pageAsset, nav, error } = await getPageData();
+const { pageAsset, nav, error } = await getPageData(params?.slug, params);
 
 if (!error) {
-    const { vanityUrl } = pageAsset as {
-        vanityUrl?: {
-            forwardTo: string;
-            temporaryRedirect: boolean;
-            permanentRedirect: boolean;
-            response: number;
-        };
-    }; // WE NEED TYPES
+    const { vanityUrl } = pageAsset as DotCMSPageAsset; // WE NEED TYPES
 
     if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
         return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
@@ -66,8 +32,8 @@ if (!error) {
             <Error error={error} />
         </Layout>
     ) : (
-        <Layout title={pageAsset.title}>
-            <MyPage client:load pageAsset={pageAsset} nav={nav.entity.children} />
+        <Layout title={pageAsset!.page.title}>
+            <MyPage client:load pageAsset={pageAsset} nav={nav?.children} />
         </Layout>
     )
 }

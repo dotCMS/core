@@ -5,25 +5,29 @@ import Header from "./layout/header";
 import Navigation from "./layout/navigation";
 import Footer from "./layout/footer/footer";
 import componentsMap from "./content-types";
+import type { FC } from "react";
+import type { DotcmsNavigationItem, DotCMSPageAsset } from "../types";
 
-
-
-export function MyPage({ pageAsset, nav }: any) {
+export const MyPage: FC<{
+  pageAsset: DotCMSPageAsset | undefined;
+  nav: DotcmsNavigationItem[] | undefined;
+}> = ({ pageAsset, nav }) => {
   pageAsset = usePageAsset(pageAsset);
 
   return (
     <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
-      {pageAsset.layout.header && (
-                <Header>
-                    <Navigation items={nav} />
-                 </Header>
-             )}
+      {pageAsset?.layout.header && (
+        <Header>
+          <Navigation items={nav} />
+        </Header>
+      )}
 
       <main className="container flex flex-col gap-8 m-auto">
         <DotcmsLayout
           pageContext={{
             components: componentsMap,
-            pageAsset: pageAsset,
+            pageAsset: pageAsset as any,
+            isInsideEditor: false,
           }}
           config={{
             pathname: "/",
@@ -31,7 +35,7 @@ export function MyPage({ pageAsset, nav }: any) {
         />
       </main>
 
-      {pageAsset.layout.footer && <Footer />}
+      {pageAsset?.layout.footer && <Footer />}
     </div>
   );
-}
+};

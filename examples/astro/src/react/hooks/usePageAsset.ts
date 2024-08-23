@@ -1,15 +1,16 @@
+import type { DotCMSPageAsset } from "../../types";
 import { client } from "../../utils/client";
 import { useEffect, useState } from "react";
 
-export const usePageAsset = (currentPageAsset: any) => {
-  const [pageAsset, setPageAsset] = useState(null);
+export const usePageAsset = (currentPageAsset: DotCMSPageAsset | undefined) => {
+  const [pageAsset, setPageAsset] = useState<DotCMSPageAsset | undefined>();
 
   useEffect(() => {
-    client.editor.on("changes", (page: any) => {
+    client.editor.on("changes", (page: unknown) => {
       if (!page) {
         return;
       }
-      setPageAsset(page);
+      setPageAsset(page as DotCMSPageAsset);
     });
 
     return () => {
