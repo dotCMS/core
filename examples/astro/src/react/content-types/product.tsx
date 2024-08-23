@@ -1,7 +1,17 @@
+import type { FC } from "react";
+import type { DotCMSContentlet } from "../../types";
 import useImageSrc from "../hooks/useImageSrc";
 
-function Product({ image, title, salePrice, retailPrice, urlTitle }) {
-  const formatPrice = (price) => {
+export type ProductProps = DotCMSContentlet;
+
+export const Product: FC<ProductProps> = ({
+  image,
+  title,
+  salePrice,
+  retailPrice,
+  urlTitle,
+}) => {
+  const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
@@ -49,6 +59,4 @@ function Product({ image, title, salePrice, retailPrice, urlTitle }) {
       </div>
     </div>
   );
-}
-
-export default Product;
+};

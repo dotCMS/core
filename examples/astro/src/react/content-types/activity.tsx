@@ -1,6 +1,15 @@
+import type { FC } from "react";
+import type { DotCMSContentlet } from "../../types";
 import useImageSrc from "../hooks/useImageSrc";
-function Activity({ title, description, image, urlTitle }) {
 
+export type ActivityProps = DotCMSContentlet;
+
+export const Activity: FC<ActivityProps> = ({
+  title,
+  description,
+  image,
+  urlTitle,
+}) => {
   const src = useImageSrc({ src: image?.idPath ?? image, width: 100 });
 
   return (
@@ -28,6 +37,4 @@ function Activity({ title, description, image, urlTitle }) {
       </div>
     </article>
   );
-}
-
-export default Activity;
+};

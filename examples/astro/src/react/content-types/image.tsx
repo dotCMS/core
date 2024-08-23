@@ -1,9 +1,15 @@
+import type { FC } from "react";
+import type { DotCMSContentlet } from "../../types";
 import useImageSrc from "../hooks/useImageSrc";
 
+export type ImageComponentProps = DotCMSContentlet;
 
-function ImageComponent({ fileAsset, title, description }) {
-
-  const src = useImageSrc({ src: fileAsset?.idPath ?? fileAsset});
+export const ImageComponent: FC<ImageComponentProps> = ({
+  fileAsset,
+  title,
+  description,
+}) => {
+  const src = useImageSrc({ src: fileAsset?.idPath ?? fileAsset });
 
   return (
     <div className="relative overflow-hidden bg-white rounded shadow-lg group">
@@ -22,6 +28,4 @@ function ImageComponent({ fileAsset, title, description }) {
       </div>
     </div>
   );
-}
-
-export default ImageComponent;
+};

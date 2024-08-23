@@ -1,10 +1,18 @@
 import useImageSrc from "../hooks/useImageSrc";
 
+import type { FC } from "react";
+import type { DotCMSContentlet } from "../../types";
 
-function Banner({ title, image, caption, buttonText, link }) {
+export type BannerProps = DotCMSContentlet;
 
+export const Banner: FC<BannerProps> = ({
+  title,
+  image,
+  caption,
+  buttonText,
+  link,
+}) => {
   const src = useImageSrc({ src: image?.idPath ?? image });
-
 
   return (
     <div className="relative w-full p-4 bg-gray-200 h-96">
@@ -27,6 +35,4 @@ function Banner({ title, image, caption, buttonText, link }) {
       </div>
     </div>
   );
-}
-
-export default Banner;
+};

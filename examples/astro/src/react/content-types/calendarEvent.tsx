@@ -1,8 +1,19 @@
+import type { FC } from "react";
+import type { DotCMSContentlet } from "../../types";
 import useImageSrc from "../hooks/useImageSrc";
 
-function extractLocationsAndActivities(contentlet) {
+export type CalendarEventProps = DotCMSContentlet;
+
+export type LocationsAndActivities = {
+  locations: any[];
+  activities: any[];
+};
+
+const extractLocationsAndActivities = (
+  contentlet: DotCMSContentlet,
+): LocationsAndActivities => {
   return contentlet.reduce(
-    (acc, { activities, ...location }) => {
+    (acc: any, { activities, ...location }: LocationsAndActivities) => {
       acc.activities = acc.activities.concat(activities);
       acc.locations.push(location);
 
@@ -10,9 +21,15 @@ function extractLocationsAndActivities(contentlet) {
     },
     { locations: [], activities: [] },
   );
-}
+};
 
-function CalendarEvent({ image, title, urlMap, description, location }) {
+export const CalendarEvent: FC<CalendarEventProps> = ({
+  image,
+  title,
+  urlMap,
+  description,
+  location,
+}) => {
   const { locations, activities } = extractLocationsAndActivities(location);
 
   const src = useImageSrc({ src: image?.idPath ?? image });
@@ -21,7 +38,11 @@ function CalendarEvent({ image, title, urlMap, description, location }) {
     <div className="relative flex bg-clip-border rounded-xl shadow-md w-full flex-row bg-slate-100">
       <div className="relative w-2/5 m-0 overflow-hidden bg-slate-100 rounded-r-none bg-clip-border rounded-xl shrink-0">
         {image && (
-          <img src={src} alt={title} className="absolute w-full h-full top-0 left-0" />
+          <img
+            src={src}
+            alt={title}
+            className="absolute w-full h-full top-0 left-0"
+          />
         )}
       </div>
       <div className="p-6">
@@ -63,16 +84,11 @@ function CalendarEvent({ image, title, urlMap, description, location }) {
           dangerouslySetInnerHTML={{ __html: description }}
         />
         <a href={urlMap}>
-          <div
-            className="flex items-center gap-2 px-6 py-3 text-xs font-bold text-center uppercase align-middle transition-all rounded-lg select-none disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none hover:bg-gray-900/10 active:bg-gray-900/20"
-            type="button"
-          >
+          <button className="flex items-center gap-2 px-6 py-3 text-xs font-bold text-center uppercase align-middle transition-all rounded-lg select-none disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none hover:bg-gray-900/10 active:bg-gray-900/20">
             Learn More
-          </div>
+          </button>
         </a>
       </div>
     </div>
   );
-}
-
-export default CalendarEvent;
+};
