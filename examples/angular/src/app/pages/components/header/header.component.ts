@@ -6,7 +6,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
     <header class="flex items-center justify-between p-4 bg-red-400">
       <div class="flex items-center">
         <h2 class="text-3xl font-bold text-white">
-          <a routerLink="/">TravelLux</a>
+          <a routerLink="/">TravelLux with NG</a>
         </h2>
       </div>
       <ng-content></ng-content>
