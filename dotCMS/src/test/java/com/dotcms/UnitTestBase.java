@@ -50,6 +50,8 @@ public abstract class UnitTestBase extends BaseMessageResources {
 		weld = new Weld().containerId(RegistrySingletonProvider.STATIC_INSTANCE)
 				.initialize();
 
+		System.out.println("Weld :: " + weld);
+
 		Config.initializeConfig();
 		Config.setProperty("API_LOCATOR_IMPLEMENTATION", MyAPILocator.class.getName());
 		Config.setProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", false);
