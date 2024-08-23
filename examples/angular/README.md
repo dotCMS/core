@@ -1,19 +1,34 @@
-DotCMS provides an Angular example that shows how to build dotCMS pages heedlessly with Angular JavaScript framework.
+# dotCMS Angular Example 
+
+DotCMS provides an Angular example that shows how to build manageable dotCMS pages headlessly with the Angular JavaScript framework.
 
 ## What do you need?
 
 1. A dotCMS instance or you can use https://demo.dotcms.com
-2. [Node.js](https://nodejs.org) and npm installed
-3. Terminal
-4. And a code editor.
+2. A valid AUTH token for the target instance (see: https://auth.dotcms.com/docs/latest/rest-api-authentication#creating-an-api-token-in-the-ui)
+3. Node js 18+ and npm installed
+4. Terminal
+5. And a code editor.
 
 ### Get the Angular example code
 
-Get the code from the next directory
+Get the code from the Angular example directory
 
 ```bash
 https://github.com/dotCMS/core/tree/master/examples/angular
 ```
+
+Or just checkout the directory
+
+```bash 
+git clone -n --depth=1 --filter=tree:0 https://github.com/dotCMS/core
+cd core
+git sparse-checkout set --no-cone examples/angular
+git checkout
+```
+The files will be found under the `examples/angular` folder
+
+
 
 ## Add the dotCMS configuration
 
@@ -32,7 +47,7 @@ Once all the configuration is in place, it is time to run the web app.
 
 1. Go back to your terminal and from the folder YOUR_NAME
 2. Run `ng serve`
-3. Open http://localhost:3000 in your browser
+3. Open http://localhost:4200 in your browser
 
 🎉 And that’s it.
 
