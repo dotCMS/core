@@ -490,7 +490,6 @@ describe('DotContentTypesPortletComponent', () => {
         });
 
         it('should set filterBy params', () => {
-            // fixture.detectChanges();
             expect(comp.filterBy).toBe('Form');
             expect(comp.listing.paginatorService.extraParams.get('type')).toBe('Form');
             expect(comp.actionHeaderOptions.primary.model).toBe(null);
