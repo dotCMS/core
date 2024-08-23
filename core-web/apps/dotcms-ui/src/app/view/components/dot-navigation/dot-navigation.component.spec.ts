@@ -246,7 +246,7 @@ describe('DotNavigationComponent', () => {
             });
 
             it('should have scroll', () => {
-                expect(fixture.debugElement.styles.cssText).toEqual('overflow-y: scroll;');
+                expect(fixture.debugElement.styles.cssText).toEqual('overflow-y: auto;');
             });
         });
     });
