@@ -1,36 +1,39 @@
 ---
-import { getPageData } from '../utils/client';
-import Layout from '../layouts/Layout.astro';
-import Error from '../components/Error.astro';
-import { MyPage } from '../react/myPage';
+import { getPageData } from "../utils/client";
+import Layout from "../layouts/Layout.astro";
+import Error from "../components/Error.astro";
+import { MyPage } from "../react/myPage";
 
 const params = Astro.params;
 
 const searchParams: Record<string, string> = {};
 
 Astro.url.searchParams.forEach((value, key) => {
-    searchParams[key] = value;
+  searchParams[key] = value;
 });
 
 const { pageAsset, nav, error } = await getPageData(params?.slug, params);
 
 if (!error) {
-    const { vanityUrl } = pageAsset ?? {};
+  const { vanityUrl } = pageAsset ?? {};
 
-    if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
-        return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
-    }
+  if (
+    vanityUrl &&
+    (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)
+  ) {
+    return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
+  }
 }
 ---
 
 {
-    error ? (
-        <Layout title="Error">
-            <Error error={error} />
-        </Layout>
-    ) : (
-        <Layout title={pageAsset!.page.title}>
-            <MyPage client:load pageAsset={pageAsset} nav={nav?.children} />
-        </Layout>
-    )
+  error ? (
+    <Layout title="Error">
+      <Error error={error} />
+    </Layout>
+  ) : (
+    <Layout title={pageAsset!.page.title}>
+      <MyPage client:load pageAsset={pageAsset} nav={nav?.children} />
+    </Layout>
+  )
 }

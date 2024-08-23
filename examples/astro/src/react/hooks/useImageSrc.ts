@@ -1,7 +1,6 @@
-import { useDotcmsPageContext } from '@dotcms/react';
+import { useDotcmsPageContext } from "@dotcms/react";
 
-const useImageSrc = ({src, width}: {src: string, width?: number}) => {
-
+const useImageSrc = ({ src, width }: { src: string; width?: number }) => {
   const dotcmsURL = new URL(import.meta.env.PUBLIC_DOTCMS_HOST).origin;
 
   const context = useDotcmsPageContext();
@@ -13,6 +12,6 @@ const useImageSrc = ({src, width}: {src: string, width?: number}) => {
   const withWidth = width ? `/${width}` : "";
 
   return `${dotcmsURL}${imageSRC}${withWidth}?language_id=${languageId}`;
-}
+};
 
-export default useImageSrc
+export default useImageSrc;
