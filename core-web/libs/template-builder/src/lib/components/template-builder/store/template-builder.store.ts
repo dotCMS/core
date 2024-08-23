@@ -396,15 +396,18 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             state,
             {
                 newRows,
-                templateIdentifier
+                templateIdentifier,
+                isAnonymousTemplate = false
             }: {
                 newRows: DotGridStackWidget[];
                 templateIdentifier: string;
+                isAnonymousTemplate?: boolean;
             }
         ) => {
             const { rows: oldRows } = state;
 
-            const shouldReplaceRows = state.templateIdentifier !== templateIdentifier;
+            const shouldReplaceRows =
+                state.templateIdentifier !== templateIdentifier && !isAnonymousTemplate;
 
             const newStateRows = shouldReplaceRows
                 ? newRows
