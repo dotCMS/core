@@ -2,6 +2,7 @@ package com.dotmarketing.servlets;
 
 import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -538,9 +539,9 @@ public class ShortyServlet extends HttpServlet {
                 .append(StringPool.FORWARD_SLASH).append(field.variable()).toString();
     }
 
-    private void validateContentlet(Contentlet contentlet, boolean live, String inode) throws DotDataException {
-        if (contentlet == null) {
-            String versionType = live ? PageMode.LIVE.name() : PageMode.WORKING.name();
+    private void validateContentlet(final Contentlet contentlet, final boolean live, final String inode) throws DotDataException {
+        if (Objects.isNull(contentlet)) {
+            final String versionType = live ? PageMode.LIVE.name() : PageMode.WORKING.name();
             throw new DotDataException(String.format("No contentlet found for %s inode %s", versionType, inode));
         }
     }
