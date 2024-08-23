@@ -1,38 +1,35 @@
 import { useEffect, useState } from "react";
 import { client } from "../../../../utils/client";
-import Contentlets from "../../../shared/contentlets";
+import { Contentlets } from "../../../shared/contentlets";
+import type { DotCMSContentlet } from "../../../../types";
 
+export const Destinations = () => {
+  const [destinations, setDestinations] = useState<DotCMSContentlet[]>([]);
 
+  useEffect(() => {
+    client.content
+      .getCollection("Destination")
+      .sortBy([
+        {
+          field: "modDate",
+          order: "desc",
+        },
+      ])
+      .limit(3)
+      .then((response) => {
+        setDestinations(response.contentlets);
+      })
+      .catch((error) => {
+        console.error(`Error fetching Destinations`, error);
+      });
+  }, []);
 
-export default function Destinations() {
-    const [destinations, setDestinations] = useState([]);
-
-    useEffect(() => {
-        client.content
-            .getCollection("Destination")
-            .sortBy([
-                {
-                    field: "modDate",
-                    order: "desc",
-                },
-            ])
-            .limit(3)
-            .then((response) => {
-                setDestinations(response.contentlets);
-            })
-            .catch((error) => {
-                console.error(`Error fetching Destinations`, error);
-            });
-    }, []);
-
-    return (
-        <div className="flex flex-col">
-            <h2 className="text-2xl font-bold mb-7 text-black">
-                Popular Destinations
-            </h2>
-            {!!destinations.length && (
-                <Contentlets contentlets={destinations} />
-            )}
-        </div>
-    );
-}
+  return (
+    <div className="flex flex-col">
+      <h2 className="text-2xl font-bold mb-7 text-black">
+        Popular Destinations
+      </h2>
+      {!!destinations.length && <Contentlets contentlets={destinations} />}
+    </div>
+  );
+};

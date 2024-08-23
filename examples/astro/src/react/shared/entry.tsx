@@ -1,3 +1,5 @@
+import type { FC } from "react";
+import type { DotCMSContentlet } from "../../types";
 import useImageSrc from "../hooks/useImageSrc";
 
 const dateFormatOptions: Intl.DateTimeFormatOptions = {
@@ -6,43 +8,43 @@ const dateFormatOptions: Intl.DateTimeFormatOptions = {
   day: "numeric",
 };
 
-function Entry ({ contentlet })  {
-  const src = useImageSrc({
-    src: contentlet.image?.idPath ?? contentlet.image
-  })
+export type EntryProps = {
+  contentlet: DotCMSContentlet;
+};
 
-  return <>
-    <a
-      className="relative min-w-32"
-      href={contentlet.urlMap || contentlet.url}
-    >
-      {contentlet.image && (
-        <img
-          src={
-            src
-          }
-          alt={contentlet.urlTitle}
-          className="object-cover absolute w-full h-full top-0 left-0"
-        />
-      )}
-    </a>
-    <div className="flex flex-col gap-1">
+export const Entry: FC<EntryProps> = ({ contentlet }) => {
+  const src = useImageSrc({
+    src: contentlet.image?.idPath ?? contentlet.image,
+  });
+
+  return (
+    <>
       <a
-        className="text-sm text-zinc-900 font-bold"
+        className="relative min-w-32"
         href={contentlet.urlMap || contentlet.url}
       >
-        {contentlet.title}
-      </a>
-      <time className="text-zinc-600">
-        {new Date(
-          contentlet.modDate
-        ).toLocaleDateString(
-          "en-US",
-          dateFormatOptions
+        {contentlet.image && (
+          <img
+            src={src}
+            alt={contentlet.urlTitle}
+            className="object-cover absolute w-full h-full top-0 left-0"
+          />
         )}
-      </time>
-    </div>
-  </>
-}
-
-export default Entry
+      </a>
+      <div className="flex flex-col gap-1">
+        <a
+          className="text-sm text-zinc-900 font-bold"
+          href={contentlet.urlMap || contentlet.url}
+        >
+          {contentlet.title}
+        </a>
+        <time className="text-zinc-600">
+          {new Date(contentlet.modDate).toLocaleDateString(
+            "en-US",
+            dateFormatOptions,
+          )}
+        </time>
+      </div>
+    </>
+  );
+};

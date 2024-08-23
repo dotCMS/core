@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// We need to make a types lib for this.
 
 export interface DotCMSPageAsset {
   canCreateTemplate: boolean;
@@ -110,7 +111,7 @@ export interface DotCMSContentlet {
   hostName: string;
   identifier: string;
   inode: string;
-  image?: string;
+  image?: any;
   languageId: number;
   language?: string;
   live: boolean;

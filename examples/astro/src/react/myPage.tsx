@@ -2,16 +2,19 @@ import { DotcmsLayout } from "@dotcms/react";
 
 import { usePageAsset } from "./hooks/usePageAsset";
 import Header from "./layout/header";
-import Navigation from "./layout/navigation";
-import Footer from "./layout/footer/footer";
+
 import componentsMap from "./content-types";
 import type { FC } from "react";
 import type { DotcmsNavigationItem, DotCMSPageAsset } from "../types";
+import { Navigation } from "./layout/navigation";
+import { Footer } from "./layout/footer/footer";
 
-export const MyPage: FC<{
+export type MyPageProps = {
   pageAsset: DotCMSPageAsset | undefined;
   nav: DotcmsNavigationItem[] | undefined;
-}> = ({ pageAsset, nav }) => {
+};
+
+export const MyPage: FC<MyPageProps> = ({ pageAsset, nav }) => {
   pageAsset = usePageAsset(pageAsset);
 
   return (

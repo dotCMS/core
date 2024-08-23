@@ -1,6 +1,6 @@
 import useImageSrc from "../../../hooks/useImageSrc";
 
-function AboutUs() {
+export const AboutUs = () => {
   const src = useImageSrc({ src: "82da90eb04/fileAsset/logo.png", width: 221 });
 
   return (
@@ -15,6 +15,4 @@ function AboutUs() {
       <img src={src} height={53} width={221} alt="TravelLux logo" />
     </div>
   );
-}
-
-export default AboutUs;
+};

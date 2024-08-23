@@ -1,25 +1,31 @@
-import { useMemo } from "react";
+import { useMemo, type FC } from "react";
 import { isInsideEditor } from "@dotcms/client";
+import type { DotCMSContentlet } from "../../types";
 
-function Contentlet({ contentlet, children }) {
-    const insideEditor = useMemo(isInsideEditor, []);
+export type ContentletProps = {
+  contentlet: DotCMSContentlet;
+  children: React.ReactNode;
+};
 
-    return insideEditor ? (
-        <div
-            data-dot-object="contentlet"
-            data-dot-identifier={contentlet.identifier}
-            data-dot-basetype={contentlet.baseType}
-            data-dot-title={contentlet.widgetTitle || contentlet.title}
-            data-dot-inode={contentlet.inode}
-            data-dot-type={contentlet.contentType}
-            data-dot-on-number-of-pages={contentlet.onNumberOfPages ?? 0}
-            key={contentlet.identifier}
-        >
-            {children}
-        </div>
-    ) : (
-        children
-    );
-}
+export const Contentlet: FC<ContentletProps> = ({ contentlet, children }) => {
+  const insideEditor = useMemo(isInsideEditor, []);
+
+  return insideEditor ? (
+    <div
+      data-dot-object="contentlet"
+      data-dot-identifier={contentlet.identifier}
+      data-dot-basetype={contentlet.baseType}
+      data-dot-title={contentlet.widgetTitle || contentlet.title}
+      data-dot-inode={contentlet.inode}
+      data-dot-type={contentlet.contentType}
+      data-dot-on-number-of-pages={contentlet.onNumberOfPages ?? 0}
+      key={contentlet.identifier}
+    >
+      {children}
+    </div>
+  ) : (
+    children
+  );
+};
 
 export default Contentlet;

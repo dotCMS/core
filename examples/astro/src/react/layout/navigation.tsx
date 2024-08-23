@@ -1,10 +1,12 @@
-function Navigation({
-  items,
-  className,
-}: {
-  items?: any[];
+import type { FC } from "react";
+import type { DotcmsNavigationItem } from "../../types";
+
+export type NavigationProps = {
+  items?: DotcmsNavigationItem[];
   className?: string;
-}) {
+};
+
+export const Navigation: FC<NavigationProps> = ({ items, className }) => {
   return (
     <nav className={className}>
       <ul className="flex space-x-4 text-white">
@@ -28,6 +30,4 @@ function Navigation({
       </ul>
     </nav>
   );
-}
-
-export default Navigation;
+};
