@@ -2,13 +2,10 @@
 import { getPageData } from '../utils/client';
 import Layout from '../layouts/Layout.astro';
 import Error from '../components/Error.astro';
-
 import { MyPage } from '../react/myPage';
-import type { DotCMSPageAsset } from '../types';
 
 const params = Astro.params;
 
-// We can move this logic to the helper function
 const searchParams: Record<string, string> = {};
 
 Astro.url.searchParams.forEach((value, key) => {
@@ -18,7 +15,7 @@ Astro.url.searchParams.forEach((value, key) => {
 const { pageAsset, nav, error } = await getPageData(params?.slug, params);
 
 if (!error) {
-    const { vanityUrl } = pageAsset as DotCMSPageAsset; // WE NEED TYPES
+    const { vanityUrl } = pageAsset ?? {};
 
     if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
         return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
