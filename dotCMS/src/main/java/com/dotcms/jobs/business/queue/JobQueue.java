@@ -1,6 +1,5 @@
 package com.dotcms.jobs.business.queue;
 
-import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,10 +16,9 @@ public interface JobQueue {
      *
      * @param queueName     The name of the queue to add the job to.
      * @param parameters    The parameters for the job.
-     * @param retryStrategy The retry strategy for the job.
      * @return The ID of the newly created job.
      */
-    String addJob(String queueName, Map<String, Object> parameters, RetryStrategy retryStrategy);
+    String addJob(String queueName, Map<String, Object> parameters);
 
     /**
      * Retrieves a job by its ID.

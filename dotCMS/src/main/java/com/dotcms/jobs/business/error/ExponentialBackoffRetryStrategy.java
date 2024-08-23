@@ -57,13 +57,27 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
         this.retryableExceptions = new HashSet<>(retryableExceptions);
     }
 
+    /**
+     * Determines whether a job should be retried based on the provided job and exception.
+     *
+     * @param job       The job in question.
+     * @param exception The exception that occurred during the execution of the job.
+     * @return true if the job should be retried, false otherwise.
+     */
     @Override
-    public boolean shouldRetry(Job job, Throwable exception) {
+    public boolean shouldRetry(final Job job, final Throwable exception) {
         return job.retryCount() < maxRetries && isRetryableException(exception);
     }
 
+    /**
+     * Calculates the delay for the next retry attempt for the given job based on the delay
+     * parameters.
+     *
+     * @param job The job for which the next retry delay is calculated.
+     * @return The delay for the next retry attempt in milliseconds.
+     */
     @Override
-    public long nextRetryDelay(Job job) {
+    public long nextRetryDelay(final Job job) {
         long delay = (long) (initialDelay * Math.pow(backoffFactor, job.retryCount()));
         delay = Math.min(delay, maxDelay);
         // Add jitter
@@ -71,13 +85,25 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
         return delay;
     }
 
+    /**
+     * Returns the maximum number of retry attempts allowed by this strategy.
+     *
+     * @return The maximum number of retries.
+     */
     @Override
     public int maxRetries() {
         return maxRetries;
     }
 
+    /**
+     * Determines whether a given exception is considered retryable according to the retry
+     * strategy.
+     *
+     * @param exception The exception to check if it is retryable.
+     * @return {@code true} if the exception is retryable, {@code false} otherwise.
+     */
     @Override
-    public boolean isRetryableException(Throwable exception) {
+    public boolean isRetryableException(final Throwable exception) {
         if (exception == null) {
             return false;
         }
@@ -92,7 +118,7 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
      *
      * @param exceptionClass The exception class to be considered retryable.
      */
-    public void addRetryableException(Class<? extends Throwable> exceptionClass) {
+    public void addRetryableException(final Class<? extends Throwable> exceptionClass) {
         retryableExceptions.add(exceptionClass);
     }
 

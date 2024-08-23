@@ -18,7 +18,7 @@ public class CircuitBreaker {
      * @param failureThreshold the number of failures that will cause the circuit to open
      * @param resetTimeout     the time in milliseconds after which to attempt to close the circuit
      */
-    public CircuitBreaker(int failureThreshold, long resetTimeout) {
+    public CircuitBreaker(final int failureThreshold, final long resetTimeout) {
         if (failureThreshold <= 0) {
             throw new IllegalArgumentException("Failure threshold must be greater than zero");
         }

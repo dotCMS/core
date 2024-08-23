@@ -1,8 +1,5 @@
 package com.dotcms.jobs.business.job;
 
-import com.dotcms.jobs.business.error.ErrorDetail;
-import com.dotcms.jobs.business.error.RetryStrategy;
-import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.LocalDateTime;
@@ -37,39 +34,15 @@ public interface AbstractJob {
 
     Map<String, Object> parameters();
 
-    ProgressTracker progressTracker();
-
     String executionNode();
 
     Throwable lastException();
 
-    ErrorDetail errorDetail();
+    com.dotcms.jobs.business.error.ErrorDetail errorDetail();
 
     int retryCount();
 
     long lastRetryTimestamp();
-
-    RetryStrategy retryStrategy();
-
-    @Value.Derived
-    default float progress() {
-        return progressTracker() != null ? progressTracker().progress() : 0.0f;
-    }
-
-    @Value.Derived
-    default int maxRetries() {
-        return retryStrategy().maxRetries();
-    }
-
-    @Value.Derived
-    default boolean canRetry() {
-        return retryStrategy().shouldRetry(Job.copyOf(this), lastException());
-    }
-
-    @Value.Derived
-    default long nextRetryDelay() {
-        return retryStrategy().nextRetryDelay(Job.copyOf(this));
-    }
 
     /**
      * Creates a new Job with an incremented retry count and updated timestamp.
@@ -89,7 +62,7 @@ public interface AbstractJob {
      * @param errorDetail The error detail to set.
      * @return A new Job instance marked as failed.
      */
-    default Job markAsFailed(ErrorDetail errorDetail) {
+    default Job markAsFailed(com.dotcms.jobs.business.error.ErrorDetail errorDetail) {
         return AbstractJob.builder().from(this)
                 .state(JobState.FAILED)
                 .result(JobResult.ERROR)

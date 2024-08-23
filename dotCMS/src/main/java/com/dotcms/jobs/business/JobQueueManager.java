@@ -4,7 +4,7 @@ import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.error.ExponentialBackoffRetryStrategy;
 import com.dotcms.jobs.business.error.JobCancellationException;
-import com.dotcms.jobs.business.error.NoProcessorFoundException;
+import com.dotcms.jobs.business.error.ProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobState;
@@ -121,7 +121,7 @@ public class JobQueueManager {
      * @param queueName The name of the queue.
      * @param processor The job processor to register.
      */
-    public void registerProcessor(String queueName, JobProcessor processor) {
+    public void registerProcessor(final String queueName, final JobProcessor processor) {
         processors.put(queueName, processor);
     }
 
@@ -131,16 +131,17 @@ public class JobQueueManager {
      * @param queueName  The name of the queue.
      * @param parameters The parameters for the job.
      * @return The ID of the created job.
-     * @throws NoProcessorFoundException if no processor is registered for the specified queue.
+     * @throws ProcessorNotFoundException if no processor is registered for the specified queue.
      */
-    public String createJob(String queueName, Map<String, Object> parameters) {
+    public String createJob(final String queueName, final Map<String, Object> parameters) {
+
         if (!processors.containsKey(queueName)) {
-            final var error = new NoProcessorFoundException(queueName);
+            final var error = new ProcessorNotFoundException(queueName);
             Logger.error(JobQueueManager.class, error);
             throw error;
         }
-        RetryStrategy retryStrategy = retryStrategy(queueName);
-        return jobQueue.addJob(queueName, parameters, retryStrategy);
+
+        return jobQueue.addJob(queueName, parameters);
     }
 
     /**
@@ -149,7 +150,7 @@ public class JobQueueManager {
      * @param jobId The ID of the job.
      * @return The Job object.
      */
-    public Job job(String jobId) {
+    public Job job(final String jobId) {
         return jobQueue.job(jobId);
     }
 
@@ -160,7 +161,7 @@ public class JobQueueManager {
      * @param pageSize The number of jobs per page.
      * @return A list of Job objects.
      */
-    public List<Job> jobs(int page, int pageSize) {
+    public List<Job> jobs(final int page, final int pageSize) {
         return jobQueue.jobs(page, pageSize);
     }
 
@@ -170,7 +171,7 @@ public class JobQueueManager {
      * @param jobId The ID of the job to cancel.
      * @throws JobCancellationException if the job cannot be cancelled.
      */
-    public void cancelJob(String jobId) {
+    public void cancelJob(final String jobId) {
         Job job = jobQueue.job(jobId);
         if (job != null) {
             final var processor = processors.get(job.queueName());
@@ -203,7 +204,7 @@ public class JobQueueManager {
      * @param jobId   The ID of the job to watch.
      * @param watcher The consumer to be notified of job updates.
      */
-    public void watchJob(String jobId, Consumer<Job> watcher) {
+    public void watchJob(final String jobId, final Consumer<Job> watcher) {
         jobWatchers.computeIfAbsent(jobId, k -> new CopyOnWriteArrayList<>()).add(watcher);
         Job currentJob = jobQueue.job(jobId);
         watcher.accept(currentJob);
@@ -214,7 +215,7 @@ public class JobQueueManager {
      *
      * @param job The job whose watchers to notify.
      */
-    private void notifyJobWatchers(Job job) {
+    private void notifyJobWatchers(final Job job) {
         List<Consumer<Job>> watchers = jobWatchers.get(job.id());
         if (watchers != null) {
             watchers.forEach(watcher -> watcher.accept(job));
@@ -229,11 +230,12 @@ public class JobQueueManager {
     /**
      * Updates the progress of a job and notifies its watchers.
      *
-     * @param job The job whose progress to update.
+     * @param job             The job whose progress to update.
+     * @param progressTracker The processor progress tracker
      */
-    private void updateJobProgress(final Job job) {
+    private void updateJobProgress(final Job job, final ProgressTracker progressTracker) {
         if (job != null) {
-            jobQueue.updateJobProgress(job.id(), job.progress());
+            jobQueue.updateJobProgress(job.id(), progressTracker.progress());
             notifyJobWatchers(job);
         }
     }
@@ -306,10 +308,10 @@ public class JobQueueManager {
      *
      * @param job The job to be processed.
      */
-    private void processJobWithRetry(Job job) {
+    private void processJobWithRetry(final Job job) {
 
         if (job.state() == JobState.FAILED) {
-            if (job.canRetry()) {
+            if (canRetry(job)) {
                 handleFailedJobWithRetry(job);
             } else {
                 handleNonRetryableFailedJob(job);
@@ -325,10 +327,10 @@ public class JobQueueManager {
      *
      * @param job The failed job that can be retried.
      */
-    private void handleFailedJobWithRetry(Job job) {
+    private void handleFailedJobWithRetry(final Job job) {
 
         long now = System.currentTimeMillis();
-        long nextRetryTime = job.lastRetryTimestamp() + job.nextRetryDelay();
+        long nextRetryTime = job.lastRetryTimestamp() + nextRetryDelay(job);
         if (now >= nextRetryTime) {
             processJob(job);
         } else {
@@ -342,7 +344,7 @@ public class JobQueueManager {
      *
      * @param job The failed job that cannot be retried.
      */
-    private void handleNonRetryableFailedJob(Job job) {
+    private void handleNonRetryableFailedJob(final Job job) {
 
         Logger.warn(this, "Job " + job.id() + " has failed and cannot be retried.");
         jobQueue.removeJob(job.id());
@@ -353,33 +355,34 @@ public class JobQueueManager {
      *
      * @param job The job to process.
      */
-    private void processJob(Job job) {
+    private void processJob(final Job job) {
 
         JobProcessor processor = processors.get(job.queueName());
         if (processor != null) {
+
             Job runningJob = job.withState(JobState.RUNNING);
             jobQueue.updateJobStatus(runningJob);
             notifyJobWatchers(runningJob);
 
             try {
-                ProgressTracker progressTracker = processor.progressTracker(job);
-                Job jobWithTracker = job.withProgressTracker(progressTracker);
+
+                final ProgressTracker progressTracker = processor.progressTracker(runningJob);
 
                 // Start a separate thread to periodically update and persist progress
                 ScheduledExecutorService progressUpdater = Executors.newSingleThreadScheduledExecutor();
                 progressUpdater.scheduleAtFixedRate(() ->
-                        updateJobProgress(jobWithTracker), 0, 1, TimeUnit.SECONDS
+                        updateJobProgress(runningJob, progressTracker), 0, 1, TimeUnit.SECONDS
                 );
 
-                processor.process(jobWithTracker);
+                processor.process(runningJob);
 
                 // Stop the progress updater
                 progressUpdater.shutdown();
 
                 // Ensure final progress is updated
-                updateJobProgress(jobWithTracker);
+                updateJobProgress(runningJob, progressTracker);
 
-                Job completedJob = jobWithTracker.markAsCompleted();
+                Job completedJob = runningJob.markAsCompleted();
                 jobQueue.updateJobStatus(completedJob);
 
                 notifyJobWatchers(completedJob);
@@ -416,10 +419,10 @@ public class JobQueueManager {
      * @param job         The job that failed.
      * @param errorDetail The details of the error that caused the failure.
      */
-    private void handleJobFailure(Job job, ErrorDetail errorDetail) {
+    private void handleJobFailure(final Job job, final ErrorDetail errorDetail) {
 
         Job updatedJob;
-        if (job.canRetry()) {
+        if (canRetry(job)) {
             updatedJob = job.incrementRetry().
                     markAsFailed(errorDetail);
         } else {
@@ -435,7 +438,7 @@ public class JobQueueManager {
      * @param queueName     The name of the queue.
      * @param retryStrategy The retry strategy to set.
      */
-    public void setRetryStrategy(String queueName, RetryStrategy retryStrategy) {
+    public void setRetryStrategy(final String queueName, final RetryStrategy retryStrategy) {
         retryStrategies.put(queueName, retryStrategy);
     }
 
@@ -445,8 +448,30 @@ public class JobQueueManager {
      * @param queueName The name of the queue.
      * @return The retry strategy for the queue, or the default strategy if none is set.
      */
-    private RetryStrategy retryStrategy(String queueName) {
+    private RetryStrategy retryStrategy(final String queueName) {
         return retryStrategies.getOrDefault(queueName, defaultRetryStrategy);
+    }
+
+    /**
+     * Determines whether a job is eligible for retry based on its retry strategy.
+     *
+     * @param job The job to check for retry eligibility.
+     * @return {@code true} if the job is eligible for retry, {@code false} otherwise.
+     */
+    private boolean canRetry(final Job job) {
+        final RetryStrategy retryStrategy = retryStrategy(job.queueName());
+        return retryStrategy.shouldRetry(job, job.lastException());
+    }
+
+    /**
+     * Calculates the next retry delay for a job based on its retry strategy.
+     *
+     * @param job The job for which to calculate the next retry delay.
+     * @return The next retry delay for the job, in milliseconds.
+     */
+    private long nextRetryDelay(final Job job) {
+        final RetryStrategy retryStrategy = retryStrategy(job.queueName());
+        return retryStrategy.nextRetryDelay(job);
     }
 
     /**
