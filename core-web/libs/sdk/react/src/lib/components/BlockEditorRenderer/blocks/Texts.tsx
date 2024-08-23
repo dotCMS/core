@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { BlockProps, Mark } from '../../../models';
+import { BlockProps, ContentNode, Mark } from '../../../models/blocks.interface';
 
 type HeadingProps = BlockProps & { level?: string };
 type LinkProps = BlockProps & { attrs?: Mark['attrs'] };
@@ -41,8 +40,9 @@ const nodeMarks: Record<string, React.FC<BlockProps | LinkProps | HeadingProps>>
     subscript: Subscript
 };
 
-//TODO: Type this later
-export const TextBlock = (props: any) => {
+type TextBlockProps = Omit<ContentNode, 'content' | 'attrs'>;
+
+export const TextBlock = (props: TextBlockProps) => {
     const { marks = [], text } = props;
     const mark = marks[0] || { type: '', attrs: {} };
     const newProps = { ...props, marks: marks.slice(1) };

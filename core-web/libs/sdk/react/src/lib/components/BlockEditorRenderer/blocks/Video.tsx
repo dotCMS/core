@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DotCmsClient } from '@dotcms/client';
 
-// Maybe we can reuse the "data" type from another file.
-export type DotCMSVideoProps = Record<string, string | any>;
+import { DotAssetProps } from '../../../models/blocks.interface';
 
-export const DotCMSVideo = ({ data, src, width, height, mimeType }: DotCMSVideoProps) => {
+export const DotCMSVideo = ({ data, src, width, height, mimeType }: DotAssetProps) => {
+
     const client = DotCmsClient.instance;
 
     const { thumbnail } = data;

@@ -1,4 +1,4 @@
-import { BlockProps } from '../../../models';
+import { BlockProps } from "../../../models/blocks.interface";
 
 type CodeBlockProps = BlockProps & { language?: string };
 

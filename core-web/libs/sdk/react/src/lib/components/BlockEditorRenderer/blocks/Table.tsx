@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {  ContentNode } from '../BlockEditorRenderer';
+import { ContentNode } from '../../../models/blocks.interface';
 
 interface TableRendererProps {
     content: ContentNode[];
