@@ -110,7 +110,7 @@ public class CreateJsonWebTokenResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Deprecated
-    @Hidden
+    @Hidden //not shown in API playground
     public final Response getApiToken(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response,
                                          final CreateTokenForm createTokenForm) {
