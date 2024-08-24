@@ -350,6 +350,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			try{
 				CacheLocator.getCache(cacheName).clearCache();
 			}catch (NullPointerException e) {
+				Logger.info(this, "--> Calling the MaintenanceUtil.flushCache() method ...");
 				MaintenanceUtil.flushCache();
 			}
 		APILocator.getPermissionAPI().resetAllPermissionReferences();

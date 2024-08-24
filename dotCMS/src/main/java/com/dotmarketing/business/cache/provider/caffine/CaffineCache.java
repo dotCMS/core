@@ -131,14 +131,15 @@ public class CaffineCache extends CacheProvider {
 
     @Override
     public void removeAll() {
-
+        Logger.info(this, "-> Removing all groups from CaffineCache provider");
         Set<String> currentGroups = new HashSet<>();
         currentGroups.addAll(getGroups());
 
         for (String group : currentGroups) {
+            Logger.info(this, "---> Removing group: " + group);
             remove(group);
         }
-
+        Logger.info(this, "-> Clearing all groups");
         groups.clear();
     }
 

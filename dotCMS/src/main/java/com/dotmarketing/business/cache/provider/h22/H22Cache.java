@@ -248,10 +248,12 @@ public class H22Cache extends CacheProvider {
 		failedThreshold = (failedThreshold<1) ? 1: failedThreshold;
 		// we either truncate the tables on a full flush or rebuild the tables
 		if(Config.getBooleanProperty("cache.h22.rebuild.on.removeAll", false) || failedFlushAlls==failedThreshold){
+			Logger.info(this, "-> The 'cache.h22.rebuild.on.removeAll' is 'true', and/or failedFlushAlls [ " + failedFlushAlls + " ] == failedThreshold [ " + failedThreshold + " ]");
 			dispose(true);
 		}
 		else{
 			try {
+				Logger.info(this, "-> Truncating tables...");
 				doTruncateTables();
 				failedFlushAlls=0;
 			} catch (SQLException e) {

@@ -261,7 +261,7 @@ public final class PostgresCacheTransport implements CacheTransport {
     @Override
     public void send(String message) throws CacheTransportException {
         if (!isInitialized.get()) {
-            Logger.error(this.getClass(), "Postgres Cache Transport Not initiallized!");
+            Logger.debug(this.getClass(), "Postgres Cache Transport Not initialized!");
             return;
         }
 
