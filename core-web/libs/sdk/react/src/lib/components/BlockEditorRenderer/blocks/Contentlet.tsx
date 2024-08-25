@@ -1,4 +1,4 @@
-import { CustomRenderer } from '../../../models/blocks.interface';
+import { ContentNode, CustomRenderer } from '../../../models/blocks.interface';
 
 // Replace this when we have a types lib
 export interface Contentlet {
@@ -35,11 +35,26 @@ export interface Contentlet {
     variant: string;
 }
 
-export const DotContent = (props: { data: Contentlet; customRenderers?: CustomRenderer }) => {
-    const { data, customRenderers } = props;
+type DotContentProps = ContentNode & {
+    customRenderers?: CustomRenderer;
+};
+
+/**
+ * Renders a DotContent component.
+ *
+ * @param {DotContentProps} props - The props for the DotContent component.
+ * @returns {JSX.Element} The rendered DotContent component.
+ */
+export const DotContent = (props: DotContentProps) => {
+    const { attrs, customRenderers } = props;
     const DefaultContent = () => <div>Unknown Content Type</div>;
+    const data = attrs?.data as unknown as Contentlet;
 
     const Component = customRenderers?.[data.contentType] ?? DefaultContent;
+
+    if (!data) {
+        console.error('DotContent: No data provided');
+    }
 
     return <Component {...data} />;
 };

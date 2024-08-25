@@ -9,6 +9,12 @@ interface TableRendererProps {
     }>;
 }
 
+/**
+ * Renders a table component for the Block Editor.
+ *
+ * @param content - The content of the table.
+ * @param blockEditorItem - The Block Editor item component.
+ */
 export const TableRenderer: React.FC<TableRendererProps> = ({
     content,
     blockEditorItem

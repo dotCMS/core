@@ -1,5 +1,3 @@
-import { Contentlet } from '../components/BlockEditorRenderer/blocks/Contentlet';
-
 export interface Block {
     content: ContentNode[];
 }
@@ -12,7 +10,7 @@ export interface Mark {
 export interface ContentNode {
     type: string;
     content: ContentNode[];
-    attrs?: Record<string, string> & { data: DotContentProps | Contentlet };
+    attrs?: Record<string, string>; //& { data?: DotContentProps | Contentlet };
     marks?: Mark[];
     text?: string;
 }

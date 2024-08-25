@@ -1,15 +1,24 @@
 import { DotCmsClient } from '@dotcms/client';
 
-import { DotAssetProps } from '../../../models/blocks.interface';
+import { ContentNode } from '../../../models/blocks.interface';
 
-export const DotCMSVideo = ({ data, src, width, height, mimeType }: DotAssetProps) => {
+type DotCMSVideoProps = ContentNode['attrs'] & {
+    data?: Record<string, unknown>;
+};
 
+/**
+ * Renders a video component for displaying videos.
+ *
+ * @param props - The properties for the video component.
+ * @returns The rendered video component.
+ */
+export const DotCMSVideo = (props: ContentNode) => {
+    const { data, src, mimeType, width, height } = props.attrs as DotCMSVideoProps;
     const client = DotCmsClient.instance;
 
-    const { thumbnail } = data;
-    const srcUrl = data.identifier ? `${client.dotcmsUrl}${src}` : src;
+    const srcUrl = data?.identifier ? `${client.dotcmsUrl}${src}` : src;
 
-    const poster = thumbnail ? `${client.dotcmsUrl}${thumbnail}` : 'poster-image.jpg';
+    const poster = data?.thumbnail ? `${client.dotcmsUrl}${data?.thumbnail}` : 'poster-image.jpg';
 
     return (
         <video controls preload="metadata" poster={poster} width={width} height={height}>

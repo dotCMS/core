@@ -1,12 +1,22 @@
 import { DotCmsClient } from '@dotcms/client';
 
-import { DotAssetProps } from '../../../models/blocks.interface';
+import { ContentNode } from '../../../models/blocks.interface';
 
-export const DotCMSImage = (props: DotAssetProps) => {
-    const { data, src, alt } = props;
+type DotCMSImageProps = ContentNode['attrs'] & {
+    data?: Record<string, unknown>;
+};
+
+/**
+ * Renders an image component for dotCMS.
+ *
+ * @param props - The props for the DotCMSImage component.
+ * @returns The rendered image component.
+ */
+export const DotCMSImage = (props: ContentNode) => {
+    const { data, src, alt } = props.attrs as DotCMSImageProps;
     const client = DotCmsClient.instance;
 
-    const srcUrl = data.identifier ? `${client.dotcmsUrl}${src}` : src;
+    const srcUrl = data?.identifier ? `${client.dotcmsUrl}${src}` : src;
 
     return <img alt={alt} src={srcUrl} />;
 };
