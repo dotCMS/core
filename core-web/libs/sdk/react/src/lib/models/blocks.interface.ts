@@ -57,3 +57,20 @@ export type CustomRenderer = Record<string, React.FC<any>>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type DotAssetProps = { data: DotContentProps; [key: string]: any };
+
+export enum Blocks {
+    PARAGRAPH = 'paragraph',
+    HEADING = 'heading',
+    TEXT = 'text',
+    BULLET_LIST = 'bulletList',
+    ORDERED_LIST = 'orderedList',
+    LIST_ITEM = 'listItem',
+    BLOCK_QUOTE = 'blockquote',
+    CODE_BLOCK = 'codeBlock',
+    HARDBREAK = 'hardBreak',
+    HORIZONTAL_RULE = 'horizontalRule',
+    DOT_IMAGE = 'dotImage',
+    DOT_VIDEO = 'dotVideo',
+    TABLE = 'table',
+    DOT_CONTENT = 'dotContent'
+}
