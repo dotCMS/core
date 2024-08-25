@@ -38,8 +38,34 @@ export function DotEditableText({
         setContent(content);
     }, [contentlet, fieldName, format, isInsideEditor]);
 
+    useEffect(() => {
+        const onMessage = ({ data }: MessageEvent) => {
+            const { name, payload } = data;
+            if (name !== 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS') {
+                return;
+            }
+
+            const { oldInode, inode } = payload;
+            const currentInode = contentlet.inode;
+
+            if (currentInode === oldInode || currentInode === inode) {
+                editorRef.current?.focus();
+
+                return;
+            }
+        };
+
+        window.addEventListener('message', onMessage);
+
+        return () => {
+            window.removeEventListener('message', onMessage);
+        };
+    }, [contentlet.inode]);
+
     const onMouseDown = (event: MouseEvent) => {
-        if (contentlet.onNumberOfPages <= 1 || editorRef.current?.hasFocus()) {
+        const { onNumberOfPages = 1 } = contentlet;
+
+        if (onNumberOfPages <= 1 || editorRef.current?.hasFocus()) {
             return;
         }
 
@@ -90,30 +116,25 @@ export function DotEditableText({
         }
     };
 
-    // const innerHTMLToElement = () => {
-    //     const element = editorRef.current?.editor.getElement();
-    //     const safeHtml = content; // Assuming content is already sanitized
-    //     element.innerHTML = safeHtml;
-    // };
-
     const didContentChange = (editedContent: string) => {
         return content !== editedContent;
     };
 
+    if (!isInsideEditor) {
+        // We can let the user pass the Child Component and create a root to get the HTML for the editor
+        return <div dangerouslySetInnerHTML={{ __html: content }} />;
+    }
+
     return (
-        <div>
-            {isInsideEditor && (
-                <Editor
-                    tinymceScriptSrc={`${DotCmsClient.dotcmsUrl}/ext/tinymcev7/tinymce.min.js`}
-                    inline={true}
-                    onInit={(_, editor) => (editorRef.current = editor)}
-                    init={TINYMCE_CONFIG[mode]}
-                    initialValue={content}
-                    onMouseDown={onMouseDown}
-                    onFocusOut={onFocusOut}
-                />
-            )}
-        </div>
+        <Editor
+            tinymceScriptSrc={`${DotCmsClient.dotcmsUrl}/ext/tinymcev7/tinymce.min.js`}
+            inline={true}
+            onInit={(_, editor) => (editorRef.current = editor)}
+            init={TINYMCE_CONFIG[mode]}
+            initialValue={content}
+            onMouseDown={onMouseDown}
+            onFocusOut={onFocusOut}
+        />
     );
 }
 

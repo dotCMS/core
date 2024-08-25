@@ -126,7 +126,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      * @memberof DotEditableTextComponent
      */
     get onNumberOfPages() {
-        return this.contentlet['onNumberOfPages'];
+        return this.contentlet['onNumberOfPages'] || 1;
     }
 
     /**
