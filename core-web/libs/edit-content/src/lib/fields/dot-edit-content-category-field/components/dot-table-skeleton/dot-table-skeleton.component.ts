@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { SkeletonModule } from 'primeng/skeleton';
@@ -12,7 +11,7 @@ import { TableModule } from 'primeng/table';
 @Component({
     selector: 'dot-table-skeleton',
     standalone: true,
-    imports: [CommonModule, SkeletonModule, TableModule],
+    imports: [SkeletonModule, TableModule],
     templateUrl: './dot-table-skeleton.component.html',
     styleUrl: './dot-table-skeleton.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

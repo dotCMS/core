@@ -133,7 +133,8 @@ const PrimaryTemplate = `
         <input
           pInputText
           type="text"
-          (input)="dt.filterGlobal($event.target.value, 'contains')"
+          #inputElement
+          (input)="dt.filterGlobal(inputElement.value, 'contains')"
           placeholder="Global Search"
         />
       </span>

@@ -62,8 +62,6 @@
     Object inodeObj =(Object) request.getAttribute("inode");
     String inode = inodeObj != null ? inodeObj.toString() : "";
 
-    String contentletIdentifier = contentlet.getIdentifier();
-
     String counter = (String) request.getAttribute("counter");
 
     boolean fullScreenField = Try.of(()->(boolean)request.getAttribute("DOT_FULL_SCREEN_FIELD")).getOrElse(false);
@@ -115,11 +113,6 @@
         }
     }
 </style>
-
-<script>
-var binaryCallbacksMap = {} // This is a map to store the callbacks for the binary fields, used to reload them when we publish or save a contentlet, look on dotCMS/src/main/webapp/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp on saveContentCallback function
-</script>
-
 
 <div class="fieldWrapper" >
     <div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
@@ -219,6 +212,7 @@ var binaryCallbacksMap = {} // This is a map to store the callbacks for the bina
             String textValue = UtilMethods.isSet(value) ? value.toString(): (UtilMethods.isSet(defaultValue) ? defaultValue : "");
             String safeTextValue = "`" + StringEscapeUtils.escapeJavaScript(textValue.replaceAll("`", "&#96;").replaceAll("\\$", "&#36;")) + "`";
 
+            String contentletIdentifier = contentlet.getIdentifier();
             String jsonField = "{}";
             String contentletObj = "{}";
             Boolean showVideoThumbnail = Config.getBooleanProperty("SHOW_VIDEO_THUMBNAIL", true);
@@ -780,7 +774,7 @@ var binaryCallbacksMap = {} // This is a map to store the callbacks for the bina
             </script>
             <script>
                 // Create a new scope so that variables defined here can have the same name without being overwritten.
-                function setBinaryFieldInputs() {
+                (function autoexecute() {
                     const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
 
                     /**
@@ -788,10 +782,7 @@ var binaryCallbacksMap = {} // This is a map to store the callbacks for the bina
                      * This is a workaround to get the contentlet from the API
                      * because there is no way to get the same contentlet the AP retreive from the dwr call.
                      */
-
-                    const identifier =  "<%=contentletIdentifier%>";
-
-                    fetch(`/api/v1/content/${identifier}`, {
+                    fetch('/api/v1/content/<%=inode%>', {
                         method: 'GET',
                         headers: {
                             'Content-Type': 'application/json'
@@ -878,14 +869,7 @@ var binaryCallbacksMap = {} // This is a map to store the callbacks for the bina
                     .catch(() => {
                         binaryFieldContainer.innerHTMl = '<div class="callOutBox">Error loading the binary field</div>';
                     })
-                };
-
-                setBinaryFieldInputs(); // Initialize the binary Field
-
-                // This code covers the multiple binaries in a contentlet
-                if(!binaryCallbacksMap["<%=field.getVelocityVarName()%>"]) {
-                    binaryCallbacksMap["<%=field.getVelocityVarName()%>"] = setBinaryFieldInputs; // Register the function to be called when the contentlet is saved
-                }
+                })();
             </script>
         <%}else{%>
 

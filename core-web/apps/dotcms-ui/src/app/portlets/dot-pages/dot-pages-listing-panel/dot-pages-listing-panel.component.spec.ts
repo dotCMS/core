@@ -230,7 +230,9 @@ describe('DotPagesListingPanelComponent', () => {
 
         it('should send event to filter keyword', () => {
             const elem = de.query(By.css('.dot-pages-listing-header__inputs input'));
-            elem.triggerEventHandler('input', { target: { value: 'test' } });
+            elem.nativeElement.focus();
+            elem.nativeElement.value = 'test';
+            elem.triggerEventHandler('input');
 
             expect(store.setKeyword).toHaveBeenCalledWith('test');
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
@@ -239,7 +241,9 @@ describe('DotPagesListingPanelComponent', () => {
 
         it('should send event to filter keyword when cleaning', () => {
             const elem = de.query(By.css('.dot-pages-listing-header__inputs input'));
-            elem.triggerEventHandler('input', { target: { value: 'test' } });
+            elem.nativeElement.focus();
+            elem.nativeElement.value = 'test';
+            elem.triggerEventHandler('input');
 
             const elemClean = de.query(
                 By.css('[data-testid="dot-pages-listing-header__keyword-input-clear"]')

@@ -406,13 +406,11 @@ public String getGravatar(String postedBy){
 		                        x++;
 		                %>
 		                    <tr <%=str_style %>>
-		                        <td>
-		                            <img border="0" src="/html/images/icons/<%= UtilMethods.getFileExtension(file.getFileName()).toLowerCase() %>.png"> &nbsp;
+								<a href="<%= file.getURI() %>" target="_blank">
+									<%= file.getFileName() %>
+								</a>
 
-		                                <%= file.getFileName() %>
-
-		                        </td>
-		                        <td>
+								<td>
 		                            <button dojoType="dijit.form.Button" type="button" class="dijitButtonDanger" style="float: right;" onClick="removeFile('<%= file.getInode() %>')"><%= LanguageUtil.get(pageContext, "remove") %></button>
 		                        </td>
 		                    </tr>

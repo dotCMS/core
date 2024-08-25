@@ -173,3 +173,4 @@ jobs:
           needs-docker-image: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+          cleanup-runner: true

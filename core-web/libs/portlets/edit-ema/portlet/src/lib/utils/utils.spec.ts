@@ -13,7 +13,8 @@ import {
     mapContainerStructureToArrayOfContainers,
     mapContainerStructureToDotContainerMap,
     areContainersEquals,
-    compareUrlPaths
+    compareUrlPaths,
+    createFullURL
 } from '.';
 
 import { dotPageContainerStructureMock } from '../shared/mocks';
@@ -589,6 +590,47 @@ describe('utils functions', () => {
 
         it('should return false when the paths are not equal', () => {
             expect(compareUrlPaths('/test', '/test2')).toBe(false);
+        });
+    });
+
+    describe('createFullURL', () => {
+        const expectedURL =
+            'http://localhost:4200/page?language_id=1&com.dotmarketing.persona.id=persona&variantName=new&experimentId=1&depth=1';
+        const params = {
+            url: 'page',
+            language_id: '1',
+            'com.dotmarketing.persona.id': 'persona',
+            variantName: 'new',
+            experimentId: '1',
+            mode: 'EDIT_MODE',
+            clientHost: 'http://localhost:4200/',
+            depth: '1'
+        };
+
+        it('should return the correct url', () => {
+            const result = createFullURL(params);
+            expect(result).toBe(expectedURL);
+        });
+
+        it('should ignore the double slash in the clientHost or path', () => {
+            const result = createFullURL({
+                ...params,
+                clientHost: 'http://localhost:4200//',
+                url: '/page'
+            });
+            expect(result).toBe(expectedURL);
+        });
+
+        it('should add the host_id if the side identifier is passed', () => {
+            const result = createFullURL(
+                {
+                    ...params,
+                    clientHost: 'http://localhost:4200//',
+                    url: '/page'
+                },
+                '123'
+            );
+            expect(result).toBe(`${expectedURL}${'&host_id=123'}`);
         });
     });
 });
