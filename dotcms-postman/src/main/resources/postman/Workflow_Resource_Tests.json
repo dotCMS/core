@@ -9127,71 +9127,6 @@
 					"response": []
 				},
 				{
-					"name": "UpdateContent",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"SucessRequest\");",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"Key Value updated\", function () {",
-									"    let contentIdentifier = pm.collectionVariables.get(\"contentletIdentifier\");",
-									"    let contentlet = jsonData.entity.results[0][contentIdentifier];",
-									"    pm.expect(contentlet.key).include(\"SucessRequest-Updated\"); ",
-									"    pm.expect(contentlet.value).include(\"SucessRequest-Updated\");",
-									"});",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{ \"contentlet\" : {\n  \"identifier\": \"{{contentletIdentifier}}\",  \n  \"key\": \"SucessRequest-Updated{{$timestamp}}\",\n  \"value\": \"SucessRequest-Updated{{$timestamp}}\"\n}\n}"
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"default",
-								"fire",
-								"PUBLISH"
-							]
-						},
-						"description": "Updates content fields \"key\" and \"value\" by using the PATCH verb.\n\nAsserts the fields \"key\" and \"value\" were effectively updated."
-					},
-					"response": []
-				},
-				{
 					"name": "Fire Publish BaseType Can Not Be Resolved BadRequest",
 					"event": [
 						{
@@ -9735,6 +9670,71 @@
 							]
 						},
 						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateContent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"SucessRequest\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Key Value updated\", function () {",
+									"    let contentIdentifier = pm.collectionVariables.get(\"contentletIdentifier\");",
+									"    let contentlet = jsonData.entity.results[0][contentIdentifier];",
+									"    pm.expect(contentlet.key).include(\"SucessRequest-Updated\"); ",
+									"    pm.expect(contentlet.value).include(\"SucessRequest-Updated\");",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"contentlet\" : {\n  \"identifier\": \"{{contentletIdentifier}}\",  \n  \"key\": \"SucessRequest-Updated{{$timestamp}}\",\n  \"value\": \"SucessRequest-Updated{{$timestamp}}\"\n}\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Updates content fields \"key\" and \"value\" by using the PATCH verb.\n\nAsserts the fields \"key\" and \"value\" were effectively updated."
 					},
 					"response": []
 				}
