@@ -1,10 +1,9 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
-import com.dotmarketing.util.UtilMethods;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -30,7 +29,7 @@ public class ContainerUUID implements Serializable{
     private final String identifier;
     private String uuid;
 
-    /**
+    /**x
      * History of Changes: This section lists all the UUIDs that have been assigned to this Container. For example,
      * if the history is ["3", "1", "4"], it means the Container was initially assigned UUID 3,
      * then changed to UUID 1 after a layout modification, and is currently assigned UUID 4.
@@ -54,12 +53,7 @@ public class ContainerUUID implements Serializable{
 
         this.identifier = containerIdOrPath;
         this.uuid = containerInstanceID == null ? UUID_DEFAULT_VALUE : containerInstanceID;
-        this.historyUUIDs = createHistoryListFromUUID();
-    }
-
-    @NotNull
-    private List<String> createHistoryListFromUUID() {
-        return !UUID_DEFAULT_VALUE.equals(this.uuid) ? list(this.uuid) : Collections.emptyList();
+        this.historyUUIDs = isNew(containerInstanceID) ? new ArrayList<>() : list(this.uuid);
     }
 
     public ContainerUUID(final @JsonProperty("identifier") String containerIdOrPath,
@@ -68,7 +62,11 @@ public class ContainerUUID implements Serializable{
 
         this.identifier = containerIdOrPath;
         this.uuid = containerInstanceID == null ? UUID_DEFAULT_VALUE : containerInstanceID;
-        this.historyUUIDs = new ArrayList<>(UtilMethods.isSet(historyUUIDs) ? historyUUIDs: createHistoryListFromUUID());
+        this.historyUUIDs = isNew(containerInstanceID) ? new ArrayList<>() : new ArrayList<>(historyUUIDs);
+    }
+
+    private boolean isNew(String containerInstanceID) {
+        return UUID_DEFAULT_VALUE.equals(containerInstanceID);
     }
 
     public void addUUIDTOHistory(final String uuid){
