@@ -335,14 +335,18 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			}
 		}
 
+		Logger.info(this, "Adding Message to SessionMessage");
+
 		if(UtilMethods.isSet(message)){
 			SessionMessages.add(req, "message",message);
 		}
+		Logger.info(this, "Adding Error Message to SessionMessage");
 		if(UtilMethods.isSet(errorMessage)){
 			SessionMessages.add(req, "error",errorMessage);
 		}
 
 		String referer = req.getParameter("referer");
+		Logger.info(this, "Forwarding to Referer: " + referer);
 		setForward(req,referer);
 	}
 
@@ -353,7 +357,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				Logger.info(this, "--> Calling the MaintenanceUtil.flushCache() method ...");
 				MaintenanceUtil.flushCache();
 			}
+		Logger.info(this, "Done Flushing Cache, Now Resetting All Permission References");
 		APILocator.getPermissionAPI().resetAllPermissionReferences();
+		Logger.info(this, "Done Resetting All Permission References");
 	}
 
 	private void _deleteMenusCache()throws Exception{
