@@ -21,16 +21,17 @@ export function DotEditableText({
     const [content, setContent] = useState(contentlet[fieldName] || '');
 
     useEffect(() => {
-        setisInsideEditor(isInsideEditorFn());
+        const isInsideEditor = isInsideEditorFn();
+        setisInsideEditor(isInsideEditor);
 
-        if (!isInsideEditorFn()) {
+        if (!isInsideEditor) {
             return;
         }
 
         const content = contentlet[fieldName] || '';
         editorRef.current?.setContent(content, { format });
         setContent(content);
-    }, [contentlet, fieldName, format, isInsideEditor]);
+    }, [contentlet, fieldName, format]);
 
     useEffect(() => {
         const onMessage = ({ data }: MessageEvent) => {
