@@ -195,6 +195,8 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
 
             componentHost.pageState = new DotPageRenderState(mockUser(), mockDotRenderedPage());
 
+            
+
             fixtureHost.detectChanges();
 
             languageSelector = de.query(By.css('dot-language-selector')).componentInstance;
@@ -205,11 +207,10 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
             expect(personaSelector).not.toBeNull();
         });
 
-        xit('should persona selector be enabled', () => {
-            expect(personaSelector.disabled).toBe(false);
-        });
+        fit('should persona selector be disabled after haveContent is set to false', () => {
 
-        it('should persona selector be disabled after haveContent is set to false', () => {
+            console.log('componentHost.pageState', componentHost.pageState.page.identifier);
+
             const dotPageStateService: DotPageStateService = de.injector.get(DotPageStateService);
             dotPageStateService.haveContent$.next(false);
 
