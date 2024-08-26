@@ -1,11 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    OnInit,
-    computed,
-    inject,
-    input
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input } from '@angular/core';
 import { AbstractControl, ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
