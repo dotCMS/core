@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.templates.business;
 
-import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.FunctionUtils.ifOrElse;
 
 import com.dotcms.business.WrapInTransaction;

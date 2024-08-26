@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.templates.business;
 
-import com.dotcms.api.APIProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -17,7 +16,7 @@ import java.util.List;
  *
  * - newLayout: This is the new layout. It is used in conjunction with oldTemplateLayout to calculate the changes between the two.
  * After this, the {@link com.dotmarketing.beans.MultiTree} is updated according to the two layouts.
- *
+
  * - pageIds: These are the IDs of the pages that need to be updated. This parameter helps filter
  * the {@link com.dotmarketing.beans.MultiTree} that will be updated.
  *
