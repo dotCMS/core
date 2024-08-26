@@ -23,13 +23,7 @@ export function DotEditableText({
     useEffect(() => {
         setisInsideEditor(isInsideEditorFn());
 
-        if (!isInsideEditor) {
-            return;
-        }
-    }, [isInsideEditor]);
-
-    useEffect(() => {
-        if (!isInsideEditor) {
+        if (!isInsideEditorFn()) {
             return;
         }
 
