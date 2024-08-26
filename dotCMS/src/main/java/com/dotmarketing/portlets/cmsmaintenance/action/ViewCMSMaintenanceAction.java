@@ -358,7 +358,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				MaintenanceUtil.flushCache();
 			}
 		Logger.info(this, "Done Flushing Cache, Now Resetting All Permission References");
-		APILocator.getPermissionAPI().resetAllPermissionReferences();
+//		APILocator.getPermissionAPI().resetAllPermissionReferences();
 		Logger.info(this, "Done Resetting All Permission References");
 	}
 
