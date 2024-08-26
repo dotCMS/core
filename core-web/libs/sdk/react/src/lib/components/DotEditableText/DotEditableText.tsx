@@ -15,14 +15,14 @@ export function DotEditableText({
     format = 'text',
     contentlet,
     fieldName = ''
-}: DotEditableTextProps) {
+}: Readonly<DotEditableTextProps>) {
     const editorRef = useRef<Editor['editor'] | null>(null);
-    const [isInsideEditor, setisInsideEditor] = useState(false);
+    const [isInsideEditor, setIsInsideEditor] = useState(false);
     const [content, setContent] = useState(contentlet[fieldName] || '');
 
     useEffect(() => {
         const isInsideEditor = isInsideEditorFn();
-        setisInsideEditor(isInsideEditor);
+        setIsInsideEditor(isInsideEditor);
 
         if (!isInsideEditor) {
             return;
@@ -42,11 +42,10 @@ export function DotEditableText({
 
             const { oldInode, inode } = payload;
             const currentInode = contentlet.inode;
+            const shouldFocus = currentInode === oldInode || currentInode === inode;
 
-            if (currentInode === oldInode || currentInode === inode) {
+            if (shouldFocus) {
                 editorRef.current?.focus();
-
-                return;
             }
         };
 
