@@ -38,7 +38,7 @@ const componentsMap = {
     Image: ImageComponent,
     calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
-    // CustomNoComponent: CustomNoComponent,
+    CustomNoComponent: CustomNoComponent,
     BlockEditorItem: BlogWithBlockEditor
 };
 

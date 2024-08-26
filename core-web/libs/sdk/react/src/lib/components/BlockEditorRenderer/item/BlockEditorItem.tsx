@@ -21,12 +21,12 @@ export const BlockEditorItem = ({
     content: ContentNode[];
     customRenderers?: CustomRenderer;
 }) => {
-    return content?.map((node: ContentNode, index: number) => {
+    return content?.map((node: ContentNode) => {
         const CustomRendererComponent = customRenderers?.[node.type];
         if (CustomRendererComponent) {
             return (
                 <CustomRendererComponent
-                    key={`${node.type}-${index}`}
+                    key={`${node.type}-${Math.random()}`}
                     {...node.attrs}
                     content={node.content}>
                     <BlockEditorItem content={node.content} customRenderers={customRenderers} />
@@ -37,72 +37,72 @@ export const BlockEditorItem = ({
         switch (node.type) {
             case Blocks.PARAGRAPH:
                 return (
-                    <Paragraph key={`${node.type}-${index}`} {...node}>
+                    <Paragraph key={`${node.type}-${Math.random()}`} {...node}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </Paragraph>
                 );
 
             case Blocks.HEADING:
                 return (
-                    <Heading key={`${node.type}-${index}`} {...node}>
+                    <Heading key={`${node.type}-${Math.random()}`} {...node}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </Heading>
                 );
 
             case Blocks.TEXT:
-                return <TextBlock key={`${node.type}-${index}`} {...node} />;
+                return <TextBlock key={`${node.type}-${Math.random()}`} {...node} />;
 
             case Blocks.BULLET_LIST:
                 return (
-                    <BulletList key={`${node.type}-${index}`}>
+                    <BulletList key={`${node.type}-${Math.random()}`}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </BulletList>
                 );
 
             case Blocks.ORDERED_LIST:
                 return (
-                    <OrderedList key={`${node.type}-${index}`}>
+                    <OrderedList key={`${node.type}-${Math.random()}`}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </OrderedList>
                 );
 
             case Blocks.LIST_ITEM:
                 return (
-                    <ListItem key={`${node.type}-${index}`}>
+                    <ListItem key={`${node.type}-${Math.random()}`}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </ListItem>
                 );
 
             case Blocks.BLOCK_QUOTE:
                 return (
-                    <BlockQuote key={`${node.type}-${index}`}>
+                    <BlockQuote key={`${node.type}-${Math.random()}`}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </BlockQuote>
                 );
 
             case Blocks.CODE_BLOCK:
                 return (
-                    <CodeBlock key={`${node.type}-${index}`} {...node}>
+                    <CodeBlock key={`${node.type}-${Math.random()}`} {...node}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </CodeBlock>
                 );
 
             case Blocks.HARDBREAK:
-                return <br key={`${node.type}-${index}`} />;
+                return <br key={`${node.type}-${Math.random()}`} />;
 
             case Blocks.HORIZONTAL_RULE:
-                return <hr key={`${node.type}-${index}`} />;
+                return <hr key={`${node.type}-${Math.random()}`} />;
 
             case Blocks.DOT_IMAGE:
-                return <DotCMSImage key={`${node.type}-${index}`} {...node} />;
+                return <DotCMSImage key={`${node.type}-${Math.random()}`} {...node} />;
 
             case Blocks.DOT_VIDEO:
-                return <DotCMSVideo key={`${node.type}-${index}`} {...node} />;
+                return <DotCMSVideo key={`${node.type}-${Math.random()}`} {...node} />;
 
             case Blocks.TABLE:
                 return (
                     <TableRenderer
-                        key={`${node.type}-${index}`}
+                        key={`${node.type}-${Math.random()}`}
                         content={node.content}
                         blockEditorItem={BlockEditorItem}
                     />
@@ -111,14 +111,16 @@ export const BlockEditorItem = ({
             case Blocks.DOT_CONTENT:
                 return (
                     <DotContent
-                        key={`${node.type}-${index}`}
+                        key={`${node.type}-${Math.random()}`}
                         {...node}
                         customRenderers={customRenderers}
                     />
                 );
 
             default:
-                return <div key={`${node.type}-${index}`}>Unknown Block Type {node.type}</div>;
+                return (
+                    <div key={`${node.type}-${Math.random()}`}>Unknown Block Type {node.type}</div>
+                );
         }
     });
 };
