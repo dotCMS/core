@@ -6,8 +6,8 @@ import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.client.AIClient;
 import com.dotcms.ai.domain.AIProvider;
-import com.dotcms.ai.domain.AIRequest;
-import com.dotcms.ai.domain.JSONObjectAIRequest;
+import com.dotcms.ai.client.AIRequest;
+import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.domain.Model;
 import com.dotcms.ai.exception.DotAIAppConfigDisabledException;
 import com.dotcms.ai.exception.DotAIClientConnectException;
@@ -138,7 +138,7 @@ public class OpenAIClient implements AIClient {
             httpRequest.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + appConfig.getApiKey());
 
             if (!payload.getAsMap().isEmpty()) {
-                Try.run(() -> ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(jsonEntity));
+                Try.run(() -> HttpEntityEnclosingRequestBase.class.cast(httpRequest).setEntity(jsonEntity));
             }
 
             try (CloseableHttpResponse response = httpClient.execute(httpRequest)) {

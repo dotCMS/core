@@ -83,9 +83,9 @@ public class OpenAIResponseEvaluator implements AIResponseEvaluator {
                 .of(DotAIModelNotFoundException.class, DotAIModelNotOperationalException.class)
                 .anyMatch(exception -> exception.isInstance(throwable))) {
             return ModelStatus.INVALID;
-        } else {
-            return ModelStatus.UNKNOWN;
         }
+
+        return ModelStatus.UNKNOWN;
     }
 
 }

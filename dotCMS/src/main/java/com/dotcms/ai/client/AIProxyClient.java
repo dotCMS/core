@@ -3,8 +3,6 @@ package com.dotcms.ai.client;
 import com.dotcms.ai.client.openai.OpenAIClient;
 import com.dotcms.ai.client.openai.OpenAIResponseEvaluator;
 import com.dotcms.ai.domain.AIProvider;
-import com.dotcms.ai.domain.AIRequest;
-import com.dotcms.ai.domain.AIResponse;
 import io.vavr.Lazy;
 
 import java.io.OutputStream;
@@ -34,13 +32,13 @@ public class AIProxyClient {
 
     private static final Lazy<AIProxyClient> INSTANCE = Lazy.of(AIProxyClient::new);
 
-    private final ConcurrentMap<AIProvider, AIProxiedClient> proxiedClients;
+    private final ConcurrentMap<String, AIProxiedClient> proxiedClients;
     private final AtomicReference<AIProvider> currentProvider;
 
     private AIProxyClient() {
         proxiedClients = new ConcurrentHashMap<>();
         addClient(
-                AIProvider.OPEN_AI,
+                AIProvider.OPEN_AI.name(),
                 AIProxiedClient.of(OpenAIClient.get(), AIProxyStrategy.MODEL_FALLBACK, OpenAIResponseEvaluator.get()));
         currentProvider = new AtomicReference<>(AIProvider.OPEN_AI);
     }
@@ -55,7 +53,7 @@ public class AIProxyClient {
      * @param provider the AI provider for which the client is added
      * @param client the proxied client to be added
      */
-    public void addClient(final AIProvider provider, final AIProxiedClient client) {
+    public void addClient(final String provider, final AIProxiedClient client) {
         proxiedClients.put(provider, client);
     }
 
@@ -67,7 +65,7 @@ public class AIProxyClient {
      * @param output the output stream to which the response will be written
      * @return the AI response
      */
-    public AIResponse callToAI(final AIProvider provider,
+    public AIResponse callToAI(final String provider,
                                final AIRequest<? extends Serializable> request,
                                final OutputStream output) {
         return Optional.ofNullable(proxiedClients.getOrDefault(provider, AIProxiedClient.NOOP))
@@ -83,7 +81,7 @@ public class AIProxyClient {
      * @param request the AI request to be sent
      * @return the AI response
      */
-    public <T extends Serializable> AIResponse callToAI(final AIProvider provider, final AIRequest<T> request) {
+    public <T extends Serializable> AIResponse callToAI(final String provider, final AIRequest<T> request) {
         return callToAI(provider, request, null);
     }
 
@@ -96,7 +94,7 @@ public class AIProxyClient {
      * @return the AI response
      */
     public <T extends Serializable> AIResponse callToAI(final AIRequest<T> request, final OutputStream output) {
-        return callToAI(currentProvider.get(), request, output);
+        return callToAI(currentProvider.get().name(), request, output);
     }
 
     /**

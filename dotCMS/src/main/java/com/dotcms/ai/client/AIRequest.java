@@ -1,4 +1,4 @@
-package com.dotcms.ai.domain;
+package com.dotcms.ai.client;
 
 import com.dotcms.ai.app.AIModelType;
 import com.dotcms.ai.app.AppConfig;
@@ -96,16 +96,22 @@ public class AIRequest<T extends Serializable> {
      * @return the resolved URL
      */
     static String resolveUrl(final AIModelType type, final AppConfig appConfig) {
+        final String resolved;
         switch (type) {
             case TEXT:
-                return appConfig.getApiUrl();
+                resolved = appConfig.getApiUrl();
+                break;
             case IMAGE:
-                return appConfig.getApiImageUrl();
+                resolved = appConfig.getApiImageUrl();
+                break;
             case EMBEDDINGS:
-                return appConfig.getApiEmbeddingsUrl();
+                resolved = appConfig.getApiEmbeddingsUrl();
+                break;
             default:
                 throw new IllegalArgumentException("Invalid AIModelType: " + type);
         }
+
+        return resolved;
     }
 
     @SuppressWarnings("unchecked")

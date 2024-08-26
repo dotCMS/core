@@ -1,4 +1,4 @@
-package com.dotcms.ai.domain;
+package com.dotcms.ai.client;
 
 import com.dotcms.ai.app.AIModelType;
 import com.dotcms.ai.app.AppConfig;

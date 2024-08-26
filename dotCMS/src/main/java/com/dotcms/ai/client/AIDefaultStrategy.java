@@ -1,7 +1,5 @@
 package com.dotcms.ai.client;
 
-import com.dotcms.ai.domain.AIRequest;
-
 import java.io.OutputStream;
 import java.io.Serializable;
 

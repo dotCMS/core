@@ -1,8 +1,6 @@
 package com.dotcms.ai.client;
 
 import com.dotcms.ai.domain.AIProvider;
-import com.dotcms.ai.domain.AIRequest;
-import com.dotcms.ai.domain.JSONObjectAIRequest;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
