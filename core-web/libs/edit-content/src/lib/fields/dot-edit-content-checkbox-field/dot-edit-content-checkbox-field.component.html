@@ -1,8 +1,8 @@
-@for (option of options; track $index) {
+@for (option of $options(); track $index) {
     <p-checkbox
-        [name]="field.variable"
+        [name]="$field().variable"
         [formControl]="formControl"
         [value]="option.value"
         [label]="option.label"
-        [inputId]="option.value + $index"></p-checkbox>
+        [inputId]="option.value.toString() + $index" />
 }
