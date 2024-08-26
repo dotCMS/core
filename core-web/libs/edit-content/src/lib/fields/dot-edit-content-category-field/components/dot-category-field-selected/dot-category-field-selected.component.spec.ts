@@ -1,7 +1,7 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/utils-testing';
+import { DotMessagePipe, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCategoryFieldSelectedComponent } from './dot-category-field-selected.component';
 
@@ -12,7 +12,12 @@ describe('DotCategoryFieldSelectedComponent', () => {
     const createComponent = createComponentFactory({
         component: DotCategoryFieldSelectedComponent,
         imports: [DotMessagePipe],
-        providers: [mockProvider(DotMessageService)]
+        providers: [{
+            provide: DotMessageService,
+            useValue: new MockDotMessageService({
+                'edit.content.category-field.category.root-name': 'Root'
+            })
+        }]
     });
 
     beforeEach(() => {
@@ -28,16 +33,17 @@ describe('DotCategoryFieldSelectedComponent', () => {
     });
 
     it('should display category name and path', () => {
+
         const items = spectator.queryAll(byTestId('category-item'));
 
         items.forEach((item, index) => {
             const title = item.querySelector('[data-testId="category-title"]');
             const path = item.querySelector('[data-testId="category-path"]');
 
-            expect(title).toContainText(CATEGORY_MOCK_TRANSFORMED[index].value);
-            expect(path?.getAttribute('ng-reflect-text')).toBe(
-                CATEGORY_MOCK_TRANSFORMED[index].path
-            );
+            const category = CATEGORY_MOCK_TRANSFORMED[index];
+
+            expect(title).toContainText(category.value);
+            expect(path).toContainText(category.path);
         });
     });
 
