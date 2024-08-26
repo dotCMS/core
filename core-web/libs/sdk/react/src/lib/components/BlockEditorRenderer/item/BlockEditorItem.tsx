@@ -26,7 +26,7 @@ export const BlockEditorItem = ({
         if (CustomRendererComponent) {
             return (
                 <CustomRendererComponent
-                    key={`${node.type}-${Math.random()}`}
+                    key={crypto.randomUUID()}
                     {...node.attrs}
                     content={node.content}>
                     <BlockEditorItem content={node.content} customRenderers={customRenderers} />
@@ -37,72 +37,72 @@ export const BlockEditorItem = ({
         switch (node.type) {
             case Blocks.PARAGRAPH:
                 return (
-                    <Paragraph key={`${node.type}-${Math.random()}`} {...node}>
+                    <Paragraph key={crypto.randomUUID()} {...node}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </Paragraph>
                 );
 
             case Blocks.HEADING:
                 return (
-                    <Heading key={`${node.type}-${Math.random()}`} {...node}>
+                    <Heading key={crypto.randomUUID()} {...node}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </Heading>
                 );
 
             case Blocks.TEXT:
-                return <TextBlock key={`${node.type}-${Math.random()}`} {...node} />;
+                return <TextBlock key={crypto.randomUUID()} {...node} />;
 
             case Blocks.BULLET_LIST:
                 return (
-                    <BulletList key={`${node.type}-${Math.random()}`}>
+                    <BulletList key={crypto.randomUUID()}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </BulletList>
                 );
 
             case Blocks.ORDERED_LIST:
                 return (
-                    <OrderedList key={`${node.type}-${Math.random()}`}>
+                    <OrderedList key={crypto.randomUUID()}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </OrderedList>
                 );
 
             case Blocks.LIST_ITEM:
                 return (
-                    <ListItem key={`${node.type}-${Math.random()}`}>
+                    <ListItem key={crypto.randomUUID()}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </ListItem>
                 );
 
             case Blocks.BLOCK_QUOTE:
                 return (
-                    <BlockQuote key={`${node.type}-${Math.random()}`}>
+                    <BlockQuote key={crypto.randomUUID()}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </BlockQuote>
                 );
 
             case Blocks.CODE_BLOCK:
                 return (
-                    <CodeBlock key={`${node.type}-${Math.random()}`} {...node}>
+                    <CodeBlock key={crypto.randomUUID()} {...node}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </CodeBlock>
                 );
 
             case Blocks.HARDBREAK:
-                return <br key={`${node.type}-${Math.random()}`} />;
+                return <br key={crypto.randomUUID()} />;
 
             case Blocks.HORIZONTAL_RULE:
-                return <hr key={`${node.type}-${Math.random()}`} />;
+                return <hr key={crypto.randomUUID()} />;
 
             case Blocks.DOT_IMAGE:
-                return <DotCMSImage key={`${node.type}-${Math.random()}`} {...node} />;
+                return <DotCMSImage key={crypto.randomUUID()} {...node} />;
 
             case Blocks.DOT_VIDEO:
-                return <DotCMSVideo key={`${node.type}-${Math.random()}`} {...node} />;
+                return <DotCMSVideo key={crypto.randomUUID()} {...node} />;
 
             case Blocks.TABLE:
                 return (
                     <TableRenderer
-                        key={`${node.type}-${Math.random()}`}
+                        key={crypto.randomUUID()}
                         content={node.content}
                         blockEditorItem={BlockEditorItem}
                     />
@@ -111,16 +111,14 @@ export const BlockEditorItem = ({
             case Blocks.DOT_CONTENT:
                 return (
                     <DotContent
-                        key={`${node.type}-${Math.random()}`}
+                        key={crypto.randomUUID()}
                         {...node}
                         customRenderers={customRenderers}
                     />
                 );
 
             default:
-                return (
-                    <div key={`${node.type}-${Math.random()}`}>Unknown Block Type {node.type}</div>
-                );
+                return <div key={crypto.randomUUID()}>Unknown Block Type {node.type}</div>;
         }
     });
 };

@@ -29,10 +29,10 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
         <table>
             <thead>
                 {content.slice(0, 1).map((rowNode) => (
-                    <tr key={`${rowNode.type}-${Math.random()}`}>
+                    <tr key={crypto.randomUUID()}>
                         {rowNode.content?.map((cellNode) => (
                             <th
-                                key={`${cellNode.type}-${Math.random()}`}
+                                key={crypto.randomUUID()}
                                 colSpan={Number(cellNode.attrs?.colspan || 1)}
                                 rowSpan={Number(cellNode.attrs?.rowspan || 1)}>
                                 {renderTableContent(cellNode)}
@@ -43,10 +43,10 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
             </thead>
             <tbody>
                 {content.slice(1).map((rowNode) => (
-                    <tr key={`${rowNode.type}-${Math.random()}`}>
+                    <tr key={crypto.randomUUID()}>
                         {rowNode.content?.map((cellNode) => (
                             <td
-                                key={`${cellNode.type}-${Math.random()}`}
+                                key={crypto.randomUUID()}
                                 colSpan={Number(cellNode.attrs?.colspan || 1)}
                                 rowSpan={Number(cellNode.attrs?.rowspan || 1)}>
                                 {renderTableContent(cellNode)}
