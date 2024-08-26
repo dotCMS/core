@@ -8,7 +8,7 @@ import java.util.Set;
 
 /**
  * Implements an exponential backoff retry strategy. This strategy increases the delay between retry
- * attempts exponentially, and adds a small random jitter to prevent synchronized retries in
+ * attempts exponentially and adds a small random jitter to prevent synchronized retries in
  * distributed systems.
  */
 public class ExponentialBackoffRetryStrategy implements RetryStrategy {
@@ -78,11 +78,14 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
      */
     @Override
     public long nextRetryDelay(final Job job) {
+
         long delay = (long) (initialDelay * Math.pow(backoffFactor, job.retryCount()));
         delay = Math.min(delay, maxDelay);
-        // Add jitter using bounded nextLong()
-        delay += random.nextLong((long) (delay * 0.1));
-        return delay;
+
+        // Add jitter (0-10% of delay)
+        long jitter = (long) (delay * 0.1 * random.nextDouble());
+
+        return delay + jitter;
     }
 
     /**
