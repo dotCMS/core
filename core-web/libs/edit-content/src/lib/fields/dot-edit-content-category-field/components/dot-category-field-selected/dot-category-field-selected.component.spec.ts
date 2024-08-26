@@ -12,12 +12,14 @@ describe('DotCategoryFieldSelectedComponent', () => {
     const createComponent = createComponentFactory({
         component: DotCategoryFieldSelectedComponent,
         imports: [DotMessagePipe],
-        providers: [{
-            provide: DotMessageService,
-            useValue: new MockDotMessageService({
-                'edit.content.category-field.category.root-name': 'Root'
-            })
-        }]
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'edit.content.category-field.category.root-name': 'Root'
+                })
+            }
+        ]
     });
 
     beforeEach(() => {
@@ -33,7 +35,6 @@ describe('DotCategoryFieldSelectedComponent', () => {
     });
 
     it('should display category name and path', () => {
-
         const items = spectator.queryAll(byTestId('category-item'));
 
         items.forEach((item, index) => {
