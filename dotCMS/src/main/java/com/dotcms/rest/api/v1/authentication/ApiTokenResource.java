@@ -109,7 +109,15 @@ public class ApiTokenResource implements Serializable {
                 description = "Takes a user ID and returns a list of Api Tokens associated with the ID.\n\n" +
                                 "The list of tokens also includes any tokens that have been revoked.\n\n",
                 tags = {"Api Tokens"},
-                )
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "User Api tokens successfully retrieved",
+                                content = @Content(mediaType = "application/json",
+                                        examples = {
+                                            @ExampleObject(
+                                                
+                                            )
+                                        }))
+                })
     public final Response getApiTokens(
             @Context final HttpServletRequest request, 
             @Context final HttpServletResponse response,
