@@ -10,15 +10,24 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
     selector: 'dot-edit-content-checkbox-field',
     standalone: true,
     imports: [CheckboxModule, ReactiveFormsModule, FormsModule],
-    templateUrl: './dot-edit-content-checkbox-field.component.html',
-    styleUrls: ['./dot-edit-content-checkbox-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
-    ]
+    ],
+    template: `
+        @for (option of $options(); track $index) {
+            <p-checkbox
+                [name]="$field().variable"
+                [formControl]="formControl"
+                [value]="option.value"
+                [label]="option.label"
+                [inputId]="option.value.toString() + $index" />
+        }
+    `,
+    styleUrls: ['./dot-edit-content-checkbox-field.component.scss']
 })
 export class DotEditContentCheckboxFieldComponent {
     private readonly controlContainer = inject(ControlContainer);
