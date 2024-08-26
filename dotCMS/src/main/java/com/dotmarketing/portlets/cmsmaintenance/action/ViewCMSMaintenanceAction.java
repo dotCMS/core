@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.cmsmaintenance.action;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
@@ -351,15 +352,22 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	}
 
 	private void _flush(String cacheName)throws Exception{
-			try{
-				CacheLocator.getCache(cacheName).clearCache();
-			}catch (NullPointerException e) {
-				Logger.info(this, "--> Calling the MaintenanceUtil.flushCache() method ...");
-				MaintenanceUtil.flushCache();
+		try {
+			CacheLocator.getCache(cacheName).clearCache();
+		} catch (NullPointerException e) {
+			Logger.info(this, "--> Calling the MaintenanceUtil.flushCache() method ...");
+			MaintenanceUtil.flushCache();
+		}
+		DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
+			try {
+				Logger.info(this, "Done Flushing Cache, Now Resetting All Permission References");
+				APILocator.getPermissionAPI().resetAllPermissionReferences();
+				Logger.info(this, "Done Resetting All Permission References");
+			} catch (Exception e) {
+				Logger.error(ViewCMSMaintenanceAction.class,
+						"Error resetting permission references after flushing the cache", e);
 			}
-		Logger.info(this, "Done Flushing Cache, Now Resetting All Permission References");
-//		APILocator.getPermissionAPI().resetAllPermissionReferences();
-		Logger.info(this, "Done Resetting All Permission References");
+		});
 	}
 
 	private void _deleteMenusCache()throws Exception{
