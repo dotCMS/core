@@ -26,7 +26,7 @@
         <tomcat-dist-folder>dotserver/tomcat-${tomcat.version}</tomcat-dist-folder>
         <tomcat-lib-folder>${assembly-directory}/${tomcat-dist-folder}/lib</tomcat-lib-folder>
         <tomcat-log4j-lib-folder>${assembly-directory}/${tomcat-dist-folder}/log4j2/lib</tomcat-log4j-lib-folder>
-        <session-manager-lib-folder>${assembly-directory}/${tomcat-dist-folder}/session-manager/lib</session-manager-lib-folder>
+        <session-manager-lib-folder>${tomcat-lib-folder}</session-manager-lib-folder>
         <tomcat9-overrides>${project.basedir}/src/main/resources/container/tomcat9</tomcat9-overrides>
         <exploded-webapp-dir>${assembly-directory}/${tomcat-dist-folder}/webapps/ROOT</exploded-webapp-dir>
         <war.output.file>${project.build.directory}/${project.build.finalName}-war.war</war.output.file>
