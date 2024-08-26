@@ -55,6 +55,7 @@ import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -64,6 +65,8 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
@@ -162,7 +165,25 @@ public class TemplateHandler implements IHandler {
     			if(existing==null || !InodeUtils.isSet(existing.getIdentifier())) {
     	        	Identifier templateId = templateWrapper.getTemplateId();
     	        	Host localHost = APILocator.getHostAPI().find(templateId.getHostId(), systemUser, false);
-    	        	tAPI.saveTemplate(template, localHost, systemUser, false);
+
+					final Template templateFromId
+							= APILocator.getTemplateAPI().findWorkingTemplate(templateId.getId(), systemUser, false);
+
+					if(templateFromId != null && InodeUtils.isSet(templateFromId.getIdentifier())) {
+						final TemplateLayout newTemplateLayout = DotTemplateTool.getTemplateLayout(template.getDrawedBody());
+
+						final TemplateSaveParameters templateSaveParameters = new TemplateSaveParameters
+								.Builder()
+								.setSite(localHost)
+								.setNewTemplate(template)
+								.setNewLayout(newTemplateLayout)
+								.setUseHistory(true)
+								.build();
+
+						tAPI.saveAndUpdateLayout(templateSaveParameters, systemUser, false);
+					} else {
+						tAPI.saveTemplate(template, localHost, systemUser, false);
+					}
 
 					PushPublishLogger.log(getClass(), PushPublishHandler.TEMPLATE, PushPublishAction.PUBLISH,
 							template.getIdentifier(), template.getInode(), template.getName(), config.getId());

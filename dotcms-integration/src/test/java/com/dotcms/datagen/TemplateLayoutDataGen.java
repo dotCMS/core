@@ -5,8 +5,9 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.templates.design.bean.*;
 
-import javax.swing.*;
 import java.util.*;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 public class TemplateLayoutDataGen  {
 
@@ -14,9 +15,10 @@ public class TemplateLayoutDataGen  {
 
     private List<TemplateLayoutColumn> currentColumns;
 
-    private Map<String, List<String>> containersIds = new HashMap<>();
-    final Map<String, List<String>> containersIdsInSidebar = new HashMap<>();
+    private List<ContainerUUID> containersIds = new ArrayList<>();
+    final List<ContainerUUID> containersIdsInSidebar = new ArrayList<>();
     private int currentColumnWidthPercent = 100;
+    private int version = 1;
 
     public static TemplateLayoutDataGen get(){
         return new TemplateLayoutDataGen();
@@ -27,39 +29,34 @@ public class TemplateLayoutDataGen  {
     }
 
     public TemplateLayoutDataGen withContainer(final String identifier, final String UUID){
-        List<String> uuids = containersIds.get(identifier);
+        return withContainer(identifier, UUID, list(UUID));
+    }
 
-        if (uuids == null) {
-            uuids = new ArrayList<>();
-        }
+    public TemplateLayoutDataGen withContainer(final String identifier, final String UUID, final List<String> uuidsHistory){
 
-        uuids.add(UUID == null ? ContainerUUID.UUID_START_VALUE : UUID);
-        containersIds.put(identifier, uuids);
+        containersIds.add(UUID == null ? new ContainerUUID(identifier, ContainerUUID.UUID_START_VALUE, uuidsHistory) :
+                new ContainerUUID(identifier, UUID, uuidsHistory));
         return this;
     }
 
     public TemplateLayoutDataGen withContainerInSidebar(final String identifier, final String UUID){
-        List<String> uuids = containersIdsInSidebar.get(identifier);
 
-        if (uuids == null) {
-            uuids = new ArrayList<>();
-        }
+        containersIdsInSidebar.add(UUID == null ? new ContainerUUID(identifier, ContainerUUID.UUID_START_VALUE, list(UUID)) :
+                new ContainerUUID(identifier, UUID, list(UUID)));
 
-        uuids.add(UUID == null ? ContainerUUID.UUID_START_VALUE : UUID);
-        containersIdsInSidebar.put(identifier, uuids);
         return this;
     }
 
     public TemplateLayout next() {
 
-        final List<ContainerUUID> containersInSidebar = createContainerUUIDS(containersIdsInSidebar);
         final List<TemplateLayoutRow> innerRows = rows == null ? getDefaultRow() : getRows();
 
         final Body body = new Body(innerRows);
         final TemplateLayout templateLayout = new TemplateLayout();
         templateLayout.setBody(body);
+        templateLayout.setVersion(version);
 
-        final Sidebar sidebar = new Sidebar(containersInSidebar, "left", "20", 20);
+        final Sidebar sidebar = new Sidebar(containersIdsInSidebar, "left", "20", 20);
         templateLayout.setSidebar(sidebar);
 
         return templateLayout;
@@ -73,27 +70,18 @@ public class TemplateLayoutDataGen  {
     private List<TemplateLayoutRow> getDefaultRow() {
         final List<TemplateLayoutRow> rows = new ArrayList<>();
 
-        final List<ContainerUUID> containers = createContainerUUIDS(containersIds);
-
         final List<TemplateLayoutColumn> columns = new ArrayList<>();
-        columns.add(new TemplateLayoutColumn(containers, 100, 1, null));
+        columns.add(new TemplateLayoutColumn(containersIds, 100, 1, null));
 
         rows.add(new TemplateLayoutRow(columns, null));
 
         return rows;
     }
 
-    private static List<ContainerUUID> createContainerUUIDS(Map<String, List<String>> containersIds) {
-        final List<ContainerUUID> containers = new ArrayList<>();
-
-        for (final String containersId : containersIds.keySet()) {
-            final List<String> uuids = containersIds.get(containersId);
-
-            for (final String uuid : uuids) {
-                containers.add(new ContainerUUID(containersId, uuid));
-            }
-        }
-        return containers;
+    public TemplateLayoutDataGen withContainer(final Container container, final String UUID, final List<String> uuidsHistory) {
+        final FileAssetContainerUtil fileAssetContainerUtil = FileAssetContainerUtil.getInstance();
+        return withContainer(fileAssetContainerUtil.isFileAssetContainer(container) ?
+                fileAssetContainerUtil.getFullPath((FileAssetContainer) container) : container.getIdentifier(), UUID, uuidsHistory);
     }
 
     public TemplateLayoutDataGen withContainer(final Container container, final String UUID) {
@@ -135,9 +123,13 @@ public class TemplateLayoutDataGen  {
     }
 
     private void addNewColumn() {
-        final List<ContainerUUID> containers = createContainerUUIDS(containersIds);
-        currentColumns.add(new TemplateLayoutColumn(containers, currentColumnWidthPercent, 1, null));
+        currentColumns.add(new TemplateLayoutColumn(containersIds, currentColumnWidthPercent, 1, null));
 
-        containersIds = new HashMap<>();
+        containersIds = new ArrayList<>();
+    }
+
+    public TemplateLayoutDataGen version(int version) {
+        this.version = version;
+        return this;
     }
 }
