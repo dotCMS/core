@@ -23,7 +23,7 @@ export const DotCMSVideo = (props: ContentNode) => {
     return (
         <video controls preload="metadata" poster={poster} width={width} height={height}>
             <source src={srcUrl} type={mimeType} />
-            Tu navegador no soporta el elemento <code>video</code>.
+            Your browser does not support the <code>video</code> element.
         </video>
     );
 };

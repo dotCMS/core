@@ -10,7 +10,7 @@ export interface Mark {
 export interface ContentNode {
     type: string;
     content: ContentNode[];
-    attrs?: Record<string, string>; //& { data?: DotContentProps | Contentlet };
+    attrs?: Record<string, string>;
     marks?: Mark[];
     text?: string;
 }
@@ -51,10 +51,7 @@ export interface BlockProps {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type CustomRenderer = Record<string, React.FC<any>>;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type DotAssetProps = { data: DotContentProps; [key: string]: any };
+export type CustomRenderer<T = any> = Record<string, React.FC<T>>;
 
 export enum Blocks {
     PARAGRAPH = 'paragraph',

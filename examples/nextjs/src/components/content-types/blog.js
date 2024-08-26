@@ -19,9 +19,14 @@ const ActivityBlock = (data) => {
 
 
 function BlogWithBlockEditor({blockEditorItem}){
-    return <BlockEditorRenderer blocks={blockEditorItem} customRenderers={{'Activity': ActivityBlock}} />
-    // style={{ backgroundColor: 'lightblue', padding: '10px', fontSize: '40px' }}
-    {/* customRenderers={{'paragraph': CustomParagraph}} */}
-
+    return <BlockEditorRenderer 
+        blocks={blockEditorItem} 
+        customRenderers={{
+            'Activity': ActivityBlock, 
+            'paragraph': CustomParagraph 
+        }} 
+        style={{ backgroundColor: 'lightblue', padding: '10px', fontSize: '40px' }} 
+        className="blocks"
+    />
 }
 export default BlogWithBlockEditor;
