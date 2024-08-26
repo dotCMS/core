@@ -55,7 +55,7 @@ export const DotContent = (props: DotContentProps) => {
 
     const data = attrs?.data as unknown as Contentlet;
 
-    const Component = customRenderers?.[data.contentType] ?? DefaultContent;
+    const Component = customRenderers?.[data?.contentType] ?? DefaultContent;
 
     if (!data) {
         console.error('DotContent: No data provided');
