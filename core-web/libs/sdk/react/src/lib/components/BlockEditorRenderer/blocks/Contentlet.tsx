@@ -40,6 +40,11 @@ type DotContentProps = ContentNode & {
 };
 
 /**
+ * Renders the default content for an unknown content type.
+ */
+const DefaultContent = () => <div>Unknown Content Type</div>;
+
+/**
  * Renders a DotContent component.
  *
  * @param {DotContentProps} props - The props for the DotContent component.
@@ -47,7 +52,7 @@ type DotContentProps = ContentNode & {
  */
 export const DotContent = (props: DotContentProps) => {
     const { attrs, customRenderers } = props;
-    const DefaultContent = () => <div>Unknown Content Type</div>;
+
     const data = attrs?.data as unknown as Contentlet;
 
     const Component = customRenderers?.[data.contentType] ?? DefaultContent;

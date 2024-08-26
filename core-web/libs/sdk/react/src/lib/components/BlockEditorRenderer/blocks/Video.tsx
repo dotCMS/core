@@ -3,7 +3,7 @@ import { DotCmsClient } from '@dotcms/client';
 import { ContentNode } from '../../../models/blocks.interface';
 
 type DotCMSVideoProps = ContentNode['attrs'] & {
-    data?: Record<string, unknown>;
+    data?: Record<string, string>;
 };
 
 /**
@@ -22,6 +22,7 @@ export const DotCMSVideo = (props: ContentNode) => {
 
     return (
         <video controls preload="metadata" poster={poster} width={width} height={height}>
+            <track default kind="captions" srcLang="en" />
             <source src={srcUrl} type={mimeType} />
             Your browser does not support the <code>video</code> element.
         </video>

@@ -25,7 +25,10 @@ export const BlockEditorItem = ({
         const CustomRendererComponent = customRenderers?.[node.type];
         if (CustomRendererComponent) {
             return (
-                <CustomRendererComponent key={index} {...node.attrs} content={node.content}>
+                <CustomRendererComponent
+                    key={`${node.type}-${index}`}
+                    {...node.attrs}
+                    content={node.content}>
                     <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                 </CustomRendererComponent>
             );
@@ -34,82 +37,88 @@ export const BlockEditorItem = ({
         switch (node.type) {
             case Blocks.PARAGRAPH:
                 return (
-                    <Paragraph key={index} {...node}>
+                    <Paragraph key={`${node.type}-${index}`} {...node}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </Paragraph>
                 );
 
             case Blocks.HEADING:
                 return (
-                    <Heading key={index} {...node}>
+                    <Heading key={`${node.type}-${index}`} {...node}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </Heading>
                 );
 
             case Blocks.TEXT:
-                return <TextBlock key={index} {...node} />;
+                return <TextBlock key={`${node.type}-${index}`} {...node} />;
 
             case Blocks.BULLET_LIST:
                 return (
-                    <BulletList key={index}>
+                    <BulletList key={`${node.type}-${index}`}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </BulletList>
                 );
 
             case Blocks.ORDERED_LIST:
                 return (
-                    <OrderedList key={index}>
+                    <OrderedList key={`${node.type}-${index}`}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </OrderedList>
                 );
 
             case Blocks.LIST_ITEM:
                 return (
-                    <ListItem key={index}>
+                    <ListItem key={`${node.type}-${index}`}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </ListItem>
                 );
 
             case Blocks.BLOCK_QUOTE:
                 return (
-                    <BlockQuote key={index}>
+                    <BlockQuote key={`${node.type}-${index}`}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </BlockQuote>
                 );
 
             case Blocks.CODE_BLOCK:
                 return (
-                    <CodeBlock key={index} {...node}>
+                    <CodeBlock key={`${node.type}-${index}`} {...node}>
                         <BlockEditorItem content={node.content} customRenderers={customRenderers} />
                     </CodeBlock>
                 );
 
             case Blocks.HARDBREAK:
-                return <br key={index} />;
+                return <br key={`${node.type}-${index}`} />;
 
             case Blocks.HORIZONTAL_RULE:
-                return <hr key={index} />;
+                return <hr key={`${node.type}-${index}`} />;
 
             case Blocks.DOT_IMAGE:
-                return <DotCMSImage key={index} {...node} />;
+                return <DotCMSImage key={`${node.type}-${index}`} {...node} />;
 
             case Blocks.DOT_VIDEO:
-                return <DotCMSVideo key={index} {...node} />;
+                return <DotCMSVideo key={`${node.type}-${index}`} {...node} />;
 
             case Blocks.TABLE:
                 return (
                     <TableRenderer
-                        key={index}
+                        key={`${node.type}-${index}`}
                         content={node.content}
                         blockEditorItem={BlockEditorItem}
                     />
                 );
 
             case Blocks.DOT_CONTENT:
-                return <DotContent key={index} {...node} customRenderers={customRenderers} />;
+                return (
+                    <DotContent
+                        key={`${node.type}-${index}`}
+                        {...node}
+                        customRenderers={customRenderers}
+                    />
+                );
 
             default:
-                return <div key={index}>Unknown Block Type {node.type}</div>;
+                return <div key={`${node.type}-${index}`}>Unknown Block Type {node.type}</div>;
         }
     });
 };

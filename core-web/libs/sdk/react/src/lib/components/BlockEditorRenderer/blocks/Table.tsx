@@ -32,7 +32,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
                     <tr key={rowIndex}>
                         {rowNode.content?.map((cellNode, cellIndex) => (
                             <th
-                                key={cellIndex}
+                                key={`${cellNode.type}-${cellIndex}`}
                                 colSpan={Number(cellNode.attrs?.colspan || 1)}
                                 rowSpan={Number(cellNode.attrs?.rowspan || 1)}>
                                 {renderTableContent(cellNode)}
@@ -46,7 +46,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
                     <tr key={rowIndex}>
                         {rowNode.content?.map((cellNode, cellIndex) => (
                             <td
-                                key={cellIndex}
+                                key={`${cellNode.type}-${cellIndex}`}
                                 colSpan={Number(cellNode.attrs?.colspan || 1)}
                                 rowSpan={Number(cellNode.attrs?.rowspan || 1)}>
                                 {renderTableContent(cellNode)}
