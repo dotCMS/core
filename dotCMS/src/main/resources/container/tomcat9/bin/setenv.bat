@@ -33,8 +33,8 @@ set "CATALINA_OPTS=%CATALINA_OPTS% -Dorg.apache.tomcat.util.digester.PROPERTY_SO
 rem Check if log4j2.configurationFile is already set
 echo %CATALINA_OPTS% | findstr /C:"-Dlog4j2.configurationFile" >nul
 if %errorlevel% neq 0 (
-  echo Setting log4j2.configurationFile=%TOMCAT_HOME%\webapps\ROOT\WEB-INF\log4j\log4j2.xml
-  set "CATALINA_OPTS=%CATALINA_OPTS% -Dlog4j2.configurationFile=%TOMCAT_HOME%\webapps\ROOT\WEB-INF\log4j\log4j2.xml"
+  echo Setting log4j2.configurationFile=%CATALINA_HOME%\webapps\ROOT\WEB-INF\log4j\log4j2.xml
+  set "CATALINA_OPTS=%CATALINA_OPTS% -Dlog4j2.configurationFile=%CATALINA_HOME%\webapps\ROOT\WEB-INF\log4j\log4j2.xml"
 ) else (
   echo Log4j configuration already set
 )
@@ -49,7 +49,7 @@ if %errorlevel% neq 0 (
 )
 
 rem Set the CLASSPATH
-set "ADDITIONAL_CLASSPATH=%CATALINA_HOME%\log4j2\lib\*;%CATALINA_HOME%\session-manager\lib\*"
+set "ADDITIONAL_CLASSPATH=%CATALINA_HOME%\log4j2\lib\*"
 if "%CLASSPATH%" neq "" (
   set "CLASSPATH=%CLASSPATH%;%ADDITIONAL_CLASSPATH%"
 ) else (
