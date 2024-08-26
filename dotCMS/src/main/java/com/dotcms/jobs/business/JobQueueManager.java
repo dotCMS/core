@@ -364,23 +364,21 @@ public class JobQueueManager {
             jobQueue.updateJobStatus(runningJob);
             notifyJobWatchers(runningJob);
 
-            try {
+            try (final ScheduledExecutorService progressUpdater = Executors.newSingleThreadScheduledExecutor()) {
 
                 final ProgressTracker progressTracker = processor.progressTracker(runningJob);
 
                 // Start a separate thread to periodically update and persist progress
-                ScheduledExecutorService progressUpdater = Executors.newSingleThreadScheduledExecutor();
                 progressUpdater.scheduleAtFixedRate(() ->
                         updateJobProgress(runningJob, progressTracker), 0, 1, TimeUnit.SECONDS
                 );
 
-                processor.process(runningJob);
-
-                // Stop the progress updater
-                progressUpdater.shutdown();
-
-                // Ensure final progress is updated
-                updateJobProgress(runningJob, progressTracker);
+                try {
+                    processor.process(runningJob);
+                } finally {
+                    // Ensure final progress is updated
+                    updateJobProgress(runningJob, progressTracker);
+                }
 
                 Job completedJob = runningJob.markAsCompleted();
                 jobQueue.updateJobStatus(completedJob);

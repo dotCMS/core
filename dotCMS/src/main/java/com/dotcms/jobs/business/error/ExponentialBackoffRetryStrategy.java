@@ -1,9 +1,9 @@
 package com.dotcms.jobs.business.error;
 
 import com.dotcms.jobs.business.job.Job;
+import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Random;
 import java.util.Set;
 
 /**
@@ -18,7 +18,7 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
     private final double backoffFactor;
     private final int maxRetries;
     private final Set<Class<? extends Throwable>> retryableExceptions;
-    private final Random random = new Random();
+    private final SecureRandom random = new SecureRandom();
 
     /**
      * Constructs an ExponentialBackoffRetryStrategy with the specified parameters.
@@ -80,8 +80,8 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
     public long nextRetryDelay(final Job job) {
         long delay = (long) (initialDelay * Math.pow(backoffFactor, job.retryCount()));
         delay = Math.min(delay, maxDelay);
-        // Add jitter
-        delay += (long) (random.nextDouble() * delay * 0.1);
+        // Add jitter using bounded nextLong()
+        delay += random.nextLong((long) (delay * 0.1));
         return delay;
     }
 
