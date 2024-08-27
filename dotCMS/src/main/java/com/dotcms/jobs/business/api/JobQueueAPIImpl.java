@@ -79,7 +79,7 @@ public class JobQueueAPIImpl implements JobQueueAPI {
     private final Map<String, RetryStrategy> retryStrategies;
     private final RetryStrategy defaultRetryStrategy;
 
-    static final int defaultThreadPoolSize = Config.getIntProperty(
+    static final int DEFAULT_THREAD_POOL_SIZE = Config.getIntProperty(
             "JOB_QUEUE_THREAD_POOL_SIZE", 10
     );
 
@@ -89,7 +89,7 @@ public class JobQueueAPIImpl implements JobQueueAPI {
      */
     public JobQueueAPIImpl() {
         // TODO: Use a job queue implementation
-        this(null, defaultThreadPoolSize);
+        this(null, DEFAULT_THREAD_POOL_SIZE);
     }
 
     /**
