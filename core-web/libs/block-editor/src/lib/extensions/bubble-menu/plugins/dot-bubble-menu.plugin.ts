@@ -188,9 +188,9 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
             }
         });
 
-        this.updateComponent();
-        this.setMenuItems(doc, from);
         this.show();
+        this.setMenuItems(doc, from);
+        this.updateComponent();
     }
 
     /* @Overrrider */
@@ -324,7 +324,8 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     /* Run commands */
     exeCommand(item: BubbleMenuItem) {
         const { markAction: action, active } = item;
-        const { inode, languageId } = this.selectionNode.attrs.data;
+        const { data = {} } = this.selectionNode.attrs;
+        const { inode, languageId } = data;
 
         const currentInode = this.getQueryParam('inode');
 
