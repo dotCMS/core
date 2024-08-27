@@ -1,20 +1,14 @@
-<p-sidebar
-    #sidebar
+<p-dialog
     (onHide)="closedSidebar.emit()"
     [(visible)]="visible"
-    [showCloseIcon]="false"
-    data-testId="sidebar"
-    position="right"
-    styleClass="w-9">
+    data-testId="dialog"
+    [draggable]="false"
+    [resizable]="false"
+    [maximizable]="false"
+    [modal]="true"
+    styleClass="category-field__dialog">
     <ng-template pTemplate="header">
         <div class="flex flex-row category-field__header">
-            <button
-                type="button"
-                (click)="sidebar.close($event)"
-                class="p-button-rounded p-button-text"
-                data-testId="back-btn"
-                icon="pi pi-angle-left"
-                pButton></button>
             <div class="category-field__header-title" data-testId="sidebar-title">
                 {{ 'edit.content.category-field.sidebar.header.select-categories' | dm }}
             </div>
@@ -27,23 +21,20 @@
                 <dot-category-field-search
                     (changeMode)="store.setMode($event)"
                     (term)="store.search($event)"
-                    @fadeAnimation
                     [isLoading]="store.isSearchLoading()" />
             </div>
             <div class="flex-grow-1 category-field__categories">
                 @if (store.mode() === 'list') {
                     <dot-category-field-category-list
-                        @fadeAnimation
                         (itemChecked)="store.updateSelected($event.selected, $event.item)"
                         (rowClicked)="store.getCategories($event)"
                         [categories]="store.categoryList()"
                         [isLoading]="store.isListLoading()"
                         [isInitialState]="store.isInitSate()"
-                        [selected]="store.selectedCategoriesValues()"
+                        [selected]="store.confirmedCategoriesValues()"
                         [breadcrumbs]="store.breadcrumbMenu()" />
                 } @else {
                     <dot-category-field-search-list
-                        @fadeAnimation
                         (itemChecked)="store.addSelected($event)"
                         (removeItem)="store.removeSelected($event)"
                         [status]="store.searchStatus()"
@@ -79,4 +70,12 @@
             }
         </div>
     </div>
-</p-sidebar>
+    <ng-template pTemplate="footer">
+        <p-button
+            (click)="closedSidebar.emit()"
+            [label]="'Cancel' | dm"
+            styleClass="p-button-outlined"
+            data-testId="dialog-cancel" />
+        <p-button (click)="confirmCategories()" [label]="'Apply' | dm" data-testId="dialog-apply" />
+    </ng-template>
+</p-dialog>

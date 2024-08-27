@@ -1,4 +1,3 @@
-import { animate, state, style, transition, trigger } from '@angular/animations';
 import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -50,18 +49,7 @@ import { DotCategoryFieldSelectedComponent } from '../dot-category-field-selecte
     ],
     templateUrl: './dot-category-field-sidebar.component.html',
     styleUrl: './dot-category-field-sidebar.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    animations: [
-        trigger('fadeAnimation', [
-            state(
-                'void',
-                style({
-                    opacity: 0
-                })
-            ),
-            transition(':enter, :leave', [animate('50ms ease-in-out')])
-        ])
-    ]
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCategoryFieldSidebarComponent implements OnInit, OnDestroy {
     /**
@@ -94,5 +82,10 @@ export class DotCategoryFieldSidebarComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         this.store.clean();
+    }
+
+    confirmCategories(): void {
+        this.store.addConfirmedCategories();
+        this.closedSidebar.emit();
     }
 }

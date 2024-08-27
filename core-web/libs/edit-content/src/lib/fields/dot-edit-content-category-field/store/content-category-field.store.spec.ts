@@ -129,7 +129,7 @@ describe('CategoryFieldStore', () => {
         it('should show item after load the values', () => {
             const expectedSelectedValues = SELECTED_LIST_MOCK;
             store.load({ field: CATEGORY_FIELD_MOCK, contentlet: CATEGORY_FIELD_CONTENTLET_MOCK });
-            expect(store.selectedCategoriesValues().sort()).toEqual(expectedSelectedValues.sort());
+            expect(store.confirmedCategoriesValues().sort()).toEqual(expectedSelectedValues.sort());
 
             expect(store.categoryList()).toEqual(EMPTY_ARRAY);
         });

@@ -100,7 +100,7 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
         });
         effect(
             () => {
-                const categoryValues = this.store.selectedCategoriesValues();
+                const categoryValues = this.store.confirmedCategoriesValues();
 
                 if (this.categoryFieldControl) {
                     this.categoryFieldControl.setValue(categoryValues);
@@ -117,6 +117,7 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
      * @memberof DotEditContentCategoryFieldComponent
      */
     openCategoriesSidebar(): void {
+        this.store.setSelectedCategories();
         this.$showCategoriesSidebar.set(true);
     }
     /**
