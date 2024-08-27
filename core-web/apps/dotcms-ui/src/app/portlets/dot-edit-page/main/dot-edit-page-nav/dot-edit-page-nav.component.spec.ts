@@ -231,8 +231,7 @@ describe('DotEditPageNavComponent', () => {
         });
 
         describe('disabled option', () => {
-            // TODO: Fix this test
-            xit('should have layout option disabled and cant edit message when template is advance and license is enterprise', () => {
+            it('should have layout option disabled and cant edit message when template is advance and license is enterprise', () => {
                 spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
 
                 component.model = undefined;
@@ -246,7 +245,7 @@ describe('DotEditPageNavComponent', () => {
                 expect(menuListItems[1].nativeElement.classList).toContain(
                     'edit-page-nav__item--disabled'
                 );
-                expect(menuListItems[1].nativeElement.getAttribute('ng-reflect-text')).toBe(
+                expect(menuListItems[1].nativeElement.getAttribute('ng-reflect-content')).toBe(
                     'Can’t edit advanced template'
                 );
             });
@@ -274,8 +273,7 @@ describe('DotEditPageNavComponent', () => {
                 );
             });
 
-            // TODO: Fix this test
-            xit('should have layout and rules option disabled and enterprise only message when template is advance and license is comunity', () => {
+            it('should have layout and rules option disabled and enterprise only message when template is advance and license is comunity', () => {
                 fixture.componentInstance.pageState = new DotPageRenderState(
                     mockUser(),
                     new DotPageRender(mockDotRenderedPageAdvanceTemplate)
@@ -291,7 +289,7 @@ describe('DotEditPageNavComponent', () => {
                     const label = item.query(By.css('.edit-page-nav__item-text'));
                     expect(label.nativeElement.textContent.trim()).toBe(labels[index]);
 
-                    expect(item.nativeElement.getAttribute('ng-reflect-text')).toBe(
+                    expect(item.nativeElement.getAttribute('ng-reflect-content')).toBe(
                         'Enterprise only'
                     );
                 });

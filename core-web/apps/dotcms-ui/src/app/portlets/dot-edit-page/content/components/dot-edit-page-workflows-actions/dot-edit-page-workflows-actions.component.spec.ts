@@ -65,8 +65,7 @@ class TestHostComponent {
     @Input() page: DotPage;
 }
 
-// TODO: Fix this test
-xdescribe('DotEditPageWorkflowsActionsComponent', () => {
+describe('DotEditPageWorkflowsActionsComponent', () => {
     let component: TestHostComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
@@ -280,7 +279,8 @@ xdescribe('DotEditPageWorkflowsActionsComponent', () => {
                     });
                 });
 
-                it('should fire actions on click in the menu items', () => {
+                // TODO: Fix this test
+                xit('should fire actions on click in the menu items', () => {
                     secondButton.click();
                     expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
                         actionId: mockWorkflowsActions[1].id,

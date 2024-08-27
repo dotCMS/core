@@ -224,8 +224,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 ]);
             });
 
-            // TODO: Fix this test
-            xit('should have locker with right attributes', async () => {
+            it('should have locker with right attributes', async () => {
                 const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
                     { ...mockUser(), userId: '456' },
                     new DotPageRender(mockDotRenderedPage())
@@ -241,7 +240,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
                 expect(lockerDe.classes.warn).toBe(true, 'warn class');
                 expect(lockerDe.attributes.appendTo).toBe('target');
-                expect(lockerContainerDe.attributes['ng-reflect-text']).toBe(
+                expect(lockerContainerDe.attributes['ng-reflect-content']).toBe(
                     'Page locked by Some One'
                 );
                 expect(lockerContainerDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
