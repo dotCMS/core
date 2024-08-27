@@ -14,7 +14,7 @@ import { DotCMSVideo } from '../blocks/Video';
  * @param customRenderers - Optional custom renderers for specific node types.
  * @returns The rendered block editor item.
  */
-export const BlockEditorItem = ({
+export const BlockEditorBlock = ({
     content,
     customRenderers
 }: {
@@ -29,7 +29,7 @@ export const BlockEditorItem = ({
                     key={`${node.type}-${index}`}
                     {...node.attrs}
                     content={node.content}>
-                    <BlockEditorItem content={node.content} customRenderers={customRenderers} />
+                    <BlockEditorBlock content={node.content} customRenderers={customRenderers} />
                 </CustomRendererComponent>
             );
         }
@@ -38,14 +38,20 @@ export const BlockEditorItem = ({
             case Blocks.PARAGRAPH:
                 return (
                     <Paragraph key={`${node.type}-${index}`} {...node}>
-                        <BlockEditorItem content={node.content} customRenderers={customRenderers} />
+                        <BlockEditorBlock
+                            content={node.content}
+                            customRenderers={customRenderers}
+                        />
                     </Paragraph>
                 );
 
             case Blocks.HEADING:
                 return (
                     <Heading key={`${node.type}-${index}`} {...node}>
-                        <BlockEditorItem content={node.content} customRenderers={customRenderers} />
+                        <BlockEditorBlock
+                            content={node.content}
+                            customRenderers={customRenderers}
+                        />
                     </Heading>
                 );
 
@@ -55,35 +61,50 @@ export const BlockEditorItem = ({
             case Blocks.BULLET_LIST:
                 return (
                     <BulletList key={`${node.type}-${index}`}>
-                        <BlockEditorItem content={node.content} customRenderers={customRenderers} />
+                        <BlockEditorBlock
+                            content={node.content}
+                            customRenderers={customRenderers}
+                        />
                     </BulletList>
                 );
 
             case Blocks.ORDERED_LIST:
                 return (
                     <OrderedList key={`${node.type}-${index}`}>
-                        <BlockEditorItem content={node.content} customRenderers={customRenderers} />
+                        <BlockEditorBlock
+                            content={node.content}
+                            customRenderers={customRenderers}
+                        />
                     </OrderedList>
                 );
 
             case Blocks.LIST_ITEM:
                 return (
                     <ListItem key={`${node.type}-${index}`}>
-                        <BlockEditorItem content={node.content} customRenderers={customRenderers} />
+                        <BlockEditorBlock
+                            content={node.content}
+                            customRenderers={customRenderers}
+                        />
                     </ListItem>
                 );
 
             case Blocks.BLOCK_QUOTE:
                 return (
                     <BlockQuote key={`${node.type}-${index}`}>
-                        <BlockEditorItem content={node.content} customRenderers={customRenderers} />
+                        <BlockEditorBlock
+                            content={node.content}
+                            customRenderers={customRenderers}
+                        />
                     </BlockQuote>
                 );
 
             case Blocks.CODE_BLOCK:
                 return (
                     <CodeBlock key={`${node.type}-${index}`} {...node}>
-                        <BlockEditorItem content={node.content} customRenderers={customRenderers} />
+                        <BlockEditorBlock
+                            content={node.content}
+                            customRenderers={customRenderers}
+                        />
                     </CodeBlock>
                 );
 
@@ -104,7 +125,7 @@ export const BlockEditorItem = ({
                     <TableRenderer
                         key={`${node.type}-${index}`}
                         content={node.content}
-                        blockEditorItem={BlockEditorItem}
+                        blockEditorItem={BlockEditorBlock}
                     />
                 );
 

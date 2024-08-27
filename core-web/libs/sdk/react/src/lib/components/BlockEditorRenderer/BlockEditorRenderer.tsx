@@ -1,4 +1,4 @@
-import { BlockEditorItem } from './item/BlockEditorItem';
+import { BlockEditorBlock } from './item/BlockEditorBlock';
 
 import { Block, CustomRenderer } from '../../models/blocks.interface';
 
@@ -10,13 +10,15 @@ interface BlockEditorRendererProps {
 }
 
 /**
- * Renders a block editor with the specified blocks, custom renderers, className, and style.
+ * BlockEditorRenderer component for rendering block editor field.
  *
- * @param blocks - The blocks to be rendered in the editor.
- * @param customRenderers - Custom renderers for specific block types.
- * @param className - The CSS class name for the container element.
- * @param style - The inline styles for the container element.
- * @returns The rendered block editor.
+ * @component
+ * @param {Object} props - The component props.
+ * @param {Block} props.blocks - The blocks of content to render.
+ * @param {CustomRenderer} [props.customRenderers] - Optional custom renderers for specific block types.
+ * @param {string} [props.className] - Optional CSS class name for the container div.
+ * @param {React.CSSProperties} [props.style] - Optional inline styles for the container div.
+ * @returns {JSX.Element} A div containing the rendered blocks of content.
  */
 export const BlockEditorRenderer = ({
     blocks,
@@ -26,7 +28,7 @@ export const BlockEditorRenderer = ({
 }: BlockEditorRendererProps) => {
     return (
         <div className={className} style={style}>
-            <BlockEditorItem content={blocks.content} customRenderers={customRenderers} />
+            <BlockEditorBlock content={blocks.content} customRenderers={customRenderers} />
         </div>
     );
 };

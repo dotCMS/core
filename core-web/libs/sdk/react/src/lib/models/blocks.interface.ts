@@ -15,7 +15,7 @@ export interface ContentNode {
     text?: string;
 }
 
-export interface DotContentProps {
+export interface DotContentletProps {
     title: string;
     baseType: string;
     inode: string;

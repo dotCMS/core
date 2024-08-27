@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 
 import { DotCmsClient } from '@dotcms/client';
 
-import { BlockEditorItem } from './BlockEditorItem';
+import { BlockEditorBlock } from './BlockEditorBlock';
 
 import { ContentNode } from '../../../models/blocks.interface';
 
@@ -441,24 +441,24 @@ const BLOCKS_MOCKS = {
 
 describe('BlockEditorItem', () => {
     it('should render the paragraph block', () => {
-        const { getByText } = render(<BlockEditorItem content={BLOCKS_MOCKS.PARAGRAPH} />);
+        const { getByText } = render(<BlockEditorBlock content={BLOCKS_MOCKS.PARAGRAPH} />);
         expect(getByText('Hello, World!')).toBeInTheDocument();
     });
 
     it('should render the heading block', () => {
-        const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.PARAGRAPH} />);
+        const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.PARAGRAPH} />);
         const heading = container.querySelector('h4');
         expect(heading).toBeInTheDocument();
     });
 
     describe('should render the text block', () => {
         it('should render the text block', () => {
-            const { getByText } = render(<BlockEditorItem content={BLOCKS_MOCKS.PARAGRAPH} />);
+            const { getByText } = render(<BlockEditorBlock content={BLOCKS_MOCKS.PARAGRAPH} />);
             expect(getByText('Hello, World!')).toBeInTheDocument();
         });
 
         it('should render a link', () => {
-            const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.LINK} />);
+            const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.LINK} />);
             const link = container.querySelector('a');
             expect(link).toBeInTheDocument();
             expect(link).toHaveTextContent('Link text');
@@ -466,42 +466,42 @@ describe('BlockEditorItem', () => {
         });
 
         it('should render a bold text', () => {
-            const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.BOLD} />);
+            const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.BOLD} />);
             const bold = container.querySelector('strong');
             expect(bold).toBeInTheDocument();
             expect(bold).toHaveTextContent('Bold text');
         });
 
         it('should render an italic text', () => {
-            const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.ITALIC} />);
+            const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.ITALIC} />);
             const italic = container.querySelector('em');
             expect(italic).toBeInTheDocument();
             expect(italic).toHaveTextContent('Italic text');
         });
 
         it('should render a strike text', () => {
-            const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.STRIKE} />);
+            const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.STRIKE} />);
             const strike = container.querySelector('s');
             expect(strike).toBeInTheDocument();
             expect(strike).toHaveTextContent('Strike text');
         });
 
         it('should render an underline text', () => {
-            const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.UNDERLINE} />);
+            const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.UNDERLINE} />);
             const underline = container.querySelector('u');
             expect(underline).toBeInTheDocument();
             expect(underline).toHaveTextContent('Underline text');
         });
 
         it('should render a supscript text', () => {
-            const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.SUPSCRIPT} />);
+            const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.SUPSCRIPT} />);
             const superscript = container.querySelector('sup');
             expect(superscript).toBeInTheDocument();
             expect(superscript).toHaveTextContent('Superscript text');
         });
 
         it('should render a subscript text', () => {
-            const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.SUBSCRIPT} />);
+            const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.SUBSCRIPT} />);
             const subscript = container.querySelector('sub');
             expect(subscript).toBeInTheDocument();
             expect(subscript).toHaveTextContent('Subscript text');
@@ -509,14 +509,14 @@ describe('BlockEditorItem', () => {
     });
 
     describe('Lists', () => {
-        const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.LIST} />);
+        const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.LIST} />);
         const listItem = container.querySelector('li');
         expect(listItem).toBeInTheDocument();
         expect(listItem).toHaveTextContent('Item 1');
     });
 
     it('should render a bullet list', () => {
-        const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.BULLET_LIST} />);
+        const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.BULLET_LIST} />);
         const list = container.querySelector('ul');
         expect(list).toBeInTheDocument();
         expect(list).toHaveTextContent('Item 1');
@@ -524,7 +524,7 @@ describe('BlockEditorItem', () => {
     });
 
     it('should render an ordered list', () => {
-        const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.ORDERED_LIST} />);
+        const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.ORDERED_LIST} />);
         const list = container.querySelector('ol');
         expect(list).toBeInTheDocument();
         expect(list).toHaveTextContent('Item 1');
@@ -533,14 +533,14 @@ describe('BlockEditorItem', () => {
 });
 
 it('should render a blockquote', () => {
-    const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.BLOCKQUOTE} />);
+    const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.BLOCKQUOTE} />);
     const blockquote = container.querySelector('blockquote');
     expect(blockquote).toBeInTheDocument();
     expect(blockquote).toHaveTextContent('Blockquote text');
 });
 
 it('should render a code block', () => {
-    const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.CODE_BLOCK} />);
+    const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.CODE_BLOCK} />);
     const codeBlock = container.querySelector('pre');
     expect(codeBlock).toBeInTheDocument();
     expect(codeBlock).toHaveAttribute('data-language', 'javascript');
@@ -549,13 +549,13 @@ it('should render a code block', () => {
 
 describe('Separators', () => {
     it('should render a horizontal rule', () => {
-        const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.HORIZONTAL_RULE} />);
+        const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.HORIZONTAL_RULE} />);
         const hr = container.querySelector('hr');
         expect(hr).toBeInTheDocument();
     });
 
     it('should render a hard break', () => {
-        const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.HARDBREAK} />);
+        const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.HARDBREAK} />);
         const br = container.querySelector('br');
         expect(br).toBeInTheDocument();
     });
@@ -568,7 +568,7 @@ describe('Assets', () => {
             dotcmsUrl: 'https://some.dotcms.com'
         } as unknown as DotCmsClient;
 
-        const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.DOT_IMAGE} />);
+        const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.DOT_IMAGE} />);
         const image = container.querySelector('img');
         expect(image).toBeInTheDocument();
         expect(image).toHaveAttribute('src', 'https://some.dotcms.com/image.jpg');
@@ -580,7 +580,9 @@ describe('Assets', () => {
             dotcmsUrl: 'https://some.dotcms.com'
         } as unknown as DotCmsClient;
 
-        const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.DOT_IMAGE_EXTERNAL} />);
+        const { container } = render(
+            <BlockEditorBlock content={BLOCKS_MOCKS.DOT_IMAGE_EXTERNAL} />
+        );
         const image = container.querySelector('img');
         expect(image).toBeInTheDocument();
         expect(image).toHaveAttribute('src', 'https://external.com/image.jpg');
@@ -592,7 +594,7 @@ describe('Assets', () => {
             dotcmsUrl: 'https://some.dotcms.com'
         } as unknown as DotCmsClient;
 
-        const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.DOT_VIDEO} />);
+        const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.DOT_VIDEO} />);
         const video = container.querySelector('video');
         expect(video).toBeInTheDocument();
         expect(video).toHaveAttribute('width', '640');
@@ -606,7 +608,7 @@ describe('Assets', () => {
 });
 
 it('should render a table', () => {
-    const { container } = render(<BlockEditorItem content={BLOCKS_MOCKS.TABLE} />);
+    const { container } = render(<BlockEditorBlock content={BLOCKS_MOCKS.TABLE} />);
     const table = container.querySelector('table');
     expect(table).toBeInTheDocument();
 
@@ -626,7 +628,7 @@ it('should render a dotContent from customRenderers', () => {
     };
 
     const { getByTestId } = render(
-        <BlockEditorItem content={BLOCKS_MOCKS.DOT_CONTENT} customRenderers={customRenderers} />
+        <BlockEditorBlock content={BLOCKS_MOCKS.DOT_CONTENT} customRenderers={customRenderers} />
     );
     expect(getByTestId('custom-dot-content')).toHaveTextContent('My activity');
 });
