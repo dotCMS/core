@@ -13,6 +13,7 @@ import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.queue.JobQueue;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import graphql.VisibleForTesting;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -97,6 +98,7 @@ public class JobQueueAPIImpl implements JobQueueAPI {
      * @param jobQueue       The JobQueue implementation to use.
      * @param threadPoolSize The number of threads to use for job processing.
      */
+    @VisibleForTesting
     public JobQueueAPIImpl(JobQueue jobQueue, int threadPoolSize) {
         this.jobQueue = jobQueue;
         this.threadPoolSize = threadPoolSize;
