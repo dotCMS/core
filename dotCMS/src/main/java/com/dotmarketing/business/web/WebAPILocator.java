@@ -9,6 +9,8 @@ import com.dotcms.experiments.business.web.ExperimentWebAPI;
 import com.dotcms.experiments.business.web.ExperimentWebAPIImpl;
 import com.dotcms.variant.business.web.VariantWebAPI;
 import com.dotcms.variant.business.web.VariantWebAPIImpl;
+import com.dotcms.visitor.filter.characteristics.CharacterWebAPI;
+import com.dotcms.visitor.filter.characteristics.CharacterWebAPIImpl;
 import com.dotmarketing.business.Locator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
@@ -73,6 +75,10 @@ public class WebAPILocator extends Locator<WebAPIIndex>{
 		return (PreRenderSEOWebAPI)getInstance(WebAPIIndex.PRERENDER_API);
 	}
 
+	public static CharacterWebAPI getCharacterWebAPI() {
+		return (CharacterWebAPI)getInstance(WebAPIIndex.CHARACTER_API);
+	}
+
 	private static Object getInstance(WebAPIIndex index) {
 		
 		if(instance == null){
@@ -113,7 +119,8 @@ enum WebAPIIndex
 	PERMISSION_WEB_API,
 	HOST_WEB_API,
 	PERSONALIZATION_WEB_API,
-	PRERENDER_API;
+	PRERENDER_API,
+	CHARACTER_API;
 
 	Object create() {
 		switch(this) {
@@ -140,6 +147,9 @@ enum WebAPIIndex
 
 			case EXPERIMENT_WEB_API:
 				return new ExperimentWebAPIImpl();
+
+			case CHARACTER_API:
+				return new CharacterWebAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

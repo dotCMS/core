@@ -19,7 +19,7 @@ public class EventLogSubmitter {
 
     private final SubmitterConfig submitterConfig;
 
-    EventLogSubmitter() {
+    public EventLogSubmitter() {
         submitterConfig = new DotConcurrentFactory.SubmitterConfigBuilder()
             .poolSize(Config.getIntProperty("EVENT_LOG_POSTING_THREADS", 8))
             .maxPoolSize(Config.getIntProperty("EVENT_LOG_POSTING_THREADS_MAX", 16))
@@ -29,7 +29,7 @@ public class EventLogSubmitter {
             .build();
     }
 
-    void logEvent(final Host host, final EventsPayload eventPayload) {
+    public void logEvent(final Host host, final EventsPayload eventPayload) {
         DotConcurrentFactory
             .getInstance()
             .getSubmitter("event-log-posting", submitterConfig)

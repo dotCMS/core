@@ -2,8 +2,10 @@ package com.dotcms.analytics.track;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.RegEX;
+import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Objects;
@@ -16,35 +18,53 @@ import java.util.Set;
  */
 public interface RequestMatcher {
 
-    String CHARSET = Config.getStringProperty("CHARSET", "UTF-8");
+
+    String CHARSET = Try.of(()->Config.getStringProperty("CHARSET", "UTF-8")).getOrElse("UTF-8");
 
     /**
      * Return true if match the request with the patterns and methods
      * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
      * @return boolean true if the request match the patterns and methods
      */
-    default boolean match(final HttpServletRequest request) {
+    default boolean match(final HttpServletRequest request, final HttpServletResponse response) {
 
         final Set<String> patterns = getMatcherPatterns();
         final Set<String> methods  = getAllowedMethods();
         return  Objects.nonNull(patterns) && !patterns.isEmpty() &&
                 Objects.nonNull(methods) &&  !methods.isEmpty()  &&
                 isAllowedMethod (methods, request.getMethod())   &&
-                match(request, patterns);
+                match(request, response, patterns);
     }
 
     /**
      * Match the request with the patterns
      * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
      * @param patterns Set of patterns
      * @return boolean true if any of the patterns match the request
      */
-    default boolean match(final HttpServletRequest request, final Set<String> patterns) {
+    default boolean match(final HttpServletRequest request, final HttpServletResponse response, final Set<String> patterns) {
 
         final String requestURI = request.getRequestURI();
         return patterns.stream().anyMatch(pattern -> match(requestURI, pattern));
     }
 
+    /**
+     * Means the matcher should run before request
+     * @return boolean
+     */
+    default boolean runBeforeRequest() {
+        return false;
+    }
+
+    /**
+     * Means the matcher should run after request
+     * @return boolean
+     */
+    default boolean runAfterRequest() {
+        return false;
+    }
     /**
      * Match the request URI with the pattern
      * @param requestURI String
