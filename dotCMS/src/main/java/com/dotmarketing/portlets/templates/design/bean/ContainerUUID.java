@@ -63,8 +63,13 @@ public class ContainerUUID implements Serializable{
 
         this.identifier = containerIdOrPath;
         this.uuid = containerInstanceID == null ? UUID_DEFAULT_VALUE : containerInstanceID;
-        this.historyUUIDs = isNew(containerInstanceID) || !UtilMethods.isSet(historyUUIDs) ? new ArrayList<>() :
-                new ArrayList<>(historyUUIDs);
+
+        if (isNew(containerInstanceID)) {
+            this.historyUUIDs = new ArrayList<>();
+        } else {
+            this.historyUUIDs = UtilMethods.isSet(historyUUIDs) ? new ArrayList<>(historyUUIDs) : list(this.uuid);
+            ;
+        }
     }
 
     private boolean isNew(String containerInstanceID) {

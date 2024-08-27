@@ -6996,7 +6996,8 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container.getIdentifier(), "1", list("1", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container.getIdentifier(), "3", list("3", "2"))
+                .withContainer(container.getIdentifier(), "2", list("3", "2"))
+                .version(2)
                 .next();
 
         assertEquals(expectedTemplateLayout, templateLayoutFromDB);
