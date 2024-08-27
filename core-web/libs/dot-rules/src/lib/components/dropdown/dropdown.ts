@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { of, Observable, from } from 'rxjs';
 
 import {
@@ -7,15 +6,19 @@ import {
     Optional,
     OnChanges,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    Output,
+    Input,
+    ChangeDetectionStrategy
 } from '@angular/core';
-import { Output, Input, ChangeDetectionStrategy } from '@angular/core';
 import { ControlValueAccessor, NgControl } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
 import { Dropdown as PDropdown } from 'primeng/dropdown';
 
 import { map, mergeMap, toArray } from 'rxjs/operators';
+
+import { isEmpty } from '@dotcms/utils';
 
 /**
  * Angular wrapper around OLD Semantic UI Dropdown Module.
@@ -120,7 +123,7 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
     onTouched: Function = () => {};
 
     writeValue(value: any): void {
-        this.modelValue = _.isEmpty(value) ? '' : value;
+        this.modelValue = isEmpty(value) ? '' : value;
     }
 
     registerOnChange(fn): void {
