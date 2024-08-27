@@ -215,8 +215,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 expect(selectButton.value).toBe(DotPageMode.PREVIEW);
             });
 
-            // TODO: Fix this test
-            xit('should have locker with right attributes', async () => {
+            it('should have locker with right attributes', async () => {
                 const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
                     { ...mockUser(), userId: '456' },
                     new DotPageRender(mockDotRenderedPage())
@@ -231,10 +230,10 @@ describe('DotEditPageStateControllerComponent', () => {
 
                 expect(lockerDe.classes.warn).toBe(true, 'warn class');
                 expect(lockerDe.attributes.appendTo).toBe('target');
-                expect(lockerDe.attributes['ng-reflect-text']).toBe('Page locked by Some One');
+                expect(lockerDe.attributes['ng-reflect-content']).toBe('Page locked by Some One');
                 expect(lockerDe.attributes['ng-reflect-tooltip-position']).toBe('top');
-                expect(locker.modelValue).toBe(false, 'checked');
-                expect(locker.disabled).toBe(false, 'disabled');
+                expect(locker.modelValue).toBe(false);
+                expect(locker.disabled).toBe(false);
             });
 
             it('should have lock info', () => {
