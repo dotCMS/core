@@ -1,7 +1,7 @@
 @if (vm$ | async; as vm) {
     <p-dataView [value]="vm.fields" layout="list">
         <ng-template pTemplate="list" let-data>
-            @for (item of data; track $index) {
+            @for (field of data; track $index) {
                 <div class="dot-add-variable-list__item">
                     <div class="item__info">
                         <h3 [attr.data-testId]="'h3' + field.variable" class="info__title">

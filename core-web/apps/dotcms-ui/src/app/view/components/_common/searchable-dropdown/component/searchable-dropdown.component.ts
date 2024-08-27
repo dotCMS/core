@@ -200,7 +200,7 @@ export class SearchableDropdownComponent
     ngAfterContentInit() {
         this.totalRecords = this.totalRecords || this.data?.length;
         this.templates.forEach((item: PrimeTemplate) => {
-            if (item.getType() === 'listItem') {
+            if (item.getType() === 'list') {
                 this.externalItemListTemplate = item.template;
             } else if (item.getType() === 'select') {
                 this.externalSelectTemplate = item.template;

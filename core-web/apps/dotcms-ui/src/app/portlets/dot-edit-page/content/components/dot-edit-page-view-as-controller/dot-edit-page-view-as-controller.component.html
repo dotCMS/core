@@ -13,17 +13,17 @@
         [value]="pageState.viewAs.language"
         appendTo="body"
         tooltipPosition="bottom"
-        tooltipStyleClass="dot-language-selector__dialog"></dot-language-selector>
+        tooltipStyleClass="dot-language-selector__dialog" />
 
     <dot-persona-selector
         (delete)="deletePersonalization($event)"
         (selected)="changePersonaHandler($event)"
         [disabled]="(dotPageStateService.haveContent$ | async) === false"
-        [pageState]="pageState"></dot-persona-selector>
+        [pageState]="pageState" />
 </ng-container>
 
 <ng-template #language>
     <dot-language-selector
         (selected)="changeLanguageHandler($event)"
-        [value]="pageState.viewAs.language"></dot-language-selector>
+        [value]="pageState.viewAs.language" />
 </ng-template>

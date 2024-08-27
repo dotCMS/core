@@ -132,8 +132,7 @@ export class ActivatedRouteListStoreMock {
     }
 }
 
-// TODO: Fix this test
-xdescribe('DotEditPageToolbarComponent', () => {
+describe('DotEditPageToolbarComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
     let componentHost: TestHostComponent;
     let component: DotEditPageToolbarComponent;
@@ -377,8 +376,7 @@ xdescribe('DotEditPageToolbarComponent', () => {
     });
 
     describe('Favorite icon', () => {
-        // TODO: Fix this test
-        xit('should change icon on favorite page if contentlet exist', () => {
+        it('should change icon on favorite page if contentlet exist', () => {
             componentHost.pageState = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage()),

@@ -14,13 +14,13 @@
             <dot-edit-page-info
                 [title]="variant.variant.title"
                 [url]="variant.variant.url"
-                class="dot-variant-header flex gap-3"></dot-edit-page-info>
+                class="dot-variant-header flex gap-3" />
         </ng-container>
     </div>
 
     <div class="main-toolbar-right flex align-items-center gap-3">
         <ng-container *ngIf="variant; else defaultHeaderRightTpl">
-            <dot-global-message data-testId="globalMessage" right></dot-global-message>
+            <dot-global-message data-testId="globalMessage" right />
             <i class="pi pi-filter-fill -rotate-180"></i>
             <h2>{{ variant.experimentName }}</h2>
         </ng-container>
@@ -31,21 +31,21 @@
         <dot-edit-page-state-controller
             (modeChange)="stateChange()"
             [pageState]="pageState"
-            [variant]="variant"></dot-edit-page-state-controller>
+            [variant]="variant" />
 
         <p-checkbox
             *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
             (onChange)="whatschange.emit($event.checked)"
             [binary]="true"
             [label]="'dot.common.whats.changed' | dm"
-            class="dot-edit__what-changed-button"></p-checkbox>
+            class="dot-edit__what-changed-button" />
     </div>
 
     <div class="lower-toolbar-right w-5">
         <dot-edit-page-view-as-controller
             [pageState]="pageState"
             [variant]="variant"
-            class="flex w-full gap-2"></dot-edit-page-view-as-controller>
+            class="flex w-full gap-2" />
     </div>
 </dot-secondary-toolbar>
 
@@ -54,7 +54,7 @@
         [apiLink]="apiLink"
         [title]="pageState.page.title"
         [url]="pageState.page.pageURI"
-        class="flex gap-2"></dot-edit-page-info>
+        class="flex gap-2" />
 
     <p-button
         *ngIf="showFavoritePageStar"
@@ -68,7 +68,7 @@
 </ng-template>
 
 <ng-template #defaultHeaderRightTpl>
-    <dot-global-message data-testId="globalMessage" right></dot-global-message>
+    <dot-global-message data-testId="globalMessage" right />
 
     <p-tag
         *ngIf="runningExperiment"
@@ -93,5 +93,5 @@
     </p-tag>
     <dot-edit-page-workflows-actions
         (fired)="actionFired.emit($event)"
-        [page]="pageState.page"></dot-edit-page-workflows-actions>
+        [page]="pageState.page" />
 </ng-template>

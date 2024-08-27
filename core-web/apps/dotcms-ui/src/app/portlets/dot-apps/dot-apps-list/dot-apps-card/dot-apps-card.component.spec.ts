@@ -123,13 +123,12 @@ describe('DotAppsCardComponent', () => {
             fixture.detectChanges();
         });
 
-        // TODO: Fix this test
-        xit('should have warning icon', () => {
+        it('should have warning icon', () => {
             const warningIcon = fixture.debugElement.query(By.css('dot-icon'));
             expect(warningIcon).toBeTruthy();
             expect(warningIcon.attributes['name']).toBe('warning');
             expect(warningIcon.attributes['size']).toBe('18');
-            expect(warningIcon.attributes['ng-reflect-text']).toBe(
+            expect(warningIcon.attributes['ng-reflect-content']).toBe(
                 `${component.app.sitesWithWarnings} ${messageServiceMock.get(
                     'apps.invalid.configurations'
                 )}`

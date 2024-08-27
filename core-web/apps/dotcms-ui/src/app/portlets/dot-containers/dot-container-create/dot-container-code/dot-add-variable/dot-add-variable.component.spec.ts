@@ -187,8 +187,7 @@ const messageServiceMock = new MockDotMessageService({
     'Image-Height': 'Image Height'
 });
 
-// TODO: Fix this test
-xdescribe('DotAddVariableComponent', () => {
+describe('DotAddVariableComponent', () => {
     let fixture: ComponentFixture<DotAddVariableComponent>;
     let de: DebugElement;
     let dialogConfig: DynamicDialogConfig;

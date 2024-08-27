@@ -15,6 +15,23 @@
         #searchableDropdown
         labelPropertyName="name"
         width="448px">
+        <ng-template let-data="data" pTemplate="list">
+            @for (personaData of data; track $index) {
+                <dot-persona-selector-option
+                    (delete)="delete.emit(personaData)"
+                    (switch)="personaChange($event)"
+                    [canDespersonalize]="canDespersonalize"
+                    [class.highlight]="
+                        value?.identifier === personaData?.identifier ||
+                        (!value && personaData?.identifier === defaultPersonaIdentifier)
+                    "
+                    [persona]="value?.identifier === personaData?.identifier ? value : personaData"
+                    [selected]="
+                        value?.identifier === personaData?.identifier ||
+                        (!value && personaData?.identifier === defaultPersonaIdentifier)
+                    " />
+            }
+        </ng-template>
         <ng-template let-persona="item" pTemplate="select">
             <dot-persona-selected-item
                 (click)="!disabled && !readonly && searchableDropdown.toggleOverlayPanel($event)"
@@ -26,21 +43,6 @@
                 [readonly]="readonly"
                 appendTo="target"
                 tooltipPosition="bottom" />
-        </ng-template>
-        <ng-template let-personaData="item" pTemplate="listItem">
-            <dot-persona-selector-option
-                (delete)="delete.emit(personaData)"
-                (switch)="personaChange($event)"
-                [canDespersonalize]="canDespersonalize"
-                [class.highlight]="
-                    value?.identifier === personaData?.identifier ||
-                    (!value && personaData?.identifier === defaultPersonaIdentifier)
-                "
-                [persona]="value?.identifier === personaData?.identifier ? value : personaData"
-                [selected]="
-                    value?.identifier === personaData?.identifier ||
-                    (!value && personaData?.identifier === defaultPersonaIdentifier)
-                " />
         </ng-template>
     </dot-searchable-dropdown>
 </div>
