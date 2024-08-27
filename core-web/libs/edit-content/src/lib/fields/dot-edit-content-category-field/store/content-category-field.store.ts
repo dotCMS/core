@@ -81,9 +81,9 @@ export const CategoryFieldStore = signalStore(
         ),
 
         /**
-         * Indicates whether any categories are selected.
+         * Indicates whether any categories are confirmed.
          */
-        hasSelectedCategories: computed(() => !!store.selected().length),
+        hasConfirmedCategories: computed(() => !!store.confirmedCategories().length),
 
         /**
          * Get the root category inode.

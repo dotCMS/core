@@ -1,4 +1,4 @@
-@if (store.selected().length) {
+@if (store.confirmedCategories().length) {
     <dot-category-field-chips
         data-testId="category-chip-list"
         [categories]="store.confirmedCategories()"

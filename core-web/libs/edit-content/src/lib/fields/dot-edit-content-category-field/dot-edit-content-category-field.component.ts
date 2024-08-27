@@ -45,8 +45,8 @@ import { CategoryFieldStore } from './store/content-category-field.store';
     styleUrl: './dot-edit-content-category-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        '[class.dot-category-field__container--has-categories]': '$hasSelectedCategories()',
-        '[class.dot-category-field__container]': '!$hasSelectedCategories()'
+        '[class.dot-category-field__container--has-categories]': '$hasConfirmedCategories()',
+        '[class.dot-category-field__container]': '!$hasConfirmedCategories()'
     },
     viewProviders: [
         {
@@ -75,11 +75,11 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
      */
     contentlet = input.required<DotCMSContentlet>();
     /**
-     * The `$hasSelectedCategories` variable is a computed property that returns a boolean value.
+     * The `$hasConfirmedCategories` variable is a computed property that returns a boolean value.
      *
      * @returns {Boolean} - True if there are selected categories, false otherwise.
      */
-    $hasSelectedCategories = computed(() => !!this.store.hasSelectedCategories());
+    $hasConfirmedCategories = computed(() => !!this.store.hasConfirmedCategories());
     /**
      * Getter to retrieve the category field control.
      *
