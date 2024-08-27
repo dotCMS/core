@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { forkJoin, Subject } from 'rxjs';
 
 import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
@@ -92,7 +91,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
                 map((environments: DotEnvironment[]) => !!environments.length),
                 take(1)
             ),
-            this.route.data.pipe(pluck('filterBy'), take(1))
+            this.route.queryParams.pipe(pluck('filterBy'), take(1))
         ).subscribe(([contentTypes, isEnterprise, environments, filterBy]) => {
             const baseTypes: StructureTypeView[] = contentTypes;
 
@@ -159,7 +158,10 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     }
 
     private setFilterByContentType(contentType: string) {
-        this.filterBy = _.startCase(_.toLower(contentType));
+        const lowerCased = contentType.toLowerCase();
+
+        this.filterBy = lowerCased.charAt(0).toUpperCase() + lowerCased.slice(1);
+
         this.paginatorExtraParams = { type: this.filterBy };
         this.actionHeaderOptions.primary.command = ($event) => {
             this.createContentType(null, $event);

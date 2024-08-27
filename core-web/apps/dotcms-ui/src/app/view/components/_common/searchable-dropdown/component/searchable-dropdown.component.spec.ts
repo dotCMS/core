@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as _ from 'lodash';
-
 import { Component, DebugElement, Input } from '@angular/core';
 import {
     ComponentFixture,
@@ -304,7 +302,7 @@ describe('SearchableDropdownComponent', () => {
             hostFixture.detectChanges();
             items = de.queryAll(By.css('.searchable-dropdown__data-list-item'));
 
-            dataExpected = _.cloneDeep(data[0]);
+            dataExpected = structuredClone(data[0]);
             dataExpected.label = dataExpected.name;
         });
 

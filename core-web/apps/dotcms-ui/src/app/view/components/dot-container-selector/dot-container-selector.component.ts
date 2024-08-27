@@ -8,7 +8,6 @@ import { PaginationEvent } from '@components/_common/searchable-dropdown/compone
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { PaginatorService } from '@dotcms/data-access';
 import { DotContainer } from '@dotcms/dotcms-models';
-import { DotContainerColumnBox } from '@models/dot-edit-layout-designer';
 
 @Component({
     providers: [PaginatorService],
@@ -19,7 +18,6 @@ import { DotContainerColumnBox } from '@models/dot-edit-layout-designer';
 export class DotContainerSelectorComponent implements OnInit {
     @Output() swap: EventEmitter<DotContainer> = new EventEmitter();
 
-    @Input() data: DotContainerColumnBox[] = [];
     @Input() innerClass = '';
 
     totalRecords: number;
