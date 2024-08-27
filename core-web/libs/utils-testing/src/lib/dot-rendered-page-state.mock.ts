@@ -6,7 +6,7 @@ import { mockUser } from './login-service.mock';
 
 export const mockDotRenderedPageState = new DotPageRenderState(
     mockUser(),
-    new DotPageRender(mockDotRenderedPage()),
+    new DotPageRender(mockDotRenderedPage())
 );
 
 export const mockDotRenderedPageStateWithPersona = new DotPageRenderState(
@@ -21,6 +21,6 @@ export const mockDotRenderedPageStateWithPersona = new DotPageRenderState(
                 keyTag: 'SuperPersona',
                 personalized: true
             }
-        },
-    }),
+        }
+    })
 );
