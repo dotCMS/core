@@ -1,20 +1,17 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
-
 import { MarkdownService } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component } from '@angular/core';
 import { FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
-import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
-import { Tooltip, TooltipModule } from 'primeng/tooltip';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotFieldRequiredDirective, DotIconModule } from '@dotcms/ui';
 
@@ -115,8 +112,7 @@ const formState = {
 })
 class MockMarkdownComponent {}
 
-// TODO: Fix this test
-fdescribe('DotAppsConfigurationDetailFormComponent', () => {
+describe('DotAppsConfigurationDetailFormComponent', () => {
 
     let spectator: Spectator<DotAppsConfigurationDetailFormComponent>;
     const createComponent = createComponentFactory({
