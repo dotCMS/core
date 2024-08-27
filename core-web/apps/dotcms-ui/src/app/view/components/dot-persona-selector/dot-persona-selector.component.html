@@ -25,7 +25,7 @@
                 [persona]="persona"
                 [readonly]="readonly"
                 appendTo="target"
-                tooltipPosition="bottom"></dot-persona-selected-item>
+                tooltipPosition="bottom" />
         </ng-template>
         <ng-template let-personaData="item" pTemplate="listItem">
             <dot-persona-selector-option
@@ -33,18 +33,18 @@
                 (switch)="personaChange($event)"
                 [canDespersonalize]="canDespersonalize"
                 [class.highlight]="
-                    value?.identifier === personaData.identifier ||
-                    (!value && personaData.identifier === defaultPersonaIdentifier)
+                    value?.identifier === personaData?.identifier ||
+                    (!value && personaData?.identifier === defaultPersonaIdentifier)
                 "
-                [persona]="value?.identifier === personaData.identifier ? value : personaData"
+                [persona]="value?.identifier === personaData?.identifier ? value : personaData"
                 [selected]="
-                    value?.identifier === personaData.identifier ||
-                    (!value && personaData.identifier === defaultPersonaIdentifier)
-                "></dot-persona-selector-option>
+                    value?.identifier === personaData?.identifier ||
+                    (!value && personaData?.identifier === defaultPersonaIdentifier)
+                " />
         </ng-template>
     </dot-searchable-dropdown>
 </div>
 
 <dot-add-persona-dialog
     (createdPersona)="handleNewPersona($event)"
-    #personaDialog></dot-add-persona-dialog>
+    #personaDialog />

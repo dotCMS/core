@@ -7,7 +7,6 @@ import {
     HostListener,
     inject,
     OnDestroy,
-    OnInit,
     Output,
     ViewChild
 } from '@angular/core';
@@ -29,7 +28,7 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     templateUrl: './dot-pages-listing-panel.component.html',
     styleUrls: ['./dot-pages-listing-panel.component.scss']
 })
-export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterViewInit {
+export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
     readonly store = inject(DotPageStore);
     readonly #dotMessageService = inject(DotMessageService);
 
@@ -48,7 +47,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
     #domIdMenuAttached = '';
     #scrollElement?: HTMLElement;
 
-    ngOnInit() {
+    constructor() {
         this.store.actionMenuDomId$
             .pipe(
                 takeUntilDestroyed(),

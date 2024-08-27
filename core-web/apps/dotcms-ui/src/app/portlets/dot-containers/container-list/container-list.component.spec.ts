@@ -7,6 +7,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, CUSTOM_ELEMENTS_SCHEMA, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, SelectItem } from 'primeng/api';
@@ -295,7 +296,8 @@ describe('ContainerListComponent', () => {
                 HttpClientTestingModule,
                 InputTextModule,
                 MenuModule,
-                TableModule
+                TableModule,
+                BrowserAnimationsModule
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
