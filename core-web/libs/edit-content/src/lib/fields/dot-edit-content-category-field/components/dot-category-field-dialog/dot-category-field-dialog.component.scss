@@ -72,12 +72,6 @@
 }
 
 :host ::ng-deep {
-    .p-sidebar-content {
-        padding: 0;
-        height: 100%;
-        overflow: hidden;
-    }
-
     .category-field__dialog.p-dialog {
         min-height: 90%;
         height: 100%;

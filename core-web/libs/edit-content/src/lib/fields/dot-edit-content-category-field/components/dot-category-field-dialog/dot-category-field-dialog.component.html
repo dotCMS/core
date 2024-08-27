@@ -1,5 +1,5 @@
 <p-dialog
-    (onHide)="closedSidebar.emit()"
+    (onHide)="closedDialog.emit()"
     [(visible)]="visible"
     data-testId="dialog"
     [draggable]="false"
@@ -9,8 +9,8 @@
     styleClass="category-field__dialog">
     <ng-template pTemplate="header">
         <div class="flex flex-row category-field__header">
-            <div class="category-field__header-title" data-testId="sidebar-title">
-                {{ 'edit.content.category-field.sidebar.header.select-categories' | dm }}
+            <div class="category-field__header-title" data-testId="dialog-title">
+                {{ 'edit.content.category-field.dialog.header.select-categories' | dm }}
             </div>
         </div>
     </ng-template>
@@ -59,20 +59,20 @@
                         class="p-button p-button-link"
                         data-testId="clear_all-btn"
                         pButton>
-                        {{ 'edit.content.category-field.sidebar.button.clear-all' | dm }}
+                        {{ 'edit.content.category-field.dialog.button.clear-all' | dm }}
                     </button>
                 </div>
             } @else {
                 <div class="category-field__empty-state" data-testId="category-field__empty-state">
                     <i class="pi pi-check-square"></i>
-                    <p>{{ 'edit.content.category-field.sidebar.empty-state' | dm }}</p>
+                    <p>{{ 'edit.content.category-field.dialog.empty-state' | dm }}</p>
                 </div>
             }
         </div>
     </div>
     <ng-template pTemplate="footer">
         <p-button
-            (click)="closedSidebar.emit()"
+            (click)="closedDialog.emit()"
             [label]="'Cancel' | dm"
             styleClass="p-button-outlined"
             data-testId="dialog-cancel" />
