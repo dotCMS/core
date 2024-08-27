@@ -35,7 +35,7 @@
     labelPropertyName="name"
     overlayWidth="490px"
     valuePropertyName="name"
-    width="100%" >
+    width="100%">
     <ng-template let-data="data" pTemplate="list">
         @for (item of data; track $index) {
             <span
@@ -51,7 +51,7 @@
                             : '/dA/' + item.themeThumbnail + '/titleImage/500w/50q/thumbnail.png'
                     "
                     class="dot-theme-item__image" />
-    
+
                 <ng-template #imageFallback>
                     <div class="dot-theme-item__image--fallback">
                         <span>{{ item.label.charAt(0) }}</span>

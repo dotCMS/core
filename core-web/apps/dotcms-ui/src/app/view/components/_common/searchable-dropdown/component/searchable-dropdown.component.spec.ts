@@ -405,7 +405,7 @@ describe('SearchableDropdownComponent', () => {
                         (click)="handleClick(item)"
                         class="searchable-dropdown__data-list-item templateTestItem">
                         {{ item.label }}
-                    </div> 
+                    </div>
                 }
             </ng-template>
             <ng-template let-persona="item" pTemplate="select">
