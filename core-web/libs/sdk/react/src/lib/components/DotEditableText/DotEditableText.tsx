@@ -43,8 +43,7 @@ export function DotEditableText({
         const content = contentlet?.[fieldName] || '';
         editorRef.current?.setContent(content, { format });
         setContent(content);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [format, contentlet?.[fieldName]]);
+    }, [format, fieldName, contentlet?.[fieldName]]);
 
     useEffect(() => {
         if (!isInsideEditorFn()) {
