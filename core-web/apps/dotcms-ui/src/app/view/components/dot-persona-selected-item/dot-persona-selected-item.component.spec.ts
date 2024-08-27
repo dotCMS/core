@@ -89,16 +89,15 @@ describe('DotPersonaSelectedItemComponent', () => {
         it('should set properties to null when enable', () => {
             container = de.query(By.css('.dot-persona-selector__container')).nativeElement;
             expect(container.getAttribute('ng-reflect-tooltip-position')).toEqual(null);
-            expect(container.getAttribute('ng-reflect-text')).toEqual(null);
+            expect(container.getAttribute('ng-reflect-content')).toEqual(null);
         });
 
-        // TODO: Fix this test
-        xit('should set properties correctly when disable', () => {
+        it('should set properties correctly when disable', () => {
             component.disabled = true;
             fixture.detectChanges();
             container = de.query(By.css('.dot-persona-selector__container')).nativeElement;
             expect(container.getAttribute('ng-reflect-tooltip-position')).toEqual('bottom');
-            expect(container.getAttribute('ng-reflect-text')).toEqual('Add content...');
+            expect(container.getAttribute('ng-reflect-content')).toEqual('Add content...');
         });
     });
 });

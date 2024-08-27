@@ -132,17 +132,18 @@ xdescribe('DotToolbarUserComponent', () => {
         jasmine.clock().uninstall();
     });
 
-    // TODO: Fix this test
-    xit('should have correct href in logout link', () => {
+    it('should have correct href in logout link', () => {
         fixture.detectChanges();
 
         const avatarComponent = de.query(By.css('p-avatar')).nativeElement;
         avatarComponent.click();
         fixture.detectChanges();
 
-        const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout'));
+        const logoutItem = de.query(By.css('#dot-toolbar-user-link-logout'));
+        const logoutLink = logoutItem.query(By.css('a'));
+
         expect(logoutLink.attributes.href).toBe('/dotAdmin/logout?r=1466424490000');
-        expect(logoutLink.parent.classes['toolbar-user__logout']).toBe(true);
+        expect(logoutItem.classes['toolbar-user__logout']).toBe(true);
     });
     it('should have correct target in logout link', () => {
         fixture.detectChanges();
@@ -151,12 +152,12 @@ xdescribe('DotToolbarUserComponent', () => {
         avatarComponent.click();
         fixture.detectChanges();
 
-        const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout'));
+        const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout a'));
         expect(logoutLink.attributes.target).toBe('_self');
     });
 
-    // TODO: Fix this test
-    xit('should call "logoutAs" in "LoginService" on logout click', async () => {
+    
+    it('should call "logoutAs" in "LoginService" on logout click', async () => {
         spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(
             new Promise((resolve) => {
                 resolve(true);
@@ -171,12 +172,8 @@ xdescribe('DotToolbarUserComponent', () => {
         avatarComponent.click();
         fixture.detectChanges();
 
-        const logoutAsLink = de.query(By.css('#dot-toolbar-user-link-logout-as'));
-        logoutAsLink.triggerEventHandler('click', {
-            preventDefault: () => {
-                //
-            }
-        });
+        const logoutAsLink = de.query(By.css('#dot-toolbar-user-link-logout-as')).nativeElement;
+        logoutAsLink.click();
 
         await fixture.whenStable();
         expect(loginService.logoutAs).toHaveBeenCalledTimes(1);

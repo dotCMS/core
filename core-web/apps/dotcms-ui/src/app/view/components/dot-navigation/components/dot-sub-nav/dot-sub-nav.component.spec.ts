@@ -23,8 +23,7 @@ const data: DotMenu = {
     ]
 };
 
-// TODO: Fix this test
-xdescribe('DotSubNavComponent', () => {
+describe('DotSubNavComponent', () => {
     let component: DotSubNavComponent;
     let fixture: ComponentFixture<DotSubNavComponent>;
     let de: DebugElement;
