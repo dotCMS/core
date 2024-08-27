@@ -2,7 +2,6 @@ package com.dotcms.ai.app;
 
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
@@ -29,10 +28,8 @@ public class AppConfig implements Serializable {
     private static final String AI_API_URL_KEY = "AI_API_URL";
     private static final String AI_IMAGE_API_URL_KEY = "AI_IMAGE_API_URL";
     private static final String AI_EMBEDDINGS_API_URL_KEY = "AI_EMBEDDINGS_API_URL";
-    private static final String AI_DEBUG_LOGGER_KEY = "AI_DEBUG_LOGGER";
     private static final String SYSTEM_HOST = "System Host";
     private static final AtomicReference<AppConfig> SYSTEM_HOST_CONFIG = new AtomicReference<>();
-    private static final boolean DEBUG_LOGGING = Config.getBooleanProperty(AI_DEBUG_LOGGER_KEY, false);
 
     public static final Pattern SPLITTER = Pattern.compile("\\s?,\\s?");
 
@@ -107,7 +104,7 @@ public class AppConfig implements Serializable {
      * @param message The {@link Supplier} with the message to log.
      */
     public static void debugLogger(final Class<?> clazz, final Supplier<String> message) {
-        if (getSystemHostConfig().getConfigBoolean(AppKeys.DEBUG_LOGGING) || DEBUG_LOGGING) {
+        if (getSystemHostConfig().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
             Logger.info(clazz, message.get());
         }
     }
