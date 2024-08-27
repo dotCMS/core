@@ -1,4 +1,3 @@
-import { cloneDeep } from 'lodash';
 import { Observable, of } from 'rxjs';
 
 import { DotFieldVariable } from '@dotcms/dotcms-models';
@@ -29,11 +28,11 @@ export const mockFieldVariables: DotFieldVariable[] = [
 
 export class DotFieldVariablesServiceMock {
     load(): Observable<DotFieldVariable[]> {
-        return of(cloneDeep(mockFieldVariables));
+        return of(structuredClone(mockFieldVariables));
     }
 
     save(): Observable<DotFieldVariable> {
-        return of(cloneDeep(mockFieldVariables[0]));
+        return of(structuredClone(mockFieldVariables[0]));
     }
 
     delete(): Observable<string> {

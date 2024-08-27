@@ -2537,12 +2537,16 @@ public class WorkflowResource {
                 new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(2).maxPoolSize(5).queueCapacity(CONTENTLETS_LIMIT).build());
         final CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(dotSubmitter);
         final List<Future<Map<String, Object>>> futures = new ArrayList<>();
+        // todo: add the mock request
+        final HttpServletRequest statelessRequest = RequestUtil.INSTANCE.createStatelessRequest(request);
+
 
         for (final SingleContentQuery singleContentQuery : contentletsToMergeList) {
 
             // this triggers the merges
             final Future<Map<String, Object>> future = completionService.submit(() -> {
 
+                HttpServletRequestThreadLocal.INSTANCE.setRequest(statelessRequest);
                 final Map<String, Object> resultMap = new HashMap<>();
                 final String inode      = singleContentQuery.getInode();
                 final String identifier = singleContentQuery.getIdentifier();
@@ -2552,7 +2556,7 @@ public class WorkflowResource {
 
                 try {
 
-                    fireTransactionalAction(systemAction, fireActionForm, request, mode,
+                    fireTransactionalAction(systemAction, fireActionForm, statelessRequest, mode,
                             initDataObject, resultMap, inode, identifier, languageId, user, indexPolicy);
                 } catch (Exception e) {
 
