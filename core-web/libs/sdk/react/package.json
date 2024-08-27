@@ -1,9 +1,9 @@
 {
     "name": "@dotcms/react",
-    "version": "0.0.1-alpha.32",
+    "version": "0.0.1-alpha.33",
     "dependencies": {
         "@tinymce/tinymce-react": "^5.1.1",
-        "@dotcms/client": "0.0.1-alpha.32"
+        "@dotcms/client": "0.0.1-alpha.33"
     },
     "peerDependencies": {
         "react": ">=18",
