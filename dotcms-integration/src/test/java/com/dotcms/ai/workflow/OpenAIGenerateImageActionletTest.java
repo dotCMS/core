@@ -28,6 +28,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +86,8 @@ public class OpenAIGenerateImageActionletTest {
                     @Override
                     public JSONObject sendTextPrompt(String prompt) {
                         return new JSONObject("{\n" +
-                                "  \"response\":\"image_id123\"\n" +
+                                "  \"response\":\"image_id123\",\n" +
+                                "  \"tempFile\":\"image_id123\"\n" +
                                 "}");
                     }
 
@@ -215,9 +217,9 @@ public class OpenAIGenerateImageActionletTest {
 
         final Object bodyObject = contentlet.get("image");
         Assert.assertNotNull("Body returned can not be null",bodyObject);
-        Assert.assertTrue("Body returned should be a String",bodyObject instanceof CharSequence);
-        final CharSequence body = (CharSequence) bodyObject;
-        Assert.assertEquals("Body returned should be not empty", body, "image_id123");
+        Assert.assertTrue("Body returned should be a String",bodyObject instanceof File);
+        final File body = (File) bodyObject;
+        Assert.assertEquals("Body returned should be not empty", body.getName(), "image_id123");
     }
 
 }

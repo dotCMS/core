@@ -39,7 +39,6 @@ import { PagesGuardService } from './api/services/guards/pages-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
 import { NotificationsService } from './api/services/notifications-service';
 import { ColorUtil } from './api/util/ColorUtil';
-import { StringPixels } from './api/util/string-pixels-util';
 import { StringFormat } from './api/util/stringFormat';
 import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-service/dot-save-on-deactivate.service';
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';
@@ -75,7 +74,6 @@ const PROVIDERS: Provider[] = [
     PagesGuardService,
     PublicAuthGuardService,
     StringFormat,
-    StringPixels,
     DotLoginPageResolver,
     DotLoginPageStateService,
     DotPushPublishDialogService,
