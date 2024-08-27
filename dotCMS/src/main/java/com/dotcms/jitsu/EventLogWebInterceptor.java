@@ -3,6 +3,7 @@ package com.dotcms.jitsu;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_LENGTH;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 
+import com.dotcms.analytics.track.RequestMatcher;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.filters.interceptor.Result;
@@ -32,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -47,6 +49,10 @@ import javax.servlet.http.HttpServletResponse;
 public class EventLogWebInterceptor implements WebInterceptor {
 
     private static final long serialVersionUID = 1L;
+
+    private final Map<String, RequestMatcher> requestMatchersMap = new ConcurrentHashMap<>();
+
+    // this should be translated to matcher and the rest of the pipeline
     private static final String[] PATHS = new String[] {
         "/s/lib.js",
         "/api/v1/event"
@@ -70,6 +76,16 @@ public class EventLogWebInterceptor implements WebInterceptor {
         });
     }
 
+    /**
+     * Add a request matchers
+     * @param requestMatchers
+     */
+    public void addRequestMatcher(final RequestMatcher... requestMatchers) {
+        for (final RequestMatcher matcher : requestMatchers) {
+            requestMatchersMap.put(matcher.getId(), matcher);
+        }
+    }
+
     @Override
     public String[] getFilters() {
         return PATHS;
@@ -79,6 +95,15 @@ public class EventLogWebInterceptor implements WebInterceptor {
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
         setHeaders(response);
 
+        final Optional<RequestMatcher> matcherOpt = this.anyMatcher(request);
+        if (matcherOpt.isPresent()) {
+
+            Logger.debug(this, ()-> "Matched: " + matcherOpt.get().getId() + " request: " + request.getRequestURI());
+            //fireNextStep(request, response);
+            return Result.SKIP_NO_CHAIN;
+        }
+
+        // I think we have to migrate this to a matcher later
         if ("GET".equals(request.getMethod())) {
             doGet(request, response);
         }
@@ -92,6 +117,13 @@ public class EventLogWebInterceptor implements WebInterceptor {
         }
 
         return Result.SKIP_NO_CHAIN;
+    }
+
+    private Optional<RequestMatcher> anyMatcher(final HttpServletRequest request) {
+
+        return requestMatchersMap.values().stream()
+                .filter(matcher -> matcher.match(request))
+                .findFirst();
     }
 
     public void doGet(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
