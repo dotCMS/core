@@ -1,5 +1,4 @@
 import autoScroll from 'dom-autoscroller';
-import * as _ from 'lodash';
 import { DragulaService } from 'ng2-dragula';
 import { Subject } from 'rxjs';
 
@@ -224,7 +223,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.layout && changes.layout.currentValue) {
-            this.fieldRows = _.cloneDeep(changes.layout.currentValue);
+            this.fieldRows = structuredClone(changes.layout.currentValue);
         }
     }
 
@@ -369,7 +368,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     cancelLastDragAndDrop(): void {
-        this.fieldRows = _.cloneDeep(this.layout);
+        this.fieldRows = structuredClone(this.layout);
     }
 
     /**
