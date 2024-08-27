@@ -113,7 +113,6 @@ const formState = {
 class MockMarkdownComponent {}
 
 describe('DotAppsConfigurationDetailFormComponent', () => {
-
     let spectator: Spectator<DotAppsConfigurationDetailFormComponent>;
     const createComponent = createComponentFactory({
         component: DotAppsConfigurationDetailFormComponent,
@@ -131,17 +130,16 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             DotFieldRequiredDirective
         ],
         providers: [MarkdownService, FormGroupDirective],
-        declarations: [MockMarkdownComponent],
+        declarations: [MockMarkdownComponent]
     });
 
     describe('Without warnings', () => {
-
         beforeEach(() => {
             spectator = createComponent({
                 props: {
                     formFields: secrets
                 }
-            })
+            });
             spectator.detectChanges();
         });
 
@@ -149,16 +147,16 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             const fields = spectator.queryAll('.field');
             expect(fields.length).toBe(secrets.length);
         });
-        
+
         it('should not have warning icon', () => {
             const element = spectator.query('dot-icon');
             expect(element).toBeFalsy();
         });
-        
+
         it('should focus the first form field after view init', async () => {
             spectator.detectComponentChanges();
             await spectator.fixture.whenStable();
-            
+
             const field = spectator.component.formFields[0];
             const firstFormField = spectator.query<HTMLInputElement>(`#${field.name}`);
             spyOn(firstFormField, 'focus');
@@ -166,7 +164,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(firstFormField.focus).toHaveBeenCalled();
             expect(document.activeElement).toEqual(firstFormField);
         });
-        
+
         it('should load Label, Textarea & Hint with right attributes', () => {
             const row = spectator.query(byTestId('name'));
 
@@ -187,7 +185,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             const hintElement = row.querySelector('.p-field-hint');
             expect(hintElement.textContent).toBe(field.hint);
         });
-        
+
         it('should load Checkbox & Hint with right attributes', () => {
             const row = spectator.query(byTestId('enabled'));
 
@@ -297,7 +295,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(spyValidOutput).toHaveBeenCalledWith(false);
         });
     });
-    
+
     describe('With warnings', () => {
         beforeEach(() => {
             spectator = createComponent({
@@ -309,11 +307,11 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
                                 warnings: [`error ${i}`]
                             };
                         }
-        
+
                         return item;
                     })
                 }
-            })
+            });
             spectator.detectChanges();
         });
 
@@ -323,16 +321,21 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
             expect(warningIcons[0].getAttribute('name')).toBe('warning');
             expect(warningIcons[0].getAttribute('size')).toBe('18');
-            expect(warningIcons[0].getAttribute('ng-reflect-content')).toBe(formFields[0].warnings[0]);
-        
+            expect(warningIcons[0].getAttribute('ng-reflect-content')).toBe(
+                formFields[0].warnings[0]
+            );
+
             expect(warningIcons[1].getAttribute('name')).toBe('warning');
             expect(warningIcons[1].getAttribute('size')).toBe('18');
-            expect(warningIcons[1].getAttribute('ng-reflect-content')).toBe(formFields[1].warnings[0]);
+            expect(warningIcons[1].getAttribute('ng-reflect-content')).toBe(
+                formFields[1].warnings[0]
+            );
 
             expect(warningIcons[2].getAttribute('name')).toBe('warning');
             expect(warningIcons[2].getAttribute('size')).toBe('18');
-            expect(warningIcons[2].getAttribute('ng-reflect-content')).toBe(formFields[2].warnings[0]);
+            expect(warningIcons[2].getAttribute('ng-reflect-content')).toBe(
+                formFields[2].warnings[0]
+            );
         });
     });
-
 });
