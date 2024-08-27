@@ -1,19 +1,11 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 
-import crypto from 'crypto';
-
 import { DotCmsClient } from '@dotcms/client';
 
 import { BlockEditorItem } from './BlockEditorItem';
 
 import { ContentNode } from '../../../models/blocks.interface';
-
-Object.defineProperty(global.self, 'crypto', {
-    value: {
-        randomUUID: crypto.randomUUID
-    }
-});
 
 const BLOCKS_MOCKS = {
     PARAGRAPH: [

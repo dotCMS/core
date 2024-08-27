@@ -28,11 +28,11 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
     return (
         <table>
             <thead>
-                {content.slice(0, 1).map((rowNode) => (
-                    <tr key={crypto.randomUUID()}>
-                        {rowNode.content?.map((cellNode) => (
+                {content.slice(0, 1).map((rowNode, rowIndex) => (
+                    <tr key={`${rowNode.type}-${rowIndex}`}>
+                        {rowNode.content?.map((cellNode, cellIndex) => (
                             <th
-                                key={crypto.randomUUID()}
+                                key={`${cellNode.type}-${cellIndex}`}
                                 colSpan={Number(cellNode.attrs?.colspan || 1)}
                                 rowSpan={Number(cellNode.attrs?.rowspan || 1)}>
                                 {renderTableContent(cellNode)}
@@ -42,11 +42,11 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
                 ))}
             </thead>
             <tbody>
-                {content.slice(1).map((rowNode) => (
-                    <tr key={crypto.randomUUID()}>
-                        {rowNode.content?.map((cellNode) => (
+                {content.slice(1).map((rowNode, rowIndex) => (
+                    <tr key={`${rowNode.type}-${rowIndex}`}>
+                        {rowNode.content?.map((cellNode, cellIndex) => (
                             <td
-                                key={crypto.randomUUID()}
+                                key={`${cellNode.type}-${cellIndex}`}
                                 colSpan={Number(cellNode.attrs?.colspan || 1)}
                                 rowSpan={Number(cellNode.attrs?.rowspan || 1)}>
                                 {renderTableContent(cellNode)}

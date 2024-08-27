@@ -1,17 +1,9 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 
-import crypto from 'crypto';
-
 import { BlockEditorRenderer } from './BlockEditorRenderer';
 
 import { Block } from '../../models/blocks.interface';
-
-Object.defineProperty(global.self, 'crypto', {
-    value: {
-        randomUUID: crypto.randomUUID
-    }
-});
 
 describe('BlockEditorRenderer', () => {
     const blocks = {
