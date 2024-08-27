@@ -16,9 +16,7 @@
         styleClass="toolbar-user__menu" />
 
     @if (vm.showMyAccount) {
-        <dot-my-account
-            (shutdown)="store.showMyAccount(false)"
-            [visible]="vm.showMyAccount" />
+        <dot-my-account (shutdown)="store.showMyAccount(false)" [visible]="vm.showMyAccount" />
     }
 
     @if (vm.showLoginAs) {

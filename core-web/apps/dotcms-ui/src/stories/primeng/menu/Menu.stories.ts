@@ -19,7 +19,7 @@ const items: MenuItem[] = [
             {
                 label: 'Delete',
                 icon: 'pi pi-times',
-                command: () => action('delete'),
+                command: () => action('delete')
             }
         ]
     }
@@ -42,10 +42,7 @@ const meta: Meta<Args> = {
         moduleMetadata({
             imports: [MenuModule, BrowserAnimationsModule, ButtonModule]
         }),
-        componentWrapperDecorator(
-            (story) =>
-                `<div class="card w-50rem h-25rem">${story}</div>`
-        )
+        componentWrapperDecorator((story) => `<div class="card w-50rem h-25rem">${story}</div>`)
     ],
     args: {
         items: [...items]
@@ -79,7 +76,7 @@ export const WithCustomLabels: Story = {
                 label: `
                     <div> <p class="font-bold">My custom label</p></div>`,
                 escape: false,
-                target: '_self',
+                target: '_self'
             },
             { separator: true },
             {
@@ -88,8 +85,9 @@ export const WithCustomLabels: Story = {
                 icon: 'pi pi-user',
                 visible: true,
                 command: () => action('my-account')
-            },
-        ]},
+            }
+        ]
+    },
     render: (args) => ({
         props: args,
         template: `

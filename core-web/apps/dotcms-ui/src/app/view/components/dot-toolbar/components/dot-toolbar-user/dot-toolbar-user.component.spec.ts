@@ -156,7 +156,6 @@ xdescribe('DotToolbarUserComponent', () => {
         expect(logoutLink.attributes.target).toBe('_self');
     });
 
-    
     it('should call "logoutAs" in "LoginService" on logout click', async () => {
         spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(
             new Promise((resolve) => {
