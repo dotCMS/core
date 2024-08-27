@@ -3,8 +3,8 @@
         <dot-icon
             *ngIf="field.warnings && field.warnings.length"
             name="warning"
-            pTooltip="{{ field.warnings.length ? field.warnings.join('. ') : '' }}"
-            size="18"></dot-icon>
+            [pTooltip]="field.warnings.length ? field.warnings.join('. ') : ''"
+            size="18" />
     </ng-template>
 
     <ng-template #labelField let-field="field">
