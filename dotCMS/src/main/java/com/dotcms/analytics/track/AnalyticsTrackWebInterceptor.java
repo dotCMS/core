@@ -1,10 +1,8 @@
 package com.dotcms.analytics.track;
 
-import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.jitsu.EventLogSubmitter;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 
 import javax.servlet.http.HttpServletRequest;
@@ -28,7 +26,10 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
     public AnalyticsTrackWebInterceptor() {
 
         submitter = new EventLogSubmitter();
-        addRequestMatcher(new PagesUrlMapsAndFileRequestMatcher(), new RuleVanityRequestMatcher());
+        addRequestMatcher(new PagesAndUrlMapsRequestMatcher(),
+                new FilesRequestMatcher(),
+                new RulesRedirectsRequestMatcher(),
+                new VanitiesRequestMatcher());
     }
 
     /**
@@ -39,6 +40,15 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
         for (final RequestMatcher matcher : requestMatchers) {
             requestMatchersMap.put(matcher.getId(), matcher);
         }
+    }
+
+    /**
+     * Remove a request matcher by id
+     * @param requestMatcherId
+     */
+    public static void removeRequestMatcher(final String requestMatcherId) {
+
+        requestMatchersMap.remove(requestMatcherId);
     }
 
     @Override

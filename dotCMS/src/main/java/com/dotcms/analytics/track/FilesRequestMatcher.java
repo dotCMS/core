@@ -13,15 +13,15 @@ import java.util.Objects;
  * Matcher for pages or files
  * @author jsanca
  */
-public class PagesUrlMapsAndFileRequestMatcher implements RequestMatcher {
+public class FilesRequestMatcher implements RequestMatcher {
 
     private final CharacterWebAPI characterWebAPI;
 
-    public PagesUrlMapsAndFileRequestMatcher() {
+    public FilesRequestMatcher() {
         this(WebAPILocator.getCharacterWebAPI());
     }
 
-    public PagesUrlMapsAndFileRequestMatcher(final CharacterWebAPI characterWebAPI) {
+    public FilesRequestMatcher(final CharacterWebAPI characterWebAPI) {
         this.characterWebAPI = characterWebAPI;
     }
 
@@ -40,8 +40,7 @@ public class PagesUrlMapsAndFileRequestMatcher implements RequestMatcher {
                     getOrDefault("iAm", CMSFilter.IAm.NOTHING_IN_THE_CMS);
 
             // should we have a fallback when nothing is returned???
-            return iAm == CMSFilter.IAm.PAGE // this captures also url maps
-                    || iAm == CMSFilter.IAm.FILE;
+            return iAm == CMSFilter.IAm.FILE;
         }
 
         return false;
