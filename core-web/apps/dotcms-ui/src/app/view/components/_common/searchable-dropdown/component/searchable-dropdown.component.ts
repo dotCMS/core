@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { fromEvent } from 'rxjs';
 
 import {
@@ -399,7 +398,7 @@ export class SearchableDropdownComponent
 
     private setOptions(change: SimpleChanges): void {
         if (change.data && change.data.currentValue) {
-            this.options = _.cloneDeep(change.data.currentValue).map((item) => {
+            this.options = structuredClone(change.data.currentValue).map((item) => {
                 item.label = this.getItemLabel(item);
 
                 return item;

@@ -161,8 +161,8 @@ public class AIModels {
 
         final AppConfig appConfig = appConfigSupplier.get();
         if (!appConfig.isEnabled()) {
-            AppConfig.debugLogger(getClass(), () -> "dotAI is not enabled, returning empty list of supported models");
-            throw new DotRuntimeException("App dotAI config without API urls or API key");
+            AppConfig.debugLogger(getClass(), () -> "dotAI is not enabled, returning empty set of supported models");
+            return Set.of();
         }
 
         final CircuitBreakerUrl.Response<OpenAIModels> response = fetchOpenAIModels(appConfig);
