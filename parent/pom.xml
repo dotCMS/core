@@ -32,7 +32,6 @@
         <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
         <maven.compiler.testTarget>${maven.compiler.target}</maven.compiler.testTarget>
         <java.module.args>
-            --illegal-access=deny
             --add-modules java.se
             --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
             --add-opens java.base/java.lang=ALL-UNNAMED
@@ -861,7 +860,6 @@
                         <forkCount>${surefire.fork.count}</forkCount>
                         <reuseForks>true</reuseForks>
                         <argLine>@{argLine} -Xmx1024m
-                            --illegal-access=deny
                             ${java.module.args}
                         </argLine>
 
