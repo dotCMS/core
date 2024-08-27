@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
 
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,7 +63,8 @@ public class ContainerUUID implements Serializable{
 
         this.identifier = containerIdOrPath;
         this.uuid = containerInstanceID == null ? UUID_DEFAULT_VALUE : containerInstanceID;
-        this.historyUUIDs = isNew(containerInstanceID) ? new ArrayList<>() : new ArrayList<>(historyUUIDs);
+        this.historyUUIDs = isNew(containerInstanceID) || !UtilMethods.isSet(historyUUIDs) ? new ArrayList<>() :
+                new ArrayList<>(historyUUIDs);
     }
 
     private boolean isNew(String containerInstanceID) {
