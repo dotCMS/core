@@ -22,7 +22,7 @@ import {
     postMessageToEditor
 } from '@dotcms/client';
 
-import { TINYMCE_CONFIG, TINYMCE_FORMAT, TINYMCE_MODE } from './utils';
+import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from './utils';
 
 import { DotCMSContentlet } from '../../models';
 
@@ -56,17 +56,17 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
     /**
      * Represents the mode of the editor which can be `plain`, `minimal`, or `full`
      *
-     * @type {TINYMCE_MODE}
+     * @type {DOT_EDITABLE_TEXT_MODE}
      * @memberof DotEditableTextComponent
      */
-    @Input() mode: TINYMCE_MODE = 'plain';
+    @Input() mode: DOT_EDITABLE_TEXT_MODE = 'plain';
     /**
      * Represents the format of the editor which can be `text` or `html`
      *
-     * @type {TINYMCE_FORMAT}
+     * @type {DOT_EDITABLE_TEXT_FORMAT}
      * @memberof DotEditableTextComponent
      */
-    @Input() format: TINYMCE_FORMAT = 'text';
+    @Input() format: DOT_EDITABLE_TEXT_FORMAT = 'text';
     /**
      * Represents the `contentlet` that can be inline edited
      *
