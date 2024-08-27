@@ -124,11 +124,14 @@ describe('AddStyleClassesDialogComponent', () => {
 
         it('should filter suggestions and pass to autocomplete on completeMethod', () => {
             spectator.detectChanges();
-            spectator.triggerEventHandler(AutoComplete, 'completeMethod', { query: 'class1', originalEvent: createFakeEvent('click') });
+            spectator.triggerEventHandler(AutoComplete, 'completeMethod', {
+                query: 'class1',
+                originalEvent: createFakeEvent('click')
+            });
 
             expect(autocomplete.suggestions).toEqual(['class1']);
         });
-        
+
         it('should save selected classes and close the dialog', () => {
             spectator.component.selectedClasses = ['class1'];
             spectator.component.save();

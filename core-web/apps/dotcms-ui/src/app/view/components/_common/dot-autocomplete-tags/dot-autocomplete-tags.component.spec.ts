@@ -187,7 +187,10 @@ describe('DotAutocompleteTagsComponent', () => {
                     query: 'test'
                 });
 
-                expect(component.filterTags).toHaveBeenCalledWith({ query: 'test', originalEvent: fakeEvent });
+                expect(component.filterTags).toHaveBeenCalledWith({
+                    query: 'test',
+                    originalEvent: fakeEvent
+                });
                 expect(component.filteredOptions.length).toBe(1);
             });
 

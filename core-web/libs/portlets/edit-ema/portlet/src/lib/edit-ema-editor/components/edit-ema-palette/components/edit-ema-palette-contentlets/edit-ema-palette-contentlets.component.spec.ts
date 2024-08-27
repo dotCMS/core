@@ -66,7 +66,7 @@ describe('EditEmaPaletteContentletsComponent', () => {
         };
         spectator.setInput('contentlets', {
             ...CONTENTLETS_PROP_MOCK,
-            filter: {...mock_filter}
+            filter: { ...mock_filter }
         });
         spectator.triggerEventHandler(Paginator, 'onPageChange', { page: 1 });
         expect(spyEmit).toHaveBeenCalledWith({ page: 1, ...mock_filter });

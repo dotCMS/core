@@ -9,5 +9,3 @@ console.error = (...params) => {
         originalConsoleError(...params);
     }
 };
-
-

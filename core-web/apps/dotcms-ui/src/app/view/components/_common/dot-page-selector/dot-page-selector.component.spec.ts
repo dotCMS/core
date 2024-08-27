@@ -164,7 +164,7 @@ xdescribe('DotPageSelectorComponent', () => {
                 FormsModule,
                 CommonModule,
                 ReactiveFormsModule,
-                BrowserAnimationsModule,
+                BrowserAnimationsModule
             ],
             providers: [
                 { provide: DotPageSelectorService, useClass: MockDotPageSelectorService },

@@ -17,7 +17,6 @@ import { CustomMenuItem, DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotc
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
-
 type ButtonSize = 'normal' | 'small' | 'large';
 
 const InplaceButtonSizePrimeNg: Record<ButtonSize, string> = {

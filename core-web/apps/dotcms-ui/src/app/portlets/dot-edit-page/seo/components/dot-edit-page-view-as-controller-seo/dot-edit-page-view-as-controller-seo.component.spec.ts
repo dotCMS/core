@@ -209,7 +209,6 @@ xdescribe('DotEditPageViewAsControllerSeoComponent', () => {
 
         // TODO: Fix this test
         xit('should persona selector be disabled after haveContent is set to false', () => {
-
             const dotPageStateService: DotPageStateService = de.injector.get(DotPageStateService);
             dotPageStateService.haveContent$.next(false);
 

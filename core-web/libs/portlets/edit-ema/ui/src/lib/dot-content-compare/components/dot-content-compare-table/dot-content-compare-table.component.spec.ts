@@ -354,7 +354,6 @@ describe('DotContentCompareTableComponent', () => {
         it('should show versions selectButton with transformed label', async () => {
             const dropdown = de.query(By.css('p-dropdown'));
 
-            
             dropdown.componentInstance.show();
             hostFixture.detectChanges();
 
@@ -362,7 +361,7 @@ describe('DotContentCompareTableComponent', () => {
 
             dropdown.queryAll(By.css('.p-dropdown-item')).forEach((item, index) => {
                 const textContent = item.nativeElement.textContent;
-                const text = `${versions[index].modDate} by ${versions[index].modUserName}`
+                const text = `${versions[index].modDate} by ${versions[index].modUserName}`;
                 expect(textContent).toContain(text);
             });
         });

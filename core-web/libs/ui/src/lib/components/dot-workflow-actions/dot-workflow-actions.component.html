@@ -1,7 +1,7 @@
-@for (action of groupedActions(); track $index;) {
+@for (action of groupedActions(); track $index) {
     @if (action.length > 1) {
         <p-splitButton
-            (onClick)="action[0].command({originalEvent: $event})"
+            (onClick)="action[0].command({ originalEvent: $event })"
             [disabled]="loading"
             [styleClass]="sizeClass"
             [model]="action | slice: 1"
@@ -9,7 +9,7 @@
             [label]="action[0].label" />
     } @else {
         <p-button
-            (onClick)="action[0].command({originalEvent: $event})"
+            (onClick)="action[0].command({ originalEvent: $event })"
             [loading]="loading"
             [styleClass]="sizeClass + (!$first ? ' p-button-outlined' : '')"
             [label]="action[0].label" />
