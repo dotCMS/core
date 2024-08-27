@@ -1,4 +1,4 @@
-package com.dotcms.jobs.business;
+package com.dotcms.jobs.business.api;
 
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
@@ -11,6 +11,7 @@ import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.queue.JobQueue;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -22,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /**
@@ -34,36 +36,38 @@ import java.util.function.Consumer;
  *         JobQueue jobQueue = new PostgresJobQueue();
  *
  *         // Create and start the job queue manager
- *         JobQueueManager jobQueueManager = new JobQueueManager(jobQueue, 5); // 5 threads
+ *         JobQueueAPIImpl jobQueueAPI = new JobQueueAPIImpl(jobQueue, 5); // 5 threads
  *
  *         //(Optional) Set up a retry strategy for content import jobs
  *         RetryStrategy contentImportRetryStrategy = new ExponentialBackoffRetryStrategy(5000, 300000, 2.0, 3);
  *         contentImportRetryStrategy.addRetryableException(IOException.class);
- *         jobQueueManager.setRetryStrategy("contentImport", contentImportRetryStrategy);
+ *         jobQueueAPI.setRetryStrategy("contentImport", contentImportRetryStrategy);
  *
  *         // Register job processors
- *         jobQueueManager.registerProcessor("contentImport", new ContentImportJobProcessor());
+ *         jobQueueAPI.registerProcessor("contentImport", new ContentImportJobProcessor());
  *
  *         // Start the job queue manager
- *         jobQueueManager.start();
+ *         jobQueueAPI.start();
  *
  *         // Create a content import job (dummy example)
  *         Map<String, Object> jobParameters = new HashMap<>();
  *         jobParameters.put("filePath", "/path/to/import/file.csv");
  *         jobParameters.put("contentType", "Article");
- *         String jobId = jobQueueManager.createJob("contentImport", jobParameters);
+ *         String jobId = jobQueueAPI.createJob("contentImport", jobParameters);
  *
  *         // Optionally, watch the job progress
- *         jobQueueManager.watchJob(jobId, job -> {
+ *         jobQueueAPI.watchJob(jobId, job -> {
  *             System.out.println("Job " + job.id() + " progress: " + job.progress() * 100 + "%");
  *         });
  *
  *         // When shutting down the application
- *         jobQueueManager.stop();
+ *         jobQueueAPI.close();
  *     }
  * }</pre>
  */
-public class JobQueueManager implements AutoCloseable {
+public class JobQueueAPIImpl implements JobQueueAPI {
+
+    private final AtomicBoolean isStarted = new AtomicBoolean(false);
 
     private final CircuitBreaker circuitBreaker;
     private final JobQueue jobQueue;
@@ -74,13 +78,26 @@ public class JobQueueManager implements AutoCloseable {
     private final Map<String, RetryStrategy> retryStrategies;
     private final RetryStrategy defaultRetryStrategy;
 
+    static final int defaultThreadPoolSize = Config.getIntProperty(
+            "JOB_QUEUE_THREAD_POOL_SIZE", 10
+    );
+
+    /**
+     * Constructs a new JobQueueManager with the default job queue implementation and the default
+     * number of threads.
+     */
+    public JobQueueAPIImpl() {
+        // TODO: Use a job queue implementation
+        this(null, defaultThreadPoolSize);
+    }
+
     /**
      * Constructs a new JobQueueManager.
      *
      * @param jobQueue       The JobQueue implementation to use.
      * @param threadPoolSize The number of threads to use for job processing.
      */
-    public JobQueueManager(JobQueue jobQueue, int threadPoolSize) {
+    public JobQueueAPIImpl(JobQueue jobQueue, int threadPoolSize) {
         this.jobQueue = jobQueue;
         this.threadPoolSize = threadPoolSize;
         this.processors = new ConcurrentHashMap<>();
@@ -94,110 +111,85 @@ public class JobQueueManager implements AutoCloseable {
         ); // 5 failures within 1 minute
     }
 
-    /**
-     * Starts the job queue manager, initializing the thread pool for job processing.
-     */
+    @Override
     public void start() {
 
-        Logger.info(
-                this, "Starting JobQueueManager with " + threadPoolSize + " threads."
-        );
+        if (isStarted.compareAndSet(false, true)) {
 
-        executorService = Executors.newFixedThreadPool(threadPoolSize);
-        for (int i = 0; i < threadPoolSize; i++) {
-            executorService.submit(this::processJobs);
+            Logger.info(
+                    this, "Starting JobQueueManager with " + threadPoolSize + " threads."
+            );
+
+            executorService = Executors.newFixedThreadPool(threadPoolSize);
+            for (int i = 0; i < threadPoolSize; i++) {
+                executorService.submit(this::processJobs);
+            }
+
+            Logger.info(this, "JobQueueManager has been successfully started.");
+        } else {
+            Logger.warn(this,
+                    "Attempt to start JobQueueAPIImpl that is already running. Ignoring."
+            );
         }
-
-        Logger.info(this, "JobQueueManager has been successfully started.");
     }
 
-    /**
-     * Closes the JobQueueManager, stopping all job processing and releasing resources.
-     * <p>
-     * This method should be called when the JobQueueManager is no longer needed.
-     * <p>
-     * Once closed, the manager cannot be restarted.
-     *
-     * @throws Exception if an error occurs while closing the manager
-     */
     @Override
     public void close() throws Exception {
 
-        Logger.info(this, "Closing JobQueueManager and stopping all job processing.");
-        executorService.shutdown();
+        if (isStarted.compareAndSet(true, false)) {
 
-        try {
-            if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
-                executorService.shutdownNow();
+            Logger.info(this, "Closing JobQueueManager and stopping all job processing.");
+            executorService.shutdown();
+
+            try {
                 if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
-                    Logger.error(this, "ExecutorService did not terminate");
+                    executorService.shutdownNow();
+                    if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+                        Logger.error(this, "ExecutorService did not terminate");
+                    }
                 }
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+                Logger.error(this, "Interrupted while waiting for jobs to complete", e);
             }
-        } catch (InterruptedException e) {
-            executorService.shutdownNow();
-            Thread.currentThread().interrupt();
-            Logger.error(this, "Interrupted while waiting for jobs to complete", e);
-        }
 
-        Logger.info(this, "JobQueueManager has been successfully closed.");
+            Logger.info(this, "JobQueueManager has been successfully closed.");
+        } else {
+            Logger.warn(this,
+                    "Attempt to close JobQueueAPIImpl that is not running. Ignoring."
+            );
+        }
     }
 
-    /**
-     * Registers a job processor for a specific queue.
-     *
-     * @param queueName The name of the queue.
-     * @param processor The job processor to register.
-     */
+    @Override
     public void registerProcessor(final String queueName, final JobProcessor processor) {
         processors.put(queueName, processor);
     }
 
-    /**
-     * Creates a new job in the specified queue.
-     *
-     * @param queueName  The name of the queue.
-     * @param parameters The parameters for the job.
-     * @return The ID of the created job.
-     * @throws ProcessorNotFoundException if no processor is registered for the specified queue.
-     */
+    @Override
     public String createJob(final String queueName, final Map<String, Object> parameters) {
 
         if (!processors.containsKey(queueName)) {
             final var error = new ProcessorNotFoundException(queueName);
-            Logger.error(JobQueueManager.class, error);
+            Logger.error(JobQueueAPIImpl.class, error);
             throw error;
         }
 
         return jobQueue.addJob(queueName, parameters);
     }
 
-    /**
-     * Retrieves a job by its ID.
-     *
-     * @param jobId The ID of the job.
-     * @return The Job object.
-     */
-    public Job job(final String jobId) {
+    @Override
+    public Job getJob(final String jobId) {
         return jobQueue.job(jobId);
     }
 
-    /**
-     * Retrieves a list of jobs.
-     *
-     * @param page     The page number.
-     * @param pageSize The number of jobs per page.
-     * @return A list of Job objects.
-     */
-    public List<Job> jobs(final int page, final int pageSize) {
+    @Override
+    public List<Job> getJobs(final int page, final int pageSize) {
         return jobQueue.jobs(page, pageSize);
     }
 
-    /**
-     * Cancels a job.
-     *
-     * @param jobId The ID of the job to cancel.
-     * @throws JobCancellationException if the job cannot be cancelled.
-     */
+    @Override
     public void cancelJob(final String jobId) {
 
         Job job = jobQueue.job(jobId);
@@ -214,31 +206,47 @@ public class JobQueueManager implements AutoCloseable {
                     notifyJobWatchers(cancelledJob);
                 } catch (Exception e) {
                     final var error = new JobCancellationException(jobId, e.getMessage());
-                    Logger.error(JobQueueManager.class, error);
+                    Logger.error(JobQueueAPIImpl.class, error);
                     throw error;
                 }
             } else {
                 final var error = new JobCancellationException(jobId, "Job cannot be cancelled");
-                Logger.error(JobQueueManager.class, error);
+                Logger.error(JobQueueAPIImpl.class, error);
                 throw error;
             }
         } else {
             final var error = new JobCancellationException(jobId, "Job not found");
-            Logger.error(JobQueueManager.class, error);
+            Logger.error(JobQueueAPIImpl.class, error);
             throw error;
         }
     }
 
-    /**
-     * Registers a watcher for a specific job.
-     *
-     * @param jobId   The ID of the job to watch.
-     * @param watcher The consumer to be notified of job updates.
-     */
+    @Override
     public void watchJob(final String jobId, final Consumer<Job> watcher) {
         jobWatchers.computeIfAbsent(jobId, k -> new CopyOnWriteArrayList<>()).add(watcher);
         Job currentJob = jobQueue.job(jobId);
         watcher.accept(currentJob);
+    }
+
+    @Override
+    public void setRetryStrategy(final String queueName, final RetryStrategy retryStrategy) {
+        retryStrategies.put(queueName, retryStrategy);
+    }
+
+    @Override
+    public void resetCircuitBreaker() {
+        Logger.info(this, "Manually resetting CircuitBreaker");
+        circuitBreaker.reset();
+    }
+
+    @Override
+    public String getCircuitBreakerStatus() {
+        return String.format("CircuitBreaker - Open: %b, Failure Count: %d, Last Failure: %s",
+                circuitBreaker.isOpen(),
+                circuitBreaker.getFailureCount(),
+                circuitBreaker.getLastFailureTime() > 0
+                        ? new Date(circuitBreaker.getLastFailureTime()).toString()
+                        : "N/A");
     }
 
     /**
@@ -463,16 +471,6 @@ public class JobQueueManager implements AutoCloseable {
     }
 
     /**
-     * Sets a retry strategy for a specific queue.
-     *
-     * @param queueName     The name of the queue.
-     * @param retryStrategy The retry strategy to set.
-     */
-    public void setRetryStrategy(final String queueName, final RetryStrategy retryStrategy) {
-        retryStrategies.put(queueName, retryStrategy);
-    }
-
-    /**
      * Gets the retry strategy for a specific queue.
      *
      * @param queueName The name of the queue.
@@ -502,29 +500,6 @@ public class JobQueueManager implements AutoCloseable {
     private long nextRetryDelay(final Job job) {
         final RetryStrategy retryStrategy = retryStrategy(job.queueName());
         return retryStrategy.nextRetryDelay(job);
-    }
-
-    /**
-     * Manually resets the CircuitBreaker. This should be called with caution, typically after
-     * addressing the underlying issues causing failures.
-     */
-    public void resetCircuitBreaker() {
-        Logger.info(this, "Manually resetting CircuitBreaker");
-        circuitBreaker.reset();
-    }
-
-    /**
-     * Provides information about the current state of the CircuitBreaker.
-     *
-     * @return A string representation of the CircuitBreaker's current status.
-     */
-    public String getCircuitBreakerStatus() {
-        return String.format("CircuitBreaker - Open: %b, Failure Count: %d, Last Failure: %s",
-                circuitBreaker.isOpen(),
-                circuitBreaker.getFailureCount(),
-                circuitBreaker.getLastFailureTime() > 0
-                        ? new Date(circuitBreaker.getLastFailureTime()).toString()
-                        : "N/A");
     }
 
     /**

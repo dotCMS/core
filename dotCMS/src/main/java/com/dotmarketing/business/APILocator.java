@@ -58,6 +58,8 @@ import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.business.ExperimentsAPIImpl;
 import com.dotcms.graphql.business.GraphqlAPI;
 import com.dotcms.graphql.business.GraphqlAPIImpl;
+import com.dotcms.jobs.business.api.JobQueueAPI;
+import com.dotcms.jobs.business.api.JobQueueAPIImpl;
 import com.dotcms.keyvalue.business.KeyValueAPI;
 import com.dotcms.keyvalue.business.KeyValueAPIImpl;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
@@ -166,7 +168,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Queue;
@@ -279,6 +280,15 @@ public class APILocator extends Locator<APIIndex> {
 	public static DotAIAPI getDotAIAPI() {
 
 		return  (DotAIAPI)getInstance(APIIndex.ARTIFICIAL_INTELLIGENCE_API);
+	}
+
+	/**
+	 * Creates a single instance of the {@link JobQueueAPI} class.
+	 *
+	 * @return The {@link JobQueueAPI} class.
+	 */
+	public static JobQueueAPI getJobQueueAPI() {
+		return (JobQueueAPI) getInstance(APIIndex.JOB_QUEUE_API);
 	}
 
 	/**
@@ -1315,6 +1325,7 @@ enum APIIndex
 	BAYESIAN_API,
 	ANALYTICS_API,
 	CONTENT_TYPE_DESTROY_API,
+	JOB_QUEUE_API,
 
 	SYSTEM_API;
 
@@ -1408,6 +1419,7 @@ enum APIIndex
 			case CONTENT_TYPE_DESTROY_API: return new ContentTypeDestroyAPIImpl();
 			case SYSTEM_API: return new SystemAPIImpl();
 			case ARTIFICIAL_INTELLIGENCE_API: return new DotAIAPIFacadeImpl();
+			case JOB_QUEUE_API: return new JobQueueAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
