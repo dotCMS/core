@@ -12,14 +12,19 @@ export type LocationsAndActivities = {
 const extractLocationsAndActivities = (
   contentlet: DotCMSContentlet,
 ): LocationsAndActivities => {
-  return contentlet.reduce(
-    (acc: any, { activities, ...location }: LocationsAndActivities) => {
-      acc.activities = acc.activities.concat(activities);
-      acc.locations.push(location);
+  return (
+    contentlet?.reduce(
+      (acc: any, { activities, ...location }: LocationsAndActivities) => {
+        acc.activities = acc.activities.concat(activities);
+        acc.locations.push(location);
 
-      return acc;
-    },
-    { locations: [], activities: [] },
+        return acc;
+      },
+      { locations: [], activities: [] },
+    ) ?? {
+      locations: [],
+      activities: [],
+    }
   );
 };
 
@@ -54,7 +59,7 @@ export const CalendarEvent: FC<CalendarEventProps> = ({
             Locations:
           </span>
           &nbsp;
-          {locations.map(({ title, url }, index) => {
+          {locations?.map(({ title, url }, index) => {
             return (
               <a key={index} href={url}>
                 <span className="bg-yellow-100 text-yellow-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-yellow-900 dark:text-yellow-300">
@@ -69,7 +74,7 @@ export const CalendarEvent: FC<CalendarEventProps> = ({
             Activities:
           </span>
           &nbsp;
-          {activities.slice(0, 3).map(({ title, urlMap }, index) => {
+          {activities?.slice(0, 3).map(({ title, urlMap }, index) => {
             return (
               <a key={index} href={urlMap}>
                 <span className="bg-indigo-100 text-indigo-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-indigo-900 dark:text-indigo-300">
