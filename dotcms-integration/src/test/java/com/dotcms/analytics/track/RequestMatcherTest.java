@@ -35,7 +35,7 @@ public class RequestMatcherTest {
             // empty implementation
         };
         final FakeHttpRequest request = new FakeHttpRequest("localhost", "/test");
-        final boolean result = requestMatcher.match(request.request());
+        final boolean result = requestMatcher.match(request.request(), null);
         assertFalse(result);
     }
 
