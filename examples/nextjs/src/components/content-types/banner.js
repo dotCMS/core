@@ -17,7 +17,10 @@ function Banner(contentlet) {
             )}
             <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white">
                 <h2 className="mb-2 text-6xl font-bold text-shadow">
-                    <DotEditableText contentlet={contentlet} fieldName={"title"} />
+                    <DotEditableText
+                        contentlet={contentlet}
+                        fieldName="title"
+                    />
                 </h2>
                 <p className="mb-4 text-xl text-shadow">{caption}</p>
                 <Link
