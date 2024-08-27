@@ -7,7 +7,6 @@ import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -157,13 +156,13 @@ public class AIModelsTest {
      * When the getOrPullSupportedModules method is called
      * Then an empty list of supported models should be returned.
      */
-    @Test(expected = DotRuntimeException.class)
+    @Test
     public void test_getOrPullSupportedModules_withNetworkError() {
         AIModels.get().cleanSupportedModelsCache();
         IPUtils.disabledIpPrivateSubnet(false);
 
         final Set<String> supported = aiModels.getOrPullSupportedModels();
-        assertSupported(supported);
+        assertTrue(supported.isEmpty());
 
         IPUtils.disabledIpPrivateSubnet(true);
         AIModels.get().setAppConfigSupplier(ConfigService.INSTANCE::config);
@@ -174,12 +173,14 @@ public class AIModelsTest {
      * When the getOrPullSupportedModules method is called
      * Then an empty list of supported models should be returned.
      */
-    @Test(expected = DotRuntimeException.class)
+    @Test
     public void test_getOrPullSupportedModules_noApiKey() throws DotDataException, DotSecurityException {
         AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost(), null);
 
         AIModels.get().cleanSupportedModelsCache();
-        aiModels.getOrPullSupportedModels();
+        final Set<String> supported = aiModels.getOrPullSupportedModels();
+
+        assertTrue(supported.isEmpty());
     }
 
     /**
@@ -187,12 +188,14 @@ public class AIModelsTest {
      * When the getOrPullSupportedModules method is called
      * Then an empty list of supported models should be returned.
      */
-    @Test(expected = DotRuntimeException.class)
+    @Test
     public void test_getOrPullSupportedModules_noSystemHost() throws DotDataException, DotSecurityException {
         AiTest.removeSecrets(APILocator.systemHost());
 
         AIModels.get().cleanSupportedModelsCache();
-        aiModels.getOrPullSupportedModels();
+        final Set<String> supported = aiModels.getOrPullSupportedModels();
+
+        assertTrue(supported.isEmpty());
     }
 
     private void saveSecrets(final Host host,
