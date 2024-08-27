@@ -138,8 +138,7 @@ export class ActivatedRouteListStoreMock {
     }
 }
 
-// TODO: Fix tests
-xdescribe('DotEditPageToolbarSeoComponent', () => {
+describe('DotEditPageToolbarSeoComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
     let componentHost: TestHostComponent;
     let component: DotEditPageToolbarSeoComponent;

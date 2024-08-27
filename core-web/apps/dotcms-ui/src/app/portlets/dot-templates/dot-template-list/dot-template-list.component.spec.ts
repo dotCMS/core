@@ -605,7 +605,6 @@ describe('DotTemplateListComponent', () => {
         it('should set Action Header options correctly', () => {
             const model: ButtonModel[] = dotListingDataTable.actionHeaderOptions.primary.model;
             expect(model).toBeUndefined();
-            // TODO: CHECK THIS
 
             dotListingDataTable.actionHeaderOptions.primary.command();
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/templates/new');

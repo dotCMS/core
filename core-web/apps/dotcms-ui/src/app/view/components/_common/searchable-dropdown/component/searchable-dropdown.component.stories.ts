@@ -88,21 +88,6 @@ export const CustomTemplate: Story = {
     render: (args) => ({
         props: args,
         template: `
-        <ng-template let-data="data" #rowTemplate>
-            @for(item of data; track $index) {
-                <div class="w-full">
-                    <p>{{ item.label }} --</p>
-                </div>
-            }
-        </ng-template>
-        <dot-searchable-dropdown [externalItemListTemplate]="rowTemplate" ${argsToTemplate(args)} />`
-    })
-};
-
-export const CustomPTemplate: Story = {
-    render: (args) => ({
-        props: args,
-        template: `
         <dot-searchable-dropdown ${argsToTemplate(args)}>
             <ng-template let-data="data" pTemplate="list">
                 @for(item of data; track $index) {

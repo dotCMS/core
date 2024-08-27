@@ -399,12 +399,14 @@ describe('SearchableDropdownComponent', () => {
             [width]="width"
             #searchableDropdown
             cssClassDataList="site_selector__data-list">
-            <ng-template let-data="item" pTemplate="listItem">
-                <div
-                    (click)="handleClick(item)"
-                    class="searchable-dropdown__data-list-item templateTestItem">
-                    {{ data.label }}
-                </div>
+            <ng-template let-data="data" pTemplate="list">
+                @for (item of data; track $index) {
+                    <div
+                        (click)="handleClick(item)"
+                        class="searchable-dropdown__data-list-item templateTestItem">
+                        {{ item.label }}
+                    </div> 
+                }
             </ng-template>
             <ng-template let-persona="item" pTemplate="select">
                 <div
@@ -455,8 +457,7 @@ class HostTestExternalTemplateComponent {
     cssClassDataList: string;
 }
 
-// TODO: Fix this test
-xdescribe('SearchableDropdownComponent', () => {
+describe('SearchableDropdownComponent', () => {
     const NROWS = 6;
 
     let hostFixture: ComponentFixture<HostTestExternalTemplateComponent>;
@@ -524,8 +525,7 @@ xdescribe('SearchableDropdownComponent', () => {
         expect(dropdown).not.toBeNull();
     });
 
-    // TODO: Fix this test
-    xit('should allow keyboad nav on filter Input - ArrowDown', () => {
+    it('should allow keyboad nav on filter Input - ArrowDown', () => {
         hostFixture.detectChanges();
         const searchInput = de.query(By.css('[data-testid="searchInput"]'));
         const keyboardEvent = new KeyboardEvent('keyup', { key: 'ArrowDown' });

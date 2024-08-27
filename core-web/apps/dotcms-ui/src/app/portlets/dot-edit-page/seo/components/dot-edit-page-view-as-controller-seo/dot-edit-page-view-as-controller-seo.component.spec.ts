@@ -99,8 +99,7 @@ const messageServiceMock = new MockDotMessageService({
     'editpage.viewas.default.device': 'Default Device'
 });
 
-// TODO: Fix this test
-xdescribe('DotEditPageViewAsControllerSeoComponent', () => {
+describe('DotEditPageViewAsControllerSeoComponent', () => {
     let componentHost: DotTestHostComponent;
     let fixtureHost: ComponentFixture<DotTestHostComponent>;
 
