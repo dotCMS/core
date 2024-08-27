@@ -6999,7 +6999,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container.getIdentifier(), "3", list("3", "2"))
                 .next();
 
-        assertEquals(expectedTemplateLayout, expectedTemplateLayout);
+        assertEquals(expectedTemplateLayout, templateLayoutFromDB);
         assertEquals(2, templateLayoutFromDB.getVersion());
     }
 
