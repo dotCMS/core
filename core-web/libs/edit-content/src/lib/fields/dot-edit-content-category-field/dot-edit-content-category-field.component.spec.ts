@@ -194,6 +194,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
                 key: '1234',
                 value: 'test'
             });
+            store.addConfirmedCategories();
             spectator.flushEffects();
 
             const categoryValue = spectator.component.categoryFieldControl.value;
@@ -202,7 +203,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
         });
 
         it('should set categoryFieldControl value when removing a category', () => {
-            store.removeSelected(SELECTED_LIST_MOCK[0]);
+            store.removeConfirmedCategories(SELECTED_LIST_MOCK[0]);
 
             spectator.flushEffects();
 

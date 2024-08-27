@@ -52,6 +52,7 @@ describe('CategoryFieldStore', () => {
         expect(store.keyParentPath()).toEqual(EMPTY_ARRAY);
         expect(store.state()).toEqual(ComponentStatus.INIT);
         expect(store.selected()).toEqual(EMPTY_ARRAY);
+        expect(store.confirmedCategories()).toEqual(EMPTY_ARRAY);
         expect(store.mode()).toEqual('list');
     });
 
@@ -122,6 +123,34 @@ describe('CategoryFieldStore', () => {
 
                 expect(store.categories().length).toBe(2);
             });
+        });
+
+        it('should remove confirmed categories with given key', () => {
+            store.addSelected([{ key: '1234', value: 'test' }]);
+            store.addConfirmedCategories();
+
+            store.removeConfirmedCategories('1234');
+            expect(store.confirmedCategories().length).toEqual(0);
+        });
+
+        it('should add selected categories to confirmed categories', () => {
+            store.addSelected([{ key: '1234', value: 'test' }]);
+            store.addConfirmedCategories();
+
+            expect(store.confirmedCategories()).toEqual(store.selected());
+        });
+
+        it('should set selected categories based on confirmed categories', () => {
+            store.addSelected([{ key: '1234', value: 'test' }]);
+            store.addConfirmedCategories();
+
+            store.removeSelected('1234');
+
+            expect(store.selected()).toEqual(EMPTY_ARRAY);
+
+            store.setSelectedCategories();
+
+            expect(store.selected()).toEqual(store.confirmedCategories());
         });
     });
 

@@ -64,15 +64,42 @@ describe('DotCategoryFieldDialogComponent', () => {
         expect(spectator.query(byTestId('category-field__empty-state'))).not.toBeNull();
     });
 
-    it('should emit event to close dialog when "back" button is clicked', () => {
+    it('should have the correct configuration for the dialog.', () => {
         const closedDialogSpy = jest.spyOn(spectator.component.closedDialog, 'emit');
-        const cancelBtn = spectator.query(byTestId('back-btn'));
-        expect(cancelBtn).not.toBeNull();
+        const dialog = spectator.query(Dialog);
 
-        expect(closedDialogSpy).not.toHaveBeenCalled();
+        expect(dialog.draggable).toBe(false);
+        expect(dialog.resizable).toBe(false);
+        expect(dialog.modal).toBe(true);
+        expect(dialog.modal).toBe(true);
 
-        spectator.click(cancelBtn);
+        dialog.onHide.emit();
+
         expect(closedDialogSpy).toHaveBeenCalled();
+    });
+
+    it('should close the dialog when the close button is clicked', () => {
+        const closedDialogSpy = jest.spyOn(spectator.component.closedDialog, 'emit');
+        spectator.click(byTestId('dialog-cancel'));
+
+        expect(closedDialogSpy).toHaveBeenCalled();
+    });
+
+    it('should save the changes and apply the categories when the apply button is clicked', () => {
+        const closedDialogSpy = jest.spyOn(spectator.component.closedDialog, 'emit');
+        const addConfirmedCategoriesSky = jest.spyOn(store, 'addConfirmedCategories');
+        const categories = { key: '1234', value: 'test' };
+        store.addSelected({ key: '1234', value: 'test' });
+        spectator.detectChanges();
+
+        expect(store.selected()).toEqual([categories]);
+        expect(store.confirmedCategories()).toEqual([]);
+
+        spectator.click(byTestId('dialog-apply'));
+
+        expect(store.confirmedCategories()).toEqual([categories]);
+        expect(closedDialogSpy).toHaveBeenCalled();
+        expect(addConfirmedCategoriesSky).toHaveBeenCalled();
     });
 
     it('should render the CategoryFieldCategoryList component', () => {
