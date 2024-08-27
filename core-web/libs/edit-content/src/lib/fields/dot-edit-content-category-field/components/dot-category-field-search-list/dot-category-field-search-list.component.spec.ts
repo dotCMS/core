@@ -1,3 +1,4 @@
+import { createFakeEvent } from '@ngneat/spectator';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Table, TableModule } from 'primeng/table';
@@ -113,7 +114,10 @@ describe('DotCategoryFieldSearchListComponent', () => {
         const itemCheckedSpy = jest.spyOn(spectator.component.itemChecked, 'emit');
 
         spectator.detectChanges();
-        spectator.triggerEventHandler(Table, 'onHeaderCheckboxToggle', { checked: true });
+        spectator.triggerEventHandler(Table, 'onHeaderCheckboxToggle', {
+            originalEvent: createFakeEvent('click'),
+            checked: true
+        });
 
         expect(itemCheckedSpy).toHaveBeenCalledWith(CATEGORY_MOCK_TRANSFORMED);
     });
@@ -121,8 +125,14 @@ describe('DotCategoryFieldSearchListComponent', () => {
     it('should emit $removeItem event with all keys when header checkbox is unselected', () => {
         const removeItemSpy = jest.spyOn(spectator.component.removeItem, 'emit');
         spectator.detectChanges();
-        spectator.triggerEventHandler(Table, 'onHeaderCheckboxToggle', { checked: true });
-        spectator.triggerEventHandler(Table, 'onHeaderCheckboxToggle', { checked: false });
+        spectator.triggerEventHandler(Table, 'onHeaderCheckboxToggle', {
+            originalEvent: createFakeEvent('click'),
+            checked: true
+        });
+        spectator.triggerEventHandler(Table, 'onHeaderCheckboxToggle', {
+            originalEvent: createFakeEvent('click'),
+            checked: false
+        });
 
         const allKeys = CATEGORY_MOCK_TRANSFORMED.map((category) => category.key);
         expect(removeItemSpy).toHaveBeenCalledWith(allKeys);
