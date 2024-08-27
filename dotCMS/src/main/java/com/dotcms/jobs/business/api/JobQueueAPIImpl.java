@@ -13,7 +13,7 @@ import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.queue.JobQueue;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import graphql.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
