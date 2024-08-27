@@ -10,6 +10,8 @@ import {
 
 import { DotEditableTextProps, TINYMCE_CONFIG } from './utils';
 
+const MCE_URL = '/ext/tinymcev7/tinymce.min.js';
+
 export function DotEditableText({
     mode = 'plain',
     format = 'text',
@@ -17,23 +19,38 @@ export function DotEditableText({
     fieldName = ''
 }: Readonly<DotEditableTextProps>) {
     const editorRef = useRef<Editor['editor'] | null>(null);
+    const [scriptSrc, setScriptSrc] = useState('');
     const [isInsideEditor, setIsInsideEditor] = useState(false);
-    const [content, setContent] = useState(contentlet[fieldName] || '');
+    const [content, setContent] = useState(contentlet?.[fieldName] || '');
 
     useEffect(() => {
-        const isInsideEditor = isInsideEditorFn();
-        setIsInsideEditor(isInsideEditor);
+        setIsInsideEditor(isInsideEditorFn());
 
-        if (!isInsideEditor) {
+        if (!contentlet || !fieldName) {
+            console.error('DotEditableText: contentlet or fieldName is missing');
+            console.error('Ensure that all needed props are passed to view and edit the content');
+
             return;
         }
 
-        const content = contentlet[fieldName] || '';
+        if (!isInsideEditorFn()) {
+            return;
+        }
+
+        const createURL = new URL(MCE_URL, DotCmsClient.dotcmsUrl);
+        setScriptSrc(createURL.toString());
+
+        const content = contentlet?.[fieldName] || '';
         editorRef.current?.setContent(content, { format });
         setContent(content);
-    }, [contentlet, fieldName, format]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [format, contentlet?.[fieldName]]);
 
     useEffect(() => {
+        if (!isInsideEditorFn()) {
+            return;
+        }
+
         const onMessage = ({ data }: MessageEvent) => {
             const { name, payload } = data;
             if (name !== 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS') {
@@ -58,56 +75,46 @@ export function DotEditableText({
 
     const onMouseDown = (event: MouseEvent) => {
         const { onNumberOfPages = 1 } = contentlet;
+        const { inode, languageId: language } = contentlet;
 
         if (onNumberOfPages <= 1 || editorRef.current?.hasFocus()) {
             return;
         }
 
-        const { inode, languageId: language } = contentlet;
-
         event.stopPropagation();
         event.preventDefault();
 
-        try {
-            postMessageToEditor({
-                action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
-                payload: {
-                    dataset: {
-                        inode,
-                        language,
-                        fieldName
-                    }
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+            payload: {
+                dataset: {
+                    inode,
+                    language,
+                    fieldName
                 }
-            });
-        } catch (error) {
-            console.error('Failed to post message to editor:', error);
-        }
+            }
+        });
     };
 
     const onFocusOut = () => {
         const editedContent = editorRef.current?.getContent({ format: format }) || '';
+        const { inode, languageId: langId } = contentlet;
 
         if (!editorRef.current?.isDirty() || !didContentChange(editedContent)) {
             return;
         }
 
-        const { inode, languageId: langId } = contentlet;
-
-        try {
-            postMessageToEditor({
-                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
-                payload: {
-                    content: editedContent,
-                    dataset: {
-                        inode,
-                        langId,
-                        fieldName
-                    }
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+            payload: {
+                content: editedContent,
+                dataset: {
+                    inode,
+                    langId,
+                    fieldName
                 }
-            });
-        } catch (error) {
-            console.error('Failed to post message to editor:', error);
-        }
+            }
+        });
     };
 
     const didContentChange = (editedContent: string) => {
@@ -116,12 +123,12 @@ export function DotEditableText({
 
     if (!isInsideEditor) {
         // We can let the user pass the Child Component and create a root to get the HTML for the editor
-        return <div dangerouslySetInnerHTML={{ __html: content }} />;
+        return <span dangerouslySetInnerHTML={{ __html: content }} />;
     }
 
     return (
         <Editor
-            tinymceScriptSrc={`${DotCmsClient.dotcmsUrl}/ext/tinymcev7/tinymce.min.js`}
+            tinymceScriptSrc={scriptSrc}
             inline={true}
             onInit={(_, editor) => (editorRef.current = editor)}
             init={TINYMCE_CONFIG[mode]}

@@ -2,25 +2,25 @@ import { IAllProps } from '@tinymce/tinymce-react';
 
 import { DotCMSContentlet } from '../../models';
 
-export type TINYMCE_MODE = 'minimal' | 'full' | 'plain';
+export type DOT_EDITABLE_TEXT_MODE = 'minimal' | 'full' | 'plain';
 
-export type TINYMCE_FORMAT = 'html' | 'text';
+export type DOT_EDITABLE_TEXT_FORMAT = 'html' | 'text';
 
 export interface DotEditableTextProps {
     /**
      * Represents the mode of the editor which can be `plain`, `minimal`, or `full`
      *
-     * @type {TINYMCE_MODE}
+     * @type {DOT_EDITABLE_TEXT_MODE}
      * @memberof DotEditableTextProps
      */
-    mode?: TINYMCE_MODE;
+    mode?: DOT_EDITABLE_TEXT_MODE;
     /**
      * Represents the format of the editor which can be `text` or `html`
      *
-     * @type {TINYMCE_FORMAT}
+     * @type {DOT_EDITABLE_TEXT_FORMAT}
      * @memberof DotEditableTextProps
      */
-    format?: TINYMCE_FORMAT;
+    format?: DOT_EDITABLE_TEXT_FORMAT;
     /**
      * Represents the `contentlet` that can be inline edited
      *
@@ -48,7 +48,7 @@ const DEFAULT_TINYMCE_CONFIG: IAllProps['init'] = {
 };
 
 export const TINYMCE_CONFIG: {
-    [key in TINYMCE_MODE]: IAllProps['init'];
+    [key in DOT_EDITABLE_TEXT_MODE]: IAllProps['init'];
 } = {
     minimal: {
         ...DEFAULT_TINYMCE_CONFIG,
