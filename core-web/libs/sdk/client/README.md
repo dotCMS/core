@@ -26,11 +26,23 @@ yarn add @dotcms/client
 
 ## Usage
 
-First, initialize the client with your DotCMS instance details.
+`@dotcms/client` supports both ES modules and CommonJS. You can import it using either syntax:
+
+### ES Modules
 
 ```javascript
 import { dotcmsClient } from '@dotcms/client';
+```
 
+### CommonJS
+
+```javascript
+const { dotcmsClient } = require('@dotcms/client');
+```
+
+First, initialize the client with your DotCMS instance details.
+
+```javascript
 const client = dotcmsClient.init({
     dotcmsUrl: 'https://your-dotcms-instance.com',
     authToken: 'your-auth-token',

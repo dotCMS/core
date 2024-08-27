@@ -34,6 +34,8 @@ enum ContentAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
 
     @Override
     public Collection<GraphQLFieldDefinition> getFields() throws DotDataException {
+
+        Logger.debug(this, ()-> "Getting fields for ContentAPIGraphQLFieldsProvider");
         // Each ContentType as query'able collection field
         final List<ContentType> contentTypeList = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .findAllRespectingLicense();
@@ -44,12 +46,14 @@ enum ContentAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
         List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
 
         validContentTypeList.forEach((type) -> {
+
+            Logger.debug(this, ()-> "Creating collection field for type: " + type.variable());
             fieldDefinitions.add(createCollectionField(type, TypeUtil.collectionizedName(type.variable())));
-            fieldDefinitions.add(createCollectionField(type, TypeUtil.oldCollectionizedName(type.variable())));
         });
 
         // Each BaseType as query'able collection field
         InterfaceType.valuesAsSet().forEach((type)->{
+            Logger.debug(this, ()-> "Creating collection field for BaseType: " + type.getName());
             fieldDefinitions.add(createCollectionFieldForBaseType(type));
         });
 

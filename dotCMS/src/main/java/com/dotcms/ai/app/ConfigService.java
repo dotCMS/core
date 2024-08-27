@@ -2,9 +2,12 @@ package com.dotcms.ai.app;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.security.apps.AppSecrets;
+import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
 import java.util.Map;
@@ -17,8 +20,10 @@ public class ConfigService {
 
     public static final ConfigService INSTANCE = new ConfigService();
 
-    public AppConfig config() {
-        return config(null);
+    private final LicenseValiditySupplier licenseValiditySupplier;
+
+    private ConfigService() {
+        licenseValiditySupplier = new LicenseValiditySupplier() {};
     }
 
     /**
@@ -26,12 +31,36 @@ public class ConfigService {
      * by dotCMS.
      */
     public AppConfig config(final Host host) {
-        final Optional<AppSecrets> appSecrets = Try.of(() -> APILocator
-                .getAppsAPI()
-                .getSecrets(AppKeys.APP_KEY, true, resolveHost(host), APILocator.systemUser()))
-                .getOrElse(Optional.empty());
+        final Host resolved = resolveHost(host);
 
-        return new AppConfig(appSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
+        if (!licenseValiditySupplier.hasValidLicense()) {
+            Logger.debug(this, "No valid license found, returning empty configuration");
+            return new AppConfig(resolved.getHostname(), Map.of());
+        }
+
+        final User systemUser = APILocator.systemUser();
+        Optional<AppSecrets> appSecrets = Try
+                .of(() -> APILocator.getAppsAPI().getSecrets(AppKeys.APP_KEY, false, resolved, systemUser))
+                .get();
+        final Host realHost;
+        if (appSecrets.isEmpty()) {
+            realHost = APILocator.systemHost();
+            appSecrets = Try
+                    .of(() -> APILocator.getAppsAPI().getSecrets(AppKeys.APP_KEY, false, realHost, systemUser))
+                    .get();
+        } else {
+            realHost = resolved;
+        }
+
+        return new AppConfig(realHost.getHostname(), appSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
+    }
+
+    /**
+     * Gets the secrets from the App - this will check the current host then the SYSTEM_HOST for a valid configuration. This lookup is low overhead and cached
+     * by dotCMS.
+     */
+    public AppConfig config() {
+        return config(null);
     }
 
     /**

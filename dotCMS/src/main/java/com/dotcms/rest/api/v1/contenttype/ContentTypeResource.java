@@ -31,7 +31,6 @@ import com.dotcms.util.diff.DiffItem;
 import com.dotcms.util.diff.DiffResult;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
-import com.dotcms.workflow.form.WorkflowSystemActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -50,6 +49,7 @@ import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -57,7 +57,6 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -715,8 +714,7 @@ public class ContentTypeResource implements Serializable {
 							contentTypeAPI, false);
 			final ImmutableMap.Builder<Object, Object> builderMap =
 					ImmutableMap.builder()
-							.putAll(contentTypeHelper.contentTypeToMap(
-									contentTypeAPI.find(tuple2._1.variable()), user))
+							.putAll(contentTypeHelper.contentTypeToMap(tuple2._1, user))
 							.put(MAP_KEY_WORKFLOWS,
 									this.workflowHelper.findSchemesByContentType(
 											contentType.id(), initData.getUser()))
@@ -776,8 +774,7 @@ public class ContentTypeResource implements Serializable {
 																								   final ContentTypeAPI contentTypeAPI,
 																								   final boolean isNew) throws DotSecurityException, DotDataException {
 
-		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = new ArrayList<>();
-		final ContentType contentTypeSaved = contentTypeAPI.save(contentType);
+		ContentType contentTypeSaved = contentTypeAPI.save(contentType);
 		this.contentTypeHelper.saveSchemesByContentType(contentTypeSaved, workflows);
 
 		if (!isNew) {
@@ -786,38 +783,16 @@ public class ContentTypeResource implements Serializable {
 			), user, contentTypeAPI);
 		}
 
-		if (UtilMethods.isSet(systemActionMappings)) {
+		// Make sure we have the correct layout for the content type
+		contentTypeSaved = this.contentTypeHelper.fixLayoutIfNecessary(
+				contentTypeSaved.id(), user
+		);
 
-			for (final Tuple2<WorkflowAPI.SystemAction,String> tuple2 : systemActionMappings) {
-
-				final WorkflowAPI.SystemAction systemAction = tuple2._1;
-				final String workflowActionId               = tuple2._2;
-				if (UtilMethods.isSet(workflowActionId)) {
-
-					Logger.warn(this, "Saving the system action: " + systemAction +
-							", for content type: " + contentTypeSaved.variable() + ", with the workflow action: "
-							+ workflowActionId );
-
-					systemActionWorkflowActionMappings.add(this.workflowHelper.mapSystemActionToWorkflowAction(new WorkflowSystemActionForm.Builder()
-							.systemAction(systemAction).actionId(workflowActionId)
-							.contentTypeVariable(contentTypeSaved.variable()).build(), user));
-				} else if (UtilMethods.isSet(systemAction)) {
-
-					if (!isNew) {
-						Logger.warn(this, "Deleting the system action: " + systemAction +
-								", for content type: " + contentTypeSaved.variable());
-
-						final SystemActionWorkflowActionMapping mappingDeleted =
-								this.workflowHelper.deleteSystemAction(systemAction, contentTypeSaved, user);
-
-						Logger.warn(this, "Deleted the system action mapping: " + mappingDeleted);
-					}
-				} else {
-
-					throw new IllegalArgumentException("On System Action Mappings, a system action has been sent null or empty");
-				}
-			}
-		}
+		// Processing the content type action mappings
+		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings =
+				this.contentTypeHelper.processWorkflowActionMapping(
+						contentTypeSaved, user, systemActionMappings, isNew
+				);
 
 		return Tuple.of(contentTypeSaved, systemActionWorkflowActionMappings);
 	}
@@ -847,12 +822,11 @@ public class ContentTypeResource implements Serializable {
 				);
 
 		if (!diffResult.getToDelete().isEmpty()) {
-			APILocator.getContentTypeFieldLayoutAPI().deleteField(
-					currentContentType,
+			APILocator.getContentTypeFieldAPI().deleteFields(
 					diffResult.getToDelete().values().stream().
 							map(Field::id).
-							collect(Collectors.toList()),
-					user);
+							collect(Collectors.toList()), user
+			);
 		}
 
 		if (!diffResult.getToAdd().isEmpty()) {

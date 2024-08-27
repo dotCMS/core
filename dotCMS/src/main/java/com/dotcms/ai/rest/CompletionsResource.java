@@ -1,15 +1,16 @@
 package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.api.CompletionsAPI;
+import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
+import com.dotcms.ai.model.SimpleModel;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.LineReadingOutputStream;
-import com.dotcms.ai.util.OpenAIModel;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
@@ -28,13 +29,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * The CompletionsResource class provides REST endpoints for interacting with the AI completions service.
@@ -61,8 +60,8 @@ public class CompletionsResource {
                 request,
                 response,
                 formIn,
-                () -> CompletionsAPI.impl().summarize(formIn),
-                out -> CompletionsAPI.impl().summarizeStream(formIn, new LineReadingOutputStream(out)));
+                () -> APILocator.getDotAIAPI().getCompletionsAPI().summarize(formIn),
+                out -> APILocator.getDotAIAPI().getCompletionsAPI().summarizeStream(formIn, new LineReadingOutputStream(out)));
     }
 
     /**
@@ -84,8 +83,8 @@ public class CompletionsResource {
                 request,
                 response,
                 formIn,
-                () -> CompletionsAPI.impl().raw(formIn),
-                out -> CompletionsAPI.impl().rawStream(formIn, new LineReadingOutputStream(out)));
+                () -> APILocator.getDotAIAPI().getCompletionsAPI().raw(formIn),
+                out -> APILocator.getDotAIAPI().getCompletionsAPI().rawStream(formIn, new LineReadingOutputStream(out)));
     }
 
     /**
@@ -101,7 +100,7 @@ public class CompletionsResource {
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response getConfig(@Context final HttpServletRequest request,
                                     @Context final HttpServletResponse response) {
-        // get user if we have one (this is allow anon)
+        // get user if we have one (this allows anon)
         new WebResource
                 .InitBuilder(request, response)
                 .requiredBackendUser(true)
@@ -120,10 +119,7 @@ public class CompletionsResource {
         final String apiKey = UtilMethods.isSet(app.getApiKey()) ? "*****" : "NOT SET";
         map.put(AppKeys.API_KEY.key, apiKey);
 
-        final List<String> models = Arrays.stream(OpenAIModel.values())
-                .filter(m->m.completionModel)
-                .map(m-> m.modelName)
-                .collect(Collectors.toList());
+        final List<SimpleModel> models = AIModels.get().getAvailableModels();
         map.put(AiKeys.AVAILABLE_MODELS, models);
 
         return Response.ok(map).build();
@@ -145,7 +141,10 @@ public class CompletionsResource {
                 .getUser();
         final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         return (!user.isAdmin())
-                ? CompletionsForm.copy(formIn).model(ConfigService.INSTANCE.config(host).getModel()).build()
+                ? CompletionsForm
+                    .copy(formIn)
+                    .model(ConfigService.INSTANCE.config(host).getModel().getCurrentModel())
+                    .build()
                 : formIn;
     }
 

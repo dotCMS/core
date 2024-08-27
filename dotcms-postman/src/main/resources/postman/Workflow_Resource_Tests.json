@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "8c53a096-125d-4e0a-b25c-11be5c6ac929",
+		"_postman_id": "2a422520-eec4-42b3-94c3-5126f2691138",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -8073,14 +8073,15 @@
 											"});",
 											"",
 											"pm.test(\"fields check\", function () {",
-											"    pm.expect(jsonData.entity[0].fields.length).to.eql(1);",
+											"    pm.expect(jsonData.entity[0].fields.length).to.eql(3);",
 											"});",
 											"",
 											"pm.test(\"description check\", function () {",
 											"    pm.expect(jsonData.entity[0].description).to.eql('THE DESCRIPTION');",
 											"});"
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -9669,6 +9670,71 @@
 							]
 						},
 						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateContent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"SucessRequest\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Key Value updated\", function () {",
+									"    let contentIdentifier = pm.collectionVariables.get(\"contentletIdentifier\");",
+									"    let contentlet = jsonData.entity.results[0][contentIdentifier];",
+									"    pm.expect(contentlet.key).include(\"SucessRequest-Updated\"); ",
+									"    pm.expect(contentlet.value).include(\"SucessRequest-Updated\");",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"contentlet\" : {\n  \"identifier\": \"{{contentletIdentifier}}\",  \n  \"key\": \"SucessRequest-Updated{{$timestamp}}\",\n  \"value\": \"SucessRequest-Updated{{$timestamp}}\"\n}\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Updates content fields \"key\" and \"value\" by using the PATCH verb.\n\nAsserts the fields \"key\" and \"value\" were effectively updated."
 					},
 					"response": []
 				}
@@ -15965,14 +16031,15 @@
 									"});",
 									"",
 									"pm.test(\"fields check\", function () {",
-									"    pm.expect(jsonData.entity[0].fields.length).to.eql(1);",
+									"    pm.expect(jsonData.entity[0].fields.length).to.eql(3);",
 									"});",
 									"",
 									"pm.test(\"description check\", function () {",
 									"    pm.expect(jsonData.entity[0].description).to.eql('Region');",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -16045,14 +16112,15 @@
 									"});",
 									"",
 									"pm.test(\"fields check\", function () {",
-									"    pm.expect(jsonData.entity[0].fields.length).to.eql(1);",
+									"    pm.expect(jsonData.entity[0].fields.length).to.eql(3);",
 									"});",
 									"",
 									"pm.test(\"description check\", function () {",
 									"    pm.expect(jsonData.entity[0].description).to.eql('Movies');",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -16510,14 +16578,15 @@
 											"});",
 											"",
 											"pm.test(\"fields check\", function () {",
-											"    pm.expect(jsonData.entity[0].fields.length).to.eql(1);",
+											"    pm.expect(jsonData.entity[0].fields.length).to.eql(3);",
 											"});",
 											"",
 											"pm.test(\"description check\", function () {",
 											"    pm.expect(jsonData.entity[0].description).to.eql('THE DESCRIPTION');",
 											"});"
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -16698,13 +16767,14 @@
 									"",
 									"pm.test(\"Check that the test Content Type has the expected information\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity[0].fields.length).to.eql(1);",
+									"    pm.expect(jsonData.entity[0].fields.length).to.eql(3);",
 									"    pm.expect(jsonData.entity[0].description).to.eql('THE DESCRIPTION');",
 									"    pm.collectionVariables.set(\"contentTypeVar\", jsonData.entity[0].variable);",
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -17408,6 +17478,46 @@
 			"script": {
 				"type": "text/javascript",
 				"exec": [
+					"if (!pm.environment.get('jwt')) {",
+					"    console.log(\"generating....\")",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = pm.environment.get(\"user\");",
+					"        const password = pm.environment.get(\"password\");",
+					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"                console.log(jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}",
 					""
 				]
 			}
@@ -17445,6 +17555,18 @@
 		},
 		{
 			"key": "temporalFileOneId",
+			"value": ""
+		},
+		{
+			"key": "contentletIdentifier",
+			"value": ""
+		},
+		{
+			"key": "contentletInode",
+			"value": ""
+		},
+		{
+			"key": "fireActionLanguageKey",
 			"value": ""
 		}
 	]

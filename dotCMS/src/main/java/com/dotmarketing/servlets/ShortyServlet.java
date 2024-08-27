@@ -2,6 +2,7 @@ package com.dotmarketing.servlets;
 
 import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -65,21 +66,21 @@ public class ShortyServlet extends HttpServlet {
   private static final String  WEBP                        = "webp";
   private static final String  FILE_ASSET_DEFAULT          = FileAssetAPI.BINARY_FIELD;
   public  static final String  SHORTY_SERVLET_FORWARD_PATH = "shorty.servlet.forward.path";
-  private static final Pattern widthPattern                = Pattern.compile("/(\\d+)w");
-  private static final Pattern heightPattern               = Pattern.compile("/(\\d+)h");
-  private static final Pattern cropWidthPattern                = Pattern.compile("/(\\d+)cw");
-  private static final Pattern cropHeightPattern               = Pattern.compile("/(\\d+)ch");
+  private static final Pattern widthPattern                = Pattern.compile("/(\\d+)w\\b");
+  private static final Pattern heightPattern               = Pattern.compile("/(\\d+)h\\b");
+  private static final Pattern cropWidthPattern                = Pattern.compile("/(\\d+)cw\\b");
+  private static final Pattern cropHeightPattern               = Pattern.compile("/(\\d+)ch\\b");
   
-  private static final Pattern focalPointPattern               = Pattern.compile("/(\\.\\d+,\\.\\d+)fp");
+  private static final Pattern focalPointPattern               = Pattern.compile("/(\\.\\d+,\\.\\d+)fp\\b");
   
-  private static final Pattern qualityPattern               = Pattern.compile("/(\\d+)q");
+  private static final Pattern qualityPattern               = Pattern.compile("/(\\d+)q\\b");
   
-  private static final Pattern resampleOptsPattern               = Pattern.compile("/(\\d+)ro");
+  private static final Pattern resampleOptsPattern               = Pattern.compile("/(\\d+)ro\\b");
   
-  private static final Pattern maxWidthPattern                = Pattern.compile("/(\\d+)maxw");
-  private static final Pattern maxHeightPattern               = Pattern.compile("/(\\d+)maxh");
-  private static final Pattern minWidthPattern                = Pattern.compile("/(\\d+)minw");
-  private static final Pattern minHeightPattern               = Pattern.compile("/(\\d+)minh");
+  private static final Pattern maxWidthPattern                = Pattern.compile("/(\\d+)maxw\\b");
+  private static final Pattern maxHeightPattern               = Pattern.compile("/(\\d+)maxh\\b");
+  private static final Pattern minWidthPattern                = Pattern.compile("/(\\d+)minw\\b");
+  private static final Pattern minHeightPattern               = Pattern.compile("/(\\d+)minh\\b");
   
   
   
@@ -109,7 +110,7 @@ public class ShortyServlet extends HttpServlet {
   
   
 
-  private int getWidth(final String uri, final int defaultWidth) {
+  protected int getWidth(final String uri, final int defaultWidth) {
 
     int width = 0;
 
@@ -130,7 +131,7 @@ public class ShortyServlet extends HttpServlet {
     return width;
   }
 
-    private int cropWidth(final String uri) {
+    protected int cropWidth(final String uri) {
 
         int cropWidth=0;
         try {
@@ -148,7 +149,7 @@ public class ShortyServlet extends HttpServlet {
         return cropWidth;
     }
   
-    private int cropHeight(final String uri) {
+    protected int cropHeight(final String uri) {
         int cropHeight=0;
         try {
             final Matcher heightMatcher = cropHeightPattern.matcher(uri);
@@ -177,7 +178,7 @@ public class ShortyServlet extends HttpServlet {
     }
   
   
-  private int getHeight (final String uri, final int defaultHeight) {
+  protected int getHeight (final String uri, final int defaultHeight) {
 
     int height = 0;
 
@@ -199,27 +200,27 @@ public class ShortyServlet extends HttpServlet {
     return height;
   }
   
-  private int getMaxHeight(final String uri) {
+  protected int getMaxHeight(final String uri) {
       final Matcher matcher = maxHeightPattern.matcher(uri);
       return matcher.find() ? Integer.parseInt(matcher.group(1)) : 0;
   }
   
-  private int getMaxWidth(final String uri) {
+  protected int getMaxWidth(final String uri) {
       final Matcher matcher = maxWidthPattern.matcher(uri);
       return matcher.find() ? Integer.parseInt(matcher.group(1)) : 0;
   }
   
-  private int getMinHeight(final String uri) {
+  protected int getMinHeight(final String uri) {
       final Matcher matcher = minHeightPattern.matcher(uri);
       return matcher.find() ? Integer.parseInt(matcher.group(1)) : 0;
   }
   
-  private int getMinWidth(final String uri) {
+  protected int getMinWidth(final String uri) {
       final Matcher matcher = minWidthPattern.matcher(uri);
       return matcher.find() ? Integer.parseInt(matcher.group(1)) : 0;
   }
   
-  private int getQuality (final String uri, final int defaultQuality) {
+  protected int getQuality (final String uri, final int defaultQuality) {
 
     int quality = 0;
 
@@ -521,8 +522,10 @@ public class ShortyServlet extends HttpServlet {
                 final String inode = live ? contentletVersionInfo.get().getLiveInode()
                         : contentletVersionInfo.get().getWorkingInode();
 
-                final Contentlet  imageContentlet = APILocator.getContentletAPI()
+                final Contentlet imageContentlet = APILocator.getContentletAPI()
                         .find(inode, APILocator.systemUser(), false);
+
+                validateContentlet(imageContentlet, live, inode);
 
                 final String fieldVar = imageContentlet.isDotAsset() ?
                         DotAssetContentType.ASSET_FIELD_VAR : FILE_ASSET_DEFAULT;
@@ -536,6 +539,12 @@ public class ShortyServlet extends HttpServlet {
                 .append(StringPool.FORWARD_SLASH).append(field.variable()).toString();
     }
 
+    private void validateContentlet(final Contentlet contentlet, final boolean live, final String inode) throws DotDataException {
+        if (Objects.isNull(contentlet)) {
+            final String versionType = live ? PageMode.LIVE.name() : PageMode.WORKING.name();
+            throw new DotDataException(String.format("No contentlet found for %s inode %s", versionType, inode));
+        }
+    }
 
     protected final Optional<Field> resolveField(final Contentlet contentlet, final String tryField) {
 

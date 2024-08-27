@@ -41,13 +41,6 @@ dot-results-seo-tool {
     gap: $spacing-1;
     overflow: auto;
 }
-.editor-content--device {
-    grid-column: 1 / -1;
-}
-
-.editor-content--hidden {
-    display: none;
-}
 
 .iframe-wrapper {
     position: relative;
@@ -55,6 +48,8 @@ dot-results-seo-tool {
     flex-grow: 1;
     margin: 0 auto;
     border: solid 1px $color-palette-gray-300;
+    height: 100%;
+    width: 100%;
 
     iframe {
         border: none;
@@ -71,8 +66,4 @@ a,
 a:focus,
 a:active {
     text-decoration: none;
-}
-
-.editor-content--expanded {
-    grid-column: span 2;
 }

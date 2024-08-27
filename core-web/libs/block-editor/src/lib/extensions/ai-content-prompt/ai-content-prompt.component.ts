@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, DestroyRef, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -44,7 +44,6 @@ interface AIContentForm {
         ButtonModule,
         TooltipModule,
         SkeletonModule,
-        NgIf,
         AsyncPipe,
         DotEmptyContainerComponent,
         ConfirmDialogModule,

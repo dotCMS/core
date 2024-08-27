@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { DragulaService } from 'ng2-dragula';
 import { merge, Observable } from 'rxjs';
 
@@ -184,7 +183,7 @@ export class FieldDragDropService {
                 copy: this.shouldCopy.bind(this),
                 accepts: this.shouldAccepts.bind(this),
                 moves: this.shouldMovesField,
-                copyItem: (item) => _.cloneDeep(item)
+                copyItem: (item) => structuredClone(item)
             });
         }
     }
@@ -200,7 +199,7 @@ export class FieldDragDropService {
                 copy: this.shouldCopy.bind(this),
                 accepts: this.shouldAccepts.bind(this),
                 moves: this.shouldMoveRow.bind(this),
-                copyItem: (item) => _.cloneDeep(item)
+                copyItem: (item) => structuredClone(item)
             });
         }
     }

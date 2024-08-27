@@ -1,11 +1,34 @@
+import { CurrentUser } from '@dotcms/dotcms-js';
+import { DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+
 import {
     deleteContentletFromContainer,
     insertContentletInContainer,
     sanitizeURL,
     getPersonalization,
     createPageApiUrlWithQueryParams,
-    SDK_EDITOR_SCRIPT_SOURCE
+    SDK_EDITOR_SCRIPT_SOURCE,
+    computePageIsLocked,
+    computeCanEditPage,
+    mapContainerStructureToArrayOfContainers,
+    mapContainerStructureToDotContainerMap,
+    areContainersEquals,
+    compareUrlPaths,
+    createFullURL
 } from '.';
+
+import { dotPageContainerStructureMock } from '../shared/mocks';
+import { DotPage } from '../shared/models';
+
+const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
+    page: {
+        locked,
+        lockedBy
+    } as DotPage,
+    currentUser: {
+        userId
+    } as CurrentUser
+});
 
 describe('utils functions', () => {
     describe('SDK Editor Script Source', () => {
@@ -342,6 +365,272 @@ describe('utils functions', () => {
             expect(result).toBe(
                 'test?variantName=test&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
             );
+        });
+    });
+
+    describe('computePageIsLocked', () => {
+        it('should return false when the page is unlocked', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const result = computePageIsLocked(page, currentUser);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when the page is locked and is the same user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const result = computePageIsLocked(page, currentUser);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return true when the page is locked and is not the same user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '456'
+            });
+
+            const result = computePageIsLocked(page, currentUser);
+
+            expect(result).toBe(true);
+        });
+    });
+
+    describe('computeCanEditPage', () => {
+        it('should return true when the page can be edited, is not locked and does not have experiment', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const result = computeCanEditPage({ ...page, canEdit: true }, currentUser);
+
+            expect(result).toBe(true);
+        });
+
+        it('should return true when the page can be edited and does have an experiment that is not running or scheduled', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const experiment = {
+                status: DotExperimentStatus.DRAFT
+            } as DotExperiment;
+
+            const result = computeCanEditPage({ ...page, canEdit: true }, currentUser, experiment);
+
+            expect(result).toBe(true);
+        });
+
+        it('should return false when the page can be edited and does have an experiment that is running', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const experiment = {
+                status: DotExperimentStatus.RUNNING
+            } as DotExperiment;
+
+            const result = computeCanEditPage({ ...page, canEdit: true }, currentUser, experiment);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when the page can be edited and does have an experiment that is scheduled', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const experiment = {
+                status: DotExperimentStatus.SCHEDULED
+            } as DotExperiment;
+
+            const result = computeCanEditPage({ ...page, canEdit: true }, currentUser, experiment);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when the page can be edited but is locked', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '456'
+            });
+
+            const result = computeCanEditPage({ ...page, canEdit: true }, currentUser);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when the page cannot be edited', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '456'
+            });
+
+            const result = computeCanEditPage({ ...page, canEdit: false }, currentUser);
+
+            expect(result).toBe(false);
+        });
+    });
+
+    describe('mapContainerStructureToArrayOfContainers', () => {
+        it('should map container structure to array', () => {
+            const result = mapContainerStructureToArrayOfContainers(dotPageContainerStructureMock);
+
+            expect(result).toEqual([
+                {
+                    identifier: '123',
+                    uuid: '123',
+                    contentletsId: ['123', '456']
+                },
+                {
+                    identifier: '123',
+                    uuid: '456',
+                    contentletsId: ['123']
+                }
+            ]);
+        });
+    });
+
+    describe('mapContainerStructureToDotContainerMap', () => {
+        it('should map container structure to dotContainerMap', () => {
+            const result = mapContainerStructureToDotContainerMap(dotPageContainerStructureMock);
+
+            expect(result).toEqual({
+                '123': dotPageContainerStructureMock['123'].container
+            });
+        });
+    });
+
+    describe('areContainersEquals', () => {
+        it('should return true when the containers are equal', () => {
+            expect(
+                areContainersEquals(
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        contentletsId: ['123', '456']
+                    },
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        acceptTypes: 'test',
+                        variantId: 'Default',
+                        maxContentlets: 1
+                    }
+                )
+            ).toBe(true);
+        });
+        it('should return false when the containers dont have the same identifier', () => {
+            expect(
+                areContainersEquals(
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        contentletsId: ['123', '456']
+                    },
+                    {
+                        identifier: '456',
+                        uuid: '123',
+                        acceptTypes: 'test',
+                        variantId: 'Default',
+                        maxContentlets: 1
+                    }
+                )
+            ).toBe(false);
+        });
+        it('should return false when the containers dont have the same uuid', () => {
+            expect(
+                areContainersEquals(
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        contentletsId: ['123', '456']
+                    },
+                    {
+                        identifier: '123',
+                        uuid: '456',
+                        acceptTypes: 'test',
+                        variantId: 'Default',
+                        maxContentlets: 1
+                    }
+                )
+            ).toBe(false);
+        });
+    });
+
+    describe('compareUrlPaths', () => {
+        it('should return true when the paths are equal', () => {
+            expect(compareUrlPaths('/test', '/test')).toBe(true);
+        });
+
+        it('should return true when the paths are equal without initial slash', () => {
+            expect(compareUrlPaths('/test', 'test')).toBe(true);
+            expect(compareUrlPaths('test', '/test')).toBe(true);
+        });
+
+        it('should return false when the paths are not equal', () => {
+            expect(compareUrlPaths('/test', '/test2')).toBe(false);
+        });
+    });
+
+    describe('createFullURL', () => {
+        const expectedURL =
+            'http://localhost:4200/page?language_id=1&com.dotmarketing.persona.id=persona&variantName=new&experimentId=1&depth=1';
+        const params = {
+            url: 'page',
+            language_id: '1',
+            'com.dotmarketing.persona.id': 'persona',
+            variantName: 'new',
+            experimentId: '1',
+            mode: 'EDIT_MODE',
+            clientHost: 'http://localhost:4200/',
+            depth: '1'
+        };
+
+        it('should return the correct url', () => {
+            const result = createFullURL(params);
+            expect(result).toBe(expectedURL);
+        });
+
+        it('should ignore the double slash in the clientHost or path', () => {
+            const result = createFullURL({
+                ...params,
+                clientHost: 'http://localhost:4200//',
+                url: '/page'
+            });
+            expect(result).toBe(expectedURL);
+        });
+
+        it('should add the host_id if the side identifier is passed', () => {
+            const result = createFullURL(
+                {
+                    ...params,
+                    clientHost: 'http://localhost:4200//',
+                    url: '/page'
+                },
+                '123'
+            );
+            expect(result).toBe(`${expectedURL}${'&host_id=123'}`);
         });
     });
 });

@@ -1,5 +1,9 @@
 package com.dotcms.ai.service;
 
+import com.dotcms.ai.api.ChatAPI;
+import com.dotcms.ai.api.OpenAIChatAPIImpl;
+import com.dotcms.ai.app.AIModel;
+import com.dotcms.ai.app.AIModelType;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotmarketing.util.json.JSONObject;
@@ -19,7 +23,7 @@ public class OpenAIChatServiceImplTest {
             "{\"data\":[{\"url\":\"http://localhost:8080\",\"value\":\"this is a response\"}]}";
 
     private AppConfig config;
-    private OpenAIChatService service;
+    private ChatAPI service;
 
     @Before
     public void setUp() {
@@ -49,17 +53,20 @@ public class OpenAIChatServiceImplTest {
         assertNotNull(result);
     }
 
-    private OpenAIChatService prepareService(final String response) {
-        return new OpenAIChatServiceImpl(config) {
+    private ChatAPI prepareService(final String response) {
+        return new OpenAIChatAPIImpl(config) {
+
+
             @Override
-            String doRequest(final String urlIn, final String openAiAPIKey, final JSONObject json) {
+            public String doRequest(final String urlIn, final JSONObject json) {
                 return response;
             }
         };
     }
 
     private JSONObject prepareJsonObject(final String prompt) {
-        when(config.getModel()).thenReturn("some-model");
+        when(config.getModel())
+                .thenReturn(AIModel.builder().withType(AIModelType.TEXT).withNames("some-model").build());
         when(config.getConfigFloat(AppKeys.COMPLETION_TEMPERATURE)).thenReturn(123.321F);
         when(config.getRolePrompt()).thenReturn("some-role-prompt");
 

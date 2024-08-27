@@ -46,21 +46,22 @@ import com.liferay.util.StringUtil;
 import com.liferay.util.Time;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 
@@ -158,7 +159,15 @@ public class LanguageUtil {
 		return languageId;
 	}
 
-	private static  Tuple2<String, String> getLanguageCountryCodes (final String languageCountryCode) {
+	/**
+	 * Returns the language and country code from the string representation: could be a language
+	 * code, language code + country code. E.g.: en, en-US, es_US, etc.
+	 *
+	 * @param languageCountryCode The language code or lang code + country code.
+	 *
+	 * @return A {@link Tuple2<String, String>} object with the language code and country code.
+	 */
+	public static Tuple2<String, String> getLanguageCountryCodes(final String languageCountryCode) {
 
 		String languageCode 		   = languageCountryCode;
 		String countryCode  		   = null;

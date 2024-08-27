@@ -53,13 +53,36 @@
 
 html {
     font-family: $font-default;
-    font-size: $font-size-default;
     color: $font-color-base;
 }
 
 body {
     margin: 0;
     padding: 0;
+}
+span,
+label,
+div,
+dl,
+dt,
+dd,
+ul,
+ol,
+li,
+pre,
+code,
+form,
+fieldset,
+legend,
+input,
+button,
+textarea,
+select,
+p,
+blockquote,
+th,
+td {
+    font-size: $font-size-md;
 }
 
 .material-icons {

@@ -1,19 +1,19 @@
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 import { DynamicDialogRef } from 'primeng/dynamicdialog/dynamicdialog-ref';
 
-import { filter, takeUntil } from 'rxjs/operators';
+import { filter, takeUntil, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
 import { DotLayout, DotTemplate } from '@dotcms/dotcms-models';
 
 import { DotTemplatePropsComponent } from './dot-template-props/dot-template-props.component';
-import { DotTemplateItem, DotTemplateState, DotTemplateStore } from './store/dot-template.store';
+import { DotTemplateItem, DotTemplateStore, VM } from './store/dot-template.store';
 
 @Component({
     selector: 'dot-template-create-edit',
@@ -22,14 +22,14 @@ import { DotTemplateItem, DotTemplateState, DotTemplateStore } from './store/dot
     providers: [DotTemplateStore]
 })
 export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
-    vm$ = this.store.vm$;
-    didTemplateChanged$ = this.store.didTemplateChanged$;
+    readonly #store = inject(DotTemplateStore);
+
+    vm$: Observable<VM>;
 
     form: UntypedFormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
-        private store: DotTemplateStore,
         private fb: UntypedFormBuilder,
         private dialogService: DialogService,
         private dotMessageService: DotMessageService,
@@ -37,9 +37,9 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
-        this.vm$
-            .pipe(takeUntil(this.destroy$))
-            .subscribe(({ original, working }: DotTemplateState) => {
+        this.vm$ = this.#store.vm$.pipe(
+            takeUntil(this.destroy$),
+            tap(({ original, working }: VM) => {
                 const template = original.type === 'design' ? working : original;
                 if (this.form) {
                     const value = this.getFormValue(template);
@@ -52,7 +52,9 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 if (!template.identifier) {
                     this.createTemplate();
                 }
-            });
+            })
+        );
+
         this.setSwitchSiteListener();
     }
 
@@ -75,9 +77,9 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 onSave: (value: DotTemplateItem) => {
                     // If it is a template Desing, save entire template
                     if (value.type === 'design') {
-                        this.store.saveTemplate(value);
+                        this.#store.saveTemplate(value);
                     } else {
-                        this.store.saveProperties(value);
+                        this.#store.saveProperties(value);
                     }
                 }
             }
@@ -91,7 +93,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateCreateEditComponent
      */
     saveAndPublishTemplate(template: DotTemplate): void {
-        this.store.saveAndPublishTemplate({
+        this.#store.saveAndPublishTemplate({
             ...this.form.value,
             ...this.formatTemplateItem(template)
         });
@@ -104,7 +106,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateCreateEditComponent
      */
     updateWorkingTemplate(template: DotTemplate): void {
-        this.store.updateWorkingTemplate({
+        this.#store.updateWorkingTemplate({
             ...this.form.value,
             ...this.formatTemplateItem(template)
         });
@@ -117,7 +119,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateCreateEditComponent
      */
     saveTemplate(template: DotTemplate): void {
-        this.store.saveTemplate({
+        this.#store.saveTemplate({
             ...this.form.value,
             ...this.formatTemplateItem(template)
         });
@@ -129,7 +131,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateCreateEditComponent
      */
     cancelTemplate() {
-        this.store.goToTemplateList();
+        this.#store.goToTemplateList();
     }
 
     /**
@@ -139,7 +141,8 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateBuilderComponent
      */
     onCustomEvent($event: CustomEvent): void {
-        this.store.goToEditTemplate($event.detail.data.id, $event.detail.data.inode);
+        const { data } = $event.detail;
+        this.#store.goToEditTemplate(data.id, data.inode);
     }
 
     private createTemplate(): void {
@@ -151,7 +154,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
             data: {
                 template: this.form.value,
                 onSave: (value: DotTemplateItem) => {
-                    this.store.createTemplate(value);
+                    this.#store.createTemplate(value);
                 }
             }
         });
@@ -232,7 +235,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 })
             )
             .subscribe(() => {
-                this.store.goToTemplateList();
+                this.#store.goToTemplateList();
             });
     }
 

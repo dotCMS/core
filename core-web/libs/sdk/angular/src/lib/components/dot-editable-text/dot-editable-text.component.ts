@@ -45,7 +45,7 @@ import { DotCMSContentlet } from '../../models';
         {
             provide: TINYMCE_SCRIPT_SRC,
             useFactory: () => {
-                return `${DotCmsClient.dotcmsUrl}/html/js/tinymcev7/tinymce.min.js`;
+                return `${DotCmsClient.dotcmsUrl}/ext/tinymcev7/tinymce.min.js`;
             }
         }
     ]
@@ -116,7 +116,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      * @memberof DotEditableTextComponent
      */
     get editor() {
-        return this.editorComponent.editor;
+        return this.editorComponent?.editor;
     }
 
     /**
@@ -164,12 +164,15 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
 
         this.init = {
             ...TINYMCE_CONFIG[this.mode],
-            base_url: `${DotCmsClient.dotcmsUrl}/html/js/tinymcev7`
+            base_url: `${DotCmsClient.dotcmsUrl}/ext/tinymcev7`
         };
     }
 
     ngOnChanges() {
         this.content = this.contentlet[this.fieldName] || '';
+        if (this.editor) {
+            this.editor.setContent(this.content, { format: this.format });
+        }
     }
 
     /**

@@ -5,7 +5,12 @@ import {
     DotCMSContentTypeField
 } from '@dotcms/dotcms-models';
 
-import { DotCategoryFieldKeyValueObj, HierarchyParent } from '../models/dot-category-field.models';
+import { ROOT_CATEGORY_KEY } from '../dot-edit-content-category-field.const';
+import {
+    DotCategoryFieldItem,
+    DotCategoryFieldKeyValueObj,
+    HierarchyParent
+} from '../models/dot-category-field.models';
 
 /**
  * Retrieves and convert selected categories from a contentlet.
@@ -51,36 +56,45 @@ export const transformToSelectedObject = (
 };
 
 /**
+ * Transforms a DotCategory object into a DotCategoryFieldKeyValueObj object.
+ *
+ * @param {DotCategory} category
+ * @param {string[]} [keyParentPath=[]]
+ * @return {*}  {DotCategoryFieldKeyValueObj}
+ */
+const transformCategory = (
+    category: DotCategory,
+    keyParentPath: string[] = []
+): DotCategoryFieldKeyValueObj => {
+    const { key, inode, categoryName, childrenCount } = category;
+    const hasChildren = childrenCount > 0;
+
+    const path = getParentPath(category.parentList ?? []);
+
+    return {
+        key,
+        inode,
+        value: categoryName || category?.name,
+        hasChildren,
+        clicked: hasChildren && keyParentPath.includes(key),
+        path
+    };
+};
+
+/**
  * Add calculated properties to the categories
  * @param categories - Single category or array of categories to transform
  * @param keyParentPath - Path of keys to determine clicked state
  * @returns Transformed category or array of transformed categories with additional properties
  */
-
 export const transformCategories = (
     categories: DotCategory | DotCategory[],
     keyParentPath: string[] = []
 ): DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[] => {
-    const transformCategory = (category: DotCategory): DotCategoryFieldKeyValueObj => {
-        const { key, inode, categoryName, childrenCount } = category;
-        const hasChildren = childrenCount > 0;
-
-        const path = category.parentList ? getParentPath(category.parentList) : '';
-
-        return {
-            key,
-            inode,
-            value: categoryName || category?.name,
-            hasChildren,
-            clicked: hasChildren && keyParentPath.includes(key),
-            path
-        };
-    };
-
     if (Array.isArray(categories)) {
-        return categories.map(transformCategory);
+        return categories.map((category) => transformCategory(category, keyParentPath));
     } else {
-        return transformCategory(categories);
+        return transformCategory(categories, keyParentPath);
     }
 };
 
@@ -104,9 +118,8 @@ export const clearCategoriesAfterIndex = (
     index: number
 ): DotCategory[][] => {
     const newArray = categoryDeepCopy<DotCategory>(array);
-    newArray.splice(index + 1);
 
-    return newArray;
+    return newArray.slice(0, index + 1);
 };
 
 /**
@@ -125,6 +138,27 @@ export const clearParentPathAfterIndex = (parentPath: string[], index: number): 
  */
 export const checkIfClickedIsLastItem = (index: number, categories: DotCategory[][]) => {
     return index + 1 === categories.length;
+};
+
+/**
+ * Check if the clicked item is already loaded
+ *
+ * @param {DotCategoryFieldItem} event
+ * @param {string[]} keyParentPath
+ * @return {*}
+ */
+export const checkIfClickedIsLoaded = (
+    event: DotCategoryFieldItem,
+    keyParentPath: string[]
+): boolean => {
+    const categoryKey = event.item.key;
+    const lastCategoryKey = keyParentPath[keyParentPath.length - 1];
+
+    if (categoryKey === ROOT_CATEGORY_KEY) {
+        return true;
+    }
+
+    return categoryKey !== lastCategoryKey;
 };
 
 /**
@@ -147,7 +181,7 @@ export const updateChecked = (
         if (!currentChecked.some((entry) => entry.key === item.key)) {
             currentChecked = [
                 ...currentChecked,
-                { key: item.key, value: item.value, inode: item.inode }
+                { key: item.key, value: item.value, inode: item.inode, path: item?.path ?? '' }
             ];
         }
     } else {
@@ -165,14 +199,14 @@ export const updateChecked = (
  * @param parentList
  */
 export const getParentPath = (parentList: DotCategoryParent[]): string => {
-    if (parentList) {
-        return parentList
-            .slice(1)
-            .map((parent) => parent.name)
-            .join(' / ');
+    if (parentList.length === 0) {
+        return '';
     }
 
-    return '';
+    return parentList
+        .slice(1)
+        .map((parent) => parent.name)
+        .join(' / ');
 };
 
 /**
@@ -212,4 +246,36 @@ export const addSelected = (
     const newItems = itemsArray.filter((item) => !itemSet.has(item.key));
 
     return [...array, ...newItems];
+};
+
+/**
+ * Retrieves the menu items from a key parent path.
+ *
+ * @param {DotCategory[][]} array
+ * @param {string[]} keyParentPath
+ * @return {*}  {MenuItem[]}
+ */
+export const getMenuItemsFromKeyParentPath = (
+    array: DotCategory[][],
+    keyParentPath: string[]
+): DotCategoryFieldKeyValueObj[] => {
+    const flatArray = array.flat();
+
+    return keyParentPath.reduce((array, key) => {
+        const category = flatArray.find((item) => item.key === key);
+
+        if (category) {
+            return [...array, transformCategory(category, keyParentPath)];
+        }
+
+        return array;
+    }, []);
+};
+
+/***
+ * Remove all the empty arrays from the matrix
+ * @param {DotCategory[][]} array
+ */
+export const removeEmptyArrays = (array: DotCategory[][]): DotCategory[][] => {
+    return array.filter((item) => item.length > 0);
 };

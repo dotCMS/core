@@ -1,4 +1,4 @@
-import { NgClass, NgIf, NgStyle } from '@angular/common';
+import { NgClass, NgStyle } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -22,7 +22,7 @@ import { WINDOW } from '@dotcms/utils';
 @Component({
     selector: 'dot-edit-content-custom-field',
     standalone: true,
-    imports: [SafeUrlPipe, NgStyle, NgClass, DotIconModule, NgIf, ButtonModule],
+    imports: [SafeUrlPipe, NgStyle, NgClass, DotIconModule, ButtonModule],
     templateUrl: './dot-edit-content-custom-field.component.html',
     styleUrls: ['./dot-edit-content-custom-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

@@ -28,7 +28,7 @@
                 type="button"
                 pButton
                 icon="pi pi-ellipsis-v"
-                attr.data-testid="bulkActions"></button>
+                data-testid="bulkActions"></button>
         </div>
         <p-menu [popup]="true" [model]="templateBulkActions" #actionsMenu appendTo="body"></p-menu>
     </div>
@@ -72,7 +72,7 @@
         <td [ngStyle]="{ 'text-align': tableColumns[4].textAlign }">
             {{ rowData.modDate | dotRelativeDate }}
         </td>
-        <td style="width: 5%; height: 3.85rem">
+        <td style="width: 5%">
             <dot-action-menu-button
                 *ngIf="!rowData.disableInteraction"
                 [attr.data-testid]="rowData.identifier"

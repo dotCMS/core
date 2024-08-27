@@ -50,7 +50,7 @@ describe('CategoryFieldStore', () => {
     it('should initialize with default state', () => {
         expect(store.categories()).toEqual(EMPTY_ARRAY);
         expect(store.keyParentPath()).toEqual(EMPTY_ARRAY);
-        expect(store.state()).toEqual(ComponentStatus.IDLE);
+        expect(store.state()).toEqual(ComponentStatus.INIT);
         expect(store.selected()).toEqual(EMPTY_ARRAY);
         expect(store.mode()).toEqual('list');
     });

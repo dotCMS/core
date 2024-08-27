@@ -541,4 +541,12 @@ public class StringUtils {
         return Optional.ofNullable(value).map(String::toCharArray).orElse(defaultChars);
     }
 
+    public static String format(final String template, final Map<String, String> values) {
+        String result = template;
+
+        for (Map.Entry<String, String> entry : values.entrySet()) {
+            result = result.replace(":" + entry.getKey(), entry.getValue());
+        }
+        return result;
+    }
 }

@@ -9,7 +9,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -20,24 +19,14 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.UnmarshalException;
-import javax.xml.bind.Unmarshaller;
-import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import java.util.*;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import org.xml.sax.SAXException;
 
 /**
  * Implementation class for the {@link PortletFactory} interface. This class uses JAXB to map XML
@@ -49,28 +38,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *     <li>The database, where custom Portlets are stored.</li>
  * </ul>
  * </p>
- *
- * @author Erick Gonzalez
- * @since Apr 24th, 2019
  */
 public class PortletFactoryImpl extends PrincipalBean implements PortletFactory {
 
   private final String[] systemXmlFiles;
 
-  private static final Map<Class<?>, JaxbContext> jaxbContexts;
 
-  // Creates the JAXB contexts for the {@link DotPortlet} and {@link PortletList} classes. They're
-  // used by JAXB to map the contents of the configuration XML files into such classes.
-  static {
-    try {
-      jaxbContexts = Map.of(
-              DotPortlet.class, new JaxbContext(DotPortlet.class),
-              PortletList.class, new JaxbContext(PortletList.class));
-    } catch (final JAXBException e) {
-      throw new DotRuntimeException(String.format("FATAL - Failed to create JAXB contexts: " +
-              "%s", ExceptionUtil.getErrorMessage(e)), e);
-    }
-  }
+
 
   /**
    * Creates an instance of this Factory using the specified XML files as sources of Portlet
@@ -100,13 +74,14 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
    * @throws IOException   An error occurred while reading the XML file.
    * @throws JAXBException An error occurred while mapping the XML file into Java objects.
    */
-  private Map<String, Portlet> xmlToPortlets(final String pathToXmlFile) throws IOException, JAXBException {
+  private Map<String, Portlet> xmlToPortlets(final String pathToXmlFile) throws IOException, ParserConfigurationException, SAXException {
     if (UtilMethods.isNotSet(pathToXmlFile)) {
       return new HashMap<>();
     }
-    Logger.debug(this, "Loading Portlets from file: " + pathToXmlFile);
-    final InputStream stream = new FileInputStream(pathToXmlFile);
-    return xmlToPortlets(stream);
+    Logger.debug(this,"Loading Portlets from file: " + pathToXmlFile);
+    try (InputStream stream = new FileInputStream(pathToXmlFile)) {
+      return xmlToPortlets(stream);
+    }
   }
 
   /**
@@ -119,32 +94,42 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
    *
    * @throws JAXBException An error occurred while mapping the XML file into Java objects.
    */
-  private Map<String, Portlet> xmlToPortlets(final InputStream fileStream) throws JAXBException {
-    if (null == fileStream) {
-      return new HashMap<>();
-    }
+  /**
+   * Takes the Input Stream of an XML file and extracts the Portlet definitions from it into
+   * Portlet objects.
+   *
+   * @param fileStream The {@link InputStream} of the XML file to read.
+   *
+   * @return A map with the {@link Portlet} definitions.
+   *
+   * @throws JAXBException An error occurred while mapping the XML file into Java objects.
+   */
+  public Map<String, Portlet> xmlToPortlets(InputStream fileStream) throws IOException, ParserConfigurationException, SAXException {
     final Map<String, Portlet> portlets = new HashMap<>();
-    final PortletList portletList = (PortletList) jaxbContexts.get(PortletList.class).unmarshall(fileStream);
-    int counter = 1;
-    if (UtilMethods.isSet(portletList) && UtilMethods.isSet(portletList.getPortlets())) {
-      for (final DotPortlet portlet : portletList.getPortlets()) {
-        portlets.put(portlet.getPortletId(), portlet);
-        Logger.debug(this, String.format("%d. Loading portlet ID '%s'", counter, portlet.getPortletId()));
-        counter++;
+
+    if (fileStream == null) {
+      return portlets;
     }
-      }
-    return portlets;
+
+    SAXParser saxParser = ThreadLocalSaxParserFactory.getSaxParser();
+    PortletSaxHandler<Portlet> handler = new PortletSaxHandler<>(this::xmlToPortlet);
+    saxParser.parse(fileStream, handler);
+    return handler.getValueMap();
   }
+
+
 
   @Override
   @VisibleForTesting
-  public Optional<DotPortlet> xmlToPortlet(final String xml) throws JAXBException {
-    final InputStream stream = new ByteArrayInputStream(xml.getBytes(UTF_8));
-    final DotPortlet portlet = (DotPortlet) jaxbContexts.get(DotPortlet.class).unmarshall(stream);
-    if (null == portlet.getPortletId() || null == portlet.getPortletClass()) {
-      return Optional.empty();
+  public Optional<Portlet> xmlToPortlet(final String xml){
+    final DotPortlet portlet;
+    try {
+        portlet = DotPortlet.builder().fromXml(xml);
+    } catch (IOException e) {
+       Logger.debug(PortletFactoryImpl.class,"Not a DotPortlet skipping "+xml);
+       return Optional.empty();
     }
-    return Optional.of(portlet);
+    return Optional.of(portlet.toPortlet());
   }
 
   @Override
@@ -259,11 +244,7 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
           (String) portletData.get("defaultpreferences"), false, (String) portletData.get("roles"), true);
 
       try {
-        final Optional<DotPortlet> xmlPortlet = xmlToPortlet((String) portletData.get("defaultpreferences"));
-        xmlPortlet.ifPresent(portlets::add);
-      } catch (final UnmarshalException e) {
-        Logger.debug(this.getClass(), String.format("XML code for Portlet ID '%s'" +
-                " cannot be mapped to DotPortlet class: %s", testPortlet.getPortletId(), ExceptionUtil.getErrorMessage(e)));
+        xmlToPortlet((String) portletData.get("defaultpreferences")).ifPresent(portlets::add);
       } catch (final Exception e) {
         Logger.warn(this.getClass(), String.format("Unable to parse XML code to Portlet with ID '%s': %s",
                 testPortlet.getPortletId(), ExceptionUtil.getErrorMessage(e)));
@@ -326,65 +307,12 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
   @Override
   public String portletToXml(final Portlet portlet) throws DotDataException {
     try {
-        final StringWriter sw = new StringWriter();
-        final Marshaller jaxbMarshaller = jaxbContexts.get(DotPortlet.class).getMarshaller();
-        jaxbMarshaller.marshal(new DotPortlet(portlet), sw);
-        return sw.toString();
-    } catch (final JAXBException e) {
-        Logger.error(this, String.format("Failed to transform the Portlet with ID " +
-                "'%s' into XML: %s", portlet.getPortletId(), ExceptionUtil.getErrorMessage(e)));
-        throw new DotDataException(e);
+      return DotPortlet.from(portlet).toXml();
+    } catch (final IOException e) {
+      Logger.error(this, String.format("Failed to transform the Portlet with ID " +
+              "'%s' into XML: %s", portlet.getPortletId(), ExceptionUtil.getErrorMessage(e)));
+      throw new DotDataException(e);
     }
-  }
-
-  /**
-   * A simple class to hold the JAXB context and its respective Marshaller and Unmarshaller
-   * implementations for a specific class.
-   */
-  private static class JaxbContext {
-
-    final JAXBContext jaxbContextObj;
-    final Unmarshaller unmarshaller;
-    final Marshaller marshaller;
-
-    /**
-     * Default class constructor.
-     *
-     * @param clazz The class to create the JAXB context, marshaller and unmarshaller for.
-     *
-     * @throws JAXBException An error occurred while creating the JAXB context.
-     */
-    public JaxbContext(final Class<?> clazz) throws JAXBException {
-      this.jaxbContextObj = JAXBContext.newInstance(clazz);
-      this.marshaller = jaxbContextObj.createMarshaller();
-      this.marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-      this.unmarshaller = jaxbContextObj.createUnmarshaller();
-    }
-
-    /**
-     * Unmarshalls the specified Input Stream. That is, converts XML data into a java content
-     * tree.
-     *
-     * @param fileStream The {@link InputStream} to unmarshall.
-     *
-     * @return The unmarshalled object.
-     *
-     * @throws JAXBException An error occurred while unmarshalling the Input Stream.
-     */
-    public Object unmarshall(final InputStream fileStream) throws JAXBException {
-      return unmarshaller.unmarshal(fileStream);
-    }
-
-    /**
-     * Returns the {@code Marshaller} object that can be used to convert a java content tree
-     * into XML data.
-     *
-     * @return The {@code Marshaller} object.
-     */
-    public Marshaller getMarshaller() {
-      return this.marshaller;
-    }
-
   }
 
 }
