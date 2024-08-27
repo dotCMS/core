@@ -143,7 +143,7 @@ export class SearchableDropdownComponent
     value: unknown;
     overlayPanelMinHeight: string;
     options: unknown[];
-    label: string;
+    label: string | null = null;
     externalSelectTemplate: TemplateRef<unknown>;
 
     selectedOptionIndex = 0;

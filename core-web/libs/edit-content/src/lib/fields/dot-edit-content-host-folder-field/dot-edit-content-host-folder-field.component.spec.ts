@@ -56,13 +56,8 @@ describe('DotEditContentHostFolderFieldComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                $field: {
-                    ...HOST_FOLDER_TEXT_MOCK
-                }
-            }
-        });
+        spectator = createComponent();
+        spectator.setInput('field', { ...HOST_FOLDER_TEXT_MOCK });
         store = spectator.inject(HostFolderFiledStore, true) as unknown as TypeMock;
         component = spectator.component;
         component.formControl.setValue(null);

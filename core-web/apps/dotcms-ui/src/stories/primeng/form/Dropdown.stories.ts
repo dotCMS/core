@@ -66,7 +66,7 @@ export default meta;
 
 type Story = StoryObj<Args>;
 
-export const Primary: Story = {
+export const Default: Story = {
     parameters: {
         docs: {
             source: {
@@ -76,3 +76,19 @@ export const Primary: Story = {
         }
     }
 };
+
+export const CustomTemplate: Story = {
+    render: (args) => ({
+        props: args,
+        template: `
+        <p-dropdown [options]="options" [style]="{'width': width + 'px'}">
+            <ng-template let-selected pTemplate="selectedItem">
+                --{{ selected.label }}--
+            </ng-template>
+            <ng-template let-item pTemplate="item">
+                **{{ item.label }}**
+            </ng-template>
+        </p-dropdown>`
+    })
+};
+

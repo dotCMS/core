@@ -9,12 +9,14 @@ import {
     signal
 } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { SplitButtonModule } from 'primeng/splitbutton';
 
 import { CustomMenuItem, DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+
 
 type ButtonSize = 'normal' | 'small' | 'large';
 
@@ -39,7 +41,7 @@ export class DotWorkflowActionsComponent implements OnChanges {
     @Input() size: ButtonSize = 'normal';
     @Output() actionFired = new EventEmitter<DotCMSWorkflowAction>();
 
-    protected groupedActions = signal<CustomMenuItem[][]>([]);
+    protected groupedActions = signal<MenuItem[][]>([]);
     protected sizeClass: string;
 
     ngOnChanges(): void {
@@ -57,7 +59,7 @@ export class DotWorkflowActionsComponent implements OnChanges {
      * @return {*}  {MenuItem[][]}
      * @memberof DotWorkflowActionsComponent
      */
-    private groupActions(actions: DotCMSWorkflowAction[] = []): CustomMenuItem[][] {
+    private groupActions(actions: DotCMSWorkflowAction[] = []): MenuItem[][] {
         return actions
             ?.reduce(
                 (acc, action) => {
