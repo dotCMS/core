@@ -1,8 +1,8 @@
 import { EditorComponent } from '@tinymce/tinymce-angular';
 
-export type TINYMCE_MODE = 'minimal' | 'full' | 'plain';
+export type DOT_EDITABLE_TEXT_MODE = 'minimal' | 'full' | 'plain';
 
-export type TINYMCE_FORMAT = 'html' | 'text';
+export type DOT_EDITABLE_TEXT_FORMAT = 'html' | 'text';
 
 const DEFAULT_TINYMCE_CONFIG: EditorComponent['init'] = {
     menubar: false,
@@ -17,7 +17,7 @@ const DEFAULT_TINYMCE_CONFIG: EditorComponent['init'] = {
 };
 
 export const TINYMCE_CONFIG: {
-    [key in TINYMCE_MODE]: EditorComponent['init'];
+    [key in DOT_EDITABLE_TEXT_MODE]: EditorComponent['init'];
 } = {
     minimal: {
         ...DEFAULT_TINYMCE_CONFIG,

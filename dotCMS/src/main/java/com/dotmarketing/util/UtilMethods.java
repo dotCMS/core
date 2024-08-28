@@ -3678,4 +3678,15 @@ public class UtilMethods {
     public static <T extends CharSequence> boolean exceedsMaxLength(final T value, final int maxLength) {
         return value != null && value.length() > maxLength;
     }
+
+    /**
+     * Extracts the user id from a User object or returns null if the object is null
+     *
+     * @param user User object
+     * @return User id or null
+     */
+    public static String extractUserIdOrNull(final User user) {
+        return Optional.ofNullable(user).map(User::getUserId).orElse(null);
+    }
+
 }
