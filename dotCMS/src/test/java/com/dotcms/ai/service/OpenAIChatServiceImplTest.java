@@ -66,7 +66,7 @@ public class OpenAIChatServiceImplTest {
 
     private JSONObject prepareJsonObject(final String prompt) {
         when(config.getModel())
-                .thenReturn(AIModel.builder().withType(AIModelType.TEXT).withNames("some-model").build());
+                .thenReturn(AIModel.builder().withType(AIModelType.TEXT).withModelNames("some-model").build());
         when(config.getConfigFloat(AppKeys.COMPLETION_TEMPERATURE)).thenReturn(123.321F);
         when(config.getRolePrompt()).thenReturn("some-role-prompt");
 

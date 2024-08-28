@@ -1,4 +1,4 @@
-package com.dotcms.ai.client;
+package com.dotcms.ai.domain;
 
 /**
  * Represents a response from an AI service.
