@@ -56,8 +56,7 @@ class DotGravatarServiceMock {
     }
 }
 
-// TODO: Fix this test
-xdescribe('DotToolbarUserComponent', () => {
+describe('DotToolbarUserComponent', () => {
     let fixture: ComponentFixture<DotToolbarUserComponent>;
     let de: DebugElement;
     let loginService: LoginService;
@@ -171,7 +170,7 @@ xdescribe('DotToolbarUserComponent', () => {
         avatarComponent.click();
         fixture.detectChanges();
 
-        const logoutAsLink = de.query(By.css('#dot-toolbar-user-link-logout-as')).nativeElement;
+        const logoutAsLink = de.query(By.css('#dot-toolbar-user-link-logout-as a')).nativeElement;
         logoutAsLink.click();
 
         await fixture.whenStable();

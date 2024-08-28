@@ -75,8 +75,7 @@ class TestPaginatorService {
     }
 }
 
-// TODO: fix tests
-xdescribe('DotPersonaSelectorComponent', () => {
+describe('DotPersonaSelectorComponent', () => {
     let component: DotPersonaSelectorComponent;
     let hostFixture: ComponentFixture<HostTestComponent>;
     let de: DebugElement;
@@ -184,7 +183,7 @@ xdescribe('DotPersonaSelectorComponent', () => {
     it('should set dot-persona-selected-item with right attributes', () => {
         const personaSelectedItemDe = de.query(By.css('dot-persona-selected-item'));
         expect(personaSelectedItemDe.attributes.appendTo).toBe('target');
-        expect(personaSelectedItemDe.attributes['ng-reflect-text']).toBe('Default Visitor');
+        expect(personaSelectedItemDe.attributes['ng-reflect-content']).toBe('Default Visitor');
         expect(personaSelectedItemDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
     });
 

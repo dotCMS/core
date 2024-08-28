@@ -95,7 +95,7 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
      * @memberof DotAutocompleteTagsComponent
      */
     removeItem(event: AutoCompleteUnselectEvent): void {
-        if (event?.value){
+        if (event?.value) {
             this.lastDeletedTag = event.value;
         }
 
