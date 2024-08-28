@@ -85,19 +85,6 @@ public interface AbstractJob {
     }
 
     /**
-     * Creates a new Job with an updated result.
-     *
-     * @param newResult The new result to set.
-     * @return A new Job instance with the updated result.
-     */
-    default Job withResult(JobResult newResult) {
-        return AbstractJob.builder().from(this)
-                .result(Optional.of(newResult))
-                .updatedAt(LocalDateTime.now())
-                .build();
-    }
-
-    /**
      * Creates a new Job marked as completed.
      *
      * @return A new Job instance marked as completed.
@@ -105,6 +92,7 @@ public interface AbstractJob {
     default Job markAsCompleted() {
         return AbstractJob.builder().from(this)
                 .state(JobState.COMPLETED)
+                .result(JobResult.SUCCESS)
                 .completedAt(Optional.of(LocalDateTime.now()))
                 .updatedAt(LocalDateTime.now())
                 .build();

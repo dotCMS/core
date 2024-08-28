@@ -1,13 +1,13 @@
 package com.dotcms.jobs.business.api;
 
-import com.dotcms.jobs.business.processor.JobProcessor;
-import com.dotcms.jobs.business.error.RetryStrategy;
-import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.ProcessorNotFoundException;
-
+import com.dotcms.jobs.business.error.RetryStrategy;
+import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.processor.JobProcessor;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -20,6 +20,24 @@ public interface JobQueueAPI extends AutoCloseable {
      * Starts the job queue manager, initializing the thread pool for job processing.
      */
     void start();
+
+    /**
+     * Checks if the JobQueueManager has been started.
+     *
+     * @return {@code true} if the JobQueueManager has been started, {@code false} otherwise.
+     */
+    boolean isStarted();
+
+    /**
+     * Waits for the JobQueueManager to start up.
+     *
+     * @param timeout The maximum time to wait.
+     * @param unit    The time unit of the timeout argument.
+     * @return {@code true} if the JobQueueManager has started, {@code false} if the waiting time
+     * elapsed before the JobQueueManager started.
+     * @throws InterruptedException if the current thread is interrupted while waiting.
+     */
+    boolean awaitStart(long timeout, TimeUnit unit) throws InterruptedException;
 
     /**
      * Stops all job processing and releases resources. This method should be called when the job

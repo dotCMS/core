@@ -8,6 +8,7 @@ import com.dotcms.jobs.business.error.ProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobState;
+import com.dotcms.jobs.business.processor.DefaultProgressTracker;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.queue.JobQueue;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -69,6 +71,9 @@ import java.util.function.Consumer;
 public class JobQueueAPIImpl implements JobQueueAPI {
 
     private final AtomicBoolean isStarted = new AtomicBoolean(false);
+    private CountDownLatch startLatch;
+    private volatile boolean isShuttingDown = false;
+    private volatile boolean isClosed = false;
 
     private final CircuitBreaker circuitBreaker;
     private final JobQueue jobQueue;
@@ -84,7 +89,7 @@ public class JobQueueAPIImpl implements JobQueueAPI {
     );
 
     /**
-     * Constructs a new JobQueueManager with the default job queue implementation and the default
+     * Constructs a new JobQueueAPIImpl with the default job queue implementation and the default
      * number of threads.
      */
     public JobQueueAPIImpl() {
@@ -93,7 +98,7 @@ public class JobQueueAPIImpl implements JobQueueAPI {
     }
 
     /**
-     * Constructs a new JobQueueManager.
+     * Constructs a new JobQueueAPIImpl.
      *
      * @param jobQueue       The JobQueue implementation to use.
      * @param threadPoolSize The number of threads to use for job processing.
@@ -114,23 +119,43 @@ public class JobQueueAPIImpl implements JobQueueAPI {
     }
 
     @Override
+    public boolean isStarted() {
+        return isStarted.get() && !isClosed;
+    }
+
+    @Override
+    public boolean awaitStart(long timeout, TimeUnit unit) throws InterruptedException {
+        return startLatch.await(timeout, unit);
+    }
+
+    @Override
     public void start() {
+
+        if (isClosed) {
+            Logger.warn(this, "Attempt to start JobQueue that has been closed. Ignoring.");
+            return;
+        }
 
         if (isStarted.compareAndSet(false, true)) {
 
             Logger.info(
-                    this, "Starting JobQueueManager with " + threadPoolSize + " threads."
+                    this, "Starting JobQueue with " + threadPoolSize + " threads."
             );
 
+            startLatch = new CountDownLatch(threadPoolSize);
             executorService = Executors.newFixedThreadPool(threadPoolSize);
+
             for (int i = 0; i < threadPoolSize; i++) {
-                executorService.submit(this::processJobs);
+                executorService.submit(() -> {
+                    startLatch.countDown();
+                    processJobs();
+                });
             }
 
-            Logger.info(this, "JobQueueManager has been successfully started.");
+            Logger.info(this, "JobQueue has been successfully started.");
         } else {
             Logger.warn(this,
-                    "Attempt to start JobQueueAPIImpl that is already running. Ignoring."
+                    "Attempt to start JobQueue that is already running. Ignoring."
             );
         }
     }
@@ -138,28 +163,33 @@ public class JobQueueAPIImpl implements JobQueueAPI {
     @Override
     public void close() throws Exception {
 
+        if (isClosed) {
+            Logger.warn(this, "JobQueue is already closed. Ignoring.");
+            return;
+        }
+
         if (isStarted.compareAndSet(true, false)) {
 
-            Logger.info(this, "Closing JobQueueManager and stopping all job processing.");
-            executorService.shutdown();
+            isShuttingDown = true;
+            Logger.info(this, "Closing JobQueue and stopping all job processing.");
+            executorService.shutdownNow();
 
             try {
                 if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
-                    executorService.shutdownNow();
-                    if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
-                        Logger.error(this, "ExecutorService did not terminate");
-                    }
+                    Logger.error(this, "ExecutorService did not terminate");
                 }
             } catch (InterruptedException e) {
-                executorService.shutdownNow();
                 Thread.currentThread().interrupt();
                 Logger.error(this, "Interrupted while waiting for jobs to complete", e);
+            } finally {
+                isShuttingDown = false;
             }
 
-            Logger.info(this, "JobQueueManager has been successfully closed.");
+            isClosed = true;
+            Logger.info(this, "JobQueue has been successfully closed.");
         } else {
             Logger.warn(this,
-                    "Attempt to close JobQueueAPIImpl that is not running. Ignoring."
+                    "Attempt to close JobQueue that is not running. Ignoring."
             );
         }
     }
@@ -183,18 +213,18 @@ public class JobQueueAPIImpl implements JobQueueAPI {
 
     @Override
     public Job getJob(final String jobId) {
-        return jobQueue.job(jobId);
+        return jobQueue.getJob(jobId);
     }
 
     @Override
     public List<Job> getJobs(final int page, final int pageSize) {
-        return jobQueue.jobs(page, pageSize);
+        return jobQueue.getJobs(page, pageSize);
     }
 
     @Override
     public void cancelJob(final String jobId) {
 
-        Job job = jobQueue.job(jobId);
+        Job job = jobQueue.getJob(jobId);
         if (job != null) {
 
             final var processor = processors.get(job.queueName());
@@ -226,7 +256,7 @@ public class JobQueueAPIImpl implements JobQueueAPI {
     @Override
     public void watchJob(final String jobId, final Consumer<Job> watcher) {
         jobWatchers.computeIfAbsent(jobId, k -> new CopyOnWriteArrayList<>()).add(watcher);
-        Job currentJob = jobQueue.job(jobId);
+        Job currentJob = jobQueue.getJob(jobId);
         watcher.accept(currentJob);
     }
 
@@ -286,7 +316,7 @@ public class JobQueueAPIImpl implements JobQueueAPI {
      */
     private void processJobs() {
 
-        while (!Thread.currentThread().isInterrupted()) {
+        while (!Thread.currentThread().isInterrupted() && !isShuttingDown) {
 
             if (isCircuitBreakerOpen()) {
                 continue;
@@ -318,15 +348,20 @@ public class JobQueueAPIImpl implements JobQueueAPI {
      * @return true if the circuit breaker is open, false otherwise.
      */
     private boolean isCircuitBreakerOpen() {
+
         if (!circuitBreaker.allowRequest()) {
+
             Logger.warn(this, "Circuit breaker is open. Pausing job processing for a while.");
+
             try {
                 Thread.sleep(5000); // Wait for 5 seconds before checking again
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+
             return true;
         }
+
         return false;
     }
 
@@ -336,10 +371,12 @@ public class JobQueueAPIImpl implements JobQueueAPI {
      * @return The next job to be processed, or null if no job is available.
      */
     private Job fetchNextJob() {
+
         Job job = jobQueue.nextPendingJob();
         if (job == null) {
             job = jobQueue.nextFailedJob();
         }
+
         return job;
     }
 
@@ -375,7 +412,9 @@ public class JobQueueAPIImpl implements JobQueueAPI {
         if (now >= nextRetryTime) {
             processJob(job);
         } else {
-            jobQueue.updateJobStatus(job); // Put the job back in the queue for later retry
+            Job updatedJob = job.withState(JobState.PENDING);
+            jobQueue.updateJobStatus(updatedJob); // Put the job back in the queue for later retry
+            notifyJobWatchers(updatedJob);
         }
     }
 
@@ -407,10 +446,15 @@ public class JobQueueAPIImpl implements JobQueueAPI {
 
             try (final CloseableScheduledExecutor closeableExecutor = new CloseableScheduledExecutor()) {
 
-                ScheduledExecutorService progressUpdater = closeableExecutor.getExecutorService();
-                final ProgressTracker progressTracker = processor.progressTracker(runningJob);
+                final ProgressTracker progressTracker;
+                if (processor.progressTracker(runningJob) != null) {
+                    progressTracker = processor.progressTracker(runningJob);
+                } else {
+                    progressTracker = new DefaultProgressTracker();
+                }
 
                 // Start a separate thread to periodically update and persist progress
+                ScheduledExecutorService progressUpdater = closeableExecutor.getExecutorService();
                 progressUpdater.scheduleAtFixedRate(() ->
                         updateJobProgress(runningJob, progressTracker), 0, 1, TimeUnit.SECONDS
                 );
@@ -433,6 +477,7 @@ public class JobQueueAPIImpl implements JobQueueAPI {
                 final var errorDetail = ErrorDetail.builder()
                         .message("Job processing failed")
                         .exception(e)
+                        .exceptionClass(e.getClass().getName())
                         .processingStage("Job execution")
                         .timestamp(LocalDateTime.now())
                         .build();
@@ -463,8 +508,7 @@ public class JobQueueAPIImpl implements JobQueueAPI {
 
         Job updatedJob;
         if (canRetry(job)) {
-            updatedJob = job.incrementRetry().
-                    markAsFailed(errorDetail);
+            updatedJob = job.incrementRetry().markAsFailed(errorDetail);
         } else {
             updatedJob = job.markAsFailed(errorDetail);
         }

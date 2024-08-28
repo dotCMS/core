@@ -26,7 +26,7 @@ public interface JobQueue {
      * @param jobId The ID of the job to retrieve.
      * @return The job with the specified ID, or null if not found.
      */
-    Job job(String jobId);
+    Job getJob(String jobId);
 
     /**
      * Retrieves a list of active jobs for a specific queue.
@@ -36,7 +36,7 @@ public interface JobQueue {
      * @param pageSize  The number of items per page.
      * @return A list of active jobs.
      */
-    List<Job> activeJobs(String queueName, int page, int pageSize);
+    List<Job> getActiveJobs(String queueName, int page, int pageSize);
 
     /**
      * Retrieves a list of completed jobs for a specific queue within a date range.
@@ -48,7 +48,7 @@ public interface JobQueue {
      * @param pageSize  The number of items per page.
      * @return A list of completed jobs.
      */
-    List<Job> completedJobs(String queueName, LocalDateTime startDate, LocalDateTime endDate,
+    List<Job> getCompletedJobs(String queueName, LocalDateTime startDate, LocalDateTime endDate,
             int page, int pageSize);
 
     /**
@@ -58,7 +58,7 @@ public interface JobQueue {
      * @param pageSize The number of items per page.
      * @return A list of all jobs.
      */
-    List<Job> jobs(int page, int pageSize);
+    List<Job> getJobs(int page, int pageSize);
 
     /**
      * Retrieves a list of failed jobs.
@@ -67,7 +67,7 @@ public interface JobQueue {
      * @param pageSize The number of items per page.
      * @return A list of failed jobs.
      */
-    List<Job> failedJobs(int page, int pageSize);
+    List<Job> getFailedJobs(int page, int pageSize);
 
     /**
      * Updates the status of a job.
