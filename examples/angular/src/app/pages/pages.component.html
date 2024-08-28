@@ -1,7 +1,7 @@
 @if (context(); as vm) {
 
     @if (vm.error){
-        <app-not-found [error]="vm.error" />
+        <app-error [error]="vm.error" />
     } @else if (vm.page) {
         <div class="flex flex-col gap-6 min-h-screen bg-neutral-50">
             @if (vm.page.layout.header){

@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { PageError } from '../pages.component';
+import { PageError } from '../../pages.component';
 
 @Component({
-  selector: 'app-not-found',
+  selector: 'app-error',
   standalone: true,
   imports: [RouterLink],
   template: `<div
@@ -35,9 +35,9 @@ import { PageError } from '../pages.component';
       </div>
     </section>
   </div> `,
-  styleUrl: './notFound.component.css',
+  styleUrl: './error.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NotFoundComponent {
+export class ErrorComponent {
   error = input.required<PageError>();
 }

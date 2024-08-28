@@ -27,7 +27,7 @@ import { map, withLatestFrom, switchMap } from 'rxjs/operators';
 
 import { getPageRequestParams } from '@dotcms/client';
 import { from } from 'rxjs';
-import { NotFoundComponent } from './notFound/notFound.component';
+import { ErrorComponent } from './components/error/error.component';
 
 export type PageError = {
   message: string;
@@ -50,7 +50,7 @@ type PageRender = {
     NavigationComponent,
     FooterComponent,
     JsonPipe,
-    NotFoundComponent,
+    ErrorComponent,
   ],
   templateUrl: './pages.component.html',
   styleUrl: './pages.component.css',
