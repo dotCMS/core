@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { createFakeEvent } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
@@ -15,7 +17,7 @@ import { TableModule } from 'primeng/table';
 import { DotMessageService, DotFormatDateService } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotDiffPipe, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService, mockMatchMedia } from '@dotcms/utils-testing';
 
 import { DotContentCompareTableComponent } from './dot-content-compare-table.component';
 
@@ -296,7 +298,8 @@ describe('DotContentCompareTableComponent', () => {
                 DotMessagePipe,
                 FormsModule,
                 DotRelativeDatePipe,
-                ButtonModule
+                ButtonModule,
+                BrowserAnimationsModule
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -324,6 +327,7 @@ describe('DotContentCompareTableComponent', () => {
         de = hostFixture.debugElement;
         hostComponent.data = dotContentCompareTableDataMock;
         hostFixture.detectChanges();
+        mockMatchMedia();
     });
 
     describe('header', () => {
@@ -347,11 +351,19 @@ describe('DotContentCompareTableComponent', () => {
                 { label: 'Plain', value: false }
             ]);
         });
-        it('should show versions selectButton with transformed label', () => {
-            const dropdown = de.query(By.css('[data-testId="versions-dropdown"]')).nativeElement;
-            expect(dropdown.innerHTML.replace(/^\s+|\s+$/gm, '')).toContain(
-                `${dotContentCompareTableDataMock.versions[0].modDate} by ${dotContentCompareTableDataMock.versions[0].modUserName}`
-            );
+        it('should show versions selectButton with transformed label', async () => {
+            const dropdown = de.query(By.css('p-dropdown'));
+
+            dropdown.componentInstance.show();
+            hostFixture.detectChanges();
+
+            const versions = hostComponent.data.versions;
+
+            dropdown.queryAll(By.css('.p-dropdown-item')).forEach((item, index) => {
+                const textContent = item.nativeElement.textContent;
+                const text = `${versions[index].modDate} by ${versions[index].modUserName}`;
+                expect(textContent).toContain(text);
+            });
         });
     });
 
@@ -469,7 +481,7 @@ describe('DotContentCompareTableComponent', () => {
         it('should emit changeVersion', () => {
             jest.spyOn(hostComponent.changeVersion, 'emit');
             const dropdown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
-            dropdown.onChange.emit({ value: 'test' });
+            dropdown.onChange.emit({ value: 'test', originalEvent: createFakeEvent('click') });
 
             expect(hostComponent.changeVersion.emit).toHaveBeenCalledWith('test');
         });

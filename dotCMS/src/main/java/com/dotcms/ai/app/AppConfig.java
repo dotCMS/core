@@ -1,5 +1,6 @@
 package com.dotcms.ai.app;
 
+import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
@@ -114,6 +115,15 @@ public class AppConfig implements Serializable {
     }
 
     /**
+     * Retrieves the host.
+     *
+     * @return the host
+     */
+    public String getHost() {
+        return host;
+    }
+
+    /**
      * Retrieves the API URL.
      *
      * @return the API URL
@@ -134,7 +144,7 @@ public class AppConfig implements Serializable {
     /**
      * Retrieves the API Embeddings URL.
      *
-     * @return
+     * @return the API Embeddings URL
      */
     public String getApiEmbeddingsUrl() {
         return UtilMethods.isEmpty(apiEmbeddingsUrl) ? AppKeys.API_EMBEDDINGS_URL.defaultValue : apiEmbeddingsUrl;
@@ -293,24 +303,10 @@ public class AppConfig implements Serializable {
      * @param modelName the name of the model to find
      */
     public AIModel resolveModelOrThrow(final String modelName) {
-        final AIModel aiModel = AIModels.get()
+        return AIModels.get()
                 .findModel(host, modelName)
-                .orElseThrow(() -> {
-                    final String supported = String.join(", ", AIModels.get().getOrPullSupportedModels());
-                    return new DotRuntimeException(
-                            "Unable to find model: [" + modelName + "]. Only [" + supported + "] are supported ");
-                });
-
-        if (!aiModel.isOperational()) {
-            debugLogger(
-                    AppConfig.class,
-                    () -> String.format(
-                            "Resolved model [%s] is not operational, avoiding its usage",
-                            aiModel.getCurrentModel()));
-            throw new DotRuntimeException(String.format("Model [%s] is not operational", aiModel.getCurrentModel()));
-        }
-
-        return aiModel;
+                .orElseThrow(() ->
+                        new DotAIModelNotFoundException(String.format("Unable to find model: [%s].", modelName)));
     }
 
     /**
