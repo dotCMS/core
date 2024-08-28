@@ -1,3 +1,4 @@
+import { createFakeEvent } from '@ngneat/spectator';
 import { Observable, of as observableOf } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -128,8 +129,7 @@ let de: DebugElement;
 let autocomplete: DebugElement;
 let dotPageSelectorService: DotPageSelectorService;
 
-// TODO: Fix this test
-xdescribe('DotPageSelectorComponent', () => {
+describe('DotPageSelectorComponent', () => {
     let hostFixture: ComponentFixture<FakeFormComponent>;
     const searchPageObj = { originalEvent: { target: { value: 'demo' } }, query: 'demo' };
     const searchFolderObj = { originalEvent: { target: { value: 'folder' } }, query: 'folder' };
@@ -283,11 +283,13 @@ xdescribe('DotPageSelectorComponent', () => {
                 expect(message.nativeNode).toHaveClass('p-info');
             });
 
-            // TODO: Fix this test
-            xit('should show message of permissions', () => {
+            it('should show message of permissions', () => {
                 spyOn(dotPageSelectorService, 'getFolders').and.callThrough();
                 autocomplete.triggerEventHandler('completeMethod', searchFolderObj);
-                autocomplete.triggerEventHandler('onSelect', expectedFolderMap[1]);
+                autocomplete.triggerEventHandler('onSelect', {
+                    originalEvent: createFakeEvent('onSelect'),
+                    value: expectedFolderMap[1]
+                });
                 hostFixture.detectChanges();
                 const message = de.query(By.css('[data-testId="message"]'));
                 expect(message.nativeNode.textContent).toEqual('Folder Permissions');
@@ -315,11 +317,13 @@ xdescribe('DotPageSelectorComponent', () => {
             spyOn(component, 'propagateChange').and.callThrough();
         });
 
-        // TODO: Fix this test
-        xit('should emit selected page and propagate changes', () => {
+        it('should emit selected page and propagate changes', () => {
             spyOn(dotPageSelectorService, 'getPages').and.callThrough();
             autocomplete.triggerEventHandler('completeMethod', searchPageObj);
-            autocomplete.triggerEventHandler('onSelect', expectedPagesMap[0]);
+            autocomplete.triggerEventHandler('onSelect', {
+                originalEvent: createFakeEvent('onSelect'),
+                value: expectedPagesMap[0]
+            });
             expect(component.selected.emit).toHaveBeenCalledWith(
                 expectedPagesMap[0].payload as DotPageAsset
             );
@@ -350,7 +354,10 @@ xdescribe('DotPageSelectorComponent', () => {
             const folder = <DotFolder>expectedFolderMap[0].payload;
             spyOn(dotPageSelectorService, 'getFolders').and.callThrough();
             autocomplete.triggerEventHandler('completeMethod', searchFolderObj);
-            autocomplete.triggerEventHandler('onSelect', expectedFolderMap[0]);
+            autocomplete.triggerEventHandler('onSelect', {
+                originalEvent: createFakeEvent('onSelect'),
+                value: expectedFolderMap[0]
+            });
             expect(component.selected.emit).toHaveBeenCalledWith(
                 `//${folder.hostName}${folder.path}`
             );

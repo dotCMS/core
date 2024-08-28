@@ -159,7 +159,7 @@ describe('DotAutocompleteTagsComponent', () => {
                 xit('should put back last deleted item by the p-autoComplete', () => {
                     autoComplete.onUnselect.emit({
                         originalEvent: createFakeEvent('click'),
-                        value: 'qEvent'
+                        value: 'backspaceEvent'
                     });
                     autoComplete.onKeyUp.emit({ ...backspaceEvent });
                     expect(component.value.length).toEqual(3);

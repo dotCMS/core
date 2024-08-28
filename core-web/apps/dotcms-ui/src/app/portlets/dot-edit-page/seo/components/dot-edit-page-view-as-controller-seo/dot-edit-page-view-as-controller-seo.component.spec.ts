@@ -201,13 +201,11 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
             personaSelector = de.query(By.css('dot-persona-selector')).componentInstance;
         });
 
-        // TODO: Fix this test
-        xit('should have persona selector', () => {
+        it('should have persona selector', () => {
             expect(personaSelector).not.toBeNull();
         });
 
-        // TODO: Fix this test
-        xit('should persona selector be disabled after haveContent is set to false', () => {
+        it('should persona selector be disabled after haveContent is set to false', () => {
             const dotPageStateService: DotPageStateService = de.injector.get(DotPageStateService);
             dotPageStateService.haveContent$.next(false);
 
@@ -229,16 +227,14 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
             expect(component.changePersonaHandler).toHaveBeenCalledWith(mockDotPersona);
         });
 
-        // TODO: Fix this test
-        xit('should have Language selector', () => {
+        it('should have Language selector', () => {
             const languageSelectorDe = de.query(By.css('dot-language-selector'));
             expect(languageSelector).not.toBeNull();
             expect(languageSelectorDe.attributes.appendTo).toBe('body');
             expect(languageSelectorDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
         });
 
-        // TODO: Fix this test
-        xit('should emit changes in Language', () => {
+        it('should emit changes in Language', () => {
             const testlanguage: DotLanguage = {
                 id: 2,
                 languageCode: 'es',
