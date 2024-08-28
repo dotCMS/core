@@ -16,13 +16,30 @@ import { NavigationComponent } from './components/navigation/navigation.componen
 
 import { DYNAMIC_COMPONENTS } from '../utils';
 
-import { DotcmsLayoutComponent, DotcmsNavigationItem } from '@dotcms/angular';
+import {
+  DotcmsLayoutComponent,
+  DotcmsNavigationItem,
+  DotCMSPageAsset,
+} from '@dotcms/angular';
 import { JsonPipe } from '@angular/common';
 import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
-import { map, withLatestFrom } from 'rxjs/operators';
+import { map, withLatestFrom, switchMap } from 'rxjs/operators';
 
 import { getPageRequestParams } from '@dotcms/client';
+import { from } from 'rxjs';
+import { NotFoundComponent } from './notFound/notFound.component';
 
+export type PageError = {
+  message: string;
+  status: number;
+};
+
+type PageRender = {
+  page: DotCMSPageAsset | null;
+  nav: DotcmsNavigationItem | null;
+  error: PageError | null;
+  status: 'idle' | 'success' | 'error' | 'loading';
+};
 
 @Component({
   selector: 'dotcms-pages',
@@ -33,6 +50,7 @@ import { getPageRequestParams } from '@dotcms/client';
     NavigationComponent,
     FooterComponent,
     JsonPipe,
+    NotFoundComponent,
   ],
   templateUrl: './pages.component.html',
   styleUrl: './pages.component.css',
@@ -41,7 +59,12 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly context = signal<any>(null);
+  protected readonly context = signal<PageRender>({
+    page: null,
+    nav: null,
+    error: null,
+    status: 'idle',
+  });
   protected readonly components = signal<any>(DYNAMIC_COMPONENTS);
   private readonly client = inject(DOTCMS_CLIENT_TOKEN);
 
@@ -49,45 +72,66 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
   protected slug: string | null = null;
 
   ngOnInit() {
-    this.route.url.pipe(
-      withLatestFrom(this.route.queryParamMap),
-      map(([segments, queryParams]) => ({
-        path: segments.length > 0 ? segments.map(segment => segment.path).join('/') : '/',
-        queryParams: queryParams
-      })),
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe(async ({ path, queryParams }) => {
-      const params = getPageRequestParams({ path, params: queryParams });
-      console.log(params);
+    this.context.update((state) => ({ ...state, status: 'loading' }));
 
-      const page = await this.client.page.get(params);
+    this.route.url
+      .pipe(
+        withLatestFrom(this.route.queryParamMap),
+        map(([segments, queryParams]) => ({
+          path:
+            segments.length > 0
+              ? segments.map((segment) => segment.path).join('/')
+              : '/',
+          queryParams: queryParams,
+        })),
+        switchMap(({ path, queryParams }) => {
+          const pageParams = getPageRequestParams({
+            path,
+            params: queryParams,
+          });
+          const pagePromise = this.client.page
+            .get(pageParams)
+            .catch((error) => {
+              return { error: {
+                message: error.message,
+                status: error.status,
+              }};
+            }) as Promise<DotCMSPageAsset | { error: PageError }>;
 
-      const navProps = {
-        path: '/',
-        depth: 2,
-        languageId: (queryParams as any)['language_id'],
-      };
-    
-      const navResponse = (await this.client.nav.get(navProps)) as {
-        entity: DotcmsNavigationItem;
-      };
-      const nav = navResponse?.entity;
-      console.log({page, nav});
-      // You can use path and queryParams here as needed
-    });
-      
+          const navParams = {
+            path: '/',
+            depth: 2,
+            languageId: (queryParams as any)['language_id'],
+          };
+          const navPromise = this.client.nav
+            .get(navParams)
+            .then((response) => (response as any).entity)
+            .catch((error) => null) as Promise<DotcmsNavigationItem | null>;
 
-    // this.route.data
-    //   .pipe(takeUntilDestroyed(this.destroyRef))
-    //   .subscribe((data) => {
-    //     console.log(data);
-    //     this.context.set(data['context']);
-    //   });
-
-
-    // this.client.editor.on('changes', (pageAsset) => {
-    //   this.context.update((context) => ({ ...context, pageAsset }));
-    // });
+          return from(Promise.all([pagePromise, navPromise]));
+        }),
+        map(([page, navResponse]) => ({
+          page,
+          nav: (navResponse)
+        })),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(({ page, nav }) => {
+        if ('error' in page) {
+          this.context.update((state) => ({
+            ...state,
+            error: page.error,
+            status: 'error',
+          }));
+        } else {
+          this.context.update((state) => ({
+            ...state,
+            page,
+            nav,
+            status: 'success',
+          }));
+        }
+      });
   }
 
   ngOnDestroy() {

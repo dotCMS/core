@@ -1,29 +1,29 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { PageError } from '../pages.component';
 
 @Component({
   selector: 'app-not-found',
   standalone: true,
   imports: [RouterLink],
   template: `<div
-    class="bg-slate-100 min-h-dvh w-full flex justify-center items-center"
+    class="flex justify-center items-center w-full bg-slate-100 min-h-dvh"
   >
     <section>
-      <div class="py-8 px-4 mx-auto max-w-screen-xl lg:py-16 lg:px-6">
+      <div class="px-4 py-8 mx-auto max-w-screen-xl lg:py-16 lg:px-6">
         <div class="mx-auto max-w-screen-sm text-center">
           <h1
-            class="mb-4 text-7xl tracking-tight font-extrabold lg:text-9xl text-primary-600"
+            class="mb-4 text-7xl font-extrabold tracking-tight lg:text-9xl text-primary-600"
           >
-            404
+            {{error().status}}
           </h1>
           <p
-            class="mb-4 text-3xl tracking-tight font-bold text-gray-900 md:text-4xl"
+            class="mb-4 text-3xl font-bold tracking-tight text-gray-900 md:text-4xl"
           >
-            Something&apos;s missing.
+            {{error().message}}
           </p>
           <p class="mb-4 text-lg font-light text-gray-500">
-            Sorry, we can&apos;t find that page. You&apos;ll find lots to
-            explore on the home page.
+            You&apos;ll find lots to explore on the home page.
           </p>
           <a
             routerLink="/"
@@ -38,4 +38,6 @@ import { RouterLink } from '@angular/router';
   styleUrl: './notFound.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NotFoundComponent {}
+export class NotFoundComponent {
+  error = input.required<PageError>();
+}
