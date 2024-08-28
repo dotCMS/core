@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-import * as _ from 'lodash';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -78,10 +76,8 @@ const dotVariantDataMock: DotVariantData = {
     mode: DotPageMode.PREVIEW
 };
 
-const pageRenderStateMock: DotPageRenderState = new DotPageRenderState(
-    mockUser(),
-    new DotPageRender(mockDotRenderedPage())
-);
+const getPageRenderStateMock = () =>
+    new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));
 
 @Component({
     selector: 'dot-test-host-component',
@@ -92,7 +88,7 @@ const pageRenderStateMock: DotPageRenderState = new DotPageRenderState(
     `
 })
 class TestHostComponent {
-    pageState: DotPageRenderState = _.cloneDeep(pageRenderStateMock);
+    pageState: DotPageRenderState = getPageRenderStateMock();
     variant: DotVariantData;
 }
 
@@ -223,7 +219,7 @@ describe('DotEditPageStateControllerComponent', () => {
                     { ...mockUser(), userId: '456' },
                     new DotPageRender(mockDotRenderedPage())
                 );
-                fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+                fixtureHost.componentInstance.pageState = pageRenderStateMocked;
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
                 const lockerDe = de.query(By.css('p-inputSwitch'));
@@ -242,7 +238,7 @@ describe('DotEditPageStateControllerComponent', () => {
             it('should have lock info', () => {
                 fixtureHost.detectChanges();
                 const message = de.query(By.css('[data-testId="lockInfo"]')).componentInstance;
-                expect(message.pageState).toEqual(pageRenderStateMock);
+                expect(message.pageState).toEqual(getPageRenderStateMock());
             });
         });
 
@@ -430,7 +426,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 new DotPageRender(mockDotRenderedPage())
             );
 
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
         });
 
         it('should update pageState service when confirmation dialog Success', async () => {
@@ -495,7 +491,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 })
             );
 
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
             spyOn(dialogService, 'confirm').and.callFake((conf) => {
                 conf.accept();
             });
@@ -530,7 +526,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 EXPERIMENT_MOCK
             );
 
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
         });
 
         it('should update pageState service when confirmation dialog Success', async () => {
@@ -568,7 +564,7 @@ describe('DotEditPageStateControllerComponent', () => {
                     }
                 }
             );
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
             fixtureHost.detectChanges();
         });
 
@@ -615,7 +611,7 @@ describe('DotEditPageStateControllerComponent', () => {
                     ...mockDotRenderedPage()
                 }
             );
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
             fixtureHost.detectChanges();
 
             await fixtureHost.whenStable();
@@ -632,7 +628,7 @@ describe('DotEditPageStateControllerComponent', () => {
                     }
                 }
             );
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
             fixtureHost.detectChanges();
 
             await fixtureHost.whenStable();
