@@ -3,7 +3,11 @@ package com.dotcms.analytics.track;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.jitsu.EventLogSubmitter;
+import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.WhiteBlackList;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -23,10 +27,19 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
 
     private final EventLogSubmitter submitter;
 
+    /// private static final String[] DEFAULT_BLACKLISTED_PROPS = new String[]{"^/api/*"};
+    private static final String[] DEFAULT_BLACKLISTED_PROPS = new String[]{StringPool.BLANK};
+    private final WhiteBlackList whiteBlackList = new WhiteBlackList.Builder()
+            .addWhitePatterns(Config.getStringArrayProperty("ANALYTICS_WHITELISTED_KEYS",
+                    new String[]{StringPool.BLANK})) // allows everything
+            .addBlackPatterns(CollectionsUtils.concat(Config.getStringArrayProperty(  // except this
+                    "ANALYTICS_BLACKLISTED_KEYS", new String[]{}), DEFAULT_BLACKLISTED_PROPS)).build();
+
     public AnalyticsTrackWebInterceptor() {
 
         submitter = new EventLogSubmitter();
-        addRequestMatcher(new PagesAndUrlMapsRequestMatcher(),
+        addRequestMatcher(
+                new PagesAndUrlMapsRequestMatcher(),
                 new FilesRequestMatcher(),
                 new RulesRedirectsRequestMatcher(),
                 new VanitiesRequestMatcher());
@@ -54,11 +67,13 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
 
-        final Optional<RequestMatcher> matcherOpt = this.anyMatcher(request, response, RequestMatcher::runBeforeRequest);
-        if (matcherOpt.isPresent()) {
+        if (whiteBlackList.isAllowed(request.getRequestURI())) {
+            final Optional<RequestMatcher> matcherOpt = this.anyMatcher(request, response, RequestMatcher::runBeforeRequest);
+            if (matcherOpt.isPresent()) {
 
-            Logger.debug(this, ()-> "intercept, Matched: " + matcherOpt.get().getId() + " request: " + request.getRequestURI());
-            //fireNextStep(request, response);
+                Logger.debug(this, () -> "intercept, Matched: " + matcherOpt.get().getId() + " request: " + request.getRequestURI());
+                //fireNextStep(request, response);
+            }
         }
 
         return Result.NEXT;
@@ -67,14 +82,13 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
     @Override
     public boolean afterIntercept(final HttpServletRequest request, final HttpServletResponse response) {
 
-        //var vanityUrlHasRun = request.getAttribute(Constants.VANITY_URL_HAS_RUN);
-        //if (Objects.nonNull(vanityUrlHasRun) && ConversionUtils.toBooleanFromDb(vanityUrlHasRun)) {
+        if (whiteBlackList.isAllowed(request.getRequestURI())) {
+            final Optional<RequestMatcher> matcherOpt = this.anyMatcher(request, response, RequestMatcher::runAfterRequest);
+            if (matcherOpt.isPresent()) {
 
-        final Optional<RequestMatcher> matcherOpt = this.anyMatcher(request,  response, RequestMatcher::runAfterRequest);
-        if (matcherOpt.isPresent()) {
-
-            Logger.debug(this, ()-> "afterIntercept, Matched: " + matcherOpt.get().getId() + " request: " + request.getRequestURI());
-            //fireNextStep(request, response);
+                Logger.debug(this, () -> "afterIntercept, Matched: " + matcherOpt.get().getId() + " request: " + request.getRequestURI());
+                //fireNextStep(request, response);
+            }
         }
 
         return true;
