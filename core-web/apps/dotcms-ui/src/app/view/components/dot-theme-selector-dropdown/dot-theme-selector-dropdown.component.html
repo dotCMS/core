@@ -20,6 +20,38 @@
     </div>
 </ng-template>
 
+<ng-template #externalItemListTemplate let-data="data">
+    @for (item of data; track $index) {
+        <span
+            (click)="onChange(item)"
+            [class.selected]="value && value.identifier === item.identifier"
+            [class.highlight]="item.name === selectedOptionValue"
+            class="theme-selector__data-list-item">
+            <img
+                *ngIf="item?.themeThumbnail; else imageFallback"
+                [src]="
+                    item.identifier === 'SYSTEM_THEME'
+                        ? item.themeThumbnail
+                        : '/dA/' + item.themeThumbnail + '/titleImage/500w/50q/thumbnail.png'
+                "
+                [alt]="item.name"
+                class="dot-theme-item__image" />
+
+            <ng-template #imageFallback>
+                <div class="dot-theme-item__image--fallback">
+                    <span>{{ item.label.charAt(0) }}</span>
+                </div>
+            </ng-template>
+            <span class="dot-theme-item__meta">
+                <span class="dot-theme-item__label">{{ item.label }}</span>
+                <span class="dot-theme-item__date">
+                    {{ 'Last-Updated' | dm }}: {{ item.modDate | date: 'MM/dd/yy' }}
+                </span>
+            </span>
+        </span>
+    }
+</ng-template>
+
 <dot-searchable-dropdown
     (hide)="onHide()"
     (display)="onShow()"
@@ -31,40 +63,9 @@
     [totalRecords]="totalRecords"
     [rows]="paginatorService.paginationPerPage"
     [externalFilterTemplate]="externalFilterTemplate"
+    [externalItemListTemplate]="externalItemListTemplate"
     #searchableDropdown
     labelPropertyName="name"
     overlayWidth="490px"
     valuePropertyName="name"
-    width="100%">
-    <ng-template let-data="data" pTemplate="list">
-        @for (item of data; track $index) {
-            <span
-                (click)="onChange(item)"
-                [class.selected]="value && value.identifier === item.identifier"
-                [class.highlight]="item.name === selectedOptionValue"
-                class="theme-selector__data-list-item">
-                <img
-                    *ngIf="item?.themeThumbnail; else imageFallback"
-                    [src]="
-                        item.identifier === 'SYSTEM_THEME'
-                            ? item.themeThumbnail
-                            : '/dA/' + item.themeThumbnail + '/titleImage/500w/50q/thumbnail.png'
-                    "
-                    [alt]="item.name"
-                    class="dot-theme-item__image" />
-
-                <ng-template #imageFallback>
-                    <div class="dot-theme-item__image--fallback">
-                        <span>{{ item.label.charAt(0) }}</span>
-                    </div>
-                </ng-template>
-                <span class="dot-theme-item__meta">
-                    <span class="dot-theme-item__label">{{ item.label }}</span>
-                    <span class="dot-theme-item__date">
-                        {{ 'Last-Updated' | dm }}: {{ item.modDate | date: 'MM/dd/yy' }}
-                    </span>
-                </span>
-            </span>
-        }
-    </ng-template>
-</dot-searchable-dropdown>
+    width="100%" />

@@ -11,12 +11,12 @@
         id="categories"
         #searchableDropdown
         labelPropertyName="categoryName"
-        placeholder="{{ placeholder }}"
-        width="100%"></dot-searchable-dropdown>
+        [placeholder]="placeholder"
+        width="100%" />
 
     <dot-field-validation-message
         [field]="group.controls[property.name]"
         [message]="
             'contenttypes.field.properties.category.error.required' | dm
-        "></dot-field-validation-message>
+        " />
 </div>

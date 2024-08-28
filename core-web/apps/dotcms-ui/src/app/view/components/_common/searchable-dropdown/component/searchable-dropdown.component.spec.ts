@@ -37,7 +37,7 @@ import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
             [valuePropertyName]="valuePropertyName"
             [overlayWidth]="overlayWidth"
             [width]="width"
-            [disabled]="disabled"></dot-searchable-dropdown>
+            [disabled]="disabled" />
     `
 })
 class HostTestComponent {
