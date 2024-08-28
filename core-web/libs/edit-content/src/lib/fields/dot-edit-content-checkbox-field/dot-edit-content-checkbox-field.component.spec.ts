@@ -99,10 +99,9 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             spectator.detectComponentChanges();
 
             spectator.queryAll(Checkbox).forEach((checkbox) => {
-                expect(spectator.query(`label[for="${checkbox.inputId}"]`)).toBeTruthy();
-                expect(spectator.query(`label[for="${checkbox.inputId}"]`).textContent).toEqual(
-                    checkbox.label
-                );
+                const selector = `label[for="${checkbox.inputId}"]`;
+                expect(spectator.query(selector)).toBeTruthy();
+                expect(spectator.query(selector).textContent).toEqual(` ${checkbox.label}`);
             });
         });
     });

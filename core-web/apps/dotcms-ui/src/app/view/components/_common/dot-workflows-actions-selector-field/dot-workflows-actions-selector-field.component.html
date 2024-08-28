@@ -2,7 +2,6 @@
     *ngIf="actions$ | async as actions"
     (onChange)="handleChange($event)"
     [(ngModel)]="value"
-    [autoDisplayFirst]="false"
     [disabled]="disabled || actions.length === 0"
     [group]="true"
     [options]="actions"
@@ -10,4 +9,4 @@
     [showClear]="true"
     [style]="{ width: '100%' }"
     #dropdown
-    appendTo="body"></p-dropdown>
+    appendTo="body" />

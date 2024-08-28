@@ -113,7 +113,7 @@ export class DotPersonaSelectorComponent implements OnInit {
      * @memberof DotPersonaSelectorComponent
      */
     personaChange(persona: DotPersona): void {
-        if (!this.value || this.value.identifier !== persona.identifier) {
+        if (!this.value || this.value?.identifier !== persona.identifier) {
             this.selected.emit(persona);
         }
 

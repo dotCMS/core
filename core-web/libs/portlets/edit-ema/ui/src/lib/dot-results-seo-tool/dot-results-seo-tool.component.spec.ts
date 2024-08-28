@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import {
