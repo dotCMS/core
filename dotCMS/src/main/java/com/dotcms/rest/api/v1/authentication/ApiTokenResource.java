@@ -23,6 +23,17 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.vavr.control.Try;
 import org.glassfish.jersey.internal.util.Base64;
 import org.glassfish.jersey.server.JSONP;
@@ -63,6 +74,11 @@ import static java.util.Collections.EMPTY_MAP;
  * Endpoint to handle Api Tokens
  */
 @Path("/v1/apitoken")
+@Tag(name = "Api Tokens", 
+    description = "Endpoints that handle operations related to Api Tokens",
+    externalDocs = @ExternalDocumentation(description = "Additional Api Token information",
+                                                    url = "https://www.dotcms.com/docs/latest/rest-api-authentication#APIToken"))
+
 public class ApiTokenResource implements Serializable {
 
     private final ApiTokenAPI tokenApi;
@@ -87,11 +103,67 @@ public class ApiTokenResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "getApiTokens",
+                summary = "Gets api tokens from a user's ID",
+                description = "Takes a user ID and returns a list of Api Tokens associated with the ID.\n\n" +
+                                "The list of tokens also includes any tokens that have been revoked.\n\n",
+                tags = {"Api Tokens"},
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "User Api tokens successfully retrieved",
+                        content = @Content(mediaType = "application/json",
+                            examples = {
+                                @ExampleObject(
+                                    value = "{\n" +
+                                            "  \"entity\": {\n" +
+                                            "    \"jwt\": \"string\",\n" +
+                                            "    \"token\": {\n" +
+                                            "      \"allowNetwork\": null,\n" +
+                                            "      \"claims\": {\n" +
+                                            "        \"label\": \"string\",\n" +
+                                            "      },\n" +
+                                            "      \"expired\": false,\n" +
+                                            "      \"expiresDate\": 0,\n" +
+                                            "      \"id\": \"string\",\n" +
+                                            "      \"issueDate\": 0,\n" +
+                                            "      \"issuer\": \"string\",\n" +
+                                            "      \"modificationDate\": 0,\n" +
+                                            "      \"notBeforeDate\": false,\n" +
+                                            "      \"requestingIp\": \"string\",\n" +
+                                            "      \"requestingUserId\": \"string\",\n" +
+                                            "      \"revoked\": false,\n" +
+                                            "      \"revokedDate\": null,\n" +
+                                            "      \"subject\": \"string\",\n" +
+                                            "      \"tokenType\": \"string\",\n" +
+                                            "      \"userId\": \"string\",\n" +
+                                            "      \"valid\": true\n" +
+                                            "    }\n" +
+                                            "  },\n" +
+                                            "  \"errors\": [],\n" +
+                                            "  \"i18nMessagesMap\": {},\n" +
+                                            "  \"messages\": [],\n" +
+                                            "  \"pagination\": null,\n" +
+                                            "  \"permissions\": []\n" +
+                                            "}"
+                                    )
+                            })),
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "403", description = "Unauthorized user"),
+                    @ApiResponse(responseCode = "500", description = "Unexpected server error")
+
+                })
     public final Response getApiTokens(
             @Context final HttpServletRequest request, 
             @Context final HttpServletResponse response,
-            @PathParam("userId") final String userId, 
-            @QueryParam("showRevoked") final boolean showRevoked) {
+            @PathParam("userId") @Parameter(
+                required = true,
+                description = "ID for user getting api tokens.",
+                schema = @Schema(type = "string")
+            ) final String userId, 
+            @QueryParam("showRevoked") @Parameter(
+                description = "Determines whether revokes tokens are shown.",
+                schema = @Schema(type = "boolean")
+            )final boolean showRevoked) {
 
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, "users");
@@ -105,6 +177,21 @@ public class ApiTokenResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "putTokenIdRevoke",
+                summary = "Revokes an api token from user(s)",
+                description = "Takes a token ID and revokes it from any specified users.\n\n" +
+                                "If the token attempmting to be revoked is expired the request will fail.\n\n",
+                tags = {"Api Token"},
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "Tokens revoked successfully",
+                        content = @Content(mediaType = "application/json",
+                            examples = {
+                                @ExampleObject(
+                                    value = ""
+                                )
+                            }))
+                })
     public final Response revokeApiToken(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("tokenId") final String tokenId) {
 
