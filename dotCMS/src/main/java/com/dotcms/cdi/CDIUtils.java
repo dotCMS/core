@@ -14,7 +14,7 @@ public class CDIUtils {
            try {
                return Optional.of(CDI.current().select(clazz).get());
            } catch (Exception e) {
-               Logger.error(CDIUtils.class, String.format("Error getting bean of class [%s]",clazz), e);
+               Logger.warn(CDIUtils.class, String.format("Unable to find bean of class [%s]",clazz), e);
                return Optional.empty();
            }
     }
