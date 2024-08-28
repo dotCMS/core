@@ -190,7 +190,7 @@ describe('DotLoginComponent', () => {
             expect(dotRouterService.goToMain).toHaveBeenCalledWith('redirect/to');
             expect(dotFormatDateService.setLang).toHaveBeenCalledWith('en_US');
         });
-        
+
         it('should disable fields while waiting login response', async () => {
             component.loginForm.setValue(credentials);
             spyOn(dotRouterService, 'goToMain');
