@@ -6,7 +6,6 @@ import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.model.AIImageRequestDTO;
 import com.dotcms.ai.api.ImageAPI;
-import com.dotcms.ai.api.OpenAIImageAPIImpl;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;

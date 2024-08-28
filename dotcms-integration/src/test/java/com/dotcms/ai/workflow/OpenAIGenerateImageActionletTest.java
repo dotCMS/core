@@ -40,7 +40,6 @@ import java.util.Map;
  */
 public class OpenAIGenerateImageActionletTest {
 
-    private static AppConfig config;
     private static Host host;
 
     @BeforeClass
@@ -78,34 +77,29 @@ public class OpenAIGenerateImageActionletTest {
                         .withType(Type.STRING)
                         .withValue("{\"default\":\"blog\"}".toCharArray())
                         .build());
-        config = new AppConfig(host.getHostname(), secrets);
-        DotAIAPIFacadeImpl.setDefaultImageAPIProvider(new ImageAPIProvider() {
+        new AppConfig(host.getHostname(), secrets);
+        DotAIAPIFacadeImpl.setDefaultImageAPIProvider(initArguments -> new ImageAPI() {
             @Override
-            public ImageAPI getImageAPI(Object... initArguments) {
-                return new ImageAPI() {
-                    @Override
-                    public JSONObject sendTextPrompt(String prompt) {
-                        return new JSONObject("{\n" +
-                                "  \"response\":\"image_id123\",\n" +
-                                "  \"tempFile\":\"image_id123\"\n" +
-                                "}");
-                    }
+            public JSONObject sendTextPrompt(String prompt) {
+                return new JSONObject("{\n" +
+                        "  \"response\":\"image_id123\",\n" +
+                        "  \"tempFile\":\"image_id123\"\n" +
+                        "}");
+            }
 
-                    @Override
-                    public JSONObject sendRawRequest(String prompt) {
-                        return null;
-                    }
+            @Override
+            public JSONObject sendRawRequest(String prompt) {
+                return null;
+            }
 
-                    @Override
-                    public JSONObject sendRequest(JSONObject jsonObject) {
-                        return null;
-                    }
+            @Override
+            public JSONObject sendRequest(JSONObject jsonObject) {
+                return null;
+            }
 
-                    @Override
-                    public JSONObject sendRequest(AIImageRequestDTO dto) {
-                        return null;
-                    }
-                };
+            @Override
+            public JSONObject sendRequest(AIImageRequestDTO dto) {
+                return null;
             }
         });
     }

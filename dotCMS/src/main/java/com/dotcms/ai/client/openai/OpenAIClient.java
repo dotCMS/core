@@ -102,9 +102,7 @@ public class OpenAIClient implements AIClient {
         final String modelName = Optional
                 .ofNullable(payload.optString(AiKeys.MODEL))
                 .orElseThrow(() -> new DotAIModelNotFoundException("Model is not present in the request"));
-        // TODO: pr-split -> uncomment this line
-        //final Tuple2<AIModel, Model> modelTuple = appConfig.resolveModelOrThrow(modelName, jsonRequest.getType());
-        final Tuple2<AIModel, Model> modelTuple = Tuple.of(null, null);
+        final Tuple2<AIModel, Model> modelTuple = appConfig.resolveModelOrThrow(modelName, jsonRequest.getType());
         final AIModel aiModel = modelTuple._1;
 
         if (!modelTuple._2.isOperational()) {

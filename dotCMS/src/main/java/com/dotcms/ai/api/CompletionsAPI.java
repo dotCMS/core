@@ -1,9 +1,7 @@
 package com.dotcms.ai.api;
 
-import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotmarketing.util.json.JSONObject;
-import io.vavr.Lazy;
 
 import java.io.OutputStream;
 
@@ -37,9 +35,10 @@ public interface CompletionsAPI {
      * this method takes a prompt in the form of json and returns a json AI response based upon that prompt
      *
      * @param promptJSON
+     * @param userId
      * @return
      */
-    JSONObject raw(JSONObject promptJSON);
+    JSONObject raw(JSONObject promptJSON, String userId);
 
     /**
      * this method takes a prompt and returns the AI response based upon that prompt
@@ -58,9 +57,15 @@ public interface CompletionsAPI {
      * @param model
      * @param temperature
      * @param maxTokens
+     * @param userId
      * @return
      */
-    JSONObject prompt(String systemPrompt, String userPrompt, String model, float temperature, int maxTokens);
+    JSONObject prompt(String systemPrompt,
+                      String userPrompt,
+                      String model,
+                      float temperature,
+                      int maxTokens,
+                      String userId);
 
     /**
      * this method takes a prompt in the form of json and returns streaming AI response based upon that prompt
