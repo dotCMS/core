@@ -60,7 +60,6 @@ public class DotRestApplication extends ResourceConfig {
 		  "com.dotcms.rendering.js",
 		  "com.dotcms.ai.rest"
 		);
-		property("jersey.config.server.tracing", "ALL");
 	}
 
 	/**

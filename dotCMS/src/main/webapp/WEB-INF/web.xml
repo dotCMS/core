@@ -509,13 +509,6 @@
 		<url-pattern>/api/v1/graphql</url-pattern>
 	</servlet-mapping>
 
-	<!--
-	<servlet-mapping>
-		<servlet-name>RESTAPI</servlet-name>
-		<url-pattern>/api/*</url-pattern>
-	</servlet-mapping>
-	-->
-
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
