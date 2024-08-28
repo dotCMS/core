@@ -13,8 +13,10 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.SystemProperties;
 import org.awaitility.Awaitility;
+import org.jboss.weld.bootstrap.api.helpers.RegistrySingletonProvider;
 import org.mockito.Mockito;
-
+import org.jboss.weld.environment.se.Weld;
+import org.jboss.weld.environment.se.WeldContainer;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,6 +30,8 @@ public class IntegrationTestInitService {
     private static IntegrationTestInitService service = new IntegrationTestInitService();
 
     private static final AtomicBoolean initCompleted = new AtomicBoolean(false);
+
+    private static WeldContainer weld;
 
     static {
         SystemProperties.getProperties();
@@ -44,6 +48,11 @@ public class IntegrationTestInitService {
     public void init() throws Exception {
         try {
             if (initCompleted.compareAndSet(false, true)) {
+                weld = new Weld().containerId(RegistrySingletonProvider.STATIC_INSTANCE)
+                        .initialize();
+
+                Config.initializeConfig();
+
                 System.setProperty(TestUtil.DOTCMS_INTEGRATION_TEST, TestUtil.DOTCMS_INTEGRATION_TEST);
 
                 Awaitility.setDefaultPollInterval(10, TimeUnit.MILLISECONDS);
