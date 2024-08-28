@@ -12,7 +12,7 @@ import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ButtonModule } from 'primeng/button';
-import { Checkbox, CheckboxModule } from 'primeng/checkbox';
+import { CheckboxModule } from 'primeng/checkbox';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
@@ -190,9 +190,8 @@ describe('DotLoginComponent', () => {
             expect(dotRouterService.goToMain).toHaveBeenCalledWith('redirect/to');
             expect(dotFormatDateService.setLang).toHaveBeenCalledWith('en_US');
         });
-
-        // TODO: Fix this test
-        xit('should disable fields while waiting login response', () => {
+        
+        it('should disable fields while waiting login response', async () => {
             component.loginForm.setValue(credentials);
             spyOn(dotRouterService, 'goToMain');
             spyOn<any>(loginService, 'loginUser').and.returnValue(
@@ -203,21 +202,20 @@ describe('DotLoginComponent', () => {
             );
             signInButton.triggerEventHandler('click', {});
 
+            fixture.detectChanges();
+            await fixture.whenStable();
+
             const languageDropdown: Dropdown = de.query(
                 By.css('[data-testId="language"]')
             ).componentInstance;
             const emailInput = de.query(By.css('[data-testId="userNameInput"]'));
             const passwordInput = de.query(By.css('[data-testId="password"]'));
-            const rememberCheckBox: Checkbox = de.query(
-                By.css('[data-testId="rememberMe"]')
-            ).componentInstance;
-
-            fixture.detectChanges();
+            const rememberCheckBox = component.loginForm.get('rememberMe');
 
             expect(languageDropdown.disabled).toBeTruthy();
             expect(emailInput.nativeElement.disabled).toBeTruthy();
             expect(passwordInput.nativeElement.disabled).toBeTruthy();
-            expect(rememberCheckBox.disabled).toBeTruthy();
+            expect(rememberCheckBox.disable).toBeTruthy();
         });
 
         it('should keep submit button disabled until the form is valid', () => {

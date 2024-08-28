@@ -77,7 +77,9 @@ export class DotLoginComponent implements OnInit, OnDestroy {
         this.setMessage('');
         this.loginService
             .loginUser(this.loginForm.value as DotLoginParams)
-            .pipe(take(1))
+            .pipe(
+                take(1)
+            )
             .subscribe(
                 (user: User) => {
                     this.setMessage('');
