@@ -23,11 +23,12 @@ import {
 } from '@dotcms/angular';
 import { JsonPipe } from '@angular/common';
 import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
-import { map, withLatestFrom, switchMap } from 'rxjs/operators';
+import { map, withLatestFrom, switchMap, delay } from 'rxjs/operators';
 
 import { getPageRequestParams } from '@dotcms/client';
 import { from } from 'rxjs';
 import { ErrorComponent } from './components/error/error.component';
+import { LoadingComponent } from './components/loading/loading.component';
 
 export type PageError = {
   message: string;
@@ -51,6 +52,7 @@ type PageRender = {
     FooterComponent,
     JsonPipe,
     ErrorComponent,
+    LoadingComponent
   ],
   templateUrl: './pages.component.html',
   styleUrl: './pages.component.css',
@@ -114,6 +116,7 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
           page,
           nav: (navResponse)
         })),
+        delay(2000),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(({ page, nav }) => {
