@@ -205,6 +205,10 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
             expect(personaSelector).not.toBeNull();
         });
 
+        xit('should persona selector be enabled', () => {
+            expect(personaSelector.disabled).toBe(false);
+        });
+
         it('should persona selector be disabled after haveContent is set to false', () => {
             const dotPageStateService: DotPageStateService = de.injector.get(DotPageStateService);
             dotPageStateService.haveContent$.next(false);

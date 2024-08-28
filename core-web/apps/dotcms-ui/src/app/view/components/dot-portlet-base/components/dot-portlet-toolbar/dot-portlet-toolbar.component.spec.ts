@@ -93,8 +93,7 @@ describe('DotPortletToolbarComponent', () => {
 
     describe('action buttons', () => {
         describe('primary', () => {
-            // TODO: Fix this test
-            xit('should show one button and call function on click', () => {
+            it('should show one button and call function on click', () => {
                 const spy = jasmine.createSpy();
                 component.actions = {
                     primary: [
