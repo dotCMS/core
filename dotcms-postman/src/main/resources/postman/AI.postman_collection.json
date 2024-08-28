@@ -60,7 +60,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"apiKey\": {\n    \"value\": \"some-api-key-1a2bc3\"\n  },\n  \"textModelNames\": {\n    \"value\": \"gpt-4o\"\n  },\n  \"textModelMaxTokens\": {\n    \"value\":\"16384\"\n  },\n  \"imageModelNames\": {\n    \"value\": \"dall-e-3\"\n  },\n  \"imageSize\": {\n    \"value\": \"1024x1024\"\n  },\n  \"imageModelMaxTokens\": {\n    \"value\":\"0\"\n  },\n  \"embeddingsModelNames\": {\n    \"value\": \"text-embedding-ada-002\"\n  },\n  \"embeddingsModelMaxTokens\": {\n    \"value\":\"8191\"\n  },\n  \"listenerIndexer\": {\n    \"value\": \"{\\\"default\\\":\\\"blog,dotcmsdocumentation,feature,ProductBriefs,news,report.file,builds,casestudy\\\",\\\"documentation\\\":\\\"dotcmsdocumentation\\\"}\"\n  }\n}\n"
+							"raw": "{\n  \"apiKey\": {\n    \"value\": \"some-api-key-1a2bc3\"\n  },\n  \"textModelNames\": {\n    \"value\": \"gpt-4o-mini\"\n  },\n  \"textModelMaxTokens\": {\n    \"value\":\"16384\"\n  },\n  \"imageModelNames\": {\n    \"value\": \"dall-e-3\"\n  },\n  \"imageSize\": {\n    \"value\": \"1024x1024\"\n  },\n  \"imageModelMaxTokens\": {\n    \"value\":\"0\"\n  },\n  \"embeddingsModelNames\": {\n    \"value\": \"text-embedding-ada-002\"\n  },\n  \"embeddingsModelMaxTokens\": {\n    \"value\":\"8191\"\n  },\n  \"listenerIndexer\": {\n    \"value\": \"{\\\"default\\\":\\\"blog,dotcmsdocumentation,feature,ProductBriefs,news,report.file,builds,casestudy\\\",\\\"documentation\\\":\\\"dotcmsdocumentation\\\"}\"\n  }\n}\n"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/apps/dotAI/SYSTEM_HOST",
@@ -3035,7 +3035,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"model\": \"text-embedding-ada-002\",\n    \"responseLengthTokens\": 1\n}",
+							"raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"responseLengthTokens\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3111,7 +3111,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"responseLengthTokens\": 1,\n    \"model\": \"text-embedding-ada-002\",\n    \"stream\": true\n}",
+							"raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"responseLengthTokens\": 1,\n    \"stream\": true\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3140,7 +3140,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test('Status code should be ok 200', function () {",
+									"pm.test('Status code should be ok 20', function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
@@ -3431,11 +3431,19 @@
 	],
 	"variable": [
 		{
+			"key": "seoId",
+			"value": ""
+		},
+		{
+			"key": "seoText",
+			"value": ""
+		},
+		{
 			"key": "seoIndex",
 			"value": ""
 		},
 		{
-			"key": "seoId",
+			"key": "seos",
 			"value": ""
 		},
 		{
@@ -3444,18 +3452,6 @@
 		},
 		{
 			"key": "seoContentTypeVar",
-			"value": ""
-		},
-		{
-			"key": "seos",
-			"value": ""
-		},
-		{
-			"key": "seoText",
-			"value": ""
-		},
-		{
-			"key": "key",
 			"value": ""
 		}
 	]
