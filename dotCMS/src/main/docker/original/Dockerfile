@@ -1,7 +1,9 @@
 # ----------------------------------------------
 # Stage 1: Construct our container using the minimal-java image and copying the prebuilt dotcms
 # ----------------------------------------------
-ARG SDKMAN_JAVA_VERSION="11.0.22-ms"
+# Need to specify the SDKMAN_JAVA_VERSION to a valid sdkman java version that is available in the dotcms/java-base image
+ARG SDKMAN_JAVA_VERSION="SDKMAN_JAVA_VERSION_ARG_NOT_SET"
+
 FROM dotcms/java-base:${SDKMAN_JAVA_VERSION} AS container-base
 WORKDIR /srv
 

@@ -73,6 +73,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Get SDKMan Version
+        id: get-sdkman-version
+        shell: bash
+        run: |
+          if [ -f .sdkmanrc ]; then
+            SDKMAN_JAVA_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
+            echo "using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
+            echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_OUTPUT
+          else
+            echo "No .sdkmanrc file found"
+            exit 1
+          fi
+
       # Clean up the runner to ensure a fresh environment
       - uses: ./.github/actions/core-cicd/cleanup-runner
 
@@ -91,6 +104,9 @@ jobs:
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          build_args: |
+            DOTCMS_DOCKER_TAG=${{ inputs.environment }}
+            SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
 
       # Build and push the dev Docker image (if required)
       - name: Build/Push Docker Dev Image
@@ -110,7 +126,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           build_args: |
             DOTCMS_DOCKER_TAG=${{ inputs.environment }}
-            DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }} 
+            DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }}
+            SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
 
       # Deploy CLI artifacts to JFrog Artifactory
       - name: CLI Deploy
