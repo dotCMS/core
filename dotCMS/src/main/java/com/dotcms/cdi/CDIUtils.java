@@ -1,6 +1,8 @@
 package com.dotcms.cdi;
 
 
+import com.dotmarketing.util.Logger;
+import java.util.Optional;
 import javax.enterprise.inject.spi.CDI;
 
 public class CDIUtils {
@@ -8,8 +10,13 @@ public class CDIUtils {
     private CDIUtils() {
     }
 
-    public static <T> T getBean(Class<T> clazz) {
-        return CDI.current().select(clazz).get();
+    public static <T> Optional<T> getBean(Class<T> clazz) {
+           try {
+               return Optional.of(CDI.current().select(clazz).get());
+           } catch (Exception e) {
+               Logger.error(CDIUtils.class, String.format("Error getting bean of class [%s]",clazz), e);
+               return Optional.empty();
+           }
     }
 
 
