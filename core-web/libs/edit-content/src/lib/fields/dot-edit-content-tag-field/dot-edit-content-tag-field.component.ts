@@ -5,6 +5,7 @@ import { AbstractControl, ControlContainer, ReactiveFormsModule } from '@angular
 import { AutoCompleteModule } from 'primeng/autocomplete';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotSelectItemDirective } from '@dotcms/ui';
 
 import { AutoCompleteCompleteEvent } from '../../models/dot-edit-content-tag.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
@@ -12,7 +13,7 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 @Component({
     selector: 'dot-edit-content-tag-field',
     standalone: true,
-    imports: [CommonModule, AutoCompleteModule, ReactiveFormsModule],
+    imports: [CommonModule, AutoCompleteModule, ReactiveFormsModule, DotSelectItemDirective],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {

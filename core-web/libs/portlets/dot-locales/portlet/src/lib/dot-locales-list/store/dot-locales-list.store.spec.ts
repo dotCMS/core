@@ -106,7 +106,7 @@ describe('DotLocalesListStore', () => {
         jest.spyOn(dotPushPublishDialogService, 'open');
 
         spectator.service.vm$.subscribe((viewModel) => {
-            const pushPublishMenuItem = viewModel.locales[0].actions[1].menuItem;  
+            const pushPublishMenuItem = viewModel.locales[0].actions[1].menuItem;
             pushPublishMenuItem.command();
 
             expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
