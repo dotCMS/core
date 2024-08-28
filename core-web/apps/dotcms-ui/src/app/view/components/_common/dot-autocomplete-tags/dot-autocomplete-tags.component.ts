@@ -95,11 +95,10 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
      * @memberof DotAutocompleteTagsComponent
      */
     removeItem(event: AutoCompleteUnselectEvent): void {
+        this.propagateChange(this.getStringifyLabels());
         if (event?.value) {
             this.lastDeletedTag = event.value;
         }
-
-        this.propagateChange(this.getStringifyLabels());
     }
     /**
      * Set the function to be called when the control receives a change event.
