@@ -68,7 +68,6 @@ public class ContainerUUID implements Serializable{
             this.historyUUIDs = new ArrayList<>();
         } else {
             this.historyUUIDs = UtilMethods.isSet(historyUUIDs) ? new ArrayList<>(historyUUIDs) : list(this.uuid);
-            ;
         }
     }
 
