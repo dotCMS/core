@@ -14,8 +14,7 @@ import { PageApiOptions, PageError } from '../pages.component';
 })
 export class PageService {
   private readonly client = inject(DOTCMS_CLIENT_TOKEN);
-  private navObservable: Observable<DotcmsNavigationItem | null> =
-    this.fetchNavigation();
+  private navObservable!: Observable<DotcmsNavigationItem | null>;
 
   /**
    * Get the page and navigation for the given route and config.
@@ -25,10 +24,14 @@ export class PageService {
    * @return {*}  {(Observable<{ page: DotCMSPageAsset | { error: PageError }; nav: DotcmsNavigationItem }>)}
    * @memberof PageService
    */
-  getPage(
+  getPageAndNavigation(
     route: ActivatedRoute,
     config: any
   ): Observable<{ page: DotCMSPageAsset | { error: PageError }; nav: DotcmsNavigationItem }> {
+    if (!this.navObservable) {
+      this.navObservable = this.fetchNavigation(route);
+    }
+
     return this.fetchPage(route, config).pipe(
       switchMap((page) =>
         this.navObservable.pipe(
@@ -39,13 +42,13 @@ export class PageService {
     );
   }
 
-  private fetchNavigation(): Observable<DotcmsNavigationItem | null> {
+  private fetchNavigation(route: ActivatedRoute): Observable<DotcmsNavigationItem | null> {
     return from(
       this.client.nav
         .get({
           path: '/',
           depth: 2,
-          languageId: 1, // Default language ID
+          languageId: route.snapshot.params['languageId'] || 1
         })
         .then((response) => (response as any).entity)
     ).pipe(shareReplay(1));

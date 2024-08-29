@@ -79,7 +79,7 @@ export class DotCMSPagesComponent implements OnInit {
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
         startWith(null), // Trigger initial load
         tap(() => this.#setLoading()),
-        switchMap(() => this.pageService.getPage(this.route, this.editorCofig)),
+        switchMap(() => this.pageService.getPageAndNavigation(this.route, this.editorCofig)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(
