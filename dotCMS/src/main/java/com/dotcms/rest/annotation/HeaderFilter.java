@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import javax.ws.rs.ext.Provider;
 
 /**
  * This decorator reads the annotations on the resources and includes header based on it based on them.
@@ -31,6 +32,7 @@ import java.util.Optional;
  */
 @Singleton
 @Priority(Priorities.HEADER_DECORATOR)
+@Provider
 public class HeaderFilter implements ContainerResponseFilter {
 
 	private final PermissionsUtil  permissionsUtil			= PermissionsUtil.getInstance();

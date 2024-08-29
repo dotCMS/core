@@ -9,7 +9,7 @@ import { DotContainersServiceMock, MockDotMessageService } from '@dotcms/utils-t
 
 import { DotContainerOptionsDirective } from './dot-container-options.directive';
 
-const meta: Meta<Dropdown> = {
+const meta: Meta = {
     title: 'DotCMS/Container Options Directive',
     component: Dropdown,
     decorators: [
@@ -34,14 +34,13 @@ const meta: Meta<Dropdown> = {
     parameters: {
         layout: 'centered'
     },
-    render: () => {
-        return {
-            template: `<p-dropdown dotContainerOptions />`
-        };
-    }
+    render: (args) => ({
+        props: args,
+        template: `<p-dropdown placeholder="Select a container" dotContainerOptions />`
+    })
 };
 export default meta;
 
-type Story = StoryObj<Dropdown>;
+type Story = StoryObj;
 
 export const Base: Story = {};

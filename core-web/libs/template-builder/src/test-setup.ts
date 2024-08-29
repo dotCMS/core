@@ -1,12 +1,11 @@
 import 'jest-preset-angular/setup-jest';
 
-import { SplitButtonMockComponent, SplitButtonMockModule } from '@dotcms/utils-testing';
-
-/*
- * This is a workaround for the following PrimeNg issue: https://github.com/primefaces/primeng/issues/12945
- * They already fixed it, but it's not in the latest v15 LTS yet: https://github.com/primefaces/primeng/pull/13597
- */
-jest.mock('primeng/splitbutton', () => ({
-    SplitButtonModule: SplitButtonMockModule,
-    SplitButton: SplitButtonMockComponent
-}));
+// Workaround for the following issue:
+// https://github.com/jsdom/jsdom/issues/2177#issuecomment-1724971596
+const originalConsoleError = console.error;
+const jsDomCssError = 'Error: Could not parse CSS stylesheet';
+console.error = (...params) => {
+    if (!params.find((p) => p.toString().includes(jsDomCssError))) {
+        originalConsoleError(...params);
+    }
+};

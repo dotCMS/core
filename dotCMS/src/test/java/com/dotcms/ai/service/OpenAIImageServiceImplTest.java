@@ -220,7 +220,8 @@ public class OpenAIImageServiceImplTest {
     }
 
     private JSONObject prepareJsonObject(final String prompt, final boolean tempFileError) throws Exception {
-        when(config.getImageModel()).thenReturn(AIModel.builder().withType(AIModelType.IMAGE).withNames("some-image-model").build());
+        when(config.getImageModel())
+                .thenReturn(AIModel.builder().withType(AIModelType.IMAGE).withModelNames("some-image-model").build());
         when(config.getImageSize()).thenReturn("some-image-size");
         final File file = mock(File.class);
         when(file.getName()).thenReturn(UUIDGenerator.shorty());
