@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.immutables.value.Value.Default;
 
 /**
  * Abstract interface for an immutable Job class. This interface defines the structure for job
@@ -24,8 +26,10 @@ public interface AbstractJob {
 
     JobState state();
 
+    @Nullable
     LocalDateTime createdAt();
 
+    @Nullable
     LocalDateTime updatedAt();
 
     Optional<LocalDateTime> completedAt();
@@ -34,17 +38,26 @@ public interface AbstractJob {
 
     Map<String, Object> parameters();
 
-    String executionNode();
-
+    @Nullable
     Throwable lastException();
 
+    @Nullable
     com.dotcms.jobs.business.error.ErrorDetail errorDetail();
 
-    int retryCount();
+    @Default
+    default int retryCount() {
+        return 0;
+    }
 
-    long lastRetryTimestamp();
+    @Default
+    default long lastRetryTimestamp() {
+        return 0;
+    }
 
-    float progress();
+    @Default
+    default float progress() {
+        return 0.0f;
+    }
 
     /**
      * Creates a new Job with an incremented retry count and updated timestamp.
@@ -52,7 +65,7 @@ public interface AbstractJob {
      * @return A new Job instance with updated retry information.
      */
     default Job incrementRetry() {
-        return AbstractJob.builder().from(this)
+        return Job.builder().from(this)
                 .retryCount(retryCount() + 1)
                 .lastRetryTimestamp(System.currentTimeMillis())
                 .build();
@@ -65,7 +78,7 @@ public interface AbstractJob {
      * @return A new Job instance marked as failed.
      */
     default Job markAsFailed(com.dotcms.jobs.business.error.ErrorDetail errorDetail) {
-        return AbstractJob.builder().from(this)
+        return Job.builder().from(this)
                 .state(JobState.FAILED)
                 .result(JobResult.ERROR)
                 .errorDetail(errorDetail)
@@ -80,7 +93,7 @@ public interface AbstractJob {
      * @return A new Job instance with the updated state.
      */
     default Job withState(JobState newState) {
-        return AbstractJob.builder().from(this)
+        return Job.builder().from(this)
                 .state(newState)
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -92,20 +105,12 @@ public interface AbstractJob {
      * @return A new Job instance marked as completed.
      */
     default Job markAsCompleted() {
-        return AbstractJob.builder().from(this)
+        return Job.builder().from(this)
                 .state(JobState.COMPLETED)
                 .result(JobResult.SUCCESS)
                 .completedAt(Optional.of(LocalDateTime.now()))
                 .updatedAt(LocalDateTime.now())
                 .build();
-    }
-
-    class Builder extends Job.Builder {
-
-    }
-
-    static Builder builder() {
-        return new Builder();
     }
 
 }

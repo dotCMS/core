@@ -250,7 +250,10 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
                 try {
 
+                    Logger.info(this, "Cancelling job " + jobId);
+
                     processor.cancel(job);
+
                     Job cancelledJob = job.withState(JobState.CANCELLED);
                     jobQueue.updateJobStatus(cancelledJob);
                     notifyJobWatchers(cancelledJob);

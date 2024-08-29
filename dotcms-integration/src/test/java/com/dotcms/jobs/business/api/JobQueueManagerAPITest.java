@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
+import com.dotcms.jobs.business.error.JobProcessingException;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobState;
@@ -35,6 +36,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -811,7 +814,7 @@ public class JobQueueManagerAPITest {
     }
 
     @Test
-    public void testCircuitBreakerCloses() throws Exception {
+    public void test_CircuitBreaker_Closes() throws Exception {
 
         // Create a job that initially fails but then succeeds
         Job mockJob = mock(Job.class);
@@ -879,7 +882,7 @@ public class JobQueueManagerAPITest {
     }
 
     @Test
-    public void testManualCircuitBreakerReset() throws Exception {
+    public void test_CircuitBreaker_Reset() throws Exception {
 
         // Create a failing job
         Job failingJob = mock(Job.class);
@@ -927,6 +930,116 @@ public class JobQueueManagerAPITest {
         assertTrue("Circuit breaker should be closed after reset", circuitBreaker.allowRequest());
         assertEquals(0, circuitBreaker.getFailureCount(), "Failure count should be reset to 0");
 
+        jobQueueManagerAPI.close();
+    }
+
+    @Test
+    public void test_Job_Cancellation() throws Exception {
+
+        class TestJobProcessor implements JobProcessor {
+
+            private volatile boolean cancellationRequested = false;
+            private final CountDownLatch processingStarted = new CountDownLatch(1);
+            private final CountDownLatch processingCompleted = new CountDownLatch(1);
+
+            @Override
+            public void process(Job job) throws JobProcessingException {
+                processingStarted.countDown();
+                try {
+                    while (!cancellationRequested) {
+                        // Simulate some work
+                        Thread.sleep(100);
+                    }
+                    throw new InterruptedException("Job cancelled");
+                } catch (InterruptedException e) {
+                    processingCompleted.countDown();
+                    throw new JobProcessingException(job.id(), "Job was cancelled", e);
+                }
+            }
+
+            @Override
+            public boolean canCancel(Job job) {
+                return true;
+            }
+
+            @Override
+            public void cancel(Job job) {
+                cancellationRequested = true;
+            }
+
+            public boolean awaitProcessingStart(long timeout, TimeUnit unit)
+                    throws InterruptedException {
+                return processingStarted.await(timeout, unit);
+            }
+
+            public boolean awaitProcessingCompleted(long timeout, TimeUnit unit)
+                    throws InterruptedException {
+                return processingCompleted.await(timeout, unit);
+            }
+        }
+
+        // Create a real job
+        Job job = Job.builder()
+                .id("job123")
+                .queueName("testQueue")
+                .state(JobState.PENDING)
+                .build();
+
+        // Use our TestJobProcessor
+        TestJobProcessor testJobProcessor = new TestJobProcessor();
+
+        // Configure JobQueue
+        when(mockJobQueue.getJob("job123")).thenReturn(job);
+        when(mockJobQueue.nextJob()).thenReturn(job).thenReturn(null);
+
+        // List to capture job state updates
+        List<JobState> stateUpdates = new CopyOnWriteArrayList<>();
+
+        // Set up a job watcher to capture state updates
+        jobQueueManagerAPI.watchJob("job123", updatedJob -> {
+            stateUpdates.add(updatedJob.state());
+        });
+
+        // Register the test processor
+        jobQueueManagerAPI.registerProcessor("testQueue", testJobProcessor);
+
+        // Configure circuit breaker
+        when(mockCircuitBreaker.allowRequest()).thenReturn(true);
+
+        // Start the job queue manager
+        jobQueueManagerAPI.start();
+
+        // Wait for the job to start processing
+        Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(() -> testJobProcessor.awaitProcessingStart(100, TimeUnit.MILLISECONDS));
+
+        // Cancel the job
+        jobQueueManagerAPI.cancelJob("job123");
+
+        // Wait for the job to complete (which should be due to cancellation)
+        Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .until(() -> testJobProcessor.awaitProcessingCompleted(100, TimeUnit.MILLISECONDS));
+
+        // Wait for state updates to be captured
+        Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(() -> stateUpdates.size() >= 3);
+
+        // Verify the job state transitions
+        assertFalse("No state updates were captured", stateUpdates.isEmpty());
+        assertEquals(JobState.PENDING, stateUpdates.get(0), "Initial state should be PENDING");
+        assertTrue("Job state should have transitioned to RUNNING",
+                stateUpdates.contains(JobState.RUNNING));
+        assertEquals(JobState.CANCELLED, stateUpdates.get(stateUpdates.size() - 1),
+                "Final state should be CANCELLED");
+
+        // Verify that the job status was updated in the queue
+        verify(mockJobQueue, timeout(5000)).
+                updateJobStatus(argThat(j -> j.state() == JobState.CANCELLED));
+
+        // Clean up
         jobQueueManagerAPI.close();
     }
 
