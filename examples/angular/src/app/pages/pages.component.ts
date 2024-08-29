@@ -18,17 +18,14 @@ import {
   DotcmsNavigationItem,
   DotCMSPageAsset,
 } from '@dotcms/angular';
-import { JsonPipe } from '@angular/common';
-import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
 import { map, switchMap } from 'rxjs/operators';
 
-import { getPageRequestParams } from '@dotcms/client';
-import { from } from 'rxjs';
 import { ErrorComponent } from './components/error/error.component';
 import { LoadingComponent } from './components/loading/loading.component';
 import { HeaderComponent } from './components/header/header.component';
 import { NavigationComponent } from './components/navigation/navigation.component';
 import { FooterComponent } from './components/footer/footer.component';
+import { PageService } from './services/page.service';
 
 export type PageError = {
   message: string;
@@ -50,7 +47,6 @@ type PageRender = {
     HeaderComponent,
     NavigationComponent,
     FooterComponent,
-    JsonPipe,
     ErrorComponent,
     LoadingComponent,
   ],
@@ -61,7 +57,7 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
-
+  private readonly pageService = inject(PageService);
   protected readonly context = signal<PageRender>({
     page: null,
     nav: null,
@@ -69,10 +65,8 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
     status: 'idle',
   });
   protected readonly components = signal<any>(DYNAMIC_COMPONENTS);
-  private readonly client = inject(DOTCMS_CLIENT_TOKEN);
 
   protected readonly editorCofig = { params: { depth: '2' } };
-  protected slug: string | null = null;
 
   ngOnInit() {
     this.router.events
@@ -82,40 +76,7 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
         tap(() => {
           this.context.update((state) => ({ ...state, status: 'loading' }));
         }),
-        switchMap(() => {
-          const queryParams = this.route.snapshot.queryParamMap;
-          const url = this.route.snapshot.url.map((segment) => segment.path).join('/')
-          const path = queryParams.get('path') || url || '/';
-
-          const pageParams = getPageRequestParams({
-            path,
-            params: queryParams,
-          });
-          const pagePromise = this.client.page
-            .get(pageParams)
-            .catch((error) => ({
-              error: {
-                message: error.message,
-                status: error.status,
-              },
-            })) as Promise<DotCMSPageAsset | { error: PageError }>;
-
-          const navParams = {
-            path: '/',
-            depth: 2,
-            languageId: parseInt(queryParams.get('languageId') || '1'),
-          };
-          const navPromise = this.client.nav
-            .get(navParams)
-            .then((response) => (response as any).entity)
-            .catch((error) => null) as Promise<DotcmsNavigationItem | null>;
-
-          return from(Promise.all([pagePromise, navPromise]));
-        }),
-        map(([page, navResponse]) => ({
-          page,
-          nav: navResponse,
-        })),
+        switchMap(() => this.pageService.getPage(this.route)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(
