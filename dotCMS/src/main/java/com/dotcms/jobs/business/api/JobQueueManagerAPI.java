@@ -1,5 +1,6 @@
 package com.dotcms.jobs.business.api;
 
+import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.ProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
@@ -14,7 +15,7 @@ import java.util.function.Consumer;
  * Defines the contract for interacting with the job queue system. This interface provides methods
  * for managing jobs, processors, and the overall state of the job queue.
  */
-public interface JobQueueAPI extends AutoCloseable {
+public interface JobQueueManagerAPI extends AutoCloseable {
 
     /**
      * Starts the job queue manager, initializing the thread pool for job processing.
@@ -108,16 +109,10 @@ public interface JobQueueAPI extends AutoCloseable {
     void setRetryStrategy(String queueName, RetryStrategy retryStrategy);
 
     /**
-     * Manually resets the CircuitBreaker. This should be called with caution, typically after
-     * addressing the underlying issues causing failures.
-     */
-    void resetCircuitBreaker();
-
-    /**
-     * Provides information about the current state of the CircuitBreaker.
+     * Retrieves the CircuitBreaker instance.
      *
-     * @return A string representation of the CircuitBreaker's current status
+     * @return The CircuitBreaker instance
      */
-    String getCircuitBreakerStatus();
+    CircuitBreaker getCircuitBreaker();
 
 }

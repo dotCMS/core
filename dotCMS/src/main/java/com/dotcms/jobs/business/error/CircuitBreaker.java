@@ -1,5 +1,7 @@
 package com.dotcms.jobs.business.error;
 
+import com.dotmarketing.util.Logger;
+
 /**
  * Implements the Circuit Breaker pattern to prevent repeated failures in a system. It helps to
  * avoid cascading failures by temporarily disabling operations that are likely to fail.
@@ -63,6 +65,9 @@ public class CircuitBreaker {
      * Manually resets the circuit breaker to a closed state.
      */
     public synchronized void reset() {
+
+        Logger.info(this, "Manually resetting CircuitBreaker");
+
         isOpen = false;
         failureCount = 0;
         lastFailureTime = 0;

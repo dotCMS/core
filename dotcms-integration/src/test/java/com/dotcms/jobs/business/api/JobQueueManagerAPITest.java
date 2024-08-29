@@ -20,6 +20,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
@@ -45,7 +46,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
-public class JobQueueAPITest {
+public class JobQueueManagerAPITest {
 
     private JobQueue mockJobQueue;
 
@@ -53,7 +54,9 @@ public class JobQueueAPITest {
 
     private RetryStrategy mockRetryStrategy;
 
-    private JobQueueAPIImpl jobQueueAPI;
+    private CircuitBreaker mockCircuitBreaker;
+
+    private JobQueueManagerAPIImpl jobQueueManagerAPI;
 
     @Before
     public void setUp() {
@@ -61,10 +64,11 @@ public class JobQueueAPITest {
         mockJobQueue = mock(JobQueue.class);
         mockJobProcessor = mock(JobProcessor.class);
         mockRetryStrategy = mock(RetryStrategy.class);
+        mockCircuitBreaker = mock(CircuitBreaker.class);
 
-        jobQueueAPI = new JobQueueAPIImpl(mockJobQueue, 1);
-        jobQueueAPI.registerProcessor("testQueue", mockJobProcessor);
-        jobQueueAPI.setRetryStrategy("testQueue", mockRetryStrategy);
+        jobQueueManagerAPI = new JobQueueManagerAPIImpl(mockJobQueue, 1, mockCircuitBreaker);
+        jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
+        jobQueueManagerAPI.setRetryStrategy("testQueue", mockRetryStrategy);
     }
 
     @Test
@@ -74,7 +78,7 @@ public class JobQueueAPITest {
         when(mockJobQueue.addJob(anyString(), anyMap())).thenReturn("job123");
 
         // Creating a job
-        String jobId = jobQueueAPI.createJob("testQueue", parameters);
+        String jobId = jobQueueManagerAPI.createJob("testQueue", parameters);
 
         assertEquals("job123", jobId);
         verify(mockJobQueue).addJob("testQueue", parameters);
@@ -87,7 +91,7 @@ public class JobQueueAPITest {
         when(mockJobQueue.getJob("job123")).thenReturn(mockJob);
 
         // Getting a job
-        Job result = jobQueueAPI.getJob("job123");
+        Job result = jobQueueManagerAPI.getJob("job123");
 
         assertEquals(mockJob, result);
         verify(mockJobQueue).getJob("job123");
@@ -105,7 +109,7 @@ public class JobQueueAPITest {
         when(mockJobQueue.getJobs(1, 10)).thenReturn(expectedJobs);
 
         // Call the method under test
-        List<Job> actualJobs = jobQueueAPI.getJobs(1, 10);
+        List<Job> actualJobs = jobQueueManagerAPI.getJobs(1, 10);
 
         // Verify the results
         assertEquals(expectedJobs, actualJobs);
@@ -123,7 +127,7 @@ public class JobQueueAPITest {
 
         when(mockJobProcessor.canCancel(mockJob)).thenReturn(true);
 
-        jobQueueAPI.cancelJob("job123");
+        jobQueueManagerAPI.cancelJob("job123");
 
         verify(mockJobProcessor).cancel(mockJob);
         verify(mockJobQueue).updateJobStatus(any(Job.class));
@@ -132,12 +136,15 @@ public class JobQueueAPITest {
     @Test
     public void test_start() throws InterruptedException {
 
-        assertFalse(jobQueueAPI.isStarted());
+        // Make the circuit breaker always allow requests
+        when(mockCircuitBreaker.allowRequest()).thenReturn(true);
 
-        jobQueueAPI.start();
+        assertFalse(jobQueueManagerAPI.isStarted());
 
-        assertTrue(jobQueueAPI.isStarted());
-        assertTrue(jobQueueAPI.awaitStart(5, TimeUnit.SECONDS));
+        jobQueueManagerAPI.start();
+
+        assertTrue(jobQueueManagerAPI.isStarted());
+        assertTrue(jobQueueManagerAPI.awaitStart(5, TimeUnit.SECONDS));
 
         // Verify that jobs are being processed
         verify(mockJobQueue, timeout(5000).atLeastOnce()).nextJob();
@@ -146,10 +153,10 @@ public class JobQueueAPITest {
     @Test
     public void test_close() throws Exception {
 
-        // Start the JobQueueAPI
-        jobQueueAPI.start();
-        assertTrue(jobQueueAPI.isStarted());
-        assertTrue(jobQueueAPI.awaitStart(5, TimeUnit.SECONDS));
+        // Start the JobQueueManagerAPI
+        jobQueueManagerAPI.start();
+        assertTrue(jobQueueManagerAPI.isStarted());
+        assertTrue(jobQueueManagerAPI.awaitStart(5, TimeUnit.SECONDS));
 
         AtomicInteger jobCheckCount = new AtomicInteger(0);
         when(mockJobQueue.nextJob()).thenAnswer(invocation -> {
@@ -157,14 +164,14 @@ public class JobQueueAPITest {
             return null;
         });
 
-        // Close the JobQueueAPI
-        jobQueueAPI.close();
+        // Close the JobQueueManagerAPI
+        jobQueueManagerAPI.close();
 
-        // Wait for the JobQueueAPI to be fully stopped
+        // Wait for the JobQueueManagerAPI to be fully stopped
         Awaitility.await()
                 .atMost(10, TimeUnit.SECONDS)
                 .pollInterval(100, TimeUnit.MILLISECONDS)
-                .until(() -> !jobQueueAPI.isStarted());
+                .until(() -> !jobQueueManagerAPI.isStarted());
 
         // Verify that no more jobs are being processed
         Awaitility.await()
@@ -187,13 +194,13 @@ public class JobQueueAPITest {
                 .pollInterval(100, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> verify(mockJobProcessor, never()).process(any(Job.class)));
 
-        // Verify that we can't start the JobQueueAPIImpl again after closing
-        jobQueueAPI.start();
-        assertFalse(jobQueueAPI.isStarted());
+        // Verify that we can't start the JobQueueManagerAPIImpl again after closing
+        jobQueueManagerAPI.start();
+        assertFalse(jobQueueManagerAPI.isStarted());
 
         // Verify that close() can be called multiple times without error
-        jobQueueAPI.close();
-        assertFalse(jobQueueAPI.isStarted());
+        jobQueueManagerAPI.close();
+        assertFalse(jobQueueManagerAPI.isStarted());
     }
 
     @Test
@@ -223,6 +230,9 @@ public class JobQueueAPITest {
         when(mockJobQueue.getJob(jobId)).thenReturn(initialJob);
         when(mockJobQueue.nextJob()).thenReturn(initialJob).thenReturn(null);
 
+        // Make the circuit breaker always allow requests
+        when(mockCircuitBreaker.allowRequest()).thenReturn(true);
+
         // Mock JobProcessor behavior
         ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
         when(mockJobProcessor.progressTracker(any())).thenReturn(mockProgressTracker);
@@ -239,11 +249,11 @@ public class JobQueueAPITest {
             capturedStates.add(job.state());
         };
 
-        // Start the JobQueueAPI
-        jobQueueAPI.start();
+        // Start the JobQueueManagerAPI
+        jobQueueManagerAPI.start();
 
         // Register the watcher
-        jobQueueAPI.watchJob(jobId, testWatcher);
+        jobQueueManagerAPI.watchJob(jobId, testWatcher);
 
         // Wait for job processing to complete
         Awaitility.await()
@@ -261,8 +271,8 @@ public class JobQueueAPITest {
         assertTrue(capturedStates.contains(JobState.RUNNING));
         assertTrue(capturedStates.contains(JobState.COMPLETED));
 
-        // Stop the JobQueueAPI
-        jobQueueAPI.close();
+        // Stop the JobQueueManagerAPI
+        jobQueueManagerAPI.close();
     }
 
     @Test
@@ -299,6 +309,9 @@ public class JobQueueAPITest {
         // Set up the job queue to return our mock job twice (for initial attempt and retry)
         when(mockJobQueue.nextJob()).thenReturn(mockJob, mockJob, null);
 
+        // Make the circuit breaker always allow requests
+        when(mockCircuitBreaker.allowRequest()).thenReturn(true);
+
         // Configure retry strategy
         when(mockRetryStrategy.shouldRetry(any(), any())).thenReturn(true);
         when(mockRetryStrategy.nextRetryDelay(any())).thenReturn(0L); // Immediate retry
@@ -321,7 +334,7 @@ public class JobQueueAPITest {
         }).when(mockJobProcessor).process(any());
 
         // Start the job queue
-        jobQueueAPI.start();
+        jobQueueManagerAPI.start();
 
         // Wait for job processing to complete
         Awaitility.await().atMost(10, TimeUnit.SECONDS)
@@ -340,7 +353,7 @@ public class JobQueueAPITest {
         assertEquals(1, retryCount.get());
 
         // Stop the job queue
-        jobQueueAPI.close();
+        jobQueueManagerAPI.close();
     }
 
     @Test
@@ -386,6 +399,9 @@ public class JobQueueAPITest {
         when(mockRetryStrategy.shouldRetry(any(), any())).thenReturn(true);
         when(mockRetryStrategy.nextRetryDelay(any())).thenReturn(100L); // Non-zero delay
 
+        // Make the circuit breaker always allow requests
+        when(mockCircuitBreaker.allowRequest()).thenReturn(true);
+
         // Configure progress tracker
         ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
         when(mockJobProcessor.progressTracker(any())).thenReturn(mockProgressTracker);
@@ -405,7 +421,7 @@ public class JobQueueAPITest {
         }).when(mockJobProcessor).process(any());
 
         // Start the job queue
-        jobQueueAPI.start();
+        jobQueueManagerAPI.start();
 
         // Wait for job processing to complete
         Awaitility.await().atMost(10, TimeUnit.SECONDS)
@@ -434,7 +450,7 @@ public class JobQueueAPITest {
         verify(mockJobQueue, atLeast(3)).nextJob();
 
         // Stop the job queue
-        jobQueueAPI.close();
+        jobQueueManagerAPI.close();
     }
 
     @Test
@@ -476,6 +492,9 @@ public class JobQueueAPITest {
                 inv -> retryCount.get() < maxRetries);
         when(mockRetryStrategy.nextRetryDelay(any())).thenReturn(0L);
 
+        // Make the circuit breaker always allow requests
+        when(mockCircuitBreaker.allowRequest()).thenReturn(true);
+
         // Configure progress tracker
         ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
         when(mockJobProcessor.progressTracker(any())).thenReturn(mockProgressTracker);
@@ -484,7 +503,7 @@ public class JobQueueAPITest {
         doThrow(new RuntimeException("Simulated failure")).when(mockJobProcessor).process(any());
 
         // Start the job queue
-        jobQueueAPI.start();
+        jobQueueManagerAPI.start();
 
         // Wait for job processing to complete
         Awaitility.await().atMost(10, TimeUnit.SECONDS)
@@ -502,7 +521,7 @@ public class JobQueueAPITest {
         verify(mockJobQueue, times(1)).removeJob(mockJob.id());
 
         // Stop the job queue
-        jobQueueAPI.close();
+        jobQueueManagerAPI.close();
     }
 
     @Test
@@ -512,6 +531,9 @@ public class JobQueueAPITest {
         Job mockJob = mock(Job.class);
         when(mockJob.id()).thenReturn("job123");
         when(mockJob.queueName()).thenReturn("testQueue");
+
+        // Make the circuit breaker always allow requests
+        when(mockCircuitBreaker.allowRequest()).thenReturn(true);
 
         AtomicReference<JobState> jobState = new AtomicReference<>(JobState.PENDING);
 
@@ -542,7 +564,7 @@ public class JobQueueAPITest {
         }).when(mockJobProcessor).process(any());
 
         // Start the job queue
-        jobQueueAPI.start();
+        jobQueueManagerAPI.start();
 
         // Wait for job processing to complete
         Awaitility.await().atMost(10, TimeUnit.SECONDS)
@@ -559,7 +581,7 @@ public class JobQueueAPITest {
                 argThat(job -> job.state() == JobState.COMPLETED));
 
         // Stop the job queue
-        jobQueueAPI.close();
+        jobQueueManagerAPI.close();
     }
 
     @Test
@@ -588,6 +610,9 @@ public class JobQueueAPITest {
         // Configure retry strategy to not retry
         when(mockRetryStrategy.shouldRetry(any(), any())).thenReturn(false);
 
+        // Make the circuit breaker always allow requests
+        when(mockCircuitBreaker.allowRequest()).thenReturn(true);
+
         // Configure progress tracker
         ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
         when(mockJobProcessor.progressTracker(any())).thenReturn(mockProgressTracker);
@@ -598,7 +623,7 @@ public class JobQueueAPITest {
         doThrow(new RuntimeException("Non-retryable error")).when(mockJobProcessor).process(any());
 
         // Start the job queue
-        jobQueueAPI.start();
+        jobQueueManagerAPI.start();
 
         // Wait for job processing to complete
         Awaitility.await().atMost(10, TimeUnit.SECONDS)
@@ -620,7 +645,7 @@ public class JobQueueAPITest {
         assertEquals("Non-retryable error", capturedErrorDetail.exception().getMessage());
 
         // Stop the job queue
-        jobQueueAPI.close();
+        jobQueueManagerAPI.close();
     }
 
     @Test
@@ -658,6 +683,9 @@ public class JobQueueAPITest {
         ProgressTracker realProgressTracker = new DefaultProgressTracker();
         when(mockJobProcessor.progressTracker(any())).thenReturn(realProgressTracker);
 
+        // Make the circuit breaker always allow requests
+        when(mockCircuitBreaker.allowRequest()).thenReturn(true);
+
         // List to store progress updates
         List<Float> progressUpdates = Collections.synchronizedList(new ArrayList<>());
 
@@ -678,12 +706,12 @@ public class JobQueueAPITest {
         }).when(mockJobProcessor).process(any());
 
         // Set up a job watcher to capture progress updates
-        jobQueueAPI.watchJob("progress-test-job", job -> {
+        jobQueueManagerAPI.watchJob("progress-test-job", job -> {
             progressUpdates.add(job.progress());
         });
 
         // Start the job queue
-        jobQueueAPI.start();
+        jobQueueManagerAPI.start();
 
         // Wait for job processing to complete
         Awaitility.await().atMost(10, TimeUnit.SECONDS)
@@ -720,7 +748,186 @@ public class JobQueueAPITest {
                 updateJobStatus(argThat(job -> job.state() == JobState.COMPLETED));
 
         // Stop the job queue
-        jobQueueAPI.close();
+        jobQueueManagerAPI.close();
+    }
+
+    @Test
+    public void test_CircuitBreaker_Opens() throws Exception {
+
+        // Create a job that always fails
+        Job failingJob = mock(Job.class);
+        when(failingJob.id()).thenReturn("job123");
+        when(failingJob.queueName()).thenReturn("testQueue");
+
+        // Set up the job queue to return the failing job a limited number of times
+        AtomicInteger jobCount = new AtomicInteger(0);
+        when(mockJobQueue.nextJob()).thenAnswer(invocation -> {
+            if (jobCount.getAndIncrement() < 10) { // Limit to 10 jobs
+                return failingJob;
+            }
+            return null;
+        });
+        when(mockJobQueue.getJob(anyString())).thenReturn(failingJob);
+        when(failingJob.withState(any())).thenReturn(failingJob);
+        when(failingJob.markAsFailed(any())).thenReturn(failingJob);
+
+        // Configure progress tracker
+        ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
+        when(mockJobProcessor.progressTracker(any())).thenReturn(mockProgressTracker);
+        when(failingJob.progress()).thenReturn(0f);
+        when(failingJob.withProgress(anyFloat())).thenReturn(failingJob);
+
+        // Configure the processor to always throw an exception
+        doThrow(new RuntimeException("Simulated failure")).when(mockJobProcessor).process(any());
+
+        // Create a real CircuitBreaker with a low threshold for testing
+        CircuitBreaker circuitBreaker = new CircuitBreaker(5, 60000);
+
+        // Create JobQueueManagerAPIImpl with the real CircuitBreaker
+        jobQueueManagerAPI = new JobQueueManagerAPIImpl(mockJobQueue, 1, circuitBreaker);
+        jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
+
+        // Start the job queue
+        jobQueueManagerAPI.start();
+
+        // Wait for the circuit breaker to open (should happen after 5 failures)
+        Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .until(() -> !circuitBreaker.allowRequest());
+
+        // Verify that the correct number of jobs were processed before the circuit opened
+        verify(mockJobProcessor, times(5)).process(any());
+
+        // Verify that no more jobs are processed while the circuit is open
+        Thread.sleep(1000); // Wait a bit to ensure no more processing attempts
+        verify(mockJobProcessor, times(5)).process(any());
+
+        // Verify the final circuit breaker status
+        assertTrue("Circuit breaker should be open", !circuitBreaker.allowRequest());
+        assertEquals(5, circuitBreaker.getFailureCount(), "Failure count should be 5");
+
+        jobQueueManagerAPI.close();
+    }
+
+    @Test
+    public void testCircuitBreakerCloses() throws Exception {
+
+        // Create a job that initially fails but then succeeds
+        Job mockJob = mock(Job.class);
+        when(mockJob.id()).thenReturn("job123");
+        when(mockJob.queueName()).thenReturn("testQueue");
+
+        // Set up the job queue to return our job
+        when(mockJobQueue.nextJob()).thenReturn(mockJob);
+        when(mockJobQueue.getJob(anyString())).thenReturn(mockJob);
+        when(mockJob.withState(any())).thenReturn(mockJob);
+        when(mockJob.markAsFailed(any())).thenReturn(mockJob);
+
+        // Configure progress tracker
+        ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
+        when(mockJobProcessor.progressTracker(any())).thenReturn(mockProgressTracker);
+        when(mockJob.progress()).thenReturn(0f);
+        when(mockJob.withProgress(anyFloat())).thenReturn(mockJob);
+
+        // Configure the processor to fail 5 times and then succeed
+        AtomicInteger processCount = new AtomicInteger(0);
+        doAnswer(inv -> {
+            if (processCount.getAndIncrement() < 5) {
+                throw new RuntimeException("Simulated failure");
+            }
+
+            Job processingJob = inv.getArgument(0);
+            processingJob.markAsCompleted();
+            return null;
+        }).when(mockJobProcessor).process(any());
+
+        AtomicReference<JobState> jobState = new AtomicReference<>(JobState.PENDING);
+        when(mockJob.markAsCompleted()).thenAnswer(inv -> {
+            jobState.set(JobState.COMPLETED);
+            return mockJob;
+        });
+
+        // Create a real CircuitBreaker with a low threshold for testing
+        CircuitBreaker circuitBreaker = new CircuitBreaker(5,
+                1000); // Short reset timeout for testing
+
+        // Create JobQueueManagerAPIImpl with the real CircuitBreaker
+        jobQueueManagerAPI = new JobQueueManagerAPIImpl(mockJobQueue, 1, circuitBreaker);
+        jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
+
+        // Start the job queue
+        jobQueueManagerAPI.start();
+
+        // Wait for the circuit breaker to open
+        Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertFalse(circuitBreaker.allowRequest()));
+
+        // Wait for the circuit breaker to close
+        Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> {
+                    assertTrue(circuitBreaker.allowRequest());
+                    assertEquals(JobState.COMPLETED, jobState.get());
+                });
+
+        verify(mockJobProcessor, atLeast(6)).process(any());
+
+        jobQueueManagerAPI.close();
+    }
+
+    @Test
+    public void testManualCircuitBreakerReset() throws Exception {
+
+        // Create a failing job
+        Job failingJob = mock(Job.class);
+        when(failingJob.id()).thenReturn("job123");
+        when(failingJob.queueName()).thenReturn("testQueue");
+
+        // Set up the job queue to return the failing job
+        when(mockJobQueue.nextJob()).thenReturn(failingJob);
+        when(mockJobQueue.getJob(anyString())).thenReturn(failingJob);
+        when(failingJob.withState(any())).thenReturn(failingJob);
+        when(failingJob.markAsFailed(any())).thenReturn(failingJob);
+
+        // Configure progress tracker
+        ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
+        when(mockJobProcessor.progressTracker(any())).thenReturn(mockProgressTracker);
+        when(failingJob.progress()).thenReturn(0f);
+        when(failingJob.withProgress(anyFloat())).thenReturn(failingJob);
+
+        // Configure the processor to always throw an exception
+        doThrow(new RuntimeException("Simulated failure")).when(mockJobProcessor).process(any());
+
+        // Create a real CircuitBreaker with a low threshold for testing
+        CircuitBreaker circuitBreaker = new CircuitBreaker(5, 60000);
+
+        // Create JobQueueManagerAPIImpl with the real CircuitBreaker
+        jobQueueManagerAPI = new JobQueueManagerAPIImpl(mockJobQueue, 1, circuitBreaker);
+        jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
+
+        // Start the job queue
+        jobQueueManagerAPI.start();
+
+        // Wait for the circuit breaker to open
+        Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .until(() -> !circuitBreaker.allowRequest());
+
+        // Verify that the circuit breaker is open
+        assertFalse("Circuit breaker should be open", circuitBreaker.allowRequest());
+
+        // Manually reset the circuit breaker
+        circuitBreaker.reset();
+
+        // Verify that the circuit breaker is now closed
+        assertTrue("Circuit breaker should be closed after reset", circuitBreaker.allowRequest());
+        assertEquals(0, circuitBreaker.getFailureCount(), "Failure count should be reset to 0");
+
+        jobQueueManagerAPI.close();
     }
 
 }

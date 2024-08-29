@@ -15,7 +15,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,36 +37,36 @@ import java.util.function.Consumer;
  *         JobQueue jobQueue = new PostgresJobQueue();
  *
  *         // Create and start the job queue manager
- *         JobQueueAPIImpl jobQueueAPI = new JobQueueAPIImpl(jobQueue, 5); // 5 threads
+ *         JobQueueManagerAPIImpl jobQueueManagerAPI = new JobQueueManagerAPIImpl(jobQueue, 5); // 5 threads
  *
  *         //(Optional) Set up a retry strategy for content import jobs
  *         RetryStrategy contentImportRetryStrategy = new ExponentialBackoffRetryStrategy(5000, 300000, 2.0, 3);
  *         contentImportRetryStrategy.addRetryableException(IOException.class);
- *         jobQueueAPI.setRetryStrategy("contentImport", contentImportRetryStrategy);
+ *         jobQueueManagerAPI.setRetryStrategy("contentImport", contentImportRetryStrategy);
  *
  *         // Register job processors
- *         jobQueueAPI.registerProcessor("contentImport", new ContentImportJobProcessor());
+ *         jobQueueManagerAPI.registerProcessor("contentImport", new ContentImportJobProcessor());
  *
  *         // Start the job queue manager
- *         jobQueueAPI.start();
+ *         jobQueueManagerAPI.start();
  *
  *         // Create a content import job (dummy example)
  *         Map<String, Object> jobParameters = new HashMap<>();
  *         jobParameters.put("filePath", "/path/to/import/file.csv");
  *         jobParameters.put("contentType", "Article");
- *         String jobId = jobQueueAPI.createJob("contentImport", jobParameters);
+ *         String jobId = jobQueueManagerAPI.createJob("contentImport", jobParameters);
  *
  *         // Optionally, watch the job progress
- *         jobQueueAPI.watchJob(jobId, job -> {
+ *         jobQueueManagerAPI.watchJob(jobId, job -> {
  *             System.out.println("Job " + job.id() + " progress: " + job.progress() * 100 + "%");
  *         });
  *
  *         // When shutting down the application
- *         jobQueueAPI.close();
+ *         jobQueueManagerAPI.close();
  *     }
  * }</pre>
  */
-public class JobQueueAPIImpl implements JobQueueAPI {
+public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     private final AtomicBoolean isStarted = new AtomicBoolean(false);
     private CountDownLatch startLatch;
@@ -88,22 +87,22 @@ public class JobQueueAPIImpl implements JobQueueAPI {
     );
 
     /**
-     * Constructs a new JobQueueAPIImpl with the default job queue implementation and the default
+     * Constructs a new JobQueueManagerAPIImpl with the default job queue implementation and the default
      * number of threads.
      */
-    public JobQueueAPIImpl() {
+    public JobQueueManagerAPIImpl() {
         // TODO: Use a job queue implementation
         this(null, DEFAULT_THREAD_POOL_SIZE);
     }
 
     /**
-     * Constructs a new JobQueueAPIImpl.
+     * Constructs a new JobQueueManagerAPIImpl.
      *
      * @param jobQueue       The JobQueue implementation to use.
      * @param threadPoolSize The number of threads to use for job processing.
      */
     @VisibleForTesting
-    public JobQueueAPIImpl(JobQueue jobQueue, int threadPoolSize) {
+    public JobQueueManagerAPIImpl(JobQueue jobQueue, int threadPoolSize) {
         this.jobQueue = jobQueue;
         this.threadPoolSize = threadPoolSize;
         this.processors = new ConcurrentHashMap<>();
@@ -115,6 +114,26 @@ public class JobQueueAPIImpl implements JobQueueAPI {
         this.circuitBreaker = new CircuitBreaker(
                 5, 60000
         ); // 5 failures within 1 minute
+    }
+
+    /**
+     * Constructs a new JobQueueManagerAPIImpl.
+     *
+     * @param jobQueue       The JobQueue implementation to use.
+     * @param threadPoolSize The number of threads to use for job processing.
+     * @param circuitBreaker The CircuitBreaker implementation to use.
+     */
+    @VisibleForTesting
+    public JobQueueManagerAPIImpl(JobQueue jobQueue, int threadPoolSize, CircuitBreaker circuitBreaker) {
+        this.jobQueue = jobQueue;
+        this.threadPoolSize = threadPoolSize;
+        this.processors = new ConcurrentHashMap<>();
+        this.jobWatchers = new ConcurrentHashMap<>();
+        this.retryStrategies = new ConcurrentHashMap<>();
+        this.defaultRetryStrategy = new ExponentialBackoffRetryStrategy(
+                1000, 60000, 2.0, 5
+        );
+        this.circuitBreaker = circuitBreaker;
     }
 
     @Override
@@ -203,7 +222,7 @@ public class JobQueueAPIImpl implements JobQueueAPI {
 
         if (!processors.containsKey(queueName)) {
             final var error = new ProcessorNotFoundException(queueName);
-            Logger.error(JobQueueAPIImpl.class, error);
+            Logger.error(JobQueueManagerAPIImpl.class, error);
             throw error;
         }
 
@@ -237,17 +256,17 @@ public class JobQueueAPIImpl implements JobQueueAPI {
                     notifyJobWatchers(cancelledJob);
                 } catch (Exception e) {
                     final var error = new JobCancellationException(jobId, e.getMessage());
-                    Logger.error(JobQueueAPIImpl.class, error);
+                    Logger.error(JobQueueManagerAPIImpl.class, error);
                     throw error;
                 }
             } else {
                 final var error = new JobCancellationException(jobId, "Job cannot be cancelled");
-                Logger.error(JobQueueAPIImpl.class, error);
+                Logger.error(JobQueueManagerAPIImpl.class, error);
                 throw error;
             }
         } else {
             final var error = new JobCancellationException(jobId, "Job not found");
-            Logger.error(JobQueueAPIImpl.class, error);
+            Logger.error(JobQueueManagerAPIImpl.class, error);
             throw error;
         }
     }
@@ -265,19 +284,9 @@ public class JobQueueAPIImpl implements JobQueueAPI {
     }
 
     @Override
-    public void resetCircuitBreaker() {
-        Logger.info(this, "Manually resetting CircuitBreaker");
-        circuitBreaker.reset();
-    }
-
-    @Override
-    public String getCircuitBreakerStatus() {
-        return String.format("CircuitBreaker - Open: %b, Failure Count: %d, Last Failure: %s",
-                circuitBreaker.isOpen(),
-                circuitBreaker.getFailureCount(),
-                circuitBreaker.getLastFailureTime() > 0
-                        ? new Date(circuitBreaker.getLastFailureTime()).toString()
-                        : "N/A");
+    @VisibleForTesting
+    public CircuitBreaker getCircuitBreaker() {
+        return circuitBreaker;
     }
 
     /**
@@ -345,7 +354,7 @@ public class JobQueueAPIImpl implements JobQueueAPI {
                 Thread.currentThread().interrupt();
             } catch (Exception e) {
                 Logger.error(this, "Unexpected error in job processing loop: " + e.getMessage(), e);
-                circuitBreaker.recordFailure();
+                getCircuitBreaker().recordFailure();
             }
         }
     }
@@ -357,7 +366,7 @@ public class JobQueueAPIImpl implements JobQueueAPI {
      */
     private boolean isCircuitBreakerOpen() {
 
-        if (!circuitBreaker.allowRequest()) {
+        if (!getCircuitBreaker().allowRequest()) {
 
             Logger.warn(this, "Circuit breaker is open. Pausing job processing for a while.");
 
@@ -493,9 +502,13 @@ public class JobQueueAPIImpl implements JobQueueAPI {
      * @param errorDetail The details of the error that caused the failure.
      */
     private void handleJobFailure(final Job job, final ErrorDetail errorDetail) {
+
         final Job failedJob = job.markAsFailed(errorDetail);
         jobQueue.updateJobStatus(failedJob);
         notifyJobWatchers(failedJob);
+
+        // Record the failure in the circuit breaker
+        getCircuitBreaker().recordFailure();
     }
 
     /**
