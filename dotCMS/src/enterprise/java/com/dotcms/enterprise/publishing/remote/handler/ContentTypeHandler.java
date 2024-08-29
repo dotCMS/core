@@ -45,6 +45,11 @@
 
 package com.dotcms.enterprise.publishing.remote.handler;
 
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessage;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -54,7 +59,7 @@ import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RelationshipFieldBuilder;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundler;
@@ -64,7 +69,6 @@ import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.workflow.helper.SystemActionMappingsHandlerMerger;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -72,13 +76,13 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.PushPublishLogger.PushPublishAction;
@@ -86,12 +90,10 @@ import com.dotmarketing.util.PushPublishLogger.PushPublishHandler;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import io.vavr.control.Try;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -139,7 +141,7 @@ public class ContentTypeHandler implements IHandler {
 	public void handle(final File bundleFolder) throws Exception {
 
 	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
-	        throw new RuntimeException("need an enterprise pro license to run this");
+	        throw new DotRuntimeException("need an enterprise pro license to run this");
         }
 
 		final Collection<File> contentTypes = FileUtil.listFilesRecursively
@@ -152,65 +154,66 @@ public class ContentTypeHandler implements IHandler {
 
 	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
 
-	        throw new RuntimeException("need an enterprise pro license to run this");
+	        throw new DotRuntimeException("need an enterprise pro license to run this");
         }
 		File workingOn = null;
         ContentType contentType = null;
 		try {
 	        //Handle folders
 	        for(final File contentTypeFile: contentTypes) {
-				workingOn = contentTypeFile;
-	        	if(contentTypeFile.isDirectory()) {
-
-	        		continue;
+				if(contentTypeFile.isDirectory()) {
+					continue;
 				}
+
+				workingOn = contentTypeFile;
 
 	        	final ContentTypeWrapper contentTypeWrapper = BundlerUtil
 						.jsonToObject(contentTypeFile, ContentTypeWrapper.class);
 
-	        	contentType            = contentTypeWrapper.getContentType();
+				if(UtilMethods.isEmpty(()->contentTypeWrapper.getContentType().inode())){
+					continue;
+				}
+
+	        	contentType = contentTypeWrapper.getContentType();
+
 	        	final List<Field> fields                 = contentTypeWrapper.getFields();
 				final List<FieldVariable> fieldVariables = contentTypeWrapper.getFieldVariables();
 
-	        	ContentType localContentType = null;	        	
-	        	try {
-	        		localContentType = typeAPI.find(contentType.inode());
-	        	} catch (final NotFoundInDbException e) {
-	        		// The Content Type doesn't exist in the receiving instance. Just move on
-	        		localContentType = null;
-	        	}
 
-	        	final boolean localExists = localContentType != null && UtilMethods.isSet(localContentType.inode());
+				final Optional<ContentType> inodeType = Try.of(()->typeAPI.find(contentTypeWrapper.getContentType().inode())).toJavaOptional();
+				final Optional<ContentType> variableType = Try.of(()->typeAPI.find(contentTypeWrapper.getContentType().variable())).toJavaOptional();
 
-	        	if(contentTypeWrapper.getOperation().equals(Operation.UNPUBLISH)) {
-
-	        		// delete operation
-	        	    if(localExists) {
-	        	    	String contentTypeInode = localContentType.inode();
-	        	    	if(contentType.fixed()){
-							PushPublishLogger.error(getClass(), PushPublishHandler.CONTENT_TYPE, PushPublishAction.UNPUBLISH,
-									localContentType.id(), localContentType.inode(), localContentType.name(), config.getId(),
-									"Type is Fixed", null);
-	        	    		continue;
-	        	    	}
-
-						this.deleteContentType(localContentType);
-					}
-	        	} else {
-
-	        		// create/update the structure
-					localContentType = this.saveOrUpdateContentType(contentTypeWrapper, contentType, fields,
-							 fieldVariables, localContentType, localExists);
+				if(inodeType.isPresent() && variableType.isPresent() && ! inodeType.get().inode().equals(variableType.get().inode())){
+					throw new DotPublishingException("ContentType:" + contentType.variable() + " exists but does not have the same inode. Expecting: " + contentType.inode() + " and got:" + variableType.get().inode() + "\n\t\tPlease delete one of the types or run the integrity checker before continuing.");
 				}
 
+
+	        	final ContentType localContentType = inodeType.orElse(variableType.orElse((null)));
+
+
+
+	        	if(contentTypeWrapper.getOperation().equals(Operation.UNPUBLISH)) {
+						this.deleteContentType(localContentType);
+					continue;
+	        	}
+
+				// create/update the structure
+				ContentType updatedContentType = this.saveOrUpdateContentType(contentTypeWrapper, contentType, fields,
+						 fieldVariables, localContentType);
+
+
                 //And finally verify it this content type was the default type of an already added folder
-				this.verifyPendingFolders(localContentType);
+				this.verifyPendingFolders(updatedContentType);
 			}
     	} catch (final Exception e) {
+			Logger.error(this.getClass(), "Error on Content Type: "+ workingOn);
+			Logger.error(this.getClass(), e.getMessage(), e);
+
 			final String errorMsg = String.format("An error occurred when processing Content Type in '%s' with ID '%s': %s",
-					workingOn, (null == contentType ? "(empty)" : contentType.name()), (null == contentType ? "(empty)" :
-                            contentType.id()), e.getMessage());
-			Logger.error(this.getClass(), errorMsg, e);
+					(null == contentType ? "(empty)" : contentType.variable()),
+					(null == contentType ? "(empty)" : contentType.id()),
+					e.getMessage());
+
 			throw new DotPublishingException(errorMsg, e);
     	}
     }
@@ -248,13 +251,21 @@ public class ContentTypeHandler implements IHandler {
 		}
 	}
 
-	private void deleteContentType(final ContentType localContentType) throws DotSecurityException, DotDataException {
+	private void deleteContentType(final ContentType localContentType)  {
+		if(UtilMethods.isEmpty(()->localContentType.inode())){
+			return;
+		}
 		try {
-
+			if(localContentType.fixed()){
+				PushPublishLogger.error(getClass(), PushPublishHandler.CONTENT_TYPE, PushPublishAction.UNPUBLISH,
+						localContentType.id(), localContentType.inode(), localContentType.name(), config.getId(),
+						"Type is Fixed", null);
+				return;
+			}
 			typeAPI.delete(localContentType);
 			PushPublishLogger.log(getClass(), PushPublishHandler.CONTENT_TYPE, PushPublishAction.UNPUBLISH,
 					localContentType.id(), localContentType.inode(), localContentType.name(), config.getId());
-		} catch(DotStateException ex) {
+		} catch(DotStateException | DotSecurityException | DotDataException ex) {
 			PushPublishLogger.error(getClass(), PushPublishHandler.CONTENT_TYPE, PushPublishAction.UNPUBLISH,
 					localContentType.id(), localContentType.inode(), localContentType.name(), config.getId(),
 					null, ex);
@@ -279,29 +290,41 @@ public class ContentTypeHandler implements IHandler {
      * @throws DotSecurityException The dotCMS user accessing the APIs doesn't have the required permissions to do so.
      */
 	private ContentType saveOrUpdateContentType(final ContentTypeWrapper contentTypeWrapper,
-												final ContentType contentType,
+												final ContentType contentTypeIn,
 												final List<Field> fields,
 												final List<FieldVariable> fieldVariables,
-												ContentType localContentType,
-												final boolean localExists) throws DotDataException, DotSecurityException {
-        final Host site = this.siteAPI.find(contentType.host(), APILocator.getUserAPI().getSystemUser(), false);
-        if (null == site || !UtilMethods.isSet(site.getIdentifier())) {
-            throw new NotFoundInDbException(String.format("Content Type '%s' [%s] is pointing to an invalid Site ID: " +
-                    "'%s'. Make sure that the ID of the Site in the sender is the same as the receiver.", contentType
-                    .name(), contentType.id(), contentType.host()));
-        }
-	    final List<Field> deferredFields = fields.stream()
+												final ContentType localContentType) throws DotDataException, DotSecurityException {
+
+		final String hostId = UtilMethods.isSet(()-> localContentType.inode())
+				? localContentType.host()
+				: Try.of(()->this.siteAPI.find(contentTypeIn.host(), APILocator.systemUser(), false).getIdentifier())
+					.toJavaOptional()
+					.orElse(Host.SYSTEM_HOST);
+
+		final Host host = APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false);
+
+		// update host so that it works locally
+		final ContentType typeToSave = hostId.equals(contentTypeIn.host())
+				? contentTypeIn
+				: ContentTypeBuilder.builder(contentTypeIn).from(contentTypeIn)
+				.host(host.getIdentifier())
+				.siteName(host.getHostname()).build();
+
+
+		final List<Field> deferredFields = fields.stream()
                 .map(field -> {
                     if (field instanceof RelationshipField) {
                         return RelationshipFieldBuilder.builder(field).skipRelationshipCreation(true).build();
                     }
                     return field;
                 }).collect(Collectors.toList());
-		contentType.constructWithFields(deferredFields);
 
-		if(localContentType == null) {
 
-			typeAPI.save(contentType);
+		typeToSave.constructWithFields(deferredFields);
+
+		if(UtilMethods.isEmpty(()->localContentType.inode())) {
+
+			typeAPI.save(typeToSave);
 
 			for (final FieldVariable fieldVariable : fieldVariables) {
 
@@ -309,27 +332,50 @@ public class ContentTypeHandler implements IHandler {
 			}
 		} else {
 
-			typeAPI.save(contentType, deferredFields, fieldVariables);
+			typeAPI.save(typeToSave, deferredFields, fieldVariables);
 		}
 
 		PushPublishLogger.log(getClass(), PushPublishHandler.CONTENT_TYPE, PushPublishAction.PUBLISH,
-				contentType.id(), contentType.inode(), contentType.name(), config.getId());
+				typeToSave.id(), typeToSave.inode(), typeToSave.name(), config.getId());
 
-		localContentType = typeAPI.find(contentType.inode());
+
+
+
+
+		ContentType returnType = typeAPI.find(typeToSave.inode());
 
 		// set the workflow scheme
-		setWorkflowScheme(contentTypeWrapper, contentType, localContentType, localExists);
-		return localContentType;
+		this.setWorkflowScheme(contentTypeWrapper, typeToSave, returnType);
+
+
+
+		if(!hostId.equals(contentTypeIn.host())){
+			String siteName = Try.of(()->this.siteAPI.find(returnType.host(), APILocator.systemUser(), false).getHostname()).getOrElse(returnType.host());
+
+			SystemMessage message = new SystemMessageBuilder()
+					.setMessage("Content type: " + returnType.variable() + " imported successfully but moved from site id: " + contentTypeIn.host() + " to " + siteName)
+					.setType(MessageType.SIMPLE_MESSAGE)
+					.setLife(15)
+					.setSeverity(MessageSeverity.INFO)
+					.create();
+			APILocator.getRoleAPI().findUserIdsForRole(APILocator.getRoleAPI().loadCMSAdminRole());
+
+
+			SystemMessageEventUtil.getInstance().pushMessage(message, APILocator.getRoleAPI().findUserIdsForRole(APILocator.getRoleAPI().loadCMSAdminRole()));
+
+		}
+
+		return returnType;
 	}
+
 
 	private void setWorkflowScheme(final ContentTypeWrapper contentTypeWrapper,
 								   final ContentType contentType,
-								   final ContentType localContentType,
-								   final boolean localExists) throws DotDataException, DotSecurityException {
+								   final ContentType localContentType) throws DotDataException, DotSecurityException {
+		boolean localExists = UtilMethods.isSet(()->localContentType.inode());
 
 		if (hasAnyWorkflowScheme(contentTypeWrapper)) {
-
-			this.saveWorkflowSchemes(contentTypeWrapper, contentType, localContentType, localExists);
+			this.saveWorkflowSchemes(contentTypeWrapper, contentType);
 		} else {
 			//if no workflow scheme is set. We need to reset the content type.
 			workflowAPI.saveSchemeIdsForContentType(contentType, Collections.emptySet());
@@ -343,51 +389,38 @@ public class ContentTypeHandler implements IHandler {
 	}
 
 	private void saveWorkflowSchemes(final ContentTypeWrapper contentTypeWrapper,
-									 final ContentType contentType,
-									 final ContentType localContentType,
-									 final boolean localExists) {
+									 final ContentType contentType) {
 
 		try {
 
-			final ImmutableList.Builder<WorkflowScheme> schemes = new ImmutableList.Builder<>();
-			WorkflowScheme scheme = null;
+			Set<String> schemes = new HashSet<>(contentTypeWrapper.getWorkflowSchemaIds().stream().map(id->
+					Try.of(()->workflowAPI
+							.findScheme(id).getId())
+							.onFailure(e->Logger.warn(ContentTypeHandler.class,"Unable to find workflow scheme id:" + id))
+							.getOrNull()
+					)
+					.filter(Objects::nonNull)
+					.collect(Collectors.toSet()));
 
-			for (int i = 0; i < contentTypeWrapper.getWorkflowSchemaIds().size(); i++) {
-
-				final String workflowId = contentTypeWrapper.getWorkflowSchemaIds()
-						.get(i);
-				try {
-					scheme = workflowAPI
-							.findScheme(workflowId);
-				} catch (Exception ex) {
-					Logger.error(ContentTypeHandler.class,
-							String.format("Error retrieving Workflow Scheme ID [%s]: %s",
-									workflowId, ex.getMessage()), ex);
-				}
-
-				if (scheme != null) {
-					schemes.add(scheme);
-				} else {
-				/*
-				Workflow Scheme should exist..., the workflow should be already
-				be processed by the WorkflowHandler.
-				 */
-					Logger.error(ContentTypeHandler.class,
-							String.format(
-									"Relating Workflow Scheme to Content Type [%s]. Workflow Scheme with id not found [%s]",
-									contentType.name(), workflowId));
-				}
+			// always add a workflow if there were none sent
+			if(schemes.isEmpty()){
+				schemes.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme().getId());
 			}
 
-			if (scheme != null) {
+			workflowAPI.saveSchemeIdsForContentType(
+					contentType, schemes);
 
-				workflowAPI.saveSchemesForStruct(
-						new StructureTransformer(localExists ? localContentType : contentType).asStructure(), schemes.build());
-			}
+
+
 		} catch (final Exception ex) {
-			Logger.warn(ContentTypeHandler.class, String.format("Some of the target Schema IDs [ %s ] for Content Type" +
-					" '%s' [%s] don't exist: %s", contentTypeWrapper.getWorkflowSchemaIds().toString(), contentType
-					.name(), contentType.id(), ex.getMessage()));
+			Logger.warn(ContentTypeHandler.class,
+					"Some of the target Schema IDs: " +
+							contentTypeWrapper.getWorkflowSchemaIds().toString()
+							+ " for Content Type"
+							+ contentType.variable()
+							+ "/"
+							+ contentType.inode()
+							+ " don't exist.", ex);
 		}
 	}
 

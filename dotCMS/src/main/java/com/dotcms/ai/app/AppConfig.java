@@ -1,8 +1,8 @@
 package com.dotcms.ai.app;
 
+import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
@@ -29,10 +29,8 @@ public class AppConfig implements Serializable {
     private static final String AI_API_URL_KEY = "AI_API_URL";
     private static final String AI_IMAGE_API_URL_KEY = "AI_IMAGE_API_URL";
     private static final String AI_EMBEDDINGS_API_URL_KEY = "AI_EMBEDDINGS_API_URL";
-    private static final String AI_DEBUG_LOGGER_KEY = "AI_DEBUG_LOGGER";
     private static final String SYSTEM_HOST = "System Host";
     private static final AtomicReference<AppConfig> SYSTEM_HOST_CONFIG = new AtomicReference<>();
-    private static final boolean DEBUG_LOGGING = Config.getBooleanProperty(AI_DEBUG_LOGGER_KEY, false);
 
     public static final Pattern SPLITTER = Pattern.compile("\\s?,\\s?");
 
@@ -107,13 +105,22 @@ public class AppConfig implements Serializable {
      * @param message The {@link Supplier} with the message to log.
      */
     public static void debugLogger(final Class<?> clazz, final Supplier<String> message) {
-        if (getSystemHostConfig().getConfigBoolean(AppKeys.DEBUG_LOGGING) || DEBUG_LOGGING) {
+        if (getSystemHostConfig().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
             Logger.info(clazz, message.get());
         }
     }
 
     public static void setSystemHostConfig(final AppConfig systemHostConfig) {
         AppConfig.SYSTEM_HOST_CONFIG.set(systemHostConfig);
+    }
+
+    /**
+     * Retrieves the host.
+     *
+     * @return the host
+     */
+    public String getHost() {
+        return host;
     }
 
     /**
@@ -137,7 +144,7 @@ public class AppConfig implements Serializable {
     /**
      * Retrieves the API Embeddings URL.
      *
-     * @return
+     * @return the API Embeddings URL
      */
     public String getApiEmbeddingsUrl() {
         return UtilMethods.isEmpty(apiEmbeddingsUrl) ? AppKeys.API_EMBEDDINGS_URL.defaultValue : apiEmbeddingsUrl;
@@ -296,24 +303,10 @@ public class AppConfig implements Serializable {
      * @param modelName the name of the model to find
      */
     public AIModel resolveModelOrThrow(final String modelName) {
-        final AIModel aiModel = AIModels.get()
+        return AIModels.get()
                 .findModel(host, modelName)
-                .orElseThrow(() -> {
-                    final String supported = String.join(", ", AIModels.get().getOrPullSupportedModels());
-                    return new DotRuntimeException(
-                            "Unable to find model: [" + modelName + "]. Only [" + supported + "] are supported ");
-                });
-
-        if (!aiModel.isOperational()) {
-            debugLogger(
-                    AppConfig.class,
-                    () -> String.format(
-                            "Resolved model [%s] is not operational, avoiding its usage",
-                            aiModel.getCurrentModel()));
-            throw new DotRuntimeException(String.format("Model [%s] is not operational", aiModel.getCurrentModel()));
-        }
-
-        return aiModel;
+                .orElseThrow(() ->
+                        new DotAIModelNotFoundException(String.format("Unable to find model: [%s].", modelName)));
     }
 
     /**

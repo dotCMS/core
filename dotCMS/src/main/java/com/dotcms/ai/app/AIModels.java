@@ -81,22 +81,22 @@ public class AIModels {
                                 loading.stream()
                                         .map(model -> Tuple.of(model.getType(), model))
                                         .collect(Collectors.toList())));
-        loading.forEach(model -> model
-                .getNames()
-                .forEach(name -> {
+        loading.forEach(aiModel -> aiModel
+                .getModels()
+                .forEach(model -> {
                     final Tuple2<String, String> key = Tuple.of(
                             host,
-                            name.toLowerCase().trim());
+                            model.getName().toLowerCase().trim());
                     if (modelsByName.containsKey(key)) {
                         Logger.debug(
                                 this,
                                 String.format(
                                         "Model [%s] already exists for host [%s], ignoring it",
-                                        name,
+                                        model.getName(),
                                         host));
                         return;
                     }
-                    modelsByName.putIfAbsent(key, model);
+                    modelsByName.putIfAbsent(key, aiModel);
                 }));
     }
 
@@ -161,8 +161,8 @@ public class AIModels {
 
         final AppConfig appConfig = appConfigSupplier.get();
         if (!appConfig.isEnabled()) {
-            AppConfig.debugLogger(getClass(), () -> "dotAI is not enabled, returning empty list of supported models");
-            throw new DotRuntimeException("App dotAI config without API urls or API key");
+            AppConfig.debugLogger(getClass(), () -> "dotAI is not enabled, returning empty set of supported models");
+            return Set.of();
         }
 
         final CircuitBreakerUrl.Response<OpenAIModels> response = fetchOpenAIModels(appConfig);
@@ -192,7 +192,9 @@ public class AIModels {
                 .stream()
                 .flatMap(entry -> entry.getValue().stream())
                 .map(Tuple2::_2)
-                .flatMap(model -> model.getNames().stream().map(name -> new SimpleModel(name, model.getType())))
+                .flatMap(aiModel -> aiModel.getModels()
+                        .stream()
+                        .map(model -> new SimpleModel(model.getName(), aiModel.getType())))
                 .collect(Collectors.toSet());
         final Set<SimpleModel> supported = getOrPullSupportedModels()
                 .stream()

@@ -32,7 +32,6 @@
         <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
         <maven.compiler.testTarget>${maven.compiler.target}</maven.compiler.testTarget>
         <java.module.args>
-            --illegal-access=deny
             --add-modules java.se
             --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
             --add-opens java.base/java.lang=ALL-UNNAMED
@@ -306,7 +305,7 @@
                                         <log>listening on IPv4 address "0.0.0.0", port 5432</log>
                                     </wait>
                                     <log>
-                                        <prefix>DB:</prefix>
+                                        <prefix>[DB]</prefix>
                                         <color>magenta</color>
                                     </log>
                                 </run>
@@ -345,7 +344,7 @@
                                         <shutdown>5000</shutdown>
                                     </wait>
                                     <log>
-                                        <prefix>ES:</prefix>
+                                        <prefix>[ES]</prefix>
                                         <color>cyan</color>
                                     </log>
                                 </run>
@@ -392,7 +391,7 @@
                                         <link>opensearch:es</link>
                                     </links>
                                     <log>
-                                        <prefix>DOTCMS:</prefix>
+                                        <prefix>[DOTCMS]</prefix>
                                         <color>cyan</color>
                                     </log>
                                 </run>
@@ -708,6 +707,13 @@
 
                         <trimStackTrace>false</trimStackTrace>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.maven.surefire</groupId>
+                            <artifactId>surefire-junit47</artifactId>
+                            <version>${version.failsafe.plugin}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -854,13 +860,19 @@
                         <forkCount>${surefire.fork.count}</forkCount>
                         <reuseForks>true</reuseForks>
                         <argLine>@{argLine} -Xmx1024m
-                            --illegal-access=deny
                             ${java.module.args}
                         </argLine>
 
                         <systemPropertyVariables/>
                         <trimStackTrace>true</trimStackTrace>
                     </configuration>
+                   <dependencies>
+                        <dependency>
+                            <groupId>org.apache.maven.surefire</groupId>
+                            <artifactId>surefire-junit47</artifactId>
+                            <version>${version.surefire.plugin}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

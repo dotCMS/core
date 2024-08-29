@@ -848,145 +848,164 @@ export const BasicSplitButtonTemplate = `<div style="display: flex; gap: 24px; f
 
 export const OutlinedSplitButtonTemplate = `<div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
 <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <p-splitButton label="Save" [model]="items" styleClass="p-button-lg p-button-outlined"></p-splitButton>
+    <p-splitButton label="Save" [model]="items" styleClass="p-button-lg" outlined></p-splitButton>
     <p-splitButton
         label="Save"
         icon="pi pi-save"
         [model]="items"
-        styleClass="p-button-lg p-button-outlined"
+        styleClass="p-button-lg"
+        outlined
     ></p-splitButton>
     <p-splitButton
         label="Save"
         icon="pi pi-save"
         iconPos="right"
         [model]="items"
-        styleClass="p-button-lg p-button-outlined"
+        styleClass="p-button-lg"
+        outlined
     ></p-splitButton>
     <p-splitButton
         label="Disabled"
         disabled="true"
-        styleClass="p-button-lg p-button-outlined"
+        styleClass="p-button-lg"
+        outlined
     ></p-splitButton>
 </div>
 <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <p-splitButton label="Save" [model]="items" styleClass="p-button-outlined"></p-splitButton>
+    <p-splitButton label="Save" [model]="items" outlined></p-splitButton>
     <p-splitButton
         label="Save"
         icon="pi pi-save"
         [model]="items"
-        styleClass="p-button-outlined"
-    ></p-splitButton>
-    <p-splitButton
-        label="Save"
-        icon="pi pi-save"
-        iconPos="right"
-        [model]="items"
-        styleClass="p-button-outlined"
-    ></p-splitButton>
-    <p-splitButton
-        label="Disabled"
-        disabled="true"
-        styleClass="p-button-outlined"
-    ></p-splitButton>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <p-splitButton
-        label="Save"
-        [model]="items"
-        styleClass="p-button-sm p-button-outlined"
-    ></p-splitButton>
-    <p-splitButton
-        label="Save"
-        icon="pi pi-save"
-        [model]="items"
-        styleClass="p-button-sm p-button-outlined"
+        outlined
     ></p-splitButton>
     <p-splitButton
         label="Save"
         icon="pi pi-save"
         iconPos="right"
         [model]="items"
-        styleClass="p-button-sm p-button-outlined"
+        outlined
     ></p-splitButton>
     <p-splitButton
         label="Disabled"
         disabled="true"
-        styleClass="p-button-sm p-button-outlined"
+        outlined
     ></p-splitButton>
 </div>
 <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
     <p-splitButton
         label="Save"
         [model]="items"
-        styleClass="p-button-lg p-button-secondary p-button-outlined"
+        styleClass="p-button-sm"
+        outlined
     ></p-splitButton>
     <p-splitButton
         label="Save"
         icon="pi pi-save"
         [model]="items"
-        styleClass="p-button-lg p-button-secondary p-button-outlined"
+        styleClass="p-button-sm"
+        outlined
     ></p-splitButton>
     <p-splitButton
         label="Save"
         icon="pi pi-save"
         iconPos="right"
         [model]="items"
-        styleClass="p-button-lg p-button-secondary p-button-outlined"
+        styleClass="p-button-sm"
+        outlined
     ></p-splitButton>
     <p-splitButton
         label="Disabled"
         disabled="true"
-        styleClass="p-button-lg p-button-secondary p-button-outlined"
+        styleClass="p-button-sm"
+        outlined
     ></p-splitButton>
 </div>
 <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
     <p-splitButton
         label="Save"
         [model]="items"
-        styleClass="p-button-secondary p-button-outlined"
+        styleClass="p-button-lg p-button-secondary"
+        outlined
     ></p-splitButton>
     <p-splitButton
         label="Save"
         icon="pi pi-save"
         [model]="items"
-        styleClass="p-button-secondary p-button-outlined"
+        styleClass="p-button-lg p-button-secondary"
+        outlined
     ></p-splitButton>
     <p-splitButton
         label="Save"
         icon="pi pi-save"
         iconPos="right"
         [model]="items"
-        styleClass="p-button-secondary p-button-outlined"
+        styleClass="p-button-lg p-button-secondary"
+        outlined
     ></p-splitButton>
     <p-splitButton
         label="Disabled"
         disabled="true"
-        styleClass="p-button-secondary p-button-outlined"
+        styleClass="p-button-lg p-button-secondary"
+        outlined
     ></p-splitButton>
 </div>
 <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
     <p-splitButton
         label="Save"
         [model]="items"
-        styleClass="p-button-sm p-button-secondary p-button-outlined"
+        styleClass="p-button-secondary"
+        outlined
     ></p-splitButton>
     <p-splitButton
         label="Save"
         icon="pi pi-save"
         [model]="items"
-        styleClass="p-button-sm p-button-secondary p-button-outlined"
+        styleClass="p-button-secondary"
+        outlined
     ></p-splitButton>
     <p-splitButton
         label="Save"
         icon="pi pi-save"
         iconPos="right"
         [model]="items"
-        styleClass="p-button-sm p-button-secondary p-button-outlined"
+        styleClass="p-button-secondary"
+        outlined
     ></p-splitButton>
     <p-splitButton
         label="Disabled"
         disabled="true"
-        styleClass="p-button-sm p-button-secondary p-button-outlined"
+        styleClass="p-button-secondary"
+        outlined
+    ></p-splitButton>
+</div>
+<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+    <p-splitButton
+        label="Save"
+        [model]="items"
+        styleClass="p-button-sm p-button-secondary"
+        outlined
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-save"
+        [model]="items"
+        styleClass="p-button-sm p-button-secondary"
+        outlined
+    ></p-splitButton>
+    <p-splitButton
+        label="Save"
+        icon="pi pi-save"
+        iconPos="right"
+        [model]="items"
+        styleClass="p-button-sm p-button-secondary"
+        outlined
+    ></p-splitButton>
+    <p-splitButton
+        label="Disabled"
+        disabled="true"
+        styleClass="p-button-sm p-button-secondary"
+        outlined
     ></p-splitButton>
 </div>
 </div>

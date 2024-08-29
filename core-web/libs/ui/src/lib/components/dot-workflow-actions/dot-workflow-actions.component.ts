@@ -13,7 +13,7 @@ import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { SplitButtonModule } from 'primeng/splitbutton';
 
-import { DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { CustomMenuItem, DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
@@ -87,7 +87,7 @@ export class DotWorkflowActionsComponent implements OnChanges {
      * @return {*}  {MenuItem[][]}
      * @memberof DotWorkflowActionsComponent
      */
-    private formatActions(actions: DotCMSWorkflowAction[] = []): MenuItem[][] {
+    private formatActions(actions: DotCMSWorkflowAction[] = []): CustomMenuItem[][] {
         const formatedActions = actions?.reduce((acc, action) => {
             if (action?.metadata?.subtype !== DotCMSActionSubtype.SEPARATOR) {
                 acc.push({

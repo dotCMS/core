@@ -1,6 +1,5 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
@@ -21,7 +20,6 @@ import { DotCategoryFieldSearchListComponent } from '../dot-category-field-searc
     selector: 'dot-category-field-selected',
     standalone: true,
     imports: [
-        CommonModule,
         ButtonModule,
         DotMessagePipe,
         DotCategoryFieldSearchListComponent,
@@ -55,6 +53,5 @@ export class DotCategoryFieldSelectedComponent {
      * Represents an EventEmitter used for removing items. Emit the key
      * of the category
      */
-    @Output()
-    removeItem = new EventEmitter<string>();
+    removeItem = output<string>();
 }

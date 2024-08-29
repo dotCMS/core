@@ -6,7 +6,31 @@ package com.dotcms.ai.api;
  */
 public interface DotAIAPI {
 
+    /**
+     * Returns the completions API
+     * @param initArguments
+     * @return
+     */
     CompletionsAPI getCompletionsAPI(Object... initArguments);
 
+    /**
+     * Returns the embeddings API
+     * @param initArguments
+     * @return
+     */
     EmbeddingsAPI getEmbeddingsAPI(Object... initArguments);
+
+    /**
+     * Returns the chat API
+     * @param initArguments
+     * @return
+     */
+    ChatAPI getChatAPI(Object... initArguments);
+
+    /**
+     * Returns the image API
+     * @param initArguments
+     * @return
+     */
+    ImageAPI getImageAPI(Object... initArguments);
 }

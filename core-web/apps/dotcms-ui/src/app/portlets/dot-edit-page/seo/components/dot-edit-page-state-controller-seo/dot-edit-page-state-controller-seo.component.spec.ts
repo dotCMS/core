@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as _ from 'lodash';
+import { createFakeEvent } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { CommonModule, DecimalPipe } from '@angular/common';
@@ -86,10 +86,8 @@ export const dotVariantDataMock: DotVariantData = {
     mode: DotPageMode.PREVIEW
 };
 
-const pageRenderStateMock: DotPageRenderState = new DotPageRenderState(
-    mockUser(),
-    new DotPageRender(mockDotRenderedPage())
-);
+const getPageRenderStateMock = () =>
+    new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));
 
 @Component({
     selector: 'dot-test-host-component',
@@ -100,7 +98,7 @@ const pageRenderStateMock: DotPageRenderState = new DotPageRenderState(
     `
 })
 class TestHostComponent {
-    pageState: DotPageRenderState = _.cloneDeep(pageRenderStateMock);
+    pageState: DotPageRenderState = getPageRenderStateMock();
     variant: DotVariantData;
 }
 
@@ -231,7 +229,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                     { ...mockUser(), userId: '456' },
                     new DotPageRender(mockDotRenderedPage())
                 );
-                fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+                fixtureHost.componentInstance.pageState = pageRenderStateMocked;
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
                 const lockerDe = de.query(By.css('p-inputSwitch'));
@@ -242,7 +240,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
                 expect(lockerDe.classes.warn).toBe(true, 'warn class');
                 expect(lockerDe.attributes.appendTo).toBe('target');
-                expect(lockerContainerDe.attributes['ng-reflect-text']).toBe(
+                expect(lockerContainerDe.attributes['ng-reflect-content']).toBe(
                     'Page locked by Some One'
                 );
                 expect(lockerContainerDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
@@ -255,7 +253,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                     { ...mockUser(), userId: '456' },
                     new DotPageRender(mockDotRenderedPage())
                 );
-                fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+                fixtureHost.componentInstance.pageState = pageRenderStateMocked;
                 componentHost.variant = null;
                 componentHost.pageState.page.locked = true;
                 fixtureHost.detectChanges();
@@ -273,7 +271,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                     { ...mockUser(), userId: '456' },
                     new DotPageRender(mockDotRenderedPage())
                 );
-                fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+                fixtureHost.componentInstance.pageState = pageRenderStateMocked;
                 componentHost.variant = null;
                 componentHost.pageState.state.locked = false;
                 fixtureHost.detectChanges();
@@ -289,7 +287,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             it('should have lock info', () => {
                 fixtureHost.detectChanges();
                 const message = de.query(By.css('[data-testId="lockInfo"]')).componentInstance;
-                expect(message.pageState).toEqual(pageRenderStateMock);
+                expect(message.pageState).toEqual(getPageRenderStateMock());
             });
         });
 
@@ -436,7 +434,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 new DotPageRender(mockDotRenderedPage())
             );
 
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
         });
 
         it('should update pageState service when confirmation dialog Success', async () => {
@@ -501,7 +499,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 })
             );
 
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
             spyOn(dialogService, 'confirm').and.callFake((conf) => {
                 conf.accept();
             });
@@ -536,7 +534,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 EXPERIMENT_MOCK
             );
 
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
         });
 
         it('should update pageState service when confirmation dialog Success', async () => {
@@ -598,7 +596,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 { ...mockUser(), userId: '486' },
                 mockDotRenderedPage()
             );
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
 
             fixtureHost.detectChanges();
         });
@@ -623,7 +621,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                     }
                 }
             );
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
             fixtureHost.detectChanges();
         });
 
@@ -638,14 +636,18 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         });
 
         it("should change the mode when the user clicks on the 'Edit' option", () => {
-            component.menuItems[0].command();
+            component.menuItems[0].command({
+                originalEvent: createFakeEvent('click')
+            });
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
         });
 
         it("should call editContentlet when clicking on the 'ContentType Content' option", () => {
             spyOn(editContentletService, 'edit');
-            component.menuItems[1].command();
+            component.menuItems[1].command({
+                originalEvent: createFakeEvent('click')
+            });
             expect(editContentletService.edit).toHaveBeenCalledWith({
                 data: {
                     inode: '123'
@@ -676,7 +678,8 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                     ...mockDotRenderedPage()
                 }
             );
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
             fixtureHost.detectChanges();
 
             await fixtureHost.whenStable();
@@ -693,7 +696,8 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                     }
                 }
             );
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
             fixtureHost.detectChanges();
 
             await fixtureHost.whenStable();

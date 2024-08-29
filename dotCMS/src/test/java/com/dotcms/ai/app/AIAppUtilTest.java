@@ -1,10 +1,12 @@
 package com.dotcms.ai.app;
 
+import com.dotcms.ai.domain.Model;
 import com.dotcms.security.apps.Secret;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -127,7 +129,7 @@ public class AIAppUtilTest {
         AIModel model = aiAppUtil.createTextModel(secrets);
         assertNotNull(model);
         assertEquals(AIModelType.TEXT, model.getType());
-        assertTrue(model.getNames().contains("textmodel"));
+        assertTrue(model.getModels().stream().map(Model::getName).collect(Collectors.toList()).contains("textmodel"));
     }
 
     /**
@@ -143,7 +145,7 @@ public class AIAppUtilTest {
         AIModel model = aiAppUtil.createImageModel(secrets);
         assertNotNull(model);
         assertEquals(AIModelType.IMAGE, model.getType());
-        assertTrue(model.getNames().contains("imagemodel"));
+        assertTrue(model.getModels().stream().map(Model::getName).collect(Collectors.toList()).contains("imagemodel"));
     }
 
     /**
@@ -159,7 +161,8 @@ public class AIAppUtilTest {
         AIModel model = aiAppUtil.createEmbeddingsModel(secrets);
         assertNotNull(model);
         assertEquals(AIModelType.EMBEDDINGS, model.getType());
-        assertTrue(model.getNames().contains("embeddingsmodel"));
+        assertTrue(model.getModels().stream().map(Model::getName).collect(Collectors.toList())
+                .contains("embeddingsmodel"));
     }
 
     @Test

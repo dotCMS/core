@@ -1,5 +1,4 @@
-import { NgFor } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { ControlContainer, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { CheckboxModule } from 'primeng/checkbox';
@@ -10,34 +9,43 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 @Component({
     selector: 'dot-edit-content-checkbox-field',
     standalone: true,
-    imports: [NgFor, CheckboxModule, ReactiveFormsModule, FormsModule],
-    templateUrl: './dot-edit-content-checkbox-field.component.html',
-    styleUrls: ['./dot-edit-content-checkbox-field.component.scss'],
+    imports: [CheckboxModule, ReactiveFormsModule, FormsModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
-    ]
+    ],
+    template: `
+        @for (option of $options(); track $index) {
+            <p-checkbox
+                [name]="$field().variable"
+                [formControl]="formControl"
+                [value]="option.value"
+                [label]="option.label"
+                [inputId]="option.value.toString() + $index" />
+        }
+    `,
+    styleUrls: ['./dot-edit-content-checkbox-field.component.scss']
 })
-export class DotEditContentCheckboxFieldComponent implements OnInit {
-    @Input() field!: DotCMSContentTypeField;
+export class DotEditContentCheckboxFieldComponent {
     private readonly controlContainer = inject(ControlContainer);
-    options = [];
 
-    ngOnInit() {
-        this.options = getSingleSelectableFieldOptions(
-            this.field.values || '',
-            this.field.dataType
-        );
-    }
+    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $options = computed(() => {
+        const field = this.$field();
+
+        return getSingleSelectableFieldOptions(field.values || '', field.dataType);
+    });
 
     /**
      * Returns the form control for the select field.
      * @returns {AbstractControl} The form control for the select field.
      */
     get formControl() {
-        return this.controlContainer.control.get(this.field.variable) as FormControl;
+        const field = this.$field();
+
+        return this.controlContainer.control.get(field.variable) as FormControl;
     }
 }

@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as _ from 'lodash';
-
 import { Component, DebugElement, Input } from '@angular/core';
 import {
     ComponentFixture,
@@ -39,7 +37,7 @@ import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
             [valuePropertyName]="valuePropertyName"
             [overlayWidth]="overlayWidth"
             [width]="width"
-            [disabled]="disabled"></dot-searchable-dropdown>
+            [disabled]="disabled" />
     `
 })
 class HostTestComponent {
@@ -304,7 +302,7 @@ describe('SearchableDropdownComponent', () => {
             hostFixture.detectChanges();
             items = de.queryAll(By.css('.searchable-dropdown__data-list-item'));
 
-            dataExpected = _.cloneDeep(data[0]);
+            dataExpected = structuredClone(data[0]);
             dataExpected.label = dataExpected.name;
         });
 
@@ -401,12 +399,14 @@ describe('SearchableDropdownComponent', () => {
             [width]="width"
             #searchableDropdown
             cssClassDataList="site_selector__data-list">
-            <ng-template let-data="item" pTemplate="listItem">
-                <div
-                    (click)="handleClick(item)"
-                    class="searchable-dropdown__data-list-item templateTestItem">
-                    {{ data.label }}
-                </div>
+            <ng-template let-data="data" pTemplate="list">
+                @for (item of data; track $index) {
+                    <div
+                        (click)="handleClick(item)"
+                        class="searchable-dropdown__data-list-item templateTestItem">
+                        {{ item.label }}
+                    </div>
+                }
             </ng-template>
             <ng-template let-persona="item" pTemplate="select">
                 <div

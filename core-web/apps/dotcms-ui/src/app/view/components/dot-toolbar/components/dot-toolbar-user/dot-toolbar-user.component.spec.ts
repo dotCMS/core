@@ -138,9 +138,11 @@ describe('DotToolbarUserComponent', () => {
         avatarComponent.click();
         fixture.detectChanges();
 
-        const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout'));
+        const logoutItem = de.query(By.css('#dot-toolbar-user-link-logout'));
+        const logoutLink = logoutItem.query(By.css('a'));
+
         expect(logoutLink.attributes.href).toBe('/dotAdmin/logout?r=1466424490000');
-        expect(logoutLink.parent.classes['toolbar-user__logout']).toBe(true);
+        expect(logoutItem.classes['toolbar-user__logout']).toBe(true);
     });
     it('should have correct target in logout link', () => {
         fixture.detectChanges();
@@ -149,7 +151,7 @@ describe('DotToolbarUserComponent', () => {
         avatarComponent.click();
         fixture.detectChanges();
 
-        const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout'));
+        const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout a'));
         expect(logoutLink.attributes.target).toBe('_self');
     });
 
@@ -168,12 +170,8 @@ describe('DotToolbarUserComponent', () => {
         avatarComponent.click();
         fixture.detectChanges();
 
-        const logoutAsLink = de.query(By.css('#dot-toolbar-user-link-logout-as'));
-        logoutAsLink.triggerEventHandler('click', {
-            preventDefault: () => {
-                //
-            }
-        });
+        const logoutAsLink = de.query(By.css('#dot-toolbar-user-link-logout-as a')).nativeElement;
+        logoutAsLink.click();
 
         await fixture.whenStable();
         expect(loginService.logoutAs).toHaveBeenCalledTimes(1);
@@ -220,5 +218,18 @@ describe('DotToolbarUserComponent', () => {
 
         fixture.detectChanges();
         expect(de.query(By.css('[data-testid="dot-mask"]'))).toBeFalsy();
+    });
+
+    it('should hide mask when menu hide', () => {
+        fixture.detectChanges();
+        const avatarComponent = de.query(By.css('[data-testid="avatar"]')).nativeElement;
+        avatarComponent.click();
+
+        const menu = de.query(By.css('p-menu'));
+        menu.triggerEventHandler('onHide', {});
+
+        fixture.detectChanges();
+
+        expect(de.query(By.css('[data-testId="dot-mask"]'))).toBeNull();
     });
 });

@@ -1,5 +1,3 @@
-import * as _ from 'lodash';
-
 import {
     ChangeDetectionStrategy,
     Component,
@@ -10,6 +8,8 @@ import {
     Optional
 } from '@angular/core';
 import { NgControl, ControlValueAccessor } from '@angular/forms';
+
+import { isEmpty } from '@dotcms/utils';
 
 // @dynamic
 @Component({
@@ -98,7 +98,7 @@ export class InputDate implements ControlValueAccessor {
     }
 
     writeValue(value: any): void {
-        this.modelValue = _.isEmpty(value) ? InputDate.DEFAULT_VALUE : new Date(value);
+        this.modelValue = isEmpty(value) ? InputDate.DEFAULT_VALUE : new Date(value);
     }
 
     registerOnChange(fn): void {
