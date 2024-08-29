@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+import { action } from '@storybook/addon-actions';
 import {
     Meta,
     StoryObj,
@@ -11,11 +11,14 @@ import {
 import { importProvidersFrom } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { MenuItem } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
 import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 
-const meta: Meta<DotCollapseBreadcrumbComponent> = {
+type Args = DotCollapseBreadcrumbComponent & { model: MenuItem[]; maxItems: number };
+
+const meta: Meta<Args> = {
     title: 'DotCMS/Menu/DotCollapseBreadcrumb',
     component: DotCollapseBreadcrumbComponent,
     decorators: [
@@ -40,10 +43,10 @@ const meta: Meta<DotCollapseBreadcrumbComponent> = {
         }
     },
     argTypes: {
-        $model: {
+        model: {
             description: 'Menu items to display'
         },
-        $maxItems: {
+        maxItems: {
             description: 'Max items to display',
             control: { type: 'number' }
         }
@@ -56,17 +59,17 @@ const meta: Meta<DotCollapseBreadcrumbComponent> = {
 
 export default meta;
 
-type Story = StoryObj<DotCollapseBreadcrumbComponent>;
+type Story = StoryObj<Args>;
 
 export const Default: Story = {
     args: {
-        $maxItems: 4,
-        $model: [
-            { label: 'Electronics', command: console.log },
-            { label: 'Computer', command: console.log },
-            { label: 'Accessories', command: console.log },
-            { label: 'Keyboard', command: console.log },
-            { label: 'Wireless', command: console.log }
+        maxItems: 4,
+        model: [
+            { label: 'Electronics', command: action('command') },
+            { label: 'Computer', command: action('command') },
+            { label: 'Accessories', command: action('command') },
+            { label: 'Keyboard', command: action('command') },
+            { label: 'Wireless', command: action('command') }
         ]
     }
 };

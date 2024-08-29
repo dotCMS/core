@@ -100,7 +100,12 @@ describe('TemplateBuilderThemeSelectorComponent', () => {
             spectator.component.ngOnInit();
 
             spectator.detectChanges();
-            spectator.component.dataView.onLazyLoad.emit({ first: 0 });
+            spectator.component.dataView.onLazyLoad.emit({
+                first: 0,
+                rows: 0,
+                sortField: '',
+                sortOrder: 0
+            });
 
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
         });

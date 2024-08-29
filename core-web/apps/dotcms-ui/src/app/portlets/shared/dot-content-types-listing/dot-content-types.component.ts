@@ -175,7 +175,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             {
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.action.delete'),
-                    command: (item) => this.removeConfirmation(item),
+                    command: (item: DotCMSContentType) => this.removeConfirmation(item),
                     icon: 'pi pi-trash'
                 },
                 shouldShow: (item) => !item.fixed && !item.defaultType
@@ -210,7 +210,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.push_publish'),
-                    command: (item) => this.pushPublishContentType(item)
+                    command: (item: DotCMSContentType) => this.pushPublishContentType(item)
                 }
             });
         }

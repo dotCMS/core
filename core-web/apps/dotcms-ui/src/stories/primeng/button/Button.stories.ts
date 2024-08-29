@@ -2,13 +2,7 @@ import { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from 'primeng/button';
 
-type Args = Button & {
-    size: string;
-    severity: string;
-    rounded: string;
-};
-
-const meta: Meta<Args> = {
+const meta: Meta = {
     title: 'PrimeNG/Button',
     component: Button,
     args: {
@@ -46,9 +40,9 @@ const meta: Meta<Args> = {
 };
 export default meta;
 
-type Story = StoryObj<Args>;
+type Story = StoryObj;
 
-export const Main: Story = {
+export const Default: Story = {
     render: (args) => {
         const argsWithClasses = ['size', 'severity', 'type', 'rounded'];
         const parts = [];

@@ -1,3 +1,4 @@
+import { createFakeEvent } from '@ngneat/spectator';
 import {
     byTestId,
     createComponentFactory,
@@ -191,7 +192,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectComponentChanges();
 
         expect(spectator.query(Menu)).toExist();
-        spectator.query(Menu).model[1].command();
+        spectator.query(Menu).model[1].command({ originalEvent: createFakeEvent('click') });
 
         spectator.query(ConfirmDialog).accept();
 
@@ -207,7 +208,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectComponentChanges();
 
         //Add to bundle
-        spectator.query(Menu).model[5].command();
+        spectator.query(Menu).model[5].command({ originalEvent: createFakeEvent('click') });
 
         spectator.detectComponentChanges();
 
@@ -233,7 +234,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectComponentChanges();
 
         expect(spectator.query(Menu)).toExist();
-        spectator.query(Menu).model[3].command();
+        spectator.query(Menu).model[3].command({ originalEvent: createFakeEvent('click') });
 
         spectator.query(ConfirmDialog).accept();
 

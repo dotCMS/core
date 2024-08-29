@@ -1,3 +1,4 @@
+import { createFakeEvent } from '@ngneat/spectator';
 import {
     createServiceFactory,
     mockProvider,
@@ -255,18 +256,24 @@ describe('DotExperimentsConfigurationStore', () => {
 
         store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
             // Start Experiment
-            menuItems[MENU_ITEMS_START_INDEX].command();
+            menuItems[MENU_ITEMS_START_INDEX].command({
+                originalEvent: createFakeEvent('click')
+            });
             expect(dotExperimentsService.start).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
             // Push Publish
-            menuItems[MENU_ITEMS_PUSH_PUBLISH_INDEX].command();
+            menuItems[MENU_ITEMS_PUSH_PUBLISH_INDEX].command({
+                originalEvent: createFakeEvent('click')
+            });
             expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
                 assetIdentifier: EXPERIMENT_MOCK.id,
                 title: 'Push Publish'
             });
 
             // Add to Bundle
-            menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].command();
+            menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].command({
+                originalEvent: createFakeEvent('click')
+            });
             expect(store.showAddToBundle).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
             // test the ones with confirm dialog in the DotExperimentsConfigurationComponent.
