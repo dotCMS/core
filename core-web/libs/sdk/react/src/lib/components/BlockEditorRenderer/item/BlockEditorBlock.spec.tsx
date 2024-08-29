@@ -5,7 +5,7 @@ import { DotCmsClient } from '@dotcms/client';
 
 import { BlockEditorBlock } from './BlockEditorBlock';
 
-import { ContentNode } from '../../../models/blocks.interface';
+import { ContentNode } from '../../../models/content-node.interface';
 
 const BLOCKS_MOCKS = {
     PARAGRAPH: [

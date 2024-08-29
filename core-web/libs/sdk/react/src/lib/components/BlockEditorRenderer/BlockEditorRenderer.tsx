@@ -2,7 +2,7 @@ import { BlockEditorBlock } from './item/BlockEditorBlock';
 
 import { Block, CustomRenderer } from '../../models/blocks.interface';
 
-interface BlockEditorRendererProps {
+export interface BlockEditorRendererProps {
     blocks: Block;
     customRenderers?: CustomRenderer;
     className?: string;

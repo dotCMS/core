@@ -1,4 +1,5 @@
-import { ContentNode, CustomRenderer } from '../../../models/blocks.interface';
+import { CustomRenderer } from '../../../models/blocks.interface';
+import { ContentNode } from '../../../models/content-node.interface';
 
 // Replace this when we have a types lib
 export interface Contentlet {

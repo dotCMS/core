@@ -1,4 +1,5 @@
-import { BlockProps, ContentNode, Mark } from '../../../models/blocks.interface';
+import { BlockProps } from '../../../models/blocks.interface';
+import { ContentNode, Mark } from '../../../models/content-node.interface';
 
 type HeadingProps = BlockProps & ContentNode;
 type LinkProps = BlockProps & { attrs?: Mark['attrs'] };

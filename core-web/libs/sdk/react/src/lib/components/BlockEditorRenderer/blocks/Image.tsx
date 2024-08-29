@@ -1,6 +1,6 @@
 import { DotCmsClient } from '@dotcms/client';
 
-import { ContentNode } from '../../../models/blocks.interface';
+import { ContentNode } from '../../../models/content-node.interface';
 
 type DotCMSImageProps = ContentNode['attrs'] & {
     data?: Record<string, unknown>;

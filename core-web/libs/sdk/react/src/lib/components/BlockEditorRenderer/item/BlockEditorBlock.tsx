@@ -1,4 +1,5 @@
-import { Blocks, ContentNode, CustomRenderer } from '../../../models/blocks.interface';
+import { Blocks, CustomRenderer } from '../../../models/blocks.interface';
+import { ContentNode } from '../../../models/content-node.interface';
 import { BlockQuote, CodeBlock } from '../blocks/Code';
 import { DotContent } from '../blocks/Contentlet';
 import { DotCMSImage } from '../blocks/Image';

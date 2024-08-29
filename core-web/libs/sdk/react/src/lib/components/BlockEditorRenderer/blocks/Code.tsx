@@ -1,4 +1,5 @@
-import { BlockProps, ContentNode } from '../../../models/blocks.interface';
+import { BlockProps } from '../../../models/blocks.interface';
+import { ContentNode } from '../../../models/content-node.interface';
 
 type CodeBlockProps = BlockProps & ContentNode;
 
