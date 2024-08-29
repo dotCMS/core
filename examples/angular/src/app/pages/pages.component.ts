@@ -39,9 +39,6 @@ type PageRender = {
 };
 
 
-export type PageApiOptions = {
-  depth: number;
-};
 
 @Component({
   selector: 'app-dotcms-page',
@@ -58,10 +55,10 @@ export type PageApiOptions = {
   styleUrl: './pages.component.css',
 })
 export class DotCMSPagesComponent implements OnInit {
-  private readonly route = inject(ActivatedRoute);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly router = inject(Router);
-  private readonly pageService = inject(PageService);
+  readonly #route = inject(ActivatedRoute);
+  readonly #destroyRef = inject(DestroyRef);
+  readonly #router = inject(Router);
+  readonly #pageService = inject(PageService);
   protected readonly context = signal<PageRender>({
     page: null,
     nav: null,
@@ -74,13 +71,13 @@ export class DotCMSPagesComponent implements OnInit {
   protected readonly editorCofig: any = { params: { depth: 2 } };
 
   ngOnInit() {
-    this.router.events
+    this.#router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
         startWith(null), // Trigger initial load
         tap(() => this.#setLoading()),
-        switchMap(() => this.pageService.getPageAndNavigation(this.route, this.editorCofig)),
-        takeUntilDestroyed(this.destroyRef)
+        switchMap(() => this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)),
+        takeUntilDestroyed(this.#destroyRef)
       )
       .subscribe(
         ({ page, nav }: {
@@ -91,7 +88,7 @@ export class DotCMSPagesComponent implements OnInit {
             this.#setError(page.error);
           } else {
             if (page.vanityUrl?.permanentRedirect || page.vanityUrl?.temporaryRedirect) {
-              this.router.navigate([page.vanityUrl.forwardTo]);
+              this.#router.navigate([page.vanityUrl.forwardTo]);
               return;
             }
 

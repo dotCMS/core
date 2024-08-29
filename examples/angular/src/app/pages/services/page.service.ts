@@ -7,7 +7,7 @@ import { getPageRequestParams } from '@dotcms/client';
 import { DotcmsNavigationItem, DotCMSPageAsset } from '@dotcms/angular';
 
 import { DOTCMS_CLIENT_TOKEN } from '../../client-token/dotcms-client';
-import { PageApiOptions, PageError } from '../pages.component';
+import { PageError } from '../pages.component';
 
 @Injectable({
   providedIn: 'root',
