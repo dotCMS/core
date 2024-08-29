@@ -87,8 +87,10 @@ export class DotCMSPagesComponent implements OnInit {
           if ('error' in page) {
             this.#setError(page.error);
           } else {
-            if (page.vanityUrl?.permanentRedirect || page.vanityUrl?.temporaryRedirect) {
-              this.#router.navigate([page.vanityUrl.forwardTo]);
+            const { vanityUrl } = page;
+
+            if (vanityUrl?.permanentRedirect || vanityUrl?.temporaryRedirect) {
+              this.#router.navigate([vanityUrl.forwardTo]);
               return;
             }
 
