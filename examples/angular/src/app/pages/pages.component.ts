@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { NavigationEnd } from '@angular/router';
-import { filter, startWith, tap } from 'rxjs/operators';
+import { delay, filter, startWith, tap } from 'rxjs/operators';
 
 import { DYNAMIC_COMPONENTS } from '../utils';
 
@@ -73,11 +73,10 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
         startWith(null), // Trigger initial load
-        tap(() => {
-          this.context.update((state) => ({ ...state, status: 'loading' }));
-        }),
+        tap(() => this.#setLoading()),
         switchMap(() => this.pageService.getPage(this.route)),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this.destroyRef),
+        delay(2000)
       )
       .subscribe(
         ({
@@ -85,25 +84,42 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
           nav,
         }: {
           page: DotCMSPageAsset | { error: PageError };
-          nav: DotcmsNavigationItem | null;
+          nav: DotcmsNavigationItem;
         }) => {
           if ('error' in page) {
-            this.context.update((state) => ({
-              page: null,
-              nav: null,
-              error: page.error,
-              status: 'error',
-            }));
+            this.#setError(page.error);
           } else {
-            this.context.update((state) => ({
-              error: null,
-              page,
-              nav,
-              status: 'success',
-            }));
+            this.#setSuccess(page, nav);
           }
         }
       );
+  }
+
+  #setSuccess(page: DotCMSPageAsset, nav: DotcmsNavigationItem) {
+    this.context.update((state) => ({
+      status: 'success',
+      page,
+      nav,
+      error: null,
+    }));
+  }
+
+  #setLoading() {
+    this.context.update((state) => ({
+      status: 'loading',
+      page: null,
+      nav: null,
+      error: null,
+    }));
+  }
+
+  #setError(error: PageError) {
+    this.context.update((state) => ({
+      page: null,
+      nav: null,
+      error: error,
+      status: 'error',
+    }));
   }
 
   ngOnDestroy() {

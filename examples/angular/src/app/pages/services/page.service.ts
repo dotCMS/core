@@ -1,26 +1,47 @@
 import { inject, Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { from, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { from, Observable, shareReplay } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 
 import { getPageRequestParams } from '@dotcms/client';
 import { DotcmsNavigationItem, DotCMSPageAsset } from '@dotcms/angular';
 
 import { DOTCMS_CLIENT_TOKEN } from '../../client-token/dotcms-client';
-import { PageError } from '../pages.component';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PageService {
   private readonly client = inject(DOTCMS_CLIENT_TOKEN);
+  private navObservable: Observable<DotcmsNavigationItem | null>;
 
-  /**
-   * Get the page and navigation data for the given route.
-   * @param route The activated route.
-   * @returns An observable that emits the page and navigation data.
-   */
+  constructor() {
+    this.navObservable = this.fetchNavigation();
+  }
+
   getPage(route: ActivatedRoute): Observable<any> {
+    return this.fetchPage(route).pipe(
+      switchMap((page) => 
+        this.navObservable.pipe(
+          map((nav) => ({ page, nav }))
+        )
+      )
+    );
+  }
+
+  private fetchNavigation(): Observable<DotcmsNavigationItem | null> {
+    return from(
+      this.client.nav.get({
+        path: '/',
+        depth: 2,
+        languageId: 1, // Default language ID
+      }).then((response) => (response as any).entity)
+    ).pipe(
+      shareReplay(1)
+    );
+  }
+
+  private fetchPage(route: ActivatedRoute): Observable<any> {
     const queryParams = route.snapshot.queryParamMap;
     const url = route.snapshot.url.map((segment) => segment.path).join('/');
     const path = queryParams.get('path') || url || '/';
@@ -29,27 +50,13 @@ export class PageService {
       path,
       params: queryParams,
     });
-    const pagePromise = this.client.page.get(pageParams).catch((error) => ({
-      error: {
-        message: error.message,
-        status: error.status,
-      },
-    })) as Promise<DotCMSPageAsset | { error: PageError }>;
 
-    const navParams = {
-      path: '/',
-      depth: 2,
-      languageId: parseInt(queryParams.get('languageId') || '1'),
-    };
-    const navPromise = this.client.nav
-      .get(navParams)
-      .then((response) => (response as any).entity)
-      .catch((error) => null) as Promise<DotcmsNavigationItem | null>;
-
-    return from(Promise.all([pagePromise, navPromise])).pipe(
-      map(([page, navResponse]) => ({
-        page,
-        nav: navResponse,
+    return from(
+      this.client.page.get(pageParams).catch((error) => ({
+        error: {
+          message: error.message,
+          status: error.status,
+        },
       }))
     );
   }
