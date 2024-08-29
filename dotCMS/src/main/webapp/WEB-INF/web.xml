@@ -361,11 +361,9 @@
         <servlet-class>com.dotcms.csspreproc.SassPreProcessServlet</servlet-class>
     </servlet>
     <!-- REST -->
-    <servlet>
+  <servlet>
 		<servlet-name>RESTAPI</servlet-name>
-		<servlet-class>
-		  com.dotcms.rest.servlet.ReloadableServletContainer
-		</servlet-class>
+		<servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
 		<init-param>
 			<param-name>jersey.config.server.mediaTypeMappings</param-name>
 			<param-value>txt : text/plain, xml : application/xml, json : application/json, js : application/javascript</param-value>

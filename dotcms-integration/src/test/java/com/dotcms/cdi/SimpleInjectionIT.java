@@ -1,6 +1,7 @@
 package com.dotcms.cdi;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
@@ -19,9 +20,12 @@ public class SimpleInjectionIT extends IntegrationTestBase {
      */
     @Test
     public void testInjection() {
-        Optional<SayHelloBean> sayHelloBean = CDIUtils.getBean(SayHelloBean.class);
-        assertTrue(sayHelloBean.isPresent());
-        assertEquals("Hello", sayHelloBean.get().sayHello());
+
+        Optional<GreetingBean> optional = CDIUtils.getBean(GreetingBean.class);
+        assertTrue(optional.isPresent());
+        final GreetingBean greetingBean = optional.get();
+        assertEquals("Hello World", greetingBean.greet());
+
     }
 
 }

@@ -1,6 +1,5 @@
 package com.dotcms.cdi;
 
-
 import com.dotmarketing.util.Logger;
 import java.util.Optional;
 import javax.enterprise.inject.spi.CDI;
@@ -22,12 +21,14 @@ public class CDIUtils {
      * @return an Optional with the bean if found, empty otherwise
      */
     public static <T> Optional<T> getBean(Class<T> clazz) {
-           try {
-               return Optional.of(CDI.current().select(clazz).get());
-           } catch (Exception e) {
-               Logger.warn(CDIUtils.class, String.format("Unable to find bean of class [%s]",clazz), e);
-               return Optional.empty();
-           }
+        try {
+            return Optional.of(CDI.current().select(clazz).get());
+        } catch (Exception e) {
+            Logger.error(CDIUtils.class,
+                String.format("Unable to find bean of class [%s] [%s]", clazz, e.getMessage())
+            );
+        }
+        return Optional.empty();
     }
 
 
