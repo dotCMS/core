@@ -21,12 +21,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.struts.ImportContentletsForm;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.ImportUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
@@ -40,6 +35,8 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import javax.servlet.ServletOutputStream;
@@ -112,6 +109,8 @@ public class ImportContentletsAction extends DotPortletAction {
 
 				
 				File file = uploadReq.getFile("file");
+				Files.copy(file.toPath(), new File(ConfigUtils.getAssetTempPath()+java.io.File.separator+file.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+				file = Paths.get(ConfigUtils.getAssetTempPath()+java.io.File.separator+file.getName()).toFile();
 
 
 				final ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
@@ -187,7 +186,7 @@ public class ImportContentletsAction extends DotPortletAction {
 							setForward(req, "portlet.ext.contentlet.import_contentlets_preview");
 							break;
 						}
-
+						csvreader.close();
 					}
 				}
 
@@ -217,10 +216,11 @@ public class ImportContentletsAction extends DotPortletAction {
 					public void run() {
 
 						ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
+						File fileToImport = (File) httpSession.getAttribute("file_to_import");
 						Charset charset = importContentletsForm.getLanguage() == -1
 								? Charset.defaultCharset()
-								: FileUtil.detectEncodeType((File) httpSession.getAttribute("file_to_import"));
-						try(Reader reader = new BufferedReader(new InputStreamReader(new FileInputStream((File) httpSession.getAttribute("file_to_import")), charset))){
+								: FileUtil.detectEncodeType(fileToImport);
+						try(Reader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileToImport), charset))){
 
 							Logger.debug(this, "Calling Process File Method");
 
