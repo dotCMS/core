@@ -3,6 +3,8 @@ import { ComponentFixture, fakeAsync, tick, waitForAsync } from '@angular/core/t
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { Dialog } from 'primeng/dialog';
+
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -68,8 +70,8 @@ describe('DotAlertConfirmComponent', () => {
 
             fixture.detectChanges();
             const confirm = de.query(By.css('p-confirmDialog')).componentInstance;
-            expect(confirm.style).toEqual({ width: '400px' }, 'width');
-            expect(confirm.closable).toBe(false, 'closable');
+            expect(confirm.style).toEqual({ width: '400px' });
+            expect(confirm.closable).toBe(false);
         });
 
         it('should bind correctly to buttons', fakeAsync(() => {
@@ -159,14 +161,14 @@ describe('DotAlertConfirmComponent', () => {
             });
 
             fixture.detectChanges();
-            const dialog = de.query(By.css('p-dialog')).componentInstance;
+            const dialog: Dialog = de.query(By.css('p-dialog')).componentInstance;
 
-            expect(dialog.closable).toBe(false, 'closable');
-            expect(dialog.draggable).toBe(false, 'draggable');
-            expect(dialog.header).toBe('Header Test', 'header');
-            expect(dialog.modal).toBe('modal', 'modal');
-            expect(dialog.visible).toBe(true, 'visible');
-            expect(dialog.style).toEqual({ width: '400px' }, 'width');
+            expect(dialog.closable).toBe(false);
+            expect(dialog.draggable).toBe(false);
+            expect(dialog.header).toBe('Header Test');
+            expect(dialog.modal).toBe(true);
+            expect(dialog.visible).toBe(true);
+            expect(dialog.style).toEqual({ width: '400px' });
         });
 
         it('should add message', () => {
