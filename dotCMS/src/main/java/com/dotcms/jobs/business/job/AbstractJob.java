@@ -44,6 +44,8 @@ public interface AbstractJob {
 
     long lastRetryTimestamp();
 
+    float progress();
+
     /**
      * Creates a new Job with an incremented retry count and updated timestamp.
      *

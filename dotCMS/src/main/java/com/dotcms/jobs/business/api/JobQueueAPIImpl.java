@@ -8,7 +8,6 @@ import com.dotcms.jobs.business.error.ProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobState;
-import com.dotcms.jobs.business.processor.DefaultProgressTracker;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.queue.JobQueue;
@@ -306,8 +305,12 @@ public class JobQueueAPIImpl implements JobQueueAPI {
      */
     private void updateJobProgress(final Job job, final ProgressTracker progressTracker) {
         if (job != null) {
-            jobQueue.updateJobProgress(job.id(), progressTracker.progress());
-            notifyJobWatchers(job);
+
+            float progress = progressTracker.progress();
+            Job updatedJob = job.withProgress(progress);
+
+            jobQueue.updateJobProgress(job.id(), updatedJob.progress());
+            notifyJobWatchers(updatedJob);
         }
     }
 
@@ -439,12 +442,7 @@ public class JobQueueAPIImpl implements JobQueueAPI {
 
             try (final CloseableScheduledExecutor closeableExecutor = new CloseableScheduledExecutor()) {
 
-                final ProgressTracker progressTracker;
-                if (processor.progressTracker(runningJob) != null) {
-                    progressTracker = processor.progressTracker(runningJob);
-                } else {
-                    progressTracker = new DefaultProgressTracker();
-                }
+                final ProgressTracker progressTracker = processor.progressTracker(runningJob);
 
                 // Start a separate thread to periodically update and persist progress
                 ScheduledExecutorService progressUpdater = closeableExecutor.getExecutorService();
