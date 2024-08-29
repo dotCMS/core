@@ -85,6 +85,4 @@ export class DotCategoryFieldDialogComponent implements OnInit, OnDestroy {
         this.store.addConfirmedCategories();
         this.closedDialog.emit();
     }
-
-    protected readonly console = console;
 }
