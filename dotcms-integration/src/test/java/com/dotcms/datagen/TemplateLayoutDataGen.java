@@ -16,7 +16,7 @@ public class TemplateLayoutDataGen  {
     private List<TemplateLayoutColumn> currentColumns;
 
     private List<ContainerUUID> containersIds = new ArrayList<>();
-    final List<ContainerUUID> containersIdsInSidebar = new ArrayList<>();
+    private final List<ContainerUUID> containersIdsInSidebar = new ArrayList<>();
     private int currentColumnWidthPercent = 100;
     private int version = 1;
 
