@@ -1,21 +1,18 @@
-import { animate, state, style, transition, trigger } from '@angular/animations';
 import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    EventEmitter,
     inject,
-    Input,
+    model,
     OnDestroy,
     OnInit,
-    Output
+    output
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { SidebarModule } from 'primeng/sidebar';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -26,21 +23,20 @@ import { DotCategoryFieldSearchListComponent } from '../dot-category-field-searc
 import { DotCategoryFieldSelectedComponent } from '../dot-category-field-selected/dot-category-field-selected.component';
 
 /**
- * The DotCategoryFieldSidebarComponent is a sidebar panel that allows editing of content category field.
+ * The DotCategoryFieldDialogComponent is a dialog panel that allows editing of content category field.
  * It provides interfaces for item selection and click handling, and communicates with a store
  * to fetch and update the categories' data.
  *
- * @property {boolean} visible - Indicates the visibility of the sidebar. Default is `true`.
- * @property {EventEmitter<void>} closedSidebar - Event emitted when the sidebar is closed.
+ * @property {boolean} visible - Indicates the visibility of the dialog. Default is `true`.
+ * @property {output<void>} closedDialog - Output emitted when the dialog is closed.
  */
 @Component({
-    selector: 'dot-category-field-sidebar',
+    selector: 'dot-category-field-dialog',
     standalone: true,
     imports: [
         DialogModule,
         ButtonModule,
         DotMessagePipe,
-        SidebarModule,
         DotCategoryFieldCategoryListComponent,
         InputTextModule,
         DotCategoryFieldSearchComponent,
@@ -48,38 +44,27 @@ import { DotCategoryFieldSelectedComponent } from '../dot-category-field-selecte
         DotCategoryFieldSelectedComponent,
         NgClass
     ],
-    templateUrl: './dot-category-field-sidebar.component.html',
-    styleUrl: './dot-category-field-sidebar.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    animations: [
-        trigger('fadeAnimation', [
-            state(
-                'void',
-                style({
-                    opacity: 0
-                })
-            ),
-            transition(':enter, :leave', [animate('50ms ease-in-out')])
-        ])
-    ]
+    templateUrl: './dot-category-field-dialog.component.html',
+    styleUrl: './dot-category-field-dialog.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotCategoryFieldSidebarComponent implements OnInit, OnDestroy {
+export class DotCategoryFieldDialogComponent implements OnInit, OnDestroy {
     /**
-     * Indicates the visibility of the sidebar.
+     * Indicates the visibility of the dialog.
      *
-     * @memberof DotCategoryFieldSidebarComponent
+     * @memberof DotCategoryFieldDialogComponent
      */
-    @Input() visible = false;
+    $isVisible = model<boolean>(false, { alias: 'isVisible' });
 
     /**
-     * Output that emit if the sidebar is closed
+     * Output that emit if the Dialog is closed
      */
-    @Output() closedSidebar = new EventEmitter<void>();
+    closedDialog = output<void>();
 
     /**
      * Store based on the `CategoryFieldStore`.
      *
-     * @memberof DotCategoryFieldSidebarComponent
+     * @memberof DotCategoryFieldDialogComponent
      */
     readonly store = inject(CategoryFieldStore);
 
@@ -94,5 +79,10 @@ export class DotCategoryFieldSidebarComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         this.store.clean();
+    }
+
+    confirmCategories(): void {
+        this.store.addConfirmedCategories();
+        this.closedDialog.emit();
     }
 }

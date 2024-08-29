@@ -717,7 +717,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         db.setSQL(WorkflowSQL.SELECT_ACTION);
         db.addParam(id);
         try {
-            return (WorkflowAction) this.convertListToObjects(db.loadObjectResults(),
+            return  (WorkflowAction) this.convertListToObjects(db.loadObjectResults(),
                     WorkflowAction.class).get(0);
         } catch (IndexOutOfBoundsException ioob) {
             return null;
@@ -1853,7 +1853,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         final WorkflowScheme proxyScheme = new WorkflowScheme();
         proxyScheme.setId(action.getSchemeId());
         cache.removeActions(proxyScheme);
-
         // update workflowScheme mod date
         final WorkflowScheme scheme = findScheme(action.getSchemeId());
         saveScheme(scheme);
