@@ -91,7 +91,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * number of threads.
      */
     public JobQueueManagerAPIImpl() {
-        // TODO: Use a job queue implementation
+        // We don't have yet a JobQueue implementation, an implementation will be developed in a
+        // later task.
         this(null, DEFAULT_THREAD_POOL_SIZE);
     }
 
