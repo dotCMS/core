@@ -4,13 +4,11 @@ import { DotCMSPagesComponent } from './pages/pages.component';
 export const routes: Routes = [
   {
     path: '**',
-    component: DotCMSPagesComponent,
-    runGuardsAndResolvers: 'always'
+    component: DotCMSPagesComponent
   },
   { 
     path: '',
     pathMatch: 'full',
-    component: DotCMSPagesComponent,
-    runGuardsAndResolvers: 'always'
+    component: DotCMSPagesComponent
   }
 ];
