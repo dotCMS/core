@@ -80,14 +80,10 @@ export class DotCMSPagesComponent implements OnInit {
         startWith(null), // Trigger initial load
         tap(() => this.#setLoading()),
         switchMap(() => this.pageService.getPage(this.route, this.editorCofig)),
-        takeUntilDestroyed(this.destroyRef),
-        delay(1000)
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(
-        ({
-          page,
-          nav,
-        }: {
+        ({ page, nav }: {
           page: DotCMSPageAsset | { error: PageError };
           nav: DotcmsNavigationItem;
         }) => {
