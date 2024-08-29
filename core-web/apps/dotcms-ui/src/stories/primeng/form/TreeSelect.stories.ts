@@ -12,7 +12,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { TreeSelectModule, TreeSelect } from 'primeng/treeselect';
 
-import { files } from '../../utils/tree-node-files';
+import { generateFakeTree } from '../../utils/tree-node-files';
 
 type ExtraArgs = {
     invalid: boolean;
@@ -37,21 +37,19 @@ const meta: Meta<Args> = {
         docs: {
             description: {
                 component:
-                    'TreeSelect is a form component to choose from hierarchical data.: https://www.primefaces.org/primeng-v15-lts/treeselect'
+                    'TreeSelect is a form component to choose from hierarchical data.: https://primeng.org/treeselect'
             }
         }
     },
     args: {
         placeholder: 'Select Item',
-        options: [...files],
+        options: [...generateFakeTree()],
         showClear: true,
         invalid: false,
         selectionMode: 'single'
     },
     render: (args) => ({
-        props: {
-            ...args
-        },
+        props: args,
         template: `
         <p-treeSelect
             ${argsToTemplate(args)}

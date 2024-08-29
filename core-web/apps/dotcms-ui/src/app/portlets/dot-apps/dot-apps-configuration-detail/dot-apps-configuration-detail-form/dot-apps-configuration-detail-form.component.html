@@ -3,8 +3,8 @@
         <dot-icon
             *ngIf="field.warnings && field.warnings.length"
             name="warning"
-            pTooltip="{{ field.warnings.length ? field.warnings.join('. ') : '' }}"
-            size="18"></dot-icon>
+            [pTooltip]="field.warnings.length ? field.warnings.join('. ') : ''"
+            size="18" />
     </ng-template>
 
     <ng-template #labelField let-field="field">
@@ -77,7 +77,7 @@
                     [ngClass]="{
                         required: field.required
                     }"
-                    [options]="field.options"></p-dropdown>
+                    [options]="field.options" />
                 <span class="p-field-hint">
                     <markdown>{{ field.hint }}</markdown>
                 </span>
