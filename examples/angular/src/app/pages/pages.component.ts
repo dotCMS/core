@@ -1,18 +1,15 @@
 import {
   Component,
   DestroyRef,
-  InjectionToken,
   OnDestroy,
   OnInit,
   inject,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, ParamMap } from '@angular/router';
-
-import { HeaderComponent } from './components/header/header.component';
-import { FooterComponent } from './components/footer/footer.component';
-import { NavigationComponent } from './components/navigation/navigation.component';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
+import { NavigationEnd } from '@angular/router';
+import { filter, startWith, tap } from 'rxjs/operators';
 
 import { DYNAMIC_COMPONENTS } from '../utils';
 
@@ -23,12 +20,15 @@ import {
 } from '@dotcms/angular';
 import { JsonPipe } from '@angular/common';
 import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
-import { map, withLatestFrom, switchMap, delay } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
 import { getPageRequestParams } from '@dotcms/client';
 import { from } from 'rxjs';
 import { ErrorComponent } from './components/error/error.component';
 import { LoadingComponent } from './components/loading/loading.component';
+import { HeaderComponent } from './components/header/header.component';
+import { NavigationComponent } from './components/navigation/navigation.component';
+import { FooterComponent } from './components/footer/footer.component';
 
 export type PageError = {
   message: string;
@@ -52,7 +52,7 @@ type PageRender = {
     FooterComponent,
     JsonPipe,
     ErrorComponent,
-    LoadingComponent
+    LoadingComponent,
   ],
   templateUrl: './pages.component.html',
   styleUrl: './pages.component.css',
@@ -60,6 +60,7 @@ type PageRender = {
 export class DotCMSPagesComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
 
   protected readonly context = signal<PageRender>({
     page: null,
@@ -74,36 +75,35 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
   protected slug: string | null = null;
 
   ngOnInit() {
-    this.context.update((state) => ({ ...state, status: 'loading' }));
-
-    this.route.url
+    this.router.events
       .pipe(
-        withLatestFrom(this.route.queryParamMap),
-        map(([segments, queryParams]) => ({
-          path:
-            segments.length > 0
-              ? segments.map((segment) => segment.path).join('/')
-              : '/',
-          queryParams: queryParams,
-        })),
-        switchMap(({ path, queryParams }) => {
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        startWith(null), // Trigger initial load
+        tap(() => {
+          this.context.update((state) => ({ ...state, status: 'loading' }));
+        }),
+        switchMap(() => {
+          const queryParams = this.route.snapshot.queryParamMap;
+          const url = this.route.snapshot.url.map((segment) => segment.path).join('/')
+          const path = queryParams.get('path') || url || '/';
+
           const pageParams = getPageRequestParams({
             path,
             params: queryParams,
           });
           const pagePromise = this.client.page
             .get(pageParams)
-            .catch((error) => {
-              return { error: {
+            .catch((error) => ({
+              error: {
                 message: error.message,
                 status: error.status,
-              }};
-            }) as Promise<DotCMSPageAsset | { error: PageError }>;
+              },
+            })) as Promise<DotCMSPageAsset | { error: PageError }>;
 
           const navParams = {
             path: '/',
             depth: 2,
-            languageId: (queryParams as any)['language_id'],
+            languageId: parseInt(queryParams.get('languageId') || '1'),
           };
           const navPromise = this.client.nav
             .get(navParams)
@@ -114,27 +114,35 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
         }),
         map(([page, navResponse]) => ({
           page,
-          nav: (navResponse)
+          nav: navResponse,
         })),
-        delay(2000),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe(({ page, nav }) => {
-        if ('error' in page) {
-          this.context.update((state) => ({
-            ...state,
-            error: page.error,
-            status: 'error',
-          }));
-        } else {
-          this.context.update((state) => ({
-            ...state,
-            page,
-            nav,
-            status: 'success',
-          }));
+      .subscribe(
+        ({
+          page,
+          nav,
+        }: {
+          page: DotCMSPageAsset | { error: PageError };
+          nav: DotcmsNavigationItem | null;
+        }) => {
+          if ('error' in page) {
+            this.context.update((state) => ({
+              page: null,
+              nav: null,
+              error: page.error,
+              status: 'error',
+            }));
+          } else {
+            this.context.update((state) => ({
+              error: null,
+              page,
+              nav,
+              status: 'success',
+            }));
+          }
         }
-      });
+      );
   }
 
   ngOnDestroy() {
