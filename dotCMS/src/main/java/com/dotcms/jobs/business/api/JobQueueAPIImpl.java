@@ -316,6 +316,8 @@ public class JobQueueAPIImpl implements JobQueueAPI {
      */
     private void processJobs() {
 
+        int emptyQueueCount = 0;
+
         while (!Thread.currentThread().isInterrupted() && !isShuttingDown) {
 
             if (isCircuitBreakerOpen()) {
@@ -324,14 +326,17 @@ public class JobQueueAPIImpl implements JobQueueAPI {
 
             try {
 
-                Job job = fetchNextJob();
+                Job job = jobQueue.nextJob();
                 if (job != null) {
                     processJobWithRetry(job);
+                    emptyQueueCount = 0;
                 } else {
                     // If no jobs were found, wait for a short time before checking again
-                    Thread.sleep(1000);
+                    // Implement exponential backoff when queue is repeatedly empty
+                    long sleepTime = Math.min(1000 * (long) Math.pow(2, emptyQueueCount), 30000);
+                    Thread.sleep(sleepTime);
+                    emptyQueueCount++;
                 }
-
             } catch (InterruptedException e) {
                 Logger.error(this, "Job processing thread interrupted: " + e.getMessage(), e);
                 Thread.currentThread().interrupt();
@@ -366,21 +371,6 @@ public class JobQueueAPIImpl implements JobQueueAPI {
     }
 
     /**
-     * Fetches the next job to be processed, either pending or failed.
-     *
-     * @return The next job to be processed, or null if no job is available.
-     */
-    private Job fetchNextJob() {
-
-        Job job = jobQueue.nextPendingJob();
-        if (job == null) {
-            job = jobQueue.nextFailedJob();
-        }
-
-        return job;
-    }
-
-    /**
      * Processes a job, handling retries if necessary. This method determines whether a job should
      * be processed immediately, retried later, or handled as a non-retryable failure.
      *
@@ -389,8 +379,19 @@ public class JobQueueAPIImpl implements JobQueueAPI {
     private void processJobWithRetry(final Job job) {
 
         if (job.state() == JobState.FAILED) {
+
             if (canRetry(job)) {
-                handleFailedJobWithRetry(job);
+
+                if (isReadyForRetry(job)) {
+                    Logger.warn(this, "Retrying job " + job.id() + " after failure.");
+                    processJob(job.incrementRetry());
+                } else {
+
+                    Logger.debug(this, "Job " + job.id() + " is not ready for retry, "
+                            + "putting back in queue.");
+                    // Put the job back in the queue for later retry
+                    jobQueue.putJobBackInQueue(job);
+                }
             } else {
                 handleNonRetryableFailedJob(job);
             }
@@ -400,22 +401,14 @@ public class JobQueueAPIImpl implements JobQueueAPI {
     }
 
     /**
-     * Handles a failed job that is eligible for retry. If it's time for the next retry attempt, the
-     * job is processed; otherwise, it's updated in the queue for a future retry.
-     *
-     * @param job The failed job that can be retried.
+     * Determines whether a job is ready for retry based on its retry strategy.
+     * @param job The job to check for retry eligibility.
+     * @return {@code true} if the job is ready for retry, {@code false} otherwise.
      */
-    private void handleFailedJobWithRetry(final Job job) {
-
+    private boolean isReadyForRetry(Job job) {
         long now = System.currentTimeMillis();
         long nextRetryTime = job.lastRetryTimestamp() + nextRetryDelay(job);
-        if (now >= nextRetryTime) {
-            processJob(job);
-        } else {
-            Job updatedJob = job.withState(JobState.PENDING);
-            jobQueue.updateJobStatus(updatedJob); // Put the job back in the queue for later retry
-            notifyJobWatchers(updatedJob);
-        }
+        return now >= nextRetryTime;
     }
 
     /**
@@ -491,29 +484,20 @@ public class JobQueueAPIImpl implements JobQueueAPI {
                     .processingStage("Processor selection")
                     .timestamp(LocalDateTime.now())
                     .build();
-            Job failedJob = job.markAsFailed(errorDetail);
-            jobQueue.updateJobStatus(failedJob);
-
-            notifyJobWatchers(failedJob);
+            handleJobFailure(job, errorDetail);
         }
     }
 
     /**
-     * Handles the failure of a job, including retry logic.
+     * Handles the failure of a job
      *
      * @param job         The job that failed.
      * @param errorDetail The details of the error that caused the failure.
      */
     private void handleJobFailure(final Job job, final ErrorDetail errorDetail) {
-
-        Job updatedJob;
-        if (canRetry(job)) {
-            updatedJob = job.incrementRetry().markAsFailed(errorDetail);
-        } else {
-            updatedJob = job.markAsFailed(errorDetail);
-        }
-        jobQueue.updateJobStatus(updatedJob);
-        notifyJobWatchers(updatedJob);
+        final Job failedJob = job.markAsFailed(errorDetail);
+        jobQueue.updateJobStatus(failedJob);
+        notifyJobWatchers(failedJob);
     }
 
     /**

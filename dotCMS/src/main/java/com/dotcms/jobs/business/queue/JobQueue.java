@@ -77,18 +77,18 @@ public interface JobQueue {
     void updateJobStatus(Job job);
 
     /**
-     * Retrieves the next pending job.
+     * Puts a job back in the queue for retry.
      *
-     * @return The next pending job, or null if no pending jobs are available.
+     * @param job The job to retry.
      */
-    Job nextPendingJob();
+    void putJobBackInQueue(Job job);
 
     /**
-     * Retrieves the next failed job.
+     * Retrieves the next job in the queue.
      *
-     * @return The next failed job, or null if no failed jobs are available.
+     * @return The next job in the queue, or null if the queue is empty.
      */
-    Job nextFailedJob();
+    Job nextJob();
 
     /**
      * Updates the progress of a job.
