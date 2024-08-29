@@ -245,7 +245,7 @@ describe('DotEditPageNavComponent', () => {
                 expect(menuListItems[1].nativeElement.classList).toContain(
                     'edit-page-nav__item--disabled'
                 );
-                expect(menuListItems[1].nativeElement.getAttribute('ng-reflect-text')).toBe(
+                expect(menuListItems[1].nativeElement.getAttribute('ng-reflect-content')).toBe(
                     'Can’t edit advanced template'
                 );
             });
@@ -289,7 +289,7 @@ describe('DotEditPageNavComponent', () => {
                     const label = item.query(By.css('.edit-page-nav__item-text'));
                     expect(label.nativeElement.textContent.trim()).toBe(labels[index]);
 
-                    expect(item.nativeElement.getAttribute('ng-reflect-text')).toBe(
+                    expect(item.nativeElement.getAttribute('ng-reflect-content')).toBe(
                         'Enterprise only'
                     );
                 });

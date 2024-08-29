@@ -51,10 +51,10 @@ export class DotEditContentService {
      * @param name - The name of the tags to retrieve.
      * @returns An Observable that emits an array of tag labels.
      */
-    getTags(name: string) {
+    getTags(name: string): Observable<string[]> {
         const params = new HttpParams().set('name', name);
 
-        return this.#http.get('/api/v2/tags', { params }).pipe(
+        return this.#http.get<string[]>('/api/v2/tags', { params }).pipe(
             pluck('entity'),
             map((res) => Object.values(res).map((obj) => obj.label))
         );

@@ -5,9 +5,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.liferay.portal.model.User;
 import org.junit.Test;
 
 /**
@@ -206,6 +209,31 @@ public class UtilMethodsTest extends UnitTestBase {
 		for(String imageName:badImageNames){
 			assertFalse(UtilMethods.isImage(imageName));
 		}
+	}
+
+	/**
+	 * Scenario: Extracting user ID from a User object
+	 * Given a null User object
+	 * When the user ID is extracted
+	 * Then the result should be null
+	 *
+	 * Given a mocked User object with no user ID
+	 * When the user ID is extracted
+	 * Then the result should be null
+	 *
+	 * Given a mocked User object with a user ID "userId"
+	 * When the user ID is extracted
+	 * Then the result should be "userId"
+	 */
+	@Test
+	public void test_extractUserIdOrNull(){
+		assertNull(UtilMethods.extractUserIdOrNull(null));
+
+		final User user = mock(User.class);
+		assertNull(UtilMethods.extractUserIdOrNull(user));
+
+		when(user.getUserId()).thenReturn("userId");
+		assertEquals("userId", UtilMethods.extractUserIdOrNull(user));
 	}
 
 }
