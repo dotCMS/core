@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { NavigationEnd } from '@angular/router';
-import { filter, startWith, tap } from 'rxjs/operators';
+import { delay, filter, startWith, tap } from 'rxjs/operators';
 
 import { DYNAMIC_COMPONENTS } from '../utils';
 
@@ -76,6 +76,7 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
         tap(() => this.#setLoading()),
         switchMap(() => this.pageService.getPage(this.route)),
         takeUntilDestroyed(this.destroyRef),
+        delay(1000)
       )
       .subscribe(
         ({
@@ -105,17 +106,15 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
 
   #setLoading() {
     this.context.update((state) => ({
+      ...state,
       status: 'loading',
-      page: null,
-      nav: null,
       error: null,
     }));
   }
 
   #setError(error: PageError) {
     this.context.update((state) => ({
-      page: null,
-      nav: null,
+      ...state,
       error: error,
       status: 'error',
     }));

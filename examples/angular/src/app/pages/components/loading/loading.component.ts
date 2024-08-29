@@ -7,14 +7,6 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     <div class="loading-container">
-      <!-- Header -->
-      <div class="loading-header">
-        <div class="loading-logo"></div>
-        <div class="loading-nav">
-          <div class="loading-nav-item" *ngFor="let i of [1,2,3,4,5]"></div>
-        </div>
-      </div>
-
       <!-- Layout 1 -->
       <ng-container *ngIf="selectedLayout === 1">
         <div class="loading-hero">
@@ -57,28 +49,6 @@ import { CommonModule } from '@angular/common';
       max-width: 1200px;
       margin: 0 auto;
       padding: 1rem;
-    }
-    .loading-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
-    .loading-logo {
-      width: 150px;
-      height: 40px;
-      background-color: #eee;
-      border-radius: 4px;
-    }
-    .loading-nav {
-      display: flex;
-      gap: 1rem;
-    }
-    .loading-nav-item {
-      width: 80px;
-      height: 20px;
-      background-color: #eee;
-      border-radius: 4px;
     }
     .loading-hero {
       height: 400px;
