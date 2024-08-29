@@ -1,12 +1,15 @@
 package com.dotcms.ai.app;
 
+import com.dotcms.ai.domain.Model;
+import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.util.Logger;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Represents an AI model with various attributes such as type, names, tokens per minute,
@@ -18,43 +21,38 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class AIModel {
 
+    private static final int NOOP_INDEX = -1;
+
     public static final AIModel NOOP_MODEL = AIModel.builder()
             .withType(AIModelType.UNKNOWN)
-            .withNames(List.of())
+            .withModelNames(List.of())
             .build();
 
     private final AIModelType type;
-    private final List<String> names;
+    private final List<Model> models;
     private final int tokensPerMinute;
     private final int apiPerMinute;
     private final int maxTokens;
     private final boolean isCompletion;
-    private final AtomicInteger current;
-    private final AtomicBoolean decommissioned;
+    private final AtomicInteger currentModelIndex;
 
-    private AIModel(final AIModelType type,
-                    final List<String> names,
-                    final int tokensPerMinute,
-                    final int apiPerMinute,
-                    final int maxTokens,
-                    final boolean isCompletion) {
-        DotPreconditions.checkNotNull(type, "type cannot be null");
-        this.type = type;
-        this.names = Optional.ofNullable(names).orElse(List.of());
-        this.tokensPerMinute = tokensPerMinute;
-        this.apiPerMinute = apiPerMinute;
-        this.maxTokens = maxTokens;
-        this.isCompletion = isCompletion;
-        current = new AtomicInteger(this.names.isEmpty() ? -1  : 0);
-        decommissioned = new AtomicBoolean(false);
+    private AIModel(final Builder builder) {
+        DotPreconditions.checkNotNull(builder.type, "type cannot be null");
+        this.type = builder.type;
+        this.models = builder.models;
+        this.tokensPerMinute = builder.tokensPerMinute;
+        this.apiPerMinute = builder.apiPerMinute;
+        this.maxTokens = builder.maxTokens;
+        this.isCompletion = builder.isCompletion;
+        currentModelIndex = new AtomicInteger(this.models.isEmpty() ? NOOP_INDEX  : 0);
     }
 
     public AIModelType getType() {
         return type;
     }
 
-    public List<String> getNames() {
-        return names;
+    public List<Model> getModels() {
+        return models;
     }
 
     public int getTokensPerMinute() {
@@ -73,38 +71,49 @@ public class AIModel {
         return isCompletion;
     }
 
-    public int getCurrent() {
-        return current.get();
+    public int getCurrentModelIndex() {
+        return currentModelIndex.get();
     }
 
-    public void setCurrent(final int current) {
-        if (!isCurrentValid(current)) {
-            logInvalidModelMessage();
-            return;
-        }
-        this.current.set(current);
-    }
-
-    public boolean isDecommissioned() {
-        return decommissioned.get();
-    }
-
-    public void setDecommissioned(final boolean decommissioned) {
-        this.decommissioned.set(decommissioned);
+    public void setCurrentModelIndex(final int currentModelIndex) {
+        this.currentModelIndex.set(currentModelIndex);
     }
 
     public boolean isOperational() {
-        return this != NOOP_MODEL;
+        return this != NOOP_MODEL && models.stream().anyMatch(Model::isOperational);
     }
 
-    public String getCurrentModel() {
-        final int currentIndex = this.current.get();
+    public Model getCurrent() {
+        final int currentIndex = currentModelIndex.get();
         if (!isCurrentValid(currentIndex)) {
             logInvalidModelMessage();
             return null;
         }
+        return models.get(currentIndex);
+    }
 
-        return names.get(currentIndex);
+    public String getCurrentModel() {
+        return Optional.ofNullable(getCurrent()).map(Model::getName).orElse(null);
+    }
+
+    public Model getModel(final String modelName) {
+        final String normalized = modelName.trim().toLowerCase();
+        return models.stream()
+                .filter(model -> normalized.equals(model.getName()))
+                .findFirst()
+                .orElseThrow(() -> new DotAIModelNotFoundException(String.format("Model [%s] not found", modelName)));
+    }
+
+    public void repairCurrentIndexIfNeeded() {
+        if (getCurrentModelIndex() != NOOP_INDEX) {
+            return;
+        }
+
+        setCurrentModelIndex(
+                getModels()
+                        .stream()
+                        .filter(Model::isOperational).findFirst().map(Model::getIndex)
+                        .orElse(NOOP_INDEX));
     }
 
     public long minIntervalBetweenCalls() {
@@ -115,22 +124,21 @@ public class AIModel {
     public String toString() {
         return "AIModel{" +
                 "type=" + type +
-                ", names=" + names +
+                ", models='" + models + '\'' +
                 ", tokensPerMinute=" + tokensPerMinute +
                 ", apiPerMinute=" + apiPerMinute +
                 ", maxTokens=" + maxTokens +
                 ", isCompletion=" + isCompletion +
-                ", current=" + current +
-                ", decommissioned=" + decommissioned +
+                ", currentModelIndex=" + currentModelIndex.get() +
                 '}';
     }
 
     private boolean isCurrentValid(final int current) {
-        return !names.isEmpty() && current >= 0 && current < names.size();
+        return !models.isEmpty() && current >= 0 && current < models.size();
     }
 
     private void logInvalidModelMessage() {
-        Logger.debug(getClass(), String.format("Current model index must be between 0 and %d", names.size()));
+        Logger.debug(getClass(), String.format("Current model index must be between 0 and %d", models.size()));
     }
 
     public static Builder builder() {
@@ -140,7 +148,7 @@ public class AIModel {
     public static class Builder {
 
         private AIModelType type;
-        private List<String> names;
+        private List<Model> models;
         private int tokensPerMinute;
         private int apiPerMinute;
         private int maxTokens;
@@ -154,13 +162,25 @@ public class AIModel {
             return this;
         }
 
-        public Builder withNames(final List<String> names) {
-            this.names = names;
+        public Builder withModels(final List<Model> models) {
+            this.models = Optional.ofNullable(models).orElse(List.of());
             return this;
         }
 
-        public Builder withNames(final String... names) {
-            return withNames(List.of(names));
+        public Builder withModelNames(final List<String> names) {
+            return withModels(
+                    Optional.ofNullable(names)
+                            .map(modelNames -> IntStream.range(0, modelNames.size())
+                                    .mapToObj(index -> Model.builder()
+                                            .withName(modelNames.get(index))
+                                            .withIndex(index)
+                                            .build())
+                                    .collect(Collectors.toList()))
+                            .orElse(List.of()));
+        }
+
+        public Builder withModelNames(final String... names) {
+            return withModelNames(List.of(names));
         }
 
         public Builder withTokensPerMinute(final int tokensPerMinute) {
@@ -184,7 +204,7 @@ public class AIModel {
         }
 
         public AIModel build() {
-            return new AIModel(type, names, tokensPerMinute, apiPerMinute, maxTokens, isCompletion);
+            return new AIModel(this);
         }
 
     }

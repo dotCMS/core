@@ -6,22 +6,20 @@
         (click)="toggleMenu($event)"
         [email]="vm.userData.email"
         data-testId="avatar"
-        dotGravatar></p-avatar>
+        dotGravatar />
     <p-menu
         [model]="vm.items"
         [popup]="true"
         #menu
         (onHide)="hideMask()"
         appendTo="body"
-        styleClass="toolbar-user__menu"></p-menu>
+        styleClass="toolbar-user__menu" />
 
     @if (vm.showMyAccount) {
-        <dot-my-account
-            (shutdown)="store.showMyAccount(false)"
-            [visible]="vm.showMyAccount"></dot-my-account>
+        <dot-my-account (shutdown)="store.showMyAccount(false)" [visible]="vm.showMyAccount" />
     }
 
     @if (vm.showLoginAs) {
-        <dot-login-as (cancel)="store.showLoginAs(false)" [visible]="vm.showLoginAs"></dot-login-as>
+        <dot-login-as (cancel)="store.showLoginAs(false)" [visible]="vm.showLoginAs" />
     }
 }

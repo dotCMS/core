@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { createFakeEvent } from '@ngneat/spectator';
 import { of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -874,7 +875,7 @@ describe('DotTemplateListComponent', () => {
 
             it('should execute Publish action', () => {
                 spyOn(dotTemplatesService, 'publish').and.returnValue(of(mockBulkResponseSuccess));
-                menu.model[0].command();
+                menu.model[0].command({ originalEvent: createFakeEvent('click') });
                 expect(dotTemplatesService.publish).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -882,14 +883,14 @@ describe('DotTemplateListComponent', () => {
                 checkNotificationAndReLoadOfPage('Templates published');
             });
             it('should execute Push Publish action', () => {
-                menu.model[1].command();
+                menu.model[1].command({ originalEvent: createFakeEvent('click') });
                 expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
                     assetIdentifier: '123Published,123Locked',
                     title: 'Push Publish'
                 });
             });
             it('should execute Add To Bundle action', () => {
-                menu.model[2].command();
+                menu.model[2].command({ originalEvent: createFakeEvent('click') });
                 fixture.detectChanges();
                 const addToBundleDialog: DotAddToBundleComponent = fixture.debugElement.query(
                     By.css('dot-add-to-bundle')
@@ -900,7 +901,7 @@ describe('DotTemplateListComponent', () => {
                 spyOn(dotTemplatesService, 'unPublish').and.returnValue(
                     of(mockBulkResponseSuccess)
                 );
-                menu.model[3].command();
+                menu.model[3].command({ originalEvent: createFakeEvent('click') });
                 expect(dotTemplatesService.unPublish).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -909,7 +910,7 @@ describe('DotTemplateListComponent', () => {
             });
             it('should execute Archive action', () => {
                 spyOn(dotTemplatesService, 'archive').and.returnValue(of(mockBulkResponseSuccess));
-                menu.model[4].command();
+                menu.model[4].command({ originalEvent: createFakeEvent('click') });
                 expect(dotTemplatesService.archive).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -920,7 +921,7 @@ describe('DotTemplateListComponent', () => {
                 spyOn(dotTemplatesService, 'unArchive').and.returnValue(
                     of(mockBulkResponseSuccess)
                 );
-                menu.model[5].command();
+                menu.model[5].command({ originalEvent: createFakeEvent('click') });
                 expect(dotTemplatesService.unArchive).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -932,7 +933,7 @@ describe('DotTemplateListComponent', () => {
                 spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
                     conf.accept();
                 });
-                menu.model[6].command();
+                menu.model[6].command({ originalEvent: createFakeEvent('click') });
                 expect(dotTemplatesService.delete).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -952,26 +953,26 @@ describe('DotTemplateListComponent', () => {
             describe('error', () => {
                 it('should fire exception on publish', () => {
                     spyOn(dotTemplatesService, 'publish').and.returnValue(of(mockBulkResponseFail));
-                    menu.model[0].command();
+                    menu.model[0].command({ originalEvent: createFakeEvent('click') });
                     checkOpenOfDialogService('Templates published');
                 });
                 it('should fire exception on unPublish', () => {
                     spyOn(dotTemplatesService, 'unPublish').and.returnValue(
                         of(mockBulkResponseFail)
                     );
-                    menu.model[3].command();
+                    menu.model[3].command({ originalEvent: createFakeEvent('click') });
                     checkOpenOfDialogService('Template unpublished');
                 });
                 it('should fire exception on archive', () => {
                     spyOn(dotTemplatesService, 'archive').and.returnValue(of(mockBulkResponseFail));
-                    menu.model[4].command();
+                    menu.model[4].command({ originalEvent: createFakeEvent('click') });
                     checkOpenOfDialogService('Template archived');
                 });
                 it('should fire exception on unArchive', () => {
                     spyOn(dotTemplatesService, 'unArchive').and.returnValue(
                         of(mockBulkResponseFail)
                     );
-                    menu.model[5].command();
+                    menu.model[5].command({ originalEvent: createFakeEvent('click') });
                     checkOpenOfDialogService('Template unarchived');
                 });
                 it('should fire exception on delete', () => {
@@ -979,7 +980,7 @@ describe('DotTemplateListComponent', () => {
                     spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
                         conf.accept();
                     });
-                    menu.model[6].command();
+                    menu.model[6].command({ originalEvent: createFakeEvent('click') });
                     checkOpenOfDialogService('Template deleted');
                 });
             });

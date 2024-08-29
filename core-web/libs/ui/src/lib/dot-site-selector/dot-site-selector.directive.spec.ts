@@ -1,11 +1,11 @@
-import { createDirectiveFactory, SpectatorDirective } from '@ngneat/spectator';
+import { createDirectiveFactory, createFakeEvent, SpectatorDirective } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { fakeAsync } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { Dropdown, DropdownFilterEvent, DropdownModule } from 'primeng/dropdown';
 
 import { DotEventsService, DotSiteService } from '@dotcms/data-access';
 import { CoreWebService, mockSites, SiteService } from '@dotcms/dotcms-js';
@@ -60,12 +60,14 @@ describe('DotSiteSelectorDirective', () => {
         });
 
         it('should get sites list with filter', fakeAsync(() => {
-            const filter = 'demo';
-
-            dropdown.onFilter.emit({ filter });
+            const event: DropdownFilterEvent = {
+                filter: 'demo',
+                originalEvent: createFakeEvent('click')
+            };
+            dropdown.onFilter.emit(event);
 
             spectator.tick(500);
-            expect(getSitesSpy).toHaveBeenCalledWith(filter, 10);
+            expect(dotSiteService.getSites).toHaveBeenCalledWith(event.filter, 10);
         }));
     });
 

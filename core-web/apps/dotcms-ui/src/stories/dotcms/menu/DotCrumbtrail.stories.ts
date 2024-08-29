@@ -41,7 +41,6 @@ const meta: Meta<DotCrumbtrailComponent> = {
         )
     ],
     parameters: {
-        layout: 'centered',
         docs: {
             description: {
                 component:
@@ -49,11 +48,10 @@ const meta: Meta<DotCrumbtrailComponent> = {
             }
         }
     },
-    render: () => {
-        return {
-            template: `<dot-crumbtrail class="max-w-full" />`
-        };
-    }
+    render: (args) => ({
+        props: args,
+        template: `<dot-crumbtrail class="max-w-full" />`
+    })
 };
 
 export default meta;

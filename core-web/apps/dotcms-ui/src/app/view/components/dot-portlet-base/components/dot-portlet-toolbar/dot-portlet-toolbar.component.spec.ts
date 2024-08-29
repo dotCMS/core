@@ -115,7 +115,7 @@ describe('DotPortletToolbarComponent', () => {
                 actionsPrimaryButton.triggerEventHandler('click', {});
 
                 expect(actionsPrimaryButton.nativeElement.textContent).toBe('Save');
-                expect(spy).toHaveBeenCalledWith({});
+                expect(spy).toHaveBeenCalled();
 
                 const actionsMenu = de.query(By.css('[data-testId="actionsMenu"]'));
                 expect(actionsMenu).toBeNull();
