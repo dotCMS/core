@@ -240,8 +240,8 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.copy'),
-                    command: async (item: DotCMSContentType) => {
-                        await this.showCloneContentTypeDialog(item);
+                    command: (item: DotCMSContentType) => {
+                        this.showCloneContentTypeDialog(item);
                     }
                 }
             });

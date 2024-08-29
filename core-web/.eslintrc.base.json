@@ -32,6 +32,7 @@
                         "ignoredFiles": ["{projectRoot}/rollup.config.{js,ts,mjs,mts}"]
                     }
                 ],
+                "@typescript-eslint/no-misused-promises": "error",
                 "@typescript-eslint/keyword-spacing": [
                     "error",
                     {
