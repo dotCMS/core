@@ -1,20 +1,13 @@
 <p-dialog
     (onHide)="closedDialog.emit()"
-    [visible]="$isVisible()"
+    [(visible)]="$isVisible"
     data-testId="dialog"
     [draggable]="false"
     [resizable]="false"
     [maximizable]="false"
     [modal]="true"
+    [header]="'edit.content.category-field.dialog.header.select-categories' | dm"
     styleClass="category-field__dialog">
-    <ng-template pTemplate="header">
-        <div class="flex flex-row category-field__header">
-            <div class="category-field__header-title" data-testId="dialog-title">
-                {{ 'edit.content.category-field.dialog.header.select-categories' | dm }}
-            </div>
-        </div>
-    </ng-template>
-
     <div class="category-field__content h-full w-full">
         <div class="category-field__left-pane flex flex-column">
             <div class="category-field__search">

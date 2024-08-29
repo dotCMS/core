@@ -4,7 +4,7 @@ import {
     Component,
     computed,
     inject,
-    input,
+    model,
     OnDestroy,
     OnInit,
     output
@@ -54,7 +54,7 @@ export class DotCategoryFieldDialogComponent implements OnInit, OnDestroy {
      *
      * @memberof DotCategoryFieldDialogComponent
      */
-    $isVisible = input<boolean>(false, { alias: 'isVisible' });
+    $isVisible = model<boolean>(false, { alias: 'isVisible' });
 
     /**
      * Output that emit if the Dialog is closed
@@ -85,4 +85,6 @@ export class DotCategoryFieldDialogComponent implements OnInit, OnDestroy {
         this.store.addConfirmedCategories();
         this.closedDialog.emit();
     }
+
+    protected readonly console = console;
 }
