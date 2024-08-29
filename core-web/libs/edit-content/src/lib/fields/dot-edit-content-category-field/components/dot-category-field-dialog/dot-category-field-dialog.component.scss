@@ -71,10 +71,17 @@
     scrollbar-gutter: auto;
 }
 
-:host ::ng-deep .p-sidebar-content {
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
+:host ::ng-deep {
+    .category-field__dialog.p-dialog {
+        min-height: 90%;
+        height: 100%;
+        width: 75vw;
+
+        .p-dialog-content {
+            padding: 0;
+            height: 100%;
+        }
+    }
 }
 
 .category-field__empty-state {

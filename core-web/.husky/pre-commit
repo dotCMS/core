@@ -16,11 +16,34 @@ NC='\033[0m' # No Color
     exit 1
 }
 
+# Load nvm and use the version specified in .nvmrc
+load_nvm_and_use_node() {
+    export NVM_DIR="$HOME/.nvm"
+    if [ -s "$NVM_DIR/nvm.sh" ]; then
+        . "$NVM_DIR/nvm.sh"  # This loads nvm
+        echo "nvm loaded."
+
+        if [ -f ".nvmrc" ]; then
+            nvm use || {
+                echo "Failed to switch to Node version specified in .nvmrc"
+                exit 1
+            }
+            echo "Using Node version from .nvmrc"
+        else
+            echo "No .nvmrc file found. Using default Node version."
+        fi
+    else
+        echo "nvm is not installed or could not be found."
+        exit 1
+    fi
+}
+
 check_sdk_client_affected() {
     local YARN_EXEC="${root_dir}/installs/node/yarn/dist/bin/yarn"
-
     local affected_projects=$(npx nx show projects --affected)
     echo "Affected projects: $affected_projects"
+
+    # Build sdk-client if affected
     if echo "$affected_projects" | grep -q "sdk-client"; then
         echo "Building sdk-client"
         if ! $YARN_EXEC nx run sdk-client:build:js; then
@@ -175,8 +198,6 @@ restore_untracked_files() {
 original_pwd=${PWD}
 root_dir="$(git rev-parse --show-toplevel)"
 
-
-
 # Check for sdkman before running other initializations
 
 # This will ensure that the correct version of node and yarn is installed
@@ -200,6 +221,9 @@ fi
 
 core_web_dir="${root_dir}/core-web"
 cd "${core_web_dir}" || exit 1
+
+# Load nvm and use the node version specified in .nvmrc
+load_nvm_and_use_node
 
 staged_files=$(git diff --cached --name-only)
 modified_files=$(git diff --name-only)
@@ -263,6 +287,22 @@ fi
 
 # Check if sdk-client is affected
 check_sdk_client_affected
+
+# Check if there are changes in core-web/libs/sdk and run bump-sdk-versions.js if needed
+sdk_files_staged=$(echo "$staged_files" | grep -E '^core-web/libs/sdk/' || true)
+if [ -n "$sdk_files_staged" ]; then
+    echo "Changes detected in core-web/libs/sdk. Running bump-sdk-versions.js"
+
+    if ! node "${root_dir}/core-web/bump-sdk-versions.js"; then
+        echo "Failed to update versions"
+        has_errors=true
+    else
+        # Add all modified package.json files to staging
+        git add "${root_dir}/core-web/libs/sdk/"
+        git add "${root_dir}/examples/"
+        echo "Staged updated package.json files for SDKs and examples"
+    fi
+fi
 
 # Restore original working directory
 cd "${original_pwd}" || exit 1  # Exit if the directory does not exist

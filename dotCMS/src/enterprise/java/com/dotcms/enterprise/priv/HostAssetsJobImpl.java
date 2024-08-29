@@ -110,6 +110,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
 import org.quartz.JobExecutionContext;
@@ -117,7 +118,6 @@ import org.quartz.JobExecutionException;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -161,6 +161,24 @@ public class HostAssetsJobImpl extends ParentProxy{
 	private final User SYSTEM_USER;
 	private final Host SYSTEM_HOST;
 	private final Folder SYSTEM_FOLDER;
+
+	/**
+	 * This feature flag allows you to enable/disable copying Content Types when you copy a Site.
+	 */
+	public static final String ENABLE_CONTENT_TYPE_COPY = "FEATURE_FLAG_ENABLE_CONTENT_TYPE_COPY";
+	/**
+	 * This property allows you to fall back to NOT copy related content whose parent is a
+	 * Contentlet living in System Host. Such type of relationship was being ignored because
+	 * contents living in System Host are <b>NEVER</b> copied, and were not taken into account when
+	 * copying relationship data.
+	 */
+	public static final String COPY_RELATED_CONTENT_IN_SYSTEM_HOST_CONTENTS =
+			"COPY_RELATED_CONTENT_IN_SYSTEM_HOST_CONTENTS";
+
+	private static final Lazy<Boolean> CONTENT_TYPE_COPY_FLAG =
+			Lazy.of(() -> Config.getBooleanProperty(ENABLE_CONTENT_TYPE_COPY, false));
+	private static final Lazy<Boolean> COPY_RELATED_CONTENT_IN_SYSTEM_HOST_CONTENTS_FLAG = Lazy.of(() ->
+			Config.getBooleanProperty(COPY_RELATED_CONTENT_IN_SYSTEM_HOST_CONTENTS, true));
 
 	private static final boolean DONT_RESPECT_FRONTEND_ROLES = Boolean.FALSE;
 	private static final boolean RESPECT_FRONTEND_ROLES = Boolean.TRUE;
@@ -255,24 +273,6 @@ public class HostAssetsJobImpl extends ParentProxy{
 		this.sendNotification(String.format(successMsg, destinationSite.getHostname()), userId, NotificationLevel.INFO);
 	}
 
-	private HTMLPageAssetAPI.TemplateContainersReMap getMirrorTemplateContainersReMap(Template sourceTemplate)
-			throws DotDataException, DotSecurityException {
-
-		User user = userAPI.getSystemUser();
-		boolean respectFrontendRoles = false;
-
-		List<Container> sourceContainers = templateAPI.getContainersInTemplate(sourceTemplate, user,
-				respectFrontendRoles);
-		List<HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple> containerMappings = new LinkedList<>();
-		for (Container sourceContainer : sourceContainers) {
-			HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple containerMapping = new HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple(
-					sourceContainer, sourceContainer);
-			containerMappings.add(containerMapping);
-		}
-		return new HTMLPageAssetAPI.TemplateContainersReMap(sourceTemplate,
-				sourceTemplate, containerMappings);
-	}
-
 	/**
 	 * Performs the copy process of the user-specified elements from the source site to the
 	 * destination site.
@@ -292,20 +292,20 @@ public class HostAssetsJobImpl extends ParentProxy{
 		try {
 			HibernateUtil.startTransaction();
 			// Global Vars
-			double progressIncrement = 0;
-			double currentProgress = 0;
+			double progressIncrement;
+			double currentProgress;
 
 			this.siteCopyStatus.addMessage("copying-templates");
 			// ======================================================================
 			// Copying templates and containers
 			// ======================================================================
-			final Map<String, HTMLPageAssetAPI.TemplateContainersReMap> templatesMappingBySourceId = new HashMap<>();
+			final Map<String, HTMLPageAssetAPI.TemplateContainersReMap> copiedTemplatesBySourceId = new HashMap<>();
 			final Map<String, Container> copiedContainersBySourceId = new HashMap<>();
-			final Map<String, FolderMapping> folderMappingsBySourceId = new HashMap<>();
-			final Map<String, ContentMapping> contentMappingsBySourceId = new HashMap<>();
-			final List<Contentlet> contentsToCopyDependencies =  new ArrayList<>();
-			final Map<String, ContentTypeMapping> copiedContentTypes = new HashMap<>();
-			final Map<String, RelationshipMapping> copiedRelationships = new HashMap<>();
+			final Map<String, FolderMapping> copiedFoldersBySourceId = new HashMap<>();
+			final Map<String, ContentMapping> copiedContentsBySourceId = new HashMap<>();
+			final List<Contentlet> contentsWithRelationships =  new ArrayList<>();
+			final Map<String, ContentTypeMapping> copiedContentTypesBySourceId = new HashMap<>();
+			final Map<String, RelationshipMapping> copiedRelationshipsBySourceId = new HashMap<>();
 			if (copyOptions.isCopyTemplatesAndContainers()) {
 				Logger.info(this, "----------------------------------------------------------------------");
 				Logger.info(this, String.format(":::: Copying Templates and Containers to new Site '%s'", destinationSite.getHostname()));
@@ -338,7 +338,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 														DONT_RESPECT_FRONTEND_ROLES);
 										final Folder sourceFolder = this.folderAPI.find(sourceContent.getFolder(), this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
 										// This should store the new container destination folder into the map.
-										final Folder destinationFolder = copyFolder(sourceFolder, destinationSite, folderMappingsBySourceId);
+										final Folder destinationFolder = copyFolder(sourceFolder, destinationSite, copiedFoldersBySourceId);
 										Logger.debug(HostAssetsJobImpl.class, () -> String.format("---> Container-As-File destination folder path is '%s'",
 												destinationFolder.getPath()));
 										// now create the Copy of the container as file and all its assets
@@ -350,12 +350,12 @@ public class HostAssetsJobImpl extends ParentProxy{
 											processedContentletsList.add(
 													processCopyOfContentlet(asset, copyOptions,
 															destinationSite,
-															contentMappingsBySourceId,
-															folderMappingsBySourceId,
+															copiedContentsBySourceId,
+															copiedFoldersBySourceId,
 															copiedContainersBySourceId,
-															templatesMappingBySourceId,
-															contentsToCopyDependencies,
-															copiedContentTypes
+															copiedTemplatesBySourceId,
+															contentsWithRelationships,
+															copiedContentTypesBySourceId
 													)
 											);
 										}
@@ -400,7 +400,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 						final Template newTemplate = copyTemplate(sourceTemplate, destinationSite, copiedContainersBySourceId);
 						HTMLPageAssetAPI.TemplateContainersReMap templateMapping = new HTMLPageAssetAPI.TemplateContainersReMap(
 								sourceTemplate, newTemplate, containerMappings);
-						templatesMappingBySourceId.put(sourceTemplate.getIdentifier(), templateMapping);
+						copiedTemplatesBySourceId.put(sourceTemplate.getIdentifier(), templateMapping);
 					} catch (final Exception e) {
 						Logger.error(this, String.format("An error occurred when copying data from Template '%s' [%s] " +
 								"from Site '%s' to Site '%s'. The process will continue...", sourceTemplate.getTitle()
@@ -446,7 +446,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 						}
 						final HTMLPageAssetAPI.TemplateContainersReMap templateMapping = new HTMLPageAssetAPI.TemplateContainersReMap(
 								sourceTemplate, sourceTemplate, containerMappings);
-						templatesMappingBySourceId.put(sourceTemplate.getIdentifier(), templateMapping);
+						copiedTemplatesBySourceId.put(sourceTemplate.getIdentifier(), templateMapping);
 					} catch (final Exception e) {
 						Logger.error(this, String.format("An error occurred when copying data from Template '%s' [%s] " +
 										"from Site '%s' to Site '%s'. The process will continue...", sourceTemplate.getTitle()
@@ -470,7 +470,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 				Logger.info(this, String.format("-> Copying %d Folders", allSourceFolders.size()));
 				for (final Folder sourceFolder : allSourceFolders) {
 					try {
-					    copyFolder(sourceFolder, destinationSite, folderMappingsBySourceId);
+					    copyFolder(sourceFolder, destinationSite, copiedFoldersBySourceId);
 					} catch (final Exception e) {
 						Logger.error(this, String.format("An error occurred when copying folder '%s' from Site '%s' to" +
 								" Site '%s'. The process will continue...", sourceFolder.getPath(), sourceSite
@@ -482,7 +482,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 				this.siteCopyStatus.updateProgress(10);
 
 				if (copyOptions.isCopyLinks()) {
-					final Collection<FolderMapping> folders = folderMappingsBySourceId.values();
+					final Collection<FolderMapping> folders = copiedFoldersBySourceId.values();
 					// ======================================================================
 					// Copying Menu Links
 					// ======================================================================
@@ -510,12 +510,12 @@ public class HostAssetsJobImpl extends ParentProxy{
 				if(copyOptions.isCopyTemplatesAndContainers()){
 					Logger.info(this, "----------------------------------------------------------------------");
 					Logger.info(this, String.format(":::: Pointing %d Templates to copied themes for new Site '%s'",
-							templatesMappingBySourceId.size(), destinationSite.getHostname()));
-					for (final String sourceTemplateId : templatesMappingBySourceId.keySet()) {
-						final Template srcTemplate = templatesMappingBySourceId.get(sourceTemplateId).getSourceTemplate();
-						if(UtilMethods.isSet(srcTemplate.getTheme()) && folderMappingsBySourceId.containsKey(srcTemplate.getTheme())){
-							final String destTemplateInode = templatesMappingBySourceId.get(sourceTemplateId).getDestinationTemplate().getInode();
-							final String destTheme = folderMappingsBySourceId.get(srcTemplate.getTheme()).destinationFolder.getInode();
+							copiedTemplatesBySourceId.size(), destinationSite.getHostname()));
+					for (final String sourceTemplateId : copiedTemplatesBySourceId.keySet()) {
+						final Template srcTemplate = copiedTemplatesBySourceId.get(sourceTemplateId).getSourceTemplate();
+						if(UtilMethods.isSet(srcTemplate.getTheme()) && copiedFoldersBySourceId.containsKey(srcTemplate.getTheme())){
+							final String destTemplateInode = copiedTemplatesBySourceId.get(sourceTemplateId).getDestinationTemplate().getInode();
+							final String destTheme = copiedFoldersBySourceId.get(srcTemplate.getTheme()).destinationFolder.getInode();
 							this.templateAPI.updateThemeWithoutVersioning(destTemplateInode, destTheme);
 						}
 					}
@@ -526,7 +526,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 			HibernateUtil.startTransaction();
 			this.siteCopyStatus.updateProgress(70);
 
-			if (Config.getBooleanProperty("FEATURE_FLAG_ENABLE_CONTENT_TYPE_COPY", false) && copyOptions.isCopyContentTypes()) {
+			if (CONTENT_TYPE_COPY_FLAG.get() && copyOptions.isCopyContentTypes()) {
 				Logger.info(this, "----------------------------------------------------------------------");
 				Logger.info(this, String.format(":::: Copying Content Types to new Site '%s'", destinationSite.getHostname()));
 				final List<ContentType> sourceContentTypes = this.contentTypeAPI.search("",
@@ -542,7 +542,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 					// Copy the Content Type objects with NONE of their relationship fields
 					final ContentType copiedContentType =
 							this.contentTypeAPI.copyFromAndDependencies(builder.build(), destinationSite, false);
-					copiedContentTypes.put(sourceContentType.id(), new ContentTypeMapping(sourceContentType, copiedContentType));
+					copiedContentTypesBySourceId.put(sourceContentType.id(), new ContentTypeMapping(sourceContentType, copiedContentType));
 				}
 				final List<RelationshipMapping> childRelationships = new ArrayList<>();
 				// Now, copy the relationship fields back, but EXCLUDE all relationship fields that are pointing
@@ -558,8 +558,8 @@ public class HostAssetsJobImpl extends ParentProxy{
 									sourceRelationshipField.name(), sourceContentType.name()));
 							continue;
 						}
-						final ContentTypeMapping parentContentTypeMapping = copiedContentTypes.get(sourceRelationship.getParentStructure().id());
-						final ContentTypeMapping childContentTypeMapping = copiedContentTypes.get(sourceRelationship.getChildStructure().id());
+						final ContentTypeMapping parentContentTypeMapping = copiedContentTypesBySourceId.get(sourceRelationship.getParentStructure().id());
+						final ContentTypeMapping childContentTypeMapping = copiedContentTypesBySourceId.get(sourceRelationship.getChildStructure().id());
 						checkNotNull(parentContentTypeMapping, "Parent Content Type ID in Relationship Field " +
 								"'%s' in Content Type '%s' is null", sourceRelationshipField.name(), sourceContentType.name());
 						checkNotNull(childContentTypeMapping, "Child Content Type ID in Relationship Field " +
@@ -567,21 +567,21 @@ public class HostAssetsJobImpl extends ParentProxy{
 						// If this Relationship Field represents the parent of the relationship, or if the relationship is between
 						// the same Content Types, just copy the field with the new IDs and data
 						if (this.relationshipAPI.isChildField(sourceRelationship, sourceRelationshipField) || this.relationshipAPI.sameParentAndChild(sourceRelationship)) {
-							final String copiedContentTypeId = copiedContentTypes.get(sourceContentType.id()).destinationContentType.id();
+							final String copiedContentTypeId = copiedContentTypesBySourceId.get(sourceContentType.id()).destinationContentType.id();
 							final String copiedContentTypeVarName = childContentTypeMapping.destinationContentType.variable();
 							this.createRelationshipField(copiedContentTypeId,
 									copiedContentTypeVarName, sourceRelationshipField,
-									sourceRelationship, copiedRelationships);
+									sourceRelationship, copiedRelationshipsBySourceId);
 						} else {
 							// Here, the Relationship Field is the child of the current Relationship and its parent Relationship has
 							// already been copied. Therefore, we can create the child Relationship Field now and reference the
 							// existing relationship
-							if (copiedRelationships.containsKey(sourceRelationship.getInode())) {
-								final Relationship copiedRelationship = copiedRelationships.get(sourceRelationship.getInode()).destinationRelationship;
-								final String copiedContentTypeId = copiedContentTypes.get(sourceContentType.id()).destinationContentType.id();
+							if (copiedRelationshipsBySourceId.containsKey(sourceRelationship.getInode())) {
+								final Relationship copiedRelationship = copiedRelationshipsBySourceId.get(sourceRelationship.getInode()).destinationRelationship;
+								final String copiedContentTypeId = copiedContentTypesBySourceId.get(sourceContentType.id()).destinationContentType.id();
 								this.createRelationshipField(copiedContentTypeId,
 										copiedRelationship.getRelationTypeValue(), sourceRelationshipField,
-										sourceRelationship, copiedRelationships);
+										sourceRelationship, copiedRelationshipsBySourceId);
 							} else {
 								// If the Relationship Field points to a relationship that hasn't been copied yet, we'll wait until
 								// the parent Relationship is created and store its data in a list
@@ -598,8 +598,8 @@ public class HostAssetsJobImpl extends ParentProxy{
 					for (final RelationshipMapping childRelationshipMapping : childRelationships) {
 						this.copyChildRelationship(childRelationshipMapping.sourceRelationship,
 								childRelationshipMapping.sourceContentType,
-								childRelationshipMapping.sourceField, copiedRelationships,
-								copiedContentTypes);
+								childRelationshipMapping.sourceField, copiedRelationshipsBySourceId,
+								copiedContentTypesBySourceId);
 					}
 				}
 				HibernateUtil.closeAndCommitTransaction();
@@ -618,31 +618,33 @@ public class HostAssetsJobImpl extends ParentProxy{
 				Logger.info(this, "----------------------------------------------------------------------");
 				Logger.info(this, String.format(":::: Copying HTML Pages - but NOT their contents - to new Site '%s'", destinationSite.getHostname()));
                 final PaginatedContentlets sourceContentlets = this.contentAPI.findContentletsPaginatedByHost(sourceSite,
-                        Arrays.asList(BaseContentType.HTMLPAGE.getType()), null, this.SYSTEM_USER,
+                        List.of(BaseContentType.HTMLPAGE.getType()), null, this.SYSTEM_USER,
 						DONT_RESPECT_FRONTEND_ROLES);
 
                 currentProgress = 70;
                 progressIncrement = (95 - 70) / (double) sourceContentlets.size();
 				Logger.info(this, String.format("-> Copying %d HTML Pages", sourceContentlets.size()));
                 for (final Contentlet sourceContent : sourceContentlets) {
-                    processCopyOfContentlet(sourceContent, copyOptions,
-                            destinationSite, contentMappingsBySourceId, folderMappingsBySourceId,
-                            copiedContainersBySourceId, templatesMappingBySourceId,
-                            contentsToCopyDependencies, copiedContentTypes);
+					if (null != sourceContent) {
+						this.processCopyOfContentlet(sourceContent, copyOptions,
+								destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
+								copiedContainersBySourceId, copiedTemplatesBySourceId,
+								contentsWithRelationships, copiedContentTypesBySourceId);
 
-                    currentProgress += progressIncrement;
+						currentProgress += progressIncrement;
 
-					this.siteCopyStatus.updateProgress((int) currentProgress);
-                    if (contentCount % 100 == 0) {
-                        HibernateUtil.closeAndCommitTransaction();
-                        HibernateUtil.startTransaction();
-                    }
-                    contentCount++;
+						this.siteCopyStatus.updateProgress((int) currentProgress);
+						if (contentCount % 100 == 0) {
+							HibernateUtil.closeAndCommitTransaction();
+							HibernateUtil.startTransaction();
+						}
+						contentCount++;
+					}
                 }
 
                 // Copy contentlet dependencies
-				this.copyRelatedContentlets(contentsToCopyDependencies,
-                        contentMappingsBySourceId, copiedRelationships, copyOptions);
+				this.copyRelatedContentlets(contentsWithRelationships,
+                        copiedContentsBySourceId, copiedRelationshipsBySourceId, copyOptions);
             }
 
             // Option 2: Copy all content on site
@@ -660,11 +662,11 @@ public class HostAssetsJobImpl extends ParentProxy{
 				Logger.info(this, "-> Copying simple contents first");
                 while (ite.hasNext()) {
                 	final Contentlet sourceContent = ite.next();
-                	if (!sourceContent.isHTMLPage()) {
-	                    processCopyOfContentlet(sourceContent, copyOptions,
-	                            destinationSite, contentMappingsBySourceId, folderMappingsBySourceId,
-	                            copiedContainersBySourceId, templatesMappingBySourceId,
-	                            contentsToCopyDependencies, copiedContentTypes);
+                	if (null != sourceContent && !sourceContent.isHTMLPage()) {
+	                    this.processCopyOfContentlet(sourceContent, copyOptions,
+	                            destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
+	                            copiedContainersBySourceId, copiedTemplatesBySourceId,
+	                            contentsWithRelationships, copiedContentTypesBySourceId);
 	                    // Update progress ONLY if the record is processed
 	                    currentProgress += progressIncrement;
 						this.siteCopyStatus.updateProgress((int) currentProgress);
@@ -683,22 +685,24 @@ public class HostAssetsJobImpl extends ParentProxy{
                 ite = sourceContentlets.iterator();
                 while (ite.hasNext()) {
                 	final Contentlet sourceContent = ite.next();
-                    processCopyOfContentlet(sourceContent, copyOptions,
-                            destinationSite, contentMappingsBySourceId, folderMappingsBySourceId,
-                            copiedContainersBySourceId, templatesMappingBySourceId,
-                            contentsToCopyDependencies, copiedContentTypes);
-                    currentProgress += progressIncrement;
-                    siteCopyStatus.updateProgress((int) currentProgress);
-                    if (contentCount % 100 == 0) {
-                        HibernateUtil.closeAndCommitTransaction();
-                        HibernateUtil.startTransaction();
-                    }
-                    contentCount++;
+					if (null != sourceContent && sourceContent.isHTMLPage()) {
+						this.processCopyOfContentlet(sourceContent, copyOptions,
+								destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
+								copiedContainersBySourceId, copiedTemplatesBySourceId,
+								contentsWithRelationships, copiedContentTypesBySourceId);
+						currentProgress += progressIncrement;
+						siteCopyStatus.updateProgress((int) currentProgress);
+						if (contentCount % 100 == 0) {
+							HibernateUtil.closeAndCommitTransaction();
+							HibernateUtil.startTransaction();
+						}
+						contentCount++;
+					}
                 }
 				Logger.info(this, String.format("-> A total of %d contents have been copied", contentCount));
                 // Copy contentlet dependencies
-                this.copyRelatedContentlets(contentsToCopyDependencies,
-                        contentMappingsBySourceId, copiedRelationships, copyOptions);
+                this.copyRelatedContentlets(contentsWithRelationships,
+                        copiedContentsBySourceId, copiedRelationshipsBySourceId, copyOptions);
             }
 
 			this.siteCopyStatus.updateProgress(95);
@@ -975,63 +979,70 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 * If the content to copy is a Content Page, then its multi-tree structure needs to be updated,
 	 * which involves updating the child references to point to the recently copied contentlets.
 	 * </p>
-	 * 
-	 * @param sourceContent              The {@link Contentlet} whose data will be copied.
-	 * @param copyOptions                The preferences selected by the user regarding what
-	 *                                   elements of the source site will be copied over to the new
-	 *                                   site.
-	 * @param destinationSite            The new {@link Host} object that will contain the
-	 *            information from the source site.
-	 * @param copiedContentlets          A {@link Map} containing the association between the
-	 *            						 Contentlet's Identifier in the source site and the
-	 *                                   Contentlet's Identifier in the destination site. This
-	 *                                   map keeps both the source and the destination
-	 *                                   {@link Contentlet} objects.
-	 * @param copiedFolders              A {@link Map} containing the association between the
-	 *                                   folder's Identifier from the source site with the folder's
-	 *                                   Identifier from the destination site. This map keeps both
-	 *                                   the source and the destination {@link Folder} objects.
-	 * @param copiedContainers           A {@link Map} that says what containerId from the source
-	 *                                   site has become what in the new copy-site
-	 * @param copiedTemplates            A {@link Map} that says what templateId from the source
-	 *                                   site has become what in the new copy-site
-	 * @param contentletsWithRelationships The dependencies of the contentlet to copy.
-	 * @param copiedContentTypes
+	 *
+	 * @param sourceContent                The {@link Contentlet} whose data will be copied.
+	 * @param copyOptions                  The preferences selected by the user regarding what
+	 *                                     elements of the source site will be copied over to the
+	 *                                     new site.
+	 * @param destinationSite              The new {@link Host} object that will contain the
+	 *                                     information from the source site.
+	 * @param copiedContentletsBySourceId  A {@link Map} containing the association between the
+	 *                                     Contentlet's Identifier in the source site and the
+	 *                                     Contentlet's Identifier in the destination site. This
+	 *                                     map keeps both the source and the destination
+	 *                                     {@link Contentlet} objects.
+	 * @param copiedFoldersBySourceId      A {@link Map} containing the association between the
+	 *                                     folder's Identifier from the source site with the
+	 *                                     folder's Identifier from the destination site. This map
+	 *                                     keeps both the source and the destination {@link Folder}
+	 *                                     objects.
+	 * @param copiedContainersBySourceId   A {@link Map} that says what containerId from the source
+	 *                                     site has become what in the new copy-site.
+	 * @param copiedTemplatesBySourceId    A {@link Map} that says what templateId from the source
+	 *                                     site has become what in the new copy-site.
+	 * @param contentsWithRelationships    The list of Contentlets that have other content related
+	 *                                     to them.
+	 * @param copiedContentTypesBySourceId A {@link Map} containing the association between the
+	 *                                     Content Type's Identifier in the source site and the
+	 *                                     Content Type's Identifier in the destination site. This
+	 *                                     is relevant ONLY if the
+	 *                                     {@code FEATURE_FLAG_ENABLE_CONTENT_TYPE_COPY} property
+	 *                                     is enabled.
 	 */
 	private Contentlet processCopyOfContentlet(final Contentlet sourceContent,
 			final HostCopyOptions copyOptions, final Host destinationSite,
-			final Map<String, ContentMapping> contentMappingsBySourceId,
-			final Map<String, FolderMapping> folderMappingsBySourceId,
+			final Map<String, ContentMapping> copiedContentletsBySourceId,
+			final Map<String, FolderMapping> copiedFoldersBySourceId,
 			final Map<String, Container> copiedContainersBySourceId,
-			final Map<String, HTMLPageAssetAPI.TemplateContainersReMap> templatesMappingBySourceId,
-			final List<Contentlet> contentsToCopyDependencies,
-		    final Map<String, ContentTypeMapping> copiedContentTypes) {
+			final Map<String, HTMLPageAssetAPI.TemplateContainersReMap> copiedTemplatesBySourceId,
+			final List<Contentlet> contentsWithRelationships,
+		    final Map<String, ContentTypeMapping> copiedContentTypesBySourceId) {
 
-		//Since certain properties are modified here we're gonna use a defensive copy to avoid cache issue.
+		//Since certain properties are modified here we're going to use a defensive copy to avoid cache issue.
 		final Contentlet sourceCopy = new Contentlet(sourceContent);
         Contentlet newContent = null;
         try {
-            if (contentMappingsBySourceId.containsKey(sourceCopy.getIdentifier())) {
+            if (copiedContentletsBySourceId.containsKey(sourceCopy.getIdentifier())) {
                 // The content has already been copied
 				Logger.debug(HostAssetsJobImpl.class,()->String.format("---> Content identified by `%s` has been copied already.", sourceCopy.getIdentifier()));
-                return contentMappingsBySourceId.get(sourceCopy.getIdentifier()).destinationContent;
+                return copiedContentletsBySourceId.get(sourceCopy.getIdentifier()).destinationContent;
             }
 			sourceCopy.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
 			sourceCopy.getMap().put(Contentlet.DISABLE_WORKFLOW, true);
 			sourceCopy.setLowIndexPriority(true);
 
 			if (copyOptions.isCopyTemplatesAndContainers() && sourceCopy.isHTMLPage()) {
-				//If we're dealing with pages, need pass template mappings to the copyContentlet
-				//such method deals with all versions of the contentlet and it needs to know about the mapping info internally.
-				sourceCopy.getMap().put(Contentlet.TEMPLATE_MAPPINGS, templatesMappingBySourceId);
+				//If we're dealing with pages, we need to pass template mappings to the copyContentlet
+				//such a method deals with all versions of the contentlet, and it needs to know about the mapping info internally.
+				sourceCopy.getMap().put(Contentlet.TEMPLATE_MAPPINGS, copiedTemplatesBySourceId);
 			}
-			final ContentType destinationContentType = Try.of(() -> copiedContentTypes.get(sourceCopy.getContentTypeId()).destinationContentType).getOrNull();
+			final ContentType destinationContentType = Try.of(() -> copiedContentTypesBySourceId.get(sourceCopy.getContentTypeId()).destinationContentType).getOrNull();
             if (InodeUtils.isSet(sourceCopy.getFolder())
                     && !sourceCopy.getFolder().equals(this.SYSTEM_FOLDER.getInode())) {
                 // The source content has a folder assigned in the source Site we copy it to the
 				// same destination folder
                 final Folder sourceFolder = this.folderAPI.find(sourceCopy.getFolder(), this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
-                final Folder destinationFolder = folderMappingsBySourceId.get(sourceFolder.getInode()) != null ? folderMappingsBySourceId
+                final Folder destinationFolder = copiedFoldersBySourceId.get(sourceFolder.getInode()) != null ? copiedFoldersBySourceId
                         .get(sourceFolder.getInode()).destinationFolder : null;
                 if (!copyOptions.isCopyFolders()) {
                     return null;
@@ -1063,15 +1074,15 @@ public class HostAssetsJobImpl extends ParentProxy{
                 // Copy page-associated contentlets
                 final List<MultiTree> pageContents = APILocator.getMultiTreeAPI().getMultiTrees(sourceCopy.getIdentifier());
 				for (final MultiTree sourceMultiTree : pageContents) {
-					String newChild = sourceMultiTree.getChild();
+					String newChild = sourceMultiTree.getContentlet();
 					// Update the child reference to point to the previously copied content
-					if (contentMappingsBySourceId.containsKey(sourceMultiTree.getChild())) {
-						newChild = contentMappingsBySourceId.get(sourceMultiTree.getChild()).destinationContent.getIdentifier();
+					if (copiedContentletsBySourceId.containsKey(sourceMultiTree.getContentlet())) {
+						newChild = copiedContentletsBySourceId.get(sourceMultiTree.getContentlet()).destinationContent.getIdentifier();
 					}
 
-                    String newContainer = sourceMultiTree.getParent2();
-					if(copiedContainersBySourceId.containsKey(sourceMultiTree.getParent2())){
-						newContainer = copiedContainersBySourceId.get(sourceMultiTree.getParent2()).getIdentifier();
+                    String newContainer = sourceMultiTree.getContainer();
+					if(copiedContainersBySourceId.containsKey(sourceMultiTree.getContainer())){
+						newContainer = copiedContainersBySourceId.get(sourceMultiTree.getContainer()).getIdentifier();
 					}
 
 					final MultiTree multiTree = new MultiTree(newContent.getIdentifier(),
@@ -1086,14 +1097,12 @@ public class HostAssetsJobImpl extends ParentProxy{
 
             }// Pages are a big deal.
 
-            contentMappingsBySourceId.put(sourceCopy.getIdentifier(), new ContentMapping(sourceCopy, newContent));
+            copiedContentletsBySourceId.put(sourceCopy.getIdentifier(), new ContentMapping(sourceCopy, newContent));
 			final Contentlet finalNewContent = newContent;
 			Logger.debug(HostAssetsJobImpl.class,()->String.format("---> Re-Mapping content: Identifier `%s` now points to `%s`.", sourceCopy.getIdentifier(), finalNewContent
 					.getIdentifier()));
 
-            if (doesRelatedContentExists(sourceCopy)) {
-                contentsToCopyDependencies.add(sourceCopy);
-            }
+			this.checkRelatedContentToCopy(sourceCopy, contentsWithRelationships);
         } catch (final Exception e) {
 			Logger.error(this, String.format("An error occurred when copying content '%s' from Site '%s' to Site '%s'." +
 					" The process will continue...", sourceCopy.getIdentifier(), sourceCopy.getHost(),
@@ -1111,61 +1120,75 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 * the copied Contentlets to the new Relationship records as they reflect the new IDs for the
 	 * copied Content Types as well.</p>
 	 *
-	 * @param contentsToCopyDependencies The list of {@link Contentlet} objects that are the
-	 *                                   parents of a given relationship.
-	 * @param contentMappingsBySourceId  The {@link Map} containing the association between the
-	 *                                   contentlet's Identifier from the source site and the
-	 *                                   contentlet's Identifier from the destination site. This
-	 *                                   map keeps both the source and the destination
-	 *                                   {@link Contentlet} objects.
-	 * @param copiedRelationships        The {@link Map} containing the copied Relationships from
-	 *                                   the source Site. This way, the copied Contentlets will
-	 *                                   be saved just like the original ones.
-	 * @param copyOptions                The {@link HostCopyOptions} object containing what objects
-	 *                                   from the source Site must be copied to the destination
-	 *                                   Site.
+	 * @param contentsWithRelationships     The list of {@link Contentlet} objects that are the
+	 *                                      parents of a given relationship.
+	 * @param copiedContentsBySourceId      The {@link Map} containing the association between the
+	 *                                      contentlet's Identifier from the source site and the
+	 *                                      contentlet's Identifier from the destination site. This
+	 *                                      map keeps both the source and the destination
+	 *                                      {@link Contentlet} objects.
+	 * @param copiedRelationshipsBySourceId The {@link Map} containing the copied Relationships
+	 *                                      from the source Site. This way, the copied Contentlets
+	 *                                      will be saved just like the original ones.
+	 * @param copyOptions                   The {@link HostCopyOptions} object containing what
+	 *                                      objects from the source Site must be copied to the
+	 *                                      destination Site.
 	 *
 	 * @throws DotDataException     An error occurred when updating records in the database.
 	 * @throws DotSecurityException The {@link User} accessing the APIs doesn't have the required
 	 *                              permissions to perform this action.
 	 */
-	private void copyRelatedContentlets(final List<Contentlet> contentsToCopyDependencies,
-										final Map<String, ContentMapping> contentMappingsBySourceId, final Map<String, RelationshipMapping> copiedRelationships, final HostCopyOptions copyOptions) throws DotDataException, DotSecurityException {
-        for (final Contentlet sourceContent : contentsToCopyDependencies) {
-            final Contentlet destinationContent = contentMappingsBySourceId.get(sourceContent.getIdentifier()).destinationContent;
+	private void copyRelatedContentlets(final List<Contentlet> contentsWithRelationships,
+										final Map<String, ContentMapping> copiedContentsBySourceId, final Map<String, RelationshipMapping> copiedRelationshipsBySourceId, final HostCopyOptions copyOptions) throws DotDataException, DotSecurityException {
+        for (final Contentlet sourceContent : contentsWithRelationships) {
+            boolean isDestinationContentInSystemHost = false;
+			Contentlet destinationContent;
+			if (Host.SYSTEM_HOST.equals(sourceContent.getHost())) {
+				destinationContent = sourceContent;
+				isDestinationContentInSystemHost = true;
+			} else {
+				destinationContent = copiedContentsBySourceId.get(sourceContent.getIdentifier()).destinationContent;
+			}
             final Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<>();
-            final List<Relationship> rels = this.relationshipAPI.byContentType(sourceContent.getContentType());
-            for (final Relationship r : rels) {
-                if (!contentRelationships.containsKey(r)) {
-                    contentRelationships.put(r, new ArrayList<>());
+            final List<Relationship> relationshipsInContentType = this.relationshipAPI.byContentType(sourceContent.getContentType());
+            for (final Relationship relationship : relationshipsInContentType) {
+                if (!contentRelationships.containsKey(relationship)) {
+                    contentRelationships.put(relationship, new ArrayList<>());
                 }
-                final List<Contentlet> cons = this.contentAPI.getRelatedContent(sourceContent, r, this.SYSTEM_USER, RESPECT_FRONTEND_ROLES);
+				final List<Contentlet> relatedContentlets =
+						this.contentAPI.getRelatedContent(sourceContent, relationship, this.SYSTEM_USER, RESPECT_FRONTEND_ROLES);
                 List<Contentlet> records = new ArrayList<>();
-                for (final Contentlet c : cons) {
-                    records = contentRelationships.get(r);
-                    if (UtilMethods.isSet(contentMappingsBySourceId.get(c.getIdentifier()))) {
-						final Tree relationshipData = TreeFactory.getTree(c.getIdentifier(), sourceContent.getIdentifier(), r.getRelationTypeValue());
+                for (final Contentlet relatedContentlet : relatedContentlets) {
+                    records = contentRelationships.get(relationship);
+                    if (UtilMethods.isSet(copiedContentsBySourceId.get(relatedContentlet.getIdentifier()))) {
+						final Tree relationshipData =
+								TreeFactory.getTree(relatedContentlet.getIdentifier(),
+										sourceContent.getIdentifier(), relationship.getRelationTypeValue());
 						// In self-related Relationships, we need to make sure that the related Contentlet is NOT the
 						// parent in the relationship in order to NOT create a duplicate relationship
-						if (this.relationshipAPI.sameParentAndChild(r) && UtilMethods.isSet(relationshipData.getParent())) {
+						if (this.relationshipAPI.sameParentAndChild(relationship) && UtilMethods.isSet(relationshipData.getParent())) {
 							continue;
 						}
-                        records.add(contentMappingsBySourceId.get(c.getIdentifier()).destinationContent);
+                        records.add(copiedContentsBySourceId.get(relatedContentlet.getIdentifier()).destinationContent);
+						if (isDestinationContentInSystemHost) {
+							records.add(relatedContentlet);
+						}
                     } else {
-                        records.add(c);
+                        records.add(relatedContentlet);
                     }
                 }
 				if (!records.isEmpty()) {
 					ContentletRelationshipRecords related;
-					if (!Config.getBooleanProperty("FEATURE_FLAG_ENABLE_CONTENT_TYPE_COPY", false) || !copyOptions.isCopyContentTypes()) {
+					if (!CONTENT_TYPE_COPY_FLAG.get() || !copyOptions.isCopyContentTypes()) {
 						related = new ContentletRelationships(
-								destinationContent).new ContentletRelationshipRecords(r, true);
+								destinationContent).new ContentletRelationshipRecords(relationship, true);
 					} else {
-						if (!copiedRelationships.containsKey(r.getInode())) {
+						if (!copiedRelationshipsBySourceId.containsKey(relationship.getInode())) {
 							continue;
 						}
-						final Relationship copiedRelationship = copiedRelationships.get(r.getInode()).destinationRelationship;
-						related = new ContentletRelationships(destinationContent).new ContentletRelationshipRecords(copiedRelationship, true);
+						final Relationship copiedRelationship = copiedRelationshipsBySourceId.get(relationship.getInode()).destinationRelationship;
+						related = new ContentletRelationships(destinationContent)
+								.new ContentletRelationshipRecords(copiedRelationship, true);
 					}
 					related.setRecords(records);
 					this.contentAPI.relateContent(destinationContent, related, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
@@ -1180,28 +1203,36 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 * in mind that, in the case of self-related Content Types, the parent and child point to each
 	 * other, so the Tree data must be accessed and read accordingly.
 	 *
-	 * @param contentlet The Contentlet whose relationships will be verified.
-	 *
-	 * @return If the Contentlet is the parent of one or more Contentlets, returns {@code true}.
-	 * Otherwise, returns {@code false}.
+	 * @param contentlet                   The Contentlet whose relationships will be verified.
+	 * @param contentletsWithRelationships The list of Contentlets that have relationships, and
+	 *                                     need to be processed later.
 	 *
 	 * @throws DotDataException     An error occurred when accessing the data source.
 	 * @throws DotSecurityException The specified user does not have the required permissions to
 	 *                              perform this action.
 	 */
-	private boolean doesRelatedContentExists(final Contentlet contentlet) throws DotDataException, DotSecurityException{
-        if(contentlet == null) {
-			return false;
+	private void checkRelatedContentToCopy(final Contentlet contentlet,
+										   final List<Contentlet> contentletsWithRelationships) throws DotDataException, DotSecurityException {
+		if (contentlet == null) {
+			return;
 		}
-
-        final List<Relationship> rels = APILocator.getRelationshipAPI().byContentType(contentlet.getContentType());
-        for (final Relationship r : rels) {
-            final List<Contentlet> cons = this.contentAPI.getRelatedContent(contentlet, r, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
-            if(cons.size() > 0 && APILocator.getRelationshipAPI().isParent(r, contentlet.getContentType())){
-            	return true;
-            }
-        }
-        return false;
+		final List<Relationship> relationshipsByCT =
+				this.relationshipAPI.byContentType(contentlet.getContentType());
+		for (final Relationship relationship : relationshipsByCT) {
+			final List<Contentlet> relatedContents = this.contentAPI.getRelatedContent(contentlet,
+					relationship, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
+			if (COPY_RELATED_CONTENT_IN_SYSTEM_HOST_CONTENTS_FLAG.get()) {
+				for (final Contentlet relatedContent : relatedContents) {
+					if (Host.SYSTEM_HOST.equals(relatedContent.getHost())) {
+						contentletsWithRelationships.add(relatedContent);
+					}
+				}
+			}
+			if (!relatedContents.isEmpty() && this.relationshipAPI.isParent(relationship,
+					contentlet.getContentType())) {
+				contentletsWithRelationships.add(contentlet);
+			}
+		}
 	}
 
     @Override

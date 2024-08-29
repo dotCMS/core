@@ -18,7 +18,7 @@ import com.dotcms.mock.response.MockHttpStatusResponse;
 
 public class NormalizationFilterTest extends UnitTestBase {
 
-    private final static NormalizationFilter normalizationFilter = new NormalizationFilter();
+    private static final NormalizationFilter normalizationFilter = new NormalizationFilter();
     private static HttpServletResponse mockResponse;
     private static HttpServletRequest mockRequest;
     private static FilterChain chain;
