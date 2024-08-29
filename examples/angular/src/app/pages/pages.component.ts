@@ -76,7 +76,6 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
         tap(() => this.#setLoading()),
         switchMap(() => this.pageService.getPage(this.route)),
         takeUntilDestroyed(this.destroyRef),
-        delay(2000)
       )
       .subscribe(
         ({

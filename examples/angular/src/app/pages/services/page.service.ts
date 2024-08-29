@@ -13,11 +13,7 @@ import { DOTCMS_CLIENT_TOKEN } from '../../client-token/dotcms-client';
 })
 export class PageService {
   private readonly client = inject(DOTCMS_CLIENT_TOKEN);
-  private navObservable: Observable<DotcmsNavigationItem | null>;
-
-  constructor() {
-    this.navObservable = this.fetchNavigation();
-  }
+  private navObservable: Observable<DotcmsNavigationItem | null> = this.fetchNavigation();
 
   getPage(route: ActivatedRoute): Observable<any> {
     return this.fetchPage(route).pipe(
