@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { from, Observable, shareReplay } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { map, switchMap, filter } from 'rxjs/operators';
 
 import { getPageRequestParams } from '@dotcms/client';
 import { DotcmsNavigationItem, DotCMSPageAsset } from '@dotcms/angular';
@@ -17,13 +17,24 @@ export class PageService {
   private navObservable: Observable<DotcmsNavigationItem | null> =
     this.fetchNavigation();
 
+  /**
+   * Get the page and navigation for the given route and config.
+   * 
+   * @param {ActivatedRoute} route
+   * @param {*} config
+   * @return {*}  {(Observable<{ page: DotCMSPageAsset | { error: PageError }; nav: DotcmsNavigationItem }>)}
+   * @memberof PageService
+   */
   getPage(
     route: ActivatedRoute,
     config: any
-  ): Observable<any> {
+  ): Observable<{ page: DotCMSPageAsset | { error: PageError }; nav: DotcmsNavigationItem }> {
     return this.fetchPage(route, config).pipe(
       switchMap((page) =>
-        this.navObservable.pipe(map((nav) => ({ page, nav })))
+        this.navObservable.pipe(
+          filter((nav): nav is DotcmsNavigationItem => nav !== null),
+          map((nav) => ({ page, nav }))
+        )
       )
     );
   }
