@@ -1,6 +1,6 @@
 <p-dialog
     (onHide)="closedDialog.emit()"
-    [(visible)]="visible"
+    [visible]="$isVisible()"
     data-testId="dialog"
     [draggable]="false"
     [resizable]="false"

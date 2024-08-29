@@ -3,12 +3,11 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    EventEmitter,
     inject,
-    Input,
+    input,
     OnDestroy,
     OnInit,
-    Output
+    output
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -29,7 +28,7 @@ import { DotCategoryFieldSelectedComponent } from '../dot-category-field-selecte
  * to fetch and update the categories' data.
  *
  * @property {boolean} visible - Indicates the visibility of the dialog. Default is `true`.
- * @property {EventEmitter<void>} closedDialog - Event emitted when the dialog is closed.
+ * @property {output<void>} closedDialog - Output emitted when the dialog is closed.
  */
 @Component({
     selector: 'dot-category-field-dialog',
@@ -55,12 +54,12 @@ export class DotCategoryFieldDialogComponent implements OnInit, OnDestroy {
      *
      * @memberof DotCategoryFieldDialogComponent
      */
-    @Input() visible = false;
+    $isVisible = input<boolean>(false, { alias: 'isVisible' });
 
     /**
      * Output that emit if the Dialog is closed
      */
-    @Output() closedDialog = new EventEmitter<void>();
+    closedDialog = output<void>();
 
     /**
      * Store based on the `CategoryFieldStore`.

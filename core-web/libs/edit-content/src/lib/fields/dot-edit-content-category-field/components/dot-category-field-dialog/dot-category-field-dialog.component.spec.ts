@@ -25,9 +25,6 @@ describe('DotCategoryFieldDialogComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
-            props: {
-                visible: true
-            },
             providers: [
                 mockProvider(CategoriesService, {
                     getChildren: jest.fn().mockReturnValue(of(CATEGORY_LIST_MOCK))
@@ -35,6 +32,7 @@ describe('DotCategoryFieldDialogComponent', () => {
                 mockProvider(DotHttpErrorManagerService)
             ]
         });
+        spectator.setInput('isVisible', true);
 
         store = spectator.inject(CategoryFieldStore, true);
 
@@ -46,7 +44,7 @@ describe('DotCategoryFieldDialogComponent', () => {
     });
 
     it('should have `visible` property set to `true` by default', () => {
-        expect(spectator.component.visible).toBe(true);
+        expect(spectator.component.$isVisible()).toBe(true);
         expect(spectator.query(Dialog)).not.toBeNull();
     });
 

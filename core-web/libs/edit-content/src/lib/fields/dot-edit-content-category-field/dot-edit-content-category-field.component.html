@@ -19,7 +19,7 @@
 @if ($showCategoriesDialog()) {
     @defer (when $showCategoriesDialog()) {
         <dot-category-field-dialog
-            [visible]="$showCategoriesDialog()"
+            [isVisible]="$showCategoriesDialog()"
             (closedDialog)="closeCategoriesDialog()"
             data-testId="dialog-placeholder" />
     }
