@@ -33,9 +33,13 @@ const updatePeerDependencies = (packageJsonPath, newVersion) => {
     const packageJson = readJSON(packageJsonPath);
     let updated = false;
 
-    if (packageJson.peerDependencies && packageJson.peerDependencies['@dotcms/client']) {
-        packageJson.peerDependencies['@dotcms/client'] = newVersion;
-        updated = true;
+    if (packageJson.peerDependencies) {
+        Object.keys(packageJson.peerDependencies).forEach((dep) => {
+            if (dep.startsWith('@dotcms/')) {
+                packageJson.peerDependencies[dep] = newVersion;
+                updated = true;
+            }
+        });
     }
 
     if (updated) {
@@ -90,14 +94,17 @@ sdkLibraries.forEach((lib) => {
     }
 });
 
-// Step 4: Update dependencies in example projects
-const sdkDependencies = {
-    '@dotcms/client': newVersion,
-    '@dotcms/angular': newVersion,
-    '@dotcms/react': newVersion,
-    '@dotcms/experiments': newVersion
-};
+// Step 4: Dynamically build the sdkDependencies object
+const sdkDependencies = sdkLibraries.reduce((deps, lib) => {
+    const packageJsonPath = path.join(sdkDir, lib, 'package.json');
+    const packageJson = readJSON(packageJsonPath);
+    if (packageJson.name) {
+        deps[packageJson.name] = newVersion;
+    }
+    return deps;
+}, {});
 
+// Step 5: Update dependencies in example projects
 const exampleProjects = fs
     .readdirSync(examplesDir)
     .filter((proj) => fs.existsSync(path.join(examplesDir, proj, 'package.json')));
