@@ -121,6 +121,10 @@ export class DotcmsLayoutComponent implements OnInit {
     }
 
     ngOnDestroy() {
+        if (!isInsideEditor()) {
+            return;
+        }
+
         this.client.editor.off('changes');
     }
 }
