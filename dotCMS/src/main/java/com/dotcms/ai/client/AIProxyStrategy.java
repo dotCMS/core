@@ -19,9 +19,7 @@ package com.dotcms.ai.client;
 public enum AIProxyStrategy {
 
     DEFAULT(new AIDefaultStrategy()),
-    // TODO: pr-split -> uncomment this line
-    //MODEL_FALLBACK(new AIModelFallbackStrategy());
-    MODEL_FALLBACK(null);
+    MODEL_FALLBACK(new AIModelFallbackStrategy());
 
     private final AIClientStrategy strategy;
 

@@ -1,7 +1,6 @@
 package com.dotcms.ai.rest.forms;
 
 import com.dotcms.ai.app.AppConfig;
-import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UtilMethods;
@@ -65,8 +64,6 @@ public class EmbeddingsForm {
                 .fields(String.join(",", form.fields))
                 .velocityTemplate(form.velocityTemplate)
                 .indexName(form.indexName);
-
-
     }
 
     @Override
@@ -103,7 +100,6 @@ public class EmbeddingsForm {
                 '}';
     }
 
-
     public static final class Builder {
         @JsonSetter(nulls = Nulls.SKIP)
         public String fields;
@@ -135,7 +131,6 @@ public class EmbeddingsForm {
             return this;
         }
 
-
         public Builder offset(int offset) {
             this.offset = offset;
             return this;
@@ -161,10 +156,10 @@ public class EmbeddingsForm {
             return this;
         }
 
-
         public EmbeddingsForm build() {
             return new EmbeddingsForm(this);
-
         }
+
     }
+
 }

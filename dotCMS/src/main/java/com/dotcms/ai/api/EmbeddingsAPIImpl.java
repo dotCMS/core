@@ -4,12 +4,13 @@ import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
+import com.dotcms.ai.client.AIProxyClient;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.db.EmbeddingsDTO.Builder;
 import com.dotcms.ai.db.EmbeddingsFactory;
+import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.ai.util.EncodingUtil;
-import com.dotcms.ai.util.OpenAIRequest;
 import com.dotcms.ai.util.VelocityContextFactory;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
@@ -43,7 +44,6 @@ import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
 
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.HttpMethod;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -311,13 +311,15 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
     }
 
     @Override
-    public Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(@NotNull final String content) {
-        return pullOrGenerateEmbeddings("N/A", content);
+    public Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(@NotNull final String content, final String userId) {
+        return pullOrGenerateEmbeddings("N/A", content, userId);
     }
 
     @WrapInTransaction
     @Override
-    public Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(final String contentId, @NotNull final String content) {
+    public Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(final String contentId,
+                                                                 @NotNull final String content,
+                                                                 final String userId) {
         if (UtilMethods.isEmpty(content)) {
             return Tuple.of(0, List.of());
         }
@@ -349,7 +351,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
         final Tuple2<Integer, List<Float>> openAiEmbeddings = Tuple.of(
                 tokens.size(),
-                sendTokensToOpenAI(contentId, tokens));
+                sendTokensToOpenAI(contentId, tokens, userId));
         saveEmbeddingsForCache(content, openAiEmbeddings);
         EMBEDDING_CACHE.put(hashed, openAiEmbeddings);
 
@@ -420,19 +422,20 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
      *
      * @param contentId The ID of the Contentlet that will be sent to the OpenAI Endpoint.
      * @param tokens    The encoded tokens representing the indexable data of a Contentlet.
+     * @param userId    The ID of the user making the request.
      *
      * @return A {@link List} of {@link Float} values representing the embeddings.
      */
-    private List<Float> sendTokensToOpenAI(final String contentId, @NotNull final List<Integer> tokens) {
+    private List<Float> sendTokensToOpenAI(final String contentId,
+                                           @NotNull final List<Integer> tokens,
+                                           final String userId) {
         final JSONObject json = new JSONObject();
         json.put(AiKeys.MODEL, config.getEmbeddingsModel().getCurrentModel());
         json.put(AiKeys.INPUT, tokens);
         debugLogger(this.getClass(), () -> String.format("Content tokens for content ID '%s': %s", contentId, tokens));
-        final String responseString = OpenAIRequest.doRequest(
-                config.getApiEmbeddingsUrl(),
-                HttpMethod.POST,
-                config,
-                json);
+        final String responseString = AIProxyClient.get()
+                .callToAI(JSONObjectAIRequest.quickEmbeddings(config, json, userId))
+                .getResponse();
         debugLogger(this.getClass(), () -> String.format("OpenAI Response for content ID '%s': %s",
                 contentId, responseString.replace("\n", BLANK)));
         final JSONObject jsonResponse = Try.of(() -> new JSONObject(responseString)).getOrElseThrow(e -> {
@@ -490,8 +493,10 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         }
     }
 
-    private EmbeddingsDTO getSearcher(EmbeddingsDTO searcher) {
-        final List<Float> queryEmbeddings = pullOrGenerateEmbeddings(searcher.query)._2;
+    private EmbeddingsDTO getSearcher(final EmbeddingsDTO searcher) {
+        final List<Float> queryEmbeddings = pullOrGenerateEmbeddings(
+                searcher.query,
+                UtilMethods.extractUserIdOrNull(searcher.user))._2;
         return EmbeddingsDTO.copy(searcher).withEmbeddings(queryEmbeddings).build();
     }
 

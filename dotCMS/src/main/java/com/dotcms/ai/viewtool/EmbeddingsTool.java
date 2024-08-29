@@ -7,7 +7,10 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -22,9 +25,11 @@ import java.util.Map;
  */
 public class EmbeddingsTool implements ViewTool {
 
+    private final ViewContext context;
     private final HttpServletRequest request;
     private final Host host;
     private final AppConfig appConfig;
+    private final User user;
 
     /**
      * Constructor for the EmbeddingsTool class.
@@ -33,9 +38,11 @@ public class EmbeddingsTool implements ViewTool {
      * @param initData Initialization data for the tool.
      */
     EmbeddingsTool(Object initData) {
-        this.request = ((ViewContext) initData).getRequest();
+        this.context = (ViewContext) initData;
+        this.request = this.context.getRequest();
         this.host = host();
         this.appConfig = appConfig();
+        this.user = user();
     }
 
     @Override
@@ -71,10 +78,14 @@ public class EmbeddingsTool implements ViewTool {
         if (tokens > maxTokens) {
             Logger.warn(
                     EmbeddingsTool.class,
-                    "Prompt is too long.  Maximum prompt size is " + maxTokens + " tokens (roughly ~" + maxTokens * .75 + " words).  Your prompt was " + tokens + " tokens ");
+                    "Prompt is too long.  Maximum prompt size is " + maxTokens + " tokens (roughly ~"
+                            + maxTokens * .75 + " words).  Your prompt was " + tokens + " tokens ");
         }
 
-        return APILocator.getDotAIAPI().getEmbeddingsAPI().pullOrGenerateEmbeddings(prompt)._2;
+        return APILocator.getDotAIAPI()
+                .getEmbeddingsAPI()
+                .pullOrGenerateEmbeddings(prompt, UtilMethods.extractUserIdOrNull(user))
+                ._2;
     }
 
     /**
@@ -94,6 +105,11 @@ public class EmbeddingsTool implements ViewTool {
     @VisibleForTesting
     AppConfig appConfig() {
         return ConfigService.INSTANCE.config(host);
+    }
+
+    @VisibleForTesting
+    User user() {
+        return PortalUtil.getUser(context.getRequest());
     }
 
 }

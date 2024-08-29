@@ -146,7 +146,7 @@ public class OpenAIAutoTagRunner implements Runnable {
         final String parsedContentPrompt = VelocityUtil.eval(contentToTag, ctx);
 
         final JSONObject openAIResponse = APILocator.getDotAIAPI().getCompletionsAPI()
-                .prompt(parsedSystemPrompt, parsedContentPrompt, model, temperature, 2000);
+                .prompt(parsedSystemPrompt, parsedContentPrompt, model, temperature, 2000, user.getUserId());
 
         return openAIResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
     }
