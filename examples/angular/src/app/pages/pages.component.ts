@@ -1,13 +1,12 @@
 import {
   Component,
   DestroyRef,
-  OnDestroy,
   OnInit,
   inject,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, ParamMap, Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NavigationEnd } from '@angular/router';
 import { delay, filter, startWith, tap } from 'rxjs/operators';
 
@@ -18,7 +17,7 @@ import {
   DotcmsNavigationItem,
   DotCMSPageAsset,
 } from '@dotcms/angular';
-import { map, switchMap } from 'rxjs/operators';
+import { switchMap } from 'rxjs/operators';
 
 import { ErrorComponent } from './components/error/error.component';
 import { LoadingComponent } from './components/loading/loading.component';
@@ -39,8 +38,13 @@ type PageRender = {
   status: 'idle' | 'success' | 'error' | 'loading';
 };
 
+
+export type PageApiOptions = {
+  depth: number;
+};
+
 @Component({
-  selector: 'dotcms-pages',
+  selector: 'app-dotcms-page',
   standalone: true,
   imports: [
     DotcmsLayoutComponent,
@@ -53,7 +57,7 @@ type PageRender = {
   templateUrl: './pages.component.html',
   styleUrl: './pages.component.css',
 })
-export class DotCMSPagesComponent implements OnInit, OnDestroy {
+export class DotCMSPagesComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
@@ -66,7 +70,8 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
   });
   protected readonly components = signal<any>(DYNAMIC_COMPONENTS);
 
-  protected readonly editorCofig = { params: { depth: '2' } };
+  // This should be PageApiOptions from @dotcms/client
+  protected readonly editorCofig: any = { params: { depth: 2 } };
 
   ngOnInit() {
     this.router.events
@@ -74,7 +79,7 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
         startWith(null), // Trigger initial load
         tap(() => this.#setLoading()),
-        switchMap(() => this.pageService.getPage(this.route)),
+        switchMap(() => this.pageService.getPage(this.route, this.editorCofig)),
         takeUntilDestroyed(this.destroyRef),
         delay(1000)
       )
@@ -118,9 +123,5 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
       error: error,
       status: 'error',
     }));
-  }
-
-  ngOnDestroy() {
-    // this.client.editor.off('changes');
   }
 }

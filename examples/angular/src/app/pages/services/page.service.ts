@@ -7,37 +7,43 @@ import { getPageRequestParams } from '@dotcms/client';
 import { DotcmsNavigationItem, DotCMSPageAsset } from '@dotcms/angular';
 
 import { DOTCMS_CLIENT_TOKEN } from '../../client-token/dotcms-client';
+import { PageApiOptions, PageError } from '../pages.component';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PageService {
   private readonly client = inject(DOTCMS_CLIENT_TOKEN);
-  private navObservable: Observable<DotcmsNavigationItem | null> = this.fetchNavigation();
+  private navObservable: Observable<DotcmsNavigationItem | null> =
+    this.fetchNavigation();
 
-  getPage(route: ActivatedRoute): Observable<any> {
-    return this.fetchPage(route).pipe(
-      switchMap((page) => 
-        this.navObservable.pipe(
-          map((nav) => ({ page, nav }))
-        )
+  getPage(
+    route: ActivatedRoute,
+    config: any
+  ): Observable<any> {
+    return this.fetchPage(route, config).pipe(
+      switchMap((page) =>
+        this.navObservable.pipe(map((nav) => ({ page, nav })))
       )
     );
   }
 
   private fetchNavigation(): Observable<DotcmsNavigationItem | null> {
     return from(
-      this.client.nav.get({
-        path: '/',
-        depth: 2,
-        languageId: 1, // Default language ID
-      }).then((response) => (response as any).entity)
-    ).pipe(
-      shareReplay(1)
-    );
+      this.client.nav
+        .get({
+          path: '/',
+          depth: 2,
+          languageId: 1, // Default language ID
+        })
+        .then((response) => (response as any).entity)
+    ).pipe(shareReplay(1));
   }
 
-  private fetchPage(route: ActivatedRoute): Observable<any> {
+  private fetchPage(
+    route: ActivatedRoute,
+    config: any
+  ): Observable<DotCMSPageAsset | { error: PageError }> {
     const queryParams = route.snapshot.queryParamMap;
     const url = route.snapshot.url.map((segment) => segment.path).join('/');
     const path = queryParams.get('path') || url || '/';
@@ -48,12 +54,17 @@ export class PageService {
     });
 
     return from(
-      this.client.page.get(pageParams).catch((error) => ({
-        error: {
-          message: error.message,
-          status: error.status,
-        },
-      }))
+      this.client.page
+        .get({ ...pageParams, ...config.params })
+        .then((response) => response as DotCMSPageAsset)
+        .catch((e) => {
+          console.error(e);
+          const error: PageError = {
+            message: e.message,
+            status: e.status,
+          }
+          return { error };
+        })
     );
   }
 }
