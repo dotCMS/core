@@ -176,7 +176,7 @@ public class DotCMSMockRequest implements HttpServletRequest {
     }
     @Override
     public String getMethod() {
-        return null;
+        return method;
     }
 
     @Override

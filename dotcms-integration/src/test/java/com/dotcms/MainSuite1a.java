@@ -1,6 +1,7 @@
 package com.dotcms;
 
 import com.dotcms.ai.workflow.OpenAIGenerateImageActionletTest;
+import com.dotcms.analytics.track.RequestMatcherTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.contenttype.business.SiteAndFolderResolverImplTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
@@ -105,7 +106,8 @@ import org.junit.runners.Suite.SuiteClasses;
         JsEngineTest.class,
         Task240306MigrateLegacyLanguageVariablesTest.class,
         EmailActionletTest.class,
-        OpenAIGenerateImageActionletTest.class
+        OpenAIGenerateImageActionletTest.class,
+        RequestMatcherTest.class
 })
 
 public class MainSuite1a {
