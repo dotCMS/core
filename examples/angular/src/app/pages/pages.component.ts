@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { NavigationEnd } from '@angular/router';
-import { delay, filter, startWith, tap } from 'rxjs/operators';
+import { filter, startWith, tap } from 'rxjs/operators';
 
 import { DYNAMIC_COMPONENTS } from '../utils';
 
