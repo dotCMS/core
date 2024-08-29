@@ -4,8 +4,14 @@ package com.dotcms.analytics.track;
  * A collector command basically puts information into a collector payload bean
  * @author jsanca
  */
-public interface CollectorCommand {
+public interface CollectorStrategy {
 
+    /**
+     * Test if the collector should run
+     * @param collectorContextMap
+     * @return
+     */
+    boolean test(final CollectorContextMap collectorContextMap);
     /**
      * This method is called in order to fire the collector
      * @param collectorContextMap

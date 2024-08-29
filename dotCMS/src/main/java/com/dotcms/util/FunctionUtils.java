@@ -15,6 +15,19 @@ import java.util.stream.Collectors;
 public class FunctionUtils {
 
     /**
+     * Get the value if the condition is true, otherwise return the default value.
+     * @param condition
+     * @param trueSupplier
+     * @param falseSupplier
+     * @return
+     * @param <T>
+     */
+    public static <T> T getOrDefault(final boolean condition, final Supplier<T> trueSupplier, final Supplier<T> falseSupplier) {
+
+        return condition?trueSupplier.get():falseSupplier.get();
+    } // getOrDefault.
+
+    /**
      * The idea behind this method is to concat a consequent callback if value is true.
             * For instance
      * <code>
