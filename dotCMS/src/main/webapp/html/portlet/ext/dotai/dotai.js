@@ -136,7 +136,6 @@ const writeModelToDropdown = async () => {
         }
 
         const newOption = document.createElement("option");
-        console.log(JSON.stringify(dotAiState.config, null, 2));
         newOption.value = dotAiState.config.availableModels[i].name;
         newOption.text = `${dotAiState.config.availableModels[i].name}`
         if (dotAiState.config.availableModels[i].current) {

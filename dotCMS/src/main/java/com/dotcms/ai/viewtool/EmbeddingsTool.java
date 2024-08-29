@@ -1,5 +1,6 @@
 package com.dotcms.ai.viewtool;
 
+import com.dotcms.ai.app.AIModelType;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.EncodingUtil;
@@ -58,8 +59,8 @@ public class EmbeddingsTool implements ViewTool {
      * @return The number of tokens in the prompt, or -1 if no encoding is found for the model.
      */
     public int countTokens(final String prompt) {
-        return EncodingUtil.get().registry
-                .getEncodingForModel(appConfig.getModel().getCurrentModel())
+        return EncodingUtil.get()
+                .getEncoding(appConfig, AIModelType.TEXT)
                 .map(encoding -> encoding.countTokens(prompt))
                 .orElse(-1);
     }
