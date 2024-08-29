@@ -18,12 +18,14 @@ public class BasicProfileCollector implements Collector {
     public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
                                         final CollectorPayloadBean collectorPayloadBean) {
 
+        String requestId = (String)collectorContextMap.get("requestId");
         Long time = (Long)collectorContextMap.get("time");
         String clusterId   = (String)collectorContextMap.get("cluster");
         String serverId   = (String)collectorContextMap.get("server");
         Boolean sessionId   = (Boolean)collectorContextMap.get("session");
         Boolean sessionNew   = (Boolean)collectorContextMap.get("sessionNew");
 
+        collectorPayloadBean.put("requestId", requestId);
         collectorPayloadBean.put("timestamp",
                 FunctionUtils.getOrDefault(Objects.nonNull(time), ()->time,System::currentTimeMillis));
         collectorPayloadBean.put("cluster",
