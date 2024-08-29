@@ -9,10 +9,13 @@ import com.liferay.util.HashBuilder;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+
+import java.nio.charset.Charset;
 import java.nio.file.StandardCopyOption;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mozilla.universalchardet.UniversalDetector;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -444,6 +447,27 @@ public class FileUtil {
 		} catch (IOException e) {
 			Logger.debug(FileUtil.class, e.getMessage(), e);
 		}
+	}
+
+	public static Charset detectEncodeType(final File file)  {
+
+		byte[] buf = new byte[4096];
+		try (InputStream is = Files.newInputStream(file.toPath())){
+
+
+			UniversalDetector detector = new UniversalDetector(null);
+			int nread;
+			while ((nread = is.read(buf)) > 0 && !detector.isDone()) {
+				detector.handleData(buf, 0, nread);
+			}
+			detector.dataEnd();
+			return Charset.forName(detector.getDetectedCharset());
+		}catch (Exception e){
+			Logger.error(FileUtil.class, e.getMessage(),e);
+
+		}
+		return Charset.defaultCharset();
+
 	}
 
 }

@@ -100,8 +100,7 @@ public class ImportUtil {
     private final static String languageCodeHeader = "languageCode";
     private final static String countryCodeHeader = "countryCode";
 
-    private final static int commitGranularity = 500;
-    private final static int sleepTime = 200;
+    private final static int commitGranularity = 100;
 
     public static final String[] IMP_DATE_FORMATS = new String[] { "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy",
         "MM/dd/yy hh:mm aa", "MM/dd/yyyy hh:mm aa",	"MM/dd/yy HH:mm", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy", "M/d/y", "M/d",
@@ -218,8 +217,6 @@ public class ImportUtil {
                     importHeaders(csvreader.getHeaders(), contentType, keyfields, isMultilingual, user, results, headers, keyFields, uniqueFields,relationships,onlyChild,onlyParent);
                 }
                 lineNumber++;
-                // Log preview/import status every 100 processed records
-                int loggingPoint = 100;
                 //Reading the whole file
                 if (headers.size() > 0) {
                     if (!preview) {
@@ -231,10 +228,6 @@ public class ImportUtil {
                             break;
                         }
                         lineNumber++;
-                        if (lineNumber % loggingPoint == 0) {
-                            final String action = preview ? "previewed." : "imported.";
-                            Logger.info(ImportUtil.class, String.format("-> %d entries have been %s", lineNumber, action));
-                        }
                         csvLine = csvreader.getValues();
                         try {
                             lines++;
@@ -281,9 +274,13 @@ public class ImportUtil {
                                 errors++;
                             }
 
-                            if ( !preview && (lineNumber % commitGranularity == 0) ) {
-                                HibernateUtil.closeAndCommitTransaction();
-                                HibernateUtil.startTransaction();
+                            if (lineNumber % commitGranularity == 0) {
+                                final String action = preview ? "previewed." : "imported.";
+                                Logger.info(ImportUtil.class, String.format("-> %d entries have been %s", lineNumber, action));
+                                if(!preview) {
+                                    HibernateUtil.closeAndCommitTransaction();
+                                    HibernateUtil.startTransaction();
+                                }
                             }
                         } catch (final DotRuntimeException ex) {
                             String errorMessage = getErrorMsgFromException(user, ex);

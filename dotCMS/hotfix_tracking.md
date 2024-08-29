@@ -52,3 +52,4 @@ This maintenance release includes the following code fixes:
 46. https://github.com/dotCMS/core/issues/28722 : Write Postman Tests for Completions AI Endpoints #28722
 47. https://github.com/dotCMS/core/issues/28990 : dotAI throws Text Embedding Error #28990
 48. https://github.com/dotCMS/core/issues/28839 : Block Editor: Bubble Menu actions and marks are not working #28839
+49. https://github.com/dotCMS/core/issues/29162 : Slow performance with imports in some cases #29162
