@@ -1,17 +1,19 @@
 package com.dotcms.analytics.track;
 
-public class PageCollectorStrategy implements CollectorStrategy {
+public class FilesCollector implements Collector {
 
     @Override
     public boolean test(CollectorContextMap collectorContextMap) {
-        return "page" == collectorContextMap.getRequestMatcher(); // should compare with the id
+        return "file" == collectorContextMap.getRequestMatcher(); // should compare with the id
     }
+
 
     @Override
     public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
                                         final CollectorPayloadBean collectorPayloadBean) {
 
         collectorPayloadBean.put("timestamp", System.currentTimeMillis());
+        collectorPayloadBean.put("objects", "tbd");
         return collectorPayloadBean;
     }
 

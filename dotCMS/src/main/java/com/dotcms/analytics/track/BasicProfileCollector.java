@@ -4,10 +4,9 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.FunctionUtils;
 import com.dotmarketing.business.APILocator;
 
-import java.io.Serializable;
 import java.util.Objects;
 
-public class BasicProfileCollectorStrategy implements CollectorStrategy {
+public class BasicProfileCollector implements Collector {
 
     @Override
     public boolean test(CollectorContextMap collectorContextMap) {
