@@ -6,9 +6,4 @@ export const routes: Routes = [
     path: '**',
     component: DotCMSPagesComponent
   },
-  { 
-    path: '',
-    pathMatch: 'full',
-    component: DotCMSPagesComponent
-  }
 ];
