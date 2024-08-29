@@ -11,17 +11,18 @@
             }
 
             <main class="container flex flex-col gap-8 m-auto">
-                @if (vm.error) {
-                    <app-error [error]="vm.error" />
-                } 
                 @if (vm.status === 'loading') {
                     <app-loading />
-                }
-                @if (vm.status === 'success' && vm.page) {
+                } @else if (vm.status === 'error' && vm.error) {
+                    <app-error [error]="vm.error" />
+                } @else if (vm.status === 'success' && vm.page) {
                     <dotcms-layout
                         [pageAsset]="vm.page"
                         [components]="components()"
                         [editor]="editorCofig" />
+                } @else {
+                    <!-- Add a fallback for unexpected states -->
+                    <p>Unexpected state encountered.</p>
                 }
             </main>
 
