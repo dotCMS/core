@@ -29,7 +29,7 @@ import { JsonPipe } from '@angular/common';
 
 export type PageError = {
   message: string;
-  status: number;
+  status: number | string;
 };
 
 type PageRender = {

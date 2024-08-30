@@ -78,7 +78,13 @@ export class PageService {
     return from(
       this.client.page
         .get({ ...pageParams, ...config.params })
-        .then((response) => response as DotCMSPageAsset)
+        .then((response) => {
+          if (!(response as any).layout) {
+            return { error: { message: 'You might be using an advanced template, or your dotCMS instance might lack an enterprise license.', status: 'Page without layout' } };
+          }
+
+          return response as DotCMSPageAsset
+        })
         .catch((e) => {
           console.error(`Error fetching page: ${e.message}`);
           const error: PageError = {

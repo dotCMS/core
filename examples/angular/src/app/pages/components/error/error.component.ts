@@ -11,7 +11,7 @@ import { PageError } from '../../pages.component';
   >
     <section>
       <div class="px-4 py-8 mx-auto max-w-screen-xl lg:py-16 lg:px-6">
-        <div class="mx-auto max-w-screen-sm text-center">
+        <div class="mx-auto max-w-screen-sm text-center text-gray-500">
           <h1
             class="mb-4 text-7xl font-extrabold tracking-tight lg:text-9xl text-primary-600"
           >
