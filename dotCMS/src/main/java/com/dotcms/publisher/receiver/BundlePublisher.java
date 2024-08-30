@@ -105,6 +105,7 @@ public class BundlePublisher extends Publisher {
 
     @Override
     public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
+        Logger.debug(BundlePublisher.class, "Initializing bundle publisher");
         if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
             throw new RuntimeException("need an enterprise license to run this");
         }
@@ -148,6 +149,7 @@ public class BundlePublisher extends Publisher {
      */
     @Override
     public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
+        Logger.debug(BundlePublisher.class, "Processing bundle");
         if ( LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level ) {
             throw new RuntimeException( "need an enterprise license to run this" );
         }
@@ -165,6 +167,7 @@ public class BundlePublisher extends Publisher {
 
         try {
             //Update audit
+            Logger.debug(BundlePublisher.class, "Updating audit table for bundle with ID '" + bundleName + "'");
             currentStatusHistory = config.getPublishAuditStatus().getStatusPojo();
             currentStatusHistory.setPublishStart(new Date());
 
@@ -209,6 +212,7 @@ public class BundlePublisher extends Publisher {
         BundleMetaDataFile bundleMetaDataFile = null;
 
         try {
+            Logger.debug(BundlePublisher.class, "Getting assets list from received bundle with ID '" + bundleName + "'");
             bundleMetaDataFile = new BundleMetaDataFile(finalBundlePath);
             assetsDetails = bundleMetaDataFile.getAssetsDetails();
         } catch (Exception e) {
@@ -219,6 +223,7 @@ public class BundlePublisher extends Publisher {
             HibernateUtil.startTransaction();
             // Execute the handlers
             for (IHandler handler : handlers) {
+                Logger.debug(BundlePublisher.class, "Start of Handler: " + handler.getName());
                 handler.handle(folderOut);
 
                 if (!handler.getWarnings().isEmpty()){
@@ -230,6 +235,7 @@ public class BundlePublisher extends Publisher {
                     }
                     hasWarnings = true;
                 }
+                Logger.debug(BundlePublisher.class, "End of Handler: " + handler.getName());
             }
             HibernateUtil.commitTransaction();
         } catch (Exception e) {
@@ -311,7 +317,8 @@ public class BundlePublisher extends Publisher {
      * @throws DotPublisherException 
      */
     private void untar(InputStream bundle, String path, String fileName) throws DotPublishingException {
-      TarArchiveEntry entry;
+        Logger.debug(BundlePublisher.class, "Untaring bundle: " + fileName);
+        TarArchiveEntry entry;
         TarArchiveInputStream inputStream = null;
         OutputStream outputStream = null;
         File baseBundlePath = new File(ConfigUtils.getBundlePath());
@@ -379,7 +386,7 @@ public class BundlePublisher extends Publisher {
                     Logger.warn(this.getClass(), "Error Closing Stream.", e);
                 }
             }// while
-
+            Logger.debug(BundlePublisher.class, "Untaring bundle finished");
         } catch (Exception e) {
             throw new DotPublishingException(e.getMessage(),e);
 
@@ -416,6 +423,7 @@ public class BundlePublisher extends Publisher {
         }
 
         private Map<String, Object> getAssetsDetailsFromBundleXML(final String finalBundlePath) {
+            Logger.debug(BundlePublisher.class, "Getting assets details from bundle.xml for bundle: " + finalBundlePath);
             File xml = new File(finalBundlePath + File.separator + "bundle.xml");
 
             PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.xmlToObject(xml);
@@ -429,6 +437,7 @@ public class BundlePublisher extends Publisher {
         }
 
         private Map<String, Object> getAssetsDetailsFromManifest(final File manifestFile) {
+            Logger.debug(BundlePublisher.class, "Getting assets details from manifest for bundle: " + manifestFile.getName());
             final Map<String, String> assetsDetails = new HashMap<>();
 
             Collection<ManifestInfo> bundlerAssets;

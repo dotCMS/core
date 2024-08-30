@@ -101,8 +101,13 @@ public class BundlePublisherResource {
 								 final HttpServletRequest request,
 								 final String remoteIP) throws Exception {
 
+		Logger.debug(BundlePublisherResource.class, "Publishing bundle from " + remoteIP);
+		Logger.debug(BundlePublisherResource.class, "Force Push: " + forcePush);
+
 		final String fileNameSent = getFileNameFromRequest(request);
 		final String fileName = UtilMethods.isSet(fileNameSent) ? fileNameSent : generatedBundleFileName();
+
+		Logger.debug(BundlePublisherResource.class, "Bundle file name: " + fileName);
 
 		Bundle bundle = null;
 
@@ -114,9 +119,10 @@ public class BundlePublisherResource {
 					remoteIP, remoteIP, bundleFolder, true);
 
 			// save bundle if it doesn't exists
+			Logger.debug(BundlePublisherResource.class, "Checking if bundle exists: " + bundleFolder);
 			bundle = APILocator.getBundleAPI().getBundleById(bundleFolder);
 			if (bundle == null || bundle.getId() == null) {
-
+				Logger.debug(BundlePublisherResource.class, "Saving bundle: " + bundleFolder);
 				bundle = new Bundle();
 				bundle.setId(bundleFolder);
 				bundle.setName(fileName.replace(".tar.gz", ""));
@@ -124,6 +130,7 @@ public class BundlePublisherResource {
 				bundle.setOwner(APILocator.getUserAPI().getSystemUser().getUserId());
 				bundle.setForcePush(forcePush);
 				APILocator.getBundleAPI().saveBundle(bundle);
+				Logger.debug(BundlePublisherResource.class, "Bundle saved: " + bundleFolder);
 			}
 
 			//Write file on FS
@@ -132,6 +139,7 @@ public class BundlePublisherResource {
 			//Start thread
 
 			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
+				Logger.debug(BundlePublisherResource.class, "Triggering Push Publisher Job for bundle: " + fileName);
 				PushPublisherJob.triggerPushPublisherJob(fileName, status);
 			}
 
