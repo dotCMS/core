@@ -114,6 +114,7 @@ public class FireActionForm extends Validated {
         this.individualPermissions = builder.individualPermissions;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Builder {
 
         @JsonProperty()
