@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { from, Observable, shareReplay } from 'rxjs';
-import { map, switchMap, filter } from 'rxjs/operators';
+import { from, Observable, of, shareReplay } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 
 import { getPageRequestParams } from '@dotcms/client';
 import { DotcmsNavigationItem, DotCMSPageAsset } from '@dotcms/angular';
@@ -18,7 +18,7 @@ export class PageService {
 
   /**
    * Get the page and navigation for the given route and config.
-   * 
+   *
    * @param {ActivatedRoute} route
    * @param {*} config
    * @return {*}  {(Observable<{ page: DotCMSPageAsset | { error: PageError }; nav: DotcmsNavigationItem }>)}
@@ -27,7 +27,10 @@ export class PageService {
   getPageAndNavigation(
     route: ActivatedRoute,
     config: any
-  ): Observable<{ page: DotCMSPageAsset | { error: PageError }; nav: DotcmsNavigationItem }> {
+  ): Observable<{
+    page: DotCMSPageAsset | { error: PageError };
+    nav: DotcmsNavigationItem | null;
+  }> {
     if (!this.navObservable) {
       this.navObservable = this.fetchNavigation(route);
     }
@@ -35,22 +38,27 @@ export class PageService {
     return this.fetchPage(route, config).pipe(
       switchMap((page) =>
         this.navObservable.pipe(
-          filter((nav): nav is DotcmsNavigationItem => nav !== null),
           map((nav) => ({ page, nav }))
         )
       )
     );
   }
 
-  private fetchNavigation(route: ActivatedRoute): Observable<DotcmsNavigationItem | null> {
+  private fetchNavigation(
+    route: ActivatedRoute
+  ): Observable<DotcmsNavigationItem | null> {
     return from(
       this.client.nav
         .get({
           path: '/',
           depth: 2,
-          languageId: route.snapshot.params['languageId'] || 1
+          languageId: route.snapshot.params['languageId'] || 1,
         })
         .then((response) => (response as any).entity)
+        .catch((e) => {
+          console.error(`Error fetching navigation: ${e.message}`);
+          return null;
+        })
     ).pipe(shareReplay(1));
   }
 
@@ -72,11 +80,11 @@ export class PageService {
         .get({ ...pageParams, ...config.params })
         .then((response) => response as DotCMSPageAsset)
         .catch((e) => {
-          console.error(e);
+          console.error(`Error fetching page: ${e.message}`);
           const error: PageError = {
             message: e.message,
             status: e.status,
-          }
+          };
           return { error };
         })
     );

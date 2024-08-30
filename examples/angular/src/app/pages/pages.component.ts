@@ -25,6 +25,7 @@ import { HeaderComponent } from './components/header/header.component';
 import { NavigationComponent } from './components/navigation/navigation.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { PageService } from './services/page.service';
+import { JsonPipe } from '@angular/common';
 
 export type PageError = {
   message: string;
@@ -82,7 +83,7 @@ export class DotCMSPagesComponent implements OnInit {
       .subscribe(
         ({ page, nav }: {
           page: DotCMSPageAsset | { error: PageError };
-          nav: DotcmsNavigationItem;
+          nav: DotcmsNavigationItem | null;
         }) => {
           if ('error' in page) {
             this.#setError(page.error);
@@ -100,7 +101,7 @@ export class DotCMSPagesComponent implements OnInit {
       );
   }
 
-  #setPageContent(page: DotCMSPageAsset, nav: DotcmsNavigationItem) {
+  #setPageContent(page: DotCMSPageAsset, nav: DotcmsNavigationItem | null) {
     this.context.update((state) => ({
       status: 'success',
       page,

@@ -1,11 +1,11 @@
 import { ApplicationConfig } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
-import { ClientConfig } from '@dotcms/client';
+import { ClientConfig, DotCmsClient } from '@dotcms/client';
 
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
-import { provideDotcmsClient } from './client-token/dotcms-client';
+import { DOTCMS_CLIENT_TOKEN, provideDotcmsClient } from './client-token/dotcms-client';
 import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
 
 const DOTCMS_CLIENT_CONFIG: ClientConfig = {
@@ -14,10 +14,15 @@ const DOTCMS_CLIENT_CONFIG: ClientConfig = {
   siteId: environment.siteId,
 };
 
+const client = DotCmsClient.init(DOTCMS_CLIENT_CONFIG);
+
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideDotcmsClient(DOTCMS_CLIENT_CONFIG),
     provideRouter(routes),
+    {
+      provide: DOTCMS_CLIENT_TOKEN,
+      useValue: client
+    },
     /**
      * This is a custom image loader that will be used by the NgOptimizedImage component.
      * It will prepend the dotCMS URL to the image src if the image is not an external URL.
