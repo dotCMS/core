@@ -10,15 +10,15 @@ import { GenericContentlet } from '../../utils';
 import { ContentletsComponent } from '../contentlets/contentlets.component';
 import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
 import { DotCmsClient } from '@dotcms/client';
+import { DOTCMS_CLIENT_TOKEN } from '../../app.config';
 
-import { DOTCMS_CLIENT_TOKEN } from '../../client-token/dotcms-client';
 
 @Component({
   selector: 'app-destinations',
   standalone: true,
   imports: [ContentletsComponent],
   template: ` <div class="flex flex-col">
-    <h2 class="text-2xl font-bold mb-7 text-black">Popular Destinations</h2>
+    <h2 class="mb-7 text-2xl font-bold text-black">Popular Destinations</h2>
     @if (!!destinations().length) {
     <app-contentlets [contentlets]="destinations()" />
     }
