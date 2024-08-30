@@ -97,12 +97,6 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
 
     private static boolean isSameAsFirst(final Model firstAttempt, final Model model) {
         if (firstAttempt.equals(model)) {
-            AppConfig.debugLogger(
-                    AIModelFallbackStrategy.class,
-                    () -> String.format(
-                            "Model [%s] is the same as the current one [%s].",
-                            model.getName(),
-                            firstAttempt.getName()));
             return true;
         }
 
@@ -150,11 +144,17 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
         final Model model = modelTuple._2;
 
         if (!responseData.getStatus().doesNeedToThrow()) {
+            AppConfig.debugLogger(
+                    AIModelFallbackStrategy.class,
+                    () -> String.format(
+                            "Model [%s] failed then setting its status to [%s].",
+                            model.getName(),
+                            responseData.getStatus()));
             model.setStatus(responseData.getStatus());
         }
 
         if (model.getIndex() == aiModel.getModels().size() - 1) {
-            aiModel.setCurrentModelIndex(-1);
+            aiModel.setCurrentModelIndex(AIModel.NOOP_INDEX);
             AppConfig.debugLogger(
                     AIModelFallbackStrategy.class,
                     () -> String.format(
@@ -217,11 +217,10 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
                         response -> AppConfig.debugLogger(
                                 AIModelFallbackStrategy.class,
                                 () -> String.format(
-                                        "Model [%s] failed with response:%s%s%s. Trying next model.",
+                                        "Model [%s] failed with response:%s%sTrying next model.",
                                         modelTuple._2.getName(),
                                         System.lineSeparator(),
-                                        response,
-                                        System.lineSeparator())),
+                                        response)),
                         () -> AppConfig.debugLogger(
                                 AIModelFallbackStrategy.class,
                                 () -> String.format(

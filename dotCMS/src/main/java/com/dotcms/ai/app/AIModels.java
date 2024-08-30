@@ -293,7 +293,7 @@ public class AIModels {
                 final String modelName = model.getName().trim().toLowerCase();
                 final ModelStatus status;
                 status = ModelStatus.ACTIVE;
-                if (aiModel.getCurrentModelIndex() == -1) {
+                if (aiModel.getCurrentModelIndex() == AIModel.NOOP_INDEX) {
                     aiModel.setCurrentModelIndex(model.getIndex());
                 }
                 Logger.debug(
