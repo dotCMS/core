@@ -445,7 +445,7 @@ public class BundleResource {
 
         if (!notExistingBundles.isEmpty()) {
             message.append(String.format(
-                    "The following bundles was not deleted because it does not exist: %s",
+                    "The following bundles were not deleted because they don't exist: %s",
                     notExistingBundles.stream().collect(Collectors.joining(", ")))
             );
         }
