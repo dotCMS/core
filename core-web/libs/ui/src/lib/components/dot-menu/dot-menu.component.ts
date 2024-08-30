@@ -25,8 +25,14 @@ export class DotMenuComponent {
     @Input()
     icon: string;
 
-    @Input()
-    model: MenuItem[];
+    model: MenuItem[] = [
+        {
+            label: 'asas',
+            command: () => {
+                console.log('asas');
+            }
+        }
+    ];
 
     @Input()
     float: boolean;
@@ -42,7 +48,7 @@ export class DotMenuComponent {
      *
      * @memberof DotMenuComponent
      */
-    toggle($event: MouseEvent): void {
+    toggle($event: Event): void {
         $event.stopPropagation();
         this.menu.toggle($event);
 

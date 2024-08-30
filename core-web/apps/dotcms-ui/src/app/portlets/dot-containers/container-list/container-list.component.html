@@ -88,10 +88,10 @@
                         *ngIf="!rowData.disableInteraction"
                         (click)="$event.stopPropagation()"
                         [value]="rowData"
-                        [attr.test-id]="rowData.friendlyName"></p-tableCheckbox>
+                        [attr.test-id]="rowData.friendlyName" />
                 </td>
                 <td [ngStyle]="{ 'text-align': vm.tableColumns[0].textAlign }">
-                    {{ rowData.name }}
+                    {{ rowData.name }} - {{ rowData.deleted }}
                     <ng-container *ngIf="rowData.path">
                         -
                         <span class="container-listing__path">{{ rowData.path }}</span>
@@ -115,7 +115,7 @@
                         [attr.data-testid]="rowData.identifier"
                         [actions]="setContainerActions(rowData)"
                         [item]="rowData"
-                        class="listing-datatable__action-button"></dot-action-menu-button>
+                        class="listing-datatable__action-button" />
                 </td>
             </tr>
         </ng-template>

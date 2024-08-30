@@ -1,3 +1,5 @@
+<p-menu [popup]="true" [model]="model" #menu appendTo="body" />
+
 @if (float) {
     <p-button
         (click)="toggle($event)"
@@ -13,5 +15,3 @@
         styleClass="p-button-sm p-button-rounded p-button-text"
         data-testid="dot-menu-button"></p-button>
 }
-
-<p-menu [popup]="true" [model]="model" #menu appendTo="body"></p-menu>

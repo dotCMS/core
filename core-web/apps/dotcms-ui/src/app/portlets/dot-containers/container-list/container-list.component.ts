@@ -10,6 +10,7 @@ import {
     ViewChildren
 } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { Menu } from 'primeng/menu';
 
@@ -25,8 +26,7 @@ import {
     DotContentState,
     CONTAINER_SOURCE,
     DotMessageSeverity,
-    DotMessageType,
-    DotActionMenuItem
+    DotMessageType
 } from '@dotcms/dotcms-models';
 import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';
 
@@ -139,8 +139,25 @@ export class ContainerListComponent implements OnDestroy {
         this.#store.updateBundleIdentifier(null);
     }
 
-    setContainerActions(container: DotContainer): DotActionMenuItem[] {
-        return this.#store.getContainerActions(container);
+    setContainerActions(container: DotContainer): MenuItem[] {
+        console.log('setContainerActions');
+        // const actions = this.#store.getContainerActions(container);
+        // console.log(actions);
+
+        return [
+            {
+                label: 'hola',
+                command: () => {
+                    console.log('hola');
+                }
+            },
+            {
+                label: 'hola',
+                command: () => {
+                    console.log('hola');
+                }
+            }
+        ];
     }
 
     /**
