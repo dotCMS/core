@@ -5,7 +5,7 @@
     }
 
     #anchorTOCDiv {
-        max-width:500px;
+        max-width:600px;
         margin: 20px;
         font-size: 2em;
         display:grid;
@@ -17,6 +17,7 @@
 
     #anchorTOCDiv div{
         font-size: .7em;
+        text-transform: capitalize;
     }
 
     .propTh{
@@ -222,17 +223,13 @@
         const th = document.createElement("th");
         th.className = "propTh";
         console.log("envLoadedKeys", envLoadedKeys);
-        if(envLoadedKeys.includes(key)) {
-            th.style.textDecoration = "line-through";
-        }
+
         th.innerHTML = key;
         tr.appendChild(th);
 
         const td = document.createElement("td");
         td.className = "propTd";
-        if(envLoadedKeys.includes(key)) {
-            td.style.textDecoration = "line-through";
-        }
+
         td.innerHTML = value;
         tr.appendChild(td);
         return tr;
@@ -242,9 +239,14 @@
     const createSystemTableRow = (key, value) => {
 
         const tr = createPropertyRow(key, value);
-
+        
+        if(envLoadedKeys.includes(key)) {
+            var cellVal = tr.cells.item(0);
+            cellVal.style.textDecoration = "line-through";
+            cellVal =tr.cells.item(1);
+            cellVal.style.textDecoration = "line-through";
+        }
         const td2 = document.createElement("td");
-
         td2.style.textAlign = "right";
         td2.style.maxWidth = "100px";
 
