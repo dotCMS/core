@@ -1131,61 +1131,6 @@ function assetHostListTable_deleteHost(hostId){
 	}
 }
 
-function showSystemVars(){
-
-
-
-    const keys = ["release", "jvm", "host" ,"environment","system"];
-    const currentDiv = document.getElementById("systemInfoDiv");
-
-    currentDiv.innerHTML="";
-    fetch('/api/v1/jvm')
-    .then(response => response.json())
-    .then(data => {
-        const headerDiv = document.createElement("h2");
-        headerDiv.innerHTML="Version: " + data.release.version + " (" +data.release.buildDate + ")" ;
-        currentDiv.appendChild(headerDiv);
-
-
-        keys.forEach(key=>{
-            const myDiv = document.createElement("div");
-            myDiv.className="propDiv";
-            const fieldSet = document.createElement("fieldset");
-            fieldSet.className="propFieldSet";
-            const label = document.createElement("label");
-            label.className="propLabel";
-            label.innerHTML=key;
-            const table = document.createElement("table");
-
-            myDiv.appendChild(fieldSet);
-            currentDiv.appendChild(myDiv);
-            fieldSet.appendChild(label);
-
-            table.className="listingTable propTable";
-            fieldSet.appendChild(table)
-
-            Object.entries(data[key]).forEach(([key, value]) =>{
-                const tr = document.createElement("tr");
-
-                const th = document.createElement("th");
-                th.className="propTh";
-                const td = document.createElement("td");
-                td.className="propTd";
-                table.appendChild(tr)
-                tr.appendChild(th);
-                tr.appendChild(td);
-                th.innerHTML=key;
-                td.innerHTML=value;
-
-            })
-
-        });
-
-
-
-
-    });
-}
 
     /**
      * When the User needs to download dotCMS assets, this function will display a dialog asking them whether they want
@@ -1276,35 +1221,7 @@ dd.leftdl {
     font-size: 1%;
 }
 
-.propDiv{
 
-    margin:30px;
-}
-.propTh{
-    width:40%;
-    text-align: right;
-    font-size:14px;
-}
-.propTd{
-    font-family: monospace;
-    max-width: 400px;
-    overflow-wrap: break-word;
-    font-size:14px;
-}
-.propLabel{
-    background-color: white;
-    font-size:24px;
-    margin-top: -48px;
-    padding:10px;
-
-    display:inline-block;
-
-    max-width:50%;
-}
-
-.propFieldSet{
-    margin-bottom:40px;
-}
 
 </style>
 
@@ -1855,11 +1772,11 @@ dd.leftdl {
     <!-- START System Info TAB -->
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <div id="systemProps" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "System-Properties") %>" >
-      <div style="width:80%;margin: 0 auto;" id="systemInfoDiv">
-
-      </div>
-
+        <%@ include file="/html/portlet/ext/cmsmaintenance/system_config.jsp" %>
     </div>
+
+
+
 
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <!-- START Threads TAB -->

@@ -1,5 +1,9 @@
 package com.dotcms.rest.api.v1.maintenance;
 
+import com.dotcms.business.SystemTable;
+import com.dotcms.config.SystemTableConfigSource;
+import com.dotmarketing.business.APILocator;
+import io.vavr.Lazy;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
@@ -58,6 +62,7 @@ public class JVMInfoResource implements Serializable {
         resultMap.put("host", getHostInfo());
         resultMap.put("jvm", getJVMInfo());
         resultMap.put("environment", getEnvironmentalVars());
+        resultMap.put("configOverrides", getDBOverrides());
         resultMap.put("system", getSystemProps());
 
         
@@ -100,7 +105,22 @@ public class JVMInfoResource implements Serializable {
         
     }
     
-    
+
+    private Map<String, Object> getDBOverrides(){
+        final Map<String,Object> resultMap=new LinkedHashMap<>();
+
+        SystemTable systemTable =APILocator.getSystemAPI().getSystemTable();
+
+        resultMap.putAll(systemTable.all());
+
+
+
+
+        return resultMap;
+    }
+
+
+
     private Map<String,Object> getJVMInfo(){
         
         final Map<String,Object> resultMap=new LinkedHashMap<>();
