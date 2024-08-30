@@ -3,9 +3,11 @@ package com.dotcms.rest.exception.mapper;
 import com.dotmarketing.util.Logger;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.ext.Provider;
 import org.elasticsearch.ElasticsearchStatusException;
 import javax.ws.rs.ext.ExceptionMapper;
 
+@Provider
 public class ElasticsearchStatusExceptionMapper implements ExceptionMapper<ElasticsearchStatusException> {
 
 
