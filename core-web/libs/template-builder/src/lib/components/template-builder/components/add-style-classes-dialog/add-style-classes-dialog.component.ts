@@ -29,7 +29,7 @@ export class AddStyleClassesDialogComponent implements OnInit {
     selectedClasses: string[] = [];
 
     isJsonClasses$: Observable<boolean>;
-    classes: string[];
+    classes: string[] = [];
 
     constructor(
         private jsonClassesService: JsonClassesService,

@@ -15,7 +15,6 @@ import {
     templateUrl: './add-widget.component.html',
     styleUrls: ['./add-widget.component.scss'],
     standalone: true,
-    imports: [],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddWidgetComponent implements AfterViewInit {
