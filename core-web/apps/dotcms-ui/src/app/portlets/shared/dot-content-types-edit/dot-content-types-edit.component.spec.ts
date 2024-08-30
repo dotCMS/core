@@ -4,7 +4,8 @@ import { createFakeEvent } from '@ngneat/spectator';
 import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
-import {} from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -143,7 +144,6 @@ describe('DotContentTypesEditComponent', () => {
                 BrowserAnimationsModule,
                 DotIconModule,
                 DotDialogModule,
-                HttpClientTestingModule,
                 ButtonModule
             ],
             providers: [
@@ -178,7 +178,9 @@ describe('DotContentTypesEditComponent', () => {
                 DotMenuService,
                 DotEventsService,
                 FieldService,
-                Location
+                Location,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         };
     };

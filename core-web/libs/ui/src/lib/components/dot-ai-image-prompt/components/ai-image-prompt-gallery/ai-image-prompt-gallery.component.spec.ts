@@ -1,6 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
-import {} from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { Galleria, GalleriaModule } from 'primeng/galleria';
 
@@ -14,7 +15,8 @@ describe('DotAiImagePromptGalleryComponent', () => {
 
     const createComponent = createComponentFactory({
         component: AiImagePromptGalleryComponent,
-        imports: [HttpClientTestingModule, GalleriaModule]
+        imports: [GalleriaModule],
+        providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()]
     });
 
     const imagesMock: DotGeneratedAIImage[] = [

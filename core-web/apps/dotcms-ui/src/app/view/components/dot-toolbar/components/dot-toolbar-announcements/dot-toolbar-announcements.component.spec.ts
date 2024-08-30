@@ -2,8 +2,8 @@ import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngne
 import { of } from 'rxjs';
 
 import { NgClass, NgForOf } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import {} from '@angular/common/http/testing';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
@@ -56,9 +56,11 @@ describe('DotToolbarAnnouncementsComponent', () => {
             {
                 provide: SiteService,
                 useValue: siteServiceMock
-            }
+            },
+            provideHttpClient(withInterceptorsFromDi()),
+            provideHttpClientTesting()
         ],
-        imports: [NgForOf, NgClass, DotMessagePipe, HttpClientTestingModule, OverlayPanelModule]
+        imports: [NgForOf, NgClass, DotMessagePipe, OverlayPanelModule]
     });
 
     beforeEach(() => {

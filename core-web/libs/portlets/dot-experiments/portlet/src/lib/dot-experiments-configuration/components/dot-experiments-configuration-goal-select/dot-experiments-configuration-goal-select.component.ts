@@ -98,6 +98,19 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
         )
     };
 
+    constructor() {
+        this.initForm();
+    }
+
+    ngOnInit(): void {
+        this.listenType();
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
+    }
+
     get goalNameControl(): FormControl {
         return this.form.get('primary.name') as FormControl;
     }
@@ -125,16 +138,6 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
                 ...this.form.value
             }
         });
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
-    }
-
-    ngOnInit(): void {
-        this.initForm();
-        this.listenType();
     }
 
     private initForm(): void {

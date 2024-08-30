@@ -1,8 +1,8 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
-import {} from '@angular/common/http/testing';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { SiteService, SiteServiceMock } from '@dotcms/dotcms-js';
 
@@ -14,7 +14,7 @@ describe('AnnouncementsStore', () => {
 
     const createService = createServiceFactory({
         service: AnnouncementsStore,
-        imports: [HttpClientTestingModule],
+        imports: [],
         providers: [
             {
                 provide: SiteService,
@@ -36,7 +36,9 @@ describe('AnnouncementsStore', () => {
                         ]
                     })
                 )
-            })
+            }),
+            provideHttpClient(withInterceptorsFromDi()),
+            provideHttpClientTesting()
         ]
     });
 

@@ -198,13 +198,14 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(applyBtn.disabled).toEqual(true);
     });
 
-    it('should be a valid form when select REACH_PAGE', () => {
+    it('should be a valid form when select REACH_PAGE', async () => {
         spectator.detectChanges();
 
         const reachPageOption = spectator.query(byTestId('dot-options-item-header_REACH_PAGE'));
         spectator.click(reachPageOption);
+        spectator.detectChanges();
 
-        spectator.detectComponentChanges();
+        await spectator.fixture.whenStable();
 
         const applyBtn = spectator.query(byTestId('add-goal-button')) as HTMLButtonElement;
 
@@ -232,23 +233,21 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             }
         };
 
-        spectator.fixture.whenStable().then(() => {
-            // Invalid path
-            spectator.component.form.setValue(invalidFormValues);
-            spectator.component.form.updateValueAndValidity();
-            spectator.detectComponentChanges();
+        // Invalid path
+        spectator.component.form.setValue(invalidFormValues);
+        spectator.component.form.updateValueAndValidity();
+        spectator.detectComponentChanges();
 
-            expect(spectator.component.form.valid).toEqual(false);
-            expect(applyBtn.disabled).toEqual(true);
+        expect(spectator.component.form.valid).toEqual(false);
+        expect(applyBtn.disabled).toEqual(true);
 
-            // Invalid path
-            spectator.component.form.setValue(validFormValues);
-            spectator.component.form.updateValueAndValidity();
-            spectator.detectComponentChanges();
+        // Invalid path
+        spectator.component.form.setValue(validFormValues);
+        spectator.component.form.updateValueAndValidity();
+        spectator.detectComponentChanges();
 
-            expect(spectator.component.form.valid).toEqual(true);
-            expect(applyBtn.disabled).toEqual(false);
-        });
+        expect(spectator.component.form.valid).toEqual(true);
+        expect(applyBtn.disabled).toEqual(false);
     });
 
     it('should be a valid form when select URL_PARAMETER', () => {
@@ -337,14 +336,14 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         spectator.component.form.get('primary.name').setValue('default');
         spectator.component.form.updateValueAndValidity();
 
-        spectator.detectComponentChanges();
+        spectator.detectChanges();
 
         const bounceRateOption = spectator.query(byTestId('dot-options-item-header_BOUNCE_RATE'));
 
         spectator.click(bounceRateOption);
 
         const applyBtn = spectator.query(byTestId('add-goal-button')) as HTMLButtonElement;
-        spectator.detectComponentChanges();
+        spectator.detectChanges();
 
         spectator.click(applyBtn);
 
@@ -354,6 +353,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     });
 
     it('should disable submit button if the input name of the goal has more than MAX_INPUT_DESCRIPTIVE_LENGTH constant', () => {
+        spectator.detectChanges();
         const invalidFormValues = {
             primary: {
                 ...DefaultGoalConfiguration.primary,
@@ -398,7 +398,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             isOpen: false
         });
 
-        spectator.detectComponentChanges();
+        spectator.detectChanges();
 
         expect(sidebar.visible).toEqual(false);
     });

@@ -3,7 +3,7 @@
 import { Observable, of as observableOf } from 'rxjs';
 
 import { Component, DebugElement } from '@angular/core';
-import { async, ComponentFixture } from '@angular/core/testing';
+import { fakeAsync, ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
@@ -142,14 +142,14 @@ xdescribe('DotAddToBundleComponent', () => {
         );
     });
 
-    it('should set placeholder "Type bundle name" if NO bundles exist', async(() => {
+    it('should set placeholder "Type bundle name" if NO bundles exist', fakeAsync(() => {
         fixture.detectChanges();
         setTimeout(() => {
             expect(comp.placeholder).toEqual('Type bundle name');
         }, 0);
     }));
 
-    it('should set placeholder "Select or type bundle" if bundles exist', async(() => {
+    it('should set placeholder "Select or type bundle" if bundles exist', fakeAsync(() => {
         spyOn(addToBundleServiceMock, 'getBundles').and.returnValue(
             observableOf([
                 {

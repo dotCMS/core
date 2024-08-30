@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import {} from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { LOCALE_ID, Type } from '@angular/core';
 import { ComponentFixture, TestBed, TestModuleMetadata } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -64,8 +65,7 @@ export class DOTTestBed {
             CommonModule,
             FormsModule,
             ReactiveFormsModule,
-            DotSafeHtmlPipe,
-            HttpClientTestingModule
+            DotSafeHtmlPipe
         ],
         providers: [
             { provide: DotUiColorsService, useClass: MockDotUiColorsService },
@@ -99,7 +99,9 @@ export class DOTTestBed {
             DotLicenseService,
             DotCustomEventHandlerService,
             DotPushPublishDialogService,
-            DotDownloadBundleDialogService
+            DotDownloadBundleDialogService,
+            provideHttpClient(withInterceptorsFromDi()),
+            provideHttpClientTesting()
         ]
     };
 

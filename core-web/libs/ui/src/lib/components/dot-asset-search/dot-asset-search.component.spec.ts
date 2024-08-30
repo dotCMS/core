@@ -1,7 +1,8 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import {} from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 
 import { InputTextModule } from 'primeng/inputtext';
@@ -43,10 +44,11 @@ describe('DotAssetSearchComponent', () => {
                             }
                         ])
                 }
-            }
+            },
+            provideHttpClient(withInterceptorsFromDi()),
+            provideHttpClientTesting()
         ],
         imports: [
-            HttpClientTestingModule,
             InputTextModule,
             DotAssetCardComponent,
             DotAssetCardListComponent,

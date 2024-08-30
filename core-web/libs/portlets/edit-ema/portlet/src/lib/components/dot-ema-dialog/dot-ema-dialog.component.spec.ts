@@ -8,8 +8,8 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
 import { MessageService } from 'primeng/api';
@@ -78,7 +78,7 @@ describe('DotEmaDialogComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotEmaDialogComponent,
-        imports: [HttpClientTestingModule],
+        imports: [],
         providers: [
             DotEmaDialogStore,
             HttpClient,
@@ -130,7 +130,9 @@ describe('DotEmaDialogComponent', () => {
             mockProvider(DotContentTypeService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotAlertConfirmService),
-            mockProvider(DotIframeService)
+            mockProvider(DotIframeService),
+            provideHttpClient(withInterceptorsFromDi()),
+            provideHttpClientTesting()
         ]
     });
 

@@ -9,6 +9,8 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, NgZone } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import {
@@ -121,7 +123,9 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 provide: DotMessageService,
                 useValue: CONTENTTYPE_FIELDS_MESSAGE_MOCK
             },
-            FormGroupDirective
+            FormGroupDirective,
+            provideHttpClient(withInterceptorsFromDi()),
+            provideHttpClientTesting()
         ]
     });
 
@@ -586,7 +590,12 @@ describe('DotEditContentBinaryFieldComponent - ControlValueAccessor', () => {
             ReactiveFormsModule,
             DotEditContentBinaryFieldComponent
         ],
-        providers: [DotAiService, DotAiImagePromptStore]
+        providers: [
+            DotAiService,
+            DotAiImagePromptStore,
+            provideHttpClient(withInterceptorsFromDi()),
+            provideHttpClientTesting()
+        ]
     });
 
     beforeEach(() => {

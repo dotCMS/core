@@ -1,6 +1,7 @@
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import {
@@ -102,7 +103,6 @@ describe('DotCDNComponentStore', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
                 DotCDNStore,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -138,7 +138,9 @@ describe('DotCDNComponentStore', () => {
                             });
                         }
                     }
-                }
+                },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
         store = TestBed.inject(DotCDNStore);

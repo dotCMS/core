@@ -4,7 +4,8 @@ import { EditorComponent } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Provider, Type } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -161,7 +162,7 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
     let spectator: Spectator<DotEditContentFieldComponent>;
 
     const createComponent = createComponentFactory({
-        imports: [HttpClientTestingModule, ...(fieldTestBed?.imports || [])],
+        imports: [...(fieldTestBed?.imports || [])],
         declarations: [...(fieldTestBed?.declarations || [])],
         component: DotEditContentFieldComponent,
         componentViewProviders: [
@@ -170,7 +171,12 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
                 useValue: createFormGroupDirectiveMock()
             }
         ],
-        providers: [FormGroupDirective, mockProvider(DotHttpErrorManagerService)]
+        providers: [
+            FormGroupDirective,
+            mockProvider(DotHttpErrorManagerService),
+            provideHttpClient(withInterceptorsFromDi()),
+            provideHttpClientTesting()
+        ]
     });
 
     beforeEach(async () => {

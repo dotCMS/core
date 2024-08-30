@@ -1,7 +1,8 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
 import { NgClass, NgFor, NgIf } from '@angular/common';
-import {} from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
 import { SelectItem } from 'primeng/api';
@@ -29,9 +30,10 @@ describe('DotTabButtonsComponent', () => {
     const createComponent = createComponentFactory({
         component: DotTabButtonsComponent,
         providers: [
-            HttpClientTestingModule,
             DotMessagePipe,
-            { provide: DotMessageService, useValue: messageServiceMock }
+            { provide: DotMessageService, useValue: messageServiceMock },
+            provideHttpClient(withInterceptorsFromDi()),
+            provideHttpClientTesting()
         ],
         imports: [NgFor, ButtonModule, NgIf, NgClass, TooltipModule, DotMessagePipe]
     });

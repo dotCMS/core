@@ -2,7 +2,8 @@ import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 import { MarkdownService } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
-import {} from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 
@@ -117,7 +118,6 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
     const createComponent = createComponentFactory({
         component: DotAppsConfigurationDetailFormComponent,
         imports: [
-            HttpClientTestingModule,
             ButtonModule,
             CommonModule,
             CheckboxModule,
@@ -129,7 +129,12 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             TooltipModule,
             DotFieldRequiredDirective
         ],
-        providers: [MarkdownService, FormGroupDirective],
+        providers: [
+            MarkdownService,
+            FormGroupDirective,
+            provideHttpClient(withInterceptorsFromDi()),
+            provideHttpClientTesting()
+        ],
         declarations: [MockMarkdownComponent]
     });
 

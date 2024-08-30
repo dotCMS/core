@@ -1,4 +1,5 @@
-import {} from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { UntypedFormBuilder } from '@angular/forms';
@@ -66,8 +67,9 @@ describe('DotCreatePersonaFormComponent', () => {
                 DotFieldValidationMessageComponent,
                 DotAutofocusDirective,
                 DotAutocompleteTagsModule,
-                HttpClientTestingModule,
-                DotMessagePipe
+                DotMessagePipe,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },

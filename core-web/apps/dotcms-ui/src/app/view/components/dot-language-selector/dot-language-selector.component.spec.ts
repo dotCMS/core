@@ -7,7 +7,8 @@ import {
 } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import {} from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { Dropdown } from 'primeng/dropdown';
 
@@ -25,7 +26,7 @@ describe('DotLanguageSelectorComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotLanguageSelectorComponent,
-        imports: [HttpClientTestingModule],
+        providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         componentProviders: [mockProvider(DotLanguagesService)]
     });
 

@@ -1,7 +1,8 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import {} from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
@@ -47,9 +48,11 @@ describe('DotAIImagePromptComponent', () => {
                     setSelectedImage: jasmine.createSpy('setSelectedImage')
                 }
             },
-            mockProvider(ConfirmationService)
+            mockProvider(ConfirmationService),
+            provideHttpClient(withInterceptorsFromDi()),
+            provideHttpClientTesting()
         ],
-        imports: [HttpClientTestingModule]
+        imports: []
     });
 
     beforeEach(() => {

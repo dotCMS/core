@@ -1,6 +1,7 @@
 import { of } from 'rxjs';
 
-import {} from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -140,7 +141,7 @@ describe('DotPagesCreatePageDialogComponent', () => {
     ) => {
         await TestBed.resetTestingModule()
             .configureTestingModule({
-                imports: [DotPagesCreatePageDialogComponent, HttpClientTestingModule],
+                imports: [DotPagesCreatePageDialogComponent],
                 providers: [
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     {
@@ -173,7 +174,9 @@ describe('DotPagesCreatePageDialogComponent', () => {
                         provide: ActivatedRoute,
                         useClass: ActivatedRouteMock
                     },
-                    { provide: DotRouterService, useClass: MockDotRouterService }
+                    { provide: DotRouterService, useClass: MockDotRouterService },
+                    provideHttpClient(withInterceptorsFromDi()),
+                    provideHttpClientTesting()
                 ]
             })
             .compileComponents();

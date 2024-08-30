@@ -1,7 +1,8 @@
 import { createDirectiveFactory, createFakeEvent, SpectatorDirective } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import {} from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -21,12 +22,14 @@ describe('DotSiteSelectorDirective', () => {
 
     const createDirective = createDirectiveFactory({
         directive: DotSiteSelectorDirective,
-        imports: [HttpClientTestingModule, DropdownModule, BrowserAnimationsModule],
+        imports: [DropdownModule, BrowserAnimationsModule],
         providers: [
             { provide: SiteService, useClass: SiteServiceMock },
             { provide: CoreWebService, useClass: CoreWebServiceMock },
             DotEventsService,
-            DotSiteService
+            DotSiteService,
+            provideHttpClient(withInterceptorsFromDi()),
+            provideHttpClientTesting()
         ]
     });
 

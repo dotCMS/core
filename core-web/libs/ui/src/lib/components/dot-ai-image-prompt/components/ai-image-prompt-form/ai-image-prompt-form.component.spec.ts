@@ -1,6 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
-import {} from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -28,13 +29,13 @@ describe('DotAiImagePromptFormComponent', () => {
 
     const createComponent = createComponentFactory({
         component: AiImagePromptFormComponent,
-        imports: [
-            HttpClientTestingModule,
-            ButtonModule,
-            ReactiveFormsModule,
-            DotCopyButtonComponent
+        imports: [ButtonModule, ReactiveFormsModule, DotCopyButtonComponent],
+        providers: [
+            DotMessageService,
+            DotClipboardUtil,
+            provideHttpClient(withInterceptorsFromDi()),
+            provideHttpClientTesting()
         ],
-        providers: [DotMessageService, DotClipboardUtil],
         mocks: [DotMessagePipe]
     });
 
