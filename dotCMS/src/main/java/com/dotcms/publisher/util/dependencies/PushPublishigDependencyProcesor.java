@@ -906,8 +906,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         dependencyProcessor.waitUntilResolveAllDependencies();
     }
 
-    private <T> boolean add(final PusheableAsset pusheableAsset, final T asset, final String reason) {
-        final boolean isAdded = config.add(asset, pusheableAsset, reason);
+    private <T> boolean add(final PusheableAsset pusheableAsset, final T asset, final String evaluateReason) {
+        final boolean isAdded = config.add(asset, pusheableAsset, evaluateReason);
 
         if (isAdded) {
             pushedAssetUtil.savePushedAssetForAllEnv(asset, pusheableAsset);
@@ -917,18 +917,18 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     }
 
     private <T> void tryToAddAllAndProcessDependencies(
-            final PusheableAsset pusheableAsset, final Iterable<T> assets, final String reason)
+            final PusheableAsset pusheableAsset, final Iterable<T> assets, final String evaluateReason)
             throws DotDataException, DotSecurityException {
 
         if (UtilMethods.isSet(assets)) {
             for (T asset : assets) {
-                tryToAddAndProcessDependencies(pusheableAsset, asset, reason);
+                tryToAddAndProcessDependencies(pusheableAsset, asset, evaluateReason);
             }
         }
     }
 
     private <T> Collection<T> tryToAddAll(final PusheableAsset pusheableAsset,
-            final Collection<T> assets, final String reason)
+            final Collection<T> assets, final String evaluateReason)
             throws DotDataException, DotSecurityException {
 
         if (assets != null) {
@@ -936,7 +936,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                     .filter(asset -> {
                         try {
                             final TryToAddResult tryToAddResult = tryToAdd(pusheableAsset, asset,
-                                    reason);
+                                    evaluateReason);
                             return TryToAddResult.Result.INCLUDE == tryToAddResult.result;
                         } catch (AssetExcludeException e) {
                             return false;
@@ -964,14 +964,14 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
      *
      * @param pusheableAsset The type of asset that is being added to the bundle.
      * @param asset          The actual dotCMS object that is being added.
-     * @param reason         The reason why this asset is being added to the bundle. Refer to {@link ManifestReason} for
+     * @param evaluateReason The reason why this asset is being added to the bundle. Refer to {@link ManifestReason} for
      *                       more details.
      */
     private <T> void tryToAddAndProcessDependencies(final PusheableAsset pusheableAsset,
-            final T asset, final String reason) {
+            final T asset, final String evaluateReason) {
         if (UtilMethods.isSet(asset)) {
             try {
-                final TryToAddResult tryToAddResult = tryToAdd(pusheableAsset, asset, reason);
+                final TryToAddResult tryToAddResult = tryToAdd(pusheableAsset, asset, evaluateReason);
 
                 if (shouldIncludeDependency(tryToAddResult)) {
                     dependencyProcessor.addAsset(asset, pusheableAsset);
@@ -1000,19 +1000,19 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
      *
      * @param pusheableAsset The type of asset that is being added to the bundle.
      * @param asset          The actual dotCMS object that is being added.
-     * @param reason         The reason why this asset is being added to the bundle. Refer to {@link ManifestReason} for
+     * @param evaluateReason The reason why this asset is being added to the bundle. Refer to {@link ManifestReason} for
      *                       more details.
      *
      * @return If the asset was added to the bundle, {@code true} will be returned. Otherwise, {@code false} will be
      * returned.
      */
     private <T> boolean tryToAddSilently (
-            final PusheableAsset pusheableAsset, final T asset, final String reason) {
+            final PusheableAsset pusheableAsset, final T asset, final String evaluateReason) {
         if (null == asset) {
             return false;
         }
         try {
-            final TryToAddResult tryToAddResult = tryToAdd(pusheableAsset, asset, reason);
+            final TryToAddResult tryToAddResult = tryToAdd(pusheableAsset, asset, evaluateReason);
             return TryToAddResult.Result.INCLUDE == tryToAddResult.result;
         } catch (final AssetExcludeException e) {
             Logger.debug(PushPublishigDependencyProcesor.class,
@@ -1027,7 +1027,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
      *
      * @param pusheableAsset The type of asset that is being added to the bundle.
      * @param asset          The actual dotCMS object that is being added.
-     * @param reason         The reason why this asset is being added to the bundle. Refer to {@link ManifestReason} for
+     * @param evaluateReason The reason why this asset is being added to the bundle. Refer to {@link ManifestReason} for
      *                       more details.
      *
      * @return An instance of the {@link TryToAddResult} class indicating if the asset was included, excluded, and the
@@ -1036,7 +1036,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
      * @throws AssetExcludeException
      */
     private synchronized <T> TryToAddResult tryToAdd(final PusheableAsset pusheableAsset, final T asset,
-            final String reason)
+            final String evaluateReason)
             throws AssetExcludeException {
         if (config.contains(asset, pusheableAsset)) {
             return new TryToAddResult(TryToAddResult.Result.ALREADY_INCLUDE);
@@ -1047,33 +1047,33 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         }
 
         if (isSystemObject(asset)) {
-            config.exclude(asset, pusheableAsset, ManifestReason.EXCLUDE_SYSTEM_OBJECT.getMessage());
+            config.exclude(asset, pusheableAsset, evaluateReason, ManifestReason.EXCLUDE_SYSTEM_OBJECT.getMessage());
             return new TryToAddResult(TryToAddResult.Result.EXCLUDE, ManifestReason.EXCLUDE_SYSTEM_OBJECT);
         }
 
         if (!isTemplateLayout(asset) && isExcludeByFilter(pusheableAsset)) {
-            config.exclude(asset, pusheableAsset, ManifestReason.EXCLUDE_BY_FILTER.getMessage());
+            config.exclude(asset, pusheableAsset, evaluateReason, ManifestReason.EXCLUDE_BY_FILTER.getMessage());
             return new TryToAddResult(TryToAddResult.Result.EXCLUDE, ManifestReason.EXCLUDE_BY_FILTER);
         }
 
         if ( config.getOperation() != Operation.PUBLISH ) {
-            config.exclude(asset, pusheableAsset, ManifestReason.EXCLUDE_BY_OPERATION.getMessage(config.getOperation()));
+            config.exclude(asset, pusheableAsset, evaluateReason, ManifestReason.EXCLUDE_BY_OPERATION.getMessage(config.getOperation()));
             return new TryToAddResult(TryToAddResult.Result.EXCLUDE, ManifestReason.EXCLUDE_BY_OPERATION);
         }
 
         if (Contentlet.class.isInstance(asset) && !Contentlet.class.cast(asset).isHost() &&
                 publisherFilter.doesExcludeDependencyQueryContainsContentletId(
                         ((Contentlet) asset).getIdentifier())) {
-            config.exclude(asset, pusheableAsset, ManifestReason.EXCLUDE_BY_FILTER.getMessage());
+            config.exclude(asset, pusheableAsset, evaluateReason, ManifestReason.EXCLUDE_BY_FILTER.getMessage());
             return new TryToAddResult(TryToAddResult.Result.EXCLUDE, ManifestReason.EXCLUDE_BY_FILTER);
         }
 
         if (!shouldCheckModDate(asset) ||
                 !dependencyModDateUtil.excludeByModDate(asset, pusheableAsset)) {
-            add(pusheableAsset, asset, reason);
+            add(pusheableAsset, asset, evaluateReason);
             return new TryToAddResult(TryToAddResult.Result.INCLUDE);
         } else {
-            config.exclude(asset, pusheableAsset,
+            config.exclude(asset, pusheableAsset, evaluateReason,
                     ManifestReason.EXCLUDE_BY_MOD_DATE.getMessage(asset.getClass()));
             return new TryToAddResult(TryToAddResult.Result.EXCLUDE, ManifestReason.EXCLUDE_BY_MOD_DATE);
         }

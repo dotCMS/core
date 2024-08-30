@@ -36,7 +36,7 @@ public class CSVManifestBuilder implements ManifestBuilder {
     public final static String FILTER_METADATA_NAME = "Filter";
 
     public final static String HEADERS_LINE =
-            "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by";
+            "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, reason to be evaluated";
     private FileWriter csvWriter;
 
     private File manifestFile;
@@ -70,9 +70,9 @@ public class CSVManifestBuilder implements ManifestBuilder {
         csvWriter.append("\n");
     }
 
-    public <T> void include(final ManifestItem manifestItem, final String reason){
+    public <T> void include(final ManifestItem manifestItem, final String evaluateReason){
         final ManifestInfo manifestInfo = manifestItem.getManifestInfo();
-        final String line = getManifestFileIncludeLine(manifestInfo, reason);
+        final String line = getManifestFileIncludeLine(manifestInfo, evaluateReason);
 
         try {
             writeLine(line);
@@ -84,18 +84,18 @@ public class CSVManifestBuilder implements ManifestBuilder {
     }
 
     private String getManifestFileIncludeLine(final ManifestInfo manifestInfo,
-            final String includeReason) {
-        return getManifestFileLine("INCLUDED", manifestInfo, includeReason, StringPool.BLANK);
+            final String evaluateReason) {
+        return getManifestFileLine("INCLUDED", manifestInfo, evaluateReason, StringPool.BLANK);
     }
 
     private String getManifestFileExcludeLine(final ManifestInfo manifestInfo,
-            final String excludeReason) {
-        return getManifestFileLine("EXCLUDED", manifestInfo, StringPool.BLANK, excludeReason);
+                                              String evaluateReason, final String excludeReason) {
+        return getManifestFileLine("EXCLUDED", manifestInfo, evaluateReason, excludeReason);
     }
 
     private String getManifestFileLine(
             final String includeExclude, final ManifestInfo manifestInfo,
-            final String includeReason, final String excludeReason) {
+            final String evaluateReason, final String excludeReason) {
 
         return list(
                 includeExclude,
@@ -106,12 +106,12 @@ public class CSVManifestBuilder implements ManifestBuilder {
                 manifestInfo.site(),
                 manifestInfo.folder(),
                 excludeReason,
-                includeReason).stream().collect(Collectors.joining(","));
+                evaluateReason).stream().collect(Collectors.joining(","));
     }
 
-    public <T> void exclude(final ManifestItem manifestItem, final String reason){
+    public <T> void exclude(final ManifestItem manifestItem, String evaluateReason, final String excludeReason){
         final ManifestInfo manifestInfo = manifestItem.getManifestInfo();
-        final String line = getManifestFileExcludeLine(manifestInfo, reason);
+        final String line = getManifestFileExcludeLine(manifestInfo, evaluateReason, excludeReason);
 
         try {
             writeLine(line);
@@ -152,7 +152,7 @@ public class CSVManifestBuilder implements ManifestBuilder {
      * #first_header:This is the first header
      * #second_header:This is the second header
      *
-     * INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by
+     * INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, reason to be evaluated
      * ...
      * </pre>
      * @param name

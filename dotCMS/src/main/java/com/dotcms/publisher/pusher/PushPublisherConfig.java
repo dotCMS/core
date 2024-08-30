@@ -268,7 +268,7 @@ public class PushPublisherConfig extends PublisherConfig {
 	}
 
 	public <T> boolean addWithDependencies(final T asset, final PusheableAsset pusheableAsset,
-			final String reason) {
+			final String evaluateReason) {
 		final String key = DependencyManager.getBundleKey(asset);
 		final boolean added = bundleAssets.isAdded(key, pusheableAsset);
 		final boolean isAlreadyAdded = bundleAssets.isDependenciesAdded(key, pusheableAsset);
@@ -278,19 +278,19 @@ public class PushPublisherConfig extends PublisherConfig {
 			this.dependencyProcessor.addAsset(asset, pusheableAsset);
 
 			if (!added) {
-				writeIncludeManifestItem(asset, reason);
+				writeIncludeManifestItem(asset, evaluateReason);
 			}
 		}
 
 		return !isAlreadyAdded;
 	}
 
-	public <T> boolean add(final T asset, final PusheableAsset pusheableAsset, final String reason) {
+	public <T> boolean add(final T asset, final PusheableAsset pusheableAsset, final String evaluateReason) {
 		final String key = DependencyManager.getBundleKey(asset);
 
 		if(!bundleAssets.isAdded(key, pusheableAsset)) {
 			bundleAssets.add(key, pusheableAsset);
-			writeIncludeManifestItem(asset, reason);
+			writeIncludeManifestItem(asset, evaluateReason);
 			return true;
 		} else {
 			return false;
@@ -302,22 +302,22 @@ public class PushPublisherConfig extends PublisherConfig {
 		return bundleAssets.isAdded(key, pusheableAsset);
 	}
 
-	public <T> boolean exclude(final T asset, final PusheableAsset pusheableAsset, final String reason) {
+	public <T> boolean exclude(final T asset, final PusheableAsset pusheableAsset, String evaluateReason, final String excludeReason) {
 		final String key = DependencyManager.getBundleKey(asset);
 
 		if(!excludes.contains(key)) {
 			excludes.add(key);
-			writeExcludeManifestItem(asset, reason);
+			writeExcludeManifestItem(asset, evaluateReason, excludeReason);
 			return true;
 		} else {
 			return false;
 		}
 	}
 
-	public <T> void writeIncludeManifestItem(final T asset, final String reason) {
+	public <T> void writeIncludeManifestItem(final T asset, final String evaluateReason) {
 		if (ManifestItem.class.isAssignableFrom(asset.getClass())) {
 			if (UtilMethods.isSet(manifestBuilder)) {
-				manifestBuilder.include((ManifestItem) asset, reason);
+				manifestBuilder.include((ManifestItem) asset, evaluateReason);
 			}
 		} else {
 			Logger.warn(PushPublisherConfig.class,
@@ -325,10 +325,10 @@ public class PushPublisherConfig extends PublisherConfig {
 		}
 	}
 
-	private <T> void writeExcludeManifestItem(final T asset, final String reason) {
+	private <T> void writeExcludeManifestItem(final T asset, String evaluateReason, final String excludeReason) {
 		if (ManifestItem.class.isAssignableFrom(asset.getClass())) {
 			if (UtilMethods.isSet(manifestBuilder)) {
-				manifestBuilder.exclude((ManifestItem) asset, reason);
+				manifestBuilder.exclude((ManifestItem) asset, evaluateReason, excludeReason);
 			}
 		} else {
 			Logger.warn(PushPublisherConfig.class,
