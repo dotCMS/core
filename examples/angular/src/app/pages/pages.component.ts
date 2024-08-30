@@ -25,7 +25,6 @@ import { HeaderComponent } from './components/header/header.component';
 import { NavigationComponent } from './components/navigation/navigation.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { PageService } from './services/page.service';
-import { JsonPipe } from '@angular/common';
 
 export type PageError = {
   message: string;
@@ -38,7 +37,6 @@ type PageRender = {
   error: PageError | null;
   status: 'idle' | 'success' | 'error' | 'loading';
 };
-
 
 
 @Component({

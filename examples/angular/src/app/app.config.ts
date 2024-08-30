@@ -20,6 +20,11 @@ const client = DotCmsClient.init(DOTCMS_CLIENT_CONFIG);
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
+    /**
+     * We provide the ⁠DOTCMS_CLIENT_TOKEN with the initialized ⁠DotCmsClient instance, enabling
+     * its injection throughout the application. This approach ensures a single ⁠DotCmsClient
+     * instance is used, promoting consistency and centralized management of client configuration.
+     */
     {
       provide: DOTCMS_CLIENT_TOKEN,
       useValue: client
