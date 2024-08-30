@@ -176,6 +176,7 @@ public class ContentTool implements ViewTool {
     	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
     	    }
     	    ret.setQuery(cons.getQuery());
+			ret.setTotalResults(cons.getTotalResults());
     		return ret;
 	    }
 	    catch(Throwable ex) {
