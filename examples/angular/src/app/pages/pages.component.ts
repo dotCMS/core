@@ -94,13 +94,13 @@ export class DotCMSPagesComponent implements OnInit {
               return;
             }
 
-            this.#setSuccess(page, nav);
+            this.#setPageContent(page, nav);
           }
         }
       );
   }
 
-  #setSuccess(page: DotCMSPageAsset, nav: DotcmsNavigationItem) {
+  #setPageContent(page: DotCMSPageAsset, nav: DotcmsNavigationItem) {
     this.context.update((state) => ({
       status: 'success',
       page,
