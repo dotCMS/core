@@ -357,7 +357,7 @@ dojo.ready(function () {
             function (evt) {
                 selectedTab = tab.selectedChildWidget;
                 if (selectedTab.id == "systemProps") {
-                    showSystemVars();
+                    initLoadConfigsAPI();
                 }
 
             });
