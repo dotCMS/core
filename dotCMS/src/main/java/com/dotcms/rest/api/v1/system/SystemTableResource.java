@@ -225,7 +225,7 @@ public class SystemTableResource implements Serializable {
 	public ResponseEntityStringView delete(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
-			@PathParam("key") final String key) throws IllegalAccessException {
+			@PathParam("key") final String key)  {
 		return deleteWithKey(request, response, Map.of("key",key));
 	}
 
@@ -247,7 +247,7 @@ public class SystemTableResource implements Serializable {
 	public ResponseEntityStringView deleteWithKey(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
-			final Map<String,String> keyMap) throws IllegalAccessException {
+			final Map<String,String> keyMap) {
 		if(UtilMethods.isEmpty(()->keyMap.get("key"))){
 			throw new IllegalArgumentException("Key cannot be null or empty");
 		}

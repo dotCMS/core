@@ -1,9 +1,15 @@
 package com.dotcms.rest.api.v1.maintenance;
 
 import com.dotcms.business.SystemTable;
-import com.dotcms.config.SystemTableConfigSource;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
-import io.vavr.Lazy;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.util.ReleaseInfo;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
@@ -23,14 +29,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.NoCache;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.util.ReleaseInfo;
-import io.vavr.control.Try;
 
 
 @Path("/v1/jvm")
