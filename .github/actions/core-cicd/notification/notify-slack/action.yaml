@@ -25,7 +25,7 @@ runs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "${{ inputs.payload }}"
+                  "text": ${{ toJSON(inputs.payload) }}
                 }
               }
             ]
