@@ -883,6 +883,12 @@ public class ContentToolTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to Test: {@link ContentTool#pull(String, int, int, String)}}
+     * When: pulling content and having more than one content
+     * Should: Return the total under the key "totalResults"
+     *
+     */
     @Test
     public void testPull_includeTotal() {
         final ContentType blogLikeType = TestDataUtils.getBlogLikeContentType();
