@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { from, Observable, of, shareReplay } from 'rxjs';
+import { from, Observable, shareReplay } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
 import { getPageRequestParams } from '@dotcms/client';
