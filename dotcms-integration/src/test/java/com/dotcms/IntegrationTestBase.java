@@ -31,10 +31,7 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
-import org.jboss.weld.environment.se.Weld;
-import org.jboss.weld.environment.se.WeldContainer;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -55,8 +52,6 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
     private static Boolean debugMode = Boolean.FALSE;
     private final static PrintStream stdout = System.out;
     private final static ByteArrayOutputStream output = new ByteArrayOutputStream();
-
-    private static WeldContainer weld;
 
     @Rule
     public TestName name = new TestName();
@@ -261,7 +256,7 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
     protected void initConnection() {
 
         if (DbConnectionFactory.connectionExists()) {
-            DbConnectionFactory.closeSilently(); // start always with a new one
+            DbConnectionFactory.closeSilently(); // start always we a new one
         }
     }
 
@@ -278,18 +273,6 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
             return supplier.execute();
         } finally {
             DbConnectionFactory.closeSilently();
-        }
-    }
-
-    @BeforeClass
-    public static void initWeld() {
-        weld = new Weld().containerId("IntegrationTestBase").initialize();
-    }
-
-    @AfterClass
-    public static void cleanupWeld() {
-        if( null != weld  && weld.isRunning() ){
-            weld.shutdown();
         }
     }
 }
