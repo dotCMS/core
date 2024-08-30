@@ -1,4 +1,4 @@
-import { NgFor, NgStyle } from '@angular/common';
+import { NgStyle } from '@angular/common';
 import { ChangeDetectionStrategy, Component, HostBinding } from '@angular/core';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
@@ -10,7 +10,7 @@ import { GRID_STACK_MARGIN_HORIZONTAL, GRID_STACK_UNIT } from '../../utils/grids
     styleUrls: ['./template-builder-background-columns.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-    imports: [NgFor, NgStyle]
+    imports: [NgStyle]
 })
 export class TemplateBuilderBackgroundColumnsComponent {
     readonly columnList = [].constructor(12);

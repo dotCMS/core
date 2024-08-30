@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -17,7 +17,7 @@ import { JsonClassesService } from './services/json-classes.service';
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
     standalone: true,
-    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipe, NgIf, AsyncPipe],
+    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipe, AsyncPipe],
     templateUrl: './add-style-classes-dialog.component.html',
     styleUrls: ['./add-style-classes-dialog.component.scss'],
     providers: [JsonClassesService],
