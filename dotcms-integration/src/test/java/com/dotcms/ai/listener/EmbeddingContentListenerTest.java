@@ -190,9 +190,9 @@ public class EmbeddingContentListenerTest {
         return embeddingsExist;
     }
 
-    private static void addDotAISecrets() throws DotDataException, DotSecurityException {
-        AiTest.aiAppSecrets(wireMockServer, host, AiTest.API_KEY);
-        AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost(), AiTest.API_KEY);
+    private static void addDotAISecrets() throws Exception {
+        AiTest.aiAppSecrets(host, AiTest.API_KEY);
+        AiTest.aiAppSecrets(APILocator.systemHost(), AiTest.API_KEY);
     }
 
     private static void removeDotAISecrets() throws DotDataException, DotSecurityException {
@@ -232,4 +232,5 @@ public class EmbeddingContentListenerTest {
         Set<Object> seen = ConcurrentHashMap.newKeySet();
         return t -> seen.add(keyExtractor.apply(t));
     }
+
 }

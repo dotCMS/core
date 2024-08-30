@@ -1,7 +1,9 @@
 package com.dotcms.ai.validator;
 
 import com.dotcms.ai.app.AIModel;
+import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.domain.Model;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
@@ -15,6 +17,8 @@ import io.vavr.control.Try;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The AIAppValidator class is responsible for validating AI configurations and model usage.
@@ -52,8 +56,7 @@ public class AIAppValidator {
             return;
         }
 
-        // TODO: pr-split -> uncomment this lines
-        /*final Set<String> supportedModels = AIModels.get().getOrPullSupportedModels(appConfig.getApiKey());
+        final Set<String> supportedModels = AIModels.get().getOrPullSupportedModels(appConfig);
         final Set<String> unsupportedModels = Stream.of(
                         appConfig.getModel(),
                         appConfig.getImageModel(),
@@ -61,9 +64,7 @@ public class AIAppValidator {
                 .flatMap(aiModel -> aiModel.getModels().stream())
                 .map(Model::getName)
                 .filter(model -> !supportedModels.contains(model))
-                .collect(Collectors.toSet());*/
-        final Set<String> supportedModels = Set.of();
-        final Set<String> unsupportedModels = Set.of();
+                .collect(Collectors.toSet());
         if (unsupportedModels.isEmpty()) {
             return;
         }
@@ -96,12 +97,10 @@ public class AIAppValidator {
             return;
         }
 
-        // TODO: pr-split -> uncomment this line
-        /*final String unavailableModels = aiModel.getModels()
+        final String unavailableModels = aiModel.getModels()
                 .stream()
                 .map(Model::getName)
-                .collect(Collectors.joining(", "));*/
-        final String unavailableModels = "";
+                .collect(Collectors.joining(", "));
         final String message = Try
                 .of(() -> LanguageUtil.get("ai.models.exhausted", aiModel.getType(), unavailableModels)).
                 getOrElse(
