@@ -2,7 +2,6 @@ package com.dotcms.jobs.business.error;
 
 import com.dotcms.jobs.business.job.Job;
 import java.security.SecureRandom;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -111,7 +110,7 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
 
     @Override
     public Set<Class<? extends Throwable>> getRetryableExceptions() {
-        return Collections.unmodifiableSet(retryableExceptions);
+        return Set.copyOf(retryableExceptions);
     }
 
 }
