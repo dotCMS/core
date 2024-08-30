@@ -134,6 +134,41 @@
         return worked;
     }
 
+    const _saveConfigKeyAPI = async (key, value) => {
+
+        document.body.style.cursor = 'wait'
+        const data = {
+            key: key,
+            value: value
+        };
+        var worked = await fetch('/api/v1/system-table/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            document.body.style.cursor = 'default'
+            if (response.ok) {
+                return response.json();
+            }
+            return Promise.reject(response);
+
+        })
+        .then(data => {
+            document.body.style.cursor = 'default'
+            return true;
+        })
+        .catch((response) => {
+            document.body.style.cursor = 'default'
+            console.log("error response:", response);
+            alert("Error in saving: " + response);
+            return false;
+        });
+        return worked;
+    }
+
     const showDeleteDialog = (key) => {
         if(document.getElementById("deleteKeyDialog") != null) {
             document.getElementById("deleteKeyDialog").remove();
@@ -172,41 +207,6 @@
     }
 
 
-
-    const _saveConfigKeyAPI = async (key, value) => {
-
-        document.body.style.cursor = 'wait'
-        const data = {
-            key: key,
-            value: value
-        };
-        var worked = await fetch('/api/v1/system-table/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => {
-            document.body.style.cursor = 'default'
-            if (response.ok) {
-                return response.json();
-            }
-            return Promise.reject(response);
-
-        })
-        .then(data => {
-            document.body.style.cursor = 'default'
-            return true;
-        })
-        .catch((response) => {
-            document.body.style.cursor = 'default'
-            console.log("error response:", response);
-            alert("Error in saving: " + response);
-            return false;
-        });
-        return worked;
-    }
 
     // Adds a row to the table
     const createPropertyRow = (key, value) => {
@@ -311,6 +311,9 @@
          if (worked) {
              renderSystemTables();
              renderOverrideTable();
+         }
+         else{
+                currentDiv.innerHTML = "Error loading data";
          }
 
 
