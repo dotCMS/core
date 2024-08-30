@@ -3,7 +3,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -111,7 +112,6 @@ describe('DotPersonaSelectorComponent', () => {
                 DotPersonaSelectorOptionModule,
                 DotAddPersonaDialogModule,
                 DotMessagePipe,
-                HttpClientTestingModule,
                 DotAvatarDirective,
                 AvatarModule,
                 BadgeModule,
@@ -137,7 +137,9 @@ describe('DotPersonaSelectorComponent', () => {
                 DotHttpErrorManagerService,
                 ConfirmationService,
                 DotAlertConfirmService,
-                DotEventsService
+                DotEventsService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
     }));

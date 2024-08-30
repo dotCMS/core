@@ -1,6 +1,7 @@
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -102,8 +103,8 @@ describe('DotStarterComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [DotMessagePipe, CheckboxModule, HttpClientTestingModule],
             declarations: [DotStarterComponent],
+            imports: [DotMessagePipe, CheckboxModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
@@ -113,7 +114,9 @@ describe('DotStarterComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 DotStarterResolver,
-                { provide: DotAccountService, useClass: DotAccountServiceMock }
+                { provide: DotAccountService, useClass: DotAccountServiceMock },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

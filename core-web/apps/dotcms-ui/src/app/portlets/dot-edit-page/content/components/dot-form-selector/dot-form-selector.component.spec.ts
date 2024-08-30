@@ -1,6 +1,7 @@
 import { Observable, of as observableOf } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -63,22 +64,23 @@ describe('DotFormSelectorComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [DotFormSelectorComponent, TestHostComponent],
+            imports: [
+                DotDialogModule,
+                BrowserAnimationsModule,
+                TableModule,
+                DotSafeHtmlPipe,
+                DotMessagePipe,
+                ButtonModule
+            ],
             providers: [
                 PaginatorService,
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock }
-            ],
-            imports: [
-                DotDialogModule,
-                BrowserAnimationsModule,
-                HttpClientTestingModule,
-                TableModule,
-                DotSafeHtmlPipe,
-                DotMessagePipe,
-                ButtonModule
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
     }));

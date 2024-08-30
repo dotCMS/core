@@ -2,7 +2,7 @@ import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { of } from 'rxjs';
 import { RawEditorOptions } from 'tinymce';
 
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject, signal } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
@@ -30,7 +30,15 @@ const DEFAULT_CONFIG = {
 @Component({
     selector: 'dot-edit-content-wysiwyg-field',
     standalone: true,
-    imports: [EditorModule, FormsModule, ReactiveFormsModule, HttpClientModule],
+    imports: [
+        EditorModule,
+        FormsModule,
+        ReactiveFormsModule,
+        // TODO: `HttpClientModule` should not be imported into a component directly.
+        // Please refactor the code to add `provideHttpClient()` call to the provider list in the
+        // application bootstrap logic and remove the `HttpClientModule` import from this component.
+        HttpClientModule
+    ],
     templateUrl: './dot-edit-content-wysiwyg-field.component.html',
     styleUrl: './dot-edit-content-wysiwyg-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,

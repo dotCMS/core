@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -124,19 +125,6 @@ xdescribe('DotPushPublishFormComponent', () => {
         pushPublishServiceMock = new PushPublishServiceMock();
         TestBed.configureTestingModule({
             declarations: [DotPushPublishFormComponent, TestHostComponent],
-            providers: [
-                { provide: PushPublishService, useValue: pushPublishServiceMock },
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: LoginService, useClass: LoginServiceMock },
-                { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: DotcmsConfigService, useClass: DotcmsConfigServiceMock },
-                DotPushPublishFiltersService,
-                DotParseHtmlService,
-                DotHttpErrorManagerService,
-                DotAlertConfirmService,
-                ConfirmationService
-            ],
             imports: [
                 AutoFocusModule,
                 FormsModule,
@@ -148,8 +136,22 @@ xdescribe('DotPushPublishFormComponent', () => {
                 DotFieldValidationMessageComponent,
                 SelectButtonModule,
                 DotSafeHtmlPipe,
-                DotMessagePipe,
-                HttpClientTestingModule
+                DotMessagePipe
+            ],
+            providers: [
+                { provide: PushPublishService, useValue: pushPublishServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: LoginService, useClass: LoginServiceMock },
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DotcmsConfigService, useClass: DotcmsConfigServiceMock },
+                DotPushPublishFiltersService,
+                DotParseHtmlService,
+                DotHttpErrorManagerService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         }).compileComponents();
     });

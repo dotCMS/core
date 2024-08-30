@@ -4,7 +4,8 @@
 import { createFakeEvent } from '@ngneat/spectator';
 import { Observable, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -146,7 +147,6 @@ describe('ContentTypesLayoutComponent', () => {
                 DotMessagePipe,
                 SplitButtonModule,
                 DotInlineEditModule,
-                HttpClientTestingModule,
                 DotPortletBoxModule,
                 DotCopyButtonComponent
             ],
@@ -156,7 +156,9 @@ describe('ContentTypesLayoutComponent', () => {
                 { provide: FieldDragDropService, useClass: FieldDragDropServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotCurrentUserService,
-                DotEventsService
+                DotEventsService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

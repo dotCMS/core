@@ -1,6 +1,6 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import {} from '@angular/common/http/testing';
 
 import { Galleria, GalleriaModule } from 'primeng/galleria';
 

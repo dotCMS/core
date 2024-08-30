@@ -7,7 +7,7 @@ import {
 } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import {} from '@angular/common/http/testing';
 
 import { Dropdown } from 'primeng/dropdown';
 

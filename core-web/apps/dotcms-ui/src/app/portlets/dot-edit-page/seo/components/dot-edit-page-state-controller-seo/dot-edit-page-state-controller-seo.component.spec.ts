@@ -4,7 +4,8 @@ import { createFakeEvent } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { CommonModule, DecimalPipe } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, LOCALE_ID } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
@@ -123,6 +124,20 @@ describe('DotEditPageStateControllerSeoComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent],
+            imports: [
+                InputSwitchModule,
+                SelectButtonModule,
+                TooltipModule,
+                DotSafeHtmlPipe,
+                DotEditPageStateControllerSeoComponent,
+                DotEditPageLockInfoSeoComponent,
+                DotDeviceSelectorSeoComponent,
+                RouterTestingModule,
+                CommonModule,
+                FormsModule,
+                OverlayPanelModule,
+                BrowserAnimationsModule
+            ],
             providers: [
                 DecimalPipe,
                 ConfirmationService,
@@ -154,22 +169,9 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                     provide: DotHttpErrorManagerService,
                     useClass: MockDotHttpErrorManagerService
                 },
-                { provide: LOCALE_ID, useValue: 'en-US' }
-            ],
-            imports: [
-                InputSwitchModule,
-                SelectButtonModule,
-                TooltipModule,
-                DotSafeHtmlPipe,
-                DotEditPageStateControllerSeoComponent,
-                DotEditPageLockInfoSeoComponent,
-                DotDeviceSelectorSeoComponent,
-                RouterTestingModule,
-                CommonModule,
-                FormsModule,
-                HttpClientTestingModule,
-                OverlayPanelModule,
-                BrowserAnimationsModule
+                { provide: LOCALE_ID, useValue: 'en-US' },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
     }));

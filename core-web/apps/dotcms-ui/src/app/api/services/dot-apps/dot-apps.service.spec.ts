@@ -2,7 +2,8 @@
 import { mockProvider } from '@ngneat/spectator';
 import { throwError } from 'rxjs';
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, getTestBed, TestBed, tick } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
@@ -59,7 +60,7 @@ describe('DotAppsService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
+            imports: [],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
@@ -76,7 +77,9 @@ describe('DotAppsService', () => {
                 DotAlertConfirmService,
                 DotAppsService,
                 DotHttpErrorManagerService,
-                mockProvider(DotMessageService)
+                mockProvider(DotMessageService),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
         injector = getTestBed();

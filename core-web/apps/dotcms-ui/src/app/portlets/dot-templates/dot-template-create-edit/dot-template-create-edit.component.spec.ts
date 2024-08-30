@@ -2,7 +2,8 @@
 
 import { BehaviorSubject, of, Subject } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -126,7 +127,6 @@ describe('DotTemplateCreateEditComponent', () => {
         await TestBed.configureTestingModule({
             declarations: [
                 DotApiLinkMockComponent,
-
                 DotPortletBaseMockComponent,
                 DotPortletToolbarMockComponent,
                 DotTemplateBuilderMockComponent,
@@ -139,8 +139,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 BrowserAnimationsModule,
                 DotFormDialogComponent,
                 DotTemplatePropsModule,
-                ButtonModule,
-                HttpClientTestingModule
+                ButtonModule
             ],
             providers: [
                 DialogService,
@@ -158,11 +157,11 @@ describe('DotTemplateCreateEditComponent', () => {
                     useValue: messageServiceMock
                 },
                 /*
-            DotTempFileUploadService, DotWorkflowActionsFireService and DotCrudService:
-            This three are from DotTemplateThumbnailFieldComponent and because
-            I had to import DotTemplatePropsModule so I can click the real dialog that
-            gets append to the body.
-        */
+    DotTempFileUploadService, DotWorkflowActionsFireService and DotCrudService:
+    This three are from DotTemplateThumbnailFieldComponent and because
+    I had to import DotTemplatePropsModule so I can click the real dialog that
+    gets append to the body.
+*/
                 {
                     provide: DotTempFileUploadService,
                     useValue: {
@@ -200,18 +199,17 @@ describe('DotTemplateCreateEditComponent', () => {
                     }
                 },
                 /*
-            PaginatorService, SiteService and DotThemesService:
-            This three are from DotThemeSelectorDropdownComponent and because
-            I had to import DotTemplatePropsModule so I can click the real dialog that
-            gets append to the body.
-        */
+    PaginatorService, SiteService and DotThemesService:
+    This three are from DotThemeSelectorDropdownComponent and because
+    I had to import DotTemplatePropsModule so I can click the real dialog that
+    gets append to the body.
+*/
                 {
                     provide: PaginatorService,
                     useValue: {
                         url: '',
                         paginationPerPage: '',
                         totalRecords: mockDotThemes.length,
-
                         setExtraParams() {
                             //
                         },
@@ -244,7 +242,9 @@ describe('DotTemplateCreateEditComponent', () => {
                     useValue: {
                         get: jasmine.createSpy().and.returnValue(of(mockDotThemes[1]))
                     }
-                }
+                },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

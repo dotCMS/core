@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By, Title } from '@angular/platform-browser';
@@ -66,6 +67,7 @@ describe('DotContentletWrapperComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [DotContentletWrapperComponent],
+            imports: [DotIframeDialogModule, RouterTestingModule, BrowserAnimationsModule],
             providers: [
                 DotContentletEditorService,
                 DotIframeService,
@@ -106,13 +108,9 @@ describe('DotContentletWrapperComponent', () => {
                     useClass: CoreWebServiceMock
                 },
                 { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: DotUiColorsService, useClass: MockDotUiColorsService }
-            ],
-            imports: [
-                DotIframeDialogModule,
-                RouterTestingModule,
-                BrowserAnimationsModule,
-                HttpClientTestingModule
+                { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
     }));

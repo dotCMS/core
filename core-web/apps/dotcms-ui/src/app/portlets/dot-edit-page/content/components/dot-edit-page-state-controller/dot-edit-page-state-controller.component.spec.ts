@@ -3,7 +3,8 @@ import { createFakeEvent } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
@@ -113,6 +114,17 @@ describe('DotEditPageStateControllerComponent', () => {
                 DotEditPageStateControllerComponent,
                 DotEditPageLockInfoComponent
             ],
+            imports: [
+                InputSwitchModule,
+                SelectButtonModule,
+                TooltipModule,
+                DotSafeHtmlPipe,
+                DotMessagePipe,
+                CommonModule,
+                FormsModule,
+                DotTabButtonsComponent,
+                MenuModule
+            ],
             providers: [
                 {
                     provide: DotMessageService,
@@ -137,19 +149,9 @@ describe('DotEditPageStateControllerComponent', () => {
                 DotAlertConfirmService,
                 ConfirmationService,
                 DotContentletEditorService,
-                DotPropertiesService
-            ],
-            imports: [
-                InputSwitchModule,
-                SelectButtonModule,
-                TooltipModule,
-                DotSafeHtmlPipe,
-                DotMessagePipe,
-                CommonModule,
-                FormsModule,
-                HttpClientTestingModule,
-                DotTabButtonsComponent,
-                MenuModule
+                DotPropertiesService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
     }));

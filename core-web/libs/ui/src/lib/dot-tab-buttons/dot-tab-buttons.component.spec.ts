@@ -1,7 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
 import { NgClass, NgFor, NgIf } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import {} from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
 import { SelectItem } from 'primeng/api';

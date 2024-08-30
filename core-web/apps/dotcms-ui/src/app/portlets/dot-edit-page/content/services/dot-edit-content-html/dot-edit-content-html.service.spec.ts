@@ -2,8 +2,13 @@
 
 import { Observable, of, throwError } from 'rxjs';
 
-import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import {
+    HttpErrorResponse,
+    HttpResponse,
+    provideHttpClient,
+    withInterceptorsFromDi
+} from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 
@@ -188,7 +193,7 @@ xdescribe('DotEditContentHtmlService', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
+            imports: [],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotEditContentHtmlService,
@@ -211,7 +216,9 @@ xdescribe('DotEditContentHtmlService', () => {
                 },
                 DotWorkflowActionsFireService,
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DotLicenseService, useClass: MockDotLicenseService }
+                { provide: DotLicenseService, useClass: MockDotLicenseService },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
         service = TestBed.inject(DotEditContentHtmlService);

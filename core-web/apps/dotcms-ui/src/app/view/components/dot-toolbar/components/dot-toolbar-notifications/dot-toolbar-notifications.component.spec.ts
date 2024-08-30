@@ -3,7 +3,8 @@
 
 import { Observable, of as observableOf, of, Subject } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Injectable, Input, signal } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -95,7 +96,7 @@ describe('DotToolbarNotificationsComponent', () => {
                 MockDotDropDownComponent,
                 MockDotNotificationsListComponent
             ],
-            imports: [DotSafeHtmlPipe, DotMessagePipe, ButtonModule, HttpClientTestingModule],
+            imports: [DotSafeHtmlPipe, DotMessagePipe, ButtonModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: IframeOverlayService, useClass: IframeOverlayService },
@@ -109,7 +110,9 @@ describe('DotToolbarNotificationsComponent', () => {
                 {
                     provide: SiteService,
                     useValue: siteServiceMock
-                }
+                },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         }).compileComponents();
 

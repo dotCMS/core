@@ -4,7 +4,8 @@ import { createFakeEvent } from '@ngneat/spectator';
 import { of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -417,6 +418,22 @@ describe('DotTemplateListComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotTemplateListComponent],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA],
+            imports: [
+                DotListingDataTableModule,
+                CommonModule,
+                DotMessagePipe,
+                DotRelativeDatePipe,
+                SharedModule,
+                CheckboxModule,
+                MenuModule,
+                ButtonModule,
+                DotActionButtonModule,
+                DotActionMenuButtonComponent,
+                DotAddToBundleComponent,
+                DynamicDialogModule,
+                BrowserAnimationsModule
+            ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
@@ -439,7 +456,6 @@ describe('DotTemplateListComponent', () => {
                         get currentSite() {
                             return undefined;
                         },
-
                         get switchSite$() {
                             return switchSiteSubject.asObservable();
                         }
@@ -460,25 +476,10 @@ describe('DotTemplateListComponent', () => {
                 {
                     provide: LoginService,
                     useValue: { currentUserLanguageId: 'en-US' }
-                }
-            ],
-            imports: [
-                DotListingDataTableModule,
-                CommonModule,
-                DotMessagePipe,
-                DotRelativeDatePipe,
-                SharedModule,
-                CheckboxModule,
-                MenuModule,
-                ButtonModule,
-                DotActionButtonModule,
-                DotActionMenuButtonComponent,
-                DotAddToBundleComponent,
-                HttpClientTestingModule,
-                DynamicDialogModule,
-                BrowserAnimationsModule
-            ],
-            schemas: [CUSTOM_ELEMENTS_SCHEMA]
+                },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
+            ]
         }).compileComponents();
         fixture = TestBed.createComponent(DotTemplateListComponent);
         comp = fixture.componentInstance;

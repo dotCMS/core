@@ -2,7 +2,8 @@
 
 import { mockProvider } from '@ngneat/spectator';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -102,12 +103,21 @@ describe('MainLegacyComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
+            declarations: [
+                MainComponentLegacyComponent,
+                MockDotDialogComponent,
+                MockDotMainNavComponent,
+                MockDotToolbarComponent,
+                MockDotGenerateSecurePasswordComponent,
+                MockDotMessageDisplayComponent,
+                MockDotLargeMessageDisplayComponent,
+                MockDotPushPublishDialogComponent
+            ],
             imports: [
                 RouterTestingModule,
                 DotContentletEditorModule,
                 DotDownloadBundleDialogModule,
-                DotWizardModule,
-                HttpClientTestingModule
+                DotWizardModule
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
@@ -127,7 +137,6 @@ describe('MainLegacyComponent', () => {
                 DotcmsConfigService,
                 LoggerService,
                 StringUtils,
-
                 DotWorkflowEventHandlerService,
                 ApiRoot,
                 UserModel,
@@ -137,17 +146,9 @@ describe('MainLegacyComponent', () => {
                 DotGlobalMessageService,
                 DotEventsService,
                 DotGenerateSecurePasswordService,
-                mockProvider(DotContentTypeService)
-            ],
-            declarations: [
-                MainComponentLegacyComponent,
-                MockDotDialogComponent,
-                MockDotMainNavComponent,
-                MockDotToolbarComponent,
-                MockDotGenerateSecurePasswordComponent,
-                MockDotMessageDisplayComponent,
-                MockDotLargeMessageDisplayComponent,
-                MockDotPushPublishDialogComponent
+                mockProvider(DotContentTypeService),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
     });

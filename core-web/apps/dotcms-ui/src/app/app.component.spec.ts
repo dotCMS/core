@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -32,7 +33,7 @@ describe('AppComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [AppComponent],
-            imports: [RouterTestingModule, HttpClientTestingModule],
+            imports: [RouterTestingModule],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotUiColorsService,
@@ -40,7 +41,9 @@ describe('AppComponent', () => {
                 DotcmsConfigService,
                 LoggerService,
                 StringUtils,
-                DotLicenseService
+                DotLicenseService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

@@ -1,6 +1,7 @@
 import { throwError } from 'rxjs';
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
@@ -32,6 +33,7 @@ describe('DotAccountService', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
+            imports: [],
             providers: [
                 DotAccountService,
                 DotHttpErrorManagerService,
@@ -47,9 +49,10 @@ describe('DotAccountService', () => {
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
-                }
-            ],
-            imports: [HttpClientTestingModule]
+                },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
+            ]
         });
 
         service = TestBed.inject(DotAccountService);

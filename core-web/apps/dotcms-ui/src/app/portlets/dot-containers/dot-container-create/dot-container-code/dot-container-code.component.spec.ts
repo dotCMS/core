@@ -1,7 +1,8 @@
 import { createFakeEvent } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, forwardRef, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import {
@@ -179,18 +180,18 @@ describe('DotContentEditorComponent', () => {
                 ButtonModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
-                HttpClientTestingModule,
                 BrowserAnimationsModule,
                 SkeletonModule
             ],
-
             providers: [
                 DialogService,
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock }
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

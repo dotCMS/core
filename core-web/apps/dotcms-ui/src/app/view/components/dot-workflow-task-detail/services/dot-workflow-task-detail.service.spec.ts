@@ -1,6 +1,7 @@
 import { of as observableOf } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
@@ -16,11 +17,13 @@ describe('DotWorkflowTaskDetailService', () => {
 
     beforeEach(() => {
         injector = TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
+            imports: [],
             providers: [
                 DotMenuService,
                 DotWorkflowTaskDetailService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock }
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

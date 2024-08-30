@@ -1,4 +1,5 @@
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -37,7 +38,6 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             imports: [
                 DotIconModule,
                 DotCopyLinkModule,
-                HttpClientTestingModule,
                 DotMessagePipe,
                 OverlayPanelModule,
                 ButtonModule,
@@ -49,7 +49,9 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
                     provide: CoreWebService,
                     useClass: CoreWebServiceMock
                 },
-                FieldService
+                FieldService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

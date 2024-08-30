@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
@@ -113,12 +114,13 @@ describe('DotPaletteContentletsComponent', () => {
                 DotFilterPipeModule,
                 FormsModule,
                 DotPaletteInputFilterModule,
-                HttpClientTestingModule,
                 PaginatorModule
             ],
             providers: [
                 { provide: DotContentletEditorService, useClass: MockDotContentletEditorService },
-                { provide: CoreWebService, useClass: CoreWebServiceMock }
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

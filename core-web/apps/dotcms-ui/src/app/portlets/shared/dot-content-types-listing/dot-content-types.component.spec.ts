@@ -3,7 +3,8 @@
 
 import { Observable, of, throwError as observableThrowError } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -152,8 +153,7 @@ describe('DotContentTypesPortletComponent', () => {
                 ]),
                 BrowserAnimationsModule,
                 DotListingDataTableModule,
-                ReactiveFormsModule,
-                HttpClientTestingModule
+                ReactiveFormsModule
             ],
             providers: [
                 DotContentTypesInfoService,
@@ -174,7 +174,9 @@ describe('DotContentTypesPortletComponent', () => {
                     provide: DotHttpErrorManagerService,
                     useClass: MockDotHttpErrorManagerService
                 },
-                { provide: DotContentTypeStore, useClass: MockDotContentTypeStore }
+                { provide: DotContentTypeStore, useClass: MockDotContentTypeStore },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         }).compileComponents();
 

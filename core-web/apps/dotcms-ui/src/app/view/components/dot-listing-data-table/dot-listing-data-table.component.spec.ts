@@ -3,7 +3,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
@@ -151,7 +152,6 @@ describe('DotListingDataTableComponent', () => {
                 DotMenuComponent,
                 DotIconModule,
                 DotRelativeDatePipe,
-                HttpClientTestingModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 FormsModule,
@@ -181,7 +181,9 @@ describe('DotListingDataTableComponent', () => {
                 {
                     provide: LoginService,
                     useValue: { currentUserLanguageId: 'en-US' }
-                }
+                },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

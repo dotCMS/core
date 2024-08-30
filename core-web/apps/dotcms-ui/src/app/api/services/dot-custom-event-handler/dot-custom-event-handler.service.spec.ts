@@ -2,10 +2,9 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
+import { Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
@@ -121,7 +120,7 @@ describe('DotCustomEventHandlerService', () => {
                 Router,
                 DotContentTypeService
             ],
-            imports: [RouterTestingModule, HttpClientTestingModule]
+            imports: [RouterModule, provideHttpClientTesting()]
         });
 
         service = TestBed.inject(DotCustomEventHandlerService);

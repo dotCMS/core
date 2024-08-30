@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { HttpClientJsonpModule } from '@angular/common/http';
+import { provideHttpClient, withJsonpSupport } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -14,6 +14,8 @@ import { DotToolbarUserComponent } from './components/dot-toolbar-user/dot-toolb
 import { DotToolbarComponent } from './dot-toolbar.component';
 
 @NgModule({
+    declarations: [DotToolbarComponent],
+    exports: [DotToolbarComponent],
     imports: [
         ButtonModule,
         CommonModule,
@@ -21,11 +23,8 @@ import { DotToolbarComponent } from './dot-toolbar.component';
         DotSiteSelectorModule,
         DotToolbarNotificationModule,
         ToolbarModule,
-        DotToolbarUserComponent,
-        HttpClientJsonpModule
+        DotToolbarUserComponent
     ],
-    declarations: [DotToolbarComponent],
-    exports: [DotToolbarComponent],
-    providers: [DotGravatarService]
+    providers: [DotGravatarService, provideHttpClient(withJsonpSupport())]
 })
 export class DotToolbarModule {}

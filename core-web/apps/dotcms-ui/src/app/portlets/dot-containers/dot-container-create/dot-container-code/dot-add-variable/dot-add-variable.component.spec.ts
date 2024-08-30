@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
     Component,
     CUSTOM_ELEMENTS_SCHEMA,
@@ -197,13 +198,8 @@ describe('DotAddVariableComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotAddVariableComponent, DotFormDialogMockComponent],
-            imports: [
-                ButtonModule,
-                DataViewModule,
-                HttpClientTestingModule,
-                SharedModule,
-                DotMessagePipe
-            ],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA],
+            imports: [ButtonModule, DataViewModule, SharedModule, DotMessagePipe],
             providers: [
                 DotFieldsService,
                 {
@@ -251,9 +247,10 @@ describe('DotAddVariableComponent', () => {
                 {
                     provide: ActivatedRoute,
                     useClass: ActivatedRouteMock
-                }
-            ],
-            schemas: [CUSTOM_ELEMENTS_SCHEMA]
+                },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
+            ]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotAddVariableComponent);

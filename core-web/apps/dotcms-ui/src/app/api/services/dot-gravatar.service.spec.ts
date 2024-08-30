@@ -1,6 +1,7 @@
 import md5 from 'md5';
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 
 import { DotGravatarService } from './dot-gravatar-service';
@@ -29,8 +30,12 @@ describe('DotGravatarService', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [DotGravatarService],
-            imports: [HttpClientTestingModule]
+            imports: [],
+            providers: [
+                DotGravatarService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
+            ]
         });
 
         service = TestBed.inject(DotGravatarService);

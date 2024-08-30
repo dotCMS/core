@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -92,12 +93,7 @@ xdescribe('IframePortletLegacyComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [],
-            imports: [
-                IFrameModule,
-                RouterTestingModule,
-                DotDownloadBundleDialogModule,
-                HttpClientTestingModule
-            ],
+            imports: [IFrameModule, RouterTestingModule, DotDownloadBundleDialogModule],
             providers: [
                 DotContentTypeService,
                 DotCustomEventHandlerService,
@@ -137,7 +133,9 @@ xdescribe('IframePortletLegacyComponent', () => {
                 DotWorkflowActionsFireService,
                 DotGlobalMessageService,
                 DotEventsService,
-                DotLicenseService
+                DotLicenseService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

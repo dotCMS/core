@@ -1,6 +1,7 @@
 import { mockProvider } from '@ngneat/spectator';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -59,6 +60,14 @@ describe('DotPortletDetailComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
+            declarations: [DotPortletDetailComponent],
+            imports: [
+                DotWorkflowTaskModule,
+                DotContentletsModule,
+                RouterTestingModule,
+                BrowserAnimationsModule,
+                DotDownloadBundleDialogModule
+            ],
             providers: [
                 DotMenuService,
                 { provide: LoginService, useClass: LoginServiceMock },
@@ -90,16 +99,9 @@ describe('DotPortletDetailComponent', () => {
                 DotEventsService,
                 DotGenerateSecurePasswordService,
                 DotLicenseService,
-                mockProvider(DotContentTypeService)
-            ],
-            declarations: [DotPortletDetailComponent],
-            imports: [
-                DotWorkflowTaskModule,
-                DotContentletsModule,
-                RouterTestingModule,
-                BrowserAnimationsModule,
-                DotDownloadBundleDialogModule,
-                HttpClientTestingModule
+                mockProvider(DotContentTypeService),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
     }));

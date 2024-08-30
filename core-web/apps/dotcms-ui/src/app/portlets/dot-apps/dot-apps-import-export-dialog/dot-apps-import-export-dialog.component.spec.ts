@@ -1,7 +1,8 @@
 import { Observable, of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -85,12 +86,13 @@ describe('DotAppsImportExportDialogComponent', () => {
                 CommonModule,
                 ReactiveFormsModule,
                 DotSafeHtmlPipe,
-                DotMessagePipe,
-                HttpClientTestingModule
+                DotMessagePipe
             ],
             providers: [
                 { provide: DotAppsService, useClass: DotAppsServiceMock },
-                { provide: DotMessageService, useValue: messageServiceMock }
+                { provide: DotMessageService, useValue: messageServiceMock },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         }).compileComponents();
 

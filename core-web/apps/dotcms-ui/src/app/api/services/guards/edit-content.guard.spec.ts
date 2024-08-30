@@ -1,7 +1,7 @@
 import { of } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { DotPropertiesService } from '@dotcms/data-access';
@@ -14,15 +14,17 @@ describe('EditContentGuard', () => {
 
     const setup = (dotPropertiesServiceMock: unknown) => {
         TestBed.configureTestingModule({
+            imports: [],
             providers: [
                 editContentGuard,
                 {
                     provide: DotPropertiesService,
                     useValue: dotPropertiesServiceMock
                 },
-                HttpClient
-            ],
-            imports: [HttpClientTestingModule]
+                HttpClient,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
+            ]
         });
 
         dotPropertiesService = TestBed.inject(DotPropertiesService);

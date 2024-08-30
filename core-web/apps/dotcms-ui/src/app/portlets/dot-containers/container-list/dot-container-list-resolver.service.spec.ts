@@ -1,6 +1,7 @@
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { take } from 'rxjs/operators';
@@ -31,7 +32,7 @@ describe('DotContainerListResolverService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
+            imports: [],
             providers: [
                 DotLicenseService,
                 PushPublishService,
@@ -57,7 +58,9 @@ describe('DotContainerListResolverService', () => {
                 {
                     provide: LoginService,
                     useValue: { currentUserLanguageId: 'en-US' }
-                }
+                },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
         service = TestBed.inject(DotContainerListResolver);

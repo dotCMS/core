@@ -2,7 +2,8 @@
 
 import { Observable, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -55,12 +56,12 @@ describe('DotCreateContentletComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule, HttpClientTestingModule],
             declarations: [
                 DotCreateContentletComponent,
                 DotContentletWrapperComponent,
                 DotIframeMockComponent
             ],
+            imports: [RouterTestingModule],
             providers: [
                 DotIframeService,
                 DotEventsService,
@@ -87,7 +88,9 @@ describe('DotCreateContentletComponent', () => {
                             return of({ url: undefined });
                         }
                     }
-                }
+                },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
     }));

@@ -1,8 +1,8 @@
 import { createFakeEvent } from '@ngneat/spectator';
 import { Observable, of, throwError } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
@@ -120,7 +120,7 @@ describe('DotPageStore', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
+            imports: [],
             providers: [
                 DotEventsService,
                 DotGlobalMessageService,
@@ -157,7 +157,9 @@ describe('DotPageStore', () => {
                 { provide: DotLicenseService, useClass: DotLicenseServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
                 { provide: SiteService, useClass: SiteServiceMock },
-                { provide: PushPublishService, useClass: PushPublishServiceMock }
+                { provide: PushPublishService, useClass: PushPublishServiceMock },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
         dotPageStore = TestBed.inject(DotPageStore);

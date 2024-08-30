@@ -2,7 +2,7 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/sp
 import { of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import {} from '@angular/common/http/testing';
 
 import { SiteService, SiteServiceMock } from '@dotcms/dotcms-js';
 

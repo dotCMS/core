@@ -4,7 +4,8 @@ import { MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -114,7 +115,6 @@ describe('DotWizardComponent', () => {
                 DotDialogModule,
                 CommonModule,
                 DotContainerReferenceModule,
-                HttpClientTestingModule,
                 FormsModule,
                 ReactiveFormsModule,
                 InputTextareaModule,
@@ -152,7 +152,9 @@ describe('DotWizardComponent', () => {
                 DotParseHtmlService,
                 DotcmsConfigService,
                 DotcmsEventsService,
-                DotWizardService
+                DotWizardService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         }).compileComponents();
 

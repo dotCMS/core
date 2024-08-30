@@ -1,7 +1,7 @@
 import { MonacoEditorConstructionOptions, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import {} from '@angular/common/http';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
@@ -87,6 +87,10 @@ type SystemOptionsType = {
         DotMessagePipe,
         DotBinaryFieldUiMessageComponent,
         DotSpinnerModule,
+
+        // TODO: `HttpClientModule` should not be imported into a component directly.
+        // Please refactor the code to add `provideHttpClient()` call to the provider list in the
+        // application bootstrap logic and remove the `HttpClientModule` import from this component.
         HttpClientModule,
         DotBinaryFieldEditorComponent,
         InputTextModule,

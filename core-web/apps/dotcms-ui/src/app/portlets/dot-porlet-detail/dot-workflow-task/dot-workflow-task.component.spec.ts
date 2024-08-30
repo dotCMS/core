@@ -2,7 +2,8 @@
 
 import { mockProvider } from '@ngneat/spectator';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -81,12 +82,7 @@ describe('DotWorkflowTaskComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotWorkflowTaskComponent],
-            imports: [
-                DotWorkflowTaskDetailModule,
-                BrowserAnimationsModule,
-                RouterTestingModule,
-                HttpClientTestingModule
-            ],
+            imports: [DotWorkflowTaskDetailModule, BrowserAnimationsModule, RouterTestingModule],
             providers: [
                 DotWorkflowTaskDetailService,
                 {
@@ -140,7 +136,9 @@ describe('DotWorkflowTaskComponent', () => {
                 DotGlobalMessageService,
                 DotGenerateSecurePasswordService,
                 DotEventsService,
-                mockProvider(DotContentTypeService)
+                mockProvider(DotContentTypeService),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

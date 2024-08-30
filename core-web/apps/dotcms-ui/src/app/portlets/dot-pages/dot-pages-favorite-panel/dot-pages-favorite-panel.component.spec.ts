@@ -1,7 +1,12 @@
 import { throwError } from 'rxjs';
 
-import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import {
+    HttpErrorResponse,
+    HttpResponse,
+    provideHttpClient,
+    withInterceptorsFromDi
+} from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -134,8 +139,7 @@ describe('DotPagesFavoritePanelComponent', () => {
                     DotMessagePipe,
                     ButtonModule,
                     DotPagesCardModule,
-                    PanelModule,
-                    HttpClientTestingModule
+                    PanelModule
                 ],
                 providers: [
                     DotSessionStorageService,
@@ -147,7 +151,9 @@ describe('DotPagesFavoritePanelComponent', () => {
                     },
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     { provide: DotPageStore, useClass: storeMock },
-                    { provide: DotMessageService, useValue: messageServiceMock }
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    provideHttpClient(withInterceptorsFromDi()),
+                    provideHttpClientTesting()
                 ]
             }).compileComponents();
         });
@@ -240,8 +246,7 @@ describe('DotPagesFavoritePanelComponent', () => {
                     DotMessagePipe,
                     ButtonModule,
                     DotPagesCardModule,
-                    PanelModule,
-                    HttpClientTestingModule
+                    PanelModule
                 ],
                 providers: [
                     DotSessionStorageService,
@@ -253,7 +258,9 @@ describe('DotPagesFavoritePanelComponent', () => {
                     },
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     { provide: DotPageStore, useClass: storeMock },
-                    { provide: DotMessageService, useValue: messageServiceMock }
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    provideHttpClient(withInterceptorsFromDi()),
+                    provideHttpClientTesting()
                 ]
             }).compileComponents();
 

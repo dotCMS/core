@@ -2,7 +2,7 @@ import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 import { MarkdownService } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import {} from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 

@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 
@@ -15,8 +15,12 @@ describe('DotFeatureFlagResolver', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [DotFeatureFlagResolver, DotPropertiesService],
-            imports: [HttpClientModule]
+            imports: [],
+            providers: [
+                DotFeatureFlagResolver,
+                DotPropertiesService,
+                provideHttpClient(withInterceptorsFromDi())
+            ]
         });
 
         resolver = TestBed.inject(DotFeatureFlagResolver);

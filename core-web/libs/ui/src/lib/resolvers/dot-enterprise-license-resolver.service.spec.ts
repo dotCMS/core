@@ -1,6 +1,7 @@
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { DotLicenseService } from '@dotcms/data-access';
@@ -13,11 +14,13 @@ describe('DotEnterpriseLicenseResolver', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
+            imports: [],
             providers: [
                 DotEnterpriseLicenseResolver,
                 DotLicenseService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock }
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
         service = TestBed.inject(DotEnterpriseLicenseResolver);

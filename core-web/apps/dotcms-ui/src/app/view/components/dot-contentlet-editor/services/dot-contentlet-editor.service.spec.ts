@@ -1,7 +1,8 @@
 import { mockProvider } from '@ngneat/spectator';
 import { of as observableOf } from 'rxjs';
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
@@ -43,7 +44,7 @@ describe('DotContentletEditorService', () => {
 
     beforeEach(() => {
         injector = TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
+            imports: [],
             providers: [
                 DotContentletEditorService,
                 DotMenuService,
@@ -61,7 +62,9 @@ describe('DotContentletEditorService', () => {
                     provide: LoginService,
                     useClass: LoginServiceMock
                 },
-                mockProvider(DotMessageService)
+                mockProvider(DotMessageService),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

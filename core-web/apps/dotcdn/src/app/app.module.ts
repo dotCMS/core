@@ -1,4 +1,4 @@
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
@@ -38,12 +38,12 @@ const dotEventSocketURLFactory = () => {
 
 @NgModule({
     declarations: [AppComponent],
+    bootstrap: [AppComponent],
     imports: [
         BrowserModule,
         InputTextModule,
         DropdownModule,
         BrowserAnimationsModule,
-        HttpClientModule,
         RouterModule.forRoot([]),
         TabViewModule,
         ChartModule,
@@ -65,8 +65,8 @@ const dotEventSocketURLFactory = () => {
         DotcmsEventsService,
         { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
         DotcmsConfigService,
-        DotCDNStore
-    ],
-    bootstrap: [AppComponent]
+        DotCDNStore,
+        provideHttpClient(withInterceptorsFromDi())
+    ]
 })
 export class AppModule {}

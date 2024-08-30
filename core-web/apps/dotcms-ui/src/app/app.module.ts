@@ -2,7 +2,7 @@ import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { MarkdownModule } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
@@ -22,6 +22,7 @@ import { SharedModule } from './shared/shared.module';
 @NgModule({
     bootstrap: [AppComponent],
     declarations: [AppComponent, ...COMPONENTS],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA],
     imports: [
         ...CUSTOM_MODULES,
         ...NGFACES_MODULES,
@@ -29,7 +30,6 @@ import { SharedModule } from './shared/shared.module';
         BrowserAnimationsModule,
         BrowserModule,
         FormsModule,
-        HttpClientModule,
         ReactiveFormsModule,
         AppRoutingModule,
         DotDirectivesModule,
@@ -39,7 +39,6 @@ import { SharedModule } from './shared/shared.module';
         MarkdownModule.forRoot(),
         DotMessagePipe
     ],
-    providers: [ENV_PROVIDERS],
-    schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    providers: [ENV_PROVIDERS, provideHttpClient(withInterceptorsFromDi())]
 })
 export class AppModule {}

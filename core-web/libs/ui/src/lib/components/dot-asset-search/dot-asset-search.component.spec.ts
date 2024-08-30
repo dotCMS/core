@@ -1,7 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import {} from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 
 import { InputTextModule } from 'primeng/inputtext';

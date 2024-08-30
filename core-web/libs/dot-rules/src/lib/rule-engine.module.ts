@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -59,28 +59,6 @@ import { RuleEngineComponent } from './rule-engine';
 import { RuleEngineContainer } from './rule-engine.container';
 
 @NgModule({
-    imports: [
-        CommonModule,
-        FormsModule,
-        ReactiveFormsModule,
-        DropdownModule,
-        MultiSelectModule,
-        InputTextModule,
-        InputSwitchModule,
-        AutoCompleteModule,
-        DialogModule,
-        ButtonModule,
-        MessagesModule,
-        MessageModule,
-        CalendarModule,
-        DotAutocompleteTagsModule,
-        HttpClientModule,
-        DotAutofocusModule,
-        DotUnlicenseModule,
-        MenuModule,
-        TooltipModule,
-        DotNotLicenseComponent
-    ],
     declarations: [
         AddToBundleDialogComponent,
         AddToBundleDialogContainer,
@@ -100,6 +78,28 @@ import { RuleEngineContainer } from './rule-engine.container';
         VisitorsLocationContainer,
         AppRulesComponent
     ],
+    exports: [RuleEngineContainer, AppRulesComponent],
+    imports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        DropdownModule,
+        MultiSelectModule,
+        InputTextModule,
+        InputSwitchModule,
+        AutoCompleteModule,
+        DialogModule,
+        ButtonModule,
+        MessagesModule,
+        MessageModule,
+        CalendarModule,
+        DotAutocompleteTagsModule,
+        DotAutofocusModule,
+        DotUnlicenseModule,
+        MenuModule,
+        TooltipModule,
+        DotNotLicenseComponent
+    ],
     providers: [
         ApiRoot,
         BrowserUtil,
@@ -117,8 +117,8 @@ import { RuleEngineContainer } from './rule-engine.container';
         I18nService,
         RuleService,
         RuleViewService,
-        RouterModule
-    ],
-    exports: [RuleEngineContainer, AppRulesComponent]
+        RouterModule,
+        provideHttpClient(withInterceptorsFromDi())
+    ]
 })
 export class RuleEngineModule {}

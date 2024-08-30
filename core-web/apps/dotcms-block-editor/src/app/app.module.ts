@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { DoBootstrap, Injector, NgModule } from '@angular/core';
 import { createCustomElement } from '@angular/elements';
 import { FormsModule } from '@angular/forms';
@@ -29,10 +29,14 @@ import { AppComponent } from './app.component';
         BlockEditorModule,
         OrderListModule,
         ListboxModule,
-        HttpClientModule,
         DotAssetSearchComponent
     ],
-    providers: [DotPropertiesService, DotContentSearchService, DotLanguagesService]
+    providers: [
+        DotPropertiesService,
+        DotContentSearchService,
+        DotLanguagesService,
+        provideHttpClient(withInterceptorsFromDi())
+    ]
 })
 export class AppModule implements DoBootstrap {
     constructor(private injector: Injector) {}

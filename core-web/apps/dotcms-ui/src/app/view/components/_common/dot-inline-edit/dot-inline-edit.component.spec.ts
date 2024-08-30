@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input, TemplateRef } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -37,8 +38,8 @@ describe('DotInlineEditComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [DotInlineEditComponent, HostTestComponent],
-            imports: [CommonModule, InplaceModule, SharedModule, HttpClientTestingModule],
-            providers: []
+            imports: [CommonModule, InplaceModule, SharedModule],
+            providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()]
         }).compileComponents();
 
         hostFixture = TestBed.createComponent(HostTestComponent);

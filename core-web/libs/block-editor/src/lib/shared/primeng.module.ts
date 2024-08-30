@@ -1,4 +1,4 @@
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 
 // PrimeNg
@@ -15,20 +15,6 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TabViewModule } from 'primeng/tabview';
 
 @NgModule({
-    imports: [
-        MenuModule,
-        CheckboxModule,
-        ButtonModule,
-        InputTextModule,
-        CardModule,
-        OrderListModule,
-        ListboxModule,
-        TabViewModule,
-        SkeletonModule,
-        ScrollerModule,
-        FileUploadModule,
-        HttpClientModule
-    ],
     exports: [
         MenuModule,
         CheckboxModule,
@@ -40,8 +26,21 @@ import { TabViewModule } from 'primeng/tabview';
         TabViewModule,
         SkeletonModule,
         ScrollerModule,
-        FileUploadModule,
-        HttpClientModule
-    ]
+        FileUploadModule
+    ],
+    imports: [
+        MenuModule,
+        CheckboxModule,
+        ButtonModule,
+        InputTextModule,
+        CardModule,
+        OrderListModule,
+        ListboxModule,
+        TabViewModule,
+        SkeletonModule,
+        ScrollerModule,
+        FileUploadModule
+    ],
+    providers: [provideHttpClient(withInterceptorsFromDi())]
 })
 export class PrimengModule {}

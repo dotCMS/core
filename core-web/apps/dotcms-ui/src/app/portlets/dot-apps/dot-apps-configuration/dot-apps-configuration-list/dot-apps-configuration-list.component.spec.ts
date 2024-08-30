@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
@@ -38,19 +39,20 @@ describe('DotAppsConfigurationListComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
+            declarations: [DotAppsConfigurationListComponent],
             imports: [
                 CommonModule,
                 ButtonModule,
                 DotAppsConfigurationItemModule,
-                HttpClientTestingModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe
             ],
-            declarations: [DotAppsConfigurationListComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 DotAlertConfirmService,
-                ConfirmationService
+                ConfirmationService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

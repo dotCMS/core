@@ -2,7 +2,8 @@
 
 import { Observable, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -137,11 +138,13 @@ describe('DotPaletteComponent', () => {
                 DotPaletteContentletsMockComponent,
                 DotPaletteContentTypeMockComponent
             ],
-            imports: [HttpClientTestingModule, NoopAnimationsModule],
+            imports: [NoopAnimationsModule],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: PaginatorService, useClass: MockPaginatorService },
-                { provide: DotESContentService, useClass: MockESPaginatorService }
+                { provide: DotESContentService, useClass: MockESPaginatorService },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
         TestBed.overrideProvider(DotPaletteStore, { useValue: storeMock });

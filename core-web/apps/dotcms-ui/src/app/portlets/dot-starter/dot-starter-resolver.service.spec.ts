@@ -1,6 +1,7 @@
 import { Observable, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 
 import { DotCurrentUserService } from '@dotcms/data-access';
@@ -44,11 +45,13 @@ describe('DotStarterResolver', () => {
 
     beforeEach(waitForAsync(() => {
         const testbed = TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
+            imports: [],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
-                DotStarterResolver
+                DotStarterResolver,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
         dotStarterResolver = testbed.inject(DotStarterResolver);

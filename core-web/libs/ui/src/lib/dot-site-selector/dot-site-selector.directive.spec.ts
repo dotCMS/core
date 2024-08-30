@@ -1,7 +1,7 @@
 import { createDirectiveFactory, createFakeEvent, SpectatorDirective } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import {} from '@angular/common/http/testing';
 import { fakeAsync } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 

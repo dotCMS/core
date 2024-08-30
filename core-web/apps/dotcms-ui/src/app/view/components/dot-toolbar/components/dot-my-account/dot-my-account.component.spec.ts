@@ -4,7 +4,8 @@
 import { of, throwError } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
@@ -94,8 +95,7 @@ describe('DotMyAccountComponent', () => {
                 CommonModule,
                 CheckboxModule,
                 DotSafeHtmlPipe,
-                DotMessagePipe,
-                HttpClientTestingModule
+                DotMessagePipe
             ],
             providers: [
                 {
@@ -118,7 +118,9 @@ describe('DotMyAccountComponent', () => {
                 UserModel,
                 DotHttpErrorManagerService,
                 DotAlertConfirmService,
-                ConfirmationService
+                ConfirmationService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

@@ -2,8 +2,8 @@ import { createFakeEvent } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, CUSTOM_ELEMENTS_SCHEMA, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -236,6 +236,24 @@ describe('ContainerListComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [ContainerListComponent, MockDotContentTypeSelectorComponent],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA],
+            imports: [
+                ActionHeaderModule,
+                ButtonModule,
+                CheckboxModule,
+                CommonModule,
+                ContainerListRoutingModule,
+                DotActionMenuButtonComponent,
+                DotAddToBundleComponent,
+                DotEmptyStateModule,
+                DotMessagePipe,
+                DotPortletBaseModule,
+                DotRelativeDatePipe,
+                InputTextModule,
+                MenuModule,
+                TableModule,
+                BrowserAnimationsModule
+            ],
             providers: [
                 ConfirmationService,
                 DialogService,
@@ -279,27 +297,10 @@ describe('ContainerListComponent', () => {
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
-                }
-            ],
-            imports: [
-                ActionHeaderModule,
-                ButtonModule,
-                CheckboxModule,
-                CommonModule,
-                ContainerListRoutingModule,
-                DotActionMenuButtonComponent,
-                DotAddToBundleComponent,
-                DotEmptyStateModule,
-                DotMessagePipe,
-                DotPortletBaseModule,
-                DotRelativeDatePipe,
-                HttpClientTestingModule,
-                InputTextModule,
-                MenuModule,
-                TableModule,
-                BrowserAnimationsModule
-            ],
-            schemas: [CUSTOM_ELEMENTS_SCHEMA]
+                },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
+            ]
         }).compileComponents();
 
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);

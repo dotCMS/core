@@ -3,7 +3,8 @@
 import { mockProvider } from '@ngneat/spectator';
 import { Observable, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, forwardRef, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
@@ -197,7 +198,6 @@ describe('ContentTypesFormComponent', () => {
                 ReactiveFormsModule,
                 RouterTestingModule,
                 TabViewModule,
-                HttpClientTestingModule,
                 DotMdIconSelectorModule,
                 DotMessagePipe
             ],
@@ -220,7 +220,9 @@ describe('ContentTypesFormComponent', () => {
                 {
                     provide: ActivatedRoute,
                     useValue: mockActivatedRoute
-                }
+                },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

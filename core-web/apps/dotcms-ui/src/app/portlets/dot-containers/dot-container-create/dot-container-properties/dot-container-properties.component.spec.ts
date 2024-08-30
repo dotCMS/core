@@ -1,7 +1,8 @@
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
     Component,
     CUSTOM_ELEMENTS_SCHEMA,
@@ -247,6 +248,23 @@ describe('DotContainerPropertiesComponent', () => {
                 DotLoopEditorComponent,
                 DotTextareaContentMockComponent
             ],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA],
+            imports: [
+                CommonModule,
+                DotMessagePipe,
+                SharedModule,
+                CheckboxModule,
+                InplaceModule,
+                ReactiveFormsModule,
+                MenuModule,
+                ButtonModule,
+                DotActionButtonModule,
+                DotActionMenuButtonComponent,
+                DotAddToBundleComponent,
+                DynamicDialogModule,
+                DotAutofocusDirective,
+                BrowserAnimationsModule
+            ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -285,26 +303,10 @@ describe('DotContainerPropertiesComponent', () => {
                 DotGlobalMessageService,
                 DotEventsService,
                 LoggerService,
-                { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
-            ],
-            imports: [
-                CommonModule,
-                DotMessagePipe,
-                SharedModule,
-                CheckboxModule,
-                InplaceModule,
-                ReactiveFormsModule,
-                MenuModule,
-                ButtonModule,
-                DotActionButtonModule,
-                DotActionMenuButtonComponent,
-                DotAddToBundleComponent,
-                HttpClientTestingModule,
-                DynamicDialogModule,
-                DotAutofocusDirective,
-                BrowserAnimationsModule
-            ],
-            schemas: [CUSTOM_ELEMENTS_SCHEMA]
+                { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
+            ]
         }).compileComponents();
         fixture = TestBed.createComponent(DotContainerPropertiesComponent);
         comp = fixture.componentInstance;

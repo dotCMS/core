@@ -1,6 +1,7 @@
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -106,14 +107,15 @@ describe('DotAddToMenuComponent', () => {
                 ReactiveFormsModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
-                HttpClientTestingModule,
                 DotFieldValidationMessageComponent
             ],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotAddToMenuService, useClass: DotAddToMenuServiceMock },
-                { provide: DotMenuService, useClass: DotMenuServiceMock }
+                { provide: DotMenuService, useClass: DotMenuServiceMock },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         }).compileComponents();
 

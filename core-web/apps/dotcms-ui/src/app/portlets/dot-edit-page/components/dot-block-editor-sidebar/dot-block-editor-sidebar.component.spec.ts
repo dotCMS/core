@@ -1,6 +1,7 @@
 import { of, throwError } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -128,13 +129,7 @@ describe('DotBlockEditorSidebarComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotBlockEditorSidebarComponent, MockDotBlockEditorComponent],
-            imports: [
-                HttpClientTestingModule,
-                BrowserAnimationsModule,
-                SidebarModule,
-                DotMessagePipe,
-                ButtonModule
-            ],
+            imports: [BrowserAnimationsModule, SidebarModule, DotMessagePipe, ButtonModule],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -148,7 +143,9 @@ describe('DotBlockEditorSidebarComponent', () => {
                 DotWorkflowActionsFireService,
                 DotEventsService,
                 DotAlertConfirmService,
-                ConfirmationService
+                ConfirmationService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         }).compileComponents();
         dotEventsService = TestBed.inject(DotEventsService);

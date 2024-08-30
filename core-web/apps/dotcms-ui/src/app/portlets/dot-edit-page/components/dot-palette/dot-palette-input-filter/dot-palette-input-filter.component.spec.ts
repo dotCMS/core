@@ -1,4 +1,5 @@
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
@@ -26,8 +27,12 @@ describe('DotPaletteInputFilterComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotPaletteInputFilterComponent, MockDotIconComponent],
-            imports: [DotSafeHtmlPipe, DotMessagePipe, HttpClientTestingModule, FormsModule],
-            providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }]
+            imports: [DotSafeHtmlPipe, DotMessagePipe, FormsModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
+            ]
         });
 
         fixture = TestBed.createComponent(DotPaletteInputFilterComponent);

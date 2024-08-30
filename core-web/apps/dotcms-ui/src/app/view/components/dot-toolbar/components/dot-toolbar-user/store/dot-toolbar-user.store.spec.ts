@@ -1,4 +1,5 @@
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -35,7 +36,7 @@ describe('DotToolbarUserStore', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule, RouterTestingModule],
+            imports: [RouterTestingModule],
             providers: [
                 DotToolbarUserStore,
                 LoggerService,
@@ -59,7 +60,9 @@ describe('DotToolbarUserStore', () => {
                 },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                { provide: LoginService, useClass: LoginServiceMock }
+                { provide: LoginService, useClass: LoginServiceMock },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

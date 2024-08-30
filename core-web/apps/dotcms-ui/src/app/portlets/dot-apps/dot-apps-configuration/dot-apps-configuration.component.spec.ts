@@ -4,7 +4,8 @@ import { MarkdownModule } from 'ngx-markdown';
 import { Observable, of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -108,6 +109,7 @@ describe('DotAppsConfigurationComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
+            declarations: [DotAppsConfigurationComponent],
             imports: [
                 RouterTestingModule.withRoutes([
                     {
@@ -122,12 +124,10 @@ describe('DotAppsConfigurationComponent', () => {
                 DotAppsConfigurationHeaderModule,
                 DotAppsImportExportDialogModule,
                 DotAppsConfigurationListModule,
-                HttpClientTestingModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 MarkdownModule.forRoot()
             ],
-            declarations: [DotAppsConfigurationComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
@@ -146,7 +146,9 @@ describe('DotAppsConfigurationComponent', () => {
                 DotAppsConfigurationResolver,
                 PaginatorService,
                 DotAlertConfirmService,
-                ConfirmationService
+                ConfirmationService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

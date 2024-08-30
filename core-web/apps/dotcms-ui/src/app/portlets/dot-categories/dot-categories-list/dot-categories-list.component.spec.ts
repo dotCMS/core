@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -104,7 +105,6 @@ xdescribe('DotCategoriesListingTableComponent', () => {
                 SharedModule,
                 MenuModule,
                 DotMenuComponent,
-                HttpClientTestingModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 BreadcrumbModule,
@@ -122,7 +122,9 @@ xdescribe('DotCategoriesListingTableComponent', () => {
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
-                DotCategoriesService
+                DotCategoriesService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

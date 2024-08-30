@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import {} from '@angular/common/http/testing';
 import { LOCALE_ID, Type } from '@angular/core';
 import { ComponentFixture, TestBed, TestModuleMetadata } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';

@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 
 import { NgClass, NgForOf } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import {} from '@angular/common/http/testing';
 
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 

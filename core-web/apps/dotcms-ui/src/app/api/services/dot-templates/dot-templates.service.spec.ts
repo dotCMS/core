@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
@@ -42,6 +43,7 @@ describe('DotTemplatesService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
+            imports: [],
             providers: [
                 DotTemplatesService,
                 {
@@ -55,9 +57,10 @@ describe('DotTemplatesService', () => {
                 {
                     provide: CoreWebService,
                     useClass: CoreWebServiceMock
-                }
-            ],
-            imports: [HttpClientTestingModule]
+                },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
+            ]
         });
         service = TestBed.inject(DotTemplatesService);
 

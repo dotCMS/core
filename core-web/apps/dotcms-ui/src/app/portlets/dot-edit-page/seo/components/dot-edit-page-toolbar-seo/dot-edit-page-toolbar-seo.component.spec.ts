@@ -1,7 +1,8 @@
 import { Observable, of } from 'rxjs';
 
 import { CommonModule, DatePipe, Location } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
@@ -154,7 +155,6 @@ describe('DotEditPageToolbarSeoComponent', () => {
             declarations: [TestHostComponent, MockGlobalMessageComponent],
             imports: [
                 DotEditPageToolbarSeoComponent,
-                HttpClientTestingModule,
                 ButtonModule,
                 CommonModule,
                 CheckboxModule,
@@ -229,7 +229,9 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 DotESContentService,
                 DotPropertiesService,
                 { provide: ActivatedRoute, useClass: ActivatedRouteListStoreMock },
-                { provide: DotPropertiesService, useClass: MockDotPropertiesService }
+                { provide: DotPropertiesService, useClass: MockDotPropertiesService },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
     });

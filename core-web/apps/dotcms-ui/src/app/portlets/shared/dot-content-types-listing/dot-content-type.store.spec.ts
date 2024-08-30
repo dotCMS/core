@@ -1,7 +1,7 @@
 import { of, throwError } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -24,7 +24,7 @@ describe('DotContentTypeComponentStore', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule, RouterTestingModule],
+            imports: [RouterTestingModule],
             providers: [
                 DotContentTypeService,
                 DotContentTypeStore,
@@ -34,7 +34,9 @@ describe('DotContentTypeComponentStore', () => {
                     useValue: {
                         handle: jasmine.createSpy().and.returnValue(of({}))
                     }
-                }
+                },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
         store = TestBed.inject(DotContentTypeStore);

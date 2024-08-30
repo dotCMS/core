@@ -3,7 +3,8 @@
 import { Observable, of as observableOf } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
@@ -73,20 +74,16 @@ describe('SiteSelectorComponent', () => {
         });
         TestBed.configureTestingModule({
             declarations: [TestHostComponent, DotSiteSelectorComponent],
-            imports: [
-                SearchableDropDownModule,
-                BrowserAnimationsModule,
-                HttpClientTestingModule,
-                CommonModule,
-                FormsModule
-            ],
+            imports: [SearchableDropDownModule, BrowserAnimationsModule, CommonModule, FormsModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: SiteService, useValue: siteServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 IframeOverlayService,
                 PaginatorService,
-                DotEventsService
+                DotEventsService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         }).compileComponents();
 

@@ -3,7 +3,8 @@
 import { mockProvider } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, ElementRef, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -258,7 +259,6 @@ describe('DotEditContentComponent', () => {
                 MockDotEditPageToolbarSeoComponent
             ],
             imports: [
-                HttpClientTestingModule,
                 BrowserAnimationsModule,
                 ButtonModule,
                 DialogModule,
@@ -360,7 +360,9 @@ describe('DotEditContentComponent', () => {
                 LoggerService,
                 StringUtils,
                 ApiRoot,
-                UserModel
+                UserModel,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

@@ -3,7 +3,8 @@
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { Observable, of, Subject } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
     Component,
     DebugElement,
@@ -220,7 +221,6 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 TableModule,
                 DotFieldValidationMessageComponent,
                 ReactiveFormsModule,
-                HttpClientTestingModule,
                 DotMessagePipe,
                 TabViewModule
             ],
@@ -241,7 +241,9 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 DragulaService,
                 DotEventsService,
                 { provide: DotMessageDisplayService, useValue: {} },
-                { provide: DotHttpErrorManagerService, useValue: {} }
+                { provide: DotHttpErrorManagerService, useValue: {} },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 
@@ -501,7 +503,6 @@ describe('Load fields and drag and drop', () => {
                 TableModule,
                 ContentTypeFieldsAddRowModule,
                 DotDialogModule,
-                HttpClientTestingModule,
                 DotMessagePipe,
                 TabViewModule
             ],
@@ -550,7 +551,9 @@ describe('Load fields and drag and drop', () => {
                     useValue: dotLoadingIndicatorServiceMock
                 },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotEventsService
+                DotEventsService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 

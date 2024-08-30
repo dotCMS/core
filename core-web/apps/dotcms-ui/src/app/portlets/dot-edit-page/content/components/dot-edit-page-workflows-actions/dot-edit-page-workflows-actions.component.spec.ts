@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -85,14 +86,8 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
 
     beforeEach(() => {
         testbed = TestBed.configureTestingModule({
-            imports: [
-                RouterTestingModule,
-                BrowserAnimationsModule,
-                MenuModule,
-                HttpClientTestingModule,
-                ButtonModule
-            ],
             declarations: [DotEditPageWorkflowsActionsComponent, TestHostComponent],
+            imports: [RouterTestingModule, BrowserAnimationsModule, MenuModule, ButtonModule],
             providers: [
                 {
                     provide: DotWorkflowService,
@@ -129,7 +124,9 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                 LoggerService,
                 StringUtils,
                 DotWorkflowEventHandlerService,
-                DotIframeService
+                DotIframeService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
     });

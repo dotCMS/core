@@ -3,7 +3,8 @@
 import { mockProvider } from '@ngneat/spectator';
 import { of, Subject } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, EventEmitter, Injectable, Output } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By, Title } from '@angular/platform-browser';
@@ -119,6 +120,7 @@ describe('DotEditPageMainComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
+            declarations: [DotEditPageMainComponent, MockDotEditContentletComponent],
             imports: [
                 RouterTestingModule.withRoutes([
                     {
@@ -128,11 +130,9 @@ describe('DotEditPageMainComponent', () => {
                 ]),
                 DotEditPageNavModule,
                 DotDownloadBundleDialogModule,
-                HttpClientTestingModule,
                 DotExperimentClassDirective,
                 DotEditPageNavDirective
             ],
-            declarations: [DotEditPageMainComponent, MockDotEditContentletComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
@@ -149,7 +149,6 @@ describe('DotEditPageMainComponent', () => {
                         queryParams: of({ mode: 'a', variantName: 'b', experimentId: 'c' })
                     }
                 },
-
                 {
                     provide: DotContentletEditorService,
                     useClass: MockDotContentletEditorService
@@ -191,7 +190,9 @@ describe('DotEditPageMainComponent', () => {
                 DotLicenseService,
                 Title,
                 mockProvider(DotSessionStorageService),
-                mockProvider(DotContentTypeService)
+                mockProvider(DotContentTypeService),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
     }));

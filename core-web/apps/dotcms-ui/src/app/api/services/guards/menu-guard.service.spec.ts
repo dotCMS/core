@@ -1,7 +1,8 @@
 import { mockProvider } from '@ngneat/spectator';
 import { of as observableOf } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
@@ -35,7 +36,7 @@ describe('ValidMenuGuardService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
+            imports: [],
             providers: [
                 MenuGuardService,
                 {
@@ -50,7 +51,9 @@ describe('ValidMenuGuardService', () => {
                     provide: DotNavigationService,
                     useClass: MockDotNavigationService
                 },
-                mockProvider(DotSessionStorageService)
+                mockProvider(DotSessionStorageService),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
             ]
         });
 
