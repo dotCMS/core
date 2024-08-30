@@ -30,15 +30,7 @@ const DEFAULT_CONFIG = {
 @Component({
     selector: 'dot-edit-content-wysiwyg-field',
     standalone: true,
-    imports: [
-        EditorModule,
-        FormsModule,
-        ReactiveFormsModule,
-        // TODO: `HttpClientModule` should not be imported into a component directly.
-        // Please refactor the code to add `provideHttpClient()` call to the provider list in the
-        // application bootstrap logic and remove the `HttpClientModule` import from this component.
-        HttpClientModule
-    ],
+    imports: [EditorModule, FormsModule, ReactiveFormsModule],
     templateUrl: './dot-edit-content-wysiwyg-field.component.html',
     styleUrl: './dot-edit-content-wysiwyg-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
