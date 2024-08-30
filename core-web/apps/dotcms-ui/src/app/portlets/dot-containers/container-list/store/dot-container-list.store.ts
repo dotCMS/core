@@ -281,21 +281,16 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
      * @memberof DotContainerListComponent
      */
     getContainerActions(container: DotContainer): DotActionMenuItem[] {
-        let options: DotActionMenuItem[];
         if (container.deleted) {
-            options = this.setArchiveContainerActions(container);
+            return this.setArchiveContainerActions(container);
         } else {
-            options = this.setBaseContainerOptions(container);
-            options = [
-                ...options,
+            return [
+                ...this.setBaseContainerOptions(container),
                 ...this.getLicenseAndRemotePublishContainerOptions(container),
-                ...this.getUnPublishAndArchiveContainerOptions(container)
+                ...this.getUnPublishAndArchiveContainerOptions(container),
+                ...this.setCopyContainerOptions(container)
             ];
-
-            options = [...options, ...this.setCopyContainerOptions(container)];
         }
-
-        return options;
     }
 
     private getContainerBulkActions(hasEnvironments = false, isEnterprise = false) {

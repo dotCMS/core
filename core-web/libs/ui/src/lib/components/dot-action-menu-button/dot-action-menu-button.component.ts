@@ -29,6 +29,8 @@ export class DotActionMenuButtonComponent implements OnInit {
 
     @Input() actions?: DotActionMenuItem[];
 
+    hasIcon = true;
+
     ngOnInit() {
         this.filteredActions = this.actions
             .filter((action: DotActionMenuItem) =>
@@ -44,5 +46,8 @@ export class DotActionMenuButtonComponent implements OnInit {
                     }
                 };
             });
+        if (this.filteredActions.length === 1) {
+            this.hasIcon = this.filteredActions[0].icon;
+        }
     }
 }
