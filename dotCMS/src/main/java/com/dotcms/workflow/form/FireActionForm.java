@@ -8,6 +8,11 @@ import com.dotcms.rest.api.Validated;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Form to fire an action in the workflow
+ * @author jsanca
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonDeserialize(builder = FireActionForm.Builder.class)
 public class FireActionForm extends Validated {
 
