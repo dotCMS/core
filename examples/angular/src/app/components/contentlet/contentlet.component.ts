@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 
-import { GenericContentlet } from '../../utils';
+import { GenericContentlet } from '..';
 import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
 import { isInsideEditor } from '@dotcms/client';
 import { NgTemplateOutlet } from '@angular/common';
