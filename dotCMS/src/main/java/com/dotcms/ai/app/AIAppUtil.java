@@ -6,6 +6,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -40,9 +41,14 @@ public class AIAppUtil {
      * @return the created text model instance
      */
     public AIModel createTextModel(final Map<String, Secret> secrets) {
+        final List<String> modelNames = splitDiscoveredSecret(secrets, AppKeys.TEXT_MODEL_NAMES);
+        if (CollectionUtils.isEmpty(modelNames)) {
+            return AIModel.NOOP_MODEL;
+        }
+
         return AIModel.builder()
                 .withType(AIModelType.TEXT)
-                .withNames(splitDiscoveredSecret(secrets, AppKeys.TEXT_MODEL_NAMES))
+                .withModelNames(modelNames)
                 .withTokensPerMinute(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_TOKENS_PER_MINUTE))
                 .withApiPerMinute(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_API_PER_MINUTE))
                 .withMaxTokens(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_MAX_TOKENS))
@@ -57,9 +63,14 @@ public class AIAppUtil {
      * @return the created image model instance
      */
     public AIModel createImageModel(final Map<String, Secret> secrets) {
+        final List<String> modelNames = splitDiscoveredSecret(secrets, AppKeys.IMAGE_MODEL_NAMES);
+        if (CollectionUtils.isEmpty(modelNames)) {
+            return AIModel.NOOP_MODEL;
+        }
+
         return AIModel.builder()
                 .withType(AIModelType.IMAGE)
-                .withNames(splitDiscoveredSecret(secrets, AppKeys.IMAGE_MODEL_NAMES))
+                .withModelNames(modelNames)
                 .withTokensPerMinute(discoverIntSecret(secrets, AppKeys.IMAGE_MODEL_TOKENS_PER_MINUTE))
                 .withApiPerMinute(discoverIntSecret(secrets, AppKeys.IMAGE_MODEL_API_PER_MINUTE))
                 .withMaxTokens(discoverIntSecret(secrets, AppKeys.IMAGE_MODEL_MAX_TOKENS))
@@ -74,9 +85,14 @@ public class AIAppUtil {
      * @return the created embeddings model instance
      */
     public AIModel createEmbeddingsModel(final Map<String, Secret> secrets) {
+        final List<String> modelNames = splitDiscoveredSecret(secrets, AppKeys.EMBEDDINGS_MODEL_NAMES);
+        if (CollectionUtils.isEmpty(modelNames)) {
+            return AIModel.NOOP_MODEL;
+        }
+
         return AIModel.builder()
                 .withType(AIModelType.EMBEDDINGS)
-                .withNames(splitDiscoveredSecret(secrets, AppKeys.EMBEDDINGS_MODEL_NAMES))
+                .withModelNames(modelNames)
                 .withTokensPerMinute(discoverIntSecret(secrets, AppKeys.EMBEDDINGS_MODEL_TOKENS_PER_MINUTE))
                 .withApiPerMinute(discoverIntSecret(secrets, AppKeys.EMBEDDINGS_MODEL_API_PER_MINUTE))
                 .withMaxTokens(discoverIntSecret(secrets, AppKeys.EMBEDDINGS_MODEL_MAX_TOKENS))
@@ -117,9 +133,11 @@ public class AIAppUtil {
      * @return the list of split secret values
      */
     public List<String> splitDiscoveredSecret(final Map<String, Secret> secrets, final AppKeys key) {
-        return Arrays.stream(Optional.ofNullable(discoverSecret(secrets, key)).orElse(StringPool.BLANK).split(","))
-                .map(String::trim)
-                .map(String::toLowerCase)
+        return Arrays
+                .stream(Optional
+                        .ofNullable(discoverSecret(secrets, key))
+                        .map(secret -> secret.split(StringPool.COMMA))
+                        .orElse(new String[0]))
                 .collect(Collectors.toList());
     }
 

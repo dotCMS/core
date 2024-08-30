@@ -669,6 +669,48 @@ export const ACTION_PAYLOAD_MOCK: ActionPayload = {
     position: 'after'
 };
 
+export const BASE_SHELL_ITEMS = [
+    {
+        icon: 'pi-file',
+        label: 'editema.editor.navbar.content',
+        href: 'content',
+        id: 'content'
+    },
+    {
+        icon: 'pi-table',
+        label: 'editema.editor.navbar.layout',
+        href: 'layout',
+        id: 'layout',
+        isDisabled: false,
+        tooltip: null
+    },
+    {
+        icon: 'pi-sliders-h',
+        label: 'editema.editor.navbar.rules',
+        id: 'rules',
+        href: `rules/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
+        isDisabled: false
+    },
+    {
+        iconURL: 'experiments',
+        label: 'editema.editor.navbar.experiments',
+        href: `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
+        id: 'experiments',
+        isDisabled: false
+    },
+    {
+        icon: 'pi-th-large',
+        label: 'editema.editor.navbar.page-tools',
+        id: 'page-tools'
+    },
+    {
+        icon: 'pi-ellipsis-v',
+        label: 'editema.editor.navbar.properties',
+        id: 'properties',
+        isDisabled: false
+    }
+];
+
 export const BASE_SHELL_PROPS_RESPONSE = {
     canRead: true,
     error: null,
@@ -683,46 +725,7 @@ export const BASE_SHELL_PROPS_RESPONSE = {
         currentUrl: '/test-url',
         requestHostName: 'http://localhost:3000'
     },
-    items: [
-        {
-            icon: 'pi-file',
-            label: 'editema.editor.navbar.content',
-            href: 'content',
-            id: 'content'
-        },
-        {
-            icon: 'pi-table',
-            label: 'editema.editor.navbar.layout',
-            href: 'layout',
-            id: 'layout',
-            isDisabled: false,
-            tooltip: null
-        },
-        {
-            icon: 'pi-sliders-h',
-            label: 'editema.editor.navbar.rules',
-            id: 'rules',
-            href: `rules/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
-            isDisabled: false
-        },
-        {
-            iconURL: 'experiments',
-            label: 'editema.editor.navbar.experiments',
-            href: `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
-            id: 'experiments',
-            isDisabled: false
-        },
-        {
-            icon: 'pi-th-large',
-            label: 'editema.editor.navbar.page-tools',
-            id: 'page-tools'
-        },
-        {
-            icon: 'pi-ellipsis-v',
-            label: 'editema.editor.navbar.properties',
-            id: 'properties'
-        }
-    ]
+    items: BASE_SHELL_ITEMS
 };
 
 export const UVE_PAGE_RESPONSE_MAP = {

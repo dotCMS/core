@@ -202,7 +202,7 @@ describe('DotWorkflowActionsComponent', () => {
         it('should have default size', () => {
             const { button, splitButton } = getComponents(spectator);
             expect(button.styleClass.trim()).toBe('');
-            expect(splitButton.styleClass.trim()).toBe('p-button-outlined');
+            expect(splitButton.styleClass.trim()).toBe('');
         });
 
         it('should set style class p-button-sm', () => {
@@ -211,7 +211,7 @@ describe('DotWorkflowActionsComponent', () => {
 
             const { button, splitButton } = getComponents(spectator);
 
-            expect(splitButton.styleClass.trim()).toBe('p-button-sm p-button-outlined');
+            expect(splitButton.styleClass.trim()).toBe('p-button-sm');
             expect(button.styleClass.trim()).toBe('p-button-sm');
         });
 
@@ -222,7 +222,7 @@ describe('DotWorkflowActionsComponent', () => {
             const { button, splitButton } = getComponents(spectator);
 
             expect(button.styleClass.trim()).toBe('p-button-lg');
-            expect(splitButton.styleClass.trim()).toBe('p-button-lg p-button-outlined');
+            expect(splitButton.styleClass.trim()).toBe('p-button-lg');
         });
     });
 });

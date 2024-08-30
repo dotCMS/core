@@ -1434,6 +1434,13 @@
             <!-- Apache Tomcat -->
 
             <dependency>
+                <groupId>com.dotcms</groupId>
+                <artifactId>tomcat-redis-session-manager</artifactId>
+                <version>1.3</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
                 <!-- Jasper is the Tomcat JSP Engine -->
                 <groupId>org.apache.tomcat</groupId>
                 <artifactId>tomcat-jasper</artifactId>

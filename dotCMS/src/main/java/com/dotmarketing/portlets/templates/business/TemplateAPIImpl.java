@@ -1300,7 +1300,14 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 			updateMultiTrees(templateSaveParameters, oldTemplateLayout.get(), user, respectFrontendRoles);
 		}
 
-		templateSaveParameters.getNewTemplate().setDrawedBody(reOrder(templateSaveParameters.getNewLayout()));
+		final TemplateLayout newTemplateLayout = reOrder(templateSaveParameters.getNewLayout());
+
+		if (!templateSaveParameters.isUseHistory()) {
+			newTemplateLayout.setVersion(oldTemplateLayout.map(templateLayout -> templateLayout.getVersion() + 1)
+					.orElse(1));
+		}
+
+		templateSaveParameters.getNewTemplate().setDrawedBody(newTemplateLayout);
 		templateSaveParameters.getNewTemplate().setDrawed(true);
 
 		return saveTemplate(templateSaveParameters.getNewTemplate(), templateSaveParameters.getSite(), user, respectFrontendRoles);
@@ -1308,7 +1315,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 	private void updateMultiTrees(final TemplateSaveParameters templateSaveParameters, TemplateLayout oldTemplateLayout,
 								  User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		LayoutChanges changes = getChange(oldTemplateLayout, templateSaveParameters.getNewLayout());
+		final LayoutChanges changes = templateSaveParameters.isUseHistory() ?
+				getChangeFromHistory(oldTemplateLayout, templateSaveParameters.getNewLayout()) :
+				getChange(oldTemplateLayout, templateSaveParameters.getNewLayout());
 
 		final List<String> pageIds = UtilMethods.isSet(templateSaveParameters.getPageIds()) ?
 				templateSaveParameters.getPageIds() :
@@ -1320,6 +1329,52 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		final String currentVariant = WebAPILocator.getVariantWebAPI().currentVariantId();
 		multiTreeAPI.updateMultiTrees(changes, pageIds, currentVariant);
+	}
+
+	private LayoutChanges getChangeFromHistory(final TemplateLayout oldTemplateLayout, final TemplateLayout newLayout) {
+
+		final LayoutChanges.Builder builder = new LayoutChanges.Builder();
+		final List<ContainerUUID> oldContainers = getContainers(oldTemplateLayout);
+		final List<ContainerUUID> newContainers = getContainers(newLayout);
+		final int deltaVersion = newLayout.getVersion() - oldTemplateLayout.getVersion();
+
+		addMoveAndRemoveChangesWithHistory(oldContainers, newContainers, deltaVersion, builder);
+
+		return builder.build();
+	}
+
+	private static void addMoveAndRemoveChangesWithHistory(final List<ContainerUUID> oldContainers,
+														final List<ContainerUUID> newContainers,
+														final int layoutVersionDelta,
+														final LayoutChanges.Builder builder) {
+		oldContainers.stream().forEach(oldContainer -> {
+			final String uuid = oldContainer.getUUID();
+
+			final Optional<ContainerUUID> newContainerUUIDMatch = newContainers.stream()
+					.filter(newContainer -> oldContainer.getIdentifier().equals(newContainer.getIdentifier()))
+					.filter(newContainer -> isMatch(oldContainer, newContainer, layoutVersionDelta))
+					.findAny();
+
+			if (newContainerUUIDMatch.isPresent() && !uuid.equals(newContainerUUIDMatch.get().getUUID())) {
+				builder.change(oldContainer.getIdentifier(), oldContainer.getUUID(),
+						newContainerUUIDMatch.get().getUUID());
+			} else if (newContainerUUIDMatch.isEmpty()) {
+				builder.remove(oldContainer.getIdentifier(), uuid);
+			}
+		});
+	}
+
+	private static boolean isMatch(final ContainerUUID oldContainer, final ContainerUUID newContainer,
+								   final int layoutVersionDelta) {
+
+		final List<String> oldHistoryUUIDs = oldContainer.getHistoryUUIDs();
+		int oldHistorySize = oldHistoryUUIDs.size();
+		int oldHistoryLastIndex = oldHistorySize - 1;
+		final String oldLastUUID = oldHistoryUUIDs.get(oldHistoryLastIndex);
+		final List<String> newHistoryUUIDs = newContainer.getHistoryUUIDs();
+
+		return newHistoryUUIDs.size() == (oldHistorySize + layoutVersionDelta) &&
+				newHistoryUUIDs.get(oldHistoryLastIndex).equals(oldLastUUID);
 	}
 
 
@@ -1374,8 +1429,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 			}
 
 			uuidByContainer.put(containerUUID.getIdentifier(), maxUUID);
-
 			containerUUID.setUuid(maxUUID.toString());
+			containerUUID.addUUIDTOHistory(maxUUID.toString());
 		});
 
 		return layout;

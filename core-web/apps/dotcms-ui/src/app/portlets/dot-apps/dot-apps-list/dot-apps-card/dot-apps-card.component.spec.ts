@@ -128,7 +128,7 @@ describe('DotAppsCardComponent', () => {
             expect(warningIcon).toBeTruthy();
             expect(warningIcon.attributes['name']).toBe('warning');
             expect(warningIcon.attributes['size']).toBe('18');
-            expect(warningIcon.attributes['ng-reflect-text']).toBe(
+            expect(warningIcon.attributes['ng-reflect-content']).toBe(
                 `${component.app.sitesWithWarnings} ${messageServiceMock.get(
                     'apps.invalid.configurations'
                 )}`

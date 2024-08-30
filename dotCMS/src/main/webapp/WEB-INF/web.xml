@@ -1,9 +1,12 @@
 <?xml version="1.0"?>
 <web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		 xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
-                      http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
-		 version="3.0" metadata-complete="true">
+                      http://java.sun.com/xml/ns/javaee/web-app_4_0.xsd"
+		 version="4.0" metadata-complete="true">
     <display-name>dotCMS</display-name>
+
+	<request-character-encoding>UTF-8</request-character-encoding>
+	<response-character-encoding>UTF-8</response-character-encoding>
 
 	<!-- Don't ever delete the following comment tags, it will break the build -->
 	<!-- BEGIN JSPS --> <!-- END JSPS -->

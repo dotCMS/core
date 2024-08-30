@@ -12,14 +12,14 @@
         (delete)="deletePersonalization($event)"
         (selected)="changePersonaHandler($event)"
         [disabled]="(dotPageStateService.haveContent$ | async) === false"
-        [pageState]="pageState"></dot-persona-selector>
+        [pageState]="pageState" />
 
     <p-checkbox
         *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
         (onChange)="whatschange.emit($event.checked)"
         [binary]="true"
         [label]="'dot.common.whats.changed' | dm"
-        class="flex dot-edit__what-changed-button"></p-checkbox>
+        class="flex dot-edit__what-changed-button" />
 </ng-container>
 
 <ng-template #language>
@@ -27,7 +27,7 @@
         (selected)="changeLanguageHandler($event)"
         [pageId]="pageState.page.identifier"
         [readonly]="!!variant"
-        [value]="pageState.viewAs.language"></dot-language-selector>
+        [value]="pageState.viewAs.language" />
 </ng-template>
 
 <p-confirmDialog

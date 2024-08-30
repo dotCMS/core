@@ -56,13 +56,8 @@ describe('DotEditContentHostFolderFieldComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                field: {
-                    ...HOST_FOLDER_TEXT_MOCK
-                }
-            }
-        });
+        spectator = createComponent();
+        spectator.setInput('field', { ...HOST_FOLDER_TEXT_MOCK });
         store = spectator.inject(HostFolderFiledStore, true) as unknown as TypeMock;
         component = spectator.component;
         component.formControl.setValue(null);
@@ -83,7 +78,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         const options = component.store.tree();
 
         expect(options).toBe(TREE_SELECT_SITES_MOCK);
-        expect(component.treeSelect.options).toBe(TREE_SELECT_SITES_MOCK);
+        expect(component.$treeSelect().options).toBe(TREE_SELECT_SITES_MOCK);
         expect(spyloadSites).toHaveBeenCalled();
     });
 
@@ -95,9 +90,9 @@ describe('DotEditContentHostFolderFieldComponent', () => {
 
         await spectator.fixture.whenStable();
 
-        const treeSelectHeight = spectator.component.treeSelect.scrollHeight;
+        const treeSelectHeight = spectator.component.$treeSelect().scrollHeight;
         const treeVirtualScrollHeight =
-            spectator.component.treeSelect.virtualScrollOptions.style['height'];
+            spectator.component.$treeSelect().virtualScrollOptions.style['height'];
 
         expect(treeSelectHeight).toBe(treeVirtualScrollHeight);
     });
@@ -111,7 +106,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             spectator.detectChanges();
             expect(component.formControl.value).toBe('demo.dotcms.com');
             expect(component.pathControl.value.key).toBe(nodeSelected.key);
-            expect(component.treeSelect.value.label).toBe(nodeSelected.label);
+            expect(component.$treeSelect().value.label).toBe(nodeSelected.label);
         });
     });
 
@@ -125,7 +120,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
 
             expect(component.formControl.value).toBe('demo.dotcms.com/level1/');
             expect(component.pathControl.value.key).toBe(nodeSelected.key);
-            expect(component.treeSelect.value.label).toBe(nodeSelected.label);
+            expect(component.$treeSelect().value.label).toBe(nodeSelected.label);
         });
     });
 
@@ -139,7 +134,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
 
             expect(component.formControl.value).toBe('demo.dotcms.com/level1/child1/');
             expect(component.pathControl.value.key).toBe(nodeSelected.key);
-            expect(component.treeSelect.value.label).toBe(nodeSelected.label);
+            expect(component.$treeSelect().value.label).toBe(nodeSelected.label);
         });
     });
 });

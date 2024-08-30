@@ -1,5 +1,7 @@
 package com.dotcms.api;
 
+import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
+
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.model.ServiceManager;
@@ -34,6 +36,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Date;
@@ -41,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -237,35 +241,34 @@ class ContentTypeAPIIT {
         ContentType newContentType = contentTypes.get(0);
         Assertions.assertNotNull(newContentType.id());
         Assertions.assertEquals("_var_"+identifier, newContentType.variable());
-        //We make sure the CT exists because the following line does not throw 404
+
+        // We make sure the CT exists because the following line does not throw 404
         client.getContentType(newContentType.variable(), 1L, true);
-        //Now lets test update
+
+        // Now lets test update
         final ImmutableSimpleContentType updatedContentType = ImmutableSimpleContentType.builder().from(newContentType).description("Updated").build();
         final SaveContentTypeRequest request = SaveContentTypeRequest.builder().
                 from(updatedContentType).build();
         final ResponseEntityView<ContentType> responseEntityView = client.updateContentType(
                 request.variable(), request);
         Assertions.assertEquals("Updated", responseEntityView.entity().description());
-        //And finally test delete
+
+        // And finally test delete
         final ResponseEntityView<String> responseStringEntity = client.delete(updatedContentType.variable());
         Assertions.assertTrue(responseStringEntity.entity().contains("deleted"));
 
-        try {
-            //a small wait to make sure the CT is deleted
-            //a simple Thread.sleep would do the trick but Sonar says it's not a good practice
-            int count = 0;
-            while (null != client.getContentType(updatedContentType.variable(), 1L, true)){
-               //We wait for the CT to be deleted
-               System.out.println("Waiting for CT to be deleted");
-               count++;
-               if(count > 10){
-                   Assertions.fail("CT was not deleted");
-               }
+        // Use Awaitility to wait until the ContentType is actually deleted
+        await().atMost(20, TimeUnit.SECONDS).until(() -> {
+            try {
+                client.getContentType(updatedContentType.variable(), 1L, true);
+                return false; // If this succeeds, the ContentType still exists
+            } catch (WebApplicationException e) {
+                if (e.getResponse().getStatus() == 404) {
+                    return true; // ContentType was successfully deleted
+                }
+                throw e; // Rethrow any unexpected exceptions
             }
-            //This should throw 404 but under certain circumstances it does throw 400
-        }catch(jakarta.ws.rs.WebApplicationException e){
-            // Not relevant here
-        }
+        });
     }
 
     /**

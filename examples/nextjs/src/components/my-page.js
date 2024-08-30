@@ -17,6 +17,7 @@ import { withExperiments } from "@dotcms/experiments";
 import { CustomNoComponent } from "./content-types/empty";
 
 import { usePageAsset } from "../hooks/usePageAsset";
+import { DotCmsClient } from "@dotcms/client";
 
 /**
  * Configure experiment settings below. If you are not using experiments,

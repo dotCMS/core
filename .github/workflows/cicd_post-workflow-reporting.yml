@@ -266,9 +266,8 @@ jobs:
       # Send Slack notification
       - name: Post to Slack
         if: steps.workflow-data.outputs.has_json == 'true' && github.repository == 'dotcms/core' && ( steps.workflow-data.outputs.status == 'FAILURE' || ( github.event_name == 'workflow_call' && inputs.slack-only-on-failure == false ) )
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
           channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
           payload: ${{ steps.prepare-slack-message.outputs.payload }}
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }} 

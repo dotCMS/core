@@ -1,5 +1,5 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { ChangeDetectionStrategy, Component, EventEmitter, input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
@@ -53,6 +53,5 @@ export class DotCategoryFieldSelectedComponent {
      * Represents an EventEmitter used for removing items. Emit the key
      * of the category
      */
-    @Output()
-    removeItem = new EventEmitter<string>();
+    removeItem = output<string>();
 }

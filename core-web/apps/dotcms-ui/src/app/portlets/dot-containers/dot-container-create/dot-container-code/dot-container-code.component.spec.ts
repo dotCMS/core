@@ -1,3 +1,4 @@
+import { createFakeEvent } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -247,7 +248,7 @@ describe('DotContentEditorComponent', () => {
             });
 
             it('should have add content type', fakeAsync(() => {
-                menu.model[0].command();
+                menu.model[0].command({ originalEvent: createFakeEvent('click') });
                 hostFixture.detectChanges();
                 const contentTypes = de.queryAll(By.css('p-tabpanel'));
                 const code = de.query(By.css(`[data-testid="${mockContentTypes[0].id}"]`));
@@ -277,8 +278,8 @@ describe('DotContentEditorComponent', () => {
             }));
 
             xit('should have remove content type and focus on another content type', fakeAsync(() => {
-                menu.model[0].command();
-                menu.model[1].command();
+                menu.model[0].command({ originalEvent: createFakeEvent('click') });
+                menu.model[1].command({ originalEvent: createFakeEvent('click') });
                 hostFixture.detectChanges();
                 const code = de.query(By.css(`[data-testid="${mockContentTypes[0].id}"]`));
                 code.triggerEventHandler('monacoInit', {
@@ -313,8 +314,8 @@ describe('DotContentEditorComponent', () => {
             }));
 
             it('should have select content type and focus on field', fakeAsync(() => {
-                menu.model[0].command();
-                menu.model[1].command();
+                menu.model[0].command({ originalEvent: createFakeEvent('click') });
+                menu.model[1].command({ originalEvent: createFakeEvent('click') });
                 hostFixture.detectChanges();
                 const code = de.query(By.css(`[data-testid="${mockContentTypes[0].id}"]`));
                 code.triggerEventHandler('monacoInit', {

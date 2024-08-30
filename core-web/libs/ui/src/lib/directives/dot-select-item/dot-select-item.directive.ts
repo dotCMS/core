@@ -17,11 +17,12 @@ export class DotSelectItemDirective {
      */
     @HostListener('onKeyUp', ['$event'])
     onKeyUp(event: KeyboardEvent) {
-        const target: HTMLInputElement = event.target as unknown as HTMLInputElement;
-
-        if (event.key === 'Enter' && !!target.value) {
-            // TODO: find a way to get the selected item from the autocomplete selectItem method was removed since v.16
-            this.autoComplete.selectItem(target.value);
+        const value = (event.target as HTMLInputElement).value;
+        if (event.key === 'Enter' && value) {
+            this.autoComplete.suggestions.push(value);
+            const options = this.autoComplete.visibleOptions();
+            const size = options.length;
+            this.autoComplete.onOptionSelect(event, options[size - 1]);
         }
     }
 }

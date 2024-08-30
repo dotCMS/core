@@ -3,12 +3,8 @@
     [text]="persona.name"
     [image]="persona.photo"
     pBadge
-    dotAvatar></p-avatar>
-<p-avatar
-    *ngIf="!persona.personalized"
-    [text]="persona.name"
-    [image]="persona.photo"
-    dotAvatar></p-avatar>
+    dotAvatar />
+<p-avatar *ngIf="!persona.personalized" [text]="persona.name" [image]="persona.photo" dotAvatar />
 
 <!-- Inline CSS code added to allow ellipsis on 2nd line, if this is moved to the SCCS file the pre-compiler cries -->
 <span

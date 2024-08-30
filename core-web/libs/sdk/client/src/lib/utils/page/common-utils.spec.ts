@@ -32,12 +32,6 @@ describe('Common Utils', () => {
             }
         });
 
-        expect(pageRequestParams).toEqual({
-            path: 'test',
-            mode: '',
-            language_id: '',
-            variantName: '',
-            personaId: ''
-        });
+        expect(pageRequestParams).toEqual({ path: 'test' });
     });
 });

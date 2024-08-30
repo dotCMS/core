@@ -33,7 +33,7 @@ import {
 } from '../../models/dot-category-field.models';
 import { DotCategoryFieldListSkeletonComponent } from '../dot-category-field-list-skeleton/dot-category-field-list-skeleton.component';
 
-export const MINIMUM_CATEGORY_COLUMNS = 4;
+export const MINIMUM_CATEGORY_COLUMNS = 3;
 
 const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
 

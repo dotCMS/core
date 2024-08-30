@@ -7,6 +7,7 @@ import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
 import { ShellProps, UVEState } from './models';
 
+import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_STATUS } from '../shared/enums';
 import { getErrorPayload, getRequestHostName, sanitizeURL } from '../utils';
 
@@ -26,91 +27,101 @@ const initialState: UVEState = {
 
 export const UVEStore = signalStore(
     withState<UVEState>(initialState),
-    withComputed(({ pageAPIResponse, isTraditionalPage, params, languages, errorCode: error }) => {
-        return {
-            $shellProps: computed<ShellProps>(() => {
-                const response = pageAPIResponse();
+    withComputed(
+        ({ pageAPIResponse, isTraditionalPage, params, languages, errorCode: error, status }) => {
+            return {
+                $shellProps: computed<ShellProps>(() => {
+                    const response = pageAPIResponse();
 
-                const currentUrl = '/' + sanitizeURL(response?.page.pageURI);
+                    const currentUrl = '/' + sanitizeURL(response?.page.pageURI);
 
-                const requestHostName = getRequestHostName(isTraditionalPage(), params());
+                    const requestHostName = getRequestHostName(isTraditionalPage(), params());
 
-                const page = response?.page;
-                const templateDrawed = response?.template.drawed;
+                    const page = response?.page;
+                    const templateDrawed = response?.template.drawed;
 
-                const isLayoutDisabled = !page?.canEdit || !templateDrawed;
+                    const isLayoutDisabled = !page?.canEdit || !templateDrawed;
 
-                const languageId = response?.viewAs.language?.id;
-                const translatedLanguages = languages();
-                const errorCode = error();
+                    const languageId = response?.viewAs.language?.id;
+                    const translatedLanguages = languages();
+                    const errorCode = error();
 
-                const errorPayload = getErrorPayload(errorCode);
+                    const errorPayload = getErrorPayload(errorCode);
+                    const isLoading = status() === UVE_STATUS.LOADING;
 
-                return {
-                    canRead: page?.canRead,
-                    error: errorPayload,
-                    translateProps: {
-                        page,
-                        languageId,
-                        languages: translatedLanguages
-                    },
-                    seoParams: {
-                        siteId: response?.site?.identifier,
-                        languageId: response?.viewAs.language.id,
-                        currentUrl,
-                        requestHostName
-                    },
-                    items: [
-                        {
-                            icon: 'pi-file',
-                            label: 'editema.editor.navbar.content',
-                            href: 'content',
-                            id: 'content'
+                    return {
+                        canRead: page?.canRead,
+                        error: errorPayload,
+                        translateProps: {
+                            page,
+                            languageId,
+                            languages: translatedLanguages
                         },
-                        {
-                            icon: 'pi-table',
-                            label: 'editema.editor.navbar.layout',
-                            href: 'layout',
-                            id: 'layout',
-                            isDisabled: isLayoutDisabled,
-                            tooltip: templateDrawed
-                                ? null
-                                : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
+                        seoParams: {
+                            siteId: response?.site?.identifier,
+                            languageId: response?.viewAs.language.id,
+                            currentUrl,
+                            requestHostName
                         },
-                        {
-                            icon: 'pi-sliders-h',
-                            label: 'editema.editor.navbar.rules',
-                            id: 'rules',
-                            href: `rules/${page?.identifier}`,
-                            isDisabled: !page?.canEdit
-                        },
-                        {
-                            iconURL: 'experiments',
-                            label: 'editema.editor.navbar.experiments',
-                            href: `experiments/${page?.identifier}`,
-                            id: 'experiments',
-                            isDisabled: !page?.canEdit
-                        },
-                        {
-                            icon: 'pi-th-large',
-                            label: 'editema.editor.navbar.page-tools',
-                            id: 'page-tools'
-                        },
-                        {
-                            icon: 'pi-ellipsis-v',
-                            label: 'editema.editor.navbar.properties',
-                            id: 'properties'
-                        }
-                    ]
-                };
-            })
-        };
-    }),
+                        items: [
+                            {
+                                icon: 'pi-file',
+                                label: 'editema.editor.navbar.content',
+                                href: 'content',
+                                id: 'content'
+                            },
+                            {
+                                icon: 'pi-table',
+                                label: 'editema.editor.navbar.layout',
+                                href: 'layout',
+                                id: 'layout',
+                                isDisabled: isLayoutDisabled,
+                                tooltip: templateDrawed
+                                    ? null
+                                    : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
+                            },
+                            {
+                                icon: 'pi-sliders-h',
+                                label: 'editema.editor.navbar.rules',
+                                id: 'rules',
+                                href: `rules/${page?.identifier}`,
+                                isDisabled: !page?.canEdit
+                            },
+                            {
+                                iconURL: 'experiments',
+                                label: 'editema.editor.navbar.experiments',
+                                href: `experiments/${page?.identifier}`,
+                                id: 'experiments',
+                                isDisabled: !page?.canEdit
+                            },
+                            {
+                                icon: 'pi-th-large',
+                                label: 'editema.editor.navbar.page-tools',
+                                id: 'page-tools'
+                            },
+                            {
+                                icon: 'pi-ellipsis-v',
+                                label: 'editema.editor.navbar.properties',
+                                id: 'properties',
+                                isDisabled: isLoading
+                            }
+                        ]
+                    };
+                })
+            };
+        }
+    ),
     withMethods((store) => {
         return {
             setUveStatus(status: UVE_STATUS) {
                 patchState(store, {
                     status
+                });
+            },
+            updatePageResponse(pageAPIResponse: DotPageApiResponse) {
+                patchState(store, {
+                    status: UVE_STATUS.LOADED,
+                    pageAPIResponse
                 });
             }
         };
