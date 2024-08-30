@@ -88,23 +88,11 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
         return delay + jitter;
     }
 
-    /**
-     * Returns the maximum number of retry attempts allowed by this strategy.
-     *
-     * @return The maximum number of retries.
-     */
     @Override
     public int maxRetries() {
         return maxRetries;
     }
 
-    /**
-     * Determines whether a given exception is considered retryable according to the retry
-     * strategy.
-     *
-     * @param exception The exception to check if it is retryable.
-     * @return {@code true} if the exception is retryable, {@code false} otherwise.
-     */
     @Override
     public boolean isRetryableException(final Throwable exception) {
         if (exception == null) {
@@ -116,20 +104,12 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
         return retryableExceptions.stream().anyMatch(clazz -> clazz.isInstance(exception));
     }
 
-    /**
-     * Adds an exception class to the set of retryable exceptions.
-     *
-     * @param exceptionClass The exception class to be considered retryable.
-     */
+    @Override
     public void addRetryableException(final Class<? extends Throwable> exceptionClass) {
         retryableExceptions.add(exceptionClass);
     }
 
-    /**
-     * Returns an unmodifiable set of the currently registered retryable exceptions.
-     *
-     * @return An unmodifiable set of retryable exception classes.
-     */
+    @Override
     public Set<Class<? extends Throwable>> getRetryableExceptions() {
         return Collections.unmodifiableSet(retryableExceptions);
     }

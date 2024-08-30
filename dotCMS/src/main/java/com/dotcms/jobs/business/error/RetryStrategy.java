@@ -1,6 +1,7 @@
 package com.dotcms.jobs.business.error;
 
 import com.dotcms.jobs.business.job.Job;
+import java.util.Set;
 
 /**
  * Defines the contract for retry strategies in the job processing system. Implementations of this
@@ -40,4 +41,19 @@ public interface RetryStrategy {
      * @return true if the exception is retryable, false otherwise.
      */
     boolean isRetryableException(Throwable exception);
+
+    /**
+     * Adds an exception class to the set of retryable exceptions.
+     *
+     * @param exceptionClass The exception class to be considered retryable.
+     */
+    void addRetryableException(final Class<? extends Throwable> exceptionClass);
+
+    /**
+     * Returns an unmodifiable set of the currently registered retryable exceptions.
+     *
+     * @return An unmodifiable set of retryable exception classes.
+     */
+    Set<Class<? extends Throwable>> getRetryableExceptions();
+
 }

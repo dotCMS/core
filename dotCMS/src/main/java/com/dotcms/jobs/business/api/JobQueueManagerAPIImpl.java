@@ -33,36 +33,38 @@ import java.util.function.Consumer;
  * <pre>{@code
  *     public static void main(String[] args) {
  *
- *         // Create the job queue
- *         JobQueue jobQueue = new PostgresJobQueue();
+ *        // Create the job queue
+ *        JobQueue jobQueue = new PostgresJobQueue();
  *
- *         // Create and start the job queue manager
- *         JobQueueManagerAPIImpl jobQueueManagerAPI = new JobQueueManagerAPIImpl(jobQueue, 5); // 5 threads
+ *        // Create and start the job queue manager
+ *        JobQueueManagerAPIImpl jobQueueManagerAPI = new JobQueueManagerAPIImpl(jobQueue, 5); // 5 threads
  *
- *         //(Optional) Set up a retry strategy for content import jobs
- *         RetryStrategy contentImportRetryStrategy = new ExponentialBackoffRetryStrategy(5000, 300000, 2.0, 3);
- *         contentImportRetryStrategy.addRetryableException(IOException.class);
- *         jobQueueManagerAPI.setRetryStrategy("contentImport", contentImportRetryStrategy);
+ *        // (Optional) Set up a retry strategy for content import jobs, if not set, the default retry strategy will be used
+ *        RetryStrategy contentImportRetryStrategy = new ExponentialBackoffRetryStrategy(
+ *                5000, 300000, 2.0, 3
+ *        );
+ *        contentImportRetryStrategy.addRetryableException(IOException.class);
+ *        jobQueueManagerAPI.setRetryStrategy("contentImport", contentImportRetryStrategy);
  *
- *         // Register job processors
- *         jobQueueManagerAPI.registerProcessor("contentImport", new ContentImportJobProcessor());
+ *        // Register job processors
+ *        jobQueueManagerAPI.registerProcessor("contentImport", new ContentImportJobProcessor());
  *
- *         // Start the job queue manager
- *         jobQueueManagerAPI.start();
+ *        // Start the job queue manager
+ *        jobQueueManagerAPI.start();
  *
- *         // Create a content import job (dummy example)
- *         Map<String, Object> jobParameters = new HashMap<>();
- *         jobParameters.put("filePath", "/path/to/import/file.csv");
- *         jobParameters.put("contentType", "Article");
- *         String jobId = jobQueueManagerAPI.createJob("contentImport", jobParameters);
+ *        // Create a content import job (dummy example)
+ *        Map<String, Object> jobParameters = new HashMap<>();
+ *        jobParameters.put("filePath", "/path/to/import/file.csv");
+ *        jobParameters.put("contentType", "Article");
+ *        String jobId = jobQueueManagerAPI.createJob("contentImport", jobParameters);
  *
- *         // Optionally, watch the job progress
- *         jobQueueManagerAPI.watchJob(jobId, job -> {
- *             System.out.println("Job " + job.id() + " progress: " + job.progress() * 100 + "%");
- *         });
+ *        // Optionally, watch the job progress
+ *        jobQueueManagerAPI.watchJob(jobId, job -> {
+ *            System.out.println("Job " + job.id() + " progress: " + job.progress() * 100 + "%");
+ *        });
  *
- *         // When shutting down the application
- *         jobQueueManagerAPI.close();
+ *        // When shutting down the application
+ *        jobQueueManagerAPI.close();
  *     }
  * }</pre>
  */
