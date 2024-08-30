@@ -168,17 +168,18 @@
 
 
     const addConfigKey = () => {
-
-        const key = document.getElementById("overrideKey").value;
-        const value = document.getElementById("overrideValue").value;
+        var key = document.getElementById("overrideKey").value;
+        var value = document.getElementById("overrideValue").value;
         if (key === "" || value === "" || key.trim().length == 0 || value.trim().length == 0) {
             alert("Key and Value are required");
             return;
         }
+        key=key.trim();
+        value=value.trim();
         document.body.style.cursor = 'wait'
         const data = {
-            key: key.trim(),
-            value: value.trim()
+            key: key,
+            value: value
         };
         fetch('/api/v1/system-table/', {
             method: 'POST',
@@ -239,7 +240,7 @@
     const createSystemTableRow = (key, value) => {
 
         const tr = createPropertyRow(key, value);
-        
+
         if(envLoadedKeys.includes(key)) {
             var cellVal = tr.cells.item(0);
             cellVal.style.textDecoration = "line-through";
