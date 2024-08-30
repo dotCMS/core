@@ -47,14 +47,19 @@ import { RowComponent } from '../row/row.component';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotcmsLayoutComponent implements OnInit {
-    /**
-     * The `pageAsset` property represents the DotCMS page asset.
-     *
-     * @type {(DotCMSPageAsset)}
-     * @memberof DotcmsLayoutComponent
-     * @required
-     */
-    @Input({ required: true }) pageAsset!: DotCMSPageAsset;
+    private _pageAsset!: DotCMSPageAsset;
+
+    @Input({ required: true })
+    set pageAsset(value: DotCMSPageAsset) {
+        this._pageAsset = value;
+        if (!value.layout) {
+            console.warn('Warning: pageAsset does not have a `layout` property. Might be using an advaced template or your dotCMS instance not have a enterprise license.');
+        }
+    }
+
+    get pageAsset(): DotCMSPageAsset {
+        return this._pageAsset;
+    }
 
     /**
      * The `components` property is a record of dynamic components for each Contentlet on the page.
