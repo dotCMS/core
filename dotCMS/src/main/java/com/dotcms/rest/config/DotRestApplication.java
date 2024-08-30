@@ -2,8 +2,6 @@ package com.dotcms.rest.config;
 
 import com.dotcms.cdi.CDIUtils;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
-import io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource;
-import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.servers.Server;
@@ -51,14 +49,13 @@ public class DotRestApplication extends ResourceConfig {
 
 		register(MultiPartFeature.class).
 		register(JacksonJaxbJsonProvider.class).
-		register(OpenApiResource.class).
-		register(AcceptHeaderOpenApiResource.class).
 		registerClasses(customClasses.keySet()).
 		packages(
 		  "com.dotcms.rest",
 		  "com.dotcms.contenttype.model.field",
 		  "com.dotcms.rendering.js",
-		  "com.dotcms.ai.rest"
+		  "com.dotcms.ai.rest",
+		  "io.swagger.v3.jaxrs2"
 		);
 	}
 
