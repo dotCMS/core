@@ -60,7 +60,7 @@ export class PageService {
   ): Observable<DotCMSPageAsset | { error: PageError }> {
     const queryParams = route.snapshot.queryParamMap;
     const url = route.snapshot.url.map((segment) => segment.path).join('/');
-    const path = queryParams.get('path') || url || '/';
+    const path = url || '/';
 
     const pageParams = getPageRequestParams({
       path,
