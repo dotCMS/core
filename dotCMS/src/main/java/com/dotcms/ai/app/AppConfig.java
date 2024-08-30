@@ -1,11 +1,11 @@
 package com.dotcms.ai.app;
 
-import com.dotcms.ai.exception.DotAIModelNotFoundException;
+import com.dotcms.ai.domain.Model;
 import com.dotcms.security.apps.Secret;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 
@@ -294,19 +294,29 @@ public class AppConfig implements Serializable {
      * @param type the type of the model to find
      */
     public AIModel resolveModel(final AIModelType type) {
-        return AIModels.get().findModel(host, type).orElse(AIModel.NOOP_MODEL);
+        return AIModels.get().resolveModel(host, type);
     }
 
     /**
      * Resolves a model-specific secret value from the provided secrets map using the specified key and model type.
      *
      * @param modelName the name of the model to find
+    *  @param type the type of the model to find
      */
-    public AIModel resolveModelOrThrow(final String modelName) {
-        return AIModels.get()
-                .findModel(host, modelName)
-                .orElseThrow(() ->
-                        new DotAIModelNotFoundException(String.format("Unable to find model: [%s].", modelName)));
+    public AIModel resolveAIModelOrThrow(final String modelName, final AIModelType type) {
+        return AIModels.get().resolveAIModelOrThrow(this, modelName, type);
+    }
+
+    /**
+     * Resolves a model-specific secret value from the provided secrets map using the specified key and model type.
+     * If the model is not found or is not operational, it throws an appropriate exception.
+     *
+     * @param modelName the name of the model to find
+     * @param type the type of the model to find
+     * @return the resolved Model
+     */
+    public Tuple2<AIModel, Model> resolveModelOrThrow(final String modelName, final AIModelType type) {
+        return AIModels.get().resolveModelOrThrow(this, modelName, type);
     }
 
     /**

@@ -145,7 +145,9 @@ public class OpenAIContentPromptRunner implements Runnable {
 
         final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
         final String parsedPrompt = VelocityUtil.eval(prompt, ctx);
-        final JSONObject openAIResponse = APILocator.getDotAIAPI().getCompletionsAPI().raw(buildRequest(parsedPrompt, model, temperature));
+        final JSONObject openAIResponse = APILocator.getDotAIAPI()
+                .getCompletionsAPI()
+                .raw(buildRequest(parsedPrompt, model, temperature), user.getUserId());
 
         try {
             return openAIResponse

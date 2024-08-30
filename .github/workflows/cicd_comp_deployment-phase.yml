@@ -32,9 +32,12 @@ on:
       reuse-previous-build:
         default: false
         type: boolean
-      publish-npm-package:
+      publish-npm-cli:
         default: false
         type: boolean
+      publish-npm-sdk-libs:
+        default: false
+        type: boolean        
     secrets:
       DOCKER_USERNAME:
         required: false
@@ -139,51 +142,55 @@ jobs:
       # Publish CLI to NPM (if required)
       - name: CLI Publish
         id: cli_publish
-        if: inputs.publish-npm-package
+        if: inputs.publish-npm-cli
         uses: ./.github/actions/core-cicd/deployment/deploy-cli-npm
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           npm-token: ${{ secrets.NPM_ORG_TOKEN }}
           cli-artifact-run-id: ${{ github.run_id }}
 
+      - name: SDKs Publish
+        id: sdks_publish
+        if: inputs.publish-npm-sdk-libs
+        uses: ./.github/actions/core-cicd/deployment/deploy-sdk-npm
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          npm-token: ${{ secrets.NPM_ORG_TOKEN }}
+          sdk-artifact-run-id: ${{ github.run_id }}
+
       # Send Slack notification for Docker image deployment (if repository is 'dotcms/core')
       - name: Slack Notification (Docker image announcement)
         if: github.repository == 'dotcms/core'
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
           channel-id: "log-docker"
           payload: |
-            {
-              "blocks": [              
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "> :large_purple_circle: *Attention dotters:* Docker image built!\n \n>This automated script is happy to announce that a new *docker* image has been built for *${{ inputs.environment }}* with *tags:* [`${{ steps.docker_build.outputs.tags }}`] :docker:"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+            > :large_purple_circle: *Attention dotters:* Docker image built!
+            >
+            > This automated script is happy to announce that a new *docker* image has been built for *${{ inputs.environment }}* with *tags:* [`${{ steps.docker_build.outputs.tags }}`] :docker:
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
 
       # Send Slack notification for CLI publication (if required)
       - name: Slack Notification (dotCLI announcement)
-        if: inputs.publish-npm-package
-        uses: slackapi/slack-github-action@v1.26.0
+        if: inputs.publish-npm-cli
+        uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
           channel-id: "log-dotcli"
           payload: |
-            {
-              "blocks": [              
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "> :large_purple_circle: *Attention dotters:* dotCLI published!\n \n>This automated script is happy to announce that a new *_dotCLI_* version *tagged as:* [ `${{ steps.cli_publish.outputs.npm-package-version }}, ${{ steps.cli_publish.outputs.npm-package-version-tag }}` ] is now available on the `NPM` registry :package:!\n \n>`npm i -g @dotcms/dotcli@${{ steps.cli_publish.outputs.npm-package-version-tag }}`"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+            > :large_purple_circle: *Attention dotters:* dotCLI published!
+            >
+            > This automated script is happy to announce that a new *_dotCLI_* version *tagged as:* [ `${{ steps.cli_publish.outputs.npm-package-version }}, ${{ steps.cli_publish.outputs.npm-package-version-tag }}` ] is now available on the `NPM` registry :package:!\n \n>`npm i -g @dotcms/dotcli@${{ steps.cli_publish.outputs.npm-package-version-tag }}`
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }} 
+
+      # Send Slack notification for SDK publication (if required)          
+      - name: Slack Notification (SDK announcement)
+        if: success() && steps.sdks_publish.outputs.published == 'true'
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :large_orange_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) published!
+            >
+            > This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.sdks_publish.outputs.npm-package-version }}` ] is now available on the `NPM` registry :package:!
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}         
+            

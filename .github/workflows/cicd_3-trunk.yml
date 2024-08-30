@@ -30,6 +30,10 @@ on:
         description: 'Run all tests'
         type: boolean
         default: false
+      publish-npm-sdk-libs:
+        description: 'Publish NPM SDKs'
+        type: boolean
+        default: false        
 
 jobs:
   # Initialize the trunk check process
@@ -39,6 +43,8 @@ jobs:
     with:
       reuse-previous-build: ${{ inputs.reuse-previous-build || github.event_name != 'workflow_dispatch' }}
       build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts || github.event_name != 'workflow_dispatch' }}
+      validation-level: 'custom'
+      custom-modules: 'sdk_libs'      
 
   # Build job - only runs if no artifacts were found during initialization
   build:
@@ -95,6 +101,7 @@ jobs:
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      publish-npm-sdk-libs: ${{ needs.initialize.outputs.sdk_libs != 'false' && github.event_name != 'workflow_dispatch' }}
       environment: trunk
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}

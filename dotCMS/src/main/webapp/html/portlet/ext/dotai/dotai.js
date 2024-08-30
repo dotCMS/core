@@ -136,11 +136,12 @@ const writeModelToDropdown = async () => {
         }
 
         const newOption = document.createElement("option");
+        console.log(JSON.stringify(dotAiState.config, null, 2));
         newOption.value = dotAiState.config.availableModels[i].name;
         newOption.text = `${dotAiState.config.availableModels[i].name}`
-        if (dotAiState.config.availableModels[i] === dotAiState.config.model) {
+        if (dotAiState.config.availableModels[i].current) {
             newOption.selected = true;
-            newOption.text = `${dotAiState.config.availableModels[i]} (default)`
+            newOption.text = `${dotAiState.config.availableModels[i].name} (default)`
         }
         modelName.appendChild(newOption);
     }
