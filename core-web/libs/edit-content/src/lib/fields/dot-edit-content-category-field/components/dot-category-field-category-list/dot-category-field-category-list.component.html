@@ -59,6 +59,6 @@
             </div>
         }
     </div>
-} @else if (!$isInitialState) {
+} @else if (!$isInitialState()) {
     <dot-empty-container [configuration]="$emptyState()" [hideContactUsLink]="true" />
 }
