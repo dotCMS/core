@@ -551,8 +551,12 @@ public class HostFactoryImpl implements HostFactory {
             dc.setSQL("delete from template_containers where template_id = ?");
             dc.addParam(template.getIdentifier());
             dc.loadResult();
-            templateAPI.unpublishTemplate(template, user, respectFrontendRoles);
-            templateAPI.archive(template, user, respectFrontendRoles);
+
+            if (!template.isDeleted()) {
+                templateAPI.unpublishTemplate(template, user, respectFrontendRoles);
+                templateAPI.archive(template, user, respectFrontendRoles);
+            }
+
             templateAPI.deleteTemplate(template, user, respectFrontendRoles);
         }
 
