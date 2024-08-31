@@ -5,7 +5,7 @@ DB_BACKUP_FILE=/data/dotcms_db.sql.gz
 STARTER_ZIP=/data/starter.zip
 DEV_LICENSE_SRC=/srv/dev_licensepack.zip
 DEV_LICENSE_DEST=/data/shared/assets/licensepack.zip
-export JAVA_HOME=/usr/share/opensearch/jdk
+export JAVA_HOME=/java
 export ES_JAVA_OPTS=${ES_JAVA_OPTS:-"-Xmx512m"}
 export DOTCMS_CLONE_TYPE=${DOTCMS_CLONE_TYPE:-"dump"}
 export DOWNLOAD_ALL_ASSETS=${ALL_ASSETS:-"false"}
@@ -60,7 +60,8 @@ setup_opensearch () {
 
     echo "Starting OPENSEARCH"
     # Start up Elasticsearch
-    su -c "/usr/share/opensearch/bin/opensearch 1> /dev/null" dotcms &
+    #su -c "/usr/share/opensearch/bin/opensearch 1> /dev/null" dotcms &
+    su -c "OPENSEARCH_JAVA_HOME=/usr /usr/share/opensearch/bin/opensearch " dotcms &
 }
 
 
