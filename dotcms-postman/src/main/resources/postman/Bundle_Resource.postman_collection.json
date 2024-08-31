@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "ca8ea061-cf7f-411f-884b-f7f1235a6232",
+		"_postman_id": "dc421cae-0191-4998-953e-d7f51d601d2e",
 		"name": "Bundle Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "30436704"
 	},
 	"item": [
 		{
@@ -38,7 +38,6 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"name": "Content-Type",
 										"value": "application/json",
 										"type": "text"
 									}
@@ -84,26 +83,22 @@
 											"});",
 											"",
 											"pm.test(\"Valid response\", function () {",
-											"    pm.expect(pm.response.text()).to.include(\"Removing bundles in a separated process\");",
+											"    pm.expect(pm.response.text()).to.include(\"The following bundles were not deleted because they don't exist: n0ex1st-18c1-4eb0-815e-981619635532\");",
 											"});",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
 										}
 									]
@@ -112,7 +107,6 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"name": "Content-Type",
 										"value": "application/json",
 										"type": "text"
 									}
@@ -368,8 +362,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{serverURL}}"
+										"value": "{{serverURL}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -445,8 +439,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{serverURL}}"
+										"value": "{{serverURL}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -489,12 +483,15 @@
 											"    pm.response.to.have.status(200);",
 											"});",
 											"",
+											"var bundleId = pm.collectionVariables.get(\"bundleId\");",
+											"",
 											"pm.test(\"Valid response\", function () {",
-											"    pm.expect(pm.response.text()).to.include(\"Removing bundles in a separated process\");",
+											"    pm.expect(pm.response.text()).to.include(\"Removing the follow bundles in a separated process, the result of the operation will be notified: \" + bundleId);",
 											"});",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -518,7 +515,6 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"name": "Content-Type",
 										"value": "application/json",
 										"type": "text"
 									}
@@ -606,6 +602,582 @@
 										"bundle",
 										"{{bundleId}}",
 										"assets"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "existing and not existing bundle",
+					"item": [
+						{
+							"name": "Create a Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+											"",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"defaultType\":false,\n    \"icon\":null,\n    \"fixed\":false,\n    \"system\":false,\n    \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\":\"\",\n    \"host\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"folder\":\"SYSTEM_FOLDER\",\n    \"name\":\"bundle removal contentlet type\",\n    \"systemActionMappings\":{\"NEW\":\"\"},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Field to Content Type",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"layout\":[\n        {\"divider\":{\n            \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"contentTypeId\":\"{{contentTypeId}}\",\n            \"dataType\":\"SYSTEM\",\n            \"fieldContentTypeProperties\":[],\n            \"fieldType\":\"Row\",\n            \"fieldTypeLabel\":\"Row\",\n            \"fieldVariables\":[],\n            \"fixed\":false,\n            \"iDate\":1667572217000,\n            \"indexed\":false,\n            \"listed\":false,\n            \"modDate\":1667572217000,\n            \"name\":\"Row Field\",\n            \"readOnly\":false,\n            \"required\":false,\n            \"searchable\":false,\n            \"sortOrder\":-1,\n            \"unique\":false},\n            \"columns\":[\n                {\n                    \"columnDivider\":{\n                        \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n                        \"contentTypeId\":\"{{contentTypeId}}\",\n                        \"dataType\":\"SYSTEM\",\n                        \"fieldContentTypeProperties\":[],\n                        \"fieldType\":\"Column\",\n                        \"fieldTypeLabel\":\"Column\",\n                        \"fieldVariables\":[],\n                        \"fixed\":false,\n                        \"iDate\":1667572217000,\n                        \"indexed\":false,\n                        \"listed\":false,\n                        \"modDate\":1667572217000,\n                        \"name\":\"Column Field\",\n                        \"readOnly\":false,\n                        \"required\":false,\n                        \"searchable\":false,\n                        \"sortOrder\":-1,\n                        \"unique\":false\n                    },\n                    \"fields\":[\n                        {\n                            \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                            \"name\":\"title\",\n                            \"dataType\":\"TEXT\",\n                            \"regexCheck\":\"\",\n                            \"defaultValue\":\"\",\n                            \"hint\":\"\",\n                            \"required\":false,\n                            \"searchable\":false,\n                            \"indexed\":false,\n                            \"listed\":false,\n                            \"unique\":false,\n                            \"id\":null\n                        }\n                    ]\n                }\n            ]\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v3/contenttype/{{contentTypeId}}/fields/move",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v3",
+										"contenttype",
+										"{{contentTypeId}}",
+										"fields",
+										"move"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create contentlet",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.collectionVariables.set(\"content1_id\", jsonData.entity.identifier);",
+											"",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"content_1\",\n        \"languageId\" : 1,\n        \"stInode\": \"{{contentTypeId}}\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Content type to Bundle",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"bundleId\", jsonData[\"bundleId\"]);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "{{serverURL}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle?assetIdentifier={{contentTypeId}}&bundleName=test_bundle_removal_by_id",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"DotAjaxDirector",
+										"com.dotcms.publisher.ajax.RemotePublishAjaxAction",
+										"cmd",
+										"addToBundle"
+									],
+									"query": [
+										{
+											"key": "assetIdentifier",
+											"value": "{{contentTypeId}}"
+										},
+										{
+											"key": "bundleName",
+											"value": "test_bundle_removal_by_id"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Content to Bundle",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "{{serverURL}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle?assetIdentifier={{content1_id}}&bundleName=test_bundle_removal_by_id",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"DotAjaxDirector",
+										"com.dotcms.publisher.ajax.RemotePublishAjaxAction",
+										"cmd",
+										"addToBundle"
+									],
+									"query": [
+										{
+											"key": "assetIdentifier",
+											"value": "{{content1_id}}"
+										},
+										{
+											"key": "bundleName",
+											"value": "test_bundle_removal_by_id"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Bundle",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var bundleId = pm.collectionVariables.get(\"bundleId\");",
+											"",
+											"pm.test(\"Valid response\", function () {",
+											"    pm.expect(pm.response.text()).to.include('Removing the follow bundles in a separated process, the result of the operation will be notified: ' + bundleId + \", The following bundles were not deleted because they don't exist: n0ex1st-18c1-4eb0-815e-981619635532\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\n\t\"identifiers\":[\"{{bundleId}}\", \"n0ex1st-18c1-4eb0-815e-981619635532\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/ids",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"ids"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check removed bundle",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var expectedHttpStatus = 404;",
+											"var maxNumberOfTries = 5;",
+											"var sleepBetweenTries = 500;",
+											"",
+											"if (!pm.collectionVariables.get(\"getBundleTries\")) {",
+											"    pm.collectionVariables.set(\"getBundleTries\", 1);",
+											"}",
+											"",
+											"if ((pm.response.code != expectedHttpStatus) && (pm.collectionVariables.get(\"getBundleTries\") < maxNumberOfTries)) {",
+											"     var tries = parseInt(pm.collectionVariables.get(\"getBundleTries\"), 10);",
+											"     pm.collectionVariables.set(\"getBundleTries\", tries + 1);",
+											"     setTimeout(function() {}, sleepBetweenTries);",
+											"     postman.setNextRequest(\"Check removed bundle\");",
+											" } else {",
+											"     pm.collectionVariables.unset(\"getBundleTries\");",
+											"     pm.test(\"Status code for get bundle is \" + expectedHttpStatus, function () {",
+											"          pm.response.to.have.status(expectedHttpStatus);",
+											"     });",
+											"}",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/{{bundleId}}/assets",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"{{bundleId}}",
+										"assets"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "empty_body",
+					"item": [
+						{
+							"name": "Delete Bundle With empty body",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Valid response\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"List of body to delete is mandatory\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/ids",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"ids"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Bundle With empty identifiers list",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Valid response\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"List of body to delete is mandatory\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\n\t\"identifiers\":[]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/ids",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"ids"
 									]
 								}
 							},
@@ -1302,13 +1874,13 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
-								"value": "application/octet-stream"
+								"value": "application/octet-stream",
+								"type": "text"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
-								"value": "attachment"
+								"value": "attachment",
+								"type": "text"
 							}
 						],
 						"body": {
@@ -1382,13 +1954,13 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
-								"value": "application/octet-stream"
+								"value": "application/octet-stream",
+								"type": "text"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
-								"value": "attachment"
+								"value": "attachment",
+								"type": "text"
 							}
 						],
 						"body": {
@@ -1451,13 +2023,13 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
-								"value": "application/octet-stream"
+								"value": "application/octet-stream",
+								"type": "text"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
-								"value": "attachment"
+								"value": "attachment",
+								"type": "text"
 							}
 						],
 						"url": {
@@ -1524,13 +2096,13 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
-								"value": "application/octet-stream"
+								"value": "application/octet-stream",
+								"type": "text"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
-								"value": "attachment"
+								"value": "attachment",
+								"type": "text"
 							}
 						],
 						"body": {
@@ -1730,13 +2302,13 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"type": "text",
-										"value": "application/octet-stream"
+										"value": "application/octet-stream",
+										"type": "text"
 									},
 									{
 										"key": "Content-Disposition",
-										"type": "text",
-										"value": "attachment"
+										"value": "attachment",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -1898,8 +2470,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{serverURL}}"
+										"value": "{{serverURL}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -1977,8 +2549,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{serverURL}}"
+										"value": "{{serverURL}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -2057,8 +2629,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{serverURL}}"
+										"value": "{{serverURL}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -2137,8 +2709,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{serverURL}}"
+										"value": "{{serverURL}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -2359,6 +2931,67 @@
 					]
 				}
 			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"  const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"// If we are unable to get the JWT we need to generate a new one",
+					"   if (!pm.environment.get('jwt')) {",
+					"       const username = pm.environment.get(\"user\");",
+					"       const password = pm.environment.get(\"password\");",
+					"       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"",
+					"       const requestOptions = {",
+					"           url: apiUrl,",
+					"           method: \"POST\",",
+					"           header: {",
+					"               \"accept\": \"*/*\",",
+					"               \"content-type\": \"application/json\",",
+					"               \"Authorization\": `Basic ${basicAuth}`",
+					"           },",
+					"           body: {",
+					"               mode: \"raw\",",
+					"               raw: JSON.stringify({",
+					"                   \"expirationSeconds\": 7200,",
+					"                   \"userId\": \"dotcms.org.1\",",
+					"                   \"network\": \"0.0.0.0/0\",",
+					"                   \"claims\": {\"label\": \"postman-tests\"}",
+					"               })",
+					"           }",
+					"       };",
+					"",
+					"",
+					"       pm.sendRequest(requestOptions, function (err, response) {",
+					"           if (err) {",
+					"               console.log(err);",
+					"           } else {",
+					"               const jwt = response.json().entity.jwt;",
+					"               pm.environment.set('jwt', jwt);",
+					"               console.log(jwt);",
+					"           }",
+					"       });",
+					"   }"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
 		}
 	],
 	"variable": [
