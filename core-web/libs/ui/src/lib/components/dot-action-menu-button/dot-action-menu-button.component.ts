@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -29,6 +29,8 @@ export class DotActionMenuButtonComponent implements OnInit {
 
     @Input() actions?: DotActionMenuItem[];
 
+    $hasIcon = signal(false);
+
     ngOnInit() {
         this.filteredActions = this.actions
             .filter((action: DotActionMenuItem) =>
@@ -44,5 +46,9 @@ export class DotActionMenuButtonComponent implements OnInit {
                     }
                 };
             });
+
+        if (this.filteredActions.length === 1) {
+            this.$hasIcon.set(this.filteredActions[0].icon ? true : false);
+        }
     }
 }
