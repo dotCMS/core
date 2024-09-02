@@ -299,16 +299,6 @@ public class AppConfig implements Serializable {
 
     /**
      * Resolves a model-specific secret value from the provided secrets map using the specified key and model type.
-     *
-     * @param modelName the name of the model to find
-    *  @param type the type of the model to find
-     */
-    public AIModel resolveAIModelOrThrow(final String modelName, final AIModelType type) {
-        return AIModels.get().resolveAIModelOrThrow(this, modelName, type);
-    }
-
-    /**
-     * Resolves a model-specific secret value from the provided secrets map using the specified key and model type.
      * If the model is not found or is not operational, it throws an appropriate exception.
      *
      * @param modelName the name of the model to find
