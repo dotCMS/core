@@ -29,13 +29,13 @@ Now we need to tell the Next.js app what dotCMS instance is going to use to get 
 2. In the root, find the file .env.local.example and rename to .env.local
 3. Open the .env.local file and update the environment variable:
 
-- `PUBLIC_DOTCMS_AUTH_TOKEN` this is the auth token for dotCMS, you can use the dotCMS UI to create one.
-- `PUBLIC_DOTCMS_HOST` this is the instance of dotCMS where your pages and content lives (license needed) if you don’t have one, you can use [https://demo.dotcms.com](https://demo.dotcms.com) (be careful it restarts every 24h)
-- `PUBLIC_DOTCMS_SITE_ID` this is the identifier of the Site you are going to use for your website you can find it by going to Settings > Sites. Once there follow the next steps:
+   - `PUBLIC_DOTCMS_AUTH_TOKEN` this is the auth token for dotCMS, you can use the dotCMS UI to create one.
+   - `PUBLIC_DOTCMS_HOST` this is the instance of dotCMS where your pages and content lives (license needed) if you don’t have one, you can use [https://demo.dotcms.com](https://demo.dotcms.com) (be careful it restarts every 24h).
+   - `PUBLIC_DOTCMS_SITE_ID` this is the identifier of the Site you are going to use for your website you can find it by going to Settings > Sites. Once there follow the next steps:
 
-1.  Select the desired Site (A modal should be opened)
-2.  Go to the History Tab
-3.  Copy the `Identifier` that appears in the top of the tab
+     1. Select the desired Site (A modal should be opened)
+     2. Go to the History Tab
+     3. Copy the `Identifier` that appears in the top of the tab
 
 ## Run the app
 
