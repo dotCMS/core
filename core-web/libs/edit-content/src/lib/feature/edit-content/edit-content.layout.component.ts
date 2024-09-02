@@ -135,7 +135,7 @@ export class EditContentLayoutComponent implements OnInit {
      * @return {*}
      * @memberof EditContentLayoutComponent
      */
-    private getExistingContent(inode) {
+    private getExistingContent(inode: string) {
         return this.dotEditContentService.getContentById(inode).pipe(
             switchMap((contentlet) => {
                 const { contentType } = contentlet;

@@ -21,13 +21,7 @@ import {
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
-import {
-    DefaultGoalConfiguration,
-    ExperimentSteps,
-    GOAL_OPERATORS,
-    GOAL_PARAMETERS,
-    GOAL_TYPES
-} from '@dotcms/dotcms-models';
+import { DefaultGoalConfiguration, ExperimentSteps, GOAL_TYPES } from '@dotcms/dotcms-models';
 import { DotDropdownDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
@@ -213,9 +207,9 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
 
         const invalidFormValues = {
             primary: {
-                name: 'default',
+                name: '  ',
                 type: GOAL_TYPES.REACH_PAGE,
-                conditions: [{ parameter: '', operator: null, value: '' }]
+                conditions: []
             }
         };
 
@@ -223,20 +217,14 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             primary: {
                 name: 'default',
                 type: GOAL_TYPES.REACH_PAGE,
-                conditions: [
-                    {
-                        parameter: GOAL_PARAMETERS.URL,
-                        operator: GOAL_OPERATORS.EQUALS,
-                        value: '1111'
-                    }
-                ]
+                conditions: []
             }
         };
 
         // Invalid path
         spectator.component.form.setValue(invalidFormValues);
         spectator.component.form.updateValueAndValidity();
-        spectator.detectComponentChanges();
+        spectator.detectChanges();
 
         expect(spectator.component.form.valid).toEqual(false);
         expect(applyBtn.disabled).toEqual(true);
@@ -244,13 +232,13 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         // Invalid path
         spectator.component.form.setValue(validFormValues);
         spectator.component.form.updateValueAndValidity();
-        spectator.detectComponentChanges();
+        spectator.detectChanges();
 
         expect(spectator.component.form.valid).toEqual(true);
         expect(applyBtn.disabled).toEqual(false);
     });
 
-    it('should be a valid form when select URL_PARAMETER', () => {
+    it('should be a valid form when select URL_PARAMETER', async () => {
         spectator.detectChanges();
 
         const urlParameterOption = spectator.query(
@@ -265,18 +253,9 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
 
         const invalidFormValues = {
             primary: {
-                name: 'default',
+                name: ' ',
                 type: GOAL_TYPES.URL_PARAMETER,
-                conditions: [
-                    {
-                        parameter: '',
-                        operator: null,
-                        value: {
-                            name: '',
-                            value: ''
-                        }
-                    }
-                ]
+                conditions: []
             }
         };
 
@@ -284,40 +263,33 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             primary: {
                 name: 'default',
                 type: GOAL_TYPES.URL_PARAMETER,
-                conditions: [
-                    {
-                        parameter: GOAL_PARAMETERS.URL,
-                        operator: GOAL_OPERATORS.EXISTS,
-                        value: {
-                            name: 'queryParam',
-                            value: ''
-                        }
-                    }
-                ]
+                conditions: []
             }
         };
 
-        expect(
-            spectator.query(DotExperimentsGoalConfigurationUrlParameterComponentComponent)
-        ).toExist();
+        const element = spectator.query(
+            DotExperimentsGoalConfigurationUrlParameterComponentComponent
+        );
 
-        spectator.fixture.whenStable().then(() => {
-            // Invalid path
-            spectator.component.form.setValue(invalidFormValues);
-            spectator.component.form.updateValueAndValidity();
-            spectator.detectComponentChanges();
+        expect(element).toExist();
 
-            expect(spectator.component.form.valid).toEqual(false);
-            expect(applyBtn.disabled).toEqual(true);
+        await spectator.fixture.whenStable();
 
-            // Invalid path
-            spectator.component.form.setValue(validFormValuesExistOperator);
-            spectator.component.form.updateValueAndValidity();
-            spectator.detectComponentChanges();
+        // Invalid path
+        spectator.component.form.setValue(invalidFormValues);
+        spectator.component.form.updateValueAndValidity();
+        spectator.detectComponentChanges();
 
-            expect(spectator.component.form.valid).toEqual(true);
-            expect(applyBtn.disabled).toEqual(false);
-        });
+        expect(spectator.component.form.valid).toEqual(false);
+        expect(applyBtn.disabled).toEqual(true);
+
+        // Invalid path
+        spectator.component.form.setValue(validFormValuesExistOperator);
+        spectator.component.form.updateValueAndValidity();
+        spectator.detectComponentChanges();
+
+        expect(spectator.component.form.valid).toEqual(true);
+        expect(applyBtn.disabled).toEqual(false);
     });
 
     it('should call setSelectedGoal from the store when a item is selected and the button of apply is clicked', () => {
@@ -404,6 +376,8 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     });
 
     it('should render coming soon placeholder', () => {
-        expect(spectator.query(DotExperimentsGoalsComingSoonComponent)).not.toBeNull();
+        const comingSoon = spectator.query(DotExperimentsGoalsComingSoonComponent);
+
+        expect(comingSoon).not.toBeNull();
     });
 });

@@ -4,7 +4,7 @@ import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectat
 import { MockComponent, MockPipe } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
@@ -49,32 +49,14 @@ describe('EditContentLayoutComponent', () => {
             MockComponent(DotEditContentAsideComponent)
         ],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            DotEditContentStore,
             mockProvider(MessageService),
             mockProvider(DotContentTypeService),
             mockProvider(DotMessageService),
             mockProvider(DotFormatDateService),
-            mockProvider(DotEditContentStore),
-            mockProvider(DotWorkflowActionsFireService),
-            provideHttpClient(withInterceptorsFromDi()),
-            provideHttpClientTesting(),
-            {
-                provide: DotEditContentService,
-                useValue: {
-                    getContentById: jest.fn().mockReturnValue(of(BINARY_FIELD_CONTENTLET)),
-                    getContentType: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK))
-                }
-            },
-            {
-                provide: DotWorkflowsActionsService,
-                useValue: {
-                    getByInode: jest.fn().mockReturnValue(of(mockWorkflowsActions)),
-                    getDefaultActions: jest.fn().mockReturnValue(of(mockWorkflowsActions))
-                }
-            },
-            {
-                provide: ActivatedRoute,
-                useValue: { snapshot: { params: { contentType: undefined, id: '1' } } }
-            }
+            mockProvider(DotWorkflowActionsFireService)
         ]
     });
 
@@ -88,7 +70,27 @@ describe('EditContentLayoutComponent', () => {
 
         beforeEach(async () => {
             spectator = createComponent({
-                detectChanges: false
+                detectChanges: false,
+                providers: [
+                    {
+                        provide: DotEditContentService,
+                        useValue: {
+                            getContentById: jest.fn().mockReturnValue(of(BINARY_FIELD_CONTENTLET)),
+                            getContentType: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK))
+                        }
+                    },
+                    {
+                        provide: DotWorkflowsActionsService,
+                        useValue: {
+                            getByInode: jest.fn().mockReturnValue(of(mockWorkflowsActions)),
+                            getDefaultActions: jest.fn().mockReturnValue(of(mockWorkflowsActions))
+                        }
+                    },
+                    {
+                        provide: ActivatedRoute,
+                        useValue: { snapshot: { params: { contentType: undefined, id: '1' } } }
+                    }
+                ]
             });
 
             dotEditContentService = spectator.inject(DotEditContentService, true);

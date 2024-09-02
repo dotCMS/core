@@ -70,11 +70,29 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 })
 export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, OnDestroy {
     sidebarSizes = SIDEBAR_SIZES;
-    form: FormGroup;
+    ç;
+    protected readonly maxNameLength = MAX_INPUT_DESCRIPTIVE_LENGTH;
+    form: FormGroup = new FormGroup({
+        primary: new FormGroup({
+            name: new FormControl('', {
+                nonNullable: true,
+                validators: [
+                    Validators.required,
+                    Validators.maxLength(this.maxNameLength),
+                    DotValidators.noWhitespace
+                ]
+            }),
+            type: new FormControl('', {
+                nonNullable: true,
+                validators: [Validators.required]
+            }),
+            conditions: new FormArray([])
+        })
+    });
     goals = GOALS_METADATA_MAP;
     goalsTypes = GOAL_TYPES;
     statusList = ComponentStatus;
-    protected readonly maxNameLength = MAX_INPUT_DESCRIPTIVE_LENGTH;
+
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore = inject(
         DotExperimentsConfigurationStore
@@ -97,10 +115,6 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
             'experiments.goal.conditions.detect.queryparam.in.url'
         )
     };
-
-    constructor() {
-        this.initForm();
-    }
 
     ngOnInit(): void {
         this.listenType();
@@ -137,26 +151,6 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
             goals: {
                 ...this.form.value
             }
-        });
-    }
-
-    private initForm(): void {
-        this.form = new FormGroup({
-            primary: new FormGroup({
-                name: new FormControl('', {
-                    nonNullable: true,
-                    validators: [
-                        Validators.required,
-                        Validators.maxLength(this.maxNameLength),
-                        DotValidators.noWhitespace
-                    ]
-                }),
-                type: new FormControl('', {
-                    nonNullable: true,
-                    validators: [Validators.required]
-                }),
-                conditions: new FormArray([])
-            })
         });
     }
 
