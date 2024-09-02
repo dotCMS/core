@@ -6,7 +6,7 @@ DotCMS provides a Astro example that shows how to build dotCMS pages heedlessly 
 
 1. A dotCMS instance or you can use https://demo.dotcms.com
 2. A valid AUTH token for the target instance (see: https://auth.dotcms.com/docs/latest/rest-api-authentication#creating-an-api-token-in-the-ui)
-3. A valid Site Identifier where your page is located (see: https://www.dotcms.com/docs/latest/multi-site-management#EditingSites)
+3. A valid Site Identifier where your page is located (see: https://www.dotcms.com/docs/latest/multi-site-management#multi-site-management)
 4. Node js 18+ and npm installed
 5. Terminal
 6. And a code editor.
