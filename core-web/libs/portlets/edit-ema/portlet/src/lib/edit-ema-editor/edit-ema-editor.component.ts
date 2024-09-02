@@ -8,7 +8,6 @@ import {
     ChangeDetectorRef,
     Component,
     ElementRef,
-    HostListener,
     OnDestroy,
     OnInit,
     ViewChild,
@@ -76,12 +75,8 @@ import {
     ClientData,
     SetUrlPayload,
     VTLFile,
-    ContentletDragPayload,
     DeletePayload,
     InsertPayloadFromDelete,
-    DragDataset,
-    DragDatasetItem,
-    ContentTypeDragPayload,
     ReorderPayload
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
@@ -90,6 +85,7 @@ import {
     SDK_EDITOR_SCRIPT_SOURCE,
     compareUrlPaths,
     deleteContentletFromContainer,
+    getDragItemData,
     insertContentletInContainer
 } from '../utils';
 
@@ -273,39 +269,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'dragstart')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
-                const dataset = (event.target as HTMLDivElement).dataset as unknown as DragDataset;
-
-                const parsedItem = JSON.parse(dataset.item) as DragDatasetItem;
-
-                const { contentType, contentlet, container, move } = parsedItem;
-
-                if (dataset.type === 'content-type') {
-                    this.uveStore.setEditorDragItem({
-                        baseType: contentType.baseType,
-                        contentType: contentType.variable,
-                        draggedPayload: {
-                            item: {
-                                variable: contentType.variable,
-                                name: contentType.name
-                            },
-                            type: dataset.type,
-                            move
-                        } as ContentTypeDragPayload
-                    });
-                } else {
-                    this.uveStore.setEditorDragItem({
-                        baseType: contentlet.baseType,
-                        contentType: contentlet.contentType,
-                        draggedPayload: {
-                            item: {
-                                contentlet,
-                                container
-                            },
-                            type: dataset.type,
-                            move
-                        } as ContentletDragPayload
-                    });
-                }
+                const { dataset } = event.target as HTMLDivElement;
+                const data = getDragItemData(dataset);
+                // https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/effectAllowed
+                // event.dataTransfer?.setData('application/json', JSON.stringify(data));
+                // event.dataTransfer.effectAllowed = 'move';
+                this.uveStore.setEditorDragItem(data);
             });
 
         fromEvent(this.window, 'dragenter')
@@ -318,35 +287,34 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 event.preventDefault();
 
                 const dragItem = this.uveStore.dragItem();
-                const editorState = this.uveStore.state();
 
-                // Set the temp item to be dragged, which is the outsider file if there is not a drag item
-                if (!dragItem) {
-                    this.uveStore.setEditorDragItem({
-                        baseType: 'dotAsset',
-                        contentType: 'dotAsset',
-                        draggedPayload: {
-                            type: 'temp'
-                        }
-                    });
-                } else if (editorState === EDITOR_STATE.OUT_OF_BOUNDS) {
-                    this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
+                this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
+                this.contentWindow?.postMessage(NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS, this.host);
+
+                if (dragItem) {
+                    return;
                 }
 
-                this.contentWindow?.postMessage(NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS, this.host);
+                this.uveStore.setEditorDragItem({
+                    baseType: 'dotAsset',
+                    contentType: 'dotAsset',
+                    draggedPayload: {
+                        type: 'temp'
+                    }
+                });
             });
 
         fromEvent(this.window, 'dragend')
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((event: DragEvent) => {
-                if (event.dataTransfer.dropEffect === 'none') {
-                    this.uveStore.resetEditorProperties();
-                }
-            });
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((event: DragEvent) => event.dataTransfer.dropEffect === 'none')
+            )
+            .subscribe(() => this.uveStore.resetEditorProperties());
 
         fromEvent(this.window, 'dragover')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
+                // console.log("LLAMADO - dragover")
                 event.preventDefault(); // Prevent file opening
                 const iframeRect = this.iframe.nativeElement.getBoundingClientRect();
 
@@ -389,6 +357,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 );
             });
 
+        fromEvent(this.window, 'dragleave')
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((event: DragEvent) => !event.relatedTarget) // Just reset when is out of the window
+            )
+            .subscribe(() => {
+                // When the drag leaves the iframe, we go back to the idle state
+                this.uveStore.resetEditorProperties(this.uveStore.dragItem());
+
+                setTimeout(() => {
+                    // console.log(this.uveStore.state())
+                }, 1000);
+            });
+
         fromEvent(this.window, 'drop')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
@@ -427,34 +409,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.placeItem(positionPayload, dragItem);
                 }
             });
-
-        fromEvent(this.window, 'dragleave')
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((event: DragEvent) => !event.relatedTarget) // Just reset when is out of the window
-            )
-            .subscribe(() => {
-                // I need to do this to hide the dropzone but maintain the current dragItem
-                this.uveStore.setEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // The user is dragging outside the window, we set this to know that user can potentially drop a file outside the window
-            });
-    }
-
-    /**
-     * Handle the reset of the editor when the user drops a file outside of the browser
-     *
-     * @param {(MouseEvent)} event
-     * @memberof EditEmaEditorComponent
-     */
-    @HostListener('mouseover', ['$event'])
-    resetEditorWhenOutOfBounds(event: MouseEvent) {
-        event.preventDefault();
-
-        const dragItem = this.uveStore.dragItem();
-        const editorState = this.uveStore.state();
-
-        if (!!dragItem && editorState === EDITOR_STATE.OUT_OF_BOUNDS) {
-            this.uveStore.resetEditorProperties();
-        }
     }
 
     /**
@@ -857,6 +811,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.uveStore.updateEditorScrollState();
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL_END]: () => {
+                // Bug here
                 this.uveStore.updateEditorOnScrollEnd();
             },
             [CUSTOMER_ACTIONS.INIT_INLINE_EDITING]: () => {
