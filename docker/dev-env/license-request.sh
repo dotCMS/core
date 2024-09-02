@@ -12,7 +12,7 @@ request_license () {
   fi
 
 
-  EXPIRE_DATE=$(date +%Y-%m-%d -d "+90 day")
+  EXPIRE_DATE=$(date +%Y-%m-%d -d "+365 day")
 
   curl -H "Content-Type: application/json" -H "Authorization:Bearer $DEV_REQUEST_TOKEN" -XPUT https://license.dotcms.com/api/ext/license -d "
     {
