@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "2a422520-eec4-42b3-94c3-5126f2691138",
+		"_postman_id": "e53e1b4d-87ee-4920-9477-917bb7ad4d95",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -17468,6 +17468,71 @@
 							""
 						]
 					}
+				}
+			]
+		},
+		{
+			"name": "FireWithUnknowProps",
+			"item": [
+				{
+					"name": "SuccessRequestWithUnknownProps",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"webPageContent\",\n        \"contentHost\": \"default\",\n        \"title\": \"Test Title\",\n        \"body\": \"Test Body\"\n    },\n    \"unknowprop1\":\"blablalba\",\n    \"anotherunknown\":\"toktoktok\",\n    \"comments\":\"This is a comment\"\n\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
 				}
 			]
 		}

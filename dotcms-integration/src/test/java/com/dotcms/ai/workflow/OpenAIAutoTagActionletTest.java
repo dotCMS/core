@@ -39,7 +39,6 @@ import java.util.Map;
  */
 public class OpenAIAutoTagActionletTest {
 
-    private static AppConfig config;
     private static Host host;
 
     @BeforeClass
@@ -77,8 +76,8 @@ public class OpenAIAutoTagActionletTest {
                         .withType(Type.STRING)
                         .withValue("{\"default\":\"blog\"}".toCharArray())
                         .build());
-        config = new AppConfig(host.getHostname(), secrets);
-        DotAIAPIFacadeImpl.addCompletionsAPIImplementation("default", (Object... initArguments)-> new CompletionsAPI() {
+        new AppConfig(host.getHostname(), secrets);
+        DotAIAPIFacadeImpl.addCompletionsAPIImplementation("default", (Object... initArguments) -> new CompletionsAPI() {
             @Override
             public JSONObject summarize(CompletionsForm searcher) {
                 return null;
@@ -90,7 +89,7 @@ public class OpenAIAutoTagActionletTest {
             }
 
             @Override
-            public JSONObject raw(JSONObject promptJSON) {
+            public JSONObject raw(JSONObject promptJSON, final String userId) {
                 return null;
             }
 
@@ -104,7 +103,8 @@ public class OpenAIAutoTagActionletTest {
                                      final String userPrompt,
                                      final String model,
                                      final float temperature,
-                                     final int maxTokens) {
+                                     final int maxTokens,
+                                     final String userId) {
                 return new JSONObject("{\n" +
                         "  \"id\": \"chatcmpl-7bHkIY2cNQXV3yWZmZ1lM1b4AIlJ6\",\n" +
                         "  \"object\": \"chat.completion\",\n" +

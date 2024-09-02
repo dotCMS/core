@@ -1,7 +1,5 @@
-package com.dotcms.ai.service;
+package com.dotcms.ai.api;
 
-import com.dotcms.ai.api.ImageAPI;
-import com.dotcms.ai.api.OpenAIImageAPIImpl;
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModelType;
 import com.dotcms.ai.app.AppConfig;
@@ -27,7 +25,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class OpenAIImageServiceImplTest {
+public class OpenAIImageAPIImplTest {
 
     private static final String RESPONSE_JSON =
             "{\"data\":[{\"url\":\"http://localhost:8080\",\"value\":\"this is a response\"}]}";
@@ -220,8 +218,7 @@ public class OpenAIImageServiceImplTest {
     }
 
     private JSONObject prepareJsonObject(final String prompt, final boolean tempFileError) throws Exception {
-        when(config.getImageModel())
-                .thenReturn(AIModel.builder().withType(AIModelType.IMAGE).withModelNames("some-image-model").build());
+        when(config.getImageModel()).thenReturn(AIModel.builder().withType(AIModelType.IMAGE).withModelNames("some-image-model").build());
         when(config.getImageSize()).thenReturn("some-image-size");
         final File file = mock(File.class);
         when(file.getName()).thenReturn(UUIDGenerator.shorty());

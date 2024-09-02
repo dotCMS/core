@@ -1,12 +1,11 @@
-package com.dotcms.ai.service;
+package com.dotcms.ai.api;
 
-import com.dotcms.ai.api.ChatAPI;
-import com.dotcms.ai.api.OpenAIChatAPIImpl;
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModelType;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotmarketing.util.json.JSONObject;
+import com.liferay.portal.model.User;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -17,17 +16,19 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class OpenAIChatServiceImplTest {
+public class OpenAIChatAPIImplTest {
 
     private static final String RESPONSE_JSON =
             "{\"data\":[{\"url\":\"http://localhost:8080\",\"value\":\"this is a response\"}]}";
 
     private AppConfig config;
     private ChatAPI service;
+    private User user;
 
     @Before
     public void setUp() {
         config = mock(AppConfig.class);
+        user = mock(User.class);
         service = prepareService(RESPONSE_JSON);
     }
 
@@ -54,11 +55,9 @@ public class OpenAIChatServiceImplTest {
     }
 
     private ChatAPI prepareService(final String response) {
-        return new OpenAIChatAPIImpl(config) {
-
-
+        return new OpenAIChatAPIImpl(config, user) {
             @Override
-            public String doRequest(final String urlIn, final JSONObject json) {
+            String doRequest(final JSONObject json, final String userId) {
                 return response;
             }
         };

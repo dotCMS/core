@@ -61,7 +61,9 @@ public class CompletionsResource {
                 response,
                 formIn,
                 () -> APILocator.getDotAIAPI().getCompletionsAPI().summarize(formIn),
-                out -> APILocator.getDotAIAPI().getCompletionsAPI().summarizeStream(formIn, new LineReadingOutputStream(out)));
+                output -> APILocator.getDotAIAPI()
+                        .getCompletionsAPI()
+                        .summarizeStream(formIn, new LineReadingOutputStream(output)));
     }
 
     /**
@@ -84,7 +86,9 @@ public class CompletionsResource {
                 response,
                 formIn,
                 () -> APILocator.getDotAIAPI().getCompletionsAPI().raw(formIn),
-                out -> APILocator.getDotAIAPI().getCompletionsAPI().rawStream(formIn, new LineReadingOutputStream(out)));
+                output -> APILocator.getDotAIAPI()
+                        .getCompletionsAPI()
+                        .rawStream(formIn, new LineReadingOutputStream(output)));
     }
 
     /**
@@ -107,16 +111,15 @@ public class CompletionsResource {
                 .init()
                 .getUser();
         final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        final AppConfig app = ConfigService.INSTANCE.config(host);
-
+        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
 
         final Map<String, Object> map = new HashMap<>();
         map.put(AiKeys.CONFIG_HOST, host.getHostname() + " (falls back to system host)");
         for (final AppKeys config : AppKeys.values()) {
-            map.put(config.key, app.getConfig(config));
+            map.put(config.key, appConfig.getConfig(config));
         }
 
-        final String apiKey = UtilMethods.isSet(app.getApiKey()) ? "*****" : "NOT SET";
+        final String apiKey = UtilMethods.isSet(appConfig.getApiKey()) ? "*****" : "NOT SET";
         map.put(AppKeys.API_KEY.key, apiKey);
 
         final List<SimpleModel> models = AIModels.get().getAvailableModels();
@@ -140,19 +143,25 @@ public class CompletionsResource {
                 .init()
                 .getUser();
         final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        return (!user.isAdmin())
-                ? CompletionsForm
-                    .copy(formIn)
-                    .model(ConfigService.INSTANCE.config(host).getModel().getCurrentModel())
-                    .build()
-                : formIn;
+        return withUserId(
+                !user.isAdmin()
+                    ? CompletionsForm
+                        .copy(formIn)
+                        .model(ConfigService.INSTANCE.config(host).getModel().getCurrentModel())
+                        .build()
+                    : formIn,
+                user);
+    }
+
+    private static CompletionsForm withUserId(final CompletionsForm completionsForm, final User user) {
+        return CompletionsForm.copy(completionsForm).user(user).build();
     }
 
     private static Response getResponse(final HttpServletRequest request,
                                         final HttpServletResponse response,
                                         final CompletionsForm formIn,
                                         final Supplier<JSONObject> noStream,
-                                        final Consumer<OutputStream> stream) {
+                                        final Consumer<OutputStream> outputStream) {
         if (StringUtils.isBlank(formIn.prompt)) {
             return badRequestResponse();
         }
@@ -162,7 +171,7 @@ public class CompletionsResource {
 
         if (resolvedForm.stream) {
             final StreamingOutput streaming = output -> {
-                stream.accept(output);
+                outputStream.accept(output);
                 output.flush();
                 output.close();
             };
@@ -173,6 +182,5 @@ public class CompletionsResource {
         jsonResponse.put(AiKeys.TOTAL_TIME, System.currentTimeMillis() - startTime + "ms");
         return Response.ok(jsonResponse.toString(), MediaType.APPLICATION_JSON).build();
     }
-
 
 }
