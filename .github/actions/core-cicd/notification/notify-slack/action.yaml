@@ -10,11 +10,16 @@ inputs:
   slack-bot-token:
     description: 'Slack Bot Token'
     required: true
+  json:
+    description: 'Boolean flag to indicate if the payload is already a JSON object'
+    required: false
+    default: 'false'    
 
 runs:
   using: "composite"
   steps:
     - name: Slack Notification
+      if: inputs.json == 'false'
       uses: slackapi/slack-github-action@v1.26.0
       with:
         channel-id: ${{ inputs.channel-id }}
@@ -32,3 +37,12 @@ runs:
           }
       env:
         SLACK_BOT_TOKEN: ${{ inputs.slack-bot-token }} 
+        
+    - name: Slack Notification with JSON
+      if: inputs.json == 'true'
+      uses: slackapi/slack-github-action@v1.26.0
+      with:
+        channel-id: ${{ inputs.channel-id }}
+        payload: ${{ inputs.payload }}
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.slack-bot-token }}
