@@ -3,7 +3,7 @@
 		 xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
                       http://java.sun.com/xml/ns/javaee/web-app_4_0.xsd"
 		 version="4.0" metadata-complete="true">
-  <display-name>dotCMS</display-name>
+    <display-name>dotCMS</display-name>
 
 	<request-character-encoding>UTF-8</request-character-encoding>
 	<response-character-encoding>UTF-8</response-character-encoding>
@@ -195,9 +195,6 @@
     
 	<!-- DOTMARKETING LISTENERS -->
 	<listener>
-		<listener-class>org.jboss.weld.environment.servlet.Listener</listener-class>
-	</listener>
-	<listener>
 		<listener-class>com.dotmarketing.listeners.ContextLifecycleListener</listener-class>
 	</listener>
 	<listener>
@@ -364,9 +361,11 @@
         <servlet-class>com.dotcms.csspreproc.SassPreProcessServlet</servlet-class>
     </servlet>
     <!-- REST -->
-  <servlet>
+    <servlet>
 		<servlet-name>RESTAPI</servlet-name>
-		<servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+		<servlet-class>
+		  com.dotcms.rest.servlet.ReloadableServletContainer
+		</servlet-class>
 		<init-param>
 			<param-name>jersey.config.server.mediaTypeMappings</param-name>
 			<param-value>txt : text/plain, xml : application/xml, json : application/json, js : application/javascript</param-value>
@@ -509,7 +508,11 @@
 		<servlet-name>DotGraphQLHttpServlet</servlet-name>
 		<url-pattern>/api/v1/graphql</url-pattern>
 	</servlet-mapping>
-
+	<servlet-mapping>
+		<servlet-name>RESTAPI</servlet-name>
+		<url-pattern>/api/*</url-pattern>
+	</servlet-mapping>
+	
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->

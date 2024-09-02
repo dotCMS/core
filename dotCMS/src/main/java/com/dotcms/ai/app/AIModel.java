@@ -21,8 +21,7 @@ import java.util.stream.IntStream;
  */
 public class AIModel {
 
-    private static final int NOOP_INDEX = -1;
-
+    public static final int NOOP_INDEX = -1;
     public static final AIModel NOOP_MODEL = AIModel.builder()
             .withType(AIModelType.UNKNOWN)
             .withModelNames(List.of())
