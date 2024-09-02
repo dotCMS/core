@@ -20,24 +20,24 @@ export type GetPageDataResponse = {
 
 export const getPageData = async (
   slug: string | undefined,
-  searchParams: Record<string, string | undefined>,
+  params: URLSearchParams,
 ): Promise<GetPageDataResponse> => {
   try {
     const path = slug || "/";
 
     const pageRequestParams = getPageRequestParams({
       path,
-      params: searchParams,
+      params,
     });
 
     const pageAsset = (await client.page.get(
-      pageRequestParams as any,
+      pageRequestParams,
     )) as DotCMSPageAsset;
 
     const { entity } = (await client.nav.get({
       path: "/",
       depth: 2,
-      languageId: pageRequestParams.language_id,
+      languageId: pageRequestParams.languageId as number,
     })) as { entity: DotcmsNavigationItem };
 
     return { pageAsset, nav: entity };

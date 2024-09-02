@@ -6,13 +6,7 @@ import { MyPage } from '../react/myPage';
 
 const params = Astro.params;
 
-const searchParams: Record<string, string> = {};
-
-Astro.url.searchParams.forEach((value, key) => {
-    searchParams[key] = value;
-});
-
-const { pageAsset, nav, error } = await getPageData(params?.slug, params);
+const { pageAsset, nav, error } = await getPageData(params?.slug, Astro.url.searchParams);
 
 if (!error) {
     const { vanityUrl } = pageAsset ?? {};
@@ -30,7 +24,7 @@ if (!error) {
         </Layout>
     ) : (
         <Layout title={pageAsset!.page.title}>
-            <MyPage client:only pageAsset={pageAsset} nav={nav?.children} />
+            <MyPage client:only="react" pageAsset={pageAsset} nav={nav?.children} />
         </Layout>
     )
 }
