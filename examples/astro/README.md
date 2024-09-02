@@ -1,54 +1,50 @@
-# Astro Starter Kit: Basics
+# dotCMS Astro Example
 
-```sh
-npm create astro@latest -- --template basics
+DotCMS provides a Astro example that shows how to build dotCMS pages heedlessly with Astro JavaScript framework.
+
+## What do you need?
+
+1. A dotCMS instance or you can use https://demo.dotcms.com
+2. A valid AUTH token for the target instance (see: https://auth.dotcms.com/docs/latest/rest-api-authentication#creating-an-api-token-in-the-ui)
+3. A valid Site Identifier where your page is located (see: https://www.dotcms.com/docs/latest/multi-site-management#EditingSites)
+4. Node js 18+ and npm installed
+5. Terminal
+6. And a code editor.
+
+### Create the new Astro application
+
+Open your terminal and let’s create the Astro app by running the following:
+
+```bash
+npm create astro@latest -- --template dotcms/core/examples/astro
 ```
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/basics)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/basics/devcontainer.json)
+Follow the Astro setup steps after it pulls the example.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Add the dotCMS configuration
 
-![just-the-basics](https://github.com/withastro/astro/assets/2244813/a0a5533c-a856-4198-8470-2d67b1d7c554)
+Now we need to tell the Next.js app what dotCMS instance is going to use to get the data to build its pages.
 
-## 🚀 Project Structure
+1. Open the folder where you created the project in your code editor
+2. In the root, find the file .env.local.example and rename to .env.local
+3. Open the .env.local file and update the environment variable:
 
-Inside of your Astro project, you'll see the following folders and files:
+- `PUBLIC_DOTCMS_AUTH_TOKEN` this is the auth token for dotCMS, you can use the dotCMS UI to create one.
+- `PUBLIC_DOTCMS_HOST` this is the instance of dotCMS where your pages and content lives (license needed) if you don’t have one, you can use [https://demo.dotcms.com](https://demo.dotcms.com) (be careful it restarts every 24h)
+- `PUBLIC_DOTCMS_SITE_ID` this is the identifier of the Site you are going to use for your website you can find it by going to Settings > Sites. Once there follow the next steps:
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src/
-│   ├── components/
-│   │   └── Card.astro
-│   ├── layouts/
-│   │   └── Layout.astro
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+1.  Select the desired Site (A modal should be opened)
+2.  Go to the History Tab
+3.  Copy the `Identifier` that appears in the top of the tab
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Run the app
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+Once all the configuration is in place, it is time to run the web app.
 
-Any static assets, like images, can be placed in the `public/` directory.
+1. Go back to your terminal and from the folder you created the project
+2. Run `npm run dev`
+3. Open http://localhost:4321 in your browser (Verify the port Astro is using, 4321 is the default but it can change)
 
-## 🧞 Commands
+🎉 And that’s it.
 
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Consider that if you go to `localhost:4321/about`, the page `/about` needs to exist in your dotCMS instance.
