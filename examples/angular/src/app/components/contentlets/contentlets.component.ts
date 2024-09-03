@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
 import { GenericContentlet } from '..';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
@@ -9,7 +9,7 @@ import { ContentletComponent } from '../contentlet/contentlet.component';
   standalone: true,
   imports: [NgOptimizedImage, DatePipe, ContentletComponent],
   template: `<ul class="flex flex-col gap-7">
-    @for (contentlet of contentlets; track contentlet.identifier) {
+    @for (contentlet of contentlets(); track contentlet.identifier) {
     <app-contentlet [contentlet]="contentlet">
       <li class="flex gap-7 min-h-16">
         <a
@@ -41,7 +41,7 @@ import { ContentletComponent } from '../contentlet/contentlet.component';
   </ul> `,
 })
 export class ContentletsComponent {
-  @Input() contentlets: Contentlet<GenericContentlet>[] = [];
+  contentlets = input.required<Contentlet<GenericContentlet>[]>();
 
   dateFormatOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric',

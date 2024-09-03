@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
   template: `
     <div class="loading-container">
       <!-- Layout 1 -->
-      <ng-container *ngIf="selectedLayout === 1">
+      @if (selectedLayout === 1) {
         <div class="loading-hero">
           <div class="loading-hero-headline"></div>
           <div class="loading-hero-caption"></div>
@@ -17,10 +17,10 @@ import { CommonModule } from '@angular/common';
         <div class="loading-articles">
           <div class="loading-article" *ngFor="let i of [1,2,3,4]"></div>
         </div>
-      </ng-container>
+      }
 
       <!-- Layout 2 -->
-      <ng-container *ngIf="selectedLayout === 2">
+      @if (selectedLayout === 2) {
         <div class="loading-centered-title">
           <div class="loading-title"></div>
           <div class="loading-subtitle"></div>
@@ -33,14 +33,14 @@ import { CommonModule } from '@angular/common';
           <div class="loading-image"></div>
           <div class="loading-text"></div>
         </div>
-      </ng-container>
+      }
 
       <!-- Layout 3 -->
-      <ng-container *ngIf="selectedLayout === 3">
+      @if (selectedLayout === 3) {
         <div class="loading-card-grid">
           <div class="loading-card" *ngFor="let i of [1,2,3,4,5,6,7,8]"></div>
         </div>
-      </ng-container>
+      }
     </div>
   `,
   styles: [`
