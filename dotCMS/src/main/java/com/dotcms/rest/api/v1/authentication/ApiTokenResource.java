@@ -188,12 +188,56 @@ public class ApiTokenResource implements Serializable {
                         content = @Content(mediaType = "application/json",
                             examples = {
                                 @ExampleObject(
-                                    value = ""
+                                    value = "{\n" +
+                                            "  \"entity\": {\n" +
+                                            "    \"revoked\": {\n" +
+                                            "      \"allowNetwork\": null,\n" +
+                                            "      \"claims\": {\n" +
+                                            "        \"label\": \"string\",\n" +
+                                            "      },\n" +
+                                            "      \"expired\": false,\n" +
+                                            "      \"expiresDate\": 0,\n" +
+                                            "      \"id\": \"string\",\n" +
+                                            "      \"issueDate\": 0,\n" +
+                                            "      \"issuer\": \"string\",\n" +
+                                            "      \"modificationDate\": 0,\n" +
+                                            "      \"notBeforeDate\": false,\n" +
+                                            "      \"requestingIp\": \"string\",\n" +
+                                            "      \"requestingUserId\": \"string\",\n" +
+                                            "      \"revoked\": true,\n" +
+                                            "      \"revokedDate\": null,\n" +
+                                            "      \"subject\": \"string\",\n" +
+                                            "      \"tokenType\": \"string\",\n" +
+                                            "      \"userId\": \"string\",\n" +
+                                            "      \"valid\": false\n" +
+                                            "    }\n" +
+                                            "  },\n" +
+                                            "  \"errors\": [],\n" +
+                                            "  \"i18nMessagesMap\": {},\n" +
+                                            "  \"messages\": [],\n" +
+                                            "  \"pagination\": null,\n" +
+                                            "  \"permissions\": []\n" +
+                                            "}"
                                 )
-                            }))
+                            })),
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "403", description = "Unauthorized user"),
+                    @ApiResponse(responseCode = "500", description = "Unexpected server error")
                 })
-    public final Response revokeApiToken(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("tokenId") final String tokenId) {
+    public final Response revokeApiToken(
+            @Context final HttpServletRequest request, 
+            @Context final HttpServletResponse response,
+            @RequestBody(descrpition = "This method takes an api-token ID and revokes it from a remote address.\n\n" +
+                                        "If the token is expired then the system will return a message stating the token is expire.\n\n",
+                        required = true,
+                        content = @Content(
+                            schema = @Schema(implementation = )
+                        ))
+            @PathParam("tokenId") @Parameter(
+                                    required = true,
+                                    description = "ID of Api token being revoked",
+                                    schema = @Schema(type= "string"))
+            final String tokenId) {
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, "users");
         final User user                     = initDataObject.getUser();
