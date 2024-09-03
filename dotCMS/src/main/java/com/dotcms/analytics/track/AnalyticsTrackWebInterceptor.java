@@ -94,10 +94,10 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
         return true;
     }
 
-    private Optional<RequestMatcher> anyMatcher(final HttpServletRequest request, final HttpServletResponse response, Predicate<? super RequestMatcher> afterRequest) {
+    private Optional<RequestMatcher> anyMatcher(final HttpServletRequest request, final HttpServletResponse response, Predicate<? super RequestMatcher> filterRequest) {
 
         return requestMatchersMap.values().stream()
-                .filter(afterRequest)
+                .filter(filterRequest)
                 .filter(matcher -> matcher.match(request, response))
                 .findFirst();
     }
