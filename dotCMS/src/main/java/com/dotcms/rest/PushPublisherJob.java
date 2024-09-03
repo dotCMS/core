@@ -56,6 +56,8 @@ public class PushPublisherJob extends DotStatefulJob {
 	 */
 	@Override
 	public void run(JobExecutionContext jobContext) throws JobExecutionException {
+		Logger.debug(PushPublisherJob.class, "Running Push Publisher Job");
+		Logger.debug(PushPublisherJob.class, "Job context: " + jobContext);
 		final Trigger trigger = jobContext.getTrigger();
 		final Map<String, Serializable> executionData = getExecutionData(trigger, PushPublisherJob.class);
 
@@ -73,14 +75,15 @@ public class PushPublisherJob extends DotStatefulJob {
 	 */
 	public static void triggerPushPublisherJob(final String bundleName,
 			final PublishAuditStatus status) {
-
+		Logger.debug(PushPublisherJob.class, "Triggering Push Publisher Job for bundle: " + bundleName);
+		Logger.debug(PushPublisherJob.class, "Status: " + status.getStatus().name());
 		final ImmutableMap<String, Serializable> nextExecutionData = ImmutableMap
 				.of("bundleName", bundleName, "status", status);
 
 		try {
 			DotStatefulJob.enqueueTrigger(nextExecutionData, PushPublisherJob.class);
 		} catch (Exception e) {
-			Logger.error(ResetPermissionsJob.class, "Error scheduling the Publishing of bundle. Bundle name: " + bundleName, e);
+			Logger.error(PushPublisherJob.class, "Error scheduling the Publishing of bundle. Bundle name: " + bundleName, e);
 			throw new DotRuntimeException("Error scheduling the reset of permissions", e);
 		}
 	}
