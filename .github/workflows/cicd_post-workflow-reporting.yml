@@ -270,4 +270,5 @@ jobs:
         with:
           channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
           payload: ${{ steps.prepare-slack-message.outputs.payload }}
+          json: true
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }} 

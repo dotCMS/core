@@ -1,6 +1,7 @@
 package com.dotcms.ai.model;
 
 
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
@@ -15,12 +16,11 @@ public class AIImageRequestDTO {
     private final String model;
 
 
-    public AIImageRequestDTO(Builder builder) {
+    public AIImageRequestDTO(final Builder builder) {
         this.numberOfImages = builder.numberOfImages;
         this.model = builder.model;
         this.prompt = builder.prompt;
         this.size = builder.size;
-
     }
 
     public String getSize() {
@@ -40,14 +40,15 @@ public class AIImageRequestDTO {
     }
 
     public static class Builder {
+        private AppConfig appConfig = ConfigService.INSTANCE.config();
         @JsonSetter(nulls = Nulls.SKIP)
         private String prompt;
         @JsonSetter(nulls = Nulls.SKIP)
         private int numberOfImages = 1;
         @JsonSetter(nulls = Nulls.SKIP)
-        private String size = ConfigService.INSTANCE.config().getImageSize();
+        private String size = appConfig.getImageSize();
         @JsonSetter(nulls = Nulls.SKIP)
-        private String model = ConfigService.INSTANCE.config().getImageModel().getCurrentModel();
+        private String model = appConfig.getImageModel().getCurrentModel();
 
         public AIImageRequestDTO build() {
             return new AIImageRequestDTO(this);
