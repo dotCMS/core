@@ -1,11 +1,17 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, signal } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { CustomMenuItem, DotActionMenuItem } from '@dotcms/dotcms-models';
 
 import { DotMenuComponent } from '../dot-menu/dot-menu.component';
+
+interface DotActionMenuClickEvent {
+    item: MenuItem;
+    originalEvent: MouseEvent;
+}
 
 /**
  * The DotActionMenuButtonComponent is a configurable button with
@@ -29,6 +35,8 @@ export class DotActionMenuButtonComponent implements OnInit {
 
     @Input() actions?: DotActionMenuItem[];
 
+    $hasIcon = signal(false);
+
     ngOnInit() {
         this.filteredActions = this.actions
             .filter((action: DotActionMenuItem) =>
@@ -37,12 +45,16 @@ export class DotActionMenuButtonComponent implements OnInit {
             .map((action: DotActionMenuItem) => {
                 return {
                     ...action.menuItem,
-                    command: ($event: MouseEvent) => {
+                    command: ($event: DotActionMenuClickEvent) => {
                         action.menuItem.command(this.item);
 
-                        $event.stopPropagation();
+                        $event.originalEvent.stopPropagation();
                     }
                 };
             });
+
+        if (this.filteredActions.length === 1) {
+            this.$hasIcon.set(this.filteredActions[0].icon ? true : false);
+        }
     }
 }
