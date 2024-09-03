@@ -80,6 +80,7 @@ public class BaseCharacter extends AbstractCharacter {
         myMap.get().put("contentId", content.orElse(null));
 
         myMap.get().put("lang", lang.toString());
+        myMap.get().put("langId", lang.getId());
     }
 
     public BaseCharacter(final HttpServletRequest request, final HttpServletResponse response) {
