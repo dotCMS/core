@@ -1,5 +1,4 @@
-import { CustomRenderer } from '../../../models/blocks.interface';
-import { ContentNode } from '../../../models/content-node.interface';
+import { DotContentProps } from '../../../models/content-node.interface';
 
 // Replace this when we have a types lib
 export interface Contentlet {
@@ -35,10 +34,6 @@ export interface Contentlet {
     contentTypeIcon: string;
     variant: string;
 }
-
-type DotContentProps = ContentNode & {
-    customRenderers?: CustomRenderer;
-};
 
 /**
  * Renders the default content for an unknown content type.

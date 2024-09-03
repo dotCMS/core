@@ -1,7 +1,9 @@
 {
     "compilerOptions": {
         "paths": {
-            "@/*": ["./src/*"]       
+            "@/*": ["./src/*"],
+            "@dotcms/react": ["../../core-web/dist/libs/sdk/react"], 
+            "@dotcms/client": ["../../core-web/dist/libs/sdk/client"]       
         }
     }
 }

@@ -1,7 +1,5 @@
 import { BlockProps } from '../../../models/blocks.interface';
-import { ContentNode } from '../../../models/content-node.interface';
-
-type CodeBlockProps = BlockProps & ContentNode;
+import { CodeBlockProps } from '../../../models/content-node.interface';
 
 /**
  * Renders a code block component.

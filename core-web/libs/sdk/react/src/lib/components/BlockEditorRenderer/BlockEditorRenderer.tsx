@@ -1,6 +1,7 @@
 import { BlockEditorBlock } from './item/BlockEditorBlock';
 
-import { Block, CustomRenderer } from '../../models/blocks.interface';
+import { Block } from '../../models/blocks.interface';
+import { CustomRenderer } from '../../models/content-node.interface';
 
 export interface BlockEditorRendererProps {
     blocks: Block;

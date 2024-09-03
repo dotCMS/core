@@ -39,9 +39,6 @@ export interface BlockProps {
     children: React.ReactNode;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type CustomRenderer<T = any> = Record<string, React.FC<T>>;
-
 export enum Blocks {
     PARAGRAPH = 'paragraph',
     HEADING = 'heading',

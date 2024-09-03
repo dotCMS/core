@@ -1,9 +1,10 @@
 import { BlockProps } from '../../../models/blocks.interface';
-import { ContentNode, Mark } from '../../../models/content-node.interface';
-
-type HeadingProps = BlockProps & ContentNode;
-type LinkProps = BlockProps & { attrs?: Mark['attrs'] };
-type ParagraphProps = BlockProps & ContentNode;
+import {
+    ContentNode,
+    HeadingProps,
+    LinkProps,
+    ParagraphProps
+} from '../../../models/content-node.interface';
 
 /**
  * Renders the text in bold.

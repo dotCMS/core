@@ -1,10 +1,6 @@
 import { DotCmsClient } from '@dotcms/client';
 
-import { ContentNode } from '../../../models/content-node.interface';
-
-type DotCMSVideoProps = ContentNode['attrs'] & {
-    data?: Record<string, string>;
-};
+import { ContentNode, DotCMSVideoProps } from '../../../models/content-node.interface';
 
 /**
  * Renders a video component for displaying videos.

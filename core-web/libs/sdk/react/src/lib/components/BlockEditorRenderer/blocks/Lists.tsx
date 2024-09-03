@@ -1,6 +1,4 @@
-interface BlockProps {
-    children: React.ReactNode;
-}
+import { BlockProps } from '../../../models/blocks.interface';
 
 /**
  * ListItem component represents a list item in a block editor.

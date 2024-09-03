@@ -1,10 +1,6 @@
 import { DotCmsClient } from '@dotcms/client';
 
-import { ContentNode } from '../../../models/content-node.interface';
-
-type DotCMSImageProps = ContentNode['attrs'] & {
-    data?: Record<string, unknown>;
-};
+import { ContentNode, DotCMSImageProps } from '../../../models/content-node.interface';
 
 /**
  * Renders an image component for dotCMS.
