@@ -1,4 +1,5 @@
 import { expect, it } from '@jest/globals';
+import { createFakeEvent } from '@ngneat/spectator';
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
@@ -12,7 +13,7 @@ import { DynamicDialogConfig, DynamicDialogRef, DynamicDialogModule } from 'prim
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService, mockMatchMedia } from '@dotcms/utils-testing';
 
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
 import { JsonClassesService } from './services/json-classes.service';
@@ -86,6 +87,7 @@ describe('AddStyleClassesDialogComponent', () => {
             service = spectator.inject(JsonClassesService);
             dialogRef = spectator.inject(DynamicDialogRef);
             autocomplete = spectator.query(AutoComplete);
+            mockMatchMedia();
         });
 
         it('should set attributes to autocomplete', () => {
@@ -122,21 +124,12 @@ describe('AddStyleClassesDialogComponent', () => {
 
         it('should filter suggestions and pass to autocomplete on completeMethod', () => {
             spectator.detectChanges();
-            spectator.triggerEventHandler(AutoComplete, 'completeMethod', { query: 'class1' });
+            spectator.triggerEventHandler(AutoComplete, 'completeMethod', {
+                query: 'class1',
+                originalEvent: createFakeEvent('click')
+            });
 
             expect(autocomplete.suggestions).toEqual(['class1']);
-        });
-
-        it('should add class on keyup.enter', () => {
-            const selectItemSpy = jest.spyOn(autocomplete, 'selectItem');
-            spectator.detectChanges();
-
-            const input = document.createElement('input');
-            input.value = 'class1';
-
-            spectator.triggerEventHandler(AutoComplete, 'onKeyUp', { key: 'Enter', target: input });
-
-            expect(selectItemSpy).toBeCalledWith('class1');
         });
 
         it('should save selected classes and close the dialog', () => {

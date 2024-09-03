@@ -51,8 +51,8 @@
 
 ::ng-deep {
     .p-overlaypanel.paginator {
-        .p-dataview-content {
-            margin-bottom: $spacing-9;
+        .p-paginator {
+            justify-content: center;
         }
 
         .p-paginator-bottom {

@@ -301,11 +301,14 @@ public class ContentTypeHandler implements IHandler {
 					.toJavaOptional()
 					.orElse(Host.SYSTEM_HOST);
 
+		final Host host = APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false);
 
 		// update host so that it works locally
 		final ContentType typeToSave = hostId.equals(contentTypeIn.host())
 				? contentTypeIn
-				: ContentTypeBuilder.builder(contentTypeIn).from(contentTypeIn).host(hostId).build();
+				: ContentTypeBuilder.builder(contentTypeIn).from(contentTypeIn)
+				.host(host.getIdentifier())
+				.siteName(host.getHostname()).build();
 
 
 		final List<Field> deferredFields = fields.stream()

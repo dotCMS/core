@@ -3,6 +3,7 @@ package com.dotcms.ai.client;
 import com.dotcms.ai.client.openai.OpenAIClient;
 import com.dotcms.ai.client.openai.OpenAIResponseEvaluator;
 import com.dotcms.ai.domain.AIProvider;
+import com.dotcms.ai.domain.AIResponse;
 import io.vavr.Lazy;
 
 import java.io.OutputStream;

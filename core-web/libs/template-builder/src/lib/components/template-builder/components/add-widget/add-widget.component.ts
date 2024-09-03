@@ -1,7 +1,6 @@
 import { GridStackWidget } from 'gridstack';
 import { DDElementHost } from 'gridstack/dist/dd-element';
 
-import { NgIf } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
@@ -16,7 +15,6 @@ import {
     templateUrl: './add-widget.component.html',
     styleUrls: ['./add-widget.component.scss'],
     standalone: true,
-    imports: [NgIf],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddWidgetComponent implements AfterViewInit {

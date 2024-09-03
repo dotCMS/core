@@ -1,10 +1,11 @@
 package com.dotcms.ai.app;
 
+import com.dotcms.ai.domain.Model;
 import com.dotcms.security.apps.Secret;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 
@@ -114,6 +115,15 @@ public class AppConfig implements Serializable {
     }
 
     /**
+     * Retrieves the host.
+     *
+     * @return the host
+     */
+    public String getHost() {
+        return host;
+    }
+
+    /**
      * Retrieves the API URL.
      *
      * @return the API URL
@@ -134,7 +144,7 @@ public class AppConfig implements Serializable {
     /**
      * Retrieves the API Embeddings URL.
      *
-     * @return
+     * @return the API Embeddings URL
      */
     public String getApiEmbeddingsUrl() {
         return UtilMethods.isEmpty(apiEmbeddingsUrl) ? AppKeys.API_EMBEDDINGS_URL.defaultValue : apiEmbeddingsUrl;
@@ -284,33 +294,19 @@ public class AppConfig implements Serializable {
      * @param type the type of the model to find
      */
     public AIModel resolveModel(final AIModelType type) {
-        return AIModels.get().findModel(host, type).orElse(AIModel.NOOP_MODEL);
+        return AIModels.get().resolveModel(host, type);
     }
 
     /**
      * Resolves a model-specific secret value from the provided secrets map using the specified key and model type.
+     * If the model is not found or is not operational, it throws an appropriate exception.
      *
      * @param modelName the name of the model to find
+     * @param type the type of the model to find
+     * @return the resolved Model
      */
-    public AIModel resolveModelOrThrow(final String modelName) {
-        final AIModel aiModel = AIModels.get()
-                .findModel(host, modelName)
-                .orElseThrow(() -> {
-                    final String supported = String.join(", ", AIModels.get().getOrPullSupportedModels());
-                    return new DotRuntimeException(
-                            "Unable to find model: [" + modelName + "]. Only [" + supported + "] are supported ");
-                });
-
-        if (!aiModel.isOperational()) {
-            debugLogger(
-                    AppConfig.class,
-                    () -> String.format(
-                            "Resolved model [%s] is not operational, avoiding its usage",
-                            aiModel.getCurrentModel()));
-            throw new DotRuntimeException(String.format("Model [%s] is not operational", aiModel.getCurrentModel()));
-        }
-
-        return aiModel;
+    public Tuple2<AIModel, Model> resolveModelOrThrow(final String modelName, final AIModelType type) {
+        return AIModels.get().resolveModelOrThrow(this, modelName, type);
     }
 
     /**

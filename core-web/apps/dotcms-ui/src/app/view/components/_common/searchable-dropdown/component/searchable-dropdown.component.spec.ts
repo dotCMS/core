@@ -37,7 +37,7 @@ import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
             [valuePropertyName]="valuePropertyName"
             [overlayWidth]="overlayWidth"
             [width]="width"
-            [disabled]="disabled"></dot-searchable-dropdown>
+            [disabled]="disabled" />
     `
 })
 class HostTestComponent {
@@ -399,12 +399,14 @@ describe('SearchableDropdownComponent', () => {
             [width]="width"
             #searchableDropdown
             cssClassDataList="site_selector__data-list">
-            <ng-template let-data="item" pTemplate="listItem">
-                <div
-                    (click)="handleClick(item)"
-                    class="searchable-dropdown__data-list-item templateTestItem">
-                    {{ data.label }}
-                </div>
+            <ng-template let-data="data" pTemplate="list">
+                @for (item of data; track $index) {
+                    <div
+                        (click)="handleClick(item)"
+                        class="searchable-dropdown__data-list-item templateTestItem">
+                        {{ item.label }}
+                    </div>
+                }
             </ng-template>
             <ng-template let-persona="item" pTemplate="select">
                 <div

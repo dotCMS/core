@@ -1,5 +1,30 @@
 import { PageProvider } from '../components/PageProvider/PageProvider';
-import { DotCMSPageContext } from '../models';
+import { DotCMSPageContext, DotCMSContentlet } from '../models';
+
+export const dotcmsContentletMock: DotCMSContentlet = {
+    archived: false,
+    baseType: '',
+    contentType: '',
+    folder: '',
+    hasTitleImage: false,
+    host: '',
+    hostName: '',
+    identifier: '',
+    inode: '',
+    languageId: 1,
+    live: false,
+    locked: false,
+    modDate: '',
+    modUser: '',
+    modUserName: '',
+    owner: '',
+    sortOrder: 1,
+    stInode: '',
+    title: 'This is my editable title',
+    titleImage: '',
+    url: '',
+    working: false
+};
 
 export const mockPageContext: DotCMSPageContext = {
     pageAsset: {

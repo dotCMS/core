@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { MultiSelectModule } from 'primeng/multiselect';
@@ -10,24 +10,26 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
     selector: 'dot-edit-content-multi-select-field',
     standalone: true,
     imports: [MultiSelectModule, ReactiveFormsModule],
-    templateUrl: './dot-edit-content-multi-select-field.component.html',
-    styleUrls: ['./dot-edit-content-multi-select-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
-    ]
+    ],
+    template: `
+        <p-multiSelect
+            [options]="$options()"
+            [formControlName]="$field().variable"
+            optionLabel="label"
+            optionValue="value" />
+    `
 })
-export class DotEditContentMultiSelectFieldComponent implements OnInit {
-    @Input() field!: DotCMSContentTypeField;
-    options = [];
+export class DotEditContentMultiSelectFieldComponent {
+    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $options = computed(() => {
+        const field = this.$field();
 
-    ngOnInit() {
-        this.options = getSingleSelectableFieldOptions(
-            this.field.values || '',
-            this.field.dataType
-        );
-    }
+        return getSingleSelectableFieldOptions(field.values || '', field.dataType);
+    });
 }

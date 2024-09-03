@@ -1,3 +1,4 @@
+import { createFakeEvent } from '@ngneat/spectator';
 import { Observable, of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -639,7 +640,7 @@ describe('DotPageStore', () => {
 
             expect(menuActions[7].label).toEqual('contenttypes.content.push_publish');
 
-            menuActions[7].command();
+            menuActions[7].command({ originalEvent: createFakeEvent('click') });
 
             expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
                 assetIdentifier: item.identifier,
@@ -800,7 +801,7 @@ describe('DotPageStore', () => {
             const publishAction = menuAction.find(
                 (action) => action.label === mockPublishAction.name
             );
-            publishAction.command();
+            publishAction.command({ originalEvent: createFakeEvent('click') });
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error, true);
             done();
         });

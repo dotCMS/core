@@ -2,17 +2,18 @@ import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    Input,
     OnInit,
-    ViewChild,
     effect,
-    inject
+    inject,
+    input,
+    viewChild
 } from '@angular/core';
 import { ControlContainer, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
+
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { TreeSelect, TreeSelectModule } from './componentes/treeselect.component';
 import { HostFolderFiledStore } from './store/host-folder-field.store';
 
 import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
@@ -28,7 +29,6 @@ import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
     standalone: true,
     imports: [TreeSelectModule, ReactiveFormsModule, TruncatePathPipe, NgClass],
     templateUrl: './dot-edit-content-host-folder-field.component.html',
-    styleUrls: ['./dot-edit-content-host-folder-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {
@@ -39,8 +39,9 @@ import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
     providers: [HostFolderFiledStore]
 })
 export class DotEditContentHostFolderFieldComponent implements OnInit {
-    @Input() field!: DotCMSContentTypeField;
-    @ViewChild(TreeSelect) treeSelect!: TreeSelect;
+    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $treeSelect = viewChild<TreeSelect>(TreeSelect);
+
     readonly #controlContainer = inject(ControlContainer);
     readonly store = inject(HostFolderFiledStore);
 
@@ -49,9 +50,10 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
     constructor() {
         effect(() => {
             this.store.nodeExpaned();
-            if (this.treeSelect.treeViewChild) {
-                this.treeSelect.treeViewChild.updateSerializedValue();
-                this.treeSelect.cd.detectChanges();
+            const treeSelect = this.$treeSelect();
+            if (treeSelect.treeViewChild) {
+                treeSelect.treeViewChild.updateSerializedValue();
+                treeSelect.cd.detectChanges();
             }
         });
         effect(() => {
@@ -75,6 +77,8 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
     }
 
     get formControl(): FormControl {
-        return this.#controlContainer.control.get(this.field.variable) as FormControl<string>;
+        const field = this.$field();
+
+        return this.#controlContainer.control.get(field.variable) as FormControl<string>;
     }
 }

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { createFakeEvent } from '@ngneat/spectator';
 import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
@@ -513,11 +514,11 @@ describe('DotContentTypesEditComponent', () => {
             const dotEventsService = fixture.debugElement.injector.get(DotEventsService);
             spyOn(dotEventsService, 'notify');
 
-            comp.contentTypeActions[0].command();
+            comp.contentTypeActions[0].command({ originalEvent: createFakeEvent('click') });
             expect(comp.contentTypeActions[0].label).toBe('Add rows');
             expect(dotEventsService.notify).toHaveBeenCalledWith('add-row');
 
-            comp.contentTypeActions[1].command();
+            comp.contentTypeActions[1].command({ originalEvent: createFakeEvent('click') });
             expect(comp.contentTypeActions[1].label).toBe('Add tab');
             expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
         });

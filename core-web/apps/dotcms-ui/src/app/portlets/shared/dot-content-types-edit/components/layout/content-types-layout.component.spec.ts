@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { createFakeEvent } from '@ngneat/spectator';
 import { Observable, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -409,9 +410,9 @@ describe('ContentTypesLayoutComponent', () => {
                 it('should set actions correctly', () => {
                     const addRow: MenuItem = splitButton.componentInstance.model[0];
                     const addTabDivider: MenuItem = splitButton.componentInstance.model[1];
-                    addRow.command();
+                    addRow.command({ originalEvent: createFakeEvent('click') });
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-row');
-                    addTabDivider.command();
+                    addTabDivider.command({ originalEvent: createFakeEvent('click') });
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
                 });
             });

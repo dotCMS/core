@@ -7,6 +7,7 @@ import com.dotcms.ai.app.ConfigService;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.network.IPUtils;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.json.JSONObject;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -48,8 +49,9 @@ public class AIViewToolTest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
         IPUtils.disabledIpPrivateSubnet(true);
         wireMockServer = AiTest.prepareWireMock();
-        AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost());
-        config = ConfigService.INSTANCE.config();
+        final Host systemHost = APILocator.systemHost();
+        AiTest.aiAppSecrets(systemHost, "gpt-4o-mini", "dall-e-3", "text-embedding-ada-002");
+        config = ConfigService.INSTANCE.config(systemHost);
     }
 
     @AfterClass
