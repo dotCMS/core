@@ -50,6 +50,7 @@ import {
     DotMessagePipe,
     DotCopyContentModalService
 } from '@dotcms/ui';
+import { isEqual } from '@dotcms/utils';
 
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
@@ -83,6 +84,7 @@ import { UVEStore } from '../store/dot-uve.store';
 import { ClientRequestProps } from '../store/features/client/withClient';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
+    TEMPORAL_DRAG_ITEM,
     compareUrlPaths,
     deleteContentletFromContainer,
     getDragItemData,
@@ -271,9 +273,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe((event: DragEvent) => {
                 const { dataset } = event.target as HTMLDivElement;
                 const data = getDragItemData(dataset);
-                // https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/effectAllowed
-                // event.dataTransfer?.setData('application/json', JSON.stringify(data));
-                // event.dataTransfer.effectAllowed = 'move';
                 this.uveStore.setEditorDragItem(data);
             });
 
@@ -295,13 +294,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                this.uveStore.setEditorDragItem({
-                    baseType: 'dotAsset',
-                    contentType: 'dotAsset',
-                    draggedPayload: {
-                        type: 'temp'
-                    }
-                });
+                this.uveStore.setEditorDragItem(TEMPORAL_DRAG_ITEM);
             });
 
         fromEvent(this.window, 'dragend')
@@ -309,12 +302,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 takeUntil(this.destroy$),
                 filter((event: DragEvent) => event.dataTransfer.dropEffect === 'none')
             )
-            .subscribe(() => this.uveStore.resetEditorProperties());
+            .subscribe(() => {
+                // console.log('dragend');
+                this.uveStore.resetEditorProperties();
+            });
 
         fromEvent(this.window, 'dragover')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
-                // console.log("LLAMADO - dragover")
                 event.preventDefault(); // Prevent file opening
                 const iframeRect = this.iframe.nativeElement.getBoundingClientRect();
 
@@ -363,12 +358,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 filter((event: DragEvent) => !event.relatedTarget) // Just reset when is out of the window
             )
             .subscribe(() => {
-                // When the drag leaves the iframe, we go back to the idle state
-                this.uveStore.resetEditorProperties(this.uveStore.dragItem());
+                // If the dragged item is a temporary item, reset the editor state when the user leaves the window
+                if (isEqual(this.uveStore.dragItem(), TEMPORAL_DRAG_ITEM)) {
+                    this.uveStore.resetEditorProperties();
 
-                setTimeout(() => {
-                    // console.log(this.uveStore.state())
-                }, 1000);
+                    return;
+                }
             });
 
         fromEvent(this.window, 'drop')
@@ -811,7 +806,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.uveStore.updateEditorScrollState();
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL_END]: () => {
-                // Bug here
                 this.uveStore.updateEditorOnScrollEnd();
             },
             [CUSTOMER_ACTIONS.INIT_INLINE_EDITING]: () => {

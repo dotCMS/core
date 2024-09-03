@@ -8,6 +8,7 @@ import {
     VanityUrl
 } from '@dotcms/dotcms-models';
 
+import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams } from '../services/dot-page-api.service';
 import { COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
 import { EDITOR_STATE } from '../shared/enums';
@@ -22,6 +23,14 @@ import {
 } from '../shared/models';
 
 export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
+
+export const TEMPORAL_DRAG_ITEM: EmaDragItem = {
+    baseType: 'dotAsset',
+    contentType: 'dotAsset',
+    draggedPayload: {
+        type: 'temp'
+    }
+};
 
 /**
  * Insert a contentlet in a container
