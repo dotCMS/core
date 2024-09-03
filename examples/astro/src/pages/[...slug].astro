@@ -8,23 +8,23 @@ const params = Astro.params;
 
 const { pageAsset, nav, error } = await getPageData(params?.slug, Astro.url.searchParams);
 
-if (!error) {
-    const { vanityUrl } = pageAsset ?? {};
+const { vanityUrl } = pageAsset ?? {};
 
-    if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
-        return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
-    }
+if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
+    return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
 }
+
+const title = pageAsset ? pageAsset.page.title : 'Error';
 ---
 
 {
-    error ? (
-        <Layout title="Error">
-            <Error error={error} />
-        </Layout>
-    ) : (
-        <Layout title={pageAsset!.page.title}>
-            <MyPage client:only="react" pageAsset={pageAsset} nav={nav?.children} />
+    (
+        <Layout title={title}>
+            {error ? (
+                <Error error={error} />
+            ) : (
+                <MyPage client:only="react" pageAsset={pageAsset} nav={nav?.children} />
+            )}
         </Layout>
     )
 }
