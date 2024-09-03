@@ -193,12 +193,17 @@ export function withEditor() {
                     });
                 },
                 updateEditorScrollState() {
-                    // If user is dragging a contentlet, we should not remove the contentlet area
-                    // Because that removes the element from the DOM and we'll lose the dragend event
-                    const contentletArea = store.dragItem() ? store.contentletArea() : null;
+                    // If the user is dragging a contentlet, do not remove the contentlet area.
+                    // Removing the element from the DOM will cause the loss of the `dragend` event.
+                    if (store.dragItem()) {
+                        patchState(store, { state: EDITOR_STATE.SCROLL_DRAG });
+
+                        return;
+                    }
+
                     patchState(store, {
-                        contentletArea,
-                        state: store.dragItem() ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
+                        contentletArea: null,
+                        state: EDITOR_STATE.IDLE
                     });
                 },
                 updateEditorOnScrollEnd() {

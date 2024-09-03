@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { EMPTY, Observable, Subject, fromEvent, of } from 'rxjs';
 
-import { NgClass, NgStyle } from '@angular/common';
+import { JsonPipe, NgClass, NgStyle } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -112,7 +112,8 @@ import {
         EmaContentletToolsComponent,
         DotEmaBookmarksComponent,
         ProgressBarModule,
-        DotResultsSeoToolComponent
+        DotResultsSeoToolComponent,
+        JsonPipe
     ],
     providers: [
         DotCopyContentModalService,
@@ -153,6 +154,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly host = '*';
 
     readonly $editorProps = this.uveStore.$editorProps;
+    readonly $vm = this.uveStore;
 
     get contentWindow(): Window {
         return this.iframe.nativeElement.contentWindow;
@@ -303,7 +305,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 filter((event: DragEvent) => event.dataTransfer.dropEffect === 'none')
             )
             .subscribe(() => {
-                // console.log('dragend');
                 this.uveStore.resetEditorProperties();
             });
 
@@ -316,7 +317,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const isInsideIframe =
                     event.clientX > iframeRect.left && event.clientX < iframeRect.right;
 
-                if (!isInsideIframe) {
+                // Check that  `this.uveStore.dragItem()` is not empty because there is a scenario where a drag operation
+                // occurs over the editor after invoking `handleReloadContentEffect`, which clears the dragItem.
+                // For more details, refer to the issue: https://github.com/dotCMS/core/issues/29855
+                if (!isInsideIframe && this.uveStore.dragItem()) {
                     this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
 
                     return;
@@ -339,7 +343,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
 
                 if (!direction) {
-                    this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
+                    // Check that  `this.uveStore.dragItem()` is not empty because there is a scenario where a drag operation
+                    // occurs over the editor after invoking `handleReloadContentEffect`, which clears the dragItem.
+                    // For more details, refer to the issue: https://github.com/dotCMS/core/issues/29855
+                    if (this.uveStore.dragItem()) {
+                        this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
+                    }
 
                     return;
                 }
@@ -359,7 +368,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(() => {
                 // If the dragged item is a temporary item, reset the editor state when the user leaves the window
-                if (isEqual(this.uveStore.dragItem(), TEMPORAL_DRAG_ITEM)) {
+                if (
+                    !this.uveStore.dragItem() ||
+                    isEqual(this.uveStore.dragItem(), TEMPORAL_DRAG_ITEM)
+                ) {
                     this.uveStore.resetEditorProperties();
 
                     return;
@@ -371,7 +383,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe((event: DragEvent) => {
                 event.preventDefault();
                 const target = event.target as HTMLDivElement;
-
                 const { position, payload, dropzone } = target.dataset;
 
                 // If we drop in a container that is not a dropzone, we just reset the editor state
