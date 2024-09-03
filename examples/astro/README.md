@@ -26,7 +26,7 @@ Follow the Astro setup steps after it pulls the example.
 Now we need to tell the Astro app what dotCMS instance is going to use to get the data to build its pages.
 
 1. Open the folder where you created the project in your code editor
-2. In the root, find the file .env.local.example and rename to .env.local
+2. In the root, find the file `.env.local.example` and rename to `.env.local`
 3. Open the .env.local file and update the environment variable:
 
    - `PUBLIC_DOTCMS_AUTH_TOKEN` this is the auth token for dotCMS, you can use the dotCMS UI to create one.
