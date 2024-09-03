@@ -23,7 +23,7 @@ Follow the Astro setup steps after it pulls the example.
 
 ## Add the dotCMS configuration
 
-Now we need to tell the Next.js app what dotCMS instance is going to use to get the data to build its pages.
+Now we need to tell the Astro app what dotCMS instance is going to use to get the data to build its pages.
 
 1. Open the folder where you created the project in your code editor
 2. In the root, find the file .env.local.example and rename to .env.local
