@@ -7,6 +7,10 @@ import java.lang.annotation.Target;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+/**
+ * Annotation to mark a resource as disabled.
+ * This is useful now that resources are activated by classpath scanning.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 public @interface Disabled {

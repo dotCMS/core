@@ -12,6 +12,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.Provider;
 
+/**
+ * Filter to check if a resource is disabled.
+ */
 @Provider
 @Priority(1)
 public class DisabledResourceFilter  implements ContainerRequestFilter {
@@ -19,6 +22,11 @@ public class DisabledResourceFilter  implements ContainerRequestFilter {
     @Context
     private ResourceInfo resourceInfo;
 
+    /**
+     * Check if the resource is disabled.
+     * @param requestContext request context.
+     * @throws IOException if an I/O exception occurs.
+     */
     @Override
     public void filter(final ContainerRequestContext requestContext) throws IOException {
         Class<?> resourceClass = resourceInfo.getResourceClass();
