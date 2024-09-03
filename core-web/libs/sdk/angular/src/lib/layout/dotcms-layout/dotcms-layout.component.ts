@@ -53,7 +53,9 @@ export class DotcmsLayoutComponent implements OnInit {
     set pageAsset(value: DotCMSPageAsset) {
         this._pageAsset = value;
         if (!value.layout) {
-            console.warn('Warning: pageAsset does not have a `layout` property. Might be using an advaced template or your dotCMS instance not have a enterprise license.');
+            console.warn(
+                'Warning: pageAsset does not have a `layout` property. Might be using an advaced template or your dotCMS instance not have a enterprise license.'
+            );
         }
     }
 
