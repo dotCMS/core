@@ -1,6 +1,5 @@
 import { DotCmsClient, getPageRequestParams } from "@dotcms/client";
-import type { DotcmsNavigationItem, DotCMSPageAsset } from "../types";
-import type { AstroGlobal } from "astro";
+import type { DotcmsNavigationItem, DotCMSPageAsset } from "@dotcms/types";
 
 export const client = DotCmsClient.init({
   authToken: import.meta.env.PUBLIC_DOTCMS_AUTH_TOKEN,

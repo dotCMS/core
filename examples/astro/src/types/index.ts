@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @dotcms/typescript-eslint/no-explicit-any */
 // We need to make a types lib for this.
 
 export interface DotCMSPageAsset {

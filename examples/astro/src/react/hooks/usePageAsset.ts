@@ -1,5 +1,5 @@
-import type { DotCMSPageAsset } from "../../types";
-import { client } from "../../utils/client";
+import type { DotCMSPageAsset } from "@dotcms/types";
+import { client } from "@utils/client";
 import { useEffect, useState } from "react";
 
 export const usePageAsset = (currentPageAsset: DotCMSPageAsset | undefined) => {

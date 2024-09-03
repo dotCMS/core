@@ -1,7 +1,7 @@
+import { Contentlets } from "@react/shared/contentlets";
+import type { DotCMSContentlet } from "@dotcms/types";
+import { client } from "@utils/client";
 import { useEffect, useState } from "react";
-import { client } from "../../../../utils/client";
-import { Contentlets } from "../../../shared/contentlets";
-import type { DotCMSContentlet } from "../../../../types";
 
 export const Destinations = () => {
   const [destinations, setDestinations] = useState<DotCMSContentlet[]>([]);

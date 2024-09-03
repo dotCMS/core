@@ -1,4 +1,4 @@
-import useImageSrc from "../../../hooks/useImageSrc";
+import useImageSrc from "src/react/hooks/useImageSrc";
 
 export const AboutUs = () => {
   const src = useImageSrc({ src: "82da90eb04/fileAsset/logo.png", width: 221 });

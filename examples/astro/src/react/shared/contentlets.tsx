@@ -1,7 +1,8 @@
 import type { FC } from "react";
-import type { DotCMSContentlet } from "../../types";
+
 import Contentlet from "./contentlet";
 import { Entry } from "./entry";
+import type { DotCMSContentlet } from "@dotcms/types";
 
 export type ContentletsProps = {
   contentlets: DotCMSContentlet[];

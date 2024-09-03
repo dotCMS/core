@@ -5,9 +5,10 @@ import Header from "./layout/header";
 
 import componentsMap from "./content-types";
 import type { FC } from "react";
-import type { DotcmsNavigationItem, DotCMSPageAsset } from "../types";
+
 import { Navigation } from "./layout/navigation";
 import { Footer } from "./layout/footer/footer";
+import type { DotcmsNavigationItem, DotCMSPageAsset } from "@dotcms/types";
 
 export type MyPageProps = {
   pageAsset: DotCMSPageAsset | undefined;

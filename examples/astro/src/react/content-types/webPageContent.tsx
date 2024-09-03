@@ -1,5 +1,5 @@
+import type { DotCMSContentlet } from "@dotcms/types";
 import type { FC } from "react";
-import type { DotCMSContentlet } from "../../types";
 
 export type WebPageContentProps = DotCMSContentlet;
 

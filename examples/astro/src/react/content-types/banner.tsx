@@ -1,7 +1,6 @@
-import useImageSrc from "../hooks/useImageSrc";
-
+import type { DotCMSContentlet } from "@dotcms/types";
+import useImageSrc from "@react/hooks/useImageSrc";
 import type { FC } from "react";
-import type { DotCMSContentlet } from "../../types";
 
 export type BannerProps = DotCMSContentlet;
 

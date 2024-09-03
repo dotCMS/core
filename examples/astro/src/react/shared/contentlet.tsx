@@ -1,6 +1,6 @@
 import { useMemo, type FC } from "react";
 import { isInsideEditor } from "@dotcms/client";
-import type { DotCMSContentlet } from "../../types";
+import type { DotCMSContentlet } from "@dotcms/types";
 
 export type ContentletProps = {
   contentlet: DotCMSContentlet;
