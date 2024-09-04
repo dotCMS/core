@@ -5039,6 +5039,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 this.pushSaveEvent(contentletOut, createNewVersion);
             }
 
+            if (contentletIn.getBoolProperty("isCopy")){
+                contentletOut.setBoolProperty("isCopy", true);
+            }
+
             return contentletOut;
         } finally {
             this.cleanup(contentletOut);
@@ -8965,6 +8969,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (UtilMethods.isSet(newIdentifier)) {
                 newContentlet.setIdentifier(newIdentifier);
             }
+            newContentlet.setProperty("isCopy", true);
             newContentlet = checkin(newContentlet, rels, parentCats,
                     permissionAPI.getPermissions(contentlet), user, respectFrontendRoles);
             if (!UtilMethods.isSet(newIdentifier)) {
