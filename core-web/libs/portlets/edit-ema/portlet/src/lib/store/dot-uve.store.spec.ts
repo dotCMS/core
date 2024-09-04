@@ -1247,21 +1247,6 @@ describe('UVEStore', () => {
                         });
                     });
 
-                    it('should have hide as true when scroll drag', () => {
-                        patchState(store, {
-                            isEditState: true,
-                            canEditPage: true,
-                            contentletArea: MOCK_CONTENTLET_AREA,
-                            state: EDITOR_STATE.SCROLL_DRAG
-                        });
-
-                        expect(store.$editorProps().contentletTools).toEqual({
-                            isEnterprise: true,
-                            contentletArea: MOCK_CONTENTLET_AREA,
-                            hide: true
-                        });
-                    });
-
                     it('should be null when scrolling', () => {
                         patchState(store, {
                             isEditState: true,
@@ -1403,15 +1388,6 @@ describe('UVEStore', () => {
 
                     expect(store.state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
                     expect(store.bounds()).toEqual([]);
-                });
-
-                it('should keep the contentletArea when there is a drag titem', () => {
-                    store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
-                    store.setEditorContentletArea(MOCK_CONTENTLET_AREA);
-
-                    store.updateEditorScrollState();
-
-                    expect(store.contentletArea()).toEqual(MOCK_CONTENTLET_AREA);
                 });
 
                 it('should set the contentletArea to null when we are scrolling', () => {

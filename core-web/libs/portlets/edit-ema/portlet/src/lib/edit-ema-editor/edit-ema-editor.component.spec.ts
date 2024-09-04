@@ -38,6 +38,7 @@ import {
     DotPersonalizeService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
+    DotSessionstorageService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService,
     PushPublishService
@@ -145,6 +146,7 @@ const createRouting = () =>
             UVEStore,
             DotFavoritePageService,
             DotESContentService,
+            DotSessionstorageService,
             {
                 provide: DotAlertConfirmService,
                 useValue: {
@@ -334,6 +336,7 @@ describe('EditEmaEditorComponent', () => {
         let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
         let router: Router;
         let dotPageApiService: DotPageApiService;
+        let dotSessionStorage: DotSessionstorageService;
 
         const createComponent = createRouting();
 
@@ -366,6 +369,7 @@ describe('EditEmaEditorComponent', () => {
             dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
             router = spectator.inject(Router, true);
             dotPageApiService = spectator.inject(DotPageApiService, true);
+            dotSessionStorage = spectator.inject(DotSessionstorageService, true);
 
             addMessageSpy = jest.spyOn(messageService, 'add');
 
@@ -1545,6 +1549,33 @@ describe('EditEmaEditorComponent', () => {
                             }
                         });
                     });
+
+                    it('should remove the last dragItem from the session storage', () => {
+                        const removeItemSpy = jest.spyOn(dotSessionStorage, 'removeItem');
+
+                        const target = {
+                            target: {
+                                dataset: {
+                                    type: 'contentlet',
+                                    item: JSON.stringify({
+                                        contentlet: CONTENTLETS_MOCK[0],
+                                        move: false
+                                    })
+                                }
+                            }
+                        };
+
+                        const dragStart = new Event('dragstart');
+
+                        Object.defineProperty(dragStart, 'target', {
+                            writable: false,
+                            value: target.target
+                        });
+
+                        window.dispatchEvent(dragStart);
+
+                        expect(removeItemSpy).toHaveBeenCalledWith('DRAG_ITEM_BEFORE_LEAVE');
+                    });
                 });
 
                 describe('drag over', () => {
@@ -1606,32 +1637,18 @@ describe('EditEmaEditorComponent', () => {
                         return dragLeave;
                     };
 
-                    describe('EXTERNAL FILE/TEMPORAL DRAG ITEM', () => {
-                        beforeEach(() => store.setEditorDragItem(TEMPORAL_DRAG_ITEM));
+                    beforeEach(() => store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK));
 
-                        it('should set the editor state to IDLE', () => {
-                            const resetEditorPropertiesSpy = jest.spyOn(
-                                store,
-                                'resetEditorProperties'
-                            );
-                            const dragLeave = createDragLeaveEvent();
-                            window.dispatchEvent(dragLeave);
-                            expect(resetEditorPropertiesSpy).toHaveBeenCalled();
-                        });
-                    });
-
-                    describe('CONTENTLET', () => {
-                        beforeEach(() => store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK));
-
-                        it('should set the editor state to IDLE', () => {
-                            const resetEditorPropertiesSpy = jest.spyOn(
-                                store,
-                                'resetEditorProperties'
-                            );
-                            const dragLeave = createDragLeaveEvent();
-                            window.dispatchEvent(dragLeave);
-                            expect(resetEditorPropertiesSpy).not.toHaveBeenCalled();
-                        });
+                    it('should reset editor properties and set the last dragItem in the session storage', () => {
+                        const resetEditorPropertiesSpy = jest.spyOn(store, 'resetEditorProperties');
+                        const setItemSpy = jest.spyOn(dotSessionStorage, 'setItem');
+                        const dragLeave = createDragLeaveEvent();
+                        window.dispatchEvent(dragLeave);
+                        expect(setItemSpy).toHaveBeenCalledWith(
+                            'DRAG_ITEM_BEFORE_LEAVE',
+                            EMA_DRAG_ITEM_CONTENTLET_MOCK
+                        );
+                        expect(resetEditorPropertiesSpy).toHaveBeenCalled();
                     });
                 });
 
@@ -1672,7 +1689,7 @@ describe('EditEmaEditorComponent', () => {
                         });
                     });
 
-                    it('should set the editor to DRAGGING if there is dragItem and the state is OUT_OF_BOUNDS', () => {
+                    it('should set the editor to DRAGGING if there is dragItem and the state is IDLE', () => {
                         store.setEditorDragItem({
                             baseType: 'dotAsset',
                             contentType: 'dotAsset',
@@ -1695,6 +1712,28 @@ describe('EditEmaEditorComponent', () => {
                         window.dispatchEvent(dragEnter);
 
                         expect(setEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.DRAGGING);
+                    });
+
+                    it('should set the last dragItem in the session storage if the file type is `dotcms/contentlet`', () => {
+                        const getItemSpy = jest
+                            .spyOn(dotSessionStorage, 'getItem')
+                            .mockReturnValue(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+                        const setEditorDragItemSpy = jest.spyOn(store, 'setEditorDragItem');
+                        const dragEnter = new Event('dragenter');
+
+                        Object.defineProperty(dragEnter, 'dataTransfer', {
+                            writable: false,
+                            value: {
+                                types: ['dotcms/contentlet']
+                            }
+                        });
+
+                        window.dispatchEvent(dragEnter);
+
+                        expect(setEditorDragItemSpy).toHaveBeenCalledWith(
+                            EMA_DRAG_ITEM_CONTENTLET_MOCK
+                        );
+                        expect(getItemSpy).toHaveBeenCalledWith('DRAG_ITEM_BEFORE_LEAVE');
                     });
                 });
 

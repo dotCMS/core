@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { EMPTY, Observable, Subject, fromEvent, of } from 'rxjs';
 
-import { JsonPipe, NgClass, NgStyle } from '@angular/common';
+import { NgClass, NgStyle } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -113,8 +113,7 @@ import {
         EmaContentletToolsComponent,
         DotEmaBookmarksComponent,
         ProgressBarModule,
-        DotResultsSeoToolComponent,
-        JsonPipe
+        DotResultsSeoToolComponent
     ],
     providers: [
         DotCopyContentModalService,
@@ -152,12 +151,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
-    readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
-
     readonly host = '*';
-
+    readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
     readonly $editorProps = this.uveStore.$editorProps;
-    readonly $vm = this.uveStore;
 
     get contentWindow(): Window {
         return this.iframe.nativeElement.contentWindow;
@@ -278,7 +274,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe((event: DragEvent) => {
                 // Set custom data-type for the drag event
                 // More info: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setData
-                event.dataTransfer.setData('dotcms/contentlet', '');
+                event.dataTransfer?.setData('dotcms/contentlet', '');
                 const { dataset } = event.target as HTMLDivElement;
                 const data = getDragItemData(dataset);
                 this.uveStore.setEditorDragItem(data);
@@ -294,7 +290,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe((event: DragEvent) => {
                 event.preventDefault();
 
-                const { types } = event.dataTransfer;
+                const types = event.dataTransfer?.types || [];
                 const dragItem = this.uveStore.dragItem();
 
                 this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
