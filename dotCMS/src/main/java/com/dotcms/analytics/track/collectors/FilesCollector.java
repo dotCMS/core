@@ -1,11 +1,11 @@
-package com.dotcms.analytics.track;
+package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import io.vavr.control.Try;
 
 import java.io.StringWriter;
@@ -13,28 +13,29 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class PagesCollector implements Collector {
+public class FilesCollector implements Collector {
 
-    private final HTMLPageAssetAPI pageAPI;
+    private final FileAssetAPI fileAssetAPI;
     private final HostAPI hostAPI;
 
 
-    public PagesCollector() {
-        this(APILocator.getHTMLPageAssetAPI(),
+    public FilesCollector() {
+        this(APILocator.getFileAssetAPI(),
                 APILocator.getHostAPI());
     }
 
-    public PagesCollector(final HTMLPageAssetAPI pageAPI,
+    public FilesCollector(final FileAssetAPI fileAssetAPI,
                           final HostAPI hostAPI) {
 
-        this.pageAPI = pageAPI;
+        this.fileAssetAPI = fileAssetAPI;
         this.hostAPI = hostAPI;
     }
 
     @Override
     public boolean test(CollectorContextMap collectorContextMap) {
-        return "page" == collectorContextMap.getRequestMatcher(); // should compare with the id
+        return "file" == collectorContextMap.getRequestMatcher(); // should compare with the id
     }
+
 
     @Override
     public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
@@ -49,17 +50,17 @@ public class PagesCollector implements Collector {
         if (Objects.nonNull(uri) && Objects.nonNull(siteId) && Objects.nonNull(languageId)) {
 
             final Host site = Try.of(()->this.hostAPI.find(siteId, APILocator.systemUser(), false)).get();
-            final IHTMLPage page = Try.of(()->this.pageAPI.getPageByPath(uri, site, languageId, true)).get();
-            pageObject.put("object_id", page.getIdentifier());
-            pageObject.put("title", page.getTitle());
+            final FileAsset fileAsset = Try.of(()->this.fileAssetAPI.getFileByPath(uri, site, languageId, true)).get();
+            pageObject.put("object_id", fileAsset.getIdentifier());
+            pageObject.put("title", fileAsset.getTitle());
             pageObject.put("path", uri);
         }
 
         final StringWriter writer = new StringWriter();
-        Try.run(()->DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValue(writer, pageObject));
+        Try.run(()-> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValue(writer, pageObject));
         collectorPayloadBean.put("objects",  writer.toString());
         collectorPayloadBean.put("path", uri);
-        collectorPayloadBean.put("event", "page");
+        collectorPayloadBean.put("event", "file");
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("site", siteId);
 

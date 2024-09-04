@@ -1,4 +1,4 @@
-package com.dotcms.analytics.track;
+package com.dotcms.analytics.track.matchers;
 
 import com.dotcms.visitor.filter.characteristics.Character;
 import com.dotcms.visitor.filter.characteristics.CharacterWebAPI;

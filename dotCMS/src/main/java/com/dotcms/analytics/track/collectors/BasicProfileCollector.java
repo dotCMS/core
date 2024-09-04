@@ -1,4 +1,4 @@
-package com.dotcms.analytics.track;
+package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.FunctionUtils;

@@ -1,5 +1,6 @@
-package com.dotcms.analytics.track;
+package com.dotcms.analytics.track.collectors;
 
+import com.dotcms.analytics.track.matchers.RequestMatcher;
 import com.dotcms.visitor.filter.characteristics.Character;
 
 import javax.servlet.http.HttpServletRequest;
@@ -10,13 +11,13 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class RequestCharacterCollectorContextMap implements CollectorContextMap {
 
-    private final Object requestMatcher;
+    private final RequestMatcher requestMatcher;
     private final Character character;
     final HttpServletRequest request;
 
     public RequestCharacterCollectorContextMap(final HttpServletRequest request,
                                                final Character character,
-                                               final Object requestMatcher) {
+                                               final RequestMatcher requestMatcher) {
         this.request = request;
         this.character = character;
         this.requestMatcher = requestMatcher;
@@ -48,7 +49,7 @@ public class RequestCharacterCollectorContextMap implements CollectorContextMap 
 
 
     @Override
-    public Object getRequestMatcher() {
+    public RequestMatcher getRequestMatcher() {
         return this.requestMatcher;
     }
 }

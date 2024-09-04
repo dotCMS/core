@@ -1,6 +1,7 @@
-package com.dotcms.analytics.track;
+package com.dotcms.analytics.track.collectors;
 
 import java.io.Serializable;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -20,6 +21,11 @@ public class ConcurrentCollectorPayloadBean implements CollectorPayloadBean {
     @Override
     public Serializable get(final String key) {
         return map.get(key);
+    }
+
+    @Override
+    public Map<String, Serializable> toMap() {
+        return Map.copyOf(map);
     }
 
 }

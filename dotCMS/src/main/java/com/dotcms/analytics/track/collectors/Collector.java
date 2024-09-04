@@ -1,4 +1,4 @@
-package com.dotcms.analytics.track;
+package com.dotcms.analytics.track.collectors;
 
 /**
  * A collector command basically puts information into a collector payload bean
@@ -26,5 +26,14 @@ public interface Collector {
      */
     default boolean isAsync() {
         return false;
+    }
+
+    /**
+     * Return an id for the Collector, by default returns the class name.
+     * @return
+     */
+    default String getId() {
+
+        return this.getClass().getName();
     }
 }

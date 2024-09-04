@@ -1,4 +1,4 @@
-package com.dotcms.analytics.track;
+package com.dotcms.analytics.track.matchers;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
