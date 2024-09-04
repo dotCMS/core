@@ -7,6 +7,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
@@ -23,7 +24,12 @@ public class ConfigService {
     private final LicenseValiditySupplier licenseValiditySupplier;
 
     private ConfigService() {
-        licenseValiditySupplier = new LicenseValiditySupplier() {};
+        this(new LicenseValiditySupplier() {});
+    }
+
+    @VisibleForTesting
+    ConfigService(final LicenseValiditySupplier licenseValiditySupplier) {
+        this.licenseValiditySupplier = licenseValiditySupplier;
     }
 
     /**

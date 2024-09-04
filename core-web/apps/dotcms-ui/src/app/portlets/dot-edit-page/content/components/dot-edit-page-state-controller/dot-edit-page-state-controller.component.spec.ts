@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { createFakeEvent } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -229,10 +230,10 @@ describe('DotEditPageStateControllerComponent', () => {
 
                 expect(lockerDe.classes.warn).toBe(true, 'warn class');
                 expect(lockerDe.attributes.appendTo).toBe('target');
-                expect(lockerDe.attributes['ng-reflect-text']).toBe('Page locked by Some One');
+                expect(lockerDe.attributes['ng-reflect-content']).toBe('Page locked by Some One');
                 expect(lockerDe.attributes['ng-reflect-tooltip-position']).toBe('top');
-                expect(locker.modelValue).toBe(false, 'checked');
-                expect(locker.disabled).toBe(false, 'disabled');
+                expect(locker.modelValue).toBe(false);
+                expect(locker.disabled).toBe(false);
             });
 
             it('should have lock info', () => {
@@ -578,14 +579,18 @@ describe('DotEditPageStateControllerComponent', () => {
         });
 
         it("should change the mode when the user clicks on the 'Edit' option", () => {
-            component.menuItems[0].command();
+            component.menuItems[0].command({
+                originalEvent: createFakeEvent('click')
+            });
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
         });
 
         it("should call editContentlet when clicking on the 'ContentType Content' option", () => {
             spyOn(editContentletService, 'edit');
-            component.menuItems[1].command();
+            component.menuItems[1].command({
+                originalEvent: createFakeEvent('click')
+            });
             expect(editContentletService.edit).toHaveBeenCalledWith({
                 data: {
                     inode: '123'

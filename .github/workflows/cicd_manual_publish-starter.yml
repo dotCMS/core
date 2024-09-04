@@ -155,21 +155,13 @@ jobs:
     runs-on: ubuntu-20.04
     environment: trunk
     steps:
+      - uses: actions/checkout@v4
       - name: Slack Notification
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
-          channel-id: "log-starter"
+          channel-id: "log-sdk-libs"
           payload: |
-            {
-              "blocks": [              
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "> :large_green_circle: *Attention dotters:* a new Starter published!\n \n>This automated script is happy to announce that a new *_${{ env.STARTER_TYPE }}_* :package: `${{ needs.deploy-artifacts.outputs.filename }}` is now available on `ARTIFACTORY` :frog:!\n \n>:link:${{ needs.deploy-artifacts.outputs.url }}\n>*Changelog* \n>```${{ github.event.inputs.changelog }}```"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }} 
+            > :large_green_circle: *Attention dotters:* a new Starter published!
+            >
+            > This automated script is happy to announce that a new *_${{ env.STARTER_TYPE }}_* :package: `${{ needs.deploy-artifacts.outputs.filename }}` is now available on `ARTIFACTORY` :frog:!\n \n>:link:${{ needs.deploy-artifacts.outputs.url }}\n>*Changelog* \n>```${{ github.event.inputs.changelog }}```
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}       

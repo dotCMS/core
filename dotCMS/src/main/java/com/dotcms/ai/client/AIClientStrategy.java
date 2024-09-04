@@ -1,5 +1,7 @@
 package com.dotcms.ai.client;
 
+import com.dotcms.ai.domain.AIResponse;
+
 import java.io.OutputStream;
 import java.io.Serializable;
 

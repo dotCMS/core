@@ -8,6 +8,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
 import javax.validation.constraints.Max;
@@ -49,6 +50,7 @@ public class CompletionsForm {
     public final String model;
     public final String operator;
     public final String site;
+    public final User user;
 
     @Override
     public boolean equals(final Object o) {
@@ -88,6 +90,7 @@ public class CompletionsForm {
                 ", operator='" + operator + '\'' +
                 ", site='" + site + '\'' +
                 ", contentType=" + Arrays.toString(contentType) +
+                ", user=" + user +
                 '}';
     }
 
@@ -118,6 +121,7 @@ public class CompletionsForm {
             this.temperature = builder.temperature >= 2 ? 2 : builder.temperature;
         }
         this.model = UtilMethods.isSet(builder.model) ? builder.model : ConfigService.INSTANCE.config().getModel().getCurrentModel();
+        this.user = builder.user;
     }
 
     private String validateBuilderQuery(final String query) {
@@ -131,7 +135,6 @@ public class CompletionsForm {
         return Try.of(() -> Long.parseLong(language))
                 .recover(x -> APILocator.getLanguageAPI().getLanguage(language).getId())
                 .getOrElseTry(() -> APILocator.getLanguageAPI().getDefaultLanguage().getId());
-
     }
 
     public static Builder copy(final CompletionsForm form) {
@@ -149,7 +152,8 @@ public class CompletionsForm {
                 .operator(form.operator)
                 .indexName(form.indexName)
                 .threshold(form.threshold)
-                .stream(form.stream);
+                .stream(form.stream)
+                .user(form.user);
     }
 
     public static final class Builder {
@@ -182,6 +186,8 @@ public class CompletionsForm {
         private String operator = "cosine";
         @JsonSetter(nulls = Nulls.SKIP)
         private String site;
+        @JsonSetter(nulls = Nulls.SKIP)
+        private User user;
 
         public Builder prompt(String queryOrPrompt) {
             this.prompt = queryOrPrompt;
@@ -224,7 +230,7 @@ public class CompletionsForm {
         }
 
         public Builder model(String model) {
-            this.model =model;
+            this.model = model;
             return this;
         }
 
@@ -254,7 +260,12 @@ public class CompletionsForm {
         }
 
         public Builder site(String site) {
-            this.site =site;
+            this.site = site;
+            return this;
+        }
+
+        public Builder user(User user) {
+            this.user = user;
             return this;
         }
 

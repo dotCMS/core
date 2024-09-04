@@ -116,9 +116,6 @@
                                     <prefix>[WireMock]</prefix>
                                     <color>green</color>
                                 </log>
-                                <env>
-                                    <WIREMOCK_OPTIONS>--verbose</WIREMOCK_OPTIONS>
-                                </env>
                             </run>
                         </wiremock>
                         <dotcms>

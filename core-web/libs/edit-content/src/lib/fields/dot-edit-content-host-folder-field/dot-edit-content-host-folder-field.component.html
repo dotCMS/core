@@ -4,7 +4,7 @@
     [formControl]="pathControl"
     [filter]="true"
     [options]="store.tree()"
-    [attr.aria-labelledby]="'field-' + field.variable"
+    [attr.aria-labelledby]="'field-' + $field().variable"
     [virtualScroll]="true"
     [virtualScrollItemSize]="50"
     [scrollHeight]="'450px'"

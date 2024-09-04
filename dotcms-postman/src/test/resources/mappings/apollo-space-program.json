@@ -1,0 +1,41 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/c",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matches": ".*\"content\":\"What are the major achievements of the Apollo space program.*"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "cmpl-11",
+      "object": "text_completion",
+      "created": 1699999999,
+      "model": "gpt-3.5-turbo-16k",
+      "choices": [
+        {
+          "text": "The Apollo space program, conducted by NASA, achieved several major milestones in space exploration. Its most significant achievement was the successful landing of humans on the Moon. Apollo 11, in 1969, saw astronauts Neil Armstrong and Buzz Aldrin become the first humans to set foot on the lunar surface. The program also provided extensive scientific data and technological advancements.",
+          "index": 0,
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 57,
+        "total_tokens": 67
+      }
+    }
+  }
+}
