@@ -19,7 +19,7 @@ const extractLocationsAndActivities = (
 
   return (
     contentlet?.reduce((acc: any, { activities, ...location }: any) => {
-      // This is a relationshipt between Contentlets
+      // This is a relationship between Contentlets
       // Event -> Location -> Activities
       // Depth 3
       acc.activities = acc.activities.concat(activities);
