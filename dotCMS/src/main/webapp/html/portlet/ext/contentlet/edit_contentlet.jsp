@@ -582,7 +582,7 @@
 								<jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
 								<%
 						}
-                    } else { %>
+                    } else if (!f.getFieldType().equals(Field.FieldType.CONSTANT.toString())) { %>
 						<jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
 					<% } %>
 
