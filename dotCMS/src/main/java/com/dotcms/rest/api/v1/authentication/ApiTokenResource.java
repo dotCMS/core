@@ -227,16 +227,16 @@ public class ApiTokenResource implements Serializable {
     public final Response revokeApiToken(
             @Context final HttpServletRequest request, 
             @Context final HttpServletResponse response,
-            @RequestBody(descrpition = "This method takes an api-token ID and revokes it from a remote address.\n\n" +
-                                        "If the token is expired then the system will return a message stating the token is expire.\n\n",
-                        required = true,
-                        content = @Content(
-                            schema = @Schema(implementation = )
-                        ))
             @PathParam("tokenId") @Parameter(
                                     required = true,
                                     description = "ID of Api token being revoked",
-                                    schema = @Schema(type= "string"))
+                                    schema = @Schema(type = "string"))
+            @RequestBody(description = "This method takes an api-token ID and revokes it from a remote address.\n\n" +
+                                        "If the token is expired then the system will return a message stating the token is expire.\n\n",
+                        required = true,
+                        content = @Content(
+                            schema = @Schema(type = "String")
+                        ))
             final String tokenId) {
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, "users");
@@ -266,6 +266,10 @@ public class ApiTokenResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes({MediaTpye.APPLICATION_JSON})
+    @Operation(operationId = "deleteApiToken",
+                summary = "Deletes an api-token",
+                description = "")
     public final Response deleteApiToken(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("tokenId") final String tokenId) {
 
