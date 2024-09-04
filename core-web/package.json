@@ -184,7 +184,7 @@
         "@types/googlemaps": "3.40.3",
         "@types/jasmine": "4.0.3",
         "@types/jasminewd2": "~2.0.8",
-        "@types/jest": "29.5.10",
+        "@types/jest": "^29.5.12",
         "@types/md5": "^2.3.5",
         "@types/node": "^18.16.9",
         "@types/puppeteer": "^5.4.2",

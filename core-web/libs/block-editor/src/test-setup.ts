@@ -1,13 +1,11 @@
-// Configure Jest for Angular [https://medium.com/@kyjungok/setup-jest-in-angular-application-22b22609cbcd]
 import 'jest-preset-angular/setup-jest';
 
-import { NgModule } from '@angular/core';
-
-// This is needed to mock the PrimeNG SplitButton component to avoid errors while running tests.
-// https://github.com/primefaces/primeng/issues/12945
-@NgModule()
-export class SplitButtonMockModule {}
-
-jest.mock('primeng/splitbutton', () => ({
-    SplitButtonModule: SplitButtonMockModule
-}));
+// Workaround for the following issue:
+// https://github.com/jsdom/jsdom/issues/2177#issuecomment-1724971596
+const originalConsoleError = console.error;
+const jsDomCssError = 'Error: Could not parse CSS stylesheet';
+console.error = (...params) => {
+    if (!params.find((p) => p.toString().includes(jsDomCssError))) {
+        originalConsoleError(...params);
+    }
+};
