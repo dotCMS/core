@@ -29,9 +29,10 @@ export const getPageData = async (
       params,
     });
 
-    const pageAsset = (await client.page.get(
-      pageRequestParams,
-    )) as DotCMSPageAsset;
+    const pageAsset = (await client.page.get({
+      ...pageRequestParams,
+      depth: 3,
+    })) as DotCMSPageAsset;
 
     const { entity } = (await client.nav.get({
       path: "/",

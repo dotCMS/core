@@ -35,6 +35,12 @@ export const MyPage: FC<MyPageProps> = ({ pageAsset, nav }) => {
           }}
           config={{
             pathname: "/",
+
+            editor: {
+              params: {
+                depth: "3",
+              },
+            },
           }}
         />
       </main>
