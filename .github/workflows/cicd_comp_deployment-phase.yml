@@ -164,7 +164,10 @@ jobs:
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
           channel-id: "log-docker"
-          payload: "> :large_purple_circle: *Attention dotters:* Docker image built!\n \n>This automated script is happy to announce that a new *docker* image has been built for *${{ inputs.environment }}* with *tags:* [`${{ steps.docker_build.outputs.tags }}`] :docker:"
+          payload: |
+            > :large_purple_circle: *Attention dotters:* Docker image built!
+            >
+            > This automated script is happy to announce that a new *docker* image has been built for *${{ inputs.environment }}* with *tags:* [`${{ steps.docker_build.outputs.tags }}`] :docker:
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
 
       # Send Slack notification for CLI publication (if required)
@@ -173,7 +176,10 @@ jobs:
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
           channel-id: "log-dotcli"
-          payload: "> :large_purple_circle: *Attention dotters:* dotCLI published!\n \n>This automated script is happy to announce that a new *_dotCLI_* version *tagged as:* [ `${{ steps.cli_publish.outputs.npm-package-version }}, ${{ steps.cli_publish.outputs.npm-package-version-tag }}` ] is now available on the `NPM` registry :package:!\n \n>`npm i -g @dotcms/dotcli@${{ steps.cli_publish.outputs.npm-package-version-tag }}`"
+          payload: |
+            > :large_purple_circle: *Attention dotters:* dotCLI published!
+            >
+            > This automated script is happy to announce that a new *_dotCLI_* version *tagged as:* [ `${{ steps.cli_publish.outputs.npm-package-version }}, ${{ steps.cli_publish.outputs.npm-package-version-tag }}` ] is now available on the `NPM` registry :package:!\n \n>`npm i -g @dotcms/dotcli@${{ steps.cli_publish.outputs.npm-package-version-tag }}`
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }} 
 
       # Send Slack notification for SDK publication (if required)          
@@ -182,6 +188,9 @@ jobs:
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
           channel-id: "log-sdk-libs"
-          payload: "> :large_orange_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) published!\n \n>This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.sdks_publish.outputs.npm-package-version }}` ] is now available on the `NPM` registry :package:!"
+          payload: |
+            > :large_orange_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) published!
+            >
+            > This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.sdks_publish.outputs.npm-package-version }}` ] is now available on the `NPM` registry :package:!
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}         
             

@@ -120,12 +120,23 @@ By default, this image is built from the `dotcms/dotcms:latest` tagged version o
 `--build-arg DOTCMS_DOCKER_TAG=latest` or `--build-arg DOTCMS_DOCKER_TAG=23.07`
 
 ```
-docker build --pull --build-arg DOTCMS_DOCKER_TAG=latest  . -t dotcms/dotcms-dev
+docker build --pull --build-arg DOTCMS_DOCKER_TAG=latest --progress=plain --load . -t dotcms/dotcms-dev:testing
 ```
 or
 ```
-docker buildx build --build-arg DOTCMS_DOCKER_TAG=master_latest_SNAPSHOT --platform linux/amd64,linux/arm64 --pull --push -t dotcms/dotcms-dev:master_latest_SNAPSHOT .
+docker buildx build --build-arg DOTCMS_DOCKER_TAG=trunk --platform linux/amd64,linux/arm64 --pull --push -t dotcms/dotcms-dev:testing .
 ```
+
+then
+```
+
+docker run --rm \
+-p 8000:8000 \
+-p 8443:8443 \
+-v $PWD/data:/data 
+dotcms/dotcms-dev:testing
+```
+
 
 ### Included Database and Elasticsearch
 

@@ -25,13 +25,14 @@ import org.glassfish.jersey.server.ResourceConfig;
  *
  */
 
+@ApplicationPath("/api")
 @OpenAPIDefinition(
 		info = @Info(
 				title = "dotCMS REST API",
 				version = "3"),
 		servers = @Server(
 						description = "dotCMS Server",
-						url = "/api"),
+						url = "/"),
 		tags = {
 				@Tag(name = "Workflow"),
 				@Tag(name = "Page"),
@@ -43,22 +44,19 @@ import org.glassfish.jersey.server.ResourceConfig;
 				@Tag(name = "Content Report")
 		}
 )
-
-@ApplicationPath("/api")
 public class DotRestApplication extends ResourceConfig {
 
 	public DotRestApplication() {
 
 		register(MultiPartFeature.class).
 		register(JacksonJaxbJsonProvider.class).
-		register(OpenApiResource.class).
-		register(AcceptHeaderOpenApiResource.class).
 		registerClasses(customClasses.keySet()).
 		packages(
 		  "com.dotcms.rest",
 		  "com.dotcms.contenttype.model.field",
 		  "com.dotcms.rendering.js",
-		  "com.dotcms.ai.rest"
+		  "com.dotcms.ai.rest",
+		  "io.swagger.v3.jaxrs2"
 		);
 	}
 

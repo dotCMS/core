@@ -140,10 +140,11 @@ public interface EmbeddingsAPI {
      * Embeddings
      *
      * @param content The content that will be tokenized and sent to OpenAI.
+     * @param userId   The ID of the user making the request.
      *
      * @return Tuple(Count of Tokens Input, List of Embeddings Output)
      */
-    Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(final String content);
+    Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(String content, String userId);
 
     /**
      * this method takes a snippet of content and will try to see if we have already generated
@@ -154,10 +155,11 @@ public interface EmbeddingsAPI {
      *
      * @param contentId The ID of the Contentlet being sent to the OpenAI Endpoint.
      * @param content   The actual indexable data that will be tokenized and sent to OpenAI service.
+     * @param userId   The ID of the user making the request.
      *
      * @return Tuple(Count of Tokens Input, List of Embeddings Output)
      */
-    Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(final String contentId, final String content);
+    Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(String contentId, String content, String userId);
 
     /**
      * Checks if the embeddings for the given inode, indexName, and extractedText already exist in the database.

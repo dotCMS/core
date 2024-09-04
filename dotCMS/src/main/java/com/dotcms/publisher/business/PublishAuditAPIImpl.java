@@ -78,6 +78,8 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	@Override
 	public void insertPublishAuditStatus(PublishAuditStatus pa)
 			throws DotPublisherException {
+		Logger.debug(PublishAuditAPIImpl.class,"Inserting audit table for bundle: " + pa.getBundleId());
+		Logger.debug(PublishAuditAPIImpl.class,"Status: " + pa.getStatus().name());
 	    boolean localt=false;
 		if(getPublishAuditStatus(pa.getBundleId()) == null) {
 			try{
@@ -123,6 +125,8 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	@WrapInTransaction
 	@Override
 	public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history, Boolean updateDates ) throws DotPublisherException {
+		Logger.debug(PublishAuditAPIImpl.class,"Updating audit table for bundle: " + bundleId);
+		Logger.debug(PublishAuditAPIImpl.class,"Status: " + newStatus.name());
 	    boolean local=false;
 		try{
 			local = HibernateUtil.startLocalTransactionIfNeeded();
@@ -515,6 +519,8 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 
 		//Status
 		PublishAuditStatus status =  new PublishAuditStatus(bundleFolder);
+		Logger.debug(PublishAuditAPIImpl.class,"Updating audit table for bundle: " + bundleFolder);
+		Logger.debug(PublishAuditAPIImpl.class,"Status: " + status.getStatus().name());
 		//History
 		PublishAuditHistory historyPojo = new PublishAuditHistory();
 		EndpointDetail detail = new EndpointDetail();
