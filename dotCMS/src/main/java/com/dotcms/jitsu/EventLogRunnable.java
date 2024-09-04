@@ -72,7 +72,7 @@ public class EventLogRunnable implements Runnable {
     }
 
     private EventsPayload convertToEventPayload(final Map<String, Serializable> stringSerializableMap) {
-        return null; // todo:
+        return null; // todo: need to convert this to EventPayload
     }
 
     @Override
