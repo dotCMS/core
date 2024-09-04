@@ -1,5 +1,6 @@
 package com.dotcms.analytics.track.collectors;
 
+import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -33,7 +34,7 @@ public class FilesCollector implements Collector {
 
     @Override
     public boolean test(CollectorContextMap collectorContextMap) {
-        return "file" == collectorContextMap.getRequestMatcher(); // should compare with the id
+        return FilesRequestMatcher.FILES_MATCHER_ID.equals(collectorContextMap.getRequestMatcher().getId()) ; // should compare with the id
     }
 
 

@@ -184,7 +184,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
             Logger.debug(this, ()-> "Running sync collectors");
             final CollectorContextMap syncCollectorContextMap = new RequestCharacterCollectorContextMap(request, character, requestMatcher);
             // we collect info which is sync and includes the request.
-            syncCollectors.values().forEach(collector -> collector.collect(syncCollectorContextMap, collectorPayloadBean));
+            syncCollectors.values().stream().filter(collector -> collector.test(syncCollectorContextMap)).forEach(collector -> collector.collect(syncCollectorContextMap, collectorPayloadBean));
         }
 
         // if there is anything to run async
@@ -192,7 +192,9 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
         this.submitter.logEvent(
                 new EventLogRunnable(site, ()-> {
                     Logger.debug(this, ()-> "Running async collectors");
-                    asyncCollectors.values().forEach(collector -> { collector.collect(collectorContextMap, collectorPayloadBean); });
+                    asyncCollectors.values().stream()
+                            .filter(collector -> collector.test(collectorContextMap))
+                            .forEach(collector -> { collector.collect(collectorContextMap, collectorPayloadBean); });
                     return collectorPayloadBean.toMap();
                 }));
 

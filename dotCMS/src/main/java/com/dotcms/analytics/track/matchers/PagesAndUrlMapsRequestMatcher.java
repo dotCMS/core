@@ -15,6 +15,7 @@ import java.util.Objects;
  */
 public class PagesAndUrlMapsRequestMatcher implements RequestMatcher {
 
+    public static final String PAGES_AND_URL_MAPS_MATCHER_ID = "pagesAndUrlMapsMatcher";
     private final CharacterWebAPI characterWebAPI;
 
     public PagesAndUrlMapsRequestMatcher() {
@@ -44,5 +45,10 @@ public class PagesAndUrlMapsRequestMatcher implements RequestMatcher {
         }
 
         return false;
+    }
+
+    @Override
+    public String getId() {
+        return PAGES_AND_URL_MAPS_MATCHER_ID;
     }
 }

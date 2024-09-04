@@ -15,6 +15,7 @@ import java.util.Objects;
  */
 public class FilesRequestMatcher implements RequestMatcher {
 
+    public static final String FILES_MATCHER_ID = "filesMatcher";
     private final CharacterWebAPI characterWebAPI;
 
     public FilesRequestMatcher() {
@@ -44,5 +45,10 @@ public class FilesRequestMatcher implements RequestMatcher {
         }
 
         return false;
+    }
+
+    @Override
+    public String getId() {
+        return FILES_MATCHER_ID;
     }
 }
