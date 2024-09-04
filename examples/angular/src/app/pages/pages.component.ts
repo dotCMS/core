@@ -10,7 +10,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { NavigationEnd } from '@angular/router';
 import { filter, startWith, tap } from 'rxjs/operators';
 
-
 import {
   DotcmsLayoutComponent,
   DotcmsNavigationItem,
@@ -24,7 +23,7 @@ import { HeaderComponent } from './components/header/header.component';
 import { NavigationComponent } from './components/navigation/navigation.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { PageService } from './services/page.service';
-import { DYNAMIC_COMPONENTS } from '../components';
+import { DYNAMIC_COMPONENTS } from './components';
 
 export type PageError = {
   message: string;

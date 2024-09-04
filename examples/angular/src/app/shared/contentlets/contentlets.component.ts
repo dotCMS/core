@@ -1,9 +1,17 @@
 import { Component, input } from '@angular/core';
 import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
-import { GenericContentlet } from '..';
+import { GenericContentlet } from '../../pages/components';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ContentletComponent } from '../contentlet/contentlet.component';
 
+/**
+ * Local component for displaying a list of contentlets.
+ *
+ * @remarks
+ * This component is used to render a list of contentlets
+ *
+ * @public
+ */
 @Component({
   selector: 'app-contentlets',
   standalone: true,

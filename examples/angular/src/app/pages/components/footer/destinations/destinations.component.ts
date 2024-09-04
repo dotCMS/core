@@ -1,16 +1,15 @@
 import {
   Component,
-  InjectionToken,
   OnInit,
   inject,
   signal,
 } from '@angular/core';
 
-import { GenericContentlet } from '..';
-import { ContentletsComponent } from '../contentlets/contentlets.component';
+import { GenericContentlet } from '../..';
+import { ContentletsComponent } from '../../../../shared/contentlets/contentlets.component';
 import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
 import { DotCmsClient } from '@dotcms/client';
-import { DOTCMS_CLIENT_TOKEN } from '../../app.config';
+import { DOTCMS_CLIENT_TOKEN } from '../../../../app.config';
 
 
 @Component({

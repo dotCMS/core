@@ -53,6 +53,30 @@ Once all the configuration is in place, it is time to run the web app.
 
 Consider that if you go to `localhost:4200/about`, the page `/about` needs to exist in your dotCMS instance.
 
+## Folder structure
+```
+.
+└── src/
+    └── app/
+        ├── content-types/
+        │   ├── activity
+        │   ├── banner
+        │   ├── product
+        │   └── ...other-content-types
+        ├── pages/
+        │   ├── components
+        │   └── services
+        └── shared/
+            ├── contentlets
+            └── contentlet
+```
+Where: </br>
+    `content-types`: Represents which component is rendered for each content-type existing on the dotCMS API page </br>
+    `pages`: Main component of the application, here all pages are rendered according to their path and pageAsset. It also displays an error page as appropriate. </br>
+    `shared`: Contains components that can be used anywhere in the application.</br>
+    &emsp;&emsp;`contentlet`: Local component for rendering a Contentlet, outside the DotCmsLayout. </br>
+    &emsp;&emsp;`contentlets`: Local component for displaying a list of `contentlet`.
+
 ## Handling Vanity URLs
 
 In dotCMS, Vanity URLs serve as alternative reference paths to internal or external URLs. They are simple yet powerful tools that can significantly aid in site maintenance and SEO.

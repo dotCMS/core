@@ -1,11 +1,10 @@
 # @dotcms/angular
 
-`@dotcms/angular` is the official set of Angular components, services and resolver designed to work seamlessly with dotCMS, making it easy to render dotCMS pages an use the page builder
+`@dotcms/angular` is the official set of Angular components and services designed to work seamlessly with dotCMS, making it easy to render dotCMS pages an use the page builder
 
 ## Features
 
--   A collection of  Angular components, services and resolver  tailored to render  
-    dotCMS pages.
+-   A collection of  Angular components and services tailored to render dotCMS pages.
 -   Streamlined integration with dotCMS page editor.
 -   Improved development experience with comprehensive TypeScript typings.
 
@@ -24,49 +23,54 @@ yarn add @dotcms/angular
 ```
 
 ## Provider
-```
+In our Angular application, we need to provide the information of our dotCMS instance
+
+```javascript
 const DOTCMS_CLIENT_CONFIG: ClientConfig = {
     dotcmsUrl: environment.dotcmsUrl,
     authToken: environment.authToken,
     siteId: environment.siteId
 };
 ```
-Add the dotcms config in the Angular app ApplicationConfig 
+And add this config in the ApplicationConfig in `src/app/app.config.ts`
+
 ```
+const client = DotCmsClient.init(DOTCMS_CLIENT_CONFIG);
+
 export const appConfig: ApplicationConfig = {
     providers: [
-        provideDotcmsClient(DOTCMS_CLIENT_CONFIG),
         provideRouter(routes),
+        // Add here
+        {
+            provide: DOTCMS_CLIENT_TOKEN,
+            useValue: client
+        }
     ],
 };
 ```
-## Resolver
-```javascript
-export const routes: Routes = [
-  {
-    path: '**',
-    resolve: {
-      // This should be called `context`.
-      context: DotCMSPageResolver,
-    },
-    component: DotCMSPagesComponent,
-    runGuardsAndResolvers: 'always' // Run the resolver on every navigation. Even if the URL hasn't changed.
-  },
-];
-```
+This way, we will have access to `DOTCMS_CLIENT_TOKEN` from anywhere in our application.
 
-Then, in your component, you can read the data using
+## Client
+To interact with the client and obtain information from, for example, our pages
 
 ```javascript
-protected readonly context = signal(null);
+private readonly client = inject(DOTCMS_CLIENT_TOKEN);
 
-ngOnInit() {
-    // Get the context data from the route
-    this.route.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
-        this.context.set(data['context']);
-    });
-}
+this.client.page
+    .get({ ...pageParams })
+    .then((response) => {
+        // Use your response 
+    })
+    .catch((e) => {
+      const error: PageError = {
+        message: e.message,
+        status: e.status,
+      };
+      // Use the error response
+    })
 ```
+For more information to how to use DotCms Client, you can visit the [documentation](https://github.com/dotCMS/core/blob/master/core-web/libs/sdk/client/README.md)
+
 ## Components
 
 ### `DotcmsLayoutComponent`
@@ -75,34 +79,47 @@ A component that renders a layout for a dotCMS page.
 
 #### Inputs
 
--   **entity**: The context for a dotCMS page.
--   **components**: An object with the relation of contentlets and the component to render each.
+| Name       | Type                        | Description |
+|------------|----------------------|---------------|
+| `pageAsset`   | `DotCMSPageAsset`             | The object that represents a dotCMS page from PageAPI response.             |
+| `components`   | `DotCMSPageComponent`             | An object with the relation of contentlets and the component to render each.             |
+| `editor`  | `EditorConfig`    | The configuration custom params for data fetching on Edit Mode..            |
 
 
 #### Usage
 
+`/pages.component.ts`
 ```javascript
-    <dotcms-layout [entity]="pageAsset" [components]="components()" />
-
-    DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
-    Activity: import('../pages/content-types/activity/activity.component').then(
-        (c) => c.ActivityComponent,
-    ),
-    Banner: import('../pages/content-types/banner/banner.component').then(
-        (c) => c.BannerComponent,
-    ),
-    Image: import('../pages/content-types/image/image.component').then(
-        (c) => c.ImageComponent,
-    ),
-    webPageContent: import(
-        '../pages/content-types/web-page-content/web-page-content.component'
-    ).then((c) => c.WebPageContentComponent),
-    Product: import('../pages/content-types/product/product.component').then(
-        (c) => c.ProductComponent,
-    ),
+    DYNAMIC_COMPONENTS: DotCMSPageComponent = {
+        Activity: import('../pages/content-types/activity/activity.component').then(
+            (c) => c.ActivityComponent,
+        ),
+        Banner: import('../pages/content-types/banner/banner.component').then(
+            (c) => c.BannerComponent,
+        ),
+        Image: import('../pages/content-types/image/image.component').then(
+            (c) => c.ImageComponent,
+        ),
+        webPageContent: import(
+            '../pages/content-types/web-page-content/web-page-content.component'
+        ).then((c) => c.WebPageContentComponent),
+        Product: import('../pages/content-types/product/product.component').then(
+            (c) => c.ProductComponent,
+        ),
     };
+    
+    components = signal(DYNAMIC_COMPONENTS);
+    
+    editorConfig = signal({ params: { depth: 2 } })
 
-components = signal(DYNAMIC_COMPONENTS);
+```
+
+`/pages.component.html`
+```
+    <dotcms-layout 
+        [entity]="pageAsset" 
+        [components]="components()" 
+        [editor]="editorConfig()" />
 ```
 
 ## Contributing
@@ -129,5 +146,5 @@ Always refer to the official [DotCMS documentation](https://www.dotcms.com/docs/
 | Documentation   | [Documentation](https://dotcms.com/docs/latest/table-of-contents)   |
 | Videos          | [Helpful Videos](http://dotcms.com/videos/)                         |
 | Forums/Listserv | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
-| Twitter         | @dotCMS                                                             |
+| Twitter         | [@dotCMS](https://x.com/dotcms)                                     |
 | Main Site       | [dotCMS.com](https://dotcms.com/)                                   |
