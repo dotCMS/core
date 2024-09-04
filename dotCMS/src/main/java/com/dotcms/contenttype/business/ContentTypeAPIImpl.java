@@ -309,7 +309,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     if (null != destinationSite && UtilMethods.isSet(destinationSite.getIdentifier())) {
       // If the CT is being copied to another Site, more properties must be copied as well
-      builder.siteName(destinationSite.getHostname());
       builder.description(sourceContentType.description());
       builder.detailPage(sourceContentType.detailPage());
       builder.urlMapPattern(sourceContentType.urlMapPattern());

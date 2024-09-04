@@ -57,8 +57,6 @@ public interface ContentTypeBuilder {
 
 	ContentTypeBuilder sortOrder(int variable);
 
-	ContentTypeBuilder siteName(String siteName);
-
 	public static ContentTypeBuilder builder(ContentType type) throws DotStateException {
 		return builder(type.getClass()).from(type);
 	}
