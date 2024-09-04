@@ -14,7 +14,7 @@ import javax.ws.rs.core.Response;
  *
  * @param <T> Exception class to mapper
  */
-public class DotBadRequestExceptionMapper<T extends Throwable> extends DotExceptionMapper<T> {
+public abstract class DotBadRequestExceptionMapper<T extends Throwable> extends DotExceptionMapper<T> {
 
     @Override
     public Response toResponse(final T exception) {
