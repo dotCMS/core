@@ -262,7 +262,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     public static final String UNIQUE_PER_SITE_FIELD_VARIABLE_NAME = "uniquePerSite";
 
-
+    private final String IS_COPY = "isCopy";
     /**
      * Property to fetch related content from database (only applies for relationship fields)
      * Related content for legacy relationship will always be pulled from the index
@@ -5039,8 +5039,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 this.pushSaveEvent(contentletOut, createNewVersion);
             }
 
-            if (contentletIn.getBoolProperty("isCopy")){
-                contentletOut.setBoolProperty("isCopy", true);
+            if (contentletIn.getBoolProperty(IS_COPY)){
+                contentletOut.setBoolProperty(IS_COPY, true);
             }
 
             return contentletOut;
@@ -8969,7 +8969,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (UtilMethods.isSet(newIdentifier)) {
                 newContentlet.setIdentifier(newIdentifier);
             }
-            newContentlet.setProperty("isCopy", true);
+            newContentlet.setProperty(IS_COPY, true);
             newContentlet = checkin(newContentlet, rels, parentCats,
                     permissionAPI.getPermissions(contentlet), user, respectFrontendRoles);
             if (!UtilMethods.isSet(newIdentifier)) {
