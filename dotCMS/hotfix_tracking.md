@@ -146,3 +146,4 @@ This maintenance release includes the following code fixes:
 139. https://github.com/dotCMS/core/issues/29254 : Add a new main tag for LTSs #29254
 140. https://github.com/dotCMS/core/issues/28857 : dotAsset is Breaking FileViewStrategy #28857
 141. https://github.com/dotCMS/core/issues/29259 : Page API: Image field content gone when request page with depth #29259
+142. https://github.com/dotCMS/core/issues/29667 : Update CLEANUP_BUNDLES_OLDER_THAN_DAYS default value to 4 #29667
