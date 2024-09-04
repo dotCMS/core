@@ -362,19 +362,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'dragleave')
             .pipe(
                 takeUntil(this.destroy$),
-                filter((event: DragEvent) => !event.relatedTarget) // Just reset when is out of the window
-            )
-            .subscribe(() => {
+                filter((event: DragEvent) => !event.relatedTarget), // Just reset when is out of the window
                 // If the dragged item is a temporary item, reset the editor state when the user leaves the window
-                if (
-                    !this.uveStore.dragItem() ||
-                    isEqual(this.uveStore.dragItem(), TEMPORAL_DRAG_ITEM)
-                ) {
-                    this.uveStore.resetEditorProperties();
-
-                    return;
-                }
-            });
+                // Else, dragend/drop event will handle the reset
+                filter(() => isEqual(this.uveStore.dragItem(), TEMPORAL_DRAG_ITEM))
+            )
+            .subscribe(() => this.uveStore.resetEditorProperties());
 
         fromEvent(this.window, 'drop')
             .pipe(takeUntil(this.destroy$))

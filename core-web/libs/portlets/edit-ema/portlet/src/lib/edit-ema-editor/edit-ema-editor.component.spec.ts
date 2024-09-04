@@ -90,11 +90,12 @@ import {
     TREE_NODE_MOCK,
     newContentlet,
     PAYLOAD_MOCK,
-    UVE_PAGE_RESPONSE_MAP
+    UVE_PAGE_RESPONSE_MAP,
+    EMA_DRAG_ITEM_CONTENTLET_MOCK
 } from '../shared/mocks';
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { SDK_EDITOR_SCRIPT_SOURCE } from '../utils';
+import { SDK_EDITOR_SCRIPT_SOURCE, TEMPORAL_DRAG_ITEM } from '../utils';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -1548,6 +1549,7 @@ describe('EditEmaEditorComponent', () => {
 
                 describe('drag over', () => {
                     it('should prevent default to avoid opening files', () => {
+                        store.setEditorDragItem(TEMPORAL_DRAG_ITEM);
                         const dragOver = new Event('dragover');
                         const preventDefaultSpy = jest.spyOn(dragOver, 'preventDefault');
 
@@ -1593,47 +1595,43 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 describe('drag leave', () => {
-                    it('should set the editor state to OUT_OF_BOUNDS', () => {
-                        const setEditorStateSpy = jest.spyOn(store, 'setEditorState');
-
+                    const createDragLeaveEvent = () => {
                         const dragLeave = new Event('dragleave');
-
                         Object.defineProperties(dragLeave, {
-                            x: {
-                                value: 0
-                            },
-                            y: {
-                                value: 0
-                            },
-                            relatedTarget: {
-                                value: undefined // this is undefined when the mouse leaves the window
-                            }
+                            x: { value: 0 },
+                            y: { value: 0 },
+                            relatedTarget: { value: undefined } // this is undefined when the mouse leaves the window
                         });
 
-                        window.dispatchEvent(dragLeave);
+                        return dragLeave;
+                    };
 
-                        expect(setEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.OUT_OF_BOUNDS);
+                    describe('EXTERNAL FILE/TEMPORAL DRAG ITEM', () => {
+                        beforeEach(() => store.setEditorDragItem(TEMPORAL_DRAG_ITEM));
+
+                        it('should set the editor state to IDLE', () => {
+                            const resetEditorPropertiesSpy = jest.spyOn(
+                                store,
+                                'resetEditorProperties'
+                            );
+                            const dragLeave = createDragLeaveEvent();
+                            window.dispatchEvent(dragLeave);
+                            expect(resetEditorPropertiesSpy).toHaveBeenCalled();
+                        });
                     });
-                    it('should not set the editor state to OUT_OF_BOUNDS when the leave is from an element in the window', () => {
-                        const setEditorStateSpy = jest.spyOn(store, 'setEditorState');
 
-                        const dragLeave = new Event('dragleave');
+                    describe('CONTENTLET', () => {
+                        beforeEach(() => store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK));
 
-                        Object.defineProperties(dragLeave, {
-                            x: {
-                                value: 900
-                            },
-                            y: {
-                                value: 1200
-                            },
-                            relatedTarget: {
-                                value: {}
-                            }
+                        it('should set the editor state to IDLE', () => {
+                            const resetEditorPropertiesSpy = jest.spyOn(
+                                store,
+                                'resetEditorProperties'
+                            );
+                            const dragLeave = createDragLeaveEvent();
+                            window.dispatchEvent(dragLeave);
+                            expect(resetEditorPropertiesSpy).not.toHaveBeenCalled();
                         });
-
-                        window.dispatchEvent(dragLeave);
-
-                        expect(setEditorStateSpy).not.toHaveBeenCalled();
                     });
                 });
 
@@ -1683,7 +1681,7 @@ describe('EditEmaEditorComponent', () => {
                             }
                         }); // Simulate drag start
 
-                        store.setEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // Simulate drag leave
+                        store.setEditorState(EDITOR_STATE.IDLE); // Simulate drag leave
 
                         const setEditorStateSpy = jest.spyOn(store, 'setEditorState');
 
@@ -2290,6 +2288,8 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('scroll inside iframe', () => {
+                beforeEach(() => store.setEditorDragItem(TEMPORAL_DRAG_ITEM));
+
                 it('should emit postMessage and change state to Scroll', () => {
                     const dragOver = new Event('dragover');
 

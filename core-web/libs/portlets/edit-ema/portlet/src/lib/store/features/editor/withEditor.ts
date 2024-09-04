@@ -124,10 +124,13 @@ export function withEditor() {
                     const showDialogs = canEditPage && isEditState;
 
                     const canUserHaveContentletTools =
-                        !!contentletArea && canEditPage && isEditState && !isScrolling;
+                        !!contentletArea &&
+                        canEditPage &&
+                        isEditState &&
+                        !(state === EDITOR_STATE.SCROLLING);
 
                     // Hide contentlet tools when user is dragging a contentlet or scrolling while dragging
-                    const hideContentletTools = dragIsActive || state === EDITOR_STATE.SCROLLING;
+                    const hideContentletTools = dragIsActive || isScrolling;
 
                     const showDropzone = canEditPage && isDragging;
 
@@ -203,7 +206,7 @@ export function withEditor() {
 
                     patchState(store, {
                         contentletArea: null,
-                        state: EDITOR_STATE.IDLE
+                        state: EDITOR_STATE.SCROLLING
                     });
                 },
                 updateEditorOnScrollEnd() {

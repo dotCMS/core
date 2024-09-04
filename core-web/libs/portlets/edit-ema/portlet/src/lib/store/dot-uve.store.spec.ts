@@ -1247,7 +1247,7 @@ describe('UVEStore', () => {
                         });
                     });
 
-                    it('should be null when scroll drag', () => {
+                    it('should have hide as true when scroll drag', () => {
                         patchState(store, {
                             isEditState: true,
                             canEditPage: true,
@@ -1255,7 +1255,22 @@ describe('UVEStore', () => {
                             state: EDITOR_STATE.SCROLL_DRAG
                         });
 
-                        expect(store.$editorProps().contentletTools).toBe(null);
+                        expect(store.$editorProps().contentletTools).toEqual({
+                            isEnterprise: true,
+                            contentletArea: MOCK_CONTENTLET_AREA,
+                            hide: true
+                        });
+                    });
+
+                    it('should be null when scrolling', () => {
+                        patchState(store, {
+                            isEditState: true,
+                            canEditPage: true,
+                            contentletArea: MOCK_CONTENTLET_AREA,
+                            state: EDITOR_STATE.SCROLLING
+                        });
+
+                        expect(store.$editorProps().contentletTools).toEqual(null);
                     });
 
                     it("should not have contentletTools when the page can't be edited", () => {
@@ -1285,17 +1300,6 @@ describe('UVEStore', () => {
                             canEditPage: true,
                             contentletArea: MOCK_CONTENTLET_AREA,
                             state: EDITOR_STATE.IDLE
-                        });
-
-                        expect(store.$editorProps().contentletTools).toBe(null);
-                    });
-
-                    it('should not have contentletTools when the we are scrolling', () => {
-                        patchState(store, {
-                            isEditState: true,
-                            canEditPage: true,
-                            contentletArea: MOCK_CONTENTLET_AREA,
-                            state: EDITOR_STATE.SCROLLING
                         });
 
                         expect(store.$editorProps().contentletTools).toBe(null);
@@ -1398,13 +1402,16 @@ describe('UVEStore', () => {
                     expect(store.state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
                 });
 
-                it("should not update the editor's scroll state when the state is OUT_OF_BOUNDS", () => {
-                    store.setEditorState(EDITOR_STATE.OUT_OF_BOUNDS);
+                it('should keep the contentletArea when there is a drag titem', () => {
+                    store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+                    store.setEditorContentletArea(MOCK_CONTENTLET_AREA);
 
                     store.updateEditorScrollState();
 
-                    expect(store.state()).toEqual(EDITOR_STATE.OUT_OF_BOUNDS);
+                    expect(store.state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
+                    expect(store.contentletArea()).toEqual(MOCK_CONTENTLET_AREA);
                 });
+
                 it('should set the contentletArea to null when we are scrolling', () => {
                     store.setEditorState(EDITOR_STATE.SCROLLING);
 
@@ -1427,14 +1434,6 @@ describe('UVEStore', () => {
                     store.updateEditorOnScrollEnd();
 
                     expect(store.state()).toEqual(EDITOR_STATE.DRAGGING);
-                });
-
-                it("should not update the editor's drag state when the state is OUT_OF_BOUNDS", () => {
-                    store.setEditorState(EDITOR_STATE.OUT_OF_BOUNDS);
-
-                    store.updateEditorOnScrollEnd();
-
-                    expect(store.state()).toEqual(EDITOR_STATE.OUT_OF_BOUNDS);
                 });
             });
 
