@@ -292,3 +292,5 @@ This maintenance release includes the following code fixes:
 223. https://github.com/dotCMS/core/issues/29209 : Wrong url when exporting file asset #29209
 224. https://github.com/dotCMS/core/issues/29222 : Telemetry: not getting data after last release of the plugin #29222
 225. https://github.com/dotCMS/core/issues/29254 : Add a new main tag for LTSs #29254
+
+**Release-23.01.23**
