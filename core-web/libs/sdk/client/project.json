@@ -11,7 +11,7 @@
                 "format": ["esm", "cjs"],
                 "compiler": "tsc",
                 "generateExportsField": true,
-                "assets": [{ "input": ".", "output": ".", "glob": "*.md" }],
+                "assets": [{ "input": "libs/sdk/client", "output": ".", "glob": "*.md" }],
                 "outputPath": "dist/libs/sdk/client",
                 "main": "libs/sdk/client/src/index.ts",
                 "tsConfig": "libs/sdk/client/tsconfig.lib.json"

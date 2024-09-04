@@ -1,5 +1,5 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { DotCMSContentlet } from '@dotcms/angular';
 
 @Component({
@@ -7,26 +7,26 @@ import { DotCMSContentlet } from '@dotcms/angular';
   standalone: true,
   imports: [CommonModule, NgOptimizedImage],
   template: `<div
-    class="relative overflow-hidden bg-white rounded shadow-lg group mb-4"
+    class="overflow-hidden relative mb-4 bg-white rounded shadow-lg group"
   >
-    <div class="relative w-full bg-gray-200 h-96">
+    <div class="relative w-full h-96 bg-gray-200">
       <img
         class="object-cover"
-        [ngSrc]="contentlet['fileAsset']"
-        [alt]="contentlet.title"
+        [ngSrc]="contentlet()['fileAsset']"
+        [alt]="contentlet().title"
         fill
       />
     </div>
     <div
-      class="absolute bottom-0 w-full px-6 py-8 text-white transition-transform duration-300 translate-y-full bg-orange-500 bg-opacity-80 w-100 group-hover:translate-y-0"
+      class="absolute bottom-0 px-6 py-8 w-full text-white bg-orange-500 bg-opacity-80 transition-transform duration-300 translate-y-full w-100 group-hover:translate-y-0"
     >
-      <div class="mb-2 text-2xl font-bold">{{ contentlet.title }}</div>
-      <p class="text-base">{{ contentlet['description'] }}</p>
+      <div class="mb-2 text-2xl font-bold">{{ contentlet().title }}</div>
+      <p class="text-base">{{ contentlet()['description'] }}</p>
     </div>
   </div>`,
   styleUrl: './image.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImageComponent {
-  @Input() contentlet!: DotCMSContentlet;
+  contentlet = input.required<DotCMSContentlet>();
 }
