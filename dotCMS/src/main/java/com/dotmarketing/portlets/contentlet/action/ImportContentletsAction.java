@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.action;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -20,10 +21,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.struts.ImportContentletsForm;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.ImportUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
@@ -32,14 +30,11 @@ import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import javax.servlet.ServletOutputStream;
@@ -111,13 +106,15 @@ public class ImportContentletsAction extends DotPortletAction {
 				byte[] bytes = FileUtil.getBytes(uploadReq.getFile("file"));
 				
 				File file = uploadReq.getFile("file");
-				this.detectEncodeType(session, file);
+				Files.copy(file.toPath(), new File(ConfigUtils.getAssetTempPath()+java.io.File.separator+file.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+				file = Paths.get(ConfigUtils.getAssetTempPath()+java.io.File.separator+file.getName()).toFile();
 
 				final ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
 				if(importContentletsForm.getStructure().isEmpty()){
 					SessionMessages.add(req, "error", "structure-type-is-required");
 					setForward(req, "portlet.ext.contentlet.import_contentlets");
-				}else if (bytes == null || bytes.length == 0) {
+				}
+				else if (file == null || file.length() < 100) {
 					SessionMessages.add(req, "error", "message.contentlet.file.required");
 					setForward(req, "portlet.ext.contentlet.import_contentlets");
 				} else {
@@ -131,19 +128,13 @@ public class ImportContentletsAction extends DotPortletAction {
 						return;
 					}
 
-					try {
-						Reader reader = null;
-						CsvReader csvreader = null;
+						Charset charset = importContentletsForm.getLanguage() == -1 ? Charset.defaultCharset() : FileUtil.detectEncodeType(file);
+						try(Reader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), charset))){
 						String[] csvHeaders = null;
 						int languageCodeHeaderColumn = -1;
 						int countryCodeHeaderColumn = -1;
-												
-						if (importContentletsForm.getLanguage() == -1)
-							reader = new InputStreamReader(new ByteArrayInputStream(bytes), Charset.forName("UTF-8"));
-						else
-							reader = new InputStreamReader(new ByteArrayInputStream(bytes));
-						
-						csvreader = new CsvReader(reader);
+
+						CsvReader csvreader = new CsvReader(reader);
 						csvreader.setSafetySwitch(false);
 						
 						switch ((int) importContentletsForm.getLanguage()) {
@@ -165,7 +156,7 @@ public class ImportContentletsAction extends DotPortletAction {
 										SessionMessages.add(req, "error", "message.import.contentlet.csv_headers.required");
 										setForward(req, "portlet.ext.contentlet.import_contentlets");
 									} else {
-										_generatePreview(0,req, res, config, form, user, bytes, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
+										_generatePreview(0,req, res, config, form, user, file, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
 										setForward(req, "portlet.ext.contentlet.import_contentlets_preview");
 									}
 								} else {
@@ -182,7 +173,7 @@ public class ImportContentletsAction extends DotPortletAction {
 							setForward(req, "portlet.ext.contentlet.import_contentlets");
 							break;
 						default:
-							_generatePreview(0, req, res, config, form, user, bytes, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
+							_generatePreview(0,req, res, config, form, user, file, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
 							setForward(req, "portlet.ext.contentlet.import_contentlets_preview");
 							break;
 						}
@@ -211,33 +202,25 @@ public class ImportContentletsAction extends DotPortletAction {
 				final HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 				final HttpSession httpSession = httpReq.getSession();
 				final long importId = ImportAuditUtil.createAuditRecord(user.getUserId(), (String)httpSession.getAttribute("fileName"));
-				Thread t=new Thread() {
-					@CloseDBIfOpened
-					public void run() {
-						try {
+				 Runnable runnable = new Runnable() {
+
+					 @Override
+					 @CloseDBIfOpened
+					 public void run() {
+
+						 ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
+						 File fileToImport = (File) httpSession.getAttribute("file_to_import");
+						 Charset charset = importContentletsForm.getLanguage() == -1
+								 ? Charset.defaultCharset()
+								 : FileUtil.detectEncodeType(fileToImport);
+						 try(Reader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileToImport), charset))){
 							Logger.debug(this, "Calling Process File Method");
-							
-							Reader reader;
-							CsvReader csvreader;
+
 							String[] csvHeaders = null;
 							int languageCodeHeaderColumn = -1;
 							int countryCodeHeaderColumn = -1;
-							
-							byte[] bytes = (byte[]) httpSession.getAttribute("file_to_import");
-							ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
-							String eCode = (String) httpSession.getAttribute(ENCODE_TYPE);
-							if (importContentletsForm.getLanguage() == -1) {
-								reader = new InputStreamReader(new ByteArrayInputStream(bytes),
-										Charset.forName("UTF-8"));
-							}
-							else if(eCode != null) {
-								reader = new InputStreamReader(new ByteArrayInputStream(bytes),
-										Charset.forName(eCode));
-							}
-							else {
-								reader = new InputStreamReader(new ByteArrayInputStream(bytes));
-							}
-							csvreader = new CsvReader(reader);
+
+							CsvReader csvreader = new CsvReader(reader);
 							csvreader.setSafetySwitch(false);
 								
 							if (importContentletsForm.getLanguage() == -1) {
@@ -256,8 +239,6 @@ public class ImportContentletsAction extends DotPortletAction {
 									}
 								}
 							}
-
-							final User user = _getUser(req);
 
 							HashMap<String, List<String>> importresults= new HashMap<>();
 							if(importSession.equals(httpSession.getAttribute("importSession"))){
@@ -287,7 +268,6 @@ public class ImportContentletsAction extends DotPortletAction {
 			
 						} catch (Exception ae) {
 							_handleException(ae, req);
-							return;
 						} finally{
 							if(!ImportAuditUtil.cancelledImports.containsKey(importId)){
 								ImportAuditUtil.setAuditRecordCompleted(importId);
@@ -297,7 +277,11 @@ public class ImportContentletsAction extends DotPortletAction {
 						}
 					}
 				};
-				 t.start();
+				 if(Config.getBooleanProperty("IMPORT_CONTENTLETS_ASYNC", true)) {
+					 DotConcurrentFactory.getInstance().getSubmitter("importContentlets").submit(runnable);
+				 }else{
+					 runnable.run();
+				 }
 				 req.setAttribute("previewResults", session.getAttribute("previewResults"));
 				 session.removeAttribute("previewResults");
 				 req.setAttribute("importId", importId);
@@ -452,8 +436,8 @@ public class ImportContentletsAction extends DotPortletAction {
 	 *            the UI.
 	 * @param user
 	 *            - The {@link User} performing this action.
-	 * @param bytes
-	 *            - The byte array representation of the CSV file.
+	 * @param file
+	 *            - The file representation of the CSV file.
 	 * @param csvHeaders
 	 *            - The headers that make up the CSV file.
 	 * @param csvreader
@@ -467,12 +451,12 @@ public class ImportContentletsAction extends DotPortletAction {
 	 * @throws Exception
 	 *             An error occurred when analyzing the CSV file.
 	 */
-	private void _generatePreview(long importId, ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, byte[] bytes, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader) throws Exception {
+	private void _generatePreview(long importId, ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, File file, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader) throws Exception {
 		// wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 		HttpSession session = httpReq.getSession();
-		httpReq.getSession().setAttribute("file_to_import", bytes);
+		httpReq.getSession().setAttribute("file_to_import", file);
 		httpReq.getSession().setAttribute("form_to_import", form);
 		ImportContentletsForm importForm = (ImportContentletsForm) form;
 		httpReq.getSession().setAttribute("fileName", importForm.getFileName());

@@ -23,6 +23,8 @@
 package com.liferay.util;
 
 import com.dotcms.publisher.pusher.PushUtils;
+
+import java.nio.charset.Charset;
 import java.util.Comparator;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
@@ -66,6 +68,7 @@ import javax.servlet.ServletContext;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.mozilla.universalchardet.UniversalDetector;
 
 /**
  * <a href="FileUtil.java.html"><b><i>View Source</i></b></a>
@@ -1083,6 +1086,31 @@ public class FileUtil {
 	}
 
 
+	/**
+	 *
+	 * @param file
+	 * @throws IOException
+	 */
+	public static Charset detectEncodeType(final File file)  {
+
+		byte[] buf = new byte[4096];
+		try (InputStream is = Files.newInputStream(file.toPath())){
+
+
+			UniversalDetector detector = new UniversalDetector(null);
+			int nread;
+			while ((nread = is.read(buf)) > 0 && !detector.isDone()) {
+				detector.handleData(buf, 0, nread);
+			}
+			detector.dataEnd();
+			return Charset.forName(detector.getDetectedCharset());
+		}catch (Exception e){
+			Logger.error(FileUtil.class, e.getMessage(),e);
+
+		}
+		return Charset.defaultCharset();
+
+	}
 
 
 }
