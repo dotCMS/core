@@ -19,6 +19,7 @@ import com.dotmarketing.quartz.job.ResetPermissionsJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import org.quartz.SchedulerException;
@@ -61,7 +62,7 @@ public class CopyHostContentUtil{
 				final boolean copyContentOnHost = copyParams.get("copy_content_on_host").equals("on");
 				final boolean copyLinks = copyParams.get("copy_links").equals("on");
 				final boolean copyHostVariables = copyParams.get("copy_host_variables").equals("on");
-				final boolean copyContentTypes = copyParams.get("copy_content_types").equals("on");
+				final boolean copyContentTypes = UtilMethods.isSet(copyParams.get("copy_content_types")) ? copyParams.get("copy_content_types").equals("on") : false;
 
 				final Host sourceHost = hostAPI.find(copyFromHostId, user, false);
 				final HostCopyOptions hostCopyOptions = copyAll?
