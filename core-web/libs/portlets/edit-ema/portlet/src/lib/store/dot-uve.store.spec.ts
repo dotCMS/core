@@ -1388,18 +1388,21 @@ describe('UVEStore', () => {
 
         describe('withMethods', () => {
             describe('updateEditorScrollState', () => {
-                it("should update the editor's scroll state when there is no drag item", () => {
+                it("should update the editor's scroll state and remove bounds when there is no drag item", () => {
                     store.updateEditorScrollState();
 
                     expect(store.state()).toEqual(EDITOR_STATE.SCROLLING);
+                    expect(store.bounds()).toEqual([]);
                 });
 
-                it("should update the editor's scroll state when there is drag item", () => {
+                it("should update the editor's scroll drag state and remove bounds when there is drag item", () => {
                     store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+                    store.setEditorBounds(getBoundsMock(ACTION_MOCK));
 
                     store.updateEditorScrollState();
 
                     expect(store.state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
+                    expect(store.bounds()).toEqual([]);
                 });
 
                 it('should keep the contentletArea when there is a drag titem', () => {
@@ -1408,7 +1411,6 @@ describe('UVEStore', () => {
 
                     store.updateEditorScrollState();
 
-                    expect(store.state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
                     expect(store.contentletArea()).toEqual(MOCK_CONTENTLET_AREA);
                 });
 

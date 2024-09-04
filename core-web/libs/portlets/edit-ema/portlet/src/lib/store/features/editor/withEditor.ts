@@ -115,7 +115,7 @@ export function withEditor() {
                     const isLoading = store.status() === UVE_STATUS.LOADING;
                     const isPageReady = isTraditionalPage || isClientReady;
 
-                    const { dragIsActive, isScrolling, isDragging } = getEditorStates(state);
+                    const { dragIsActive, isScrolling } = getEditorStates(state);
 
                     const url = sanitizeURL(params?.url);
 
@@ -132,7 +132,7 @@ export function withEditor() {
                     // Hide contentlet tools when user is dragging a contentlet or scrolling while dragging
                     const hideContentletTools = dragIsActive || isScrolling;
 
-                    const showDropzone = canEditPage && isDragging;
+                    const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
 
                     const showPalette = isEnterprise && canEditPage && isEditState;
 
@@ -199,12 +199,13 @@ export function withEditor() {
                     // If the user is dragging a contentlet, do not remove the contentlet area.
                     // Removing the element from the DOM will cause the loss of the `dragend` event.
                     if (store.dragItem()) {
-                        patchState(store, { state: EDITOR_STATE.SCROLL_DRAG });
+                        patchState(store, { bounds: [], state: EDITOR_STATE.SCROLL_DRAG });
 
                         return;
                     }
 
                     patchState(store, {
+                        bounds: [],
                         contentletArea: null,
                         state: EDITOR_STATE.SCROLLING
                     });
