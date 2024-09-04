@@ -61,11 +61,12 @@ public class CopyHostContentUtil{
 				final boolean copyContentOnHost = copyParams.get("copy_content_on_host").equals("on");
 				final boolean copyLinks = copyParams.get("copy_links").equals("on");
 				final boolean copyHostVariables = copyParams.get("copy_host_variables").equals("on");
+				final boolean copyContentTypes = copyParams.get("copy_content_types").equals("on");
 
 				final Host sourceHost = hostAPI.find(copyFromHostId, user, false);
 				final HostCopyOptions hostCopyOptions = copyAll?
 					new HostCopyOptions(copyAll):
-					new HostCopyOptions(copyTemplatesContainers, copyFolders, copyLinks, copyContentOnPages, copyContentOnHost,copyHostVariables);
+						new HostCopyOptions(copyTemplatesContainers, copyFolders, copyLinks, copyContentOnPages, copyContentOnHost,copyHostVariables,copyContentTypes);
 
 			    HostAssetsJobProxy.fireJob(newSite.getIdentifier(), sourceHost.getIdentifier(), hostCopyOptions, user.getUserId());
 		} catch (Throwable e) {
