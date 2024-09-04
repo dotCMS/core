@@ -1,7 +1,8 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  input,
   Input,
   OnInit,
 } from '@angular/core';
@@ -15,7 +16,7 @@ import { DotCMSContentlet } from '@dotcms/angular';
   imports: [RouterLink, NgOptimizedImage],
   template: ` <div class="overflow-hidden bg-white rounded shadow-lg">
     <div class="p-4">
-      @if (contentlet.image; as image) {
+      @if (contentlet().image; as image) {
         <img
           class="w-full"
           [ngSrc]="image"
@@ -26,17 +27,17 @@ import { DotCMSContentlet } from '@dotcms/angular';
       }
     </div>
     <div class="px-6 py-4 bg-slate-100">
-      <div class="mb-2 text-xl font-bold">{{ contentlet.title }}</div>
-      @if (contentlet[retailPrice] && contentlet[salePrice]) {
+      <div class="mb-2 text-xl font-bold">{{ contentlet().title }}</div>
+      @if (contentlet()['retailPrice'] && contentlet()['salePrice']) {
         <div class="text-gray-500 line-through">{{ retailPrice }}</div>
-        <div class="text-3xl font-bold ">{{ salePrice }}</div>
+        <div class="text-3xl font-bold">{{ salePrice }}</div>
       } @else {
         <div class="text-3xl font-bold">
-          {{ contentlet[retailPrice] ? retailPrice : salePrice }}
+          {{ contentlet()['retailPrice'] ? retailPrice : salePrice }}
         </div>
       }
       <a
-        [routerLink]="'/store/products/' + contentlet['urlTitle'] || '#'"
+        [routerLink]="'/store/products/' + contentlet()['urlTitle'] || '#'"
         class="inline-block px-4 py-2 mt-4 text-white bg-green-500 rounded hover:bg-green-600"
       >
         Buy Now
@@ -47,14 +48,14 @@ import { DotCMSContentlet } from '@dotcms/angular';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductComponent implements OnInit {
-  @Input() contentlet!: DotCMSContentlet;
+  contentlet = input.required<DotCMSContentlet>();
 
   protected salePrice!: string;
   protected retailPrice!: string;
 
   ngOnInit() {
-    this.salePrice = this.formatPrice(this.contentlet['salePrice']);
-    this.retailPrice = this.formatPrice(this.contentlet['retailPrice']);
+    this.salePrice = this.formatPrice(this.contentlet()['salePrice']);
+    this.retailPrice = this.formatPrice(this.contentlet()['retailPrice']);
   }
 
   formatPrice(price: number) {
