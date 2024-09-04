@@ -294,3 +294,5 @@ This maintenance release includes the following code fixes:
 225. https://github.com/dotCMS/core/issues/29254 : Add a new main tag for LTSs #29254
 
 **Release-23.01.23**
+
+226. https://github.com/dotCMS/core/issues/29256 : Many to One Relationships Not Copied in Copy Site #29256
