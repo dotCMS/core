@@ -5,7 +5,7 @@ ARG DOTCMS_DOCKER_TAG="latest"
 
 FROM dotcms/dotcms:${DOTCMS_DOCKER_TAG} AS dotcms
 
-FROM ubuntu:22.04
+FROM mcr.microsoft.com/openjdk/jdk:21-ubuntu AS dev-env-builder
 
 # Defining default non-root user UID, GID, and name 
 ARG USER_UID="65001"
@@ -21,6 +21,7 @@ RUN groupadd -f -g $USER_GID $USER_GROUP
 RUN useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
 
 COPY --from=dotcms --chown=$USER_NAME:$USER_GROUP /srv/ /srv/
+COPY --from=dotcms  /java /java
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG UBUNTU_RELEASE=jammy
@@ -52,11 +53,16 @@ RUN apt-get autoremove -y && \
 
 COPY --from=opensearchproject/opensearch:1 --chown=$USER_NAME:$USER_GROUP /usr/share/opensearch /usr/share/opensearch
 
+
+
+
+
 RUN echo "discovery.type: single-node\nbootstrap.memory_lock: true\ncluster.routing.allocation.disk.threshold_enabled: true\ncluster.routing.allocation.disk.watermark.low: 1g\ncluster.routing.allocation.disk.watermark.high: 500m\ncluster.routing.allocation.disk.watermark.flood_stage: 400m\ncluster.info.update.interval: 5m" >> /usr/share/opensearch/config/opensearch.yml
 
 
 ENV PATH=$PATH:/usr/share/opensearch/bin
 RUN /usr/share/opensearch/opensearch-onetime-setup.sh
+RUN rm -rf /usr/share/opensearch/jdk
 RUN chown -R dotcms.dotcms /usr/share/opensearch/config
 COPY entrypoint.sh /
 RUN chmod 755 /entrypoint.sh
@@ -66,5 +72,8 @@ COPY license-request.sh /
 RUN chmod 755 /license-request.sh
 RUN bash -x /license-request.sh
 RUN rm /license-request.sh
+
+FROM scratch
+COPY --from=dev-env-builder  / /
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
