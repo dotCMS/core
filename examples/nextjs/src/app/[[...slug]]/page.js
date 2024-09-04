@@ -42,7 +42,10 @@ export default async function Home({ searchParams, params }) {
                 path,
                 params: searchParams,
             });
-            const pageAsset = await client.page.get(pageRequestParams);
+            const pageAsset = await client.page.get({
+                ...pageRequestParams,
+                depth: 3,
+            });
             const nav = await client.nav.get({
                 path: "/",
                 depth: 2,
