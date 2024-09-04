@@ -59,7 +59,7 @@ public class BaseCharacter extends AbstractCharacter {
         final Optional<String> content = Optional.ofNullable((String) request.getAttribute(WebKeys.WIKI_CONTENTLET));
         final Language lang = WebAPILocator.getLanguageWebAPI().getLanguage(request);
         IAm iAm = resolveResourceType(uri, getHostNoThrow(request), lang.getId());
-        final long pageProcessingTime = (Long) request.getAttribute(VisitorFilter.DOTPAGE_PROCESSING_TIME);
+        final Long pageProcessingTime = (Long) request.getAttribute(VisitorFilter.DOTPAGE_PROCESSING_TIME);
         myMap.get().put("id", UUID.randomUUID().toString());
         myMap.get().put("status", response.getStatus());
         myMap.get().put("iAm", iAm);

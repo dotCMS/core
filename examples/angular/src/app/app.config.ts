@@ -1,12 +1,13 @@
-import { ApplicationConfig } from '@angular/core';
+import { ApplicationConfig, InjectionToken } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
 
-import { ClientConfig } from '@dotcms/client';
+import { ClientConfig, DotCmsClient } from '@dotcms/client';
 
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
-import { provideDotcmsClient } from './client-token/dotcms-client';
-import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
+
+export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCmsClient>('DOTCMS_CLIENT');
 
 const DOTCMS_CLIENT_CONFIG: ClientConfig = {
   dotcmsUrl: environment.dotcmsUrl,
@@ -14,17 +15,29 @@ const DOTCMS_CLIENT_CONFIG: ClientConfig = {
   siteId: environment.siteId,
 };
 
+const client = DotCmsClient.init(DOTCMS_CLIENT_CONFIG);
+
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideDotcmsClient(DOTCMS_CLIENT_CONFIG),
     provideRouter(routes),
     /**
-     * This is a custom image loader that will be used by the NgOptimizedImage component.
-     * It will prepend the dotCMS URL to the image src if the image is not an external URL.
-     * It will also append the language_id query parameter if the loaderParams object contains a languageId key.
-     * If you need to use an imagen from an external URL, you can set the isOutsideSRC key to true in the loaderParams object.
+     * We provide the ⁠DOTCMS_CLIENT_TOKEN with the initialized ⁠DotCmsClient instance, enabling
+     * its injection throughout the application. This approach ensures a single ⁠DotCmsClient
+     * instance is used, promoting consistency and centralized management of client configuration.
+     */
+    {
+      provide: DOTCMS_CLIENT_TOKEN,
+      useValue: client
+    },
+    /**
+     * This custom image loader, designed for the NgOptimizedImage component, appends the dotCMS URL
+     * to the image source if it’s not an external URL.
+     * 
+     * Additionally, it appends the ⁠language_id query parameter if the ⁠loaderParams object contains
+     * a ⁠languageId key. To use an image from an external URL, set the ⁠isOutsideSRC key to ⁠true in
+     * the ⁠loaderParams object.
      * <img [ngSrc]="https://my-url.com/some.jpg" [loaderParams]="{isOutsideSRC: true}" />
-     * If you need to customize the image loader, you can provide your own implementation.
+     * For further customization, you can provide your own image loader implementation.
      */
     {
       provide: IMAGE_LOADER,
