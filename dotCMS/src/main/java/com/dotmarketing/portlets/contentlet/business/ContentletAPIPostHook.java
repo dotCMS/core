@@ -191,6 +191,81 @@ public interface ContentletAPIPostHook {
 	public default void copyContentlet(Contentlet currentContentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles,Contentlet returnValue){}
 
 	/**
+	 * Copies a contentlet including all its fields. Binary files, Image and File fields are
+	 * pointers, and they are preserved as they are. So, if source contentlet points to image A,
+	 * the resulting new contentlet will point to the same image A as well. Additionally, this
+	 * method copies source permissions and moves the new piece of content to the given folder. When
+	 * copying a File Asset, the value of the {@code opySuffix} parameter will be appended to the
+	 * file name.
+	 *
+	 * @param contentletToCopy     The {@link Contentlet} that will be copied.
+	 * @param contentType          Optional. The {@link ContentType} that will be used to save the
+	 *                             copied Contentlet. This is useful when copying Sites and you
+	 *                             choose to copy both Content Types and Contentets.
+	 * @param site                 The {@link Host} where the copied Contentlet will be saved.
+	 * @param folder               The {@link Folder} where the copied Contentlet will be saved.
+	 * @param user                 The {@link User} that is performing the action.
+	 * @param copySuffix           The suffix that will be appended to the file name, if
+	 *                             applicable.
+	 * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+	 *                             front-end roles must be validated against this user, set to
+	 *                             {@code true}.
+	 */
+	default void copyContentlet(final Contentlet contentletToCopy, final ContentType contentType,
+								final Host site, final Folder folder, final User user,
+								final String copySuffix, final boolean respectFrontendRoles,
+								Contentlet returnValue) {
+	}
+
+	default void copyContentlet(final Contentlet currentContentlet, final ContentType contentType,
+								final Folder folder, final User user,
+								final boolean appendCopyToFileName,
+								final boolean respectFrontendRoles, final Contentlet returnValue) {
+	}
+
+	/**
+	 * Copies a contentlet including all its fields. Binary files, Image and File fields are
+	 * pointers, and they are preserved as they are. So, if source contentlet points to image A,
+	 * the resulting new contentlet will point to the same image A as well. Additionally, this
+	 * method copies source permissions and moves the new piece of content to the given folder.
+	 *
+	 * @param contentletToCopy     The {@link Contentlet} that will be copied.
+	 * @param contentType          Optional. The {@link ContentType} that will be used to save the
+	 *                             copied Contentlet. This is useful when copying Sites and you
+	 *                             choose to copy both Content Types and Contentets.
+	 * @param folder               The {@link Folder} where the copied Contentlet will be saved.
+	 * @param user                 The {@link User} that is performing the action.
+	 * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+	 *                             front-end roles must be validated against this user, set to
+	 *                             {@code true}.
+	 */
+	default void copyContentlet(final Contentlet contentletToCopy, final ContentType contentType,
+								final Folder folder, final User user,
+								final boolean respectFrontendRoles, final Contentlet returnValue) {
+	}
+
+	/**
+	 * Copies a contentlet including all its fields. Binary files, Image and File fields are
+	 * pointers, and they are preserved as they are. So, if source contentlet points to image A,
+	 * the resulting new contentlet will point to the same image A as well. Additionally, this
+	 * method copies source permissions and moves the new piece of content to the given folder.
+	 *
+	 * @param contentletToCopy     The {@link Contentlet} that will be copied.
+	 * @param contentType          Optional. The {@link ContentType} that will be used to save the
+	 *                             copied Contentlet. This is useful when copying Sites and you
+	 *                             choose to copy both Content Types and Contentets.
+	 * @param site                 The {@link Host} where the copied Contentlet will be saved.
+	 * @param user                 The {@link User} that is performing the action.
+	 * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+	 *                             front-end roles must be validated against this user, set to
+	 *                             {@code true}.
+	 */
+	default void copyContentlet(final Contentlet contentletToCopy, final ContentType contentType,
+								final Host site, final User user,
+								final boolean respectFrontendRoles, final Contentlet returnValue) {
+	}
+
+	/**
 	 * Makes a copy of a content.
 	 * @param contentletToCopy
 	 * @param host

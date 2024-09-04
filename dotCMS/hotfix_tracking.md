@@ -149,3 +149,4 @@ This maintenance release includes the following code fixes:
 142. https://github.com/dotCMS/core/issues/29667 : Update CLEANUP_BUNDLES_OLDER_THAN_DAYS default value to 4 #29667
 143. https://github.com/dotCMS/core/issues/29162 : Slow performance with imports in some cases #29162
 144. https://github.com/dotCMS/core/issues/28779 : IndexOutOfBoundsException in sitesearch portlet #28779
+145. https://github.com/dotCMS/core/issues/29256 : Many to One Relationships Not Copied in Copy Site #29256

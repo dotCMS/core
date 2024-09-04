@@ -8941,6 +8941,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final Folder folder, final User user, final String copySuffix,
             final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException {
+        return copyContentlet(sourceContentlet, null, host, folder, user,
+                copySuffix, respectFrontendRoles);
+    }
+
+    @WrapInTransaction
+    @Override
+    @SuppressWarnings("unchecked")
+    public Contentlet copyContentlet(final Contentlet sourceContentlet,
+                                     final ContentType contentType, final Host host, final Folder folder, final User user,
+                                     final String copySuffix, final boolean respectFrontendRoles) throws DotDataException,
+            DotSecurityException, DotContentletStateException {
         if (user == null || UtilMethods.isNotSet(user.getUserId())) {
             throw new DotSecurityException("A user must be specified.");
         }
@@ -9290,10 +9301,28 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user,
-            boolean respectFrontendRoles)
+    public Contentlet copyContentlet(final Contentlet contentlet, final ContentType contentType, final Host site, final User user,
+                                     final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+        return copyContentlet(contentlet, contentType, site, null, user,
+                generateCopySuffix(contentlet, site, null), respectFrontendRoles);
+    }
+
+    @WrapInTransaction
+    @Override
+    public Contentlet copyContentlet(final Contentlet contentlet, final Folder folder, final User user,
+                                     final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException {
         return copyContentlet(contentlet, null, folder, user,
+                generateCopySuffix(contentlet, null, folder), respectFrontendRoles);
+    }
+
+    @WrapInTransaction
+    @Override
+    public Contentlet copyContentlet(final Contentlet contentlet, final ContentType contentType, final Folder folder, final User user,
+                                     final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+        return copyContentlet(contentlet, contentType, null, folder, user,
                 generateCopySuffix(contentlet, null, folder), respectFrontendRoles);
     }
 

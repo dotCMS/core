@@ -19,6 +19,7 @@ public class CopySiteForm {
     private final boolean copyLinks;
     private final boolean copySiteVariables;
     private final SiteForm site;
+    private final boolean copyContentTypes;
 
     @JsonCreator
     public CopySiteForm(
@@ -30,6 +31,7 @@ public class CopySiteForm {
             @JsonProperty("copyContentOnSite") final boolean copyContentOnSite,
             @JsonProperty("copyLinks") final boolean copyLinks,
             @JsonProperty("copySiteVariables") final boolean copySiteVariables,
+            @JsonProperty("copyContentTypes") final boolean copyContentTypes,
             @JsonProperty("site") final SiteForm site) {
 
         this.copyFromSiteId = copyFromSiteId;
@@ -40,6 +42,7 @@ public class CopySiteForm {
         this.copyContentOnSite = copyContentOnSite;
         this.copyLinks = copyLinks;
         this.copySiteVariables = copySiteVariables;
+        this.copyContentTypes = copyContentTypes;
         this.site = site;
     }
 
@@ -78,6 +81,9 @@ public class CopySiteForm {
     public boolean isCopySiteVariables() {
         return copySiteVariables;
     }
+    public boolean isCopyContentTypes() {
+        return copyContentTypes;
+    }
 
     @Override
     public String toString() {
@@ -90,6 +96,7 @@ public class CopySiteForm {
                 ", copyContentOnSite=" + copyContentOnSite +
                 ", copyLinks=" + copyLinks +
                 ", copySiteVariables=" + copySiteVariables +
+                ", copyContentTypes=" + copyContentTypes +
                 ", site=" + site +
                 '}';
     }

@@ -10,10 +10,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.event.ContentTypeSavedEvent;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -27,6 +24,9 @@ import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LowerKeyMap;
+import com.dotcms.workflow.form.WorkflowSystemActionForm;
+import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -36,11 +36,15 @@ import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotCorruptedDataException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.quartz.job.ContentTypeDeleteJob;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
 import com.dotmarketing.util.ActivityLogger;
@@ -481,17 +485,57 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @WrapInTransaction
   @Override
-  public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
+  public ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
+    return copyFromAndDependencies(copyContentTypeBean, null, true);
+  }
 
-    if (LicenseManager.getInstance().isCommunity()) {
+  @WrapInTransaction
+  @Override
+  public ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException {
+    return copyFromAndDependencies(copyContentTypeBean, destinationSite, true);
+  }
 
-        throw new InvalidLicenseException("An enterprise license is required to copy content type");
-    }
-
+  @WrapInTransaction
+  public ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite, final boolean copyRelationshipFields) throws DotDataException, DotSecurityException {
     final ContentType sourceContentType = copyContentTypeBean.getSourceContentType();
-    final ContentTypeBuilder builder = ContentTypeBuilder.builder(sourceContentType).name(copyContentTypeBean.getName())
-            .fixed(false).system(false)
-            .id(null).modDate(new Date()).variable(null);
+    final ContentType copiedContentType = copyFrom(copyContentTypeBean, destinationSite, copyRelationshipFields);
+    // saving workflow information
+    final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+    final List<WorkflowScheme> workflowSchemes = workflowAPI.findSchemesForContentType(find(sourceContentType.id()));
+    final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = workflowAPI.findSystemActionsByContentType(sourceContentType, user);
+    workflowAPI.saveSchemeIdsForContentType(copiedContentType, workflowSchemes.stream().map(WorkflowScheme::getId).collect(Collectors.toSet()));
+    final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
+    for (final SystemActionWorkflowActionMapping systemActionWorkflowActionMapping : systemActionWorkflowActionMappings) {
+      workflowHelper.mapSystemActionToWorkflowAction(new WorkflowSystemActionForm.Builder()
+              .systemAction(systemActionWorkflowActionMapping.getSystemAction())
+              .actionId(systemActionWorkflowActionMapping.getWorkflowAction().getId())
+              .contentTypeVariable(copiedContentType.variable()).build(), user);
+    }
+    return copiedContentType;
+  }
+
+  @WrapInTransaction
+  @Override
+  public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
+    return copyFrom(copyContentTypeBean, null, true);
+  }
+
+  @WrapInTransaction
+  @Override
+  public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException {
+    return copyFrom(copyContentTypeBean, destinationSite, true);
+  }
+
+  @WrapInTransaction
+  public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite, final boolean copyRelationshipFields) throws DotDataException, DotSecurityException {
+    final ContentType sourceContentType = copyContentTypeBean.getSourceContentType();
+    final ContentTypeBuilder builder = ContentTypeBuilder.builder(sourceContentType)
+            .name(copyContentTypeBean.getName())
+            .fixed(false)
+            .system(false)
+            .id(null)
+            .modDate(new Date())
+            .variable(null);
 
     if (UtilMethods.isSet(copyContentTypeBean.getNewVariable())) {
       builder.variable(copyContentTypeBean.getNewVariable());
@@ -509,6 +553,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       builder.icon(copyContentTypeBean.getIcon());
     }
 
+    if (null != destinationSite && UtilMethods.isSet(destinationSite.getIdentifier())) {
+      // If the CT is being copied to another Site, more properties must be copied as well
+      builder.siteName(destinationSite.getHostname());
+      builder.description(sourceContentType.description());
+      builder.detailPage(sourceContentType.detailPage());
+      builder.urlMapPattern(sourceContentType.urlMapPattern());
+    }
+
     Logger.debug(this, ()->"Creating the content type: " + copyContentTypeBean.getName()
             + ", from: " + copyContentTypeBean.getSourceContentType().variable());
 
@@ -523,30 +575,34 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
             + ", from: " + copyContentTypeBean.getSourceContentType().variable());
 
     for (final Field sourceField : sourceFields) {
+      DotPreconditions.checkNotEmpty(sourceField.variable(), DotCorruptedDataException.class,
+              "Velocity Variable Name in Field ID '%s' cannot be empty", sourceField.id());
+      if (sourceField instanceof RelationshipField && !copyRelationshipFields) {
+        continue;
+      }
+      Field newField = lowerNewFieldMap.get(sourceField.variable().toLowerCase());
+      if (null == newField) {
 
-        Field newField = lowerNewFieldMap.get(sourceField.variable().toLowerCase());
-        if (null == newField) {
+        newField = APILocator.getContentTypeFieldAPI()
+                .save(FieldBuilder.builder(sourceField).sortOrder(sourceField.sortOrder()).contentTypeId(newContentType.id()).id(null).build(), user);
+      } else {
 
-            newField = APILocator.getContentTypeFieldAPI()
-                    .save(FieldBuilder.builder(sourceField).sortOrder(sourceField.sortOrder()).contentTypeId(newContentType.id()).id(null).build(), user);
-        } else {
+        // if contains we just need to sort based on the source order
+        APILocator.getContentTypeFieldAPI()
+                .save(FieldBuilder.builder(newField).sortOrder(sourceField.sortOrder()).build(), user);
+      }
 
-            // if contains we just need to sort based on the source order
-          APILocator.getContentTypeFieldAPI()
-                  .save(FieldBuilder.builder(newField).sortOrder(sourceField.sortOrder()).build(), user);
+      final List<FieldVariable> currentFieldVariables = sourceField.fieldVariables();
+      if (UtilMethods.isSet(currentFieldVariables)) {
+        for (final FieldVariable fieldVariable : currentFieldVariables) {
+
+          APILocator.getContentTypeFieldAPI().save(ImmutableFieldVariable.builder().from(fieldVariable).
+                  fieldId(newField.id()).id(null).userId(user.getUserId()).build(), user);
         }
-
-        final List<FieldVariable> currentFieldVariables = sourceField.fieldVariables();
-        if (UtilMethods.isSet(currentFieldVariables)) {
-          for (final FieldVariable fieldVariable : currentFieldVariables) {
-
-            APILocator.getContentTypeFieldAPI().save(ImmutableFieldVariable.builder().from(fieldVariable).
-                    fieldId(newField.id()).id(null).userId(user.getUserId()).build(), user);
-          }
-        }
+      }
     }
 
-    return newContentType;
+    return find(newContentType.id());
   }
 
   @WrapInTransaction
