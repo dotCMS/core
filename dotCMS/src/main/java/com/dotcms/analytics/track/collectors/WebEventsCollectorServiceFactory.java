@@ -47,6 +47,17 @@ public class WebEventsCollectorServiceFactory {
         private final Map<String, Collector> asyncCollectors = new ConcurrentHashMap<>();
         private final EventLogSubmitter submitter = new EventLogSubmitter();
 
+        WebEventsCollectorServiceImpl () {
+
+            final Collector basicProfileCollector = new BasicProfileCollector();
+            this.syncCollectors.put(basicProfileCollector.getId(), basicProfileCollector);
+
+            final Collector fileCollector  = new FilesCollector();
+            final Collector pagesCollector = new PagesCollector();
+            this.asyncCollectors.put(fileCollector.getId(), fileCollector);
+            this.asyncCollectors.put(pagesCollector.getId(), pagesCollector);
+        }
+
         @Override
         public void fireCollectors(final HttpServletRequest request,
                                    final HttpServletResponse response,
@@ -55,17 +66,17 @@ public class WebEventsCollectorServiceFactory {
             if (!asyncCollectors.isEmpty() || !syncCollectors.isEmpty()) {
 
                 final CollectorPayloadBean collectorPayloadBean = new ConcurrentCollectorPayloadBean();
-                this.fireCollectorsAndEmittEvent(request, response, requestMatcher, collectorPayloadBean);
+                this.fireCollectorsAndEmitEvent(request, response, requestMatcher, collectorPayloadBean);
             } else {
 
                 Logger.debug(this, ()-> "No collectors to ran");
             }
         }
 
-        private void fireCollectorsAndEmittEvent(final HttpServletRequest request,
-                                                 final HttpServletResponse response,
-                                                 final RequestMatcher requestMatcher,
-                                                 final CollectorPayloadBean collectorPayloadBean) {
+        private void fireCollectorsAndEmitEvent(final HttpServletRequest request,
+                                                final HttpServletResponse response,
+                                                final RequestMatcher requestMatcher,
+                                                final CollectorPayloadBean collectorPayloadBean) {
 
             final Character character = WebAPILocator.getCharacterWebAPI().getOrCreateCharacter(request, response);
             final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
@@ -74,7 +85,8 @@ public class WebEventsCollectorServiceFactory {
                 Logger.debug(this, ()-> "Running sync collectors");
                 final CollectorContextMap syncCollectorContextMap = new RequestCharacterCollectorContextMap(request, character, requestMatcher);
                 // we collect info which is sync and includes the request.
-                syncCollectors.values().stream().filter(collector -> collector.test(syncCollectorContextMap)).forEach(collector -> collector.collect(syncCollectorContextMap, collectorPayloadBean));
+                syncCollectors.values().stream().filter(collector -> collector.test(syncCollectorContextMap))
+                        .forEach(collector -> collector.collect(syncCollectorContextMap, collectorPayloadBean));
             }
 
             // if there is anything to run async
