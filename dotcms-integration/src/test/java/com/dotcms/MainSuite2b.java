@@ -50,6 +50,7 @@ import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
 import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
+import com.dotcms.jobs.business.api.JobQueueManagerAPITest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mail.MailAPIImplTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
@@ -317,7 +318,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240530AddDotAIPortletToLayoutTest.class,
         EmbeddingContentListenerTest.class,
         Task240606AddVariableColumnToWorkflowTest.class,
-        OpenAIContentPromptActionletTest.class
+        OpenAIContentPromptActionletTest.class,
+        JobQueueManagerAPITest.class
 })
 
 public class MainSuite2b {
