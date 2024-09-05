@@ -55,10 +55,10 @@ jobs:
       # Check SonarQube Quality Gate status
       - name: SonarQube Quality Gate check
         id: sonarqube-quality-gate-check
-        uses: sonarsource/sonarqube-quality-gate-action@master
+        uses: sonarsource/sonarqube-quality-gate-action@dc2f7b0dd95544cd550de3028f89193576e958b9
         continue-on-error: ${{ github.repository != 'dotCMS/core' }}
-        timeout-minutes: 10 # Force step to fail after specific time
         with:
+          pollingTimeoutSec: 600 # 10 minutes
           scanMetadataReportFile: target/sonar/report-task.txt
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
