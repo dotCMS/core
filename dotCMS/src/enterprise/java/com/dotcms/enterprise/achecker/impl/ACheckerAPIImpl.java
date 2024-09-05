@@ -6,7 +6,10 @@ import com.dotcms.enterprise.achecker.ACheckerResponse;
 import com.dotcms.enterprise.achecker.dao.GuidelinesDAO;
 import com.dotcms.enterprise.achecker.model.GuideLineBean;
 import com.dotcms.enterprise.achecker.tinymce.DaoLocator;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.EnterpriseFeature;
+import com.dotmarketing.business.DotValidationException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 
 import java.util.List;
@@ -30,12 +33,16 @@ public class ACheckerAPIImpl implements ACheckerAPI {
      * @throws Exception If the guidelines can't be retrieved.
      */
     @EnterpriseFeature
-    public List<GuideLineBean> getAccessibilityGuidelineList() throws Exception {
-        if (UtilMethods.isNotSet(this.accessibilityGuidelineList)) {
-            GuidelinesDAO gLines = DaoLocator.getGuidelinesDAO();
-            this.accessibilityGuidelineList = gLines.getOpenGuidelines();
+    public List<GuideLineBean> getAccessibilityGuidelineList() throws DotDataException {
+        try {
+            if (UtilMethods.isNotSet(this.accessibilityGuidelineList)) {
+                GuidelinesDAO gLines = DaoLocator.getGuidelinesDAO();
+                this.accessibilityGuidelineList = gLines.getOpenGuidelines();
+            }
+            return this.accessibilityGuidelineList;
+        } catch (final Exception e) {
+            throw new DotDataException(ExceptionUtil.getErrorMessage(e), e);
         }
-        return this.accessibilityGuidelineList;
     }
 
     /**
@@ -54,19 +61,23 @@ public class ACheckerAPIImpl implements ACheckerAPI {
      *
      * @return The result of the validation, as a JSON object.
      *
-     * @throws Exception If the validation fails.
+     * @throws DotValidationException If the validation fails.
      */
     @EnterpriseFeature
-    public ACheckerResponse validate(final Map<String, String> validationData) throws Exception {
+    public ACheckerResponse validate(final Map<String, String> validationData) throws DotValidationException {
         final String lang = validationData.get(LANG);
         final String content = validationData.get(CONTENT);
         final String guidelines = validationData.get(GUIDELINES);
         final String fragment = validationData.get(FRAGMENT);
-        if (UtilMethods.isSet(lang) && lang.trim().length() == 2) {
-            DaoLocator.getLangCodesDAO().getLangCodeBy3LetterCode(lang);
+        try {
+            if (UtilMethods.isSet(lang) && lang.trim().length() == 2) {
+                DaoLocator.getLangCodesDAO().getLangCodeBy3LetterCode(lang);
+            }
+            final ACheckerRequest request = new ACheckerRequest(lang, content, guidelines, Boolean.parseBoolean(fragment));
+            return new ACheckerImpl().validate(request);
+        } catch (final Exception e) {
+            throw new DotValidationException(ExceptionUtil.getErrorMessage(e), e);
         }
-        final ACheckerRequest request = new ACheckerRequest(lang, content, guidelines, Boolean.parseBoolean(fragment));
-        return new ACheckerImpl().validate(request);
     }
 
 }

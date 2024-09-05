@@ -1,6 +1,8 @@
 package com.dotcms.enterprise.achecker;
 
 import com.dotcms.enterprise.achecker.model.GuideLineBean;
+import com.dotmarketing.business.DotValidationException;
+import com.dotmarketing.exception.DotDataException;
 
 import java.util.List;
 import java.util.Map;
@@ -25,9 +27,9 @@ public interface ACheckerAPI {
      *
      * @return The list of Accessibility Guidelines available in the system.
      *
-     * @throws Exception If the guidelines can't be retrieved.
+     * @throws DotDataException If the guidelines can't be retrieved.
      */
-    List<GuideLineBean> getAccessibilityGuidelineList() throws Exception;
+    List<GuideLineBean> getAccessibilityGuidelineList() throws DotDataException;
 
     /**
      * Validates the given content against the specified Accessibility Guidelines.
@@ -45,8 +47,8 @@ public interface ACheckerAPI {
      *
      * @return The result of the validation, as a JSON object.
      *
-     * @throws Exception If the validation fails.
+     * @throws DotValidationException If the validation fails.
      */
-    ACheckerResponse validate(final Map<String, String> validationData) throws Exception;
+    ACheckerResponse validate(final Map<String, String> validationData) throws DotValidationException;
 
 }
