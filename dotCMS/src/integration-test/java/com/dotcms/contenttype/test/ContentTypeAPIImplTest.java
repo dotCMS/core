@@ -147,7 +147,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			fieldList.add(plot);
 			fieldList.add(boxOffice);
 
-			contentTypeAPI.save(movieOriginal, fieldList);
+			movieOriginal = contentTypeAPI.save(movieOriginal, fieldList);
 
 			final List<Field> fieldsRecovery = APILocator.getContentTypeFieldAPI().byContentTypeId(movieOriginal.id());
 
