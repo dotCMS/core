@@ -25,7 +25,7 @@ public class BasicProfileCollector implements Collector {
         final Boolean sessionId   = (Boolean)collectorContextMap.get("session");
         final Boolean sessionNew   = (Boolean)collectorContextMap.get("sessionNew");
 
-        collectorPayloadBean.put("requestId", requestId);
+        collectorPayloadBean.put("request_id", requestId);
         collectorPayloadBean.put("timestamp",
                 FunctionUtils.getOrDefault(Objects.nonNull(time), ()->time,System::currentTimeMillis));
         collectorPayloadBean.put("cluster",

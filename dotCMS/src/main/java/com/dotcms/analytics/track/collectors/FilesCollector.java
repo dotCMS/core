@@ -61,7 +61,7 @@ public class FilesCollector implements Collector {
         Try.run(()-> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValue(writer, pageObject));
         collectorPayloadBean.put("objects",  writer.toString());
         collectorPayloadBean.put("path", uri);
-        collectorPayloadBean.put("event", "file");
+        collectorPayloadBean.put("event_type", "FILE_REQUEST");
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("site", siteId);
 

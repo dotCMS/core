@@ -60,7 +60,7 @@ public class PagesCollector implements Collector {
         Try.run(()->DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValue(writer, pageObject));
         collectorPayloadBean.put("objects",  writer.toString());
         collectorPayloadBean.put("path", uri);
-        collectorPayloadBean.put("event", "page");
+        collectorPayloadBean.put("event_type", "PAGE_REQUEST");
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("site", siteId);
 

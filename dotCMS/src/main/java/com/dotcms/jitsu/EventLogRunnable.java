@@ -7,6 +7,7 @@ import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrl.Response;
 import com.dotcms.http.CircuitBreakerUrlBuilder;
 import com.dotcms.jitsu.EventsPayload.EventPayload;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;
@@ -19,6 +20,7 @@ import org.apache.http.HttpStatus;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -72,7 +74,8 @@ public class EventLogRunnable implements Runnable {
     }
 
     private EventsPayload convertToEventPayload(final Map<String, Serializable> stringSerializableMap) {
-        return null; // todo: need to convert this to EventPayload
+
+        return new AnalyticsEventsPayload(new HashMap<>(stringSerializableMap));
     }
 
     @Override

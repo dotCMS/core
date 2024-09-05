@@ -43,10 +43,6 @@ import java.util.function.Predicate;
 public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
 
     private final static Map<String, RequestMatcher> requestMatchersMap = new ConcurrentHashMap<>();
-    private final static Map<String, Collector> syncCollectors  = new ConcurrentHashMap<>();
-    private final static Map<String, Collector> asyncCollectors = new ConcurrentHashMap<>();
-
-    private final EventLogSubmitter submitter;
 
     /// private static final String[] DEFAULT_BLACKLISTED_PROPS = new String[]{"^/api/*"};
     private static final String[] DEFAULT_BLACKLISTED_PROPS = new String[]{StringPool.BLANK};
@@ -85,35 +81,6 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
         requestMatchersMap.remove(requestMatcherId);
     }
 
-    /**
-     * Add a collector
-     * @param collectors
-     */
-    public static void addCollector(final Collector... collectors) {
-        for (final Collector collector : collectors) {
-            if (collector.isAsync()) {
-
-                asyncCollectors.put(collector.getId(), collector);
-            } else {
-                syncCollectors.put(collector.getId(), collector);
-            }
-        }
-    }
-
-    /**
-     * Remove a collector by id
-     * @param collectorId
-     */
-    public static void removeCollector(final String collectorId) {
-
-        if (syncCollectors.containsKey(collectorId)) {
-            syncCollectors.remove(collectorId);
-        }
-
-        if (asyncCollectors.containsKey(collectorId)) {
-            asyncCollectors.remove(collectorId);
-        }
-    }
 
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
@@ -165,38 +132,6 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
         Logger.debug(this, ()-> "fireNext, uri: " + request.getRequestURI() +
                 " requestMatcher: " + requestMatcher.getId());
 
-        if (!asyncCollectors.isEmpty() || !syncCollectors.isEmpty()) {
-
-            final CollectorPayloadBean collectorPayloadBean = new ConcurrentCollectorPayloadBean();
-            this.runCollectors(request, response, requestMatcher, collectorPayloadBean);
-        }
-    }
-
-    private void runCollectors(final HttpServletRequest request,
-                               final HttpServletResponse response,
-                               final RequestMatcher requestMatcher,
-                               final CollectorPayloadBean collectorPayloadBean) {
-
-        final Character character = WebAPILocator.getCharacterWebAPI().getOrCreateCharacter(request, response);
-        final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        if (!syncCollectors.isEmpty()) {
-
-            Logger.debug(this, ()-> "Running sync collectors");
-            final CollectorContextMap syncCollectorContextMap = new RequestCharacterCollectorContextMap(request, character, requestMatcher);
-            // we collect info which is sync and includes the request.
-            syncCollectors.values().stream().filter(collector -> collector.test(syncCollectorContextMap)).forEach(collector -> collector.collect(syncCollectorContextMap, collectorPayloadBean));
-        }
-
-        // if there is anything to run async
-        final CollectorContextMap collectorContextMap = new CharacterCollectorContextMap(character, requestMatcher);
-        this.submitter.logEvent(
-                new EventLogRunnable(site, ()-> {
-                    Logger.debug(this, ()-> "Running async collectors");
-                    asyncCollectors.values().stream()
-                            .filter(collector -> collector.test(collectorContextMap))
-                            .forEach(collector -> { collector.collect(collectorContextMap, collectorPayloadBean); });
-                    return collectorPayloadBean.toMap();
-                }));
 
     }
 
