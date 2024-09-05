@@ -57,7 +57,7 @@ public class BinaryCleanupJob implements StatefulJob {
     // also delete bundles older than 2 days
     if (Config.getBooleanProperty("bundles.delete.enabled", true)) {
 
-      olderThan =  Date.from(Instant.now().minus(Duration.ofMillis(Config.getIntProperty("bundles.delete.older.than.milliseconds", 1000 * 60 * 60 * 24 * 2))));
+      olderThan =  Date.from(Instant.now().minus(Duration.ofMillis(Config.getIntProperty("bundles.delete.older.than.milliseconds", 1000 * 60 * 60 * 24 * 4))));
       Logger.info(this.getClass(), "Deleting bundle files older than " + olderThan + " from " + ConfigUtils.getBundlePath());
       final File bundleFolder = new File(ConfigUtils.getBundlePath());
       FileUtil.cleanTree(bundleFolder, olderThan);
