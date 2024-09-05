@@ -109,7 +109,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/achecker/validate",
+									"raw": "{{serverURL}}/api/v1/achecker/_validate",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -117,7 +117,7 @@
 										"api",
 										"v1",
 										"achecker",
-										"validate"
+										"_validate"
 									]
 								},
 								"description": "Validates content against a single Accessibility Guideline."
@@ -169,7 +169,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/achecker/validate",
+									"raw": "{{serverURL}}/api/v1/achecker/_validate",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -177,7 +177,7 @@
 										"api",
 										"v1",
 										"achecker",
-										"validate"
+										"_validate"
 									]
 								},
 								"description": "Validates content against a more than one Accessibility Guideline. You can specify more as comma-separated values."
@@ -229,7 +229,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/achecker/validate",
+									"raw": "{{serverURL}}/api/v1/achecker/_validate",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -237,7 +237,7 @@
 										"api",
 										"v1",
 										"achecker",
-										"validate"
+										"_validate"
 									]
 								},
 								"description": "Validate content without specifying a language. This won't affect how the guideline validation works. It's just for dotCMS purposes."
@@ -289,7 +289,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/achecker/validate",
+									"raw": "{{serverURL}}/api/v1/achecker/_validate",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -297,7 +297,7 @@
 										"api",
 										"v1",
 										"achecker",
-										"validate"
+										"_validate"
 									]
 								},
 								"description": "Validate a content with the `fragment` attribute set to `false`. This means that our API will NOT automatically include the required HTML code to the content for the Accessibliity Guideline service to validate it correctly. Therefore, more errors will be present."
@@ -376,7 +376,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/achecker/validate",
+									"raw": "{{serverURL}}/api/v1/achecker/_validate",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -384,7 +384,7 @@
 										"api",
 										"v1",
 										"achecker",
-										"validate"
+										"_validate"
 									]
 								},
 								"description": "The `content` attribute is required. This request will fail."
@@ -433,7 +433,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/achecker/validate",
+									"raw": "{{serverURL}}/api/v1/achecker/_validate",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -441,7 +441,7 @@
 										"api",
 										"v1",
 										"achecker",
-										"validate"
+										"_validate"
 									]
 								},
 								"description": "The `guidelines` attribute is required. This request will fail."
@@ -554,7 +554,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/achecker/validate",
+									"raw": "{{serverURL}}/api/v1/achecker/_validate",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -562,7 +562,7 @@
 										"api",
 										"v1",
 										"achecker",
-										"validate"
+										"_validate"
 									]
 								},
 								"description": "Validates content against a single Accessibility Guideline."

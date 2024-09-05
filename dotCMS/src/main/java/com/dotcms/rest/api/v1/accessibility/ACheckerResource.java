@@ -5,6 +5,7 @@ import com.dotcms.enterprise.achecker.model.GuideLineBean;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotmarketing.business.APILocator;
 import com.google.common.annotations.VisibleForTesting;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -25,8 +26,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
 
-import static com.dotcms.rest.api.v1.accessibility.ACheckerHelper.CONTENT;
-import static com.dotcms.rest.api.v1.accessibility.ACheckerHelper.GUIDELINES;
+import static com.dotcms.enterprise.achecker.ACheckerAPI.CONTENT;
+import static com.dotcms.enterprise.achecker.ACheckerAPI.GUIDELINES;
 import static com.dotcms.util.DotPreconditions.checkNotEmpty;
 
 /**
@@ -85,7 +86,7 @@ public class ACheckerResource {
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
                 .init();
-        final List<GuideLineBean> guidelines = ACheckerHelper.getInstance().getAccessibilityGuidelineList();
+        final List<GuideLineBean> guidelines = APILocator.getACheckerAPI().getAccessibilityGuidelineList();
         return Response.ok(new ResponseEntityView<>(guidelines)).build();
     }
 
@@ -109,7 +110,7 @@ public class ACheckerResource {
      * validation, if any.
      */
     @POST
-    @Path("/validate")
+    @Path("/_validate")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -230,8 +231,8 @@ public class ACheckerResource {
                 String.format("'%s' parameter cannot be empty", CONTENT));
         checkNotEmpty(accessibilityForm.get(GUIDELINES), IllegalArgumentException.class,
                 String.format("'%s' parameter cannot be empty", GUIDELINES));
-        final ACheckerResponse aCheckerResponse = ACheckerHelper.getInstance().validate(accessibilityForm);
-        return Response.ok(new ResponseEntityView<>(aCheckerResponse)).build();
+        final ACheckerResponse aCheckerResponse = APILocator.getACheckerAPI().validate(accessibilityForm);
+        return Response.ok(new ResponseACheckerEntityView(aCheckerResponse)).build();
     }
 
 }
