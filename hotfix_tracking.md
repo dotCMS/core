@@ -299,3 +299,4 @@ This maintenance release includes the following code fixes:
 227. https://github.com/dotCMS/core/issues/29392 : Saving folder names with special characters leads to incorrect encoding #29392
 228. https://github.com/dotCMS/core/issues/29667 : Update CLEANUP_BUNDLES_OLDER_THAN_DAYS default value to 4 #29667
 229. https://github.com/dotCMS/core/issues/28857 : dotAsset is Breaking FileViewStrategy #28857
+230. https://github.com/dotCMS/core/issues/29259 : Page API: Image field content gone when request page with depth #29259
