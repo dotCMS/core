@@ -323,7 +323,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             });
 
         fromEvent(this.window, 'dragover')
-            .pipe(takeUntil(this.destroy$))
+            .pipe(
+                takeUntil(this.destroy$),
+                // Check that  `this.uveStore.dragItem()` is not empty because there is a scenario where a drag operation
+                // occurs over the editor after invoking `handleReloadContentEffect`, which clears the dragItem.
+                // For more details, refer to the issue: https://github.com/dotCMS/core/issues/29855
+                filter((_event: DragEvent) => !!this.uveStore.dragItem())
+            )
             .subscribe((event: DragEvent) => {
                 event.preventDefault(); // Prevent file opening
                 const iframeRect = this.iframe.nativeElement.getBoundingClientRect();
