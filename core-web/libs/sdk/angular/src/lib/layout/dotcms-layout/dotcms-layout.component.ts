@@ -49,6 +49,12 @@ import { RowComponent } from '../row/row.component';
 export class DotcmsLayoutComponent implements OnInit {
     private _pageAsset!: DotCMSPageAsset;
 
+    /**
+     * Represents the DotCMS page asset.
+     *
+     * @type {DotCMSPageAsset}
+     * @memberof DotcmsLayoutComponent
+     */
     @Input({ required: true })
     set pageAsset(value: DotCMSPageAsset) {
         this._pageAsset = value;
@@ -59,6 +65,13 @@ export class DotcmsLayoutComponent implements OnInit {
         }
     }
 
+    /**
+     * Returns the DotCMS page asset.
+     *
+     * @readonly
+     * @type {DotCMSPageAsset}
+     * @memberof DotcmsLayoutComponent
+     */
     get pageAsset(): DotCMSPageAsset {
         return this._pageAsset;
     }
