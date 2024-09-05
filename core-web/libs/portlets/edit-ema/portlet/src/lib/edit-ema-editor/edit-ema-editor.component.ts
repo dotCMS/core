@@ -34,8 +34,7 @@ import {
     DotSeoMetaTagsUtilService,
     DotContentletService,
     DotTempFileUploadService,
-    DotWorkflowActionsFireService,
-    DotSessionstorageService
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -83,7 +82,6 @@ import {
 import { UVEStore } from '../store/dot-uve.store';
 import { ClientRequestProps } from '../store/features/client/withClient';
 import {
-    LAST_DRAG_ITEM_KEY,
     SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
     compareUrlPaths,
@@ -120,8 +118,7 @@ import {
         DotCopyContentService,
         DotHttpErrorManagerService,
         DotContentletService,
-        DotTempFileUploadService,
-        DotSessionstorageService
+        DotTempFileUploadService
     ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
@@ -146,7 +143,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly dotPageApiService = inject(DotPageApiService);
-    private readonly dotSessionStorage = inject(DotSessionstorageService);
 
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
@@ -274,11 +270,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe((event: DragEvent) => {
                 // Set custom data-type for the drag event
                 // More info: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setData
-                event.dataTransfer?.setData('dotcms/contentlet', '');
+                event.dataTransfer?.setData('dotcms/item', '');
                 const { dataset } = event.target as HTMLDivElement;
                 const data = getDragItemData(dataset);
                 this.uveStore.setEditorDragItem(data);
-                this.dotSessionStorage.removeItem(LAST_DRAG_ITEM_KEY);
             });
 
         fromEvent(this.window, 'dragenter')
@@ -293,20 +288,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const types = event.dataTransfer?.types || [];
                 const dragItem = this.uveStore.dragItem();
 
+                // If the user left and go back with a contentlet
+                // We force them to re-do the drag
+                // More info: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/types
+                if (!dragItem && types.includes('dotcms/item')) {
+                    return;
+                }
+
                 this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
                 this.contentWindow?.postMessage(NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS, this.host);
 
                 if (dragItem) {
-                    return;
-                }
-
-                // If there is not drag item and the current event has `type` equals to `dotcms/contentlet`
-                // We restore the last drag item before leave the window from the localstorage
-                // More info: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/types
-                if (types.includes('dotcms/contentlet')) {
-                    const dragItemBeforeLeave = this.dotSessionStorage.getItem(LAST_DRAG_ITEM_KEY);
-                    this.uveStore.setEditorDragItem(dragItemBeforeLeave as EmaDragItem);
-
                     return;
                 }
 
@@ -379,8 +371,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 filter((event: DragEvent) => !event.relatedTarget) // Just reset when is out of the window
             )
             .subscribe(() => {
-                // We save the last dragged item before leave the window
-                this.dotSessionStorage.setItem(LAST_DRAG_ITEM_KEY, this.uveStore.dragItem());
                 this.uveStore.resetEditorProperties();
             });
 

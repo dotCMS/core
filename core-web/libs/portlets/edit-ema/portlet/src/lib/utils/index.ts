@@ -504,10 +504,3 @@ export const getDragItemData = (dataset: DOMStringMap) => {
         } as ContentletDragPayload
     };
 };
-
-/**
- * This is the key to store the last item dragged before leaving the window
- *
- *  @type {*}
- * */
-export const LAST_DRAG_ITEM_KEY = 'DRAG_ITEM_BEFORE_LEAVE';
