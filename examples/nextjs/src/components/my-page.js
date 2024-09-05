@@ -40,7 +40,7 @@ const componentsMap = {
     calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
     CustomNoComponent: CustomNoComponent,
-    BlockEditorItem: BlogWithBlockEditor
+    BlockEditorItem: BlogWithBlockEditor,
 };
 
 export function MyPage({ pageAsset, nav }) {
@@ -77,7 +77,12 @@ export function MyPage({ pageAsset, nav }) {
                         pageAsset: pageAsset,
                     }}
                     config={{
-                        pathname
+                        pathname,
+                        editor: {
+                            params: {
+                                depth: 3,
+                            },
+                        },
                     }}
                 />
             </main>
