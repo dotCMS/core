@@ -269,13 +269,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'dragstart')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
-                // Set custom data-type for the drag event
-                // More info: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setData
                 const { dataset } = event.target as HTMLDivElement;
                 const data = getDragItemData(dataset);
+
+                // Needed to identify if a dotcms dragItem from the window left and came back
+                // More info: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setData
                 event.dataTransfer?.setData('dotcms/item', '');
 
-                // It's not a valid drag item
+                // If there is no data, we do nothing because it's not a valid dragItem
                 if (!data) {
                     return;
                 }
@@ -295,8 +296,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const types = event.dataTransfer?.types || [];
                 const dragItem = this.uveStore.dragItem();
 
-                // If the user left and go back with a contentlet
-                // We force them to re-do the drag
+                // Identify if the dotcms dragItem entered the editor from the outside
+                // We do not set dragging state, forcing users to do the dragging action again
+                // This check does not apply if users drag something from their computer
                 // More info: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/types
                 if (!dragItem && types.includes('dotcms/item')) {
                     return;
