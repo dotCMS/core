@@ -58,15 +58,20 @@ jobs:
                 });
             }
             
-            let issueNumber = ('${{ inputs.issue_number }}'.trim() && parseInt('${{ inputs.issue_number }}')) || -1;
-            const issue = context.payload.issue || await getIssue(issueNumber);
+            let issue = context.payload.issue;
             if (!issue) {
+              if (!!'${{ inputs.issue_number }}') {
+                issue = await getIssue(${{ inputs.issue_number }});
+              }
+            
+              if (!issue) {
                 console.log('Issue [${{ inputs.issue_number }}] not found');
                 process.exit(0);
+              }
             }
             
             console.log(`Issue: ${JSON.stringify(issue, null, 2)}`);
-            issueNumber = issue.data.number;
+            const issueNumber = issue.data.number;
             
             const dropAndLearnText = 'Drop Everything & Learn';
             if (issue.data.title.includes(dropAndLearnText)) {
