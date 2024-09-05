@@ -1,20 +1,33 @@
-@if (context()?.pageAsset; as pageAsset) {
-    <div class="flex flex-col min-h-screen gap-6 bg-neutral-50">
-        @if(pageAsset.layout.header){
-            <app-header>
-                <app-navigation [items]="context()?.nav.children" />
-            </app-header>
-        }
+@if (context(); as vm) {
+    @if (vm.status !== 'idle') {
+        <div class="flex flex-col gap-6 min-h-screen bg-neutral-50">
+            @if (vm.page?.layout?.header) {
+                <app-header>
+                    @if (vm.nav?.children) {
+                        <app-navigation [items]="vm.nav?.children || []" />
+                    }
+                </app-header>
+            }
 
-        <main class="container flex flex-col gap-8 m-auto">
-            <dotcms-layout
-                [pageAsset]="context()?.pageAsset"
-                [components]="components()"
-                [editor]="editorCofig" />
-        </main>
+            <main class="container flex flex-col gap-8 m-auto">
+                @if (vm.status === 'loading') {
+                    <app-loading />
+                } @else if (vm.status === 'error' && vm.error) {
+                    <app-error [error]="vm.error" />
+                } @else if (vm.status === 'success' && vm.page) {
+                    <dotcms-layout
+                        [pageAsset]="vm.page"
+                        [components]="components()"
+                        [editor]="editorCofig" />
+                } @else {
+                    <!-- Add a fallback for unexpected states -->
+                    <p>Unexpected state encountered.</p>
+                }
+            </main>
 
-        @if(pageAsset.layout.footer){
-            <app-footer />
-        }
-    </div>
+            @if (vm.page?.layout?.footer) {
+                <app-footer />
+            }
+        </div>
+    }
 }

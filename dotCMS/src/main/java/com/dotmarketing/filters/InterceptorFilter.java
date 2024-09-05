@@ -1,5 +1,6 @@
 package com.dotmarketing.filters;
 
+import com.dotcms.analytics.track.AnalyticsTrackWebInterceptor;
 import com.dotcms.ema.EMAWebInterceptor;
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
@@ -39,6 +40,7 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
         delegate.add(new ResponseMetaDataWebInterceptor());
         delegate.add(new EventLogWebInterceptor());
         delegate.add(new CurrentVariantWebInterceptor());
+        delegate.add(new AnalyticsTrackWebInterceptor());
     } // addInterceptors.
 
 } // E:O:F:InterceptorFilter.
