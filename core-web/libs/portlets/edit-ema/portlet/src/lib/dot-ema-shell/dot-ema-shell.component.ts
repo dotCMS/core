@@ -1,7 +1,7 @@
 import { combineLatest, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, effect, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -35,7 +35,7 @@ import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.s
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
-import { DotPage } from '../shared/models';
+import { DialogAction, DotPage } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 
 @Component({
@@ -79,8 +79,6 @@ import { UVEStore } from '../store/dot-uve.store';
 export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
-
-    readonly $didTranslate = signal(false);
 
     readonly uveStore = inject(UVEStore);
 
@@ -161,33 +159,27 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.#currentComponent = event;
     }
 
-    handleNgEvent({ event }: { event: CustomEvent }) {
+    handleNgEvent({ event, dirty, saved, isTranslation }: DialogAction) {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
-                if (!this.$didTranslate()) {
+                // We dont want to reload if it was saved without changes and is not a translation
+
+                if ((dirty && saved) || (isTranslation && saved)) {
+                    this.reloadFromDialog();
+                } else if (isTranslation && !saved) {
                     this.navigate({
                         language_id: 1 // We navigate to the default language if the user didn't translate
                     });
-                } else {
-                    this.$didTranslate.set(false);
-                    this.reloadFromDialog();
                 }
 
                 break;
             }
 
-            case NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED: {
-                // We need to check when the contentlet is updated, to know if we need to reload the page
-                this.$didTranslate.set(true);
-                break;
-            }
-
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
-                this.$didTranslate.set(true);
                 // This can be undefined
                 const url = event.detail.payload?.htmlPageReferer?.split('?')[0].replace('/', '');
 
-                if (url && this.uveStore.params().url !== url) {
+                if (dirty && url && this.uveStore.params().url !== url) {
                     this.navigate({
                         url
                     });

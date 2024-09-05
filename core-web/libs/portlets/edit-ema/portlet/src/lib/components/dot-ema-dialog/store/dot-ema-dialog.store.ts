@@ -25,6 +25,9 @@ export interface EditEmaDialogState {
     url: string;
     type: DialogType;
     payload?: ActionPayload;
+    dirty: boolean;
+    saved: boolean;
+    isTranslation: boolean;
 }
 
 // We can modify this if we add more events, for now I think is enough
@@ -48,7 +51,15 @@ export interface CreateContentletAction {
 @Injectable()
 export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     constructor() {
-        super({ header: '', url: '', type: null, status: DialogStatus.IDLE });
+        super({
+            header: '',
+            url: '',
+            type: null,
+            status: DialogStatus.IDLE,
+            dirty: false,
+            saved: false,
+            isTranslation: false
+        });
     }
 
     private dotActionUrlService = inject(DotActionUrlService);
@@ -184,7 +195,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
                 header: page.title,
                 status: DialogStatus.LOADING,
                 type: 'content',
-                url: this.createTranslatePageUrl(page, newLanguage)
+                url: this.createTranslatePageUrl(page, newLanguage),
+                isTranslation: true
             };
         }
     );
@@ -216,6 +228,30 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     );
 
     /**
+     * This method is called when the user make changes in the form
+     *
+     * @memberof DotEmaDialogStore
+     */
+    readonly setDirty = this.updater((state, dirty: boolean) => {
+        return {
+            ...state,
+            dirty
+        };
+    });
+
+    /**
+     * This method is called when the user save the form
+     *
+     * @memberof DotEmaDialogStore
+     */
+    readonly setSaved = this.updater((state, saved: boolean) => {
+        return {
+            ...state,
+            saved
+        };
+    });
+
+    /**
      * This method is called when the user clicks on the [+ add] button and selects form as content type
      *
      * @memberof DotEmaDialogStore
@@ -243,7 +279,10 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             header: '',
             status: DialogStatus.IDLE,
             type: null,
-            payload: undefined
+            payload: undefined,
+            dirty: false,
+            saved: false,
+            isTranslation: false
         };
     });
 

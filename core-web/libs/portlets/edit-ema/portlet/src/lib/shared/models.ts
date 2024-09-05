@@ -188,3 +188,11 @@ export interface DotDeviceWithIcon extends DotDevice {
 }
 
 export type CommonErrorsInfo = Record<CommonErrors, InfoPage>;
+
+export interface DialogAction {
+    event: CustomEvent;
+    payload: ActionPayload;
+    dirty: boolean;
+    saved: boolean;
+    isTranslation: boolean;
+}

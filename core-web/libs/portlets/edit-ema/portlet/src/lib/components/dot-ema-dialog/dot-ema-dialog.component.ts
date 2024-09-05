@@ -38,7 +38,7 @@ import {
 
 import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
 import { NG_CUSTOM_EVENTS } from '../../shared/enums';
-import { ActionPayload, DotPage, VTLFile } from '../../shared/models';
+import { ActionPayload, DialogAction, DotPage, VTLFile } from '../../shared/models';
 import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
 
 @Component({
@@ -58,7 +58,7 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
 export class DotEmaDialogComponent {
     @ViewChild('iframe') iframe: ElementRef<HTMLIFrameElement>;
 
-    @Output() action = new EventEmitter<{ event: CustomEvent; payload: ActionPayload }>();
+    @Output() action = new EventEmitter<DialogAction>();
     @Output() reloadFromDialog = new EventEmitter<void>();
 
     $compareData = signal<DotContentCompareEvent | null>(null);
@@ -283,13 +283,18 @@ export class DotEmaDialogComponent {
     }
 
     protected onHide() {
+        const { dirty, saved, payload, isTranslation } = this.dialogState();
+
         this.action.emit({
             event: new CustomEvent('ng-event', {
                 detail: {
                     name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
                 }
             }),
-            payload: this.dialogState().payload
+            payload,
+            dirty,
+            saved,
+            isTranslation
         });
     }
 
@@ -310,21 +315,43 @@ export class DotEmaDialogComponent {
         )
             .pipe(takeUntilDestroyed(this.destroyRef$))
             .subscribe((event: CustomEvent) => {
-                this.action.emit({ event, payload: this.dialogState().payload });
+                const { payload, dirty, saved, isTranslation } = this.dialogState();
 
-                if (event.detail.name === NG_CUSTOM_EVENTS.COMPARE_CONTENTLET) {
-                    this.ngZone.run(() => {
-                        this.$compareData.set(<DotContentCompareEvent>event.detail.data);
-                    });
-                }
+                this.action.emit({ event, payload, dirty, saved, isTranslation });
 
-                if (event.detail.name === NG_CUSTOM_EVENTS.OPEN_WIZARD) {
-                    this.handleWorkflowEvent(event.detail.data);
-                } else if (
-                    event.detail.name === NG_CUSTOM_EVENTS.SAVE_PAGE &&
-                    event.detail.payload.isMoveAction
-                ) {
-                    this.reloadIframe();
+                switch (event.detail.name) {
+                    case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
+                        this.store.resetDialog();
+
+                        break;
+                    }
+
+                    case NG_CUSTOM_EVENTS.COMPARE_CONTENTLET: {
+                        this.ngZone.run(() => {
+                            this.$compareData.set(<DotContentCompareEvent>event.detail.data);
+                        });
+                        break;
+                    }
+
+                    case NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED: {
+                        this.store.setDirty(true);
+                        break;
+                    }
+
+                    case NG_CUSTOM_EVENTS.OPEN_WIZARD: {
+                        this.handleWorkflowEvent(event.detail.data);
+                        break;
+                    }
+
+                    case NG_CUSTOM_EVENTS.SAVE_PAGE: {
+                        this.store.setSaved(true);
+
+                        if (event.detail.payload.isMoveAction) {
+                            this.reloadIframe();
+                        }
+
+                        break;
+                    }
                 }
             });
     }
@@ -346,7 +373,15 @@ export class DotEmaDialogComponent {
             }
         });
 
-        this.action.emit({ event: customEvent, payload: this.dialogState().payload });
+        const { payload, dirty, saved, isTranslation } = this.dialogState();
+
+        this.action.emit({
+            event: customEvent,
+            payload,
+            dirty,
+            saved,
+            isTranslation
+        });
     }
 
     /**
