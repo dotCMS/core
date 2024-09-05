@@ -298,3 +298,4 @@ This maintenance release includes the following code fixes:
 226. https://github.com/dotCMS/core/issues/29256 : Many to One Relationships Not Copied in Copy Site #29256
 227. https://github.com/dotCMS/core/issues/29392 : Saving folder names with special characters leads to incorrect encoding #29392
 228. https://github.com/dotCMS/core/issues/29667 : Update CLEANUP_BUNDLES_OLDER_THAN_DAYS default value to 4 #29667
+229. https://github.com/dotCMS/core/issues/28857 : dotAsset is Breaking FileViewStrategy #28857

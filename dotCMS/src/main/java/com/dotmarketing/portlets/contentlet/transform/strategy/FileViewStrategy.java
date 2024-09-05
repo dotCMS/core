@@ -21,6 +21,7 @@ import com.dotcms.api.APIProvider;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -29,6 +30,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -91,7 +93,8 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
         final String fileAssetIdentifier = (String) contentlet.get(field.variable());
 
         if (!UtilMethods.isSet(fileAssetIdentifier)) {
-            return null;
+            Logger.warn(this, "FileAsset identifier is empty for field: " + field.variable());
+            return Map.of();
         }
 
         Optional<Contentlet> fileAsContentOptional = APILocator.getContentletAPI()
@@ -100,10 +103,20 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
                         , contentlet.getLanguageId(),
                         APILocator.systemUser(), true);
 
-        FileAsset fileAsset = null;
+        if(fileAsContentOptional.isEmpty()) {
+            //Prevent NPE
+            Logger.warn(this, "Live FileAsset not found for identifier: " + fileAssetIdentifier);
+            return Map.of();
+        }
 
-        if(fileAsContentOptional.isPresent()) {
-            fileAsset = APILocator.getFileAssetAPI().fromContentlet(fileAsContentOptional.get());
+        final FileAsset fileAsset;
+        final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
+        //This does always assume we're getting a fileAsset we don't want to miss a dotAsset
+        final Contentlet incoming = fileAsContentOptional.get();
+        if(incoming.isDotAsset()){
+            fileAsset = convertToFileAsset(incoming, fileAssetAPI);
+        } else {
+            fileAsset = fileAssetAPI.fromContentlet(incoming);
         }
 
         final Map<String, Object> map = new HashMap<>();
@@ -152,8 +165,39 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
             map.put(FILE_NAME_FIELD, fileName);
             map.put("fileSize", fileSize);
         }
-        map.put("type", "file_asset");
+        map.put("type", assetType(incoming));
         map.put("isContentlet", true);
         return map;
+    }
+
+    /**
+     * This method will convert a dotAsset to a fileAsset
+     * @param dotAsset the dotAsset to be converted
+     * @param api the fileAssetAPI
+     * @return the fileAsset
+     * @throws DotDataException if the content type is not found
+     */
+    private  FileAsset convertToFileAsset(final Contentlet dotAsset, final FileAssetAPI api) throws DotDataException {
+        final ContentType contentType =
+                Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find("FileAsset")).getOrNull();
+
+        if(null == contentType){
+            throw new DotDataException("FileAsset content type not found");
+        }
+
+        final Contentlet newCon = new Contentlet(dotAsset);
+        //here we're simply replacing the content type with the fileAsset content type to bypass a check that takes place in the fromContentlet method
+        //No big deal since we're not going to save this contentlet
+        newCon.setContentType(contentType);
+        return api.fromContentlet(newCon);
+    }
+
+    /**
+     * This method will return the asset type
+     * @param contentlet the contentlet
+     * @return the asset type
+     */
+    String assetType(final Contentlet contentlet){
+        return contentlet.isDotAsset() ? "dot_asset" : "file_asset";
     }
 }

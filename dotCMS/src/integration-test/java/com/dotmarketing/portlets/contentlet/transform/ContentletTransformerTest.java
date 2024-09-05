@@ -20,18 +20,11 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.api.APIProvider;
 import com.dotcms.api.APIProvider.Builder;
-import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.ImageField;
-import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
-import com.dotcms.datagen.CategoryDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.rest.ContentHelper;
@@ -336,21 +329,21 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         assertNotNull(newContentlet);
 
         final List<Field> constants = widgetLikeContenType.fields(ConstantField.class);
-        
+
         final String constantVar1 = constants.get(0).variable();
         final String constantVar2 = constants.get(1).variable();
-        
+
         // assert our content type has no constant values in it
         assertTrue(constants.size()>1);
         assertNull(constants.get(0).values());
         assertNull(constants.get(1).values());
-        
+
         // assert our content Map has no constant values in it
         Map<String,Object> map = new DotTransformerBuilder().defaultOptions().content(newContentlet).build().toMaps().get(0);
         assertNull(map.get(constantVar1));
         assertNull(map.get(constantVar2));
-        
-        
+
+
         // update our Content Type constants to have values
         final List<Field> allFields = new ArrayList<>(widgetLikeContenType.fields());
         allFields.removeIf(constants::contains);
@@ -360,23 +353,23 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             allFields.add(newField);
         }
         ContentType updatedType =APILocator.getContentTypeAPI(APILocator.systemUser()).save(widgetLikeContenType, allFields);
-        
-        // contentlet.constantValue now have values
-        assertNotNull(newContentlet.get(constantVar1));  
-        assertNotNull(newContentlet.get(constantVar2));  
-        
-        // field.value == contentlet.constantValue 
-        assertEquals(updatedType.fieldMap().get(constantVar1).values(), newContentlet.get(constantVar1));  
-        assertEquals(updatedType.fieldMap().get(constantVar2).values(), newContentlet.get(constantVar2));  
 
-        
+        // contentlet.constantValue now have values
+        assertNotNull(newContentlet.get(constantVar1));
+        assertNotNull(newContentlet.get(constantVar2));
+
+        // field.value == contentlet.constantValue 
+        assertEquals(updatedType.fieldMap().get(constantVar1).values(), newContentlet.get(constantVar1));
+        assertEquals(updatedType.fieldMap().get(constantVar2).values(), newContentlet.get(constantVar2));
+
+
         map = new DotTransformerBuilder().defaultOptions().content(newContentlet).build().toMaps().get(0);
 
 
         // contentlet.constantValue ==  map.values
-        assertEquals(newContentlet.get(constantVar1), map.get(constantVar1));  
-        assertEquals(newContentlet.get(constantVar2), map.get(constantVar2));  
-        
+        assertEquals(newContentlet.get(constantVar1), map.get(constantVar1));
+        assertEquals(newContentlet.get(constantVar2), map.get(constantVar2));
+
     }
 
     /**
@@ -956,6 +949,50 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         Assert.assertFalse(keyValueField.get("origin").toString().contains("&#58;"));
         Assert.assertFalse(keyValueField.get("origin").toString().contains("&#44;"));
 
+    }
+
+
+    /**
+     * Given Scenario: We have a contentlet with a dotAsset field, and we push it into the transformer prepared with the FILEASSET_VIEW strategy.
+     * Expected Result: We should get the dotAsset field with the expected properties.
+     * @throws Exception
+     */
+    @Test
+    public void Test_DotAsset_Field_Pushed_Into_Transformer() throws Exception {
+
+        final Contentlet dotAssetLikeContentlet = TestDataUtils.getDotAssetLikeContentlet();
+        ContentletDataGen.publish(dotAssetLikeContentlet);
+
+        final List<Field> fields = List.of(
+                new FieldDataGen()
+                        .name("title")
+                        .velocityVarName("title")
+                        .next(),
+                new FieldDataGen()
+                        .type(FileField.class)
+                        .name("dotAsset")
+                        .velocityVarName("dotAsset")
+                        .next()
+        );
+
+        final String contentTypeName =  "withDotAssetType"+System.currentTimeMillis();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .name(contentTypeName)
+                .velocityVarName(contentTypeName)
+                .fields(fields)
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty("title", "Test")
+                .setProperty("dotAsset", dotAssetLikeContentlet.getIdentifier())
+                .nextPersistedAndPublish();
+
+        final Contentlet transformed = new DotTransformerBuilder().hydratedContentMapTransformer().content(contentlet).build().hydrate().get(0);
+        Map<?,?> asset = (Map)transformed.getMap().get("dotAsset");
+        Assert.assertNotNull(asset);
+        Assert.assertFalse(asset.isEmpty());
+        Assert.assertEquals("dot_asset", asset.get("type"));
     }
 
 }
