@@ -1214,6 +1214,18 @@ describe('UVEStore', () => {
 
                         expect(store.$editorProps().progressBar).toBe(true);
                     });
+
+                    it('should have progressBar as true when the status is loaded but client is not ready', () => {
+                        patchState(store, { status: UVE_STATUS.LOADED, isClientReady: false });
+
+                        expect(store.$editorProps().progressBar).toBe(true);
+                    });
+
+                    it('should have progressBar as false when the status is loaded and client is ready', () => {
+                        patchState(store, { status: UVE_STATUS.LOADED, isClientReady: true });
+
+                        expect(store.$editorProps().progressBar).toBe(false);
+                    });
                 });
 
                 describe('contentletTools', () => {
