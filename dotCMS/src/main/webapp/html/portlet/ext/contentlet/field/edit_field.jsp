@@ -691,7 +691,7 @@
 
 
         <%
-            String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+            String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD", "true");
             if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
         %>
 
@@ -1053,7 +1053,7 @@
     <%} %>
     <%
 
-        String bnFlag = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+        String bnFlag = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD", "true");
         Boolean newBinaryOn = bnFlag != null && bnFlag.equalsIgnoreCase("true");
 
         Boolean isBinaryField = field.getFieldType().equals(Field.FieldType.BINARY.toString());

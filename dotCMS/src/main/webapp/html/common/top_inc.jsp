@@ -44,7 +44,7 @@ THIS FILE AND ITS INCLUDES
 	<link rel="stylesheet" href="/html/assets/monaco-editor/min/vs/editor/editor.main.css" />
 
 	<%
-		String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+		String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD", "true");
 		if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
 	%>
 		<link rel="stylesheet" href="/dotcms-binary-field-builder/styles.css" />
