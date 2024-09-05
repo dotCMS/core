@@ -50,6 +50,7 @@ import {
     DotMessagePipe,
     DotCopyContentModalService
 } from '@dotcms/ui';
+import { isEqual } from '@dotcms/utils';
 
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
@@ -268,17 +269,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'dragstart')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
+                // Set custom data-type for the drag event
+                // More info: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setData
                 const { dataset } = event.target as HTMLDivElement;
                 const data = getDragItemData(dataset);
+                event.dataTransfer?.setData('dotcms/item', '');
 
                 // It's not a valid drag item
                 if (!data) {
                     return;
                 }
 
-                // Set custom data-type for the drag event
-                // More info: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setData
-                event.dataTransfer?.setData('dotcms/item', '');
                 this.uveStore.setEditorDragItem(data);
             });
 
@@ -398,6 +399,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const file = event.dataTransfer?.files[0]; // We are sure that is comes but in the tests we don't have DragEvent class
                 const dragItem = this.uveStore.dragItem();
 
+                // If we have a file, we need to upload it
                 if (file) {
                     // I need to publish the temp file to use it.
                     this.handleFileUpload({
@@ -406,14 +408,23 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         position,
                         dragItem
                     });
-                } else {
+
+                    return;
+                }
+
+                // If we have a dragItem, we need to place it
+                if (!isEqual(dragItem, TEMPORAL_DRAG_ITEM)) {
                     const positionPayload = <PositionPayload>{
                         position,
                         ...data
                     };
 
                     this.placeItem(positionPayload, dragItem);
+
+                    return;
                 }
+
+                this.uveStore.resetEditorProperties();
             });
     }
 

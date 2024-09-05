@@ -1563,15 +1563,20 @@ describe('EditEmaEditorComponent', () => {
 
                     it('should not call the setEditorDragItem if it is an invalid drag item', () => {
                         const setEditorDragItemSpy = jest.spyOn(store, 'setEditorDragItem');
-
+                        const dragStart = new Event('dragstart');
                         const target = {
                             target: {
                                 dataset: {}
                             }
                         };
+                        const dataTransfer = {
+                            writable: false,
+                            value: {
+                                setData: jest.fn()
+                            }
+                        };
 
-                        const dragStart = new Event('dragstart');
-
+                        Object.defineProperty(dragStart, 'dataTransfer', dataTransfer);
                         Object.defineProperty(dragStart, 'target', {
                             writable: false,
                             value: target.target
@@ -1579,6 +1584,7 @@ describe('EditEmaEditorComponent', () => {
 
                         window.dispatchEvent(dragStart);
                         expect(setEditorDragItemSpy).not.toHaveBeenCalled();
+                        expect(dataTransfer.value.setData).toHaveBeenCalledWith('dotcms/item', '');
                     });
                 });
 
