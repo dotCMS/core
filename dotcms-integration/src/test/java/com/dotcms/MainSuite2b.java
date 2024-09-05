@@ -121,6 +121,7 @@ import com.dotmarketing.startup.StartupTasksExecutorDataTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.*;
+import com.dotmarketing.util.ConfigUtilsTest;
 import com.dotmarketing.util.ITConfigTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
@@ -319,7 +320,8 @@ import org.junit.runners.Suite.SuiteClasses;
         EmbeddingContentListenerTest.class,
         Task240606AddVariableColumnToWorkflowTest.class,
         OpenAIContentPromptActionletTest.class,
-        JobQueueManagerAPITest.class
+        JobQueueManagerAPITest.class,
+        ConfigUtilsTest.class
 })
 
 public class MainSuite2b {
