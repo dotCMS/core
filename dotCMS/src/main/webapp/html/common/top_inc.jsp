@@ -45,7 +45,7 @@ THIS FILE AND ITS INCLUDES
 
 	<%
 		String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
-		if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
+		if((isNewBinaryFieldEnabled == null) || (isNewBinaryFieldEnabled != null && !isNewBinaryFieldEnabled.equalsIgnoreCase("false"))){
 	%>
 		<link rel="stylesheet" href="/dotcms-binary-field-builder/styles.css" />
 	<% } %>

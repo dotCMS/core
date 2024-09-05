@@ -96,7 +96,7 @@
 
 <%
 	String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
-	if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
+	if((isNewBinaryFieldEnabled == null) || (isNewBinaryFieldEnabled != null && !isNewBinaryFieldEnabled.equalsIgnoreCase("false"))){
 %>
 
 <!--  dotCMS Binary Field Builder -->
