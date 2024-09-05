@@ -45,7 +45,7 @@ const startClassMap: Record<number, string | null> = {
 
 /**
  * Retrieves the data for a set of containers.
- * 
+ *
  * @param containers - The DotCMSPageAssetContainer object containing the containers.
  * @param containerRef - The DotCMSContainer object representing the container reference.
  * @returns An object containing the container data, accept types, contentlets, and variant ID.

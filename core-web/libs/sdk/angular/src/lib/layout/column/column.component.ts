@@ -31,7 +31,7 @@ export class ColumnComponent implements OnInit {
      * @memberof ColumnComponent
      */
     @Input() column!: DotPageAssetLayoutColumn;
-    
+
     /**
      * The data-testid attribute used for identifying the component during testing.
      *
