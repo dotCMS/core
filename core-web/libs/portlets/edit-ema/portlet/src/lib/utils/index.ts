@@ -472,35 +472,41 @@ export const compareUrlPaths = (urlPath: string, urlPath2: string): boolean => {
  * @param {DragDataset} dataset
  * @return {*}
  */
-export const getDragItemData = (dataset: DOMStringMap) => {
-    const item = JSON.parse(dataset.item) as DragDatasetItem;
-    const { contentType, contentlet, container, move } = item;
+export const getDragItemData = ({ type, item }: DOMStringMap) => {
+    try {
+        const data = JSON.parse(item) as DragDatasetItem;
+        const { contentType, contentlet, container, move } = data;
 
-    if (dataset.type === 'content-type') {
+        if (type === 'content-type') {
+            return {
+                baseType: contentType.baseType,
+                contentType: contentType.variable,
+                draggedPayload: {
+                    item: {
+                        variable: contentType.variable,
+                        name: contentType.name
+                    },
+                    type,
+                    move
+                } as ContentTypeDragPayload
+            };
+        }
+
         return {
-            baseType: contentType.baseType,
-            contentType: contentType.variable,
+            baseType: contentlet.baseType,
+            contentType: contentlet.contentType,
             draggedPayload: {
                 item: {
-                    variable: contentType.variable,
-                    name: contentType.name
+                    contentlet,
+                    container
                 },
-                type: dataset.type,
+                type,
                 move
-            } as ContentTypeDragPayload
+            } as ContentletDragPayload
         };
+    } catch (error) {
+        // It can fail if the data.item is not a valid JSON
+        // In that case, we are draging an invalid element from the window
+        return null;
     }
-
-    return {
-        baseType: contentlet.baseType,
-        contentType: contentlet.contentType,
-        draggedPayload: {
-            item: {
-                contentlet,
-                container
-            },
-            type: dataset.type,
-            move
-        } as ContentletDragPayload
-    };
 };

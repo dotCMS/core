@@ -268,11 +268,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'dragstart')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
+                const { dataset } = event.target as HTMLDivElement;
+                const data = getDragItemData(dataset);
+
+                // It's not a valid drag item
+                if (!data) {
+                    return;
+                }
+
                 // Set custom data-type for the drag event
                 // More info: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setData
                 event.dataTransfer?.setData('dotcms/item', '');
-                const { dataset } = event.target as HTMLDivElement;
-                const data = getDragItemData(dataset);
                 this.uveStore.setEditorDragItem(data);
             });
 

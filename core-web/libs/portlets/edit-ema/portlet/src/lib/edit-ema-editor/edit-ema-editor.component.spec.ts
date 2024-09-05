@@ -1560,6 +1560,26 @@ describe('EditEmaEditorComponent', () => {
                             }
                         });
                     });
+
+                    it('should not call the setEditorDragItem if it is an invalid drag item', () => {
+                        const setEditorDragItemSpy = jest.spyOn(store, 'setEditorDragItem');
+
+                        const target = {
+                            target: {
+                                dataset: {}
+                            }
+                        };
+
+                        const dragStart = new Event('dragstart');
+
+                        Object.defineProperty(dragStart, 'target', {
+                            writable: false,
+                            value: target.target
+                        });
+
+                        window.dispatchEvent(dragStart);
+                        expect(setEditorDragItemSpy).not.toHaveBeenCalled();
+                    });
                 });
 
                 describe('drag over', () => {
