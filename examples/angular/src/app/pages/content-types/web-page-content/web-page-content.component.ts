@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { DotCMSContentlet } from '@dotcms/angular';
 
 @Component({
@@ -8,12 +8,12 @@ import { DotCMSContentlet } from '@dotcms/angular';
   imports: [
     CommonModule,
   ],
-  template: `<h1 class="text-xl font-bold">{{contentlet.title}}</h1>
-  <div [innerHTML]="contentlet.body" ></div>
+  template: `<h1 class="text-xl font-bold">{{contentlet().title}}</h1>
+  <div [innerHTML]="contentlet().body" ></div>
   `,
   styleUrl: './web-page-content.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WebPageContentComponent {
-  @Input() contentlet!: DotCMSContentlet;
+  contentlet = input.required<DotCMSContentlet>();
 }

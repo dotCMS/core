@@ -1,27 +1,36 @@
 interface PageRequestParamsProps {
     path: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    params: { [key: string]: any } | undefined; // QueryParams are typed as `any` in frameworks
+    params: { [key: string]: any } | undefined | URLSearchParams; // QueryParams are typed as `any` in frameworks
 }
 
-export const getPageRequestParams = ({ path = '', params = {} }: PageRequestParamsProps) => {
+export const getPageRequestParams = ({
+    path = '',
+    params = {}
+}: PageRequestParamsProps): {
+    path: string;
+    [key: string]: string | number;
+} => {
+    const copiedParams: PageRequestParamsProps['params'] =
+        params instanceof URLSearchParams ? Object.fromEntries(params.entries()) : { ...params };
+
     const finalParams: Record<string, unknown> = {};
-    const dotMarketingPersonaId = params['com.dotmarketing.persona.id'] || '';
+    const dotMarketingPersonaId = copiedParams['com.dotmarketing.persona.id'] || '';
 
-    if (params['mode']) {
-        finalParams['mode'] = params['mode'];
+    if (copiedParams['mode']) {
+        finalParams['mode'] = copiedParams['mode'];
     }
 
-    if (params['language_id']) {
-        finalParams['language_id'] = params['language_id'];
+    if (copiedParams['language_id']) {
+        finalParams['language_id'] = copiedParams['language_id'];
     }
 
-    if (params['variantName']) {
-        finalParams['variantName'] = params['variantName'];
+    if (copiedParams['variantName']) {
+        finalParams['variantName'] = copiedParams['variantName'];
     }
 
-    if (params['personaId'] || dotMarketingPersonaId) {
-        finalParams['personaId'] = params['personaId'] || dotMarketingPersonaId;
+    if (copiedParams['personaId'] || dotMarketingPersonaId) {
+        finalParams['personaId'] = copiedParams['personaId'] || dotMarketingPersonaId;
     }
 
     return {

@@ -1,6 +1,6 @@
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
-import { GenericContentlet } from '../../utils';
+import { GenericContentlet } from '..';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ContentletComponent } from '../contentlet/contentlet.component';
 
@@ -9,11 +9,11 @@ import { ContentletComponent } from '../contentlet/contentlet.component';
   standalone: true,
   imports: [NgOptimizedImage, DatePipe, ContentletComponent],
   template: `<ul class="flex flex-col gap-7">
-    @for (contentlet of contentlets; track contentlet.identifier) {
+    @for (contentlet of contentlets(); track contentlet.identifier) {
     <app-contentlet [contentlet]="contentlet">
       <li class="flex gap-7 min-h-16">
         <a
-          class="min-w-32 relative"
+          class="relative min-w-32"
           [href]="contentlet.urlMap ?? contentlet.url"
         >
           <img
@@ -26,7 +26,7 @@ import { ContentletComponent } from '../contentlet/contentlet.component';
         </a>
         <div class="flex flex-col gap-1">
           <a
-            class="text-sm text-zinc-900 font-bold"
+            class="text-sm font-bold text-zinc-900"
             [href]="contentlet.urlMap ?? contentlet.url"
           >
             {{ contentlet.title }}
@@ -41,7 +41,7 @@ import { ContentletComponent } from '../contentlet/contentlet.component';
   </ul> `,
 })
 export class ContentletsComponent {
-  @Input() contentlets: Contentlet<GenericContentlet>[] = [];
+  contentlets = input.required<Contentlet<GenericContentlet>[]>();
 
   dateFormatOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric',
