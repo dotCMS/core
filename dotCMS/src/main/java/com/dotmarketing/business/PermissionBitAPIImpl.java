@@ -658,7 +658,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		boolean isCopy = false;
 		if (permissionable instanceof Contentlet){
 			Contentlet contentlet = (Contentlet) permissionable;
-			isCopy = contentlet.getBoolProperty("isCopy");
+			isCopy = contentlet.getBoolProperty(Contentlet.IS_COPY);
 		}
 
 		if(!isCopy) {
