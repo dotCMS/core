@@ -56,7 +56,6 @@ This GitHub Action is designed to automate the process of publishing dotCMS SDK 
 - Additionally, the example projects should point to the 'latest' tag to ensure that version updates do not impact their functionality due to version inconsistency.
 - Ensure that the NPM token provided has the correct permissions to publish packages.
 - The action assumes that the `package.json` files are located under `core-web/libs/sdk/client`.
-- The publish step only runs if the version validation passes, ensuring that no duplicate versions are published.
 
 ## Usage Example
 
@@ -75,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Publish to NPM
-        uses: ./path-to-this-action
+        uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
         with:
           ref: 'master'
           npm-token: ${{ secrets.NPM_TOKEN }}
