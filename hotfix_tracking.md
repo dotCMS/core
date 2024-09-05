@@ -296,3 +296,4 @@ This maintenance release includes the following code fixes:
 **Release-23.01.23**
 
 226. https://github.com/dotCMS/core/issues/29256 : Many to One Relationships Not Copied in Copy Site #29256
+227. https://github.com/dotCMS/core/issues/29392 : Saving folder names with special characters leads to incorrect encoding #29392
