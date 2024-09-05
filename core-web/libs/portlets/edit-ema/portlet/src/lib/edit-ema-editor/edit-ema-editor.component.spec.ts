@@ -90,11 +90,12 @@ import {
     TREE_NODE_MOCK,
     newContentlet,
     PAYLOAD_MOCK,
-    UVE_PAGE_RESPONSE_MAP
+    UVE_PAGE_RESPONSE_MAP,
+    EMA_DRAG_ITEM_CONTENTLET_MOCK
 } from '../shared/mocks';
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { SDK_EDITOR_SCRIPT_SOURCE } from '../utils';
+import { SDK_EDITOR_SCRIPT_SOURCE, TEMPORAL_DRAG_ITEM } from '../utils';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -1411,8 +1412,14 @@ describe('EditEmaEditorComponent', () => {
 
             describe('drag and drop', () => {
                 describe('drag start', () => {
-                    it('should call the setEditorDragItem from the store for content-types', () => {
+                    it('should call the setEditorDragItem from the store for content-types and set the `dotcms/item` type ', () => {
                         const setEditorDragItemSpy = jest.spyOn(store, 'setEditorDragItem');
+                        const dataTransfer = {
+                            writable: false,
+                            value: {
+                                setData: jest.fn()
+                            }
+                        };
 
                         const target = {
                             target: {
@@ -1437,6 +1444,8 @@ describe('EditEmaEditorComponent', () => {
                             value: target.target
                         });
 
+                        Object.defineProperty(dragStart, 'dataTransfer', dataTransfer);
+
                         window.dispatchEvent(dragStart);
 
                         expect(setEditorDragItemSpy).toHaveBeenCalledWith({
@@ -1451,6 +1460,8 @@ describe('EditEmaEditorComponent', () => {
                                 move: false
                             }
                         });
+
+                        expect(dataTransfer.value.setData).toHaveBeenCalledWith('dotcms/item', '');
                     });
 
                     it('should call the setEditorDragItem from the store for contentlets', () => {
@@ -1473,6 +1484,11 @@ describe('EditEmaEditorComponent', () => {
                         const dragStart = new Event('dragstart');
 
                         Object.defineProperty(dragStart, 'target', {
+                            writable: false,
+                            value: target.target
+                        });
+
+                        Object.defineProperty(dragStart, 'data', {
                             writable: false,
                             value: target.target
                         });
@@ -1544,10 +1560,37 @@ describe('EditEmaEditorComponent', () => {
                             }
                         });
                     });
+
+                    it('should not call the setEditorDragItem if it is an invalid drag item', () => {
+                        const setEditorDragItemSpy = jest.spyOn(store, 'setEditorDragItem');
+                        const dragStart = new Event('dragstart');
+                        const target = {
+                            target: {
+                                dataset: {}
+                            }
+                        };
+                        const dataTransfer = {
+                            writable: false,
+                            value: {
+                                setData: jest.fn()
+                            }
+                        };
+
+                        Object.defineProperty(dragStart, 'dataTransfer', dataTransfer);
+                        Object.defineProperty(dragStart, 'target', {
+                            writable: false,
+                            value: target.target
+                        });
+
+                        window.dispatchEvent(dragStart);
+                        expect(setEditorDragItemSpy).not.toHaveBeenCalled();
+                        expect(dataTransfer.value.setData).toHaveBeenCalledWith('dotcms/item', '');
+                    });
                 });
 
                 describe('drag over', () => {
                     it('should prevent default to avoid opening files', () => {
+                        store.setEditorDragItem(TEMPORAL_DRAG_ITEM);
                         const dragOver = new Event('dragover');
                         const preventDefaultSpy = jest.spyOn(dragOver, 'preventDefault');
 
@@ -1593,47 +1636,24 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 describe('drag leave', () => {
-                    it('should set the editor state to OUT_OF_BOUNDS', () => {
-                        const setEditorStateSpy = jest.spyOn(store, 'setEditorState');
-
+                    const createDragLeaveEvent = () => {
                         const dragLeave = new Event('dragleave');
-
                         Object.defineProperties(dragLeave, {
-                            x: {
-                                value: 0
-                            },
-                            y: {
-                                value: 0
-                            },
-                            relatedTarget: {
-                                value: undefined // this is undefined when the mouse leaves the window
-                            }
+                            x: { value: 0 },
+                            y: { value: 0 },
+                            relatedTarget: { value: undefined } // this is undefined when the mouse leaves the window
                         });
 
+                        return dragLeave;
+                    };
+
+                    beforeEach(() => store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK));
+
+                    it('should reset editor properties', () => {
+                        const resetEditorPropertiesSpy = jest.spyOn(store, 'resetEditorProperties');
+                        const dragLeave = createDragLeaveEvent();
                         window.dispatchEvent(dragLeave);
-
-                        expect(setEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.OUT_OF_BOUNDS);
-                    });
-                    it('should not set the editor state to OUT_OF_BOUNDS when the leave is from an element in the window', () => {
-                        const setEditorStateSpy = jest.spyOn(store, 'setEditorState');
-
-                        const dragLeave = new Event('dragleave');
-
-                        Object.defineProperties(dragLeave, {
-                            x: {
-                                value: 900
-                            },
-                            y: {
-                                value: 1200
-                            },
-                            relatedTarget: {
-                                value: {}
-                            }
-                        });
-
-                        window.dispatchEvent(dragLeave);
-
-                        expect(setEditorStateSpy).not.toHaveBeenCalled();
+                        expect(resetEditorPropertiesSpy).toHaveBeenCalled();
                     });
                 });
 
@@ -1674,7 +1694,7 @@ describe('EditEmaEditorComponent', () => {
                         });
                     });
 
-                    it('should set the editor to DRAGGING if there is dragItem and the state is OUT_OF_BOUNDS', () => {
+                    it('should set the editor to DRAGGING if there is dragItem and the state is IDLE', () => {
                         store.setEditorDragItem({
                             baseType: 'dotAsset',
                             contentType: 'dotAsset',
@@ -1683,7 +1703,7 @@ describe('EditEmaEditorComponent', () => {
                             }
                         }); // Simulate drag start
 
-                        store.setEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // Simulate drag leave
+                        store.setEditorState(EDITOR_STATE.IDLE); // Simulate drag leave
 
                         const setEditorStateSpy = jest.spyOn(store, 'setEditorState');
 
@@ -1697,6 +1717,25 @@ describe('EditEmaEditorComponent', () => {
                         window.dispatchEvent(dragEnter);
 
                         expect(setEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.DRAGGING);
+                    });
+
+                    it('should set ignore drag events if the file type is `dotcms/item`', () => {
+                        const setEditorDragItemSpy = jest.spyOn(store, 'setEditorDragItem');
+                        const setEditorStateSpy = jest.spyOn(store, 'setEditorState');
+                        const dragEnter = new Event('dragenter');
+
+                        Object.defineProperty(dragEnter, 'dataTransfer', {
+                            writable: false,
+                            value: {
+                                types: ['dotcms/item']
+                            }
+                        });
+
+                        window.dispatchEvent(dragEnter);
+
+                        expect(store.state()).toBe(EDITOR_STATE.IDLE);
+                        expect(setEditorDragItemSpy).not.toHaveBeenCalled();
+                        expect(setEditorStateSpy).not.toHaveBeenCalled();
                     });
                 });
 
@@ -2290,6 +2329,8 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('scroll inside iframe', () => {
+                beforeEach(() => store.setEditorDragItem(TEMPORAL_DRAG_ITEM));
+
                 it('should emit postMessage and change state to Scroll', () => {
                     const dragOver = new Event('dragover');
 
