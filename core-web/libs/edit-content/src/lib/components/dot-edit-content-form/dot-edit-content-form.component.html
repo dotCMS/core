@@ -18,7 +18,7 @@
                         @for (column of row.columns; track column) {
                             <div class="column" data-testId="column">
                                 @for (field of column.fields; track field) {
-                                    @if (field.fieldType !== fieldTypes.CONSTANT) {
+                                    @if (!isFilteredType(field)) {
                                         <dot-edit-content-field
                                             [contentType]="formData.contentType.variable"
                                             [contentlet]="formData.contentlet"

@@ -17,6 +17,7 @@ export enum FIELD_TYPES {
     CUSTOM_FIELD = 'Custom-Field',
     DATE = 'Date',
     DATE_AND_TIME = 'Date-and-Time',
+    HIDDEN = 'Hidden-Field',
     HOST_FOLDER = 'Host-Folder',
     JSON = 'JSON-Field',
     KEY_VALUE = 'Key-Value',

@@ -31,6 +31,7 @@ export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue> = {
     [FIELD_TYPES.CUSTOM_FIELD]: defaultResolutionFn,
     [FIELD_TYPES.DATE]: defaultResolutionFn,
     [FIELD_TYPES.DATE_AND_TIME]: defaultResolutionFn,
+    [FIELD_TYPES.HIDDEN]: defaultResolutionFn,
     [FIELD_TYPES.HOST_FOLDER]: (contentlet, field) => {
         if (contentlet?.hostName && contentlet?.url) {
             const path = `${contentlet?.hostName}${contentlet?.url}`;

@@ -58,6 +58,7 @@ export class DotEditContentFormComponent implements OnInit {
     @Output() changeValue = new EventEmitter();
     form!: FormGroup;
     readonly fieldTypes = FIELD_TYPES;
+    readonly filteredTypes = FILTERED_TYPES;
     protected tabs: DotCMSContentTypeLayoutTab[] = [];
     private readonly fb = inject(FormBuilder);
     private readonly dotMessageService = inject(DotMessageService);
@@ -86,13 +87,24 @@ export class DotEditContentFormComponent implements OnInit {
         });
 
         this.formData.contentType.fields.forEach((field) => {
-            if (Object.values(FILTERED_TYPES).includes(field.fieldType as FILTERED_TYPES)) {
+            if (this.isFilteredType(field)) {
                 return;
             }
 
             const fieldControl = this.initializeFormControl(field);
             this.form.addControl(field.variable, fieldControl);
         });
+    }
+
+    /**
+     * Check if the field is a filtered type.
+     *
+     * @param {DotCMSContentTypeField} field
+     * @returns {boolean}
+     * @memberof DotEditContentFormComponent
+     */
+    isFilteredType(field: DotCMSContentTypeField): boolean {
+        return Object.values(FILTERED_TYPES).includes(field.fieldType as FILTERED_TYPES);
     }
 
     /**
