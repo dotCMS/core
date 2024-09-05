@@ -6,6 +6,7 @@ import com.dotcms.analytics.track.collectors.CollectorContextMap;
 import com.dotcms.analytics.track.collectors.CollectorPayloadBean;
 import com.dotcms.analytics.track.collectors.ConcurrentCollectorPayloadBean;
 import com.dotcms.analytics.track.collectors.RequestCharacterCollectorContextMap;
+import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceFactory;
 import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
 import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
 import com.dotcms.analytics.track.matchers.RequestMatcher;
@@ -54,7 +55,6 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
 
     public AnalyticsTrackWebInterceptor() {
 
-        submitter = new EventLogSubmitter();
         addRequestMatcher(
                 new PagesAndUrlMapsRequestMatcher(),
                 new FilesRequestMatcher(),
@@ -131,8 +131,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
 
         Logger.debug(this, ()-> "fireNext, uri: " + request.getRequestURI() +
                 " requestMatcher: " + requestMatcher.getId());
-
-
+        WebEventsCollectorServiceFactory.getInstance().getWebEventsCollectorService().fireCollectors(request, response, requestMatcher);
     }
 
 
