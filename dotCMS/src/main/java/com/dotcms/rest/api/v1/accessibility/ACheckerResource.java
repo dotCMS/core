@@ -6,6 +6,8 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotValidationException;
+import com.dotmarketing.exception.DotDataException;
 import com.google.common.annotations.VisibleForTesting;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -59,7 +61,7 @@ public class ACheckerResource {
      *
      * @return The list of Accessibility Guidelines available in the system.
      *
-     * @throws Exception If the guidelines can't be retrieved.
+     * @throws DotDataException If the guidelines can't be retrieved.
      */
     @GET
     @Path("/guidelines")
@@ -78,7 +80,7 @@ public class ACheckerResource {
             }
     )
     public final Response getGuidelines(@Context final HttpServletRequest request,
-                                        @Context final HttpServletResponse response) throws Exception {
+                                        @Context final HttpServletResponse response) throws DotDataException {
         new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -220,7 +222,7 @@ public class ACheckerResource {
     )
     public final Response validate(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
-                                   @NotNull final AccessibilityForm accessibilityForm) throws Exception {
+                                   @NotNull final AccessibilityForm accessibilityForm) throws DotValidationException {
         new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
