@@ -135,9 +135,9 @@
     "devDependencies": {
         "@angular-devkit/build-angular": "18.2.3",
         "@angular-devkit/schematics": "18.2.3",
-        "@angular-eslint/eslint-plugin": "17.3.0",
-        "@angular-eslint/eslint-plugin-template": "17.3.0",
-        "@angular-eslint/template-parser": "17.3.0",
+        "@angular-eslint/eslint-plugin": "18.3.0",
+        "@angular-eslint/eslint-plugin-template": "18.3.0",
+        "@angular-eslint/template-parser": "18.3.0",
         "@angular/cli": "18.2.3",
         "@angular/compiler-cli": "18.2.3",
         "@angular/language-service": "18.2.3",
