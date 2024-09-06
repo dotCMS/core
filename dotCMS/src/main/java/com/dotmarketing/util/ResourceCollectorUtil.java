@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -70,8 +71,7 @@ public class ResourceCollectorUtil {
 
             Logger.error(ResourceCollectorUtil.class, e.getMessage(), e);
         }
-        
-        
+
         return getPackages(importPackage);
         
         
@@ -83,19 +83,17 @@ public class ResourceCollectorUtil {
         if(UtilMethods.isEmpty(importPackage)) {
             return  ImmutableList.of();
         }
+
         return removeVersionRange(importPackage);
         
     }
-    
-    
-    
-    
 
     private static Collection<String> removeVersionRange(String packages){
         
         final Set<String> finalSet = new LinkedHashSet<>();
         
-        for(final String pkg :StringUtils.splitOnCommasWithQuotes(packages) ) {
+        for(final String pkg :StringUtils.splitOnCommasWithQuotes(packages)
+                .stream().map(String::trim).filter(ResourceCollectorUtil::isValidPackage).collect(Collectors.toSet())) {
             int brace = pkg.indexOf("\"[");
             int comma = pkg.indexOf(",");
             int parans = pkg.indexOf(")\"");
@@ -111,8 +109,11 @@ public class ResourceCollectorUtil {
         }
         
         return finalSet;
-        
-        
+    }
+
+    public static boolean isValidPackage (final String packageName) {
+
+        return packageName.length() > 0 && !".".equals(packageName); // more?
     }
     
     

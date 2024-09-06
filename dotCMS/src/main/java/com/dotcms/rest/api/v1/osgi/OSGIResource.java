@@ -495,6 +495,7 @@ public class OSGIResource {
         final String extraPackages = extraPackagesForm.getPackages();
 
         Logger.debug(this, ()->"Modifying the extra packages OSGI jar " + extraPackages);
+
         OSGIUtil.getInstance().writeOsgiExtras(extraPackages);
         return new ResponseEntityStringView("OSGI Extra Packages Saved");
     }

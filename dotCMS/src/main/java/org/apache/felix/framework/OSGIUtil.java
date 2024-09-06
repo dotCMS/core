@@ -33,12 +33,17 @@ import io.vavr.control.Try;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.felix.framework.cache.ConnectContentContent;
 import org.apache.felix.framework.util.FelixConstants;
+import org.apache.felix.framework.util.manifestparser.ManifestParser;
+import org.apache.felix.framework.util.manifestparser.ParsedHeaderClause;
 import org.apache.felix.main.AutoProcessor;
 import org.apache.felix.main.Main;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 
@@ -52,6 +57,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -214,18 +220,18 @@ public class OSGIUtil {
             return ;
         }
         
-            if("RESET".equals(extraPackages)) {
+        if("RESET".equals(extraPackages)) {
             new File(OSGIUtil.getInstance().getOsgiExtraConfigPath()).delete();
             debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
             return;
         }
 
+        this.testDryRun(extraPackages);
+
         //Override the file with the values we just read
-        
         final String osgiExtraFile = OSGIUtil.getInstance().getOsgiExtraConfigPath();
         final String osgiExtraFileTmp = osgiExtraFile + "_" + UUIDGenerator.shorty();
-        
-        
+
         try(BufferedWriter writer = new BufferedWriter( new FileWriter( osgiExtraFileTmp   ) )){
             writer.write( extraPackages );
             Logger.info( this, "OSGI Extra Packages Saved");
@@ -235,14 +241,9 @@ public class OSGIUtil {
             throw new DotRuntimeException( e.getMessage(), e );
         }
         new File(osgiExtraFileTmp).renameTo(new File(osgiExtraFile));
-        
-        
+
         //restart OSGI after delay
         debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
-        
-        
-        
-        
     }
     
     
@@ -255,6 +256,45 @@ public class OSGIUtil {
                 + File.separator + "server" + File.separator + "osgi" + File.separator +  "osgi-extra.conf";
         final String dirPath = Config.getStringProperty(OSGI_EXTRA_CONFIG_FILE_PATH_KEY, supplier.get());
         return Paths.get(dirPath).normalize().toString();
+    }
+
+    /**
+     * Test if the Osgi Packages are ok to be overriden
+     * @param osgiPackages
+     */
+    public void testDryRun (final String osgiPackages) {
+
+        final List<ParsedHeaderClause> exportClauses =
+                invokeParserStandardHeader(osgiPackages);
+        for (final ParsedHeaderClause clause : exportClauses) {
+
+            for (final String packageName : clause.m_paths) {
+                if (packageName.equals(".")) {
+
+                    Logger.error(this, "Exporing '.' is invalid.\nPackages: " + osgiPackages);
+                    throw new OsgiException("Exporing '.' is invalid.");
+                }
+
+                if (packageName.length() == 0) {
+
+                    Logger.error(this, "Exported package names cannot be zero length.\nPackages: " + osgiPackages);
+                    throw new OsgiException(
+                            "Exported package names cannot be zero length.\nPackages: " + osgiPackages);
+                }
+            }
+        }
+    }
+
+    private  List<ParsedHeaderClause>  invokeParserStandardHeader (final String osgiPackages) {
+
+        try {
+            final Method method = ManifestParser.class.getDeclaredMethod("parseStandardHeader", String.class);
+            method.setAccessible(true);
+            return (List<ParsedHeaderClause>) method.invoke(null, osgiPackages);
+        } catch (Exception e) {
+            throw new OsgiException(
+                    "Can not access the parseStandardHeader to run the dry run");
+        }
     }
 
     /**
