@@ -102,7 +102,7 @@ export class DotCategoryFieldCategoryListComponent {
     /**
      * Represents the current state of the component.
      */
-    $state = input.required<ComponentStatus>({ alias: 'state' });
+    $state = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'state' });
 
     stateList = ComponentStatus;
 
