@@ -6,6 +6,5 @@ import { Component, Input } from '@angular/core';
     styleUrls: ['./dot-portlet-base.component.scss']
 })
 export class DotPortletBaseComponent {
-    @Input()
-    boxed = true;
+    @Input() boxed = true;
 }
