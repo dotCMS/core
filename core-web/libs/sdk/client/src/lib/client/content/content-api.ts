@@ -3,7 +3,7 @@ import { CollectionBuilder } from './builders/collection/collection';
 import { ClientOptions } from '../sdk-js-client';
 
 /**
- * Content classs exposes the content api methods
+ * Class to interact with the API methods related to content.
  *
  * @export
  * @class Content
@@ -12,13 +12,22 @@ export class Content {
     #requestOptions: ClientOptions;
     #serverUrl: string;
 
+    /**
+     * Creates an instance of Content.
+     * @param {ClientOptions} requestOptions - The options for the client request.
+     * @param {string} serverUrl - The server URL.
+     */
     constructor(requestOptions: ClientOptions, serverUrl: string) {
         this.#requestOptions = requestOptions;
         this.#serverUrl = serverUrl;
     }
 
     /**
-     * Takes a content type and returns a builder to filter and fetch the collection
+     * Takes a content type and returns a builder to filter and fetch the collection.
+     * @param {string} contentType - The content type to get the collection.
+     * @return {CollectionBuilder<T>} CollectionBuilder to filter and fetch the collection.
+     * @template T - Represents the type of the content type to fetch. Defaults to unknown.
+     * @memberof Content
      *
      * @example
      * ```javascript
@@ -50,7 +59,7 @@ export class Content {
      * ```
      * @example
      * ```typescript
-     * // Using an specific type for your content
+     * // Using a specific type for your content
      *
      * type Blog = {
      *     summary: string;
@@ -77,10 +86,6 @@ export class Content {
      *     });
      * ```
      *
-     * @param {string} contentType The content type to get the collection
-     * @return {CollectionBuilder} CollectionBuilder to filter and fetch the collection
-     * @template T Represents the type of the content type to fetch. Defaults to unknown
-     * @memberof Content
      */
     getCollection<T = unknown>(contentType: string): CollectionBuilder<T> {
         return new CollectionBuilder<T>(this.#requestOptions, this.#serverUrl, contentType);

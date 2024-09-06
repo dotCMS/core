@@ -9,6 +9,7 @@ This client library provides a streamlined, promise-based interface to fetch pag
 -   Easy-to-use methods to interact with the [DotCMS Page](https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas) and [Navigation APIs](https://www.dotcms.com/docs/latest/navigation-rest-api).
 -   Support for custom actions to communicate with the DotCMS page editor.
 -   Comprehensive TypeScript typings for better development experience.
+<!-- Poner los enviroments Configuracion Inicial -->
 
 ## Installation
 
@@ -31,6 +32,7 @@ yarn add @dotcms/client
 ### ES Modules
 
 ```javascript
+// Cambiar por la C Mayúscula
 import { dotcmsClient } from '@dotcms/client';
 ```
 
