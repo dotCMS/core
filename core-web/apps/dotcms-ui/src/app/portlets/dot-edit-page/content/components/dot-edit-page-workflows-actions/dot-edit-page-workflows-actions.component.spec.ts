@@ -58,7 +58,7 @@ import { DotEditPageWorkflowsActionsComponent } from './dot-edit-page-workflows-
 @Component({
     selector: 'dot-test-host-component',
     template: `
-        <dot-edit-page-workflows-actions [page]="page"></dot-edit-page-workflows-actions>
+        <dot-edit-page-workflows-actions [page]="page" />
     `
 })
 class TestHostComponent {
@@ -201,7 +201,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                     });
                     fixture.detectChanges();
 
-                    splitButtons = de.queryAll(By.css('.p-menuitem-link'));
+                    splitButtons = de.queryAll(By.css('.p-menuitem-content'));
                     firstButton = splitButtons[0].nativeElement;
                     secondButton = splitButtons[1].nativeElement;
                     thirdButton = splitButtons[2].nativeElement;
@@ -279,14 +279,16 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                     });
                 });
 
-                it('should fire actions on click in the menu items', () => {
+                it('should fire actions on click on secondButton', () => {
                     secondButton.click();
                     expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
                         actionId: mockWorkflowsActions[1].id,
                         inode: component.page.workingInode,
                         data: undefined
                     });
+                });
 
+                it('should fire actions on click on thirdButton', () => {
                     thirdButton.click();
                     expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
                         actionId: mockWorkflowsActions[2].id,

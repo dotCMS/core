@@ -14,11 +14,12 @@ import {
     mapContainerStructureToDotContainerMap,
     areContainersEquals,
     compareUrlPaths,
-    createFullURL
+    createFullURL,
+    getDragItemData
 } from '.';
 
 import { dotPageContainerStructureMock } from '../shared/mocks';
-import { DotPage } from '../shared/models';
+import { ContentletDragPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
 
 const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
     page: {
@@ -631,6 +632,81 @@ describe('utils functions', () => {
                 '123'
             );
             expect(result).toBe(`${expectedURL}${'&host_id=123'}`);
+        });
+    });
+
+    describe('getDragItemData', () => {
+        it('should return correct data for content-type', () => {
+            const dataset = {
+                type: 'content-type',
+                item: JSON.stringify({
+                    contentType: {
+                        baseType: 'base-type-1',
+                        variable: 'variable-1',
+                        name: 'name-1'
+                    },
+                    move: true
+                })
+            };
+
+            const result = getDragItemData(dataset);
+
+            expect(result).toEqual({
+                baseType: 'base-type-1',
+                contentType: 'variable-1',
+                draggedPayload: {
+                    item: {
+                        variable: 'variable-1',
+                        name: 'name-1'
+                    },
+                    type: 'content-type',
+                    move: true
+                } as ContentTypeDragPayload
+            });
+        });
+
+        it('should return correct data for contentlet', () => {
+            const dataset = {
+                type: 'contentlet',
+                item: JSON.stringify({
+                    contentlet: {
+                        baseType: 'base-type-2',
+                        contentType: 'content-type-2'
+                    },
+                    container: {},
+                    move: false
+                })
+            };
+            const draggedPayloadExpected: unknown = {
+                item: {
+                    contentlet: {
+                        baseType: 'base-type-2',
+                        contentType: 'content-type-2'
+                    },
+                    container: {}
+                },
+                type: 'contentlet',
+                move: false
+            };
+
+            const result = getDragItemData(dataset);
+
+            expect(result).toEqual({
+                baseType: 'base-type-2',
+                contentType: 'content-type-2',
+                draggedPayload: draggedPayloadExpected as ContentletDragPayload
+            });
+        });
+
+        it('should return null for invalid JSON data', () => {
+            const dataset = {
+                type: 'contentlet',
+                item: 'invalid-json'
+            };
+
+            const result = getDragItemData(dataset);
+
+            expect(result).toBeNull();
         });
     });
 });

@@ -1,7 +1,10 @@
 package com.dotcms;
 
 import com.dotcms.ai.app.AIModelsTest;
+import com.dotcms.ai.app.ConfigServiceTest;
+import com.dotcms.ai.client.AIProxyClientTest;
 import com.dotcms.ai.listener.EmbeddingContentListenerTest;
+import com.dotcms.ai.validator.AIAppValidatorTest;
 import com.dotcms.ai.viewtool.AIViewToolTest;
 import com.dotcms.ai.viewtool.CompletionsToolTest;
 import com.dotcms.ai.viewtool.EmbeddingsToolTest;
@@ -47,6 +50,7 @@ import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
 import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
+import com.dotcms.jobs.business.api.JobQueueManagerAPITest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mail.MailAPIImplTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
@@ -117,6 +121,7 @@ import com.dotmarketing.startup.StartupTasksExecutorDataTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.*;
+import com.dotmarketing.util.ConfigUtilsTest;
 import com.dotmarketing.util.ITConfigTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
@@ -302,6 +307,9 @@ import org.junit.runners.Suite.SuiteClasses;
         EmbeddingsToolTest.class,
         CompletionsToolTest.class,
         AIModelsTest.class,
+        ConfigServiceTest.class,
+        AIProxyClientTest.class,
+        AIAppValidatorTest.class,
         TimeMachineAPITest.class,
         Task240513UpdateContentTypesSystemFieldTest.class,
         PruneTimeMachineBackupJobTest.class,
@@ -311,7 +319,9 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240530AddDotAIPortletToLayoutTest.class,
         EmbeddingContentListenerTest.class,
         Task240606AddVariableColumnToWorkflowTest.class,
-        OpenAIContentPromptActionletTest.class
+        OpenAIContentPromptActionletTest.class,
+        JobQueueManagerAPITest.class,
+        ConfigUtilsTest.class
 })
 
 public class MainSuite2b {

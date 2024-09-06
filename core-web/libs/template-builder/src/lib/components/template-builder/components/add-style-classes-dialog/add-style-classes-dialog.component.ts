@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -10,22 +10,14 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { catchError, map, shareReplay, tap } from 'rxjs/operators';
 
-import { DotMessagePipe, DotSelectItemDirective } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { JsonClassesService } from './services/json-classes.service';
 
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
     standalone: true,
-    imports: [
-        AutoCompleteModule,
-        FormsModule,
-        ButtonModule,
-        DotMessagePipe,
-        NgIf,
-        AsyncPipe,
-        DotSelectItemDirective
-    ],
+    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipe, AsyncPipe],
     templateUrl: './add-style-classes-dialog.component.html',
     styleUrls: ['./add-style-classes-dialog.component.scss'],
     providers: [JsonClassesService],
@@ -37,7 +29,7 @@ export class AddStyleClassesDialogComponent implements OnInit {
     selectedClasses: string[] = [];
 
     isJsonClasses$: Observable<boolean>;
-    classes: string[];
+    classes: string[] = [];
 
     constructor(
         private jsonClassesService: JsonClassesService,

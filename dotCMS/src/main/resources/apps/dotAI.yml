@@ -15,11 +15,11 @@ params:
     hint: "Your ChatGPT API key"
     required: true
   textModelNames:
-    value: "gpt-4o"
+    value: "gpt-4o-mini"
     hidden: false
     type: "STRING"
     label: "Model Names"
-    hint: "Comma delimited list of models used to generate OpenAI API response (e.g. gpt-3.5-turbo-16k)"
+    hint: "Comma delimited list of models used to generate OpenAI API response (e.g. gpt-4o-mini)"
     required: true
   rolePrompt:
     value: "You are dotCMSbot, and AI assistant to help content creators generate and rewrite content in their content management system."

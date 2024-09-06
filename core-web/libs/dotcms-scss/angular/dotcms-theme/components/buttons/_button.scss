@@ -157,3 +157,32 @@ a.p-button.p-button-text {
 .p-button-rounded {
     border-radius: 50%;
 }
+
+.p-buttonset {
+    .p-button {
+        margin: 0;
+
+        &:not(:last-child) {
+            border-right: 0 none;
+        }
+
+        &:not(:first-of-type):not(:last-of-type) {
+            border-radius: 0;
+        }
+
+        &:first-of-type {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        &:last-of-type {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        &:focus {
+            position: relative;
+            z-index: 1;
+        }
+    }
+}

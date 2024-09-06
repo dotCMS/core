@@ -183,7 +183,7 @@ describe('DotPaletteContentletsComponent', () => {
         expect(paginatorContainer.componentInstance.rows).toBe(25);
         expect(paginatorContainer.componentInstance.totalRecords).toBe(30);
         expect(paginatorContainer.componentInstance.showFirstLastIcon).toBe(false);
-        expect(paginatorContainer.componentInstance.pageLinkSize).toBe('2');
+        expect(paginatorContainer.componentInstance.pageLinkSize).toBe(2);
 
         paginatorContainer.componentInstance.onPageChange.emit({ first: 25 });
 

@@ -17,7 +17,7 @@ export class DotNavigationComponent implements OnInit {
     menu$: Observable<DotMenu[]>;
 
     @HostBinding('style.overflow-y') get overFlow() {
-        return this.dotNavigationService.collapsed$.getValue() ? '' : 'scroll';
+        return this.dotNavigationService.collapsed$.getValue() ? '' : 'auto';
     }
 
     constructor(

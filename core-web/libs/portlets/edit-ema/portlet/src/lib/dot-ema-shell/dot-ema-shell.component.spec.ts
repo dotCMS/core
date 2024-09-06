@@ -243,7 +243,8 @@ describe('DotEmaShellComponent', () => {
                     {
                         icon: 'pi-ellipsis-v',
                         label: 'editema.editor.navbar.properties',
-                        id: 'properties'
+                        id: 'properties',
+                        isDisabled: false
                     }
                 ]);
             });
