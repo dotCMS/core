@@ -140,7 +140,10 @@ export function withLoad() {
                                                     currentUser,
                                                     experiment,
                                                     languages,
-                                                    params,
+                                                    params: {
+                                                        ...params,
+                                                        t: new Date().getTime().toString() // To force a reload no matter where we do the load
+                                                    },
                                                     canEditPage,
                                                     pageIsLocked,
                                                     isTraditionalPage,

@@ -13,7 +13,7 @@ export interface UVEState {
     currentUser?: CurrentUser;
     experiment?: DotExperiment;
     errorCode?: number;
-    params?: DotPageApiParams;
+    params?: DotPageApiParams & { t: string }; // TODO: Add the t param to the DotPageApiParams, as an optional param
     status: UVE_STATUS;
     isTraditionalPage: boolean;
     canEditPage: boolean;
