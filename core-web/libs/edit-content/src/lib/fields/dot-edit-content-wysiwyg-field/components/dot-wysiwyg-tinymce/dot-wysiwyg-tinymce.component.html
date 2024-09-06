@@ -1,0 +1,6 @@
+@if ($init()) {
+    <editor
+        [formControlName]="$field().variable"
+        [init]="$init()"
+        (onInit)="handleEditorInit($event)" />
+}
