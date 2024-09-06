@@ -34,7 +34,6 @@ export enum EDITOR_STATE {
     ERROR = 'error',
     IDLE = 'idle',
     DRAGGING = 'dragging',
-    OUT_OF_BOUNDS = 'out-of-bounds',
     SCROLL_DRAG = 'scroll-drag',
     SCROLLING = 'scrolling',
     INLINE_EDITING = 'inline-editing'
