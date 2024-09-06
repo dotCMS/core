@@ -62,7 +62,7 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
         }
 
         postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: editor });
-    }, [pathname]);
+    }, [pathname, editor]);
 
     /**
      * Updates the page asset when changes are made in the editor.
