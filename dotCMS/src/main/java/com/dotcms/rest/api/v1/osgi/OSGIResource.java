@@ -496,7 +496,9 @@ public class OSGIResource {
 
         Logger.debug(this, ()->"Modifying the extra packages OSGI jar " + extraPackages);
 
-        OSGIUtil.getInstance().writeOsgiExtras(extraPackages);
+        final boolean testDryRun = request.getParameter("testDryRun") != null?
+                Boolean.parseBoolean(request.getParameter("testDryRun")): true;
+        OSGIUtil.getInstance().writeOsgiExtras(extraPackages, testDryRun);
         return new ResponseEntityStringView("OSGI Extra Packages Saved");
     }
 

@@ -214,7 +214,7 @@ public class OSGIUtil {
      * @throws ServletException
      * @throws IOException
      */
-    public void writeOsgiExtras ( final String extraPackages )  {
+    public void writeOsgiExtras (final String extraPackages, final boolean testDryRun)  {
 
         if(UtilMethods.isEmpty(extraPackages)) {
             return ;
@@ -226,7 +226,9 @@ public class OSGIUtil {
             return;
         }
 
-        this.testDryRun(extraPackages);
+        if (Config.getBooleanProperty("OSGI_TEST_DRY_RUN", true) && testDryRun) {
+            this.testDryRun(extraPackages);
+        }
 
         //Override the file with the values we just read
         final String osgiExtraFile = OSGIUtil.getInstance().getOsgiExtraConfigPath();
@@ -245,10 +247,6 @@ public class OSGIUtil {
         //restart OSGI after delay
         debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
     }
-    
-    
-    
-    
 
     public String getOsgiExtraConfigPath () {
 
@@ -354,7 +352,8 @@ public class OSGIUtil {
 
             final String fileUploadDirectory = felixProps.getProperty(FELIX_UPLOAD_DIR);
             // before init we have to check if any new bundle has been upload
-            this.fireReload(new File(fileUploadDirectory));
+            final boolean testDryRun = false; // we do not want to do test dry run when starting the osgi
+            this.fireReload(new File(fileUploadDirectory), testDryRun);
             // Create an instance and initialize the framework.
             FrameworkFactory factory = getFrameworkFactory();
             felixFramework = factory.newFramework(felixProps);
@@ -449,7 +448,8 @@ public class OSGIUtil {
                 try {
 
                     Logger.debug(this, () -> "Trying to lock to start the reload");
-                    lockManager.tryClusterLock(() -> this.fireReload(uploadFolderFile));
+                    final boolean testDryRun = true;
+                    lockManager.tryClusterLock(() -> this.fireReload(uploadFolderFile, testDryRun));
                     Logger.debug(this, () -> "File Reload Done");
                 } catch (Throwable e) {
 
@@ -470,11 +470,7 @@ public class OSGIUtil {
         return UtilMethods.isSet(pathnames) && pathnames.length > 0;
     }
 
-
-    
-    
-    
-    private void fireReload(final File uploadFolderFile) {
+    private void fireReload(final File uploadFolderFile, final boolean testDryRun) {
 
         Logger.info(this, ()-> "Starting the osgi reload on folder: " + uploadFolderFile);
 
@@ -499,13 +495,14 @@ public class OSGIUtil {
                 osgiUserPackages.addAll(packages);
             }
 
-            processOsgiPackages(uploadFolderFile, pathnames, osgiUserPackages);
+            processOsgiPackages(uploadFolderFile, pathnames, osgiUserPackages, testDryRun);
         }
     }
     
     private void processOsgiPackages(final File uploadFolderFile,
                                      final String[] pathnames,
-                                     final Set<String> osgiUserPackages) {
+                                     final Set<String> osgiUserPackages,
+                                     final boolean testDryRun) {
         try {
 
             final LinkedHashSet<String> exportedPackagesSet = this.getExportedPackagesAsSet();
@@ -517,7 +514,7 @@ public class OSGIUtil {
                 
             Logger.info(this, "There are a new changes into the exported packages");
             exportedPackagesSet.addAll(osgiUserPackages);
-            this.writeExtraPackagesFiles(exportedPackagesSet);
+            this.writeExtraPackagesFiles(exportedPackagesSet, testDryRun);
 
         } catch (IOException e) {
             Logger.error(this, e.getMessage(), e);
@@ -891,11 +888,10 @@ public class OSGIUtil {
         
 
     }
-    
-    
-    private void writeExtraPackagesFiles(final Set<String> packages) throws IOException {
 
-        this.writeOsgiExtras(packagesToOrderedString(packages));
+    private void writeExtraPackagesFiles(final Set<String> packages, final boolean testDryRun) throws IOException {
+
+        this.writeOsgiExtras(packagesToOrderedString(packages), testDryRun);
     }
 
     /**
