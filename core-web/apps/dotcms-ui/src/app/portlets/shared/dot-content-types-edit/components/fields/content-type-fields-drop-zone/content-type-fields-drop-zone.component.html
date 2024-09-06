@@ -4,22 +4,21 @@
         [attr.disabled]="loading"
         class="content-type-fields-drop-zone__container"
         dragula="fields-row-bag">
-        <ng-template [ngForOf]="fieldRows" ngFor let-row let-i="index">
-            <dot-content-type-fields-row
-                *ngIf="row.columns && row.columns.length; else tab_container"
-                (editField)="editFieldHandler($event)"
-                (removeField)="removeField($event)"
-                (removeRow)="removeFieldRow($event, i)"
-                [fieldRow]="row"></dot-content-type-fields-row>
-
-            <ng-template #tab_container>
+        @for (row of fieldRows; track row; let i = $index) {
+            @if (row.columns && row.columns.length) {
+                <dot-content-type-fields-row
+                    (editField)="editFieldHandler($event)"
+                    (removeField)="removeField($event)"
+                    (removeRow)="removeFieldRow($event, i)"
+                    [fieldRow]="row"></dot-content-type-fields-row>
+            } @else {
                 <dot-content-type-fields-tab
                     (editTab)="saveFieldsHandler($event)"
                     (removeTab)="removeTab($event, i)"
                     [fieldTab]="row"
                     class="row-header__drag"></dot-content-type-fields-tab>
-            </ng-template>
-        </ng-template>
+            }
+        }
         <dot-add-rows (selectColums)="addRow($event)"></dot-add-rows>
     </div>
 
@@ -35,14 +34,15 @@
     width="45rem">
     <p-tabView (onChange)="handleTabChange($event.index)" [(activeIndex)]="activeTab">
         <p-tabPanel [header]="'contenttypes.dropzone.tab.overview' | dm">
-            <dot-convert-to-block-info
-                *ngIf="
-                    currentFieldType?.clazz ===
-                    'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
-                "
-                (action)="scrollTo($event)"
-                [currentFieldType]="currentFieldType"
-                [currentField]="currentField"></dot-convert-to-block-info>
+            @if (
+                currentFieldType?.clazz ===
+                'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+            ) {
+                <dot-convert-to-block-info
+                    (action)="scrollTo($event)"
+                    [currentFieldType]="currentFieldType"
+                    [currentField]="currentField"></dot-convert-to-block-info>
+            }
             <div class="wrapper">
                 <dot-content-type-fields-properties-form
                     (saveField)="saveFieldsHandler($event)"
@@ -50,14 +50,15 @@
                     [formFieldData]="currentField"
                     [contentType]="contentType"
                     #fieldPropertiesForm></dot-content-type-fields-properties-form>
-                <dot-convert-wysiwyg-to-block
-                    *ngIf="
-                        !!currentField?.id &&
-                        currentFieldType?.clazz ===
-                            'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
-                    "
-                    (convert)="convertWysiwygToBlock($event)"
-                    [currentFieldType]="currentFieldType"></dot-convert-wysiwyg-to-block>
+                @if (
+                    !!currentField?.id &&
+                    currentFieldType?.clazz ===
+                        'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+                ) {
+                    <dot-convert-wysiwyg-to-block
+                        (convert)="convertWysiwygToBlock($event)"
+                        [currentFieldType]="currentFieldType"></dot-convert-wysiwyg-to-block>
+                }
             </div>
         </p-tabPanel>
         @if (!!currentField?.id && isFieldWithSettings) {

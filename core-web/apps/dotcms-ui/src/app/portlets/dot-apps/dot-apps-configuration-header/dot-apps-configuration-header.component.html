@@ -28,15 +28,16 @@
         }"
         class="dot-apps-configuration__description">
         <markdown>{{ app.description }}</markdown>
-        <a
-            *ngIf="app.description.length > 270"
-            (click)="showMore = !showMore"
-            class="dot-apps-configuration__description__link_show-more">
-            {{
-                showMore
-                    ? ('apps.confirmation.description.show.less' | dm)
-                    : ('apps.confirmation.description.show.more' | dm)
-            }}
-        </a>
+        @if (app.description.length > 270) {
+            <a
+                (click)="showMore = !showMore"
+                class="dot-apps-configuration__description__link_show-more">
+                {{
+                    showMore
+                        ? ('apps.confirmation.description.show.less' | dm)
+                        : ('apps.confirmation.description.show.more' | dm)
+                }}
+            </a>
+        }
     </div>
 </div>

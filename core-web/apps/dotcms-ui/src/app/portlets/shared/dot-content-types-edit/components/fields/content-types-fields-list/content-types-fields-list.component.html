@@ -3,11 +3,10 @@
     class="content-types-fields-list"
     dragula="fields-bag"
     data-drag-type="source">
-    <li
-        *ngFor="let fieldType of fieldTypes"
-        [attr.data-clazz]="fieldType.clazz"
-        class="content-types-fields-list__item">
-        <dot-icon name="{{ fieldService.getIcon(fieldType.clazz) }}"></dot-icon>
-        <span role="listitem">{{ fieldType.name }}</span>
-    </li>
+    @for (fieldType of fieldTypes; track fieldType) {
+        <li [attr.data-clazz]="fieldType.clazz" class="content-types-fields-list__item">
+            <dot-icon name="{{ fieldService.getIcon(fieldType.clazz) }}"></dot-icon>
+            <span role="listitem">{{ fieldType.name }}</span>
+        </li>
+    }
 </ul>

@@ -1,4 +1,4 @@
-import { NgClass, NgForOf, CommonModule } from '@angular/common';
+import { NgClass, CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -31,7 +31,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     templateUrl: './dot-toolbar-announcements.component.html',
     styleUrls: ['./dot-toolbar-announcements.component.scss'],
     standalone: true,
-    imports: [NgForOf, NgClass, DotMessagePipe, RouterLink, CommonModule, OverlayPanelModule],
+    imports: [NgClass, DotMessagePipe, RouterLink, CommonModule, OverlayPanelModule],
     providers: [AnnouncementsStore]
 })
 export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {

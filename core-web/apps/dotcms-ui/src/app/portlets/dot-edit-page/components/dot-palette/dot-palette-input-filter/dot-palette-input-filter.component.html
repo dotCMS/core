@@ -1,10 +1,11 @@
-<button
-    *ngIf="goBackBtn"
-    (click)="goBack.emit()"
-    class="dot-palette-input-filter__back-btn"
-    data-testId="goBackBtn">
-    <dot-icon data-testId="goBack" name="keyboard_arrow_left" size="18"></dot-icon>
-</button>
+@if (goBackBtn) {
+    <button
+        (click)="goBack.emit()"
+        class="dot-palette-input-filter__back-btn"
+        data-testId="goBackBtn">
+        <dot-icon data-testId="goBack" name="keyboard_arrow_left" size="18"></dot-icon>
+    </button>
+}
 
 <input
     [(ngModel)]="value"

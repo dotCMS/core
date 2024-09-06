@@ -1,7 +1,5 @@
-<dot-content-types
-    *ngIf="haveLicense$ | async as haveLicense; else unlicensed"
-    data-testId="content-types"></dot-content-types>
-
-<ng-template #unlicensed>
+@if (haveLicense$ | async; as haveLicense) {
+    <dot-content-types data-testId="content-types"></dot-content-types>
+} @else {
     <dot-not-license data-testId="not-license" />
-</ng-template>
+}
