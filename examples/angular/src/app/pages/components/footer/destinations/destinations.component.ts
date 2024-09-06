@@ -6,7 +6,7 @@ import {
 } from '@angular/core';
 
 import { GenericContentlet } from '../..';
-import { ContentletsComponent } from '../../../../shared/contentlets/contentlets.component';
+import { ContentletsWrapperComponent } from '../../../../shared/contentlets-wrapper/contentlets.component';
 import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
 import { DotCmsClient } from '@dotcms/client';
 import { DOTCMS_CLIENT_TOKEN } from '../../../../app.config';
@@ -15,11 +15,11 @@ import { DOTCMS_CLIENT_TOKEN } from '../../../../app.config';
 @Component({
   selector: 'app-destinations',
   standalone: true,
-  imports: [ContentletsComponent],
+  imports: [ContentletsWrapperComponent],
   template: ` <div class="flex flex-col">
     <h2 class="mb-7 text-2xl font-bold text-black">Popular Destinations</h2>
     @if (!!destinations().length) {
-    <app-contentlets [contentlets]="destinations()" />
+    <app-contentlets-wrapper [contentlets]="destinations()" />
     }
   </div>`,
 })

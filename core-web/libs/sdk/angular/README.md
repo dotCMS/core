@@ -1,4 +1,4 @@
-+# @dotcms/angular
+# @dotcms/angular
 
 `@dotcms/angular` is the official Angular library designed to work seamlessly with dotCMS. This library simplifies the process of rendering dotCMS pages and integrating with the [Universal Visual Editor](dotcms.com/docs/latest/universal-visual-editor) in your Angular applications.
 
@@ -14,7 +14,7 @@
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
-- [License](#license)
+- [Licensing](#licensing)
 
 ## Features
 
@@ -36,6 +36,62 @@ Or using Yarn:
 ```bash
 yarn add @dotcms/angular
 ```
+
+## Configutarion
+### Provider Setup
+We need to provide the information of our dotCMS instance
+
+```javascript
+
+import { ClientConfig } from '@dotcms/client';
+
+const DOTCMS_CLIENT_CONFIG: ClientConfig = {
+    dotcmsUrl: environment.dotcmsUrl,
+    authToken: environment.authToken,
+    siteId: environment.siteId
+};
+```
+And add this config in the Angular app ApplicationConfig.
+
+`src/app/app.config.ts`
+```javascript
+import { InjectionToken } from '@angular/core';
+import { ClientConfig, DotCmsClient } from '@dotcms/client';
+
+export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCmsClient>('DOTCMS_CLIENT');
+
+export const appConfig: ApplicationConfig = {
+    providers: [
+        provideRouter(routes),
+        {
+            provide: DOTCMS_CLIENT_TOKEN,
+            useValue: DotCmsClient.init(DOTCMS_CLIENT_CONFIG),
+        }
+    ],
+};
+```
+This way, we will have access to `DOTCMS_CLIENT_TOKEN` from anywhere in our application.
+
+### Client Usage
+To interact with the client and obtain information from, for example, our pages
+
+```javascript
+private readonly client = inject(DOTCMS_CLIENT_TOKEN);
+
+this.client.page
+    .get({ ...pageParams })
+    .then((response) => {
+        // Use your response 
+    })
+    .catch((e) => {
+      const error: PageError = {
+        message: e.message,
+        status: e.status,
+      };
+      // Use the error response
+    })
+```
+For more information to how to use DotCms Client, you can visit the [documentation](https://github.com/dotCMS/core/blob/master/core-web/libs/sdk/client/README.md)
 
 ## DotCMS Page API
 
@@ -117,3 +173,11 @@ If you encounter issues:
 2. Verify that your dotCMS configuration (URL, auth token, site ID) is correct.
 3. Check the browser console for any error messages.
 4. Refer to the [dotCMS documentation](https://dotcms.com/docs/) for additional guidance.
+
+## Contributing
+
+GitHub pull requests are the preferred method to contribute code to dotCMS. Before any pull requests can be accepted, an automated tool will ask you to agree to the [dotCMS Contributor's Agreement](https://gist.github.com/wezell/85ef45298c48494b90d92755b583acb3).
+
+## Licensing
+
+dotCMS comes in multiple editions and as such is dual licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://dotcms.com/cms-platform/features).

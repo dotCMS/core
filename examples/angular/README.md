@@ -6,11 +6,11 @@ This example project demonstrates how to build manageable dotCMS pages headlessl
 
 - [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
-  - [Obtaining the Example Code](#obtaining-the-example-code)
+  - [Obtaining the Example Code](#downloading-the-example)
   - [Configuration](#configuration)
 - [Running the Application](#running-the-application)
 - [Project Structure](#project-structure)
-- [Key Features](#key-features)
+- [Key Features](#handling-vanity-urls)
   - [Handling Vanity URLs](#handling-vanity-urls)
 - [Troubleshooting](#troubleshooting)
 - [Further Resources](#further-resources)
@@ -60,11 +60,10 @@ To configure the Angular app to use your dotCMS instance:
      production: false,
      authToken: 'YOUR_AUTH_TOKEN_HERE',
      dotcmsUrl: 'https://demo.dotcms.com',
-     // other configurations...
    };
    ```
 
-   ⚠️ **Security Note**: Ensure that the `authToken` used here has read-only permissions to minimize security risks in client-side applications.
+   ⚠️ **Security Note**: Ensure that the `authToken` used here has [read-only permissions](https://www.dotcms.com/docs/latest/user-permissions#FrontEndBackEnd) to minimize security risks in client-side applications.
 
 ## Running the Application
 
@@ -86,23 +85,23 @@ Note: When accessing `localhost:4200/about`, ensure that the `/about` page exist
 └── src/
     └── app/
         ├── content-types/
-        │   ├── activity/
-        │   ├── banner/
-        │   ├── product/
-        │   └── ...other-content-types/
+        │   ├── activity
+        │   ├── banner
+        │   ├── product
+        │   └── ...other-content-types
         ├── pages/
-        │   ├── components/
-        │   └── services/
+        │   ├── components
+        │   └── services
         └── shared/
-            ├── contentlets/
-            └── contentlet/
+            └── contentlets-wrapper/
+                └── contentlet/  
 ```
 
 - `content-types/`: Components for rendering specific dotCMS content types
 - `pages/`: Main application component for rendering pages based on their path and pageAsset
 - `shared/`: Reusable components
-  - `contentlet/`: Component for rendering individual Contentlets
-  - `contentlets/`: Component for displaying lists of Contentlets
+  - `contentlets-wrapper/`: Component for displaying lists of Contentlets
+    - `contentlet/`: Component for rendering individual Contentlets
 
 ## Universal Visual Editor
 To enable the Universal Visual Editor in dotCMS, follow these steps:
@@ -128,8 +127,8 @@ To enable the Universal Visual Editor in dotCMS, follow these steps:
 
 If you want more information about the UVE, please refer to the [dotCMS UVE Documentation](https://dotcms.com/docs/latest/universal-visual-editor-uve).
 
-
-## Handling Vanity URLs
+## Key Features
+### Handling Vanity URLs
 
 This example demonstrates how to integrate dotCMS Vanity URLs with Angular routing. Vanity URLs in dotCMS provide alternative paths to internal or external URLs, enhancing site maintenance and SEO.
 

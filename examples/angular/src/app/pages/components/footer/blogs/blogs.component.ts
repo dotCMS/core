@@ -6,18 +6,18 @@ import {
 } from '@angular/core';
 import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
 import { DotCmsClient } from '@dotcms/client';
-import { ContentletsComponent } from '../../../../shared/contentlets/contentlets.component';
+import { ContentletsWrapperComponent } from '../../../../shared/contentlets-wrapper/contentlets.component';
 import { DOTCMS_CLIENT_TOKEN } from '../../../../app.config';
 import { GenericContentlet } from '../..';
 
 @Component({
   selector: 'app-blogs',
   standalone: true,
-  imports: [ContentletsComponent],
+  imports: [ContentletsWrapperComponent],
   template: ` <div class="flex flex-col">
     <h2 class="mb-7 text-2xl font-bold text-black">Latest Blog Posts</h2>
     @if (!!blogs().length) {
-    <app-contentlets [contentlets]="blogs()" />
+    <app-contentlets-wrapper [contentlets]="blogs()" />
     }
   </div>`,
 })

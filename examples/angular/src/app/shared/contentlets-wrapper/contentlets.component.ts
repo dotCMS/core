@@ -12,7 +12,7 @@ import { ContentletComponent } from './contentlet/contentlet.component';
  * @class ContentletsComponent
  */
 @Component({
-  selector: 'app-contentlets',
+  selector: 'app-contentlets-wrapper',
   standalone: true,
   imports: [NgOptimizedImage, DatePipe, ContentletComponent],
   template: `<ul class="flex flex-col gap-7">
@@ -47,6 +47,6 @@ import { ContentletComponent } from './contentlet/contentlet.component';
     }
   </ul> `,
 })
-export class ContentletsComponent {
+export class ContentletsWrapperComponent {
   contentlets = input.required<Contentlet<GenericContentlet>[]>();
 }

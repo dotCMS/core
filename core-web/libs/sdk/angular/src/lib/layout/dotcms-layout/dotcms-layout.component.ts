@@ -20,7 +20,7 @@ import {
     updateNavigation
 } from '@dotcms/client';
 
-import { DynamicComponentEntity } from '../../models';
+import { DotCMSPageComponent } from '../../models';
 import { DotCMSPageAsset } from '../../models/dotcms.model';
 import { PageContextService } from '../../services/dotcms-context/page-context.service';
 import { RowComponent } from '../row/row.component';
@@ -79,11 +79,11 @@ export class DotcmsLayoutComponent implements OnInit {
     /**
      * The `components` property is a record of dynamic components for each Contentlet on the page.
      *
-     * @type {Record<string, DynamicComponentEntity>}
+     * @type {DotCMSPageComponent}
      * @memberof DotcmsLayoutComponent
      * @required
      */
-    @Input({ required: true }) components!: Record<string, DynamicComponentEntity>;
+    @Input({ required: true }) components!: DotCMSPageComponent;
 
     /**
      * The `onReload` property is a function that reloads the page after changes are made.
