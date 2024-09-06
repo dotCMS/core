@@ -45,7 +45,7 @@ export interface ClientConfig {
     requestOptions?: ClientOptions;
 }
 
-type PageApiOptions = {
+export type PageApiOptions = {
     /**
      * The path of the page you want to retrieve.
      *
