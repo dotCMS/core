@@ -45,6 +45,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.Version;
 import org.osgi.framework.launch.Framework;
 
 import javax.servlet.ServletException;
@@ -269,7 +270,7 @@ public class OSGIUtil {
             for (final String packageName : clause.m_paths) {
                 if (packageName.equals(".")) {
 
-                    Logger.error(this, "Exporing '.' is invalid.\nPackages: " + osgiPackages);
+                    Logger.error(this, "Exporing '.' is invalid.");
                     throw new OsgiException("Exporing '.' is invalid.");
                 }
 
@@ -277,8 +278,30 @@ public class OSGIUtil {
 
                     Logger.error(this, "Exported package names cannot be zero length.\nPackages: " + osgiPackages);
                     throw new OsgiException(
-                            "Exported package names cannot be zero length.\nPackages: " + osgiPackages);
+                            "Exported package names cannot be zero length.");
                 }
+            }
+
+            // Check for "version" and "specification-version" attributes
+            // and verify they are the same if both are specified.
+            final Object versionAttr = clause.m_attrs.get(Constants.VERSION_ATTRIBUTE);
+            final Object packageSpecVersion = clause.m_attrs.get(Constants.PACKAGE_SPECIFICATION_VERSION);
+            if ((versionAttr != null) && (packageSpecVersion != null)) {
+                // Verify they are equal.
+                if (!String.class.cast (versionAttr).trim().equals(String.class.cast(packageSpecVersion).trim())) {
+                    throw new OsgiException(
+                            "Both version and specification-version are specified, but they are not equal.");
+                }
+            }
+
+            if (versionAttr != null) {
+                // check version format
+                Version.parseVersion(versionAttr.toString());
+            }
+
+            if (packageSpecVersion != null) {
+                // check version format
+                Version.parseVersion(packageSpecVersion.toString());
             }
         }
     }
