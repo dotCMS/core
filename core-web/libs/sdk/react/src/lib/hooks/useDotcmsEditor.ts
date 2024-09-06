@@ -16,6 +16,7 @@ import { DotCMSPageContext } from '../models';
 /**
  * Custom Hook to handle the DotCMS editor interaction with the page.
  *
+ * @category Hooks
  * @param {DotcmsPageProps} props {
  *     pageContext,
  *     config,

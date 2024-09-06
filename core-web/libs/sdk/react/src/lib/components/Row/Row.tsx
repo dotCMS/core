@@ -26,7 +26,7 @@ export interface RowProps {
 /**
  * This component renders a row with all it's content using the layout provided by dotCMS Page API.
  *
- * @see {@link https://dotcms.com/docs/latest/page-api-layouts}
+ * @see {@link https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas}
  * @category Components
  * @param {React.ForwardedRef<HTMLDivElement, RowProps>} ref
  * @return {JSX.Element} Rendered rows with columns
