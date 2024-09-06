@@ -234,7 +234,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         await spectator.fixture.whenStable();
 
         // Invalid path
-        spectator.component.form.patchValue(invalidFormValues, {emitEvent: false});
+        spectator.component.form.patchValue(invalidFormValues, { emitEvent: false });
         spectator.component.form.updateValueAndValidity();
         spectator.detectChanges();
 
@@ -242,7 +242,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(applyBtn.disabled).toEqual(true);
 
         // Invalid path
-        spectator.component.form.setValue(validFormValues, {emitEvent: false});
+        spectator.component.form.setValue(validFormValues, { emitEvent: false });
         spectator.component.form.updateValueAndValidity();
         spectator.detectChanges();
 
@@ -253,7 +253,9 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     it('should be a valid form when select URL_PARAMETER', async () => {
         spectator.detectChanges();
 
-        const urlParameterOption = spectator.query(byTestId('dot-options-item-header_URL_PARAMETER'));
+        const urlParameterOption = spectator.query(
+            byTestId('dot-options-item-header_URL_PARAMETER')
+        );
         spectator.click(urlParameterOption);
 
         spectator.detectComponentChanges();
@@ -295,14 +297,16 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             }
         };
 
-        const component = spectator.query(DotExperimentsGoalConfigurationUrlParameterComponentComponent)
+        const component = spectator.query(
+            DotExperimentsGoalConfigurationUrlParameterComponentComponent
+        );
 
         expect(component).toExist();
 
         await spectator.fixture.whenStable();
 
         // Invalid path
-        spectator.component.form.setValue(invalidFormValues, {emitEvent: false});
+        spectator.component.form.setValue(invalidFormValues, { emitEvent: false });
         spectator.component.form.updateValueAndValidity();
         spectator.detectChanges();
 
@@ -310,7 +314,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(applyBtn.disabled).toEqual(true);
 
         // Invalid path
-        spectator.component.form.setValue(validFormValuesExistOperator, {emitEvent: false});
+        spectator.component.form.setValue(validFormValuesExistOperator, { emitEvent: false });
         spectator.component.form.updateValueAndValidity();
         spectator.detectChanges();
 
@@ -318,7 +322,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(applyBtn.disabled).toEqual(true);
     });
 
-    it('should call setSelectedGoal from the store when a item is selected and the button of apply is clicked', async() => {
+    it('should call setSelectedGoal from the store when a item is selected and the button of apply is clicked', async () => {
         jest.spyOn(store, 'setSelectedGoal');
         const expectedGoal = {
             experimentId: EXPERIMENT_MOCK.id,
