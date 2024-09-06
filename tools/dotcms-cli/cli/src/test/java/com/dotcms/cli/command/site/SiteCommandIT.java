@@ -18,6 +18,8 @@ import com.dotcms.model.site.SiteVariableView;
 import com.dotcms.model.site.SiteView;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -30,8 +32,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -619,30 +619,21 @@ class SiteCommandIT extends CommandTest {
 
             // ---
             // Creating some test sites
-            final String newSiteName1 = String.format("new.dotcms.site1-%d",
-                    System.currentTimeMillis());
-            var status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName1);
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            sitesTestHelper.createSiteOnServer().siteName();
             sitesCount++;
 
-            final String newSiteName2 = String.format("new.dotcms.site2-%d",
-                    System.currentTimeMillis());
-            status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName2);
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            sitesTestHelper.createSiteOnServer().siteName();
             sitesCount++;
 
-            final String newSiteName3 = String.format("new.dotcms.site3-%d",
-                    System.currentTimeMillis());
-            status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName3);
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            sitesTestHelper.createSiteOnServer().siteName();
             sitesCount++;
 
             // Pulling all sites
-            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME,
+            final var status = commandLine.execute(SiteCommand.NAME, SitePull.NAME,
                     "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            // Make sure we have the proper amount of JSON files in the sites folder
+            // Make sure we have the proper number of JSON files in the sites folder
             try (Stream<Path> walk = Files.walk(workspace.sites())) {
 
                 var jsonFiles = walk.filter(Files::isRegularFile)
