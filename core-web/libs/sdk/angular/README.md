@@ -6,7 +6,7 @@
 
 - [Features](#features)
 - [Installation](#installation)
-- [Configuration](#configuration)
+- [Configuration](#provider-setup)
   - [Provider Setup](#provider-setup)
   - [Client Usage](#client-usage)
 - [Components](#components)
