@@ -33,26 +33,29 @@ This GitHub Action is designed to automate the process of publishing dotCMS SDK 
 5. **Publish SDK into NPM Registry**: Publishes the SDK libraries to NPM if the version is validated.
 
 ## Detailed Steps
-1. **Checkout**
-The action uses `actions/checkout@v4` to check out the specified branch, allowing the workflow to access the repository's contents.
 
-2. **Set Up Node.js**
-`actions/setup-node@v4` sets up the Node.js environment, crucial for running scripts and managing dependencies.
+1. **Checkout**  
+   The action uses `actions/checkout@v4` to check out the specified branch, allowing the workflow to access the repository's contents.
 
-3. **Get Next Version**
-This step retrieves the next version of the SDK by reading the `package.json` file from the specified directory.
+2. **Set Up Node.js**  
+   `actions/setup-node@v4` sets up the Node.js environment, crucial for running scripts and managing dependencies.
 
-4. **Validate Version**
-The version retrieved in the previous step is compared to the current version in the NPM registry. The workflow checks if the version is already published or if it follows the expected versioning scheme.
+3. **Get Next Version**  
+   This step retrieves the next version of the SDK by reading the `package.json` file from the specified directory.
 
-5. **Publish SDK into NPM Registry**
-If the validation passes, the SDK libraries are published to the NPM registry. The libraries are iterated over, and each is published using the provided NPM token and tag.
+4. **Validate Version**  
+   The version retrieved in the previous step is compared to the current version in the NPM registry. The workflow checks if the version is already published or if it follows the expected versioning scheme.
+
+5. **Publish SDK into NPM Registry**  
+   If the validation passes, the SDK libraries are published to the NPM registry. The libraries are iterated over, and each is published using the provided NPM token and tag.
 
 ### Notes
 
+- The versions of the SDK libraries will be incremented in the NPM registry, but they will not be updated in the codebase itself through this process. This simplification avoids automatic pull requests and all the considerations necessary due to protections on the main branch, as well as the lengthy execution process that would be required to ultimately publish the libraries.
+- This is a temporary solution until we determine the most appropriate pattern to handle the lifecycle of each module that needs to be released individually (e.g., dotCLI and the SDKs).
+- Additionally, the example projects should point to the 'latest' tag to ensure that version updates do not impact their functionality due to version inconsistency.
 - Ensure that the NPM token provided has the correct permissions to publish packages.
 - The action assumes that the `package.json` files are located under `core-web/libs/sdk/client`.
-- The publish step only runs if the version validation passes, ensuring that no duplicate versions are published.
 
 ## Usage Example
 
@@ -71,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Publish to NPM
-        uses: ./path-to-this-action
+        uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
         with:
           ref: 'master'
           npm-token: ${{ secrets.NPM_TOKEN }}

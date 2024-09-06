@@ -74,6 +74,7 @@
 <%@ page import="org.apache.poi.ss.usermodel.Row" %>
 <%@ page import="com.dotcms.contenttype.transform.field.FieldTransformer" %>
 <%@ page import="com.dotmarketing.util.Logger" %>
+<%@ page import="com.dotmarketing.util.ConfigUtils" %>
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
@@ -95,8 +96,7 @@
 </style>
 
 <%
-	String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
-	if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
+	if (ConfigUtils.isFeatureFlagOn("FEATURE_FLAG_NEW_BINARY_FIELD")) {
 %>
 
 <!--  dotCMS Binary Field Builder -->
