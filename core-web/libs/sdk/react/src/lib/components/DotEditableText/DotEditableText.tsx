@@ -13,7 +13,7 @@ import { DotEditableTextProps, TINYMCE_CONFIG } from './utils';
 const MCE_URL = '/ext/tinymcev7/tinymce.min.js';
 
 /**
- * Allows to inline edit content pulled from dotCMS API using TinyMCE editor
+ * Allows inline edit content pulled from dotCMS API using TinyMCE editor
  *
  * @export
  * @component
@@ -23,7 +23,6 @@ const MCE_URL = '/ext/tinymcev7/tinymce.min.js';
  *     contentlet,
  *     fieldName = ''
  * }
- * @return {JSX.Element} A component that allows inline editing of content
  * @example
  * ```javascript
  * import { DotEditableText } from '@dotcms/react';
@@ -38,6 +37,7 @@ const MCE_URL = '/ext/tinymcev7/tinymce.min.js';
  *     </h2>
  * );
  * ```
+ * @returns {JSX.Element} A component to edit content inline
  */
 export function DotEditableText({
     mode = 'plain',
