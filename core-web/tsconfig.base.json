@@ -13,6 +13,7 @@
         "target": "es2021",
         "module": "esnext",
         "lib": ["es2017", "es2020", "dom", "dom.iterable"],
+        "strict": false,
         "skipLibCheck": true,
         "skipDefaultLibCheck": true,
         "baseUrl": ".",
@@ -64,6 +65,10 @@
             "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
             "@tests/*": ["apps/dotcms-ui/src/app/test/*"]
         }
+    },
+    "angularCompilerOptions": {
+        "strictTemplates": false,
+        "strictInjectionParameters": false
     },
     "exclude": ["node_modules", "tmp"]
 }

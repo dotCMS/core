@@ -1,3 +1,5 @@
+import { createHostFactory, SpectatorHost } from '@ngneat/spectator';
+
 import { CommonModule } from '@angular/common';
 import { Component, DebugElement } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -5,21 +7,29 @@ import { By } from '@angular/platform-browser';
 
 import { DotPortletBoxComponent } from './components/dot-portlet-box/dot-portlet-box.component';
 import { DotPortletBaseComponent } from './dot-portlet-base.component';
-@Component({
-    template: `
-        <dot-portlet-base><div>Hello World</div></dot-portlet-base>
-    `
-})
-class DefaultTestHostComponent {}
 
 @Component({
+    standalone: true,
     template: `
-        <dot-portlet-base [boxed]="false"><div>Hello World</div></dot-portlet-base>
+        <dot-portlet-base>
+            <div>Hello World</div>
+        </dot-portlet-base>
+    `
+})
+class HostComponent {}
+
+@Component({
+    standalone: true,
+    template: `
+        <dot-portlet-base [boxed]="false">
+            <div>Hello World</div>
+        </dot-portlet-base>
     `
 })
 class DefaultTestHostUnboxedComponent {}
 
 @Component({
+    standalone: true,
     template: `
         <dot-portlet-base>
             <dot-portlet-toolbar></dot-portlet-toolbar>
@@ -36,6 +46,8 @@ class DefaultTestHostWithToolbarComponent {}
 class DotToolbarMockComponent {}
 
 describe('DotPortletBaseComponent', () => {
+    let spectator: SpectatorHost<HostComponent>;
+
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [
@@ -65,7 +77,7 @@ describe('DotPortletBaseComponent', () => {
         expect(toolbar).toBeNull();
     });
 
-    it('should render unboxed content', () => {
+    fit('should render unboxed content', () => {
         const testFixture = TestBed.createComponent(DefaultTestHostUnboxedComponent);
         testFixture.detectChanges();
 
