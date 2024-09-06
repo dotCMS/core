@@ -263,7 +263,7 @@
         "verdaccio": "^5.0.4",
         "vite": "~5.0.0",
         "vite-plugin-dts": "~2.3.0",
-        "webpack": "^5.64.0",
+        "webpack": "^5.94.0",
         "webpack-bundle-analyzer": "^4.5.0"
     },
     "resolutions": {
