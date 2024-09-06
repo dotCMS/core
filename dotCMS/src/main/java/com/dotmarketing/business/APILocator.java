@@ -47,6 +47,8 @@ import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
+import com.dotcms.enterprise.achecker.ACheckerAPI;
+import com.dotcms.enterprise.achecker.impl.ACheckerAPIImpl;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
 import com.dotcms.enterprise.cluster.action.business.ServerActionAPI;
@@ -1161,6 +1163,10 @@ public class APILocator extends Locator<APIIndex> {
 		return (SystemAPI) getInstance(APIIndex.SYSTEM_API);
 	}
 
+	public static ACheckerAPI getACheckerAPI() {
+		return (ACheckerAPI) getInstance(APIIndex.ACHECKER_API);
+	}
+
 	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
@@ -1315,8 +1321,8 @@ enum APIIndex
 	BAYESIAN_API,
 	ANALYTICS_API,
 	CONTENT_TYPE_DESTROY_API,
-
-	SYSTEM_API;
+	SYSTEM_API,
+	ACHECKER_API;
 
 	Object create() {
 		switch(this) {
@@ -1408,6 +1414,7 @@ enum APIIndex
 			case CONTENT_TYPE_DESTROY_API: return new ContentTypeDestroyAPIImpl();
 			case SYSTEM_API: return new SystemAPIImpl();
 			case ARTIFICIAL_INTELLIGENCE_API: return new DotAIAPIFacadeImpl();
+			case ACHECKER_API: return new ACheckerAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
