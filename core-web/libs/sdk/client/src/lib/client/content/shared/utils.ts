@@ -11,8 +11,7 @@ import { CONTENT_TYPE_MAIN_FIELDS } from './const';
  * ```ts
  * const query = '+field: value';
  * const contentType = 'contentTypeVar';
- * // Output: '+contentTypeVar.field: value'
- * const sanitizedQuery = sanitizeQueryForContentType(query, contentType);
+ * const sanitizedQuery = sanitizeQueryForContentType(query, contentType); // Output: '+contentTypeVar.field: value'
  * ```
  *
  * @export

@@ -109,7 +109,8 @@ export class CollectionBuilder<T = unknown> {
      * Takes an array of constrains to sort the content by field an specific order
      *
      * @example
-     * ```javascript
+     * ```typescript
+     * const client = new DotCMSClient(config);
      * // This will sort the content by title in ascending order
      * // and by modDate in descending order
      *  const sortBy = [{ field: 'title', order: 'asc' }, { field: 'modDate', order: 'desc' }]
@@ -169,7 +170,8 @@ export class CollectionBuilder<T = unknown> {
     /**
      * Takes a function that recieves a QueryBuilder to buid a query for content filtering.
      * @example
-     *```javascript
+     *```typescript
+     * const client = new DotCMSClient(config);
      * // This will filter the content by title equals 'Hello World' or 'Hello World 2'
      * client.content.getCollection("Activity").query((queryBuilder) =>
      *     queryBuilder.field('title').equals('Hello World').or().equals('Hello World 2')

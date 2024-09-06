@@ -35,7 +35,7 @@ export function sanitizeQuery(str: string): string {
  * This function sanitizes a term by adding quotes if it contains spaces.
  * In lucene, a term with spaces should be enclosed in quotes.
  *
- * @exxample
+ * @example
  * ```ts
  * sanitizePhrases(`my term`); // Output: `"my term"`
  * sanitizePhrases(`myterm`); // Output: `myterm`
@@ -55,7 +55,7 @@ export function sanitizePhrases(term: string): string {
  *
  * @example
  * ```ts
- * buildEquals("+myField: ", "myValue"); // Output: "+myField: myValue"
+ * const equals = buildEquals("+myField: ", "myValue"); // Current query: "+myField: myValue"
  * ```
  *
  * @export
@@ -76,7 +76,7 @@ export function buildEquals(query: string, term: string): Equals {
  * @example
  * ```ts
  * const query = "+myField: myValue";
- * buildRawEquals(query, "-myField2: myValue2"); // Output: "+myField: myValue -myField2: myValue"
+ * const field = buildRawEquals(query, "-myField2: myValue2"); // Current query: "+myField: myValue -myField2: myValue"
  * ```
  *
  * @export
@@ -96,7 +96,7 @@ export function buildRawEquals(query: string, raw: string): Equals {
  *
  * @example
  * ```ts
- * buildField("+myField: ", "myValue"); // Output: "+myField: myValue"
+ * const field = buildField("+myField: ", "myValue"); // Current query: "+myField: myValue"
  * ```
  *
  * @export
@@ -117,7 +117,7 @@ export function buildField(query: string, field: string): Field {
  * @example
  * ```ts
  * const query = "+myField: myValue";
- * buildExcludeField(query, "myField2"); // Output: "+myField: myValue -myField2:"
+ * const field = buildExcludeField(query, "myField2"); // Current query: "+myField: myValue -myField2:"
  * ```
  *
  * @export
@@ -136,14 +136,16 @@ export function buildExcludeField(query: string, field: string): Field {
  * We need to format the operand before adding it to the query.
  *
  * @example
+ * <caption>E.g. Using the AND operand</caption>
  * ```ts
  * const query = "+myField: myValue";
- * buildOperand(query, OPERAND.AND); // Output: "+myField: myValue AND"
+ * const field = buildOperand(query, OPERAND.AND); // Current query: "+myField: myValue AND"
  * ```
  * @example
+ * <caption>E.g. Using the OR operand</caption>
  * ```ts
  * const query = "+myField: myValue";
- * buildOperand(query, OPERAND.OR); // Output: "+myField: myValue OR"
+ * const field = buildOperand(query, OPERAND.OR); // Current query: "+myField: myValue OR"
  * ```
  * @export
  * @param {string} query
@@ -163,7 +165,7 @@ export function buildOperand(query: string, operand: OPERAND): Operand {
  * @example
  * ```ts
  * const query = "+myField: myValue";
- * buildNotOperand(query); // Output: "+myField: myValue NOT"
+ * const field = buildNotOperand(query); // Current query: "+myField: myValue NOT"
  * ```
  *
  * @export
