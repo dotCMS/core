@@ -1,0 +1,11 @@
+{
+    "migrations": [
+        {
+            "version": "18.0.0-0",
+            "description": "Updates the Angular CDK to v18",
+            "factory": "./ng-update/index#updateToV18",
+            "package": "@angular/cdk",
+            "name": "migration-v18"
+        }
+    ]
+}

@@ -214,7 +214,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             primary: {
                 name: 'default',
                 type: GOAL_TYPES.REACH_PAGE,
-                conditions: [{ parameter: '', operator: null, value: '' }]
+                conditions: []
             }
         };
 
@@ -231,6 +231,8 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
                 ]
             }
         };
+
+        console.log(spectator.component.form.value);
 
         spectator.fixture.whenStable().then(() => {
             // Invalid path
