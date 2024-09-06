@@ -9,7 +9,6 @@ This client library provides a streamlined, promise-based interface to fetch pag
 -   Easy-to-use methods to interact with the [DotCMS Page](https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas) and [Navigation APIs](https://www.dotcms.com/docs/latest/navigation-rest-api).
 -   Support for custom actions to communicate with the DotCMS page editor.
 -   Comprehensive TypeScript typings for better development experience.
-<!-- Poner los enviroments Configuracion Inicial -->
 
 ## Installation
 
@@ -32,20 +31,19 @@ yarn add @dotcms/client
 ### ES Modules
 
 ```javascript
-// Cambiar por la C Mayúscula
-import { dotcmsClient } from '@dotcms/client';
+import { DotCmsClient } from '@dotcms/client';
 ```
 
 ### CommonJS
 
 ```javascript
-const { dotcmsClient } = require('@dotcms/client');
+const { DotCmsClient } = require('@dotcms/client');
 ```
 
 First, initialize the client with your DotCMS instance details.
 
 ```javascript
-const client = dotcmsClient.init({
+const client = DotCmsClient.init({
     dotcmsUrl: 'https://your-dotcms-instance.com',
     authToken: 'your-auth-token',
     siteId: 'your-site-id'
@@ -84,7 +82,7 @@ console.log(navData);
 
 Detailed documentation of the `@dotcms/client` methods, parameters, and types can be found below:
 
-### `dotcmsClient.init(config: ClientConfig): DotCmsClient`
+### `DotCmsClient.init(config: ClientConfig): DotCmsClient`
 
 Initializes the DotCMS client with the specified configuration.
 
