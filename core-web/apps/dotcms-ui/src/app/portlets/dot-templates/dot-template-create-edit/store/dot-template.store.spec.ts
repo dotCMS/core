@@ -6,13 +6,14 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotRouterService,
+    DotGlobalMessageService
+} from '@dotcms/data-access';
 import {
     MockDotMessageService,
     MockDotRouterService,
@@ -71,7 +72,6 @@ const cacheSetSpy = jasmine.createSpy();
 
 const BASIC_PROVIDERS = [
     DotTemplateStore,
-    DotEditLayoutService,
     {
         provide: DotHttpErrorManagerService,
         useValue: {
@@ -204,7 +204,8 @@ describe('DotTemplateStore', () => {
             const state = {
                 original: template,
                 working: template,
-                apiLink: ''
+                apiLink: '',
+                didTemplateChanged: false
             };
 
             service.vm$.subscribe((res) => {
@@ -296,7 +297,8 @@ describe('DotTemplateStore', () => {
             const state = {
                 original: template,
                 working: template,
-                apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working'
+                apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working',
+                didTemplateChanged: false
             };
 
             service.vm$.subscribe((res) => {

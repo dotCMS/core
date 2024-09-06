@@ -1,9 +1,5 @@
 package com.dotcms.rest;
 
-import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotcms.rest.tag.TagsResourceHelper.toRestTagMap;
-import static com.dotmarketing.util.UUIDUtil.isUUID;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
@@ -28,10 +24,8 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -47,12 +41,22 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotcms.rest.tag.TagsResourceHelper.toRestTagMap;
+import static com.dotmarketing.util.UUIDUtil.isUUID;
 
 /**
  * Tag Related logic is exposed to the web here
+ * @deprecated use /v2/tags instead
+ * @see com.dotcms.rest.api.v2.tags.TagResource
  */
 @Path("/v1/tags")
+@Deprecated(since = "23.12")
 public class TagResource {
 
     private static final String TAGS = "tags";
@@ -106,7 +110,7 @@ public class TagResource {
         final User user = initDataObject.getUser();
 
         final List<Tag> tags = UtilMethods.isSet(tagName)
-                ? helper.searchTagsInternal(tagName, helper.getSiteId(siteId, request), user)
+                ? helper.searchTagsInternal(tagName, helper.getSiteId(siteId, request, user))
                 : helper.getTagsInternal();
 
         return toRestTagMap(tags);

@@ -5,7 +5,7 @@ export default {
     parameters: {
         docs: {
             page: readme
-        },
+        }
     },
     args: {
         value: '',
@@ -31,6 +31,6 @@ const Template = (args) => {
     }
 
     return keyvalue;
-}
+};
 
 export const KeyValue = Template.bind({});

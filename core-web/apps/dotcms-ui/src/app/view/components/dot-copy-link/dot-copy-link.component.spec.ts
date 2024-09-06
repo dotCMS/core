@@ -5,9 +5,8 @@ import { By } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotClipboardUtil, DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCopyLinkComponent } from './dot-copy-link.component';

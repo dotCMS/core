@@ -29,7 +29,7 @@ public interface StoryBlockAPI {
     /**
      * Contains the types of Contentlets that can be added to a Story Block field
      */
-    Set<String> allowedTypes = new ImmutableSet.Builder<String>().add("dotContent", "dotImage").build();
+    Set<String> allowedTypes = new ImmutableSet.Builder<String>().add("dotContent", "dotImage", "dotVideo").build();
 
     /**
      * Updates all Contentlets referenced in every {@link com.dotcms.contenttype.model.field.StoryBlockField}  of the

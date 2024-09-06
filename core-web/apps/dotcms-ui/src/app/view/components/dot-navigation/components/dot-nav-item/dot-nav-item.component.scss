@@ -4,6 +4,7 @@
 
 :host {
     display: block;
+    font-size: $font-size-md;
 
     &.dot-nav-item__collapsed {
         position: relative;
@@ -20,8 +21,10 @@
                 position: absolute;
                 top: 0;
                 transform: translateY(0);
-                transition: opacity $basic-speed ease, transform $basic-speed ease;
-                z-index: 2;
+                transition:
+                    opacity $basic-speed ease,
+                    transform $basic-speed ease;
+                z-index: 9999;
             }
         }
 
@@ -36,7 +39,7 @@
             background: var(--color-palette-primary-800);
             border-bottom-right-radius: 0.1875rem;
             border-top-right-radius: 0.1875rem;
-            box-shadow: $md-shadow-2;
+            box-shadow: $shadow-s;
             transform: translateY(1rem);
         }
 

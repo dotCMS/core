@@ -1,0 +1,473 @@
+:root {
+    --color-primary-h: 225deg;
+    --color-primary-s: 85%;
+    --color-secondary-h: 256;
+    --color-secondary-s: 85%;
+    --color-black-h: 229deg;
+    --color-black-s: 12%;
+    --color-black-l: 9%;
+    --color-white-h: 0deg;
+    --color-white-s: 0%;
+    --color-white-l: 100%;
+    /**
+  * @tokens Colors
+  * @presenter Color
+  */
+    --color-palette-primary-100: hsl(var(--color-primary-h) var(--color-primary-s) 98%);
+    --color-palette-primary-200: hsl(var(--color-primary-h) var(--color-primary-s) 96%);
+    --color-palette-primary-300: hsl(var(--color-primary-h) var(--color-primary-s) 90%);
+    --color-palette-primary-400: hsl(var(--color-primary-h) var(--color-primary-s) 78%);
+    --color-palette-primary-500: hsl(var(--color-primary-h) var(--color-primary-s) 60%);
+    --color-palette-primary-600: hsl(var(--color-primary-h) var(--color-primary-s) 48%);
+    --color-palette-primary-700: hsl(var(--color-primary-h) var(--color-primary-s) 36%);
+    --color-palette-primary-800: hsl(var(--color-primary-h) var(--color-primary-s) 27%);
+    --color-palette-primary-900: hsl(var(--color-primary-h) var(--color-primary-s) 21%);
+    --color-palette-primary-op-10: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.1);
+    --color-palette-primary-op-20: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.2);
+    --color-palette-primary-op-30: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.3);
+    --color-palette-primary-op-40: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.4);
+    --color-palette-primary-op-50: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.5);
+    --color-palette-primary-op-60: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.6);
+    --color-palette-primary-op-70: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.7);
+    --color-palette-primary-op-80: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.8);
+    --color-palette-primary-op-90: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.9);
+    --color-palette-secondary-100: hsl(var(--color-secondary-h) var(--color-secondary-s) 98%);
+    --color-palette-secondary-200: hsl(var(--color-secondary-h) var(--color-secondary-s) 94%);
+    --color-palette-secondary-300: hsl(var(--color-secondary-h) var(--color-secondary-s) 84%);
+    --color-palette-secondary-400: hsl(var(--color-secondary-h) var(--color-secondary-s) 71%);
+    --color-palette-secondary-500: hsl(var(--color-secondary-h) var(--color-secondary-s) 60%);
+    --color-palette-secondary-600: hsl(var(--color-secondary-h) var(--color-secondary-s) 51%);
+    --color-palette-secondary-700: hsl(var(--color-secondary-h) var(--color-secondary-s) 42%);
+    --color-palette-secondary-800: hsl(var(--color-secondary-h) var(--color-secondary-s) 30%);
+    --color-palette-secondary-900: hsl(var(--color-secondary-h) var(--color-secondary-s) 22%);
+    --color-palette-secondary-op-10: hsla(
+            var(--color-secondary-h),
+            var(--color-secondary-s),
+            60%,
+            0.1
+    );
+    --color-palette-secondary-op-20: hsla(
+            var(--color-secondary-h),
+            var(--color-secondary-s),
+            60%,
+            0.2
+    );
+    --color-palette-secondary-op-30: hsla(
+            var(--color-secondary-h),
+            var(--color-secondary-s),
+            60%,
+            0.3
+    );
+    --color-palette-secondary-op-40: hsla(
+            var(--color-secondary-h),
+            var(--color-secondary-s),
+            60%,
+            0.4
+    );
+    --color-palette-secondary-op-50: hsla(
+            var(--color-secondary-h),
+            var(--color-secondary-s),
+            60%,
+            0.5
+    );
+    --color-palette-secondary-op-60: hsla(
+            var(--color-secondary-h),
+            var(--color-secondary-s),
+            60%,
+            0.6
+    );
+    --color-palette-secondary-op-70: hsla(
+            var(--color-secondary-h),
+            var(--color-secondary-s),
+            60%,
+            0.7
+    );
+    --color-palette-secondary-op-80: hsla(
+            var(--color-secondary-h),
+            var(--color-secondary-s),
+            60%,
+            0.8
+    );
+    --color-palette-secondary-op-90: hsla(
+            var(--color-secondary-h),
+            var(--color-secondary-s),
+            60%,
+            0.9
+    );
+    /* COLOR BLACK OPACITY */
+    --color-palette-black-op-10: hsla(
+            var(--color-black-h),
+            var(--color-black-l),
+            var(--color-black-l),
+            0.1
+    );
+    --color-palette-black-op-20: hsla(
+            var(--color-black-h),
+            var(--color-black-l),
+            var(--color-black-l),
+            0.2
+    );
+    --color-palette-black-op-30: hsla(
+            var(--color-black-h),
+            var(--color-black-l),
+            var(--color-black-l),
+            0.1
+    );
+    --color-palette-black-op-40: hsla(
+            var(--color-black-h),
+            var(--color-black-l),
+            var(--color-black-l),
+            0.4
+    );
+    --color-palette-black-op-50: hsla(
+            var(--color-black-h),
+            var(--color-black-l),
+            var(--color-black-l),
+            0.5
+    );
+    --color-palette-black-op-60: hsla(
+            var(--color-black-h),
+            var(--color-black-l),
+            var(--color-black-l),
+            0.6
+    );
+    --color-palette-black-op-70: hsla(
+            var(--color-black-h),
+            var(--color-black-l),
+            var(--color-black-l),
+            0.7
+    );
+    --color-palette-black-op-80: hsla(
+            var(--color-black-h),
+            var(--color-black-l),
+            var(--color-black-l),
+            0.8
+    );
+    --color-palette-black-op-90: hsla(
+            var(--color-black-h),
+            var(--color-black-l),
+            var(--color-black-l),
+            0.9
+    );
+    /* COLOR WHITE OPACITY */
+    --color-palette-white-op-10: hsla(
+            var(--color-white-h),
+            var(--color-white-l),
+            var(--color-white-l),
+            0.1
+    );
+    --color-palette-white-op-20: hsla(
+            var(--color-white-h),
+            var(--color-white-l),
+            var(--color-white-l),
+            0.2
+    );
+    --color-palette-white-op-30: hsla(
+            var(--color-white-h),
+            var(--color-white-l),
+            var(--color-white-l),
+            0.3
+    );
+    --color-palette-white-op-40: hsla(
+            var(--color-white-h),
+            var(--color-white-l),
+            var(--color-white-l),
+            0.4
+    );
+    --color-palette-white-op-50: hsla(
+            var(--color-white-h),
+            var(--color-white-l),
+            var(--color-white-l),
+            0.5
+    );
+    --color-palette-white-op-60: hsla(
+            var(--color-white-h),
+            var(--color-white-l),
+            var(--color-white-l),
+            0.6
+    );
+    --color-palette-white-op-70: hsla(
+            var(--color-white-h),
+            var(--color-white-l),
+            var(--color-white-l),
+            0.7
+    );
+    --color-palette-white-op-80: hsla(
+            var(--color-white-h),
+            var(--color-white-l),
+            var(--color-white-l),
+            0.8
+    );
+    --color-palette-white-op-90: hsla(
+            var(--color-white-h),
+            var(--color-white-l),
+            var(--color-white-l),
+            0.9
+    );
+    /**
+  * @tokens-end
+  */
+    --color-background: #3a3847;
+    --empty-message: '';
+}
+
+
+#container {
+    margin: 0px auto 0px auto;
+    overflow: hidden;
+}
+
+#container input[type="radio"] {
+    visibility: hidden;
+}
+
+#container label {
+    border-radius: .25em .25em 0 0;
+    color: #888;
+    cursor: pointer;
+    display: block;
+    float: left;
+    text-align: center;
+    padding: 1.2rem 1.35rem;
+
+}
+
+#container input:hover + label {
+    background: var(--color-palette-primary-100);
+    color: #444;
+    border-bottom: 4px solid var(--color-palette-primary-100);
+}
+
+#container input:checked + label {
+    background: var(--color-palette-primary-100);
+    border-bottom: 4px solid var(--color-palette-primary-500);
+    color: #444;
+    position: relative;
+    z-index: 6;
+
+}
+
+#content {
+    border-top: 1px solid #eeeeee;
+    min-height: 90vh;
+    margin: 0 auto;
+    text-align: left;
+    z-index: 5;
+}
+
+#content-1 {
+    display: block;
+    padding: 20px;
+    min-height: 60vh;
+}
+
+#content-2 {
+    display: none;
+    padding: 20px;
+    min-height: 60vh;
+}
+
+#content-3 {
+    display: none;
+    padding: 20px;
+    min-height: 60vh;
+}
+
+#content-4 {
+    display: none;
+    padding: 20px;
+    min-height: 60vh;
+}
+
+
+input[type="text"] {
+    padding: 10px;
+    margin-top: -10px;
+    border-color: var(--color-palette-primary-op-20);
+    border-radius: 0.375rem;
+    border: 1px solid;
+}
+
+input[type="text"]:hover {
+    border-color: var(--color-palette-primary-400);
+}
+
+input[type="text"]:focus {
+    border-color: var(--color-palette-primary-400);
+}
+
+input[type="number"] {
+    padding: 10px;
+    min-width: 100px;
+    margin-top: -10px;
+    border-color: var(--color-palette-primary-op-20);
+    border-radius: 0.375rem;
+}
+
+input[type="number"]:hover {
+    border-color: var(--color-palette-primary-400);
+}
+
+input[type="number"]:focus {
+    border-color: var(--color-palette-primary-400);
+}
+
+input[type="radio"] {
+    border-radius: 0.375rem;
+    padding: 10px;
+
+}
+
+input[type="radio"]:hover {
+    border-radius: 0.375rem;
+    padding: 10px;
+}
+
+
+#answerChat {
+    width: 100%;
+    min-height: 500px;
+    height: auto;
+}
+
+.hTable {
+    text-align: center;
+}
+
+textarea {
+    padding: 10px;
+    margin-top: -10px;
+    border-color: var(--color-palette-primary-op-20);
+    border-radius: 0.375rem;
+}
+
+textarea:hover {
+    border-color: var(--color-palette-primary-400);
+}
+
+textarea:focus {
+    border-color: var(--color-palette-primary-400);
+}
+
+select {
+    padding: 10px;
+    margin-top: -10px;
+    border-color: var(--color-palette-primary-op-20);
+    border-radius: 0.375rem;
+    width:80%;
+}
+
+select:hover {
+    border-color: var(--color-palette-primary-400);
+}
+
+select:focus {
+    border-color: var(--color-palette-primary-400);
+}
+
+.button {
+    padding: 20px 40px;
+    border: 1px solid #9D9D9D;
+    border-radius: .25em;
+}
+#submitBuildIndexBtn{
+    min-width: 230px;
+
+
+}
+
+.button:hover {
+    border-color: var(--color-palette-primary-400);
+    background: var(--color-palette-primary-100);
+    cursor: pointer;
+}
+
+.button:focus {
+    border-color: var(--color-palette-primary-400);
+}
+
+.aiChevron{
+    padding: 0px;
+    width:12px;
+    height:12px;
+    border:0px solid green;
+    display: inline-block;
+    font-size: .75em;
+}
+
+.prompt {
+    max-width: 400px;
+    min-height: 100px;
+    resize: vertical;
+    width:80%;
+}
+.clearPromptX {
+    display: block;
+    position: relative;
+    top:-10px;
+    right:-385px;
+    width:24px;
+    height:0px;
+    z-index: 15;
+    color: #9D9D9D;
+    cursor: pointer;
+}
+.clearPromptX:hover {
+    border-color: var(--color-palette-primary-400);
+    color: var(--color-palette-primary-400);
+}
+th {
+    padding: 1em;
+    vertical-align: top;
+    text-align: right;
+    margin-right: 20px;
+}
+
+td {
+    padding: 1em;
+    vertical-align: top;
+}
+
+.propTable {
+    margin-left: 30px;
+}
+
+.propTh {
+    padding: 5px;
+    font-weight: bold;
+    padding-right: 10px;
+
+}
+
+.propTd {
+    max-width: 400px;
+    overflow-wrap: break-word;
+    padding: 6px;
+
+
+}
+
+.aiSearchResultsTable {
+    width: 100%;
+    table-layout: fixed;
+    overflow: hidden;
+
+
+}
+
+.rotated {
+    transform: rotate(90deg);
+}
+
+#imageSavedMessage{
+    display: block;
+    padding: 10px 5px;
+    color: darkgreen;
+
+}
+
+#image-prompts >li{
+    padding:5px;
+    list-style-type: decimal ;
+    display: list-item;
+}

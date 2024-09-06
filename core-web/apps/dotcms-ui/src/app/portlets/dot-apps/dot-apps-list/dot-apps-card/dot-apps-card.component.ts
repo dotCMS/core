@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
-import { DotApps } from '@dotcms/dotcms-models';
+import { DotApp } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-apps-card',
@@ -8,6 +8,6 @@ import { DotApps } from '@dotcms/dotcms-models';
     styleUrls: ['./dot-apps-card.component.scss']
 })
 export class DotAppsCardComponent {
-    @Input() app: DotApps;
+    @Input() app: DotApp;
     @Output() actionFired = new EventEmitter<string>();
 }

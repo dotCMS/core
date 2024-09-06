@@ -7,8 +7,6 @@ import com.dotmarketing.startup.StartupTask;
 
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * Remove the foreign key with the publishing_end_point table to all the Integrity Resolver tables and rename the column
  * endpoint_id to remote IP, Also change the endpoint_id column size.
@@ -30,7 +28,7 @@ public class Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTables implem
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
 
-        final Map<String, String> tables = map(
+        final Map<String, String> tables = Map.of(
                 "folders_ir", "fk_folder_ir_ep",
                 "structures_ir", "fk_structure_ir_ep",
                 "htmlpages_ir", "fk_page_ir_ep",

@@ -1,10 +1,10 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck, take } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkRequestOptions,
     DotCMSContentlet,
@@ -18,6 +18,12 @@ interface DotActionRequestOptions {
     individualPermissions?: { [key: string]: string[] };
 }
 
+export interface DotFireActionOptions<T> {
+    actionId: string;
+    inode?: string;
+    data?: T;
+}
+
 enum ActionToFire {
     NEW = 'NEW',
     DESTROY = 'DESTROY',
@@ -27,28 +33,32 @@ enum ActionToFire {
 
 @Injectable()
 export class DotWorkflowActionsFireService {
-    constructor(private coreWebService: CoreWebService) {}
+    private readonly BASE_URL = '/api/v1/workflow';
+    private readonly httpClient = inject(HttpClient);
+    private readonly defaultHeaders = new HttpHeaders()
+        .set('Accept', '*/*')
+        .set('Content-Type', 'application/json');
 
     /**
-     * Fire a workflow action over a contentlet
+     *  Fire a workflow action over a contentlet
      *
-     * @param {string} inode
-     * @param {string} actionId
-     * @param {{ [key: string]: string }} data
-     * @returns Observable<DotCMSContentlet> // contentlet
+     * @template T
+     * @param {DotFireActionOptions<T>} options
+     * @return {*}  {Observable<DotCMSContentlet>}
      * @memberof DotWorkflowActionsFireService
      */
-    fireTo<T = { [key: string]: string }>(
-        inode: string,
-        actionId: string,
-        data?: T
+    fireTo<T = Record<string, string>>(
+        options: DotFireActionOptions<T>
     ): Observable<DotCMSContentlet> {
-        return this.coreWebService
-            .requestView({
-                body: data,
-                method: 'PUT',
-                url: `v1/workflow/actions/${actionId}/fire?inode=${inode}&indexPolicy=WAIT_FOR`
-            })
+        const { actionId, inode, data } = options;
+        const queryInode = inode ? `inode=${inode}&` : '';
+
+        return this.httpClient
+            .put(
+                `${this.BASE_URL}/actions/${actionId}/fire?${queryInode}indexPolicy=WAIT_FOR`,
+                data,
+                { headers: this.defaultHeaders }
+            )
             .pipe(pluck('entity'));
     }
 
@@ -60,11 +70,9 @@ export class DotWorkflowActionsFireService {
      * @memberof DotWorkflowActionsFireService
      */
     bulkFire(data: DotActionBulkRequestOptions): Observable<DotActionBulkResult> {
-        return this.coreWebService
-            .requestView({
-                body: data,
-                method: 'PUT',
-                url: `/api/v1/workflow/contentlet/actions/bulk/fire`
+        return this.httpClient
+            .put(`${this.BASE_URL}/contentlet/actions/bulk/fire`, data, {
+                headers: this.defaultHeaders
             })
             .pipe(pluck('entity'));
     }
@@ -170,14 +178,14 @@ export class DotWorkflowActionsFireService {
             ? { contentlet, individualPermissions }
             : { contentlet };
 
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: `v1/workflow/actions/default/fire/${action}${
-                    data.inode ? `?inode=${data.inode}` : ''
+        return this.httpClient
+            .put(
+                `${this.BASE_URL}/actions/default/fire/${action}${
+                    data['inode'] ? `?inode=${data['inode']}` : ''
                 }`,
-                body: bodyRequest
-            })
+                bodyRequest,
+                { headers: this.defaultHeaders }
+            )
             .pipe(take(1), pluck('entity'));
     }
 }

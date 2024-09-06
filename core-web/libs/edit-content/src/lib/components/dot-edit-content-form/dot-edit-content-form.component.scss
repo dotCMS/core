@@ -1,0 +1,45 @@
+@use "variables" as *;
+
+:host {
+    min-width: 0; // Make it shrinkable
+    overflow: auto;
+
+    ::ng-deep {
+        .p-tabview {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .p-tabview-panels {
+            flex: 1;
+            overflow: auto;
+            padding: $spacing-4;
+        }
+    }
+    .form__layout {
+        padding: $spacing-4;
+    }
+}
+
+form {
+    height: 100%;
+}
+
+.row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: $spacing-4;
+    margin-bottom: $spacing-4;
+}
+
+.row:last-child {
+    margin-bottom: 0;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-4;
+}

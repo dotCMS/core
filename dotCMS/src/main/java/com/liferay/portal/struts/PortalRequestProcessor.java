@@ -22,7 +22,6 @@
 
 package com.liferay.portal.struts;
 
-import com.dotcms.repackage.com.oroad.stxx.plugin.StxxTilesRequestProcessor;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.PortletContext;
 import com.dotcms.repackage.javax.portlet.PortletException;
@@ -31,6 +30,7 @@ import com.dotcms.repackage.javax.portlet.PortletPreferences;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.config.ForwardConfig;
+import com.dotcms.repackage.org.apache.struts.tiles.TilesRequestProcessor;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -93,7 +93,7 @@ import javax.servlet.http.HttpSession;
  * @version $Revision: 1.53 $
  *
  */
-public class PortalRequestProcessor extends StxxTilesRequestProcessor {
+public class PortalRequestProcessor extends TilesRequestProcessor {
 
 	public PortalRequestProcessor() {
 		_publicPaths = CollectionFactory.getHashSet();

@@ -2,18 +2,16 @@
     <li>
         <div class="dot-tree__content">
             <dot-icon
-                name="face"
                 [class.dot-tree--active]="parent === contentType?.name"
-            ></dot-icon>
+                name="face"></dot-icon>
             <span data-testId="dot-tree-upper-text">{{ parent }}</span>
         </div>
         <ul class="dot-tree--child">
             <li>
                 <div class="dot-tree__content">
                     <dot-icon
-                        name="child_care"
                         [class.dot-tree--active]="child === contentType?.name"
-                    ></dot-icon>
+                        name="child_care"></dot-icon>
                     <span data-testId="dot-tree-nested-text">{{ child }}</span>
                 </div>
             </li>

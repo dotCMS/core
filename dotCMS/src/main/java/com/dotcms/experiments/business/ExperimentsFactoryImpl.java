@@ -1,13 +1,16 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.experiments.model.AbstractExperiment;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.transform.TransformerLocator;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,6 +40,10 @@ public class ExperimentsFactoryImpl implements
     public static final String NAME_FILTER = "AND name LIKE ?";
 
     public static final String STATUS_FILTER = "SELECT * from experiment WHERE status = ?";
+
+    private static final String ACTIVE_EXPERIMENTS_BY_PAGE = "SELECT experiment.* " +
+    "FROM experiment " +
+    "WHERE status NOT IN (?, ?) and page_id = ?";
 
     @Override
     public void save(Experiment experiment) throws DotDataException {
@@ -167,5 +174,24 @@ public class ExperimentsFactoryImpl implements
         dc.addJSONParam(experiment.runningIds());
         dc.addParam(experiment.id().get());
         dc.loadResult();
+    }
+
+    /**
+     * Default implementation for {@link ExperimentsFactory#listActive(String)} (Host)}
+     *
+     * @param pageIdentifier
+     * @return
+     * @throws DotDataException
+     */
+    @Override
+    public final Collection<Experiment> listActive(final String pageIdentifier) throws DotDataException {
+        final List<Map<String, Object>> results = new DotConnect()
+                .setSQL(ACTIVE_EXPERIMENTS_BY_PAGE)
+                .addParam(AbstractExperiment.Status.ENDED.toString())
+                .addParam(AbstractExperiment.Status.ARCHIVED.toString())
+                .addParam(pageIdentifier)
+                .loadObjectResults();
+
+        return TransformerLocator.createExperimentTransformer(results).list;
     }
 }

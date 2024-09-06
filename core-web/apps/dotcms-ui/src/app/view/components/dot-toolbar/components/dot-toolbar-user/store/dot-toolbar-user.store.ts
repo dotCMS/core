@@ -121,14 +121,14 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
             {
                 id: 'dot-toolbar-user-link-my-account',
                 label: this.dotMessageService.get('my-account'),
-                icon: 'pi pi-user-edit',
+                icon: 'pi pi-user',
                 visible: !auth.isLoginAs,
                 command: () => this.showMyAccount(true)
             },
             {
                 id: 'dot-toolbar-user-link-login-as',
                 label: this.dotMessageService.get('login-as'),
-                icon: 'pi pi-sort-alt',
+                icon: 'pi pi-users',
                 visible: !auth.isLoginAs,
                 command: () => this.showLoginAs(true)
             },
@@ -139,14 +139,16 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
                 icon: 'pi pi-sign-out',
                 visible: !auth.isLoginAs,
                 url: this.FINAL_LOGOUT_URL,
-                target: '_self'
+                target: '_self',
+                styleClass: 'toolbar-user__logout'
             },
             {
                 id: 'dot-toolbar-user-link-logout-as',
                 label: this.dotMessageService.get('logout-as'),
                 icon: 'pi pi-sign-out',
                 visible: !!auth.isLoginAs,
-                command: () => this.logoutAs()
+                command: () => this.logoutAs(),
+                styleClass: 'toolbar-user__logout'
             }
         ] as MenuItem[];
     }

@@ -3,7 +3,7 @@ import { Observable, of, Subject } from 'rxjs';
 import { Component, EventEmitter, forwardRef, Input, Output, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { AutoComplete } from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteSelectEvent } from 'primeng/autocomplete';
 
 import { switchMap, take } from 'rxjs/operators';
 
@@ -22,6 +22,7 @@ const NO_SPECIAL_CHAR = /^[a-zA-Z0-9._/-]*$/g;
 const REPLACE_SPECIAL_CHAR = /[^a-zA-Z0-9._/-]/g;
 const NO_SPECIAL_CHAR_WHITE_SPACE = /^[a-zA-Z0-9._/-\s]*$/g;
 const REPLACE_SPECIAL_CHAR_WHITE_SPACE = /[^a-zA-Z0-9._/-\s]/g;
+
 enum SearchType {
     SITE = 'site',
     FOLDER = 'folder',
@@ -109,17 +110,22 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @param DotPageAsset item
      * @memberof DotPageSelectorComponent
      */
-    onSelect(item: DotPageSelectorItem): void {
+    onSelect(event: AutoCompleteSelectEvent): void {
+        const { originalEvent, value } = event;
+
         if (this.searchType === 'site') {
-            const site: Site = <Site>item.payload;
+            const site: Site = <Site>value.payload;
             this.currentHost = site;
-            this.autoComplete.completeMethod.emit({ query: `//${site.hostname}/` });
+            this.autoComplete.completeMethod.emit({
+                query: `//${site.hostname}/`,
+                originalEvent
+            });
         } else if (this.searchType === 'page') {
-            const page: DotPageAsset = <DotPageAsset>item.payload;
+            const page: DotPageAsset = <DotPageAsset>value.payload;
             this.selected.emit(page);
             this.propagateChange(page.identifier);
         } else if (this.searchType === 'folder') {
-            this.handleFolderSelection(<DotFolder>item.payload);
+            this.handleFolderSelection(<DotFolder>value.payload);
         }
 
         this.resetResults();
@@ -231,8 +237,8 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
         return this.isSearchingForHost(query)
             ? SearchType.SITE
             : this.folderSearch
-            ? SearchType.FOLDER
-            : SearchType.PAGE;
+              ? SearchType.FOLDER
+              : SearchType.PAGE;
     }
 
     private getConditionalSearch(param: string): Observable<DotPageSelectorItem[]> {
@@ -301,8 +307,8 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
         return cleanedQuery.startsWith('//')
             ? cleanedQuery
             : cleanedQuery.length >= 3
-            ? cleanedQuery
-            : '';
+              ? cleanedQuery
+              : '';
     }
 
     private cleanHost(query: string): string {

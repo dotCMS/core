@@ -59,7 +59,7 @@
 			cmsFileBrowser(callback, value, meta);
 		}
 	});
-	
+
 </script>
 
 <script type="text/javascript">
@@ -232,19 +232,21 @@ var cmsfile=null;
 	var aceEditors = new Array();
 
 
-	function enableDisableWysiwygCodeOrPlain(id) {
+	function enableDisableWysiwygCodeOrPlain(id, isFullscreen = "false") {
 		var toggleValue=dijit.byId(id+'_toggler').attr('value');
 		if (toggleValue=="WYSIWYG"){
-			toWYSIWYG(id);
+			toWYSIWYG(id, isFullscreen);
 			updateDisabledWysiwyg(id,"WYSIWYG");
 			}
 		else if(toggleValue=="CODE"){
-			toCodeArea(id);
+			toCodeArea(id, isFullscreen);
 			updateDisabledWysiwyg(id,"CODE");
+			dojo.query(".wysiwyg-container").style({display:'none'});
 			}
 		else if(toggleValue=="PLAIN"){
 			toPlainView(id);
 			updateDisabledWysiwyg(id,"PLAIN");
+			dojo.query(".wysiwyg-container").style({display:'block'});
 			}
 	}
 
@@ -321,22 +323,23 @@ var cmsfile=null;
 		document.getElementById(id).value = document.getElementById(id).value.trim();
 	}
 
-	function toCodeArea(id) {
+	function toCodeArea(id, isFullscreen = "false") {
 		if(enabledWYSIWYG[id]){
 			disableWYSIWYG(id);
+			dojo.query('#'+id).style({display:''});
 		}
 		if(!enabledCodeAreas[id]) {
-			aceAreaById(id);
+			aceAreaById(id, isFullscreen);
 		}
 	}
 
-	function toWYSIWYG(id) {
+	function toWYSIWYG(id, isFullscreen = "false") {
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.switch.wysiwyg")) %>'))
         {
 			if(enabledCodeAreas[id]){
 				aceRemover(id);
 			}
-			enableWYSIWYG(id, false);
+			enableWYSIWYG(id, false, isFullscreen);
 		}
 	}
 
@@ -412,7 +415,7 @@ var cmsfile=null;
         }
   }
 
-	function enableWYSIWYG(textAreaId, confirmChange) {
+	function enableWYSIWYG(textAreaId, confirmChange, isFullscreen = "false") {
 		if (!isWYSIWYGEnabled(textAreaId)) {
 			//Confirming the change
 			if (confirmChange == true &&
@@ -460,11 +463,16 @@ var cmsfile=null;
 			  // Init instance callback to fix the pointer-events issue.
 			  tinyConf = {
 			    ...tinyConf,
-                height: 332,
+                height: isFullscreen === "true" ? "100%" : 332,
 			    init_instance_callback: (editor) => {
 			      let dropZone = document.getElementById(
 			        `dot-asset-drop-zone-${textAreaId}`
 			      );
+
+									if(isFullscreen === "true"){
+
+										editor.editorContainer.style.height = "100%";
+									}
 
                   if (dropZone) {
                     editor.on("dragover", function (e) {
@@ -492,7 +500,7 @@ var cmsfile=null;
                         return false;
                     });
                   }
-			      
+
                 }
 			  };
 			  var wellTinyMCE = new tinymce.Editor(
@@ -508,7 +516,7 @@ var cmsfile=null;
 			} catch (e) {
 			  showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
 			}
-
+		dojo.query(".wysiwyg-container").style({display:'block'});
 			enabledWYSIWYG[textAreaId] = true;
 		}
 	}
@@ -701,22 +709,27 @@ var cmsfile=null;
 		});
 	}
 
-	function aceAreaById(textarea){
+	function aceAreaById(textarea, isFullscreen = "false"){
 		document.getElementById(textarea).style.display = "none";
 		var id = document.getElementById(textarea).value.trim();
 		aceEditors[textarea] = document.getElementById(textarea+'aceEditor');
 		var aceClass = aceEditors[textarea].className;
 		aceEditors[textarea].className = aceClass.replace('classAce', 'aceText');
 		aceEditors[textarea].style.display = 'block';
+		aceEditors[textarea].style.height = '100%';
 		aceEditors[textarea] = ace.edit(textarea+'aceEditor');
 	    aceEditors[textarea].setTheme("ace/theme/textmate");
 	    aceEditors[textarea].getSession().setMode("ace/mode/velocity");
 	    aceEditors[textarea].getSession().setUseWrapMode(true);
 	    aceEditors[textarea].setValue(id);
+
+		if(isFullscreen === "false") {
 	    aceEditors[textarea].setOptions({
 		    minLines: 25,
 		    maxLines:40
 	    });
+		}
+
 
     	aceEditors[textarea].clearSelection();
 		enabledCodeAreas[textarea]=true;
@@ -738,7 +751,7 @@ var cmsfile=null;
 	}
 
 	function addFileImageCallback(file) {
-		var pattern = "<%=Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}")%>";
+		var pattern = "<%=Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "/dA/{path}{name}?language_id={languageId}")%>";
         var assetURI = replaceUrlPattern(pattern, file);
         insertAssetInEditor([file])
 	}
@@ -931,7 +944,7 @@ var cmsfile=null;
 
 	var textEditor = new Array();
 	var aceTextId = new Array();
-	function aceText(textarea,keyValue,isWidget) {
+	function aceText(textarea,keyValue,isWidget, isFullscreen = "false") {
 		var elementWysiwyg = document.getElementById("disabledWysiwyg");
 		var wysiwygValue = elementWysiwyg.value;
 		var result = "";
@@ -939,15 +952,18 @@ var cmsfile=null;
 		var wysiwygValueArray = wysiwygValue.split(",");
 		if(document.getElementById('aceTextArea_'+textarea).style.position != 'relative'){
 			document.getElementById('aceTextArea_'+textarea).style.position='relative';
+			document.getElementById('aceTextArea_'+textarea).style.height='100%'; // This gets overrided when setting the min and max lines
 			textEditor[textarea] = ace.edit('aceTextArea_'+textarea);
 			//textEditor[textarea].setTheme("ace/theme/textmate");
 			textEditor[textarea].getSession().setMode("ace/mode/"+keyValue);
 			textEditor[textarea].getSession().setUseWrapMode(true);
 
-			textEditor[textarea].setOptions({
-		            minLines: 15,
-		            maxLines:35
-		        });
+				if(isFullscreen !== "true"){
+					textEditor[textarea].setOptions({
+										minLines: 15,
+										maxLines:35
+								});
+				}
 
 			 aceTextId[textarea] = textarea;
 		}

@@ -1,5 +1,4 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -17,9 +16,8 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { RippleModule } from 'primeng/ripple';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
-export default {
-    title: 'DotCMS/Forms    ',
-
+const meta: Meta = {
+    title: 'DotCMS/Forms',
     parameters: {
         docs: {
             description: {
@@ -86,7 +84,10 @@ export default {
         },
         width: '200'
     }
-} as Meta;
+};
+export default meta;
+
+type Story = StoryObj;
 
 const TextInputDefault = `
 <div class="p-field">
@@ -226,18 +227,19 @@ const InputTemplate = (input) => {
     `;
 };
 
-export const Vertical: Story = (props) => {
-    return {
-        template: InputTemplate(TextInputDefault),
-        props
-    };
-};
-
-Vertical.parameters = {
-    docs: {
-        source: {
-            code: InputTemplate(TextInputDefault)
+export const Vertical: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: InputTemplate(TextInputDefault)
+            }
         }
+    },
+    render: (props) => {
+        return {
+            template: InputTemplate(TextInputDefault),
+            props
+        };
     }
 };
 
@@ -313,34 +315,35 @@ const HorizontalTemplate = `
 </div>
 `;
 
-export const Horizontal: Story = (props) => {
-    return {
-        template: HorizontalTemplate,
-        props
-    };
-};
-
-Horizontal.parameters = {
-    layout: 'centered',
-    docs: {
-        source: {
-            code: HorizontalTemplate
+export const Horizontal: Story = {
+    parameters: {
+        layout: 'centered',
+        docs: {
+            source: {
+                code: HorizontalTemplate
+            }
         }
+    },
+    render: (props) => {
+        return {
+            template: HorizontalTemplate,
+            props
+        };
     }
 };
 
-export const FloatingLabel: Story = (props) => {
-    return {
-        template: InputTemplate(TextInputFloatingLabel),
-        props
-    };
-};
-
-FloatingLabel.parameters = {
-    template: {},
-    docs: {
-        source: {
-            code: InputTemplate(TextInputFloatingLabel)
+export const FloatingLabel: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: InputTemplate(TextInputFloatingLabel)
+            }
         }
+    },
+    render: (props) => {
+        return {
+            template: TextInputFloatingLabel,
+            props
+        };
     }
 };

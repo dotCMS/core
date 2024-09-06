@@ -89,30 +89,11 @@
         }
 
         .p-checkbox {
-            @extend #field-panel-item-checkbox;
+            margin-right: $spacing-1;
         }
 
         .p-multiselect-close {
-            margin-left: $spacing-1;
-            width: $spacing-5;
-            height: $spacing-5;
-            color: $color-palette-primary;
-            border: 0 none;
-            background: transparent;
-            border-radius: 50%;
-
-            &:hover {
-                background-color: $color-palette-primary-op-10;
-            }
-
-            &:active {
-                background-color: $color-palette-primary-op-20;
-            }
-
-            &:focus {
-                background-color: transparent;
-                @include field-focus;
-            }
+            @extend #field-panel-icon-close;
         }
     }
 
@@ -138,16 +119,10 @@
             &.p-highlight.p-disabled {
                 @extend #field-panel-item-disabled;
             }
-
-            .p-checkbox {
-                @extend #field-panel-item-checkbox;
-            }
         }
 
         .p-multiselect-empty-message {
-            padding: $spacing-2 $spacing-2;
-            color: $black;
-            background: transparent;
+            @extend #field-panel-empty-message;
         }
     }
 }

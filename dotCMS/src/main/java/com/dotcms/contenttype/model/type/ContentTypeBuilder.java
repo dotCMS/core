@@ -5,7 +5,14 @@ import com.dotmarketing.util.Logger;
 
 import java.lang.reflect.Method;
 import java.util.Date;
+import java.util.Map;
 
+/**
+ * This Builder interface allows dotCMS to create immutable Content Type objects.
+ *
+ * @author Will Ezell
+ * @since Jul 7th, 2016
+ */
 public interface ContentTypeBuilder {
 
 	// Generated builders will implement this method
@@ -24,8 +31,6 @@ public interface ContentTypeBuilder {
 	ContentTypeBuilder description(String variable);
 
 	ContentTypeBuilder defaultType(boolean variable);
-
-	//ContentTypeBuilder storageType(StorageType variable);
 
 	ContentTypeBuilder detailPage(String variable);
 
@@ -69,11 +74,21 @@ public interface ContentTypeBuilder {
 	 */
 	ContentTypeBuilder markedForDeletion(boolean variable);
 
-	public static ContentTypeBuilder builder(ContentType type) throws DotStateException {
+	/**
+	 * Allows a Content Type to store additional or temporary information associated to a given
+	 * Content Type. Developers can save any attributes they deem necessary.
+	 *
+	 * @param metadata A Map of key/value pairs to be stored as metadata
+	 *
+	 * @return The current {@link ContentTypeBuilder} instance.
+	 */
+	ContentTypeBuilder metadata(final Map<String, ? extends Object> metadata);
+
+	static ContentTypeBuilder builder(ContentType type) throws DotStateException {
 		return builder(type.getClass()).from(type);
 	}
 
-	public static ContentTypeBuilder builder(final Class clazz) throws DotStateException {
+	static ContentTypeBuilder builder(final Class clazz) throws DotStateException {
 		try {
 			String canon = clazz.getCanonicalName();
 			Class tryMe = clazz;
@@ -96,7 +111,7 @@ public interface ContentTypeBuilder {
 
 	}
 
-	public static ContentType instanceOf(Class clazz) {
+	static ContentType instanceOf(Class clazz) {
 		ContentTypeBuilder builder = builder(clazz);
 		builder.name("INSTANCETYPE");
 		builder.variable("INSTANCETYPE");

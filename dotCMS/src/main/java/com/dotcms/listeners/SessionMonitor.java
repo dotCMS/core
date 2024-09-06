@@ -96,10 +96,12 @@ public class SessionMonitor implements ServletRequestListener,
     
     public void sessionCreated(final HttpSessionEvent event) {
         // Not implemented
+        Logger.debug(this, "Session created");
     }
     
     public void sessionDestroyed(final HttpSessionEvent event) {
 
+        Logger.debug(this, "Session destroyed");
         final String userId = (String) event.getSession().getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
         if (userId != null) {
 

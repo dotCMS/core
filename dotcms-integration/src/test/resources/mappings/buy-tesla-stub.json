@@ -1,0 +1,48 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/c",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matches": ".*\"content\":\"Should I buy a Tesla electric vehicle.*"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "chatcmpl-9Gw6oD0Cr5QTyGKN8Sij8nDw15P12",
+      "object": "chat.completion",
+      "created": 1713823646,
+      "model": "gpt-3.5-turbo-16k-0613",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Whether you should buy a Tesla car depends on various factors such as your budget, driving needs, environmental concerns, and personal preferences. Tesla vehicles are known for their cutting-edge technology, impressive performance, and eco-friendliness due to their electric powertrains. If you prioritize sustainability and enjoy the idea of driving an electric vehicle with advanced features like autopilot capabilities and over-the-air software updates, a Tesla could be a compelling option. Additionally, consider factors like charging infrastructure availability in your area, maintenance costs, and your overall satisfaction with the Tesla ownership experience. It's recommended to thoroughly research and test drive different models to determine if a Tesla aligns with your lifestyle and priorities."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 44,
+        "completion_tokens": 242,
+        "total_tokens": 286
+      },
+      "system_fingerprint": null,
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  }
+}

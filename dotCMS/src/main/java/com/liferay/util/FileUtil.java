@@ -24,12 +24,21 @@ package com.liferay.util;
 
 import com.dotcms.publisher.pusher.PushUtils;
 import java.util.Comparator;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+
+import javax.servlet.ServletContext;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -56,16 +65,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import javax.servlet.ServletContext;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
 /**
  * <a href="FileUtil.java.html"><b><i>View Source</i></b></a>
@@ -76,11 +82,11 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
  */
 @SuppressWarnings("javasecurity:S2083")
 public class FileUtil {
-	//http://jira.dotmarketing.net/browse/DOTCMS-2178
-	static final long KILO_BYTE = 1024L;
-	static final long MEGA_BYTE = 1024L *1024;
-	static final long GIGA_BYTE = 1024L *1024*1024;
-	static final long TERA_BYTE = 1024L *1024*1024*1024;
+
+	public static final long KILO_BYTE = 1024L;
+	public static final long MEGA_BYTE = 1024L *1024;
+	public static final long GIGA_BYTE = 1024L *1024*1024;
+	public static final long TERA_BYTE = 1024L *1024*1024*1024;
 	private static final String CONTENT_VERSION_HARD_LINK = "CONTENT_VERSION_HARD_LINK";
 	private static final String CONTENT_ALLOW_ZERO_LENGTH_FILES = "CONTENT_ALLOW_ZERO_LENGTH_FILES";
 
@@ -101,9 +107,6 @@ public class FileUtil {
 
 		copyDirectory(new File(sourceDirName), new File(destinationDirName), true, filter);
 	}
-
-
-
 
 	public static void copyDirectory(File source, File destination, boolean hardLinks) throws IOException {
 		copyDirectory(source,destination,hardLinks,null);
@@ -191,6 +194,11 @@ public class FileUtil {
 
 	public static void copyFile(File source, File destination, boolean hardLinks, boolean validateEmptyFile) throws IOException {
 
+
+		if(source==null || destination==null){
+			// Prevent NPE, throw expected error
+			throw new IOException("Source or Destination file is null ");
+		}
 
 		if (!source.exists()) {
 			throw new IOException("Source file does not exist " + source);
@@ -452,7 +460,7 @@ public class FileUtil {
 			return ret;
 		}
 
-		String base = Config.CONTEXT_PATH;
+		String base = Config.CONTEXT.getRealPath("/");
 		base = (base.lastIndexOf(File.separatorChar) == base.length()-1) ? base.substring(0, base.lastIndexOf(File.separatorChar)) : base;
 		relativePath = relativePath.replace('/', File.separatorChar);
 
@@ -495,6 +503,23 @@ public class FileUtil {
 
 	public static String[] listDirs(String fileName) {
 		return listDirs(new File(fileName));
+	}
+
+	/**
+	 * Iterates the directory by using the pathFilter and passing the paths found to the pathConsumer
+	 * @param directoryPath String base directory path
+	 * @param pathFilter Predicate<Path> filter to be applied to the paths found
+	 * @param pathConsumer Consumer<Path> consumer to be applied to the paths found
+	 * @throws IOException
+	 */
+	public static void walk(final String directoryPath,
+							final Predicate<Path> pathFilter,
+							final Consumer<Path> pathConsumer) throws IOException {
+
+		try (Stream<Path> walk = Files.walk(Paths.get(directoryPath))) {
+
+			walk.filter(pathFilter).forEach(pathConsumer);
+		}
 	}
 
 	public static String[] listDirs(File file) {
@@ -1081,8 +1106,5 @@ public class FileUtil {
 		return PushUtils.tarGzipDirectory(directory);
 
 	}
-
-
-
 
 }

@@ -140,8 +140,7 @@ export class DotFormComponent {
                                 !this.status.dotValid ||
                                 this.uploadFileInProgress ||
                                 this.processingSubmit
-                            }
-                        >
+                            }>
                             {this.submitLabel}
                         </button>
                     </div>

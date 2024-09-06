@@ -1,15 +1,17 @@
-<div class="card" *ngFor="let item of items">
-    <div class="image skeleton"></div>
-    <div class="body">
-        <div class="data-wrapper">
-            <div>
-                <span class="title skeleton"></span>
-                <span class="subtitle skeleton"></span>
-            </div>
-            <div class="state">
-                <span class="circle skeleton"></span>
-                <span class="meta skeleton"></span>
+@for (item of items; track item) {
+    <div class="card">
+        <div class="image skeleton"></div>
+        <div class="body">
+            <div class="data-wrapper">
+                <div>
+                    <span class="title skeleton"></span>
+                    <span class="subtitle skeleton"></span>
+                </div>
+                <div class="state">
+                    <span class="circle skeleton"></span>
+                    <span class="meta skeleton"></span>
+                </div>
             </div>
         </div>
     </div>
-</div>
+}

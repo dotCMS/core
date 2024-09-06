@@ -1,5 +1,15 @@
 package com.dotcms.rest.api.v1.maintenance;
 
+import com.dotcms.business.SystemTable;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.util.ReleaseInfo;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
@@ -19,14 +29,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.NoCache;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.util.ReleaseInfo;
-import io.vavr.control.Try;
 
 
 @Path("/v1/jvm")
@@ -58,6 +60,7 @@ public class JVMInfoResource implements Serializable {
         resultMap.put("host", getHostInfo());
         resultMap.put("jvm", getJVMInfo());
         resultMap.put("environment", getEnvironmentalVars());
+        resultMap.put("configOverrides", getDBOverrides());
         resultMap.put("system", getSystemProps());
 
         
@@ -91,7 +94,6 @@ public class JVMInfoResource implements Serializable {
         resultMap.put("cpuLoadJava",  percentage.format(os.getProcessCpuLoad()));
         resultMap.put("arch",  os.getArch());
         resultMap.put("cpuLoadSystem",  percentage.format(os.getSystemCpuLoad()));
-        resultMap.put("systemLoadAverage",  percentage.format(os.getSystemLoadAverage()));
         resultMap.put("os",  os.getName());
         resultMap.put("osVersion",  os.getVersion());
         resultMap.put("hostname", Try.of(()->InetAddress.getLocalHost().getHostName()).getOrElse("ukn") );
@@ -101,7 +103,22 @@ public class JVMInfoResource implements Serializable {
         
     }
     
-    
+
+    private Map<String, Object> getDBOverrides(){
+        final Map<String,Object> resultMap=new LinkedHashMap<>();
+
+        SystemTable systemTable =APILocator.getSystemAPI().getSystemTable();
+
+        resultMap.putAll(systemTable.all());
+
+
+
+
+        return resultMap;
+    }
+
+
+
     private Map<String,Object> getJVMInfo(){
         
         final Map<String,Object> resultMap=new LinkedHashMap<>();
@@ -154,10 +171,9 @@ public class JVMInfoResource implements Serializable {
         
         final Map<String,Object> resultMap=new LinkedHashMap<>();
         resultMap.put("version",ReleaseInfo.getVersion());
-        resultMap.put("buildDate",UtilMethods.dateToHTMLDate (ReleaseInfo.getBuildDate()));
+        resultMap.put("buildDate",UtilMethods.htmlDateToHTMLTime (ReleaseInfo.getBuildDate()));
 
         resultMap.put("name",ReleaseInfo.getName());
-        resultMap.put("codeName",ReleaseInfo.getCodeName());
         resultMap.put("buildNumber",ReleaseInfo.getBuildNumber());
         resultMap.put("serverInfo",ReleaseInfo.getServerInfo());
         resultMap.put("releaseInfo",ReleaseInfo.getReleaseInfo());

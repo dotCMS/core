@@ -1,0 +1,117 @@
+<form (ngSubmit)="generate.emit()" [formGroup]="form">
+    <p-accordion
+        [multiple]="false"
+        [activeIndex]="0"
+        collapseIcon="pi pi-angle-up"
+        expandIcon="pi pi-angle-down">
+        <p-accordionTab
+            [disabled]="isLoading"
+            [header]="'block-editor.extension.ai-image.settings' | dm"
+            iconPos="end">
+            <div class="field ai-image-prompt__input">
+                <label dotFieldRequired>{{ 'block-editor.extension.ai-image.input' | dm }}</label>
+                <div>
+                    <p-radioButton formControlName="type" inputId="optionOne" value="input" />
+                    <label class="ml-2" for="optionOne">
+                        {{ 'block-editor.extension.ai-image.custom.prompt' | dm }}
+                    </label>
+                </div>
+                <span>{{ 'block-editor.extension.ai-image.custom.prompt.desc' | dm }}</span>
+                @if (hasEditorContent) {
+                    <div data-testid="ai-existing-content">
+                        <p-radioButton formControlName="type" inputId="option2" value="auto" />
+                        <label class="ml-2" for="option2">
+                            {{ 'block-editor.extension.ai-image.existing.content' | dm }}
+                        </label>
+                    </div>
+                    <span>{{ 'block-editor.extension.ai-image.existing.content.desc' | dm }}</span>
+                }
+            </div>
+            <div class="field ai-image-prompt__orientation">
+                <label dotFieldRequired for="orientation">
+                    {{ 'block-editor.extension.ai-image.orientation' | dm }}
+                </label>
+                <p-dropdown
+                    [options]="orientationOptions"
+                    formControlName="size"
+                    inputId="orientation"
+                    styleClass="w-full" />
+            </div>
+        </p-accordionTab>
+        <p-accordionTab
+            [disabled]="isLoading"
+            [header]="'block-editor.extension.ai-image.prompt' | dm"
+            iconPos="end">
+            <div
+                [class.ai-image-prompt__text--generated]="aiProcessedPrompt && !isLoading"
+                class="ai-image-prompt__text">
+                <div class="field">
+                    @if (requiredPrompt) {
+                        <label data-testid="prompt-label" dotFieldRequired for="prompt">
+                            {{ promptLabel | dm }}
+                        </label>
+                    } @else {
+                        <label data-testid="prompt-label" for="prompt">
+                            {{ promptLabel | dm }}
+                        </label>
+                    }
+                    <textarea
+                        [placeholder]="promptTextAreaPlaceholder | dm"
+                        class="w-full ai-image-prompt__textarea"
+                        id="prompt"
+                        cols="30"
+                        formControlName="text"
+                        pInputTextarea
+                        rows="11"></textarea>
+                </div>
+                @if (aiProcessedPrompt && !isLoading) {
+                    <div class="field">
+                        <label class="ai-image-prompt__rewritten-label" for="prompt-rewritten">
+                            {{ 'block-editor.extension.ai-image.rewritten' | dm }}
+                        </label>
+                        <div class="ai-image-prompt__text-wrapper">
+                            <textarea
+                                [value]="aiProcessedPrompt"
+                                class="w-full ai-image-prompt__rewritten-textarea"
+                                id="prompt-rewritten"
+                                cols="30"
+                                pInputTextarea
+                                readonly
+                                rows="11"></textarea>
+                            <dot-copy-button
+                                [copy]="aiProcessedPrompt"
+                                customClass="p-button-rounded" />
+                        </div>
+                    </div>
+                }
+            </div>
+        </p-accordionTab>
+    </p-accordion>
+    <button
+        [disabled]="form.invalid || isLoading"
+        [label]="submitButtonLabel | dm"
+        class="align-self-end p-button-outlined"
+        pButton
+        type="submit">
+        @if (!isLoading) {
+            <svg
+                fill="none"
+                height="22"
+                viewBox="0 0 18 22"
+                width="18"
+                xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M9.48043 13.2597L5.40457 14.5046C5.29885 14.5368 5.20602 14.6037 5.13999 14.6952C5.07396 14.7868 5.03828 14.8981 5.03828 15.0124C5.03828 15.1268 5.07396 15.238 5.13999 15.3296C5.20602 15.4211 5.29885 15.488 5.40457 15.5203L9.48043 16.7651L10.6799 20.9949C10.711 21.1046 10.7755 21.2009 10.8637 21.2695C10.9519 21.338 11.0591 21.375 11.1693 21.375C11.2795 21.375 11.3867 21.338 11.4749 21.2695C11.5631 21.2009 11.6276 21.1046 11.6586 20.9949L12.8586 16.7651L16.9345 15.5203C17.0402 15.488 17.133 15.4211 17.1991 15.3296C17.2651 15.238 17.3008 15.1268 17.3008 15.0124C17.3008 14.8981 17.2651 14.7868 17.1991 14.6952C17.133 14.6037 17.0402 14.5368 16.9345 14.5046L12.8586 13.2597L11.6586 9.02989C11.6276 8.92018 11.5631 8.82385 11.4749 8.75533C11.3867 8.6868 11.2795 8.64977 11.1693 8.64977C11.0591 8.64977 10.9519 8.6868 10.8637 8.75533C10.7754 8.82385 10.711 8.92018 10.6799 9.02989L9.48043 13.2597Z"
+                    fill="#426BF0" />
+                <path
+                    d="M14.4668 5.66732L16.6779 4.99138C16.7836 4.95914 16.8764 4.89224 16.9424 4.8007C17.0084 4.70916 17.0441 4.59789 17.0441 4.48355C17.0441 4.3692 17.0084 4.25794 16.9424 4.16639C16.8764 4.07485 16.7836 4.00795 16.6779 3.97571L14.4668 3.3003L13.8154 1.00513C13.7844 0.895414 13.7199 0.799084 13.6317 0.730559C13.5435 0.662034 13.4362 0.625 13.3261 0.625C13.2159 0.625 13.1086 0.662034 13.0204 0.730559C12.9322 0.799084 12.8677 0.895414 12.8367 1.00513L12.1859 3.3003L9.9743 3.97571C9.86858 4.00794 9.77575 4.07483 9.70972 4.16638C9.6437 4.25792 9.60801 4.3692 9.60801 4.48355C9.60801 4.5979 9.6437 4.70917 9.70972 4.80072C9.77575 4.89226 9.86858 4.95915 9.9743 4.99138L12.1859 5.66732L12.8367 7.96196C12.8677 8.07168 12.9322 8.16801 13.0204 8.23653C13.1086 8.30506 13.2159 8.34209 13.3261 8.34209C13.4362 8.34209 13.5435 8.30506 13.6317 8.23653C13.7199 8.16801 13.7844 8.07168 13.8154 7.96196L14.4668 5.66732Z"
+                    fill="#426BF0" />
+                <path
+                    d="M3.24925 6.62823L1.01825 7.57256C0.924385 7.61231 0.844063 7.68016 0.787521 7.76748C0.730978 7.8548 0.700781 7.95761 0.700781 8.06282C0.700781 8.16802 0.730978 8.27083 0.787521 8.35815C0.844063 8.44547 0.924385 8.51333 1.01825 8.55307L3.24925 9.4974L4.1592 11.8127C4.19751 11.9101 4.2629 11.9935 4.34704 12.0522C4.43118 12.1109 4.53026 12.1422 4.63163 12.1422C4.733 12.1422 4.83208 12.1109 4.91622 12.0522C5.00036 11.9935 5.06576 11.9101 5.10406 11.8127L6.01402 9.4974L8.24456 8.55307C8.33841 8.51332 8.41873 8.44546 8.47527 8.35815C8.53181 8.27083 8.56201 8.16801 8.56201 8.06282C8.56201 7.95762 8.53181 7.8548 8.47527 7.76749C8.41873 7.68017 8.33841 7.61231 8.24456 7.57256L6.01402 6.62823L5.10406 4.31342C5.06576 4.21602 5.00036 4.13266 4.91622 4.07399C4.83208 4.01531 4.733 3.98397 4.63163 3.98397C4.53026 3.98397 4.43118 4.01531 4.34704 4.07399C4.2629 4.13266 4.19751 4.21602 4.1592 4.31342L3.24925 6.62823Z"
+                    fill="#426BF0" />
+            </svg>
+        } @else {
+            <i class="pi pi-spin pi-spinner"></i>
+        }
+    </button>
+</form>

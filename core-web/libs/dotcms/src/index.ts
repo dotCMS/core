@@ -1,17 +1,17 @@
 import { DotApiAuthorization } from './lib/api/DotApiAuthorization';
 import { DotApiConfiguration } from './lib/api/DotApiConfiguration';
+import { DotApiContent } from './lib/api/DotApiContent';
+import { DotApiContentType } from './lib/api/DotApiContentType';
 import { DotApiElasticSearch } from './lib/api/DotApiElasticSearch';
 import { DotApiEvent } from './lib/api/DotApiEvent';
+import { DotApiForm } from './lib/api/DotApiForm';
 import { DotApiLanguage } from './lib/api/DotApiLanguage';
 import { DotApiNavigation } from './lib/api/DotApiNavigation';
 import { DotApiPage } from './lib/api/DotApiPage';
 import { DotApiSite } from './lib/api/DotApiSite';
 import { DotApiWidget } from './lib/api/DotApiWidget';
-import { DotCMSHttpClient } from './lib/utils/DotCMSHttpClient';
 import { DotCMSConfigurationParams, DotCMSFormConfig } from './lib/models';
-import { DotApiContent } from './lib/api/DotApiContent';
-import { DotApiContentType } from './lib/api/DotApiContentType';
-import { DotApiForm } from './lib/api/DotApiForm';
+import { DotCMSHttpClient } from './lib/utils/DotCMSHttpClient';
 
 export interface DotCMSApp {
     auth: DotApiAuthorization;

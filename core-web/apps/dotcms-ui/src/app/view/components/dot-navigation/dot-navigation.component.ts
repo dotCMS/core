@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { Component, HostBinding, HostListener, OnInit } from '@angular/core';
 
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { DotMenu, DotMenuItem } from '@models/navigation';
+import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 import { DotNavigationService } from './services/dot-navigation.service';
 
@@ -17,7 +17,7 @@ export class DotNavigationComponent implements OnInit {
     menu$: Observable<DotMenu[]>;
 
     @HostBinding('style.overflow-y') get overFlow() {
-        return this.dotNavigationService.collapsed$.getValue() ? '' : 'scroll';
+        return this.dotNavigationService.collapsed$.getValue() ? '' : 'auto';
     }
 
     constructor(

@@ -32,7 +32,7 @@ dot-material-icon-picker {
         }
 
         .dot-material-icon__preview {
-            font-size: $font-size-xl;
+            font-size: $font-size-lg;
         }
 
         .dot-material-icon__button {
@@ -43,15 +43,17 @@ dot-material-icon-picker {
             justify-content: center;
 
             mwc-icon {
-                font-size: $font-size-xl;
+                font-size: $font-size-lg;
                 width: $field-height-md;
             }
         }
 
         .dot-material-icon__list {
             border: 0;
-            box-shadow: 0 5px 5px -3px $color-palette-black-op-20,
-                0 8px 10px 1px $color-palette-black-op-10, 0 3px 14px 2px $color-palette-black-op-10;
+            box-shadow:
+                0 5px 5px -3px $color-palette-black-op-20,
+                0 8px 10px 1px $color-palette-black-op-10,
+                0 3px 14px 2px $color-palette-black-op-10;
             color: $black;
 
             li:hover {
@@ -67,7 +69,7 @@ dot-material-icon-picker {
             }
 
             mwc-icon {
-                font-size: $font-size-lg;
+                font-size: $font-size-lmd;
             }
         }
     }

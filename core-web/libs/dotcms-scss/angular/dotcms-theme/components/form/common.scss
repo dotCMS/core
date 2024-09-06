@@ -1,6 +1,8 @@
 @use "variables" as *;
 @import "mixins";
 
+$select-border-size: 2px;
+
 #form-field-base {
     background-color: $white;
     height: $field-height-md;
@@ -75,7 +77,6 @@
 }
 
 #field-trigger-icon {
-    padding: $spacing-1 $spacing-1;
     font-size: $icon-sm;
 }
 
@@ -84,7 +85,7 @@
     color: $black;
     border: 0 none;
     border-radius: $border-radius-md;
-    box-shadow: $md-shadow-6;
+    box-shadow: $shadow-l;
     padding: $spacing-1;
     margin-top: $spacing-1;
 }
@@ -97,6 +98,13 @@
     margin: 0;
     border-top-right-radius: $border-radius-xs;
     border-top-left-radius: $border-radius-xs;
+    gap: $spacing-1;
+}
+
+#field-panel-empty-message {
+    padding: $spacing-2 $spacing-2;
+    color: $black;
+    background: transparent;
 }
 
 #field-panel-filter {
@@ -109,6 +117,33 @@
     color: $color-palette-primary;
 }
 
+#field-panel-icon-close {
+    color: $color-palette-primary;
+    width: $spacing-6;
+    height: $spacing-6;
+    border-radius: $border-radius-circular;
+    border: 0 none;
+    background: transparent;
+    transition:
+        color 0.15s,
+        box-shadow 0.15s;
+
+    &:hover {
+        background-color: $color-palette-primary-op-10;
+    }
+
+    &:active {
+        background-color: $color-palette-primary-op-20;
+    }
+
+    &:focus {
+        outline: 0 none;
+        outline-offset: 0;
+        background-color: transparent;
+        @include field-focus;
+    }
+}
+
 #field-panel-items {
     padding: 0;
 }
@@ -119,6 +154,7 @@
     padding: 0 $spacing-2;
     color: $black;
     height: $field-height-md;
+    gap: $spacing-1;
 }
 
 #field-panel-item-highlight {
@@ -134,15 +170,6 @@
     cursor: initial;
 }
 
-#field-panel-item-checkbox {
-    margin-right: $spacing-1;
-
-    .p-checkbox-box {
-        border-radius: $border-radius-sm;
-        border: 2px solid $color-palette-gray-400;
-    }
-}
-
 #field-chip {
     height: 1.5rem;
     padding: $spacing-1;
@@ -154,4 +181,13 @@
     align-items: center;
     justify-content: center;
     gap: $spacing-0;
+}
+
+#field-chip-token {
+    padding: 0.375rem $spacing-2;
+    margin-right: $spacing-1;
+    background: $bg-highlight;
+    color: $color-palette-primary;
+    border-radius: $border-radius-xs;
+    font-size: $font-size-sm;
 }

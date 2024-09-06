@@ -1,17 +1,13 @@
 package com.dotcms.cli.command.files;
 
-import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.cli.common.AuthenticationMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
-import com.dotcms.model.config.Workspace;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
 
@@ -19,6 +15,9 @@ public abstract class AbstractFilesCommand {
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
+
+    @CommandLine.Mixin
+    protected AuthenticationMixin authenticationMixin;
 
     @CommandLine.Mixin
     protected HelpOptionMixin helpOption;
@@ -52,47 +51,5 @@ public abstract class AbstractFilesCommand {
 
         return patternsSet;
     }
-
-    /**
-     * Returns the directory where workspace files are stored. If the directory does not exist,
-     * it will be created.
-     *
-     * @param workspacePath the file object representing a directory within the workspace
-     * @return the workspace files directory
-     * @throws IOException if an I/O error occurs while creating the directory
-     */
-    protected File getOrCreateWorkspaceFilesDirectory(final Path workspacePath) throws IOException {
-        final Workspace workspace = workspaceManager.getOrCreate(workspacePath);
-        return workspace.files().toFile();
-    }
-
-    /**
-     * Returns the directory where the workspace is.
-     *
-     * @param fromFile the file object representing a directory within the workspace, or null if not specified
-     * @return the workspace files directory
-     * @throws IllegalArgumentException if a valid workspace is not found from the provided path
-     */
-    protected File getWorkspaceDirectory(final File fromFile) {
-
-        String fromPath;
-        if (fromFile == null) {
-            // If the workspace is not specified, we use the current directory
-            fromPath = Paths.get("").toAbsolutePath().normalize().toString();
-        } else {
-            fromPath = fromFile.getAbsolutePath();
-        }
-
-        final Path path = Paths.get(fromPath);
-        final var workspace = workspaceManager.findWorkspace(path);
-
-        if (workspace.isPresent()) {
-            return workspace.get().root().toFile();
-        }
-
-        throw new IllegalArgumentException(
-                String.format("No valid workspace found at path: [%s]", fromPath));
-    }
-
 
 }

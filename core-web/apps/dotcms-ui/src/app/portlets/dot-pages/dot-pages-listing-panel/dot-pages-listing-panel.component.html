@@ -1,11 +1,12 @@
 <ng-container *ngIf="vm$ | async as vm">
     <p-contextMenu
-        #cm
-        [model]="vm.pages.menuActions"
         (onHide)="closedActionsContextMenu()"
-    ></p-contextMenu>
+        [model]="vm.pages.menuActions"
+        #cm></p-contextMenu>
     <p-table
-        #table
+        (onLazyLoad)="loadPagesLazy($event)"
+        (onRowSelect)="onRowSelect($event)"
+        (onPage)="pageChange.emit()"
         [contextMenu]="cm"
         [value]="vm.pages.items"
         [totalRecords]="vm.pages.total"
@@ -17,84 +18,79 @@
         [showPageLinks]="false"
         [showCurrentPageReport]="true"
         [showFirstLastIcon]="false"
-        (onLazyLoad)="loadPagesLazy($event)"
-        (onRowSelect)="onRowSelect($event)"
-        (onPage)="pageChange.emit()"
+        #table
         selectionMode="single"
-        sortField="modDate"
-    >
+        sortField="modDate">
         <ng-template pTemplate="caption">
             <div class="flex justify-content-between dot-pages-listing-header">
                 <div class="dot-pages-listing-header__inputs">
                     <div class="p-input-icon-right">
                         <input
-                            class="dot-pages-listing-header__filter-input"
-                            #input
                             [placeholder]="'Type-To-Search' | dm"
                             [value]="vm.keywordValue"
-                            (input)="filterData($event.target.value)"
+                            class="dot-pages-listing-header__filter-input"
+                            #input
+                            (input)="filterData(input.value)"
                             data-testid="dot-pages-listing-header__keyword-input"
                             type="text"
                             pInputText
-                            dotAutofocus
-                        />
+                            dotAutofocus />
                         <i
-                            class="pi pi-times"
                             *ngIf="input.value.length"
                             (click)="filterData('')"
+                            class="pi pi-times"
                             data-testid="dot-pages-listing-header__keyword-input-clear"
-                            role="button"
-                        ></i>
+                            role="button"></i>
                     </div>
                     <p-dropdown
-                        class="dot-pages-listing-header__language-input"
+                        (onChange)="setPagesLanguage($event.value)"
                         [(ngModel)]="vm.languageIdValue"
                         [options]="vm.languageOptions"
-                        (onChange)="setPagesLanguage($event.value)"
-                    ></p-dropdown>
+                        class="dot-pages-listing-header__language-input"></p-dropdown>
                     <p-checkbox
+                        (onChange)="setPagesArchived($event.checked)"
                         [(ngModel)]="vm.showArchivedValue"
                         [binary]="true"
-                        [label]="'Show-Archived' | dm"
-                        (onChange)="setPagesArchived($event.checked)"
-                    ></p-checkbox>
+                        [label]="'Show-Archived' | dm"></p-checkbox>
                 </div>
                 <button
-                    class="p-button-primary"
-                    [label]="'create.page' | dm"
                     (click)="store.getPageTypes()"
+                    [label]="'create.page' | dm"
+                    class="p-button-primary"
                     data-testid="createPageButton"
-                    pButton
-                ></button>
+                    pButton></button>
             </div>
         </ng-template>
         <ng-template pTemplate="header">
             <tr *ngIf="vm.pages.items.length !== 0">
                 <th pSortableColumn="title" style="width: 25%">
-                    {{ 'title' | dm }}<p-sortIcon field="title"></p-sortIcon>
+                    {{ 'title' | dm }}
+                    <p-sortIcon field="title"></p-sortIcon>
                 </th>
                 <th pSortableColumn="urlMap" style="width: 20%">
-                    {{ 'url' | dm }}<p-sortIcon field="urlMap"></p-sortIcon>
+                    {{ 'url' | dm }}
+                    <p-sortIcon field="urlMap"></p-sortIcon>
                 </th>
                 <th pSortableColumn="contentType" style="width: 12%">
-                    {{ 'type' | dm }}<p-sortIcon field="contentType"></p-sortIcon>
+                    {{ 'type' | dm }}
+                    <p-sortIcon field="contentType"></p-sortIcon>
                 </th>
                 <th pSortableColumn="languageId" style="width: 12%">
-                    {{ 'status' | dm }}<p-sortIcon field="languageId"></p-sortIcon>
+                    {{ 'status' | dm }}
+                    <p-sortIcon field="languageId"></p-sortIcon>
                 </th>
                 <th style="width: 12%">
                     {{ 'Last-Editor' | dm }}
                 </th>
                 <th pSortableColumn="modDate" style="width: 14%">
-                    {{ 'Last-Edited' | dm }}<p-sortIcon field="modDate"></p-sortIcon>
+                    {{ 'Last-Edited' | dm }}
+                    <p-sortIcon field="modDate"></p-sortIcon>
                 </th>
                 <th style="width: 5%"></th>
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-rowData let-rowIndex="rowIndex">
             <tr
-                id="tableRow-{{ rowIndex }}"
-                [pSelectableRow]="rowData"
                 (contextmenu)="
                     showActionsContextMenu({
                         event: $event,
@@ -102,9 +98,9 @@
                         item: rowData
                     })
                 "
-                style="height: 47px"
-                pContextMenuRow
-            >
+                [pSelectableRow]="rowData"
+                id="tableRow-{{ rowIndex }}"
+                pContextMenuRow>
                 <td>{{ rowData['title'] }}</td>
                 <td [pTooltip]="rowData['urlMap'] || rowData['url']" tooltipPosition="bottom">
                     {{ rowData['urlMap'] || rowData['url'] }}
@@ -117,14 +113,12 @@
                         <dot-state-icon
                             [labels]="dotStateLabels"
                             [state]="rowData"
-                            size="14px"
-                        ></dot-state-icon>
-                        <dot-badge bordered="{true}">{{
-                            vm.languageLabels[rowData['languageId']]
-                        }}</dot-badge>
+                            size="14px"></dot-state-icon>
+                        <dot-badge bordered="{true}">
+                            {{ vm.languageLabels[rowData['languageId']] }}
+                        </dot-badge>
                         <dot-contentlet-lock-icon
-                            locked="{{ rowData['locked'] }}"
-                        ></dot-contentlet-lock-icon>
+                            locked="{{ rowData['locked'] }}"></dot-contentlet-lock-icon>
                     </div>
                 </td>
                 <td>
@@ -133,7 +127,6 @@
                 <td>{{ rowData['modDate'] | dotRelativeDate }}</td>
                 <td>
                     <p-button
-                        id="pageActionButton-{{ rowIndex }}"
                         (click)="
                             showActionsMenu.emit({
                                 event: $event,
@@ -141,15 +134,15 @@
                                 item: rowData
                             })
                         "
+                        id="pageActionButton-{{ rowIndex }}"
                         icon="pi pi-ellipsis-v"
-                        styleClass="p-button-rounded p-button-sm p-button-text"
-                    ></p-button>
+                        styleClass="p-button-rounded p-button-sm p-button-text"></p-button>
                 </td>
             </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
             <tr>
-                <td class="dot-pages-listing__empty-content" [attr.colspan]="7">
+                <td [attr.colspan]="7" class="dot-pages-listing__empty-content">
                     {{ 'favoritePage.listing.empty.table' | dm }}
                 </td>
             </tr>

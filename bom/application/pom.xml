@@ -5,25 +5,27 @@
     <parent>
         <artifactId>dotcms-bom</artifactId>
         <groupId>com.dotcms</groupId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}${sha1}${changelist}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
-    <artifactId>application-bom</artifactId>
+    <artifactId>dotcms-application-bom</artifactId>
 
     <properties>
+        <maven.deploy.skip>false</maven.deploy.skip>
+        <flatten.mode>bom</flatten.mode>
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
-        <twelvemonkeys.version>3.7.1</twelvemonkeys.version>
+        <twelvemonkeys.version>3.10.1</twelvemonkeys.version>
         <swagger.version>2.2.0</swagger.version>
-        <bytebuddy.version>1.12.6</bytebuddy.version>
-        <batik.version>1.16</batik.version>
+        <bytebuddy.version>1.14.15</bytebuddy.version>
+        <batik.version>1.17</batik.version>
         <bouncy-castle.version>1.70</bouncy-castle.version>
-        <awaitility.version>3.0.0</awaitility.version>
+        <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
-        <glowroot.version>0.13.1</glowroot.version>
-        <jackson.version>2.13.4</jackson.version>
-        <jersey.version>2.22.1</jersey.version>
-        <dotcms.tika-api.version>1.0.0-SNAPSHOT</dotcms.tika-api.version>
+        <glowroot.version>0.14.1</glowroot.version>
+        <jackson.version>2.17.2</jackson.version>
+        <jersey.version>2.28</jersey.version>
+        <graalvm.version>22.3.3</graalvm.version>
     </properties>
     <dependencyManagement>
 
@@ -56,12 +58,12 @@
             <dependency>
                 <groupId>com.dotcms.core.plugins</groupId>
                 <artifactId>com.dotcms.tika-api</artifactId>
-                <version>${dotcms.tika-api.version}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.dotcms</groupId>
-                <artifactId>logging-bom</artifactId>
+                <artifactId>dotcms-logging-bom</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -82,11 +84,6 @@
               *****************************
             -->
 
-            <dependency>
-                <groupId>com.dotcms</groupId>
-                <artifactId>ant-tooling</artifactId>
-                <version>1.3.2</version>
-            </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.aopalliance-repackaged</artifactId>
@@ -151,6 +148,11 @@
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.commons-httpclient</artifactId>
                 <version>3.1_3</version>
+            </dependency>
+            <dependency>
+                <groupId>com.dotcms.lib</groupId>
+                <artifactId>dot.commons-io</artifactId>
+                <version>2.0.1_2</version>
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
@@ -419,11 +421,6 @@
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.stxx</artifactId>
-                <version>1.3_3</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.Tidy</artifactId>
                 <version>ukv_2</version>
             </dependency>
@@ -522,7 +519,7 @@
                 <!-- replaces dot.quartz-all -->
                 <groupId>org.quartz-scheduler</groupId>
                 <artifactId>quartz</artifactId>
-                <version>1.8.6</version>
+                <version>2.3.2</version>
             </dependency>
 
 
@@ -650,7 +647,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.21</version>
+                <version>1.26.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -670,7 +667,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-pool2</artifactId>
-                <version>2.9.0</version>
+                <version>2.11.1</version>
             </dependency>
 
 
@@ -724,7 +721,7 @@
             <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java</artifactId>
-                <version>13.0</version>
+                <version>17.5</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -735,13 +732,15 @@
             <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java-extended-scalars</artifactId>
-                <version>1.0.1</version>
+                <version>17.1</version>
             </dependency>
             <dependency>
                 <groupId>com.graphql-java-kickstart</groupId>
                 <artifactId>graphql-java-servlet</artifactId>
-                <version>9.1.0</version>
+                <version>13.0.1</version>
             </dependency>
+
+
 
             <!--
              *****************************
@@ -757,7 +756,7 @@
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>42.5.1</version>
+                <version>42.7.2</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.checkerframework</groupId>
@@ -769,7 +768,7 @@
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
-                <version>2.1.214</version>
+                <version>2.2.224</version>
             </dependency>
 
             <dependency>
@@ -794,7 +793,7 @@
            <dependency>
                 <groupId>dnsjava</groupId>
                 <artifactId>dnsjava</artifactId>
-                <version>2.1.8</version>
+                <version>3.5.3</version>
             </dependency>
 
             <dependency>
@@ -842,13 +841,19 @@
             <dependency>
                 <groupId>redis.clients</groupId>
                 <artifactId>jedis</artifactId>
-                <version>2.7.3</version>
+                <version>4.4.6</version>
             </dependency>
 
             <dependency>
                 <groupId>org.elasticsearch.client</groupId>
                 <artifactId>elasticsearch-rest-high-level-client</artifactId>
                 <version>7.10.2</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.yaml</groupId>
+                        <artifactId>snakeyaml</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
 
@@ -908,7 +913,7 @@
             <dependency>
                 <groupId>com.thoughtworks.xstream</groupId>
                 <artifactId>xstream</artifactId>
-                <version>1.4.17</version>
+                <version>1.4.20</version>
                 <exclusions>
                     <exclusion>
                         <groupId>xpp3</groupId>
@@ -922,31 +927,9 @@
             <dependency>
                 <groupId>org.glassfish.jaxb</groupId>
                 <artifactId>jaxb-runtime</artifactId>
-                <version>2.3.8</version>
+                <version>2.3.9</version>
             </dependency>
 
-
-            <!-- Castor:  Replace with JaxB -->
-            <dependency>
-                <groupId>org.codehaus.castor</groupId>
-                <artifactId>castor-core</artifactId>
-                <version>1.4.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.castor</groupId>
-                <artifactId>castor-xml</artifactId>
-                <version>1.4.1</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.inject</groupId>
-                        <artifactId>javax.inject</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.springframework</groupId>
-                        <artifactId>spring-context</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
 
 
             <!--
@@ -982,6 +965,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>2.2</version>
+            </dependency>
+
+            <dependency>
                 <groupId>com.github.jonpeterson</groupId>
                 <artifactId>jackson-module-model-versioning</artifactId>
                 <version>1.2.2</version>
@@ -992,6 +981,18 @@
                 <groupId>com.jayway.jsonpath</groupId>
                 <artifactId>json-path</artifactId>
                 <version>2.4.0</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>net.minidev</groupId>
+                        <artifactId>json-smart</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>2.4.9</version>
             </dependency>
 
 
@@ -1131,7 +1132,7 @@
             <dependency>
                 <groupId>javax.ws.rs</groupId>
                 <artifactId>javax.ws.rs-api</artifactId>
-                <version>2.0.1</version>
+                <version>2.1.1</version>
             </dependency>
 
             <!-- Rest API Documentation -->
@@ -1146,6 +1147,51 @@
                 <version>${swagger.version}</version>
             </dependency>
 
+            <!-- CDI Support -->
+
+            <dependency>
+                <groupId>org.jboss.weld.servlet</groupId>
+                <artifactId>weld-servlet-shaded</artifactId>
+                <version>3.1.9.Final</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.hk2.external</groupId>
+                <artifactId>bean-validator</artifactId>
+                <version>2.5.0-b06</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.hk2</groupId>
+                <artifactId>hk2-locator</artifactId>
+                <version>2.5.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-junit5</artifactId>
+                <version>2.0.2.Final</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.weld.se</groupId>
+                        <artifactId>weld-se-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.weld.se</groupId>
+                <artifactId>weld-se-shaded</artifactId>
+                <version>3.1.9.Final</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>io.smallrye</groupId>
+                <artifactId>jandex</artifactId>
+                <version>3.0.5</version>
+            </dependency>
 
             <!--
                  *****************************
@@ -1401,7 +1447,7 @@
                  Is only needed during compilation and no runtime component required -->
                 <groupId>org.immutables</groupId>
                 <artifactId>value</artifactId>
-                <version>2.9.0</version>
+                <version>${immutables.version}</version>
             </dependency>
 
             <!--
@@ -1434,17 +1480,24 @@
             <!-- Apache Tomcat -->
 
             <dependency>
+                <groupId>com.dotcms</groupId>
+                <artifactId>tomcat-redis-session-manager</artifactId>
+                <version>1.3</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
                 <!-- Jasper is the Tomcat JSP Engine -->
                 <groupId>org.apache.tomcat</groupId>
                 <artifactId>tomcat-jasper</artifactId>
-                <version>9.0.73</version>
+                <version>${tomcat.version}</version>
             </dependency>
 
 
             <dependency>
                 <groupId>org.apache.tomcat</groupId>
                 <artifactId>tomcat-jdbc</artifactId>
-                <version>9.0.73</version>
+                <version>${tomcat.version}</version>
             </dependency>
 
 
@@ -1466,6 +1519,28 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.13.2</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.hamcrest</groupId>
+                        <artifactId>hamcrest-core</artifactId>
+                        <!-- Replaced with hamcrest org.hamcrest:hamcrest:2.1 -->
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>5.10.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>5.10.2</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
@@ -1473,36 +1548,23 @@
                 <artifactId>awaitility</artifactId>
                 <version>${awaitility.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.awaitility</groupId>
-                <artifactId>awaitility-proxy</artifactId>
-                <version>${awaitility.version}</version>
-            </dependency>
+
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>2.28.2</version>
+                <version>5.12.0</version>
             </dependency>
             <dependency>
-                <!-- Deprecated need to remove replace with core mockito-->
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito2</artifactId>
-                <version>2.0.9</version>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>5.12.0</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
-                <!-- Deprecated need to remove replace with core mockito-->
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-junit4</artifactId>
-                <version>2.0.9</version>
-            </dependency>
-
-            <dependency>
-                <!-- Hamcrest is a framework for writing matcher objects allowing 'match' rules to be defined declaratively. -->
                 <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest-all</artifactId>
-                <version>1.3</version>
-                <!-- often just used for testing we have in production code
-                Note, scope does not pass down to child, must declare scope explicitly-->
+                <artifactId>hamcrest</artifactId>
+                <version>2.1</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
@@ -1511,6 +1573,50 @@
                 <version>2.6</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.wiremock</groupId>
+                <artifactId>wiremock</artifactId>
+                <version>3.5.3</version>
+            </dependency>
+
+            <!-- Graalvm Js Engine -->
+            <dependency>
+                <groupId>org.graalvm.sdk</groupId>
+                <artifactId>graal-sdk</artifactId>
+                <version>${graalvm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.graalvm.js</groupId>
+                <artifactId>js</artifactId>
+                <version>${graalvm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.graalvm.js</groupId>
+                <artifactId>js-scriptengine</artifactId>
+                <version>${graalvm.version}</version>
+            </dependency>
+
+            <!-- AI -->
+            <dependency>
+                <groupId>com.knuddels</groupId>
+                <artifactId>jtokkit</artifactId>
+                <version>0.6.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.pgvector</groupId>
+                <artifactId>pgvector</artifactId>
+                <version>0.1.3</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.checkerframework</groupId>
+                        <artifactId>checker-qual</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.postgresql</groupId>
+                        <artifactId>postgresql</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>

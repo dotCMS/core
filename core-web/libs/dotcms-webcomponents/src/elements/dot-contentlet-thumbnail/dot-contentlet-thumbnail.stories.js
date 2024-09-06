@@ -5,7 +5,7 @@ export default {
     parameters: {
         docs: {
             page: readme
-        },
+        }
     },
     args: {
         height: '200px',
@@ -19,11 +19,10 @@ export default {
             hasTitleImage: 'true',
             title: 'Hello World',
             mediaType: 'image/jpg',
-            contentTypeIcon: 'jpgIcon',
+            contentTypeIcon: 'jpgIcon'
         }
     }
 };
-
 
 const Template = (args) => {
     const fileIcon = document.createElement('dot-contentlet-thumbnail');

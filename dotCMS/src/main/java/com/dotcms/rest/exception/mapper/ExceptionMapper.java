@@ -1,15 +1,9 @@
 package com.dotcms.rest.exception.mapper;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.Provider;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-import static com.dotcms.util.CollectionsUtils.map;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.Provider;
 
 /**
  * Generic exception handler to avoid cyclical issues with the stack trace mapping

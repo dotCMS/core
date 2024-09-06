@@ -1,0 +1,24 @@
+# Properties from these files are imported with a prefix "ext."
+# The pom.xml files need to be configured to use these properties.  This prevents issues
+# with the way that properties are immutable in maven
+# updatable properties are called out in the code like the following
+# <postman.collections>${ext.postman.collections}</postman.collections>
+# the property can be set on the command line with -Dpostman.collections
+# essentially these files set the default valuue for the property
+
+#postman.collections=GraphQLTests
+
+# Following docker-maven-plugin external configuration https://dmp.fabric8.io/#external-configuration
+# we have a separate prefix to allow properties configuration that is specific for each module and context
+# the prefix format for the dotcms instance is docker.${module.name}.${context.name}.dotcms
+# envRun as in the documentation then overrides the environment variables for that instance at runtime only
+#
+# To set the DOT_FEATURE_FLAG_SEO_IMPROVEMENTS variable when running the following command
+# ./mvnw -pl :dotcms-core -Pdocker-start -Dcontext.name=ext-master_latest_SNAPSHOT -Ddotcms.image.name=dotcms/dotcms:master_latest_SNAPSHOT
+# use
+#docker.dotcms-core.ext-master_latest_SNAPSHOT.dotcms.envRun.DOT_FEATURE_FLAG_SEO_IMPROVEMENTS=true
+#
+# If not context is set then the "default" context is used
+# To set the DOT_FEATURE_FLAG_SEO_IMPROVEMENTS variable when running the following command
+# ./mvnw -pl :dotcms-core -Pdocker-start
+#docker.dotcms-core.default.dotcms.envRun.DOT_FEATURE_FLAG_SEO_IMPROVEMENTS=true

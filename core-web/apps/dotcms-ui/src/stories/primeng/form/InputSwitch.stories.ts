@@ -1,11 +1,14 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { InputSwitch, InputSwitchModule } from 'primeng/inputswitch';
 
-export default {
+const InputSwitchTemplate = `<p-inputSwitch [(ngModel)]="data" />`;
+
+type Args = InputSwitch & { data: boolean };
+
+const meta: Meta<Args> = {
     title: 'PrimeNG/Form/InputSwitch',
     component: InputSwitch,
     parameters: {
@@ -13,6 +16,9 @@ export default {
             description: {
                 component:
                     'InputSwitch is used to select a boolean value.: https://primeng.org/inputswitch'
+            },
+            source: {
+                code: InputSwitchTemplate
             }
         }
     },
@@ -22,34 +28,21 @@ export default {
         })
     ],
     args: {
-        checked: false
-    }
-} as Meta;
-
-const InputSwitchTemplate = `<p-inputSwitch [(ngModel)]="checked"></p-inputSwitch>`;
-
-const Template: Story<InputSwitch> = (props: InputSwitch) => {
-    const template = InputSwitchTemplate;
-
-    return {
-        props,
-        template
-    };
-};
-
-export const Basic: Story = Template.bind({});
-
-Basic.argTypes = {
-    checked: {
-        name: 'checked',
-        description: 'Boolean'
-    }
-};
-
-Basic.parameters = {
-    docs: {
-        source: {
-            code: InputSwitchTemplate
+        data: false
+    },
+    argTypes: {
+        data: {
+            name: 'checked',
+            description: 'Boolean'
         }
-    }
+    },
+    render: (args) => ({
+        props: args,
+        template: InputSwitchTemplate
+    })
 };
+export default meta;
+
+type Story = StoryObj<Args>;
+
+export const Basic: Story = {};

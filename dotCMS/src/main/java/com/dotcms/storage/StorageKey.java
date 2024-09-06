@@ -1,6 +1,7 @@
 package com.dotcms.storage;
 
 import java.io.Serializable;
+import java.util.Objects;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -59,6 +60,26 @@ public class StorageKey implements Serializable {
                "StorageKey{ storage=`%s`,\n group=`%s`, \n path=`%s` \n }",
                storage, group, path
         );
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        StorageKey that = (StorageKey) o;
+
+        if (!Objects.equals(path, that.path)) return false;
+        if (!Objects.equals(group, that.group)) return false;
+        return Objects.equals(storage, that.storage);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = path != null ? path.hashCode() : 0;
+        result = 31 * result + (group != null ? group.hashCode() : 0);
+        result = 31 * result + (storage != null ? storage.hashCode() : 0);
+        return result;
     }
 
     /**

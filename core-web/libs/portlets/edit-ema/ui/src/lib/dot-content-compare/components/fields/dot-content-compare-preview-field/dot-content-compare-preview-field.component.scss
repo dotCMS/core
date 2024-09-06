@@ -1,0 +1,10 @@
+@use "variables" as *;
+:host {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+    a {
+        margin-top: $spacing-2;
+    }
+}

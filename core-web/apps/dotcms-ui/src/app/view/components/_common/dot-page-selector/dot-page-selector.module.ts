@@ -5,8 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 
 import { DotPageSelectorComponent } from './dot-page-selector.component';
@@ -19,7 +18,7 @@ import { DotPageSelectorService } from './service/dot-page-selector.service';
         FormsModule,
         DotDirectivesModule,
         DotFieldHelperModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe
     ],
     declarations: [DotPageSelectorComponent],

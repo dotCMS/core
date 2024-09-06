@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 form {
-    margin: $spacing-4;
+    margin: 0 $spacing-3;
 
     .p-input-icon-right {
         width: 100%;
@@ -12,7 +12,7 @@ form {
         }
 
         button,
-        .pending-label {
+        .pi-spinner {
             position: absolute;
             right: 0;
             top: 0;
@@ -21,10 +21,57 @@ form {
             background: none;
         }
 
-        .pending-label {
-            height: fit-content;
-            font-size: $font-size-xs;
+        .pi-spinner {
             margin-right: $spacing-1;
+            color: $color-palette-primary;
         }
     }
+}
+
+.ai-content__generated-text-wrapper {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    .p-inputtext.p-inputtextarea {
+        padding: $spacing-1 $spacing-6 $spacing-1 $spacing-4;
+        min-height: $spacing-8;
+    }
+
+    dot-copy-button {
+        position: absolute;
+        right: $spacing-3;
+        bottom: $spacing-1;
+    }
+}
+
+.ai-content__generated-text,
+dot-empty-container {
+    height: 22rem;
+}
+
+.ai-content__pagination {
+    display: flex;
+    justify-content: center;
+    gap: $spacing-1;
+    align-items: center;
+}
+
+.ai-content__input-text {
+    height: $spacing-8;
+}
+
+.ai-content__buttons {
+    display: flex;
+    gap: $spacing-1;
+}
+
+.ai-content__form {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-3;
+}
+
+dot-empty-container ::ng-deep .message__icon {
+    color: $red;
 }

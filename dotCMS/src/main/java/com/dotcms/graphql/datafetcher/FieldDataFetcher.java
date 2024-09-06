@@ -24,6 +24,7 @@ public class FieldDataFetcher implements DataFetcher<Object> {
             final Contentlet contentlet = environment.getSource();
             final String var = environment.getField().getName();
 
+            Logger.debug(this, ()-> "Fetching field for contentlet: " + contentlet.getIdentifier() + " field: " + var);
             Object fieldValue = contentlet.get(var);
 
             final Field field = contentlet.getContentType().fieldMap().get(var);

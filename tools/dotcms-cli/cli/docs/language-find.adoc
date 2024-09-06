@@ -1,0 +1,61 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Language Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= language-find(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+language-find - *Get all existing languages*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*language find* [*-h*] [*--dotcms-url*=_<remoteURL>_] [*-tk*=_<token>_]
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+ This command will list all the languages available in the system.
+ The output will be a list of languages with their respective information.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
+
+*-h*, *--help*::
+  Display this help message.
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

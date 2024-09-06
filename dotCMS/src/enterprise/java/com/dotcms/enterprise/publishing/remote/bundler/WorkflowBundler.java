@@ -45,21 +45,18 @@
 
 package com.dotcms.enterprise.publishing.remote.bundler;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.WorkflowWrapper;
-import com.dotcms.publishing.*;
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.IPublisher;
+import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -68,14 +65,28 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
-import static com.dotcms.util.CollectionsUtils.map;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This class is in charge of generates the xml with the workflow information in order to be PP.
@@ -235,7 +246,7 @@ public class WorkflowBundler implements IBundler {
 			// action by step
 			for (final WorkflowAction workflowAction : stepActions) {
 
-				actionStepsListMap.add(map(ACTION_ID, workflowAction.getId(),
+				actionStepsListMap.add(Map.of(ACTION_ID, workflowAction.getId(),
 						STEP_ID, workflowStep.getId(),
 						ACTION_ORDER, String.valueOf(actionOrder++)));
 			}

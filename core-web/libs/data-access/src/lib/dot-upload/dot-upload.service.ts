@@ -71,7 +71,11 @@ export class DotUploadService {
                 }
             })
             .catch((request) => {
-                throw this.errorHandler(JSON.parse(request.response), request.status);
+                const { message, response } = request;
+                const parsedResponse =
+                    typeof response === 'string' ? JSON.parse(response) : response;
+
+                throw this.errorHandler(parsedResponse || { message }, request.status);
             });
     }
 

@@ -12,18 +12,17 @@
 }
 
 .p-tabview-title {
-    text-transform: uppercase;
+    text-transform: capitalize;
 }
 
 .p-tabview .p-tabview-nav li .p-tabview-nav-link {
     border: none;
-    border-width: 0 0 0 0;
-    border-color: transparent transparent transparent transparent;
     border-radius: 0;
     color: $black;
     padding: 1.2rem $spacing-4 1.35rem;
     transition: none;
-    margin: 0 0 0 0;
+    margin: 0;
+    white-space: nowrap;
 }
 
 .p-tabview .p-tabview-nav li .p-tabview-nav-link:not(.p-disabled):focus {
@@ -32,7 +31,7 @@
     box-shadow: none;
 }
 
-.p-tabview .p-tabview-nav li:not(.p-highlight):not(.p-disabled):hover .p-tabview-nav-link {
+.p-tabview .p-tabview-nav li:not(.p-highlight):not(.p-disabled) .p-tabview-nav-link:hover {
     background: $bg-hover;
     color: $text-color-hover;
     background-clip: padding-box;
@@ -74,7 +73,17 @@
     display: none;
 }
 
-.p-tabview-nav-next,
-.p-tabview-nav-prev {
+.p-tabview-nav-next.p-link,
+.p-tabview-nav-prev.p-link {
     width: 40px;
+}
+
+.p-tabview-nav-next.p-link {
+    border-left: none;
+    background: $color-palette-gray-200;
+}
+
+.p-tabview-nav-prev.p-link {
+    border-right: none;
+    background: $color-palette-gray-200;
 }

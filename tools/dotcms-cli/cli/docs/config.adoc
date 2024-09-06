@@ -1,0 +1,63 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Config Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= config(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+config - *Configure Create Update and Activate dotCMS instances.*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*config* [*-dh*]
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+ Creates the essential configuration file for the dotCMS CLI.
+ The file is created in the user's home directory.
+ The file is named [dot-service.yml]
+ This file is used to store the configuration of the dotCMS instances.
+ An instance can also be activated by using the command instance -act <instanceName>
+ Typically an instance holds the API URL, the user and the profile-name.
+ Running this command is mandatory before using the CLI.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*-d*, *--delete*::
+  
+
+*-h*, *--help*::
+  Display this help message.
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

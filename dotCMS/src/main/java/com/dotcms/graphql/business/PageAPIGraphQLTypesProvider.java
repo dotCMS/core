@@ -6,7 +6,6 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLInt;
-import static graphql.Scalars.GraphQLLong;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLList.list;
 
@@ -43,6 +42,7 @@ import com.dotmarketing.portlets.templates.design.bean.Sidebar;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
+import com.dotmarketing.util.Logger;
 import eu.bitwalker.useragentutils.Browser;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
+import static graphql.scalars.ExtendedScalars.GraphQLLong;
 
 /**
  * Singleton class that provides all the {@link GraphQLType}s needed for the Page API
@@ -88,11 +89,13 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
     @Override
     public Collection<? extends GraphQLType> getTypes() {
+
+        Logger.debug(this, ()-> "Creating Page API GraphQL Types");
         typesMap.clear();
 
         // Page type
         final Map<String, TypeFetcher> pageFields = new HashMap<>(ContentFields.getContentFields());
-        pageFields.put("__icon__", new TypeFetcher(GraphQLString));
+        pageFields.put("icon", new TypeFetcher(GraphQLString));
         pageFields.put("cachettl", new TypeFetcher(GraphQLString));
         pageFields.put("canEdit", new TypeFetcher(GraphQLBoolean));
         pageFields.put("canLock", new TypeFetcher(GraphQLBoolean));
@@ -571,6 +574,8 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 PropertyDataFetcher.fetching(ContainerStructure::getContainerId)));
         containerStructureFields.put("code", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching(ContainerStructure::getCode)));
+        containerStructureFields.put("contentTypeVar", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching(ContainerStructure::getContentTypeVar)));
 
         typesMap.put(DOT_PAGE_CONTAINER_STRUCTURE, TypeUtil.createObjectType(DOT_PAGE_CONTAINER_STRUCTURE,
                 containerStructureFields));

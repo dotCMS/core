@@ -13,6 +13,7 @@ export class CwFilter {
                 xform = Number.parseFloat(fieldValue);
             }
         }
+
         return xform;
     }
 
@@ -20,17 +21,17 @@ export class CwFilter {
         let isFiltered = false;
         if (filterText !== '') {
             let filter = filterText;
-            let re = /([\w]*[:][\w]*)/g;
-            let matches = filterText.match(re);
+            const re = /([\w]*[:][\w]*)/g;
+            const matches = filterText.match(re);
             if (matches != null) {
                 // 'match' is now an array of the field filters.
                 matches.forEach((match) => {
-                    let terms = match.split(':');
+                    const terms = match.split(':');
                     filter = filter.replace(match, '');
                     if (!isFiltered) {
-                        let fieldName = terms[0];
-                        let fieldValue = terms[1];
-                        let hasField =
+                        const fieldName = terms[0];
+                        const fieldValue = terms[1];
+                        const hasField =
                             obj.hasOwnProperty(fieldName) || obj.hasOwnProperty('_' + fieldName);
                         if (hasField) {
                             try {
@@ -48,11 +49,13 @@ export class CwFilter {
                     }
                 });
             }
+
             filter = filter.trim().toLowerCase();
             if (filter) {
                 isFiltered = isFiltered || !(obj.name.toLowerCase().indexOf(filter) >= 0);
             }
         }
+
         return isFiltered;
     }
 }

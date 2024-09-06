@@ -25,14 +25,36 @@ public class WorkspaceMixin {
     File file;
 
     /**
+     * Checks if the workspace was explicitly set. This helps me to tell if the user specified a workspace or not.
+     * Or we're simply using the current working directory. This is important information for the WorkspaceManager.
+     * @return true if the workspace was explicitly set.
+     */
+    boolean userProvided(){
+        return null != file;
+    }
+
+    /**
      * if no workspace is provided, it will return current working directory.
      * @return the workspace path.
      */
-     public Path workspace(){
+     Path workspace(){
         if(null == file){
+            // if no workspace is provided, it will return current working directory.
             return Path.of("");
         }
+        //a workspace was provided, so we need to return the path to it.
         return file.toPath();
+    }
+
+   /**
+    * This method is used to create the WorkspaceParams object.
+    * @return the WorkspaceParams object.
+    */
+    WorkspaceParams workspaceParams(){
+        return WorkspaceParams.builder()
+                .workspacePath(workspace())
+                .userProvided(userProvided())
+                .build();
     }
 
 

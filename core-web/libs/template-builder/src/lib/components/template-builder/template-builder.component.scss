@@ -36,7 +36,7 @@
 // Class added by the gridstack library when the widget is being dragged
 dotcms-add-widget.ui-draggable-dragging {
     transform: rotate(-3.66deg);
-    box-shadow: $md-shadow-6;
+    box-shadow: $shadow-l;
 }
 
 dotcms-add-widget {
@@ -51,6 +51,10 @@ p-toolbar {
 
 dotcms-template-builder-section {
     margin-top: $spacing-3;
+}
+
+dotcms-template-builder-section:last-child {
+    margin-bottom: $spacing-3;
 }
 
 p-divider {
@@ -78,6 +82,7 @@ p-divider {
     padding: 0 $spacing-5 5rem $spacing-5;
     height: 100%;
     overflow-y: auto;
+    transition: opacity 0.3s ease-in-out;
 }
 
 .grid-stack-item {

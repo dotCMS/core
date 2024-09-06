@@ -1,11 +1,13 @@
+import { createFakeEvent } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { CUSTOM_ELEMENTS_SCHEMA, Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, SelectItem } from 'primeng/api';
@@ -16,18 +18,16 @@ import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
 import { Table, TableModule } from 'primeng/table';
 
-import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
-import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { ActionHeaderModule } from '@components/dot-listing-data-table/action-header/action-header.module';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
-import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import {
     DotAlertConfirmService,
+    DotFormatDateService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
     DotMessageService,
+    DotRouterService,
     DotSiteBrowserService,
     PaginatorService
 } from '@dotcms/data-access';
@@ -46,17 +46,20 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE, DotActionBulkResult, DotContainer } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotActionMenuButtonComponent,
+    DotAddToBundleComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
     DotFormatDateServiceMock,
+    DotMessageDisplayServiceMock,
     MockDotMessageService,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 
 import { ContainerListRoutingModule } from './container-list-routing.module';
@@ -273,7 +276,10 @@ describe('ContainerListComponent', () => {
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock }
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                }
             ],
             imports: [
                 ActionHeaderModule,
@@ -281,8 +287,8 @@ describe('ContainerListComponent', () => {
                 CheckboxModule,
                 CommonModule,
                 ContainerListRoutingModule,
-                DotActionMenuButtonModule,
-                DotAddToBundleModule,
+                DotActionMenuButtonComponent,
+                DotAddToBundleComponent,
                 DotEmptyStateModule,
                 DotMessagePipe,
                 DotPortletBaseModule,
@@ -290,7 +296,8 @@ describe('ContainerListComponent', () => {
                 HttpClientTestingModule,
                 InputTextModule,
                 MenuModule,
-                TableModule
+                TableModule,
+                BrowserAnimationsModule
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
@@ -335,8 +342,12 @@ describe('ContainerListComponent', () => {
                 By.css('[data-testid="123Published"]')
             ).componentInstance;
             const actions = setBasicOptions();
-            actions.push({ menuItem: { label: 'Unpublish', command: jasmine.any(Function) } });
-            actions.push({ menuItem: { label: 'Duplicate', command: jasmine.any(Function) } });
+            actions.push({
+                menuItem: { label: 'Unpublish', command: jasmine.any(Function) }
+            });
+            actions.push({
+                menuItem: { label: 'Duplicate', command: jasmine.any(Function) }
+            });
 
             expect(publishContainer.actions).toEqual(actions);
         });
@@ -346,8 +357,12 @@ describe('ContainerListComponent', () => {
                 By.css('[data-testid="123Unpublish"]')
             ).componentInstance;
             const actions = setBasicOptions();
-            actions.push({ menuItem: { label: 'Archive', command: jasmine.any(Function) } });
-            actions.push({ menuItem: { label: 'Duplicate', command: jasmine.any(Function) } });
+            actions.push({
+                menuItem: { label: 'Archive', command: jasmine.any(Function) }
+            });
+            actions.push({
+                menuItem: { label: 'Duplicate', command: jasmine.any(Function) }
+            });
 
             expect(unPublishContainer.actions).toEqual(actions);
         });
@@ -376,7 +391,9 @@ describe('ContainerListComponent', () => {
 
             comp.handleActionMenuOpen({} as MouseEvent);
 
-            menu.model[0].command();
+            menu.model[0].command({
+                originalEvent: createFakeEvent('click')
+            });
             expect(dotContainersService.publish).toHaveBeenCalledWith([
                 '123Published',
                 '123Unpublish',
@@ -452,7 +469,7 @@ describe('ContainerListComponent', () => {
         it('should fetch containers with offset when table emits onPage', () => {
             spyOn(store, 'getContainersWithOffset');
 
-            table.onPage.emit({ first: 10 });
+            table.onPage.emit({ first: 10, rows: 10 });
 
             expect(store.getContainersWithOffset).toHaveBeenCalledWith(10);
         });

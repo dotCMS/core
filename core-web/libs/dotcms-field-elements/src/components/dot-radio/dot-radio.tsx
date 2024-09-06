@@ -121,8 +121,7 @@ export class DotRadioComponent {
                         class="dot-radio__items"
                         aria-describedby={getHintId(this.hint)}
                         tabIndex={this.hint ? 0 : null}
-                        role="radiogroup"
-                    >
+                        role="radiogroup">
                         {this._options.map((item: DotOption) => {
                             item.value = item.value.trim();
                             return (

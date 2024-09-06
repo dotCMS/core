@@ -24,7 +24,7 @@ export interface DotPageRenderParameters {
     canCreateTemplate: boolean;
     viewAs: DotEditPageViewAs;
     numberContents: number;
-    urlContentMap?: { title: string };
+    urlContentMap?: { title: string; contentType?: string; inode?: string };
 }
 
 export class DotPageRender {

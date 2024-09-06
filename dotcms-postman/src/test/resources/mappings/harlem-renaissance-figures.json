@@ -1,0 +1,41 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/c",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matches": ".*\"content\":\"Who are some influential figures in the Harlem Renaissance.*"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "cmpl-12",
+      "object": "text_completion",
+      "created": 1699999999,
+      "model": "gpt-3.5-turbo-16k",
+      "choices": [
+        {
+          "text": "The Harlem Renaissance was a cultural movement in the early 20th century that celebrated African American culture through literature, art, and music. Influential figures include Langston Hughes, Zora Neale Hurston, Claude McKay, Duke Ellington, and Louis Armstrong. Their work helped to reshape the cultural and artistic landscape of the United States.",
+          "index": 0,
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 12,
+        "completion_tokens": 52,
+        "total_tokens": 64
+      }
+    }
+  }
+}

@@ -2,7 +2,7 @@ import { Observable, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { FormControl, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Params } from '@angular/router';
 
 import { SelectItem } from 'primeng/api';
@@ -10,9 +10,7 @@ import { SelectItem } from 'primeng/api';
 import { take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotRouterService, DotFormatDateService } from '@dotcms/data-access';
 import { DotLoginParams, HttpCode, LoggerService, LoginService, User } from '@dotcms/dotcms-js';
 import { DotLoginInformation, DotLoginLanguage } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
@@ -110,15 +108,6 @@ export class DotLoginComponent implements OnInit, OnDestroy {
         this.dotMessageService.init({ language: lang });
     }
 
-    /**
-     * Display the forgot password card
-     *
-     * @memberof DotLoginComponent
-     */
-    goToForgotPassword(): void {
-        this.dotRouterService.goToForgotPassword();
-    }
-
     private setInitialFormValues(loginInfo: DotLoginInformation): void {
         this.loginForm
             .get('language')
@@ -127,11 +116,15 @@ export class DotLoginComponent implements OnInit, OnDestroy {
         this.setInitialMessage(loginInfo);
     }
 
+    private isEmail(potentialEmail: string): boolean {
+        return !!new FormControl(potentialEmail, Validators.email).errors?.email;
+    }
+
     private setInitialMessage(loginInfo: DotLoginInformation): void {
         this.route.queryParams.pipe(take(1)).subscribe((params: Params) => {
             if (params['changedPassword']) {
                 this.setMessage(loginInfo.i18nMessagesMap['reset-password-success']);
-            } else if (params['resetEmailSent']) {
+            } else if (params['resetEmailSent'] && !this.isEmail(params['resetEmail'])) {
                 this.setMessage(
                     loginInfo.i18nMessagesMap['a-new-password-has-been-sent-to-x'].replace(
                         '{0}',

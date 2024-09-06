@@ -1,15 +1,17 @@
 package com.dotcms.storage.model;
 
-import com.google.common.collect.ImmutableSet.Builder;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
+/**
+ * This Enum provides the list of stand-alone metadata fields that can be calculated without having
+ * to use Tika.
+ *
+ * @author Fabrizzio Araya
+ * @since Mar 23rd, 2021
+ */
 public enum BasicMetadataFields {
-
-    //These are stand-alone metadata fields that can be calculated without having to use Tika
 
     VERSION_KEY            ("version"),
     NAME_META_KEY          ("name"),
@@ -22,7 +24,8 @@ public enum BasicMetadataFields {
     SIZE_META_KEY          ("fileSize", Integer.TYPE),
     MOD_DATE_META_KEY      ("modDate", Integer.TYPE),
     WIDTH_META_KEY         ("width", Integer.TYPE),
-    HEIGHT_META_KEY        ("height", Integer.TYPE);
+    HEIGHT_META_KEY        ("height", Integer.TYPE),
+    EDITABLE_AS_TEXT       ("editableAsText", Boolean.TYPE);
 
     private final String key;
     private final Class<?> clazz;
@@ -60,4 +63,5 @@ public enum BasicMetadataFields {
         return Stream.of(BasicMetadataFields.values())
                 .collect(Collectors.toMap(BasicMetadataFields::key, e -> e));
     }
+
 }

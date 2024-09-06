@@ -12,9 +12,12 @@ import { By } from '@angular/platform-browser';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplatePropsComponent } from './dot-template-props.component';
@@ -117,7 +120,7 @@ describe('DotTemplatePropsComponent', () => {
                 DotMessagePipe,
                 FormsModule,
                 ReactiveFormsModule,
-                DotFieldValidationMessageModule,
+                DotFieldValidationMessageComponent,
                 DotFieldRequiredDirective
             ],
             providers: [
@@ -177,7 +180,7 @@ describe('DotTemplatePropsComponent', () => {
 
                 expect(label.classes['p-label-input-required']).toBe(true);
                 expect(label.attributes.for).toBe('title');
-                expect(label.nativeElement.textContent).toBe('Title');
+                expect(label.nativeElement.textContent.trim()).toBe('Title');
 
                 expect(input.attributes.autofocus).toBeDefined();
                 expect(input.attributes.pInputText).toBeDefined();
@@ -209,7 +212,7 @@ describe('DotTemplatePropsComponent', () => {
                 expect(field.classes['field']).toBe(true);
 
                 expect(label.attributes.for).toBe('description');
-                expect(label.nativeElement.textContent).toBe('Description');
+                expect(label.nativeElement.textContent.trim()).toBe('Description');
 
                 expect(textarea.attributes.pInputTextarea).toBeDefined();
                 expect(textarea.attributes.formControlName).toBe('friendlyName');

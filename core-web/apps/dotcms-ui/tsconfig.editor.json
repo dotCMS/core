@@ -3,7 +3,9 @@
     "include": [
         "**/*.ts",
         "../../libs/dotcms-models/src/lib/dot-es-content.model.ts",
-        "../../libs/dotcms-models/src/lib/dot-what-changed.model.ts"
+        "../../libs/dotcms-models/src/lib/dot-what-changed.model.ts",
+        "../../libs/dot-rules/src/lib/dot-rules.module.ts",
+        "../../libs/dotcms-models/src/lib/dot-page-content.model.ts"
     ],
     "compilerOptions": {
         "types": ["jest", "node"]

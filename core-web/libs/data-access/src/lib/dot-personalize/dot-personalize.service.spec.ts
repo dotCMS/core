@@ -1,6 +1,7 @@
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed, getTestBed } from '@angular/core/testing';
 
+import { DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
@@ -15,6 +16,7 @@ describe('DotPersonalizeService', () => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
             providers: [
+                DotSessionStorageService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotPersonalizeService
             ]
@@ -27,7 +29,7 @@ describe('DotPersonalizeService', () => {
     it('should set Personalized', () => {
         dotPersonalizeService.personalized('a', 'b').subscribe();
 
-        const req = httpMock.expectOne('/api/v1/personalization/pagepersonas');
+        const req = httpMock.expectOne('/api/v1/personalization/pagepersonas?variantName=DEFAULT');
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual({ pageId: 'a', personaTag: 'b' });
     });
@@ -38,7 +40,7 @@ describe('DotPersonalizeService', () => {
         dotPersonalizeService.despersonalized(pageId, personaTag).subscribe();
 
         const req = httpMock.expectOne(
-            `/api/v1/personalization/pagepersonas/page/${pageId}/personalization/${personaTag}`
+            `/api/v1/personalization/pagepersonas/page/${pageId}/personalization/${personaTag}?variantName=DEFAULT`
         );
         expect(req.request.method).toBe('DELETE');
     });

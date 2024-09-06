@@ -2,6 +2,10 @@ package com.dotmarketing.portlets.workflows.business;
 
 import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
 
+import com.dotcms.ai.workflow.DotEmbeddingsActionlet;
+import com.dotcms.ai.workflow.OpenAIAutoTagActionlet;
+import com.dotcms.ai.workflow.OpenAIContentPromptActionlet;
+import com.dotcms.ai.workflow.OpenAIGenerateImageActionlet;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
@@ -16,6 +20,7 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.rekognition.actionlet.RekognitionActionlet;
+import com.dotcms.rendering.js.JsScriptActionlet;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.ActionFail;
@@ -70,6 +75,7 @@ import com.dotmarketing.portlets.workflows.LargeMessageActionlet;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.AsyncEmailActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.BatchAction;
 import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
@@ -133,7 +139,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -147,6 +152,7 @@ import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -160,7 +166,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
@@ -236,6 +241,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private static final String BULK_ACTIONS_CONTENTLET_FETCH_STEP = "workflow.action.bulk.fetch.step";
 
+	private static final String LICENSE_REQUIRED_MESSAGE_KEY = "Workflow-Schemes-License-required";
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
 
@@ -261,6 +268,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				PushPublishActionlet.class,
 				CheckURLAccessibilityActionlet.class,
                 EmailActionlet.class,
+				AsyncEmailActionlet.class,
                 SetValueActionlet.class,
                 ReindexContentActionlet.class,
                 PushNowActionlet.class,
@@ -270,11 +278,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				CopyActionlet.class,
 				MessageActionlet.class,
 				VelocityScriptActionlet.class,
+				JsScriptActionlet.class,
 				LargeMessageActionlet.class,
 				SendFormEmailActionlet.class,
 				ResetApproversActionlet.class,
 				RekognitionActionlet.class,
-				MoveContentActionlet.class
+				MoveContentActionlet.class,
+				DotEmbeddingsActionlet.class,
+				OpenAIContentPromptActionlet.class,
+				OpenAIGenerateImageActionlet.class,
+				OpenAIAutoTagActionlet.class
 		));
 
 		refreshWorkFlowActionletMap();
@@ -397,7 +410,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         // if the class calling the workflow api is not friend, so checks the validation
         if (!this.getFriendClass().isFriend()) {
             if (!hasValidLicense()) {
-                throw new InvalidLicenseException("Workflow-Schemes-License-required");
+                throw new InvalidLicenseException(LICENSE_REQUIRED_MESSAGE_KEY);
             }
 
             boolean hasAccessToPortlet = false;
@@ -595,13 +608,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@CloseDBIfOpened
-	public WorkflowScheme findScheme(final String id) throws DotDataException, DotSecurityException {
+	public WorkflowScheme findScheme(final String idOrVar) throws DotDataException, DotSecurityException {
 
-		final String schemeId = this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME);
+		final String schemeIdOrVar = this.getLongId(idOrVar, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME);
 
-		validateWorkflowLicense(schemeId, "Workflow-Schemes-License-required");
+		validateWorkflowLicense(schemeIdOrVar, LICENSE_REQUIRED_MESSAGE_KEY);
 
-		return workFlowFactory.findScheme(schemeId);
+		return workFlowFactory.findScheme(schemeIdOrVar);
 	}
 
 	@Override
@@ -719,7 +732,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public List<ContentType> findContentTypesForScheme(final WorkflowScheme workflowScheme) {
 
-		validateWorkflowLicense(workflowScheme.getId(), "Workflow-Schemes-License-required");
+		validateWorkflowLicense(workflowScheme.getId(), LICENSE_REQUIRED_MESSAGE_KEY);
 		try {
 			return workFlowFactory.findContentTypesByScheme(workflowScheme);
 		}catch(Exception e){
@@ -839,7 +852,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param user The user
 	 */
 	@WrapInTransaction
-	private WorkflowScheme deleteSchemeTask(final WorkflowScheme scheme, final User user) {
+	@VisibleForTesting
+	@Override
+	public WorkflowScheme deleteSchemeTask(final WorkflowScheme scheme, final User user) {
 
 		try {
 
@@ -1566,10 +1581,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	} // findActions.
 
 	private void validateWorkflowLicense(String scheme, String message) {
-		if (!SYSTEM_WORKFLOW_ID.equals(scheme)) {
-			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-				throw new InvalidLicenseException(message);
-			}
+		if (!SYSTEM_WORKFLOW_ID.equals(scheme) && !SYSTEM_WORKFLOW_VARIABLE_NAME.equals(scheme)
+				&& (!hasValidLicense() && !this.getFriendClass().isFriend())) {
+			throw new InvalidLicenseException(message);
 		}
 	}
 
@@ -4026,9 +4040,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				CollectionsUtils.join(this.findWorkFlowComments(task),
 						this.findWorkflowHistory (task));
 
-	    return workflowTimelineItems.stream()
-                .sorted(Comparator.comparing(WorkflowTimelineItem::createdDate))
-                .collect(CollectionsUtils.toImmutableList());
+		final Comparator<WorkflowTimelineItem> comparator = Comparator.comparing(WorkflowTimelineItem::createdDate).reversed();
+		return workflowTimelineItems.stream()
+				.sorted(comparator)
+				.collect(CollectionsUtils.toImmutableList());
+
 	}
 
 
@@ -4184,6 +4200,25 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         }
 
         return actionsBuilder.build();
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public Optional<SystemActionWorkflowActionMapping> findSystemActionByScheme(final SystemAction systemAction,
+																				final WorkflowScheme workflowScheme,
+																				final User user) throws DotSecurityException, DotDataException {
+
+		final List<Map<String, Object>> mappings = this.workFlowFactory.findSystemActionsByScheme (workflowScheme);
+		for (final Map<String, Object> rowMap : mappings) {
+
+			final SystemActionWorkflowActionMapping mapping =
+					this.toSystemActionWorkflowActionMapping(rowMap, workflowScheme, user);
+			if (Objects.nonNull(mapping) && mapping.getSystemAction().equals(systemAction)) {
+				return Optional.ofNullable(mapping);
+			}
+		}
+
+		return Optional.empty();
 	}
 
 	@Override
@@ -4364,6 +4399,54 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return this.hasActionlet(action, Actionlet::destroy);
 	}
 
+	@CloseDBIfOpened
+	@Override
+	public long countAllSchemasSteps(final User user) throws DotDataException, DotSecurityException {
+		try {
+			this.isUserAllowToModifiedWorkflow(user);
+		} catch (WorkflowPortletAccessException | InvalidLicenseException e) {
+			throw new DotSecurityException(e.getMessage(), e);
+		}
+
+		return workFlowFactory.countAllSchemasSteps();
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public long countAllSchemasActions(final User user) throws DotDataException, DotSecurityException {
+		try {
+			this.isUserAllowToModifiedWorkflow(user);
+		} catch (WorkflowPortletAccessException | InvalidLicenseException e) {
+			throw new DotSecurityException(e.getMessage(), e);
+		}
+
+		return workFlowFactory.countAllSchemasActions();
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public long countAllSchemasSubActions(final User user) throws DotDataException, DotSecurityException {
+		try {
+			this.isUserAllowToModifiedWorkflow(user);
+		} catch (WorkflowPortletAccessException | InvalidLicenseException e) {
+			throw new DotSecurityException(e.getMessage(), e);
+		}
+
+		return workFlowFactory.countAllSchemasSubActions();
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public long countAllSchemasUniqueSubActions(final User user) throws DotDataException, DotSecurityException {
+		try {
+			this.isUserAllowToModifiedWorkflow(user);
+		} catch (WorkflowPortletAccessException | InvalidLicenseException e) {
+			throw new DotSecurityException(e.getMessage(), e);
+		}
+
+		return workFlowFactory.countAllSchemasUniqueSubActions();
+	}
+
 	@Override
 	public WorkflowTask createWorkflowTask(final Contentlet contentlet, final User user,
 									final WorkflowStep workflowStep, final String title, String description) throws DotDataException {
@@ -4435,5 +4518,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		return null;
     }
+
+	@Override
+	@CloseDBIfOpened
+	public int countWorkflowSchemes(final User user) {
+		isUserAllowToModifiedWorkflow(user);
+		return workFlowFactory.countWorkflowSchemes(false);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public int countWorkflowSchemesIncludeArchived(final User user) {
+		isUserAllowToModifiedWorkflow(user);
+		return workFlowFactory.countWorkflowSchemes(true);
+	}
 
 }

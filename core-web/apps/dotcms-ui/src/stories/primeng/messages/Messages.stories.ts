@@ -1,24 +1,27 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { MessageModule } from 'primeng/message';
-import { MessagesModule } from 'primeng/messages';
+import { MessagesModule, Messages } from 'primeng/messages';
 
-export default {
+const MessageTemplate = `<p-messages [(value)]="messages" />`;
+
+const meta: Meta<Messages> = {
     title: 'PrimeNG/Messages/Message',
     parameters: {
         docs: {
             description: {
                 component:
                     'Messages is used to display alerts inline.: https://primefaces.org/primeng/showcase/#/messages'
+            },
+            source: {
+                code: MessageTemplate
             }
         }
     },
     decorators: [
         moduleMetadata({
-            imports: [MessagesModule, MessageModule, BrowserAnimationsModule]
+            imports: [MessagesModule, BrowserAnimationsModule]
         })
     ],
     args: {
@@ -28,39 +31,14 @@ export default {
             { severity: 'warn', summary: 'Warning', detail: 'Message Content' },
             { severity: 'error', summary: 'Error', detail: 'Message Content' }
         ]
-    }
-} as Meta;
-
-type Message = {
-    severity: string;
-    summary: string;
-    detail: string;
+    },
+    render: (args) => ({
+        props: args,
+        template: MessageTemplate
+    })
 };
+export default meta;
 
-const MessageTemplate = `<p-messages [(value)]="messages"></p-messages>`;
+type Story = StoryObj;
 
-const Template: Story<{ messages: Message[] }> = () => {
-    const template = MessageTemplate;
-
-    return {
-        props: {
-            messages: [
-                { severity: 'success', summary: 'Success', detail: 'Message Content' },
-                { severity: 'info', summary: 'Info', detail: 'Message Content' },
-                { severity: 'warn', summary: 'Warning', detail: 'Message Content' },
-                { severity: 'error', summary: 'Error', detail: 'Message Content' }
-            ]
-        },
-        template
-    };
-};
-
-export const Basic: Story = Template.bind({});
-
-Basic.parameters = {
-    docs: {
-        source: {
-            code: MessageTemplate
-        }
-    }
-};
+export const Basic: Story = {};

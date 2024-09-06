@@ -478,4 +478,45 @@ public class ResourceLinkTest {
 
     }
 
+    /**
+     * Method to test: Test the resource link when the inode is null
+     * Given Scenario: When executing getFileLink method, an url should be returned
+     * ExpectedResult: Expected an url with the same structure as FileLink resource url that is showed in the info button of a content
+     *
+     */
+    @Test
+    public void test_ResourceLink_get_fileLink() throws Exception{
+
+        final String mimeType = "text/html";
+        final String hostName = "demo.dotcms.com";
+        final long languageId = 1L;
+        final boolean isSecure = false;
+
+        final File file = FileUtil.createTemporaryFile("comments-list", "html", "This is a test temporal file");
+
+        final String htmlFileName = file.getName() + "&languageId=1";
+        final User adminUser = mockAdminUser();
+
+        final Contentlet contentlet = mock(Contentlet.class);
+        when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.getIdentifier()).thenReturn(UUIDGenerator.generateUuid());
+        when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
+        when(contentlet.isFileAsset()).thenReturn(true);
+        when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
+        when(contentlet.getLanguageId()).thenReturn(languageId);
+        when(contentlet.isNew()).thenReturn(false);
+        when(contentlet.getBinaryMetadata(FileAssetAPI.BINARY_FIELD)).thenReturn(mockMetadata(file));
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
+        when(request.isSecure()).thenReturn(isSecure);
+        when(request.getServerPort()).thenReturn(80);
+
+        final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, null, mimeType, htmlFileName);
+        final String link = resourceLinkBuilder.getFileLink(request, adminUser, contentlet, "fileAsset");
+
+        assertEquals("http://demo.dotcms.com/dA/"+ contentlet.getInode() + "/" + htmlFileName,link);
+
+    }
+
 }

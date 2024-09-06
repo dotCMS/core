@@ -154,7 +154,7 @@ public class HostAjax {
                             "Site '%s': %s", site.getIdentifier(), e.getMessage()), e);
                 }
                 final Map<String, Object> siteInfoMap = site.getMap();
-				siteInfoMap.putAll(CollectionsUtils.map(
+				siteInfoMap.putAll(Map.of(
                         "userPermissions", this.permissionAPI.getPermissionIdsFromUser(site, user),
                         "hostInSetup", siteInSetup,
                         "archived", site.isArchived(),
@@ -175,7 +175,7 @@ public class HostAjax {
 
         final List<Map<String, Object>> fieldMapList = fields.stream().map(Field::getMap).collect(Collectors.toList());
         final Structure siteContentType = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(Host.HOST_VELOCITY_VAR_NAME);
-        return CollectionsUtils.map(
+        return Map.of(
                 "total", totalResults,
                 "list", siteList,
                 "structure", siteContentType.getMap(),

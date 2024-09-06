@@ -6,7 +6,7 @@ import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 import { take } from 'rxjs/operators';
 
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotApps } from '@dotcms/dotcms-models';
+import { DotApp } from '@dotcms/dotcms-models';
 
 /**
  * Returns app configuration detail from the api
@@ -16,10 +16,10 @@ import { DotApps } from '@dotcms/dotcms-models';
  * @implements {Resolve<DotAppsResolverData>}
  */
 @Injectable()
-export class DotAppsConfigurationDetailResolver implements Resolve<DotApps> {
+export class DotAppsConfigurationDetailResolver implements Resolve<DotApp> {
     constructor(private dotAppsService: DotAppsService) {}
 
-    resolve(route: ActivatedRouteSnapshot): Observable<DotApps> {
+    resolve(route: ActivatedRouteSnapshot): Observable<DotApp> {
         const appKey = route.paramMap.get('appKey');
         const id = route.paramMap.get('id');
 

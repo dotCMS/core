@@ -1,4 +1,4 @@
-<%@page import="com.liferay.portal.language.LanguageUtil"%>
+	<%@page import="com.liferay.portal.language.LanguageUtil"%>
 
 <script type="text/javascript" src="/html/portlet/ext/osgi/js.jsp" ></script>
 <dot-asset-drop-zone dojoAttachPoint="dropzone">
@@ -22,46 +22,14 @@
     const headerError = '<%=LanguageUtil.get(pageContext, "OSGI-Header-Error")%>';
     const dotAssetDropZone = document.querySelector('dot-asset-drop-zone');
 
-	const uploadPlugin = ({files, onSuccess, updateProgress, onError}) => {
-        // Check if we get an array of files otherwise create array.
-        const data = Array.isArray(files) ? files : [files];
-
-        // Create Form Data
-        const formData = new FormData();
-        data.forEach((file) => formData.append('file', file));
-        formData.append('json', '{}');
-        
-        return new Promise((res, rej) => {
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/api/osgi');
-            xhr.onload = () => res(xhr);
-            xhr.onerror = rej;
-
-            // Get Upload Process
-            if (xhr.upload && updateProgress) {
-                xhr.upload.onprogress = (e) => {
-                    const percentComplete = (e.loaded / e.total) * 100;
-                    updateProgress(percentComplete);
-                };
-            }
-
-            xhr.send(formData);
-
-        }).then(async (request) => {
-            if (request.status !== 200) {
-                throw request;
-            }
-            onSuccess();
-            dijit.byId('savingOSGIDialog').show();
-            return JSON.parse(request.response);
-        })
-        .catch((request) => {
-            const response = typeof (request.response) === 'string' ? JSON.parse(request.response) : request.response;
-            const errorMesage = response.errors[0].message;
-            onError(headerError, errorMesage);
-            throw response;
+    const uploadPlugin = ({ files, onSuccess, updateProgress, onError }) => {
+        return bundles.handleUpload({
+            files,
+            onSuccess,
+            updateProgress,
+            onError
         });
-    }
+    };
 
     // Custom Props
     dotAssetDropZone.customUploadFiles = uploadPlugin;

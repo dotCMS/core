@@ -5,8 +5,8 @@ export default {
     parameters: {
         docs: {
             page: readme
-        },
-    },
+        }
+    }
 };
 
 export const DataViewButton = () => `<dot-data-view-button value="list" />`;

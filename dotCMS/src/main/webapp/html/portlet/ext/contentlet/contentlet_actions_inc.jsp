@@ -54,8 +54,8 @@ catch(Exception e){
 					APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName());
 		}
 	}
-   
-   
+
+
 boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user, PageMode.get(request).respectAnonPerms);
 
 
@@ -67,14 +67,14 @@ if(contentlet.isHTMLPage() && UtilMethods.isSet(contentlet.getIdentifier())){
     previewUrl= "/dotAdmin/#/edit-page/content?url=" + contentUrl + "&language_id=" + contentlet.getLanguageId();
 }else{
 	contentUrl = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, user, PageMode.get(request).respectAnonPerms);
-	previewUrl = "/dotAdmin/#/edit-page/content?url=" + contentUrl + "&language_id=" + contentlet.getLanguageId();  
+	previewUrl = "/dotAdmin/#/edit-page/content?url=" + contentUrl + "&language_id=" + contentlet.getLanguageId();
 }
 
 if(myHost.getIdentifier() != null){
 	previewUrl += "&host_id=" + myHost.getIdentifier();
 }
 
-   
+
 %>
 
 
@@ -82,11 +82,11 @@ if(myHost.getIdentifier() != null){
 <script>
 function setLinkToContentType(){
 
-   const URLLength = window.parent.location.hash.split('/').length;
    const contentTypeLink = document.getElementById('contentTypeLink');
+   const isExistingContent = !!'<%=contentlet.getInode() %>';
 
-  //URL has inode, example: #/c/content/87edb0d5-99aa-4d18-a50d-60eef7c74954
-   if (URLLength>3 && contentTypeLink) {
+  // This is to avoid be a link when creating the content just when is editing.
+   if (isExistingContent && contentTypeLink) {
         contentTypeLink.addEventListener('click', jumpToContentType);
         contentTypeLink.setAttribute('href','#');
    }
@@ -235,16 +235,21 @@ function jumpToContentType(){
 		<%for(WorkflowAction action : wfActions){ %>
 			<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); %>
 
-
-			<a
-			style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv"
-			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || (action.hasMoveActionletActionlet() && !action.hasMoveActionletHasPathActionlet()) || UtilMethods.isSet(action.getCondition()) %>)">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>
-				<%if(action.hasSaveActionlet()){ %>
-                    <i class="fa fa-save" style="opacity:.35;float:right"></i>
-                <%} %>
-
-			</a>
+				<!-- EXCLUDE SEPARATOR FROM ACTIONS -->
+				<%
+					String subtype = action.getMetadata() != null ? String.valueOf(action.getMetadata().get("subtype")) : "";
+					if(!"SEPARATOR".equals(subtype)) {
+				%>
+					<a
+						style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv"
+						onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || (action.hasMoveActionletActionlet() && !action.hasMoveActionletHasPathActionlet()) || UtilMethods.isSet(action.getCondition()) %>)"
+					>
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>
+						<%if(action.hasSaveActionlet()){ %>
+							<i class="fa fa-save" style="opacity:.35;float:right"></i>
+						<%} %>
+					</a>
+				<%} %>
 		<%} %>
 
 	<%}  %>

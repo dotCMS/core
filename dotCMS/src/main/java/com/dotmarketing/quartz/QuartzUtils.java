@@ -134,6 +134,7 @@ public class QuartzUtils {
 					task.setStartDate(t.getStartTime());
 					task.setEndDate(t.getStartTime());
 					task.setSequentialScheduled(sequential);
+					task.setJavaClassName(jobDetail.getJobClass().getName());
 
 					result.add(task);
 				}

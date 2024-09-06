@@ -48,7 +48,11 @@ public class AppSecrets implements Serializable {
             return false;
         }
         final AppSecrets that = (AppSecrets) object;
-        return key.equals(that.key) && this.secrets.equals(that.secrets); //areEqual(this.secrets, that.secrets);
+        return key.equals(that.key) && this.secrets.equals(that.secrets);
+    }
+
+    public static Builder builder(){
+        return new Builder();
     }
 
     @Override
@@ -58,7 +62,7 @@ public class AppSecrets implements Serializable {
 
     public static class Builder {
 
-        private final Map<String,Secret> secretMap = new HashMap<>();
+        private final Map<String, Secret> secretMap = new HashMap<>();
         private String key;
 
         public AppSecrets build(){
@@ -70,36 +74,41 @@ public class AppSecrets implements Serializable {
             return this;
         }
 
-        public Builder withHiddenSecret(final String name, final String value) {
-            secretMap.put(
-                    name, Secret.newSecret(value.toCharArray(), Type.STRING, true)
-            );
+        public Builder withSecret(final String name, final Secret secret) {
+            secretMap.put(name, secret);
             return this;
+        }
+
+        public Builder withHiddenSecret(final String name, final String value) {
+            return withSecret(
+                    name,
+                    Secret.builder()
+                            .withValue(value)
+                            .withHidden(true)
+                            .withType(Type.STRING)
+                            .build());
         }
 
         public Builder withHiddenSecret(final String name, final boolean value){
-            secretMap.put(
-                    name, Secret.newSecret(String.valueOf(value).toCharArray(), Type.BOOL, true)
-            );
-            return this;
+            return withHiddenSecret(name, String.valueOf(value));
         }
 
         public Builder withSecret(final String name, final String value){
-            secretMap.put(
-                    name, Secret.newSecret(value.toCharArray(), Type.STRING, false)
-            );
-            return this;
+            return withSecret(
+                    name,
+                    Secret.builder()
+                            .withValue(value)
+                            .withHidden(false)
+                            .withType(Type.STRING)
+                            .build());
         }
 
-        public Builder withSecret(final String name, final boolean value){
-            secretMap.put(
-                    name, Secret.newSecret(String.valueOf(value).toCharArray(), Type.STRING, false)
-            );
-            return this;
+        public Builder withSecret(final String name, final boolean value) {
+            return withSecret(name, String.valueOf(value));
         }
 
-        public Builder withSecret(final String name, final Secret secret){
-            secretMap.put(name, secret);
+        public Builder withSecrets(final Map<String, Secret> secrets) {
+            secretMap.putAll(secrets);
             return this;
         }
 

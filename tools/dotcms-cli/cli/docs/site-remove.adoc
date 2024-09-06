@@ -1,0 +1,77 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Site Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= site-remove(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+site-remove - *Use this command to remove a site.*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*site remove* [*-h*] [*--non-interactive*] [*--dotcms-url*=_<remoteURL>_] [*-tk*=_<token>_]
+            _idOrName_
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+ This operation is irreversible.
+ So be mindful of what you are doing.
+ Just like everything else in dotCMS. Sites must follow certain rules.
+ Before they can be deleted
+ The Site Not be the default site.
+ The Site must be stopped first. See *site:stop* command.
+ The site must be archived first. See *site:archive* command. 
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
+
+*-h*, *--help*::
+  Display this help message.
+
+*--non-interactive*::
+  When specified, user confirmation is bypassed, allowing the command to run without asking for confirmation.
++
+By default, this is false.
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+== Arguments
+
+_idOrName_::
+  Site name Or Id.
+
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

@@ -11,10 +11,10 @@
     color: $color-palette-gray-800;
     border: 0 none;
     border-radius: $border-radius-md;
-    box-shadow: $md-shadow-1;
+    box-shadow: $shadow-xs;
 
     .p-confirm-popup-icon {
-        font-size: $font-size-xl;
+        font-size: $font-size-lg;
         color: $color-palette-primary-500;
     }
 
@@ -79,7 +79,7 @@
 }
 
 .p-confirm-popup .p-button.p-button-sm {
-    font-size: 0.875rem;
+    font-size: $font-size-sm;
     padding: 0.65625rem 1.09375rem;
 }
 

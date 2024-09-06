@@ -52,7 +52,7 @@ public interface HTMLPageAssetAPI {
     static final String HTTPS_REQUIRED_FIELD_NAME="HTTPS Required";
     
     static final String CACHE_TTL_FIELD="cachettl";
-    static final String CACHE_TTL_FIELD_NAME="Cache TTL";
+    static final String CACHE_TTL_FIELD_NAME="Cache TTL (seconds)";
     
     static final String SEO_DESCRIPTION_FIELD="seodescription";
     static final String SEO_DESCRIPTION_FIELD_NAME="SEO Description";

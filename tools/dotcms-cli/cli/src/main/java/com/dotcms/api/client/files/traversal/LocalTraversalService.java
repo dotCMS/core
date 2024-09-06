@@ -2,11 +2,6 @@ package com.dotcms.api.client.files.traversal;
 
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
-import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.common.AssetsUtils;
-import org.apache.commons.lang3.tuple.Triple;
-
-import java.io.File;
 import java.util.List;
 
 /**
@@ -18,22 +13,14 @@ public interface LocalTraversalService {
 
     /**
      * Traverses the file system directory at the specified path and builds a hierarchical tree
-     * representation of its contents. The folders and contents are compared to the remote server in order to determine
-     * if there are any differences between the local and remote file system.
+     * representation of its contents. The folders and contents are compared to the remote server in
+     * order to determine if there are any differences between the local and remote file system.
      *
-     * @param output             the output option mixin
-     * @param workspace          the project workspace
-     * @param source             local the source file or directory
-     * @param removeAssets       true to allow remove assets, false otherwise
-     * @param removeFolders      true to allow remove folders, false otherwise
-     * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
-     * @param failFast           true to fail fast, false to continue on error
-     * @return a Triple containing a list of exceptions, the folder's local path structure and its corresponding
-     * root node of the hierarchical tree
+     * @param params traversal params
+     * @return a TraverseResult containing a list of exceptions, the folder's local path structure
+     * and its corresponding root node of the hierarchical tree
      */
-    Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(
-            OutputOptionMixin output, final File workspace, final String source,
-            boolean removeAssets, boolean removeFolders, boolean ignoreEmptyFolders, final boolean failFast);
+    TraverseResult traverseLocalFolder(LocalTraverseParams params);
 
     /**
      * Builds the file system tree from the specified root node. The tree is built using a ForkJoinPool, which allows

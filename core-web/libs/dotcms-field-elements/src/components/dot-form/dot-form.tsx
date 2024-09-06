@@ -119,8 +119,7 @@ export class DotFormComponent {
                         </button>
                         <button
                             type="submit"
-                            disabled={!this.status.dotValid || this.uploadFileInProgress}
-                        >
+                            disabled={!this.status.dotValid || this.uploadFileInProgress}>
                             {this.submitLabel}
                         </button>
                     </div>

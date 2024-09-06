@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { Subject } from 'rxjs';
 
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
@@ -8,6 +7,7 @@ import { takeUntil } from 'rxjs/operators';
 
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
+import { camelCase } from '@dotcms/utils';
 import { DotFileUpload } from '@models/dot-file-upload/dot-file-upload.model';
 
 @Component({
@@ -24,7 +24,10 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(private fb: UntypedFormBuilder, private siteService: SiteService) {}
+    constructor(
+        private fb: UntypedFormBuilder,
+        private siteService: SiteService
+    ) {}
 
     ngOnInit() {
         this.initPersonaForm();
@@ -63,7 +66,7 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
      * @memberof DotCreatePersonaFormComponent
      */
     setKeyTag(): void {
-        this.form.get('keyTag').setValue(_.camelCase(this.form.get('name').value));
+        this.form.get('keyTag').setValue(camelCase(this.form.get('name').value));
     }
 
     /**

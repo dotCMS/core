@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.page;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -14,7 +15,6 @@ import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageViewPaginator;
 import com.dotcms.rest.api.v1.workflow.WorkflowResource;
 import com.dotcms.rest.exception.BadRequestException;
@@ -25,6 +25,9 @@ import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -46,6 +49,8 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotF
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageLivePreviewVersionBean;
+import com.dotmarketing.portlets.htmlpageasset.business.render.VanityURLView;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.EmptyPageView;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -54,6 +59,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
@@ -63,6 +69,15 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
 
@@ -96,6 +111,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+
 /**
  * Provides different methods to access information about HTML Pages in dotCMS. For example,
  * users of this end-point can get the metadata of an HTML Page (i.e., information about the
@@ -105,12 +122,15 @@ import java.util.stream.Collectors;
  * @version 4.2
  * @since Oct 6, 2017
  */
-@Path("/v1/page")
-@Tag(name = "Page")
-public class PageResource {
 
-    private static final String LISTING       = "listing";
-    private static final String EDITING       = "editing";
+
+@Path("/v1/page")
+@Tag(name = "Page", 
+        description = "Endpoints that operate on pages",
+        externalDocs = @ExternalDocumentation(description = "Additional Page API information", 
+                                                url = "https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas"))
+
+public class PageResource {
 
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
@@ -120,6 +140,7 @@ public class PageResource {
     /**
      * Creates an instance of this REST end-point.
      */
+    @SuppressWarnings("unused")
     public PageResource() {
         this(
                 PageResourceHelper.getInstance(),
@@ -143,24 +164,40 @@ public class PageResource {
     }
 
     /**
-     * Returns the metadata in JSON format of the objects that make up an HTML Page in the system.
-     *
+     * Returns the metadata -- i.e.; the objects that make up an HTML Page -- in the form of a JSON
+     * object based on the specified URI. If such a URI maps to a Vanity URL, the response will
+     * change based on its response code:
+     * <ul>
+     *     <li>If a {@code 200 Forward} states is set, the JSON metadata will include the actual
+     *     page that the Vanity URL is referencing.</li>
+     *     <li>If a {@code 302 Temporary Redirect} or {@code 301 Permanent Redirect} is set, the
+     *     JSON metadata will include an "empty" page JSON, and the Vanity URL properties exposed by
+     *     the {@link CachedVanityUrl}.</li>
+     * </ul>
+     * Here's an example of how this method works:
      * <pre>
      * Format:
-     * http://localhost:8080/api/v1/page/json/{page-url}
+     * http://localhost:8080/api/v1/page/json/{page-url-or-vanity-url}
      * <br/>
      * Example:
      * http://localhost:8080/api/v1/page/json/about-us/locations/index
      * </pre>
      *
      * @param originalRequest The {@link HttpServletRequest} object.
-     * @param response The {@link HttpServletResponse} object.
-     * @param uri The path to the HTML Page whose information will be retrieved.
-     * @param modeParam {@link PageMode}
-     * @param personaId {@link com.dotmarketing.portlets.personas.model.Persona}'s identifier to render the page
-     * @param languageId {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s Id to render the page
-     * @param deviceInode {@link }'s inode to render the page
+     * @param response        The {@link HttpServletResponse} object.
+     * @param uri             The path to the HTML Page whose information will be retrieved.
+     * @param modeParam       {@link PageMode}
+     * @param personaId       {@link com.dotmarketing.portlets.personas.model.Persona}'s identifier
+     *                        to render the page
+     * @param languageId      {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s Id
+     *                        to render the page
+     * @param deviceInode     {@link }'s inode to render the page
+     *
      * @return All the objects on an associated HTML Page.
+     *
+     * @throws DotDataException     An error occurred when accessing information in the database.
+     * @throws DotSecurityException The currently logged-in user does not have the necessary
+     *                              permissions to call this action.
      */
     @NoCache
     @GET
@@ -172,83 +209,62 @@ public class PageResource {
             @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
             @QueryParam("language_id") final String languageId,
-            @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException {
-
-        Logger.debug(this, String.format("Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b", uri,
-                modeParam, languageId, personaId, deviceInode));
+            @QueryParam("device_inode") final String deviceInode) throws DotDataException, DotSecurityException {
+        Logger.debug(this, () -> String.format(
+                "Rendering page as JSON: uri -> %s , mode -> %s , language -> %s , persona -> %s , device_inode -> %s",
+                uri, modeParam, languageId, personaId, deviceInode));
 
         final HttpServletRequest request = this.pageResourceHelper.decorateRequest (originalRequest);
         // Force authentication
-        final InitDataObject auth = webResource.init(request, response, true);
-        final User user = auth.getUser();
-        Response res;
-
-        final PageMode mode = modeParam != null ? PageMode.get(modeParam) :
-                this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request, uri);
-        PageMode.setPageMode(request, mode);
-
-        try {
-
-            if (deviceInode != null) {
-                request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
-            }
-
-            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageMetadata(
-                    PageContextBuilder.builder()
-                            .setUser(user)
-                            .setPageUri(uri)
-                            .setPageMode(mode)
-                            .setParseJSON(true)
-                            .build(),
-                    request,
-                    response
-            );
-
-            final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
-
-
-            final Host host = APILocator.getHostAPI().find(pageRendered.getPage().getHost(), user,
-                    PageMode.get(request).respectAnonPerms);
-            request.setAttribute(WebKeys.CURRENT_HOST, host);
-            request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
-
-            res = responseBuilder.build();
-        } catch (HTMLPageAssetNotFoundException e) {
-            final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.render, parameters:  %s, %s %s: ",
-                    request, uri, modeParam);
-            Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-        } catch (Exception e) {
-
-            final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.render, parameters:  %s, %s %s: ",
-                    request, uri, modeParam);
-            Logger.error(this, errorMsg, e);
-            res = ResponseUtil.mapExceptionResponse(e);
-        }
-        return res;
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .init();
+        final User user = initData.getUser();
+        return getPageRender(originalRequest, request, response, user, uri, languageId,
+                modeParam, deviceInode, true);
     }
 
-
     /**
-     * Returns the metadata in JSON format of the objects that make up an HTML Page in the system including page's and
-     * containers html code rendered
-     *
+     * Returns the metadata -- i.e.; the objects that make up an HTML Page, including the rendered
+     * HTML code from the page and its containers -- in the form of a JSON object based on the
+     * specified URI. If such a URI maps to a Vanity URL, the response will change based on its
+     * response code:
+     * <ul>
+     *     <li>If a {@code 200 Forward} states is set, the JSON metadata will include the actual
+     *     page that the Vanity URL is referencing.</li>
+     *     <li>If a {@code 302 Temporary Redirect} or {@code 301 Permanent Redirect} is set, the
+     *     JSON metadata will include an "empty" page JSON, and the Vanity URL properties exposed by
+     *     the {@link CachedVanityUrl}.</li>
+     * </ul>
+     * Here's an example of how this method works:
      * <pre>
      * Format:
-     * http://localhost:8080/api/v1/page/render/{page-url}
+     * http://localhost:8080/api/v1/page/render/{page-url-or-vanity-url}?mode={mode}&com.dotmarketing.persona.id={personaId}&language_id={languageId}&device_inode={deviceInode}
      * <br/>
      * Example:
-     * http://localhost:8080/api/v1/page/render/about-us/locations/index
+     * http://localhost:8080/api/v1/page/render/about-us/locations/index?language_id=1
      * </pre>
      *
      * @param originalRequest The {@link HttpServletRequest} object.
-     * @param response The {@link HttpServletResponse} object.
-     * @param uri The path to the HTML Page whose information will be retrieved.
-     * @param modeParam {@link PageMode}
-     * @param personaId {@link com.dotmarketing.portlets.personas.model.Persona}'s identifier to render the page
-     * @param languageId {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s Id to render the page
-     * @param deviceInode {@link java.lang.String}'s inode to render the page
-     * @return
+     * @param response        The {@link HttpServletResponse} object.
+     * @param uri             The path to the HTML Page whose information will be retrieved, or a
+     *                        Vanity URL.
+     * @param modeParam       The current {@link PageMode} used to render the page.
+     * @param personaId       The {@link com.dotmarketing.portlets.personas.model.Persona}'s
+     *                        identifier used to render the page.
+     * @param languageId      The
+     *                        {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s ID
+     *                        to render the page.
+     * @param deviceInode     The {@link java.lang.String}'s inode to render the page. This is used
+     *                        to render the page with specific width and height dimensions.
+     *
+     * @return The HTML Page's metadata -- or the associated Vanity URL data -- in JSON format.
+     *
+     * @throws DotDataException     An error occurred when accessing information in the database.
+     * @throws DotSecurityException The currently logged-in user does not have the necessary
+     *                              permissions to call this action.
      */
     @NoCache
     @GET
@@ -260,95 +276,190 @@ public class PageResource {
             @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
             @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
-            @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException, SystemException, PortalException {
-        if (HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, false) && !this.includeRenderedAttrFromEMA(originalRequest, uri)) {
-            return this.loadJson(originalRequest, response, uri, modeParam, personaId, languageId, deviceInode);
+            @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException {
+        if (HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, false)
+                && !this.includeRenderedAttrFromEMA(originalRequest, uri)) {
+            final String depth = HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.DEPTH_PARAM, null);
+            if (UtilMethods.isSet(depth)) {
+                HttpServletRequestThreadLocal.INSTANCE.getRequest().setAttribute(WebKeys.HTMLPAGE_DEPTH, depth);
+            }
+            return this.loadJson(originalRequest, response, uri, modeParam, personaId, languageId
+                    , deviceInode);
         }
-        Logger.debug(this, ()->String.format(
-                "Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b",
+        Logger.debug(this, () -> String.format(
+                "Rendering page: uri -> %s , mode -> %s , language -> %s , persona -> %s , device_inode -> %s",
                 uri, modeParam, languageId, personaId, deviceInode));
-
-        final HttpServletRequest request = this.pageResourceHelper.decorateRequest (originalRequest);
+        final HttpServletRequest request = this.pageResourceHelper.decorateRequest(originalRequest);
         // Force authentication
-        final InitDataObject auth = webResource.init(request, response, true);
-        final User user = auth.getUser();
-        Response res;
-
-
-        final PageMode mode = modeParam != null
-                ? PageMode.get(modeParam)
-                : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request,uri);
-
-        PageMode.setPageMode(request, mode);
-
-        if (deviceInode != null) {
-            request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
-        }
-
-        final HttpSession session = request.getSession(false);
-        if(null != session){
-            // Time Machine-Date affects the logic on the vtls that conform parts of the rendered pages.
-            // so.. we better get rid of it.
-            session.removeAttribute("tm_date");
-        }
-
-        final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
-                PageContextBuilder.builder()
-                        .setUser(user)
-                        .setPageUri(uri)
-                        .setPageMode(mode)
-                        .build(),
-                request,
-                response
-        );
-
-        final Host host = APILocator.getHostAPI().find(pageRendered.getPage().getHost(), user,
-                PageMode.get(request).respectAnonPerms);
-        request.setAttribute(WebKeys.CURRENT_HOST, host);
-        request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
-
-        res = Response.ok(new ResponseEntityView(pageRendered)).build();
-
-        return res;
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .init();
+        final User user = initData.getUser();
+        return getPageRender(originalRequest, request, response, user, uri, languageId,
+                modeParam, deviceInode, false);
     }
 
+    /**
+     * Returns the building blocks of an HTML Page including either its rendered version, or just
+     * its metadata in the form of a JSON object. Vanity URLs are taken into account, in which case
+     * Temporary or Permanent Redirects will include an "empty" page object; whereas a Forward will
+     * return the metadata of the page that the Vanity URL points to.
+     *
+     * @param originalRequest The original {@link HttpServletRequest} object.
+     * @param request         The decorated {@link HttpServletRequest} object, which includes
+     *                        special handling in some of its properties.
+     * @param response        The {@link HttpServletResponse} object.
+     * @param user            The currently logged-in {@link User}.
+     * @param uri             The path to the HTML Page whose information will be retrieved, or a
+     *                        Vanity URL.
+     * @param languageId      The
+     *                        {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s ID
+     *                        to render the page.
+     * @param modeParam       The current {@link PageMode} used to render the page.
+     * @param deviceInode     The {@link java.lang.String}'s inode to render the page. This is used
+     *                        to render the page with specific width and height dimensions.
+     * @param asJson          If only the HTML PAge's metadata must be returned in the JSON
+     *                        response, set this to {@code true}. Otherwise, if the rendered
+     *                        Containers and page content must be returned as well, set it to
+     *                        {@code false}.
+     *
+     * @return The HTML Page's metadata -- or the associated Vanity URL data -- in JSON format.
+     *
+     * @throws DotDataException     An error occurred when accessing information in the database.
+     * @throws DotSecurityException The currently logged-in user does not have the necessary
+     *                              permissions to call this action.
+     */
+    private Response getPageRender(final HttpServletRequest originalRequest,
+                                   final HttpServletRequest request,
+                                   final HttpServletResponse response, final User user,
+                                   final String uri, final String languageId,
+                                   final String modeParam, final String deviceInode,
+                                   final boolean asJson) throws DotDataException,
+            DotSecurityException {
+        String resolvedUri = uri;
+        final Optional<CachedVanityUrl> cachedVanityUrlOpt =
+                this.pageResourceHelper.resolveVanityUrlIfPresent(originalRequest, uri, languageId);
+        if (cachedVanityUrlOpt.isPresent()) {
+            response.setHeader(VanityUrlAPI.VANITY_URL_RESPONSE_HEADER, cachedVanityUrlOpt.get().vanityUrlId);
+            if (cachedVanityUrlOpt.get().isTemporaryRedirect() || cachedVanityUrlOpt.get().isPermanentRedirect()) {
+                Logger.debug(this, () -> String.format("Incoming Vanity URL is a %d Redirect",
+                        cachedVanityUrlOpt.get().response));
+                final EmptyPageView emptyPageView =
+                        new EmptyPageView.Builder().vanityUrl(cachedVanityUrlOpt.get()).build();
+                return Response.ok(new ResponseEntityView<>(emptyPageView)).build();
+            } else {
+                final VanityUrlResult vanityUrlResult = cachedVanityUrlOpt.get().handle(uri);
+                resolvedUri = vanityUrlResult.getRewrite();
+                Logger.debug(this, () -> String.format("Incoming Vanity URL resolved to URI: %s",
+                        vanityUrlResult.getRewrite()));
+            }
+        }
+        final PageMode mode = modeParam != null
+                ? PageMode.get(modeParam)
+                : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request, resolvedUri);
+        PageMode.setPageMode(request, mode);
+        if (StringUtils.isSet(deviceInode)) {
+            request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
+        } else {
+            request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
+        }
+        PageView pageRendered;
+        final PageContextBuilder pageContextBuilder = PageContextBuilder.builder()
+                .setUser(user)
+                .setPageUri(resolvedUri)
+                .setPageMode(mode);
+        cachedVanityUrlOpt.ifPresent(cachedVanityUrl
+                -> pageContextBuilder.setVanityUrl(new VanityURLView.Builder().vanityUrl(cachedVanityUrl).build()));
+        if (asJson) {
+            pageRendered = this.htmlPageAssetRenderedAPI.getPageMetadata(
+                    pageContextBuilder
+                            .setParseJSON(true)
+                            .build(),
+                    request, response
+            );
+        } else {
+            final HttpSession session = request.getSession(false);
+            if (null != session) {
+                // Time Machine-Date affects the logic on the VTLs that conform parts of the
+                // rendered pages. So, we better get rid of it
+                session.removeAttribute("tm_date");
+            }
+            pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
+                    pageContextBuilder.build(), request, response
+            );
+        }
+        final Host site = APILocator.getHostAPI().find(pageRendered.getPage().getHost(), user,
+                PageMode.get(request).respectAnonPerms);
+        request.setAttribute(WebKeys.CURRENT_HOST, site);
+        request.getSession().setAttribute(WebKeys.CURRENT_HOST, site);
+        return Response.ok(new ResponseEntityView<>(pageRendered)).build();
+    }
 
     /**
-     * Save a template and link it with a page, If the page already has a anonymous template linked then it is updated,
-     * otherwise a new template is created and the old link template remains unchanged
+     * Saves a Template and links it with an HTML Page. If the page already has an Anonymous
+     * Template linked to it, it will be updated in these new changes. Otherwise, a new Anonymous
+     * Template is created and the previously linked Template will remain unchanged.
      *
-     * @see Template#isAnonymous()
+     * @param request          The current instance of the {@link HttpServletRequest}.
+     * @param response         The current instance of the {@link HttpServletResponse}.
+     * @param pageId           The ID of the page that the Template will be linked to.
+     * @param variantNameParam The name of the Variant associated to the page.
+     * @param form             The {@link PageForm} containing the information of the Template.
      *
-     * @param request The {@link HttpServletRequest} object.
-     * @param pageId page's Id to link the template
-     * @param form The {@link PageForm}
-     * @return
+     * @return The {@link Response} entity containing the updated {@link PageView} object for the
+     * specified page.
+     *
+     * @throws DotSecurityException The currently logged-in user does not have the necessary
+     *                              permissions to perform this action.
      */
     @NoCache
     @POST
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{pageId}/layout")
-    public Response saveLayout(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @PathParam("pageId") final String pageId,
-            @QueryParam("variantName") final String variantNameParam,
-            final PageForm form) throws DotSecurityException {
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "postPageLayoutHTMLLink",
+        summary = "Links template and page",
+        description = "Takes a saved template and links it to an HTML page.\n\n" +
+                    "Any pages with a template already linked will update with the new link.\n\n" +
+                    "Otherwise a new template will be created without making any changes to previous templates.\n\n" +
+                    "Returns the rendered page.\n\n",
+        tags = {"Page"},
+        responses = {
+                @ApiResponse(responseCode = "200", description = "Page template linked to HTML and saved successfully",
+                        content = @Content(mediaType = "application/json", 
+                                schema = @Schema(implementation = ResponseEntityView.class)
+                                )
+                        ),
+                @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
+                @ApiResponse(responseCode = "404", description = "Page not found")
+                })
+    public Response saveLayout(
+                @Context final HttpServletRequest request,
+                @Context final HttpServletResponse response,
+                @PathParam("pageId") @Parameter(description = "ID for the page will link to") final String pageId,
+                @QueryParam("variantName") final String variantNameParam,
+                @RequestBody(description = "POST body consists of a JSON object containing " + 
+                                        "one property called 'PageForm', which contains information " +
+                                        "about the layout of a page's template ",
+                                required = true,
+                                content = @Content(
+                                        schema = @Schema(implementation = PageForm.class)
+                                        )
+                                )
+                final PageForm form) 
+                throws DotSecurityException {                
 
         final String variantName = UtilMethods.isSet(variantNameParam) ? variantNameParam :
                 VariantAPI.DEFAULT_VARIANT.name();
 
-        Logger.debug(this, String.format("Saving layout: pageId -> %s layout-> %s variantName -> %s", pageId,
+        Logger.debug(this, () -> String.format("Saving layout: pageId -> %s , layout -> %s , variantName -> %s", pageId,
                 form != null ? form.getLayout() : null, variantName));
-
-        if (form == null) {
-            throw new BadRequestException("Layout is required");
-        }
+        checkNotNull(form, BadRequestException.class, "The 'PageForm' JSON data is required");
 
         final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
-
-        Response res;
-
         try {
             HTMLPageAsset page = (HTMLPageAsset) this.pageResourceHelper.getPage(user, pageId, request);
 
@@ -364,21 +475,18 @@ public class PageResource {
                     response
             );
 
-            res = Response.ok(new ResponseEntityView(renderedPage)).build();
-
-        } catch(DoesNotExistException e) {
-            final String errorMsg = String.format("DoesNotExistException on PageResource.saveLayout, parameters:  %s, %s %s: ",
+            return Response.ok(new ResponseEntityView<>(renderedPage)).build();
+        } catch (final DoesNotExistException e) {
+            final String errorMsg = String.format("DoesNotExistException on PageResource.saveLayout. Parameters: [ %s ], [ %s ], [ %s ]: ",
                     request, pageId, form);
             Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse("", "Unable to find page with Identifier: " + pageId, Response.Status.NOT_FOUND);
-        } catch (BadRequestException | DotDataException e) {
-            final String errorMsg = String.format("%s on PageResource.saveLayout, parameters:  %s, %s %s: ",
+            return ExceptionMapperUtil.createResponse("", "Unable to find page with Identifier: " + pageId, Response.Status.NOT_FOUND);
+        } catch (final BadRequestException | DotDataException e) {
+            final String errorMsg = String.format("%s on PageResource.saveLayout. Parameters: [ %s ], [ %s ], [ %s ]: ",
                     e.getClass().getCanonicalName(), request, pageId, form);
             Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
         }
-
-        return res;
     }
 
     /**
@@ -393,8 +501,35 @@ public class PageResource {
     @NoCache
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes({MediaType.APPLICATION_JSON})
     @Path("/layout")
-    public Response saveLayout(@Context final HttpServletRequest request, @Context final HttpServletResponse response, final PageForm form) throws DotDataException {
+    @Operation(operationId = "postPageLayout",
+                summary = "Saves a page template",
+                description = "Handles saving of a page template using provided data. " +
+                                "Method processes the request and returns HTTP response indicating a complete save operation.",
+                tags = {"Page"},
+                responses = {
+                        @ApiResponse(responseCode = "200", description = "Page template saved successfully",
+                                content = @Content(mediaType = "application/json", 
+                                        schema = @Schema(implementation = ResponseEntityView.class)
+                                        )
+                                ),
+                        @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
+                        @ApiResponse(responseCode = "404", description = "Page not found")
+                })
+    public Response saveLayout(
+                @Context final HttpServletRequest request, 
+                @Context final HttpServletResponse response, 
+                @RequestBody(description = "POST body consists of a JSON object containing " + 
+                                        "one property called 'PageForm', which contains a " +
+                                        "template layout for the page",
+                                required = true,
+                                content = @Content(
+                                        schema = @Schema(implementation = PageForm.class)
+                                        )
+                                )
+                final PageForm form) 
+                throws DotDataException {
 
         final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
@@ -416,11 +551,6 @@ public class PageResource {
                     e.getClass().getCanonicalName(), request, form);
             Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
-        } catch (IOException e) {
-            final String errorMsg = String.format("IOException on PageResource.saveLayout, parameters:  %s, %s: ",
-                    request, form);
-            Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return res;
@@ -1088,9 +1218,8 @@ public class PageResource {
                 .rejectWhenNoUser(true).requiredBackendUser(true).init().getUser();
 
         final PageMode mode = PageMode.get(request);
-        Logger.debug(this, ()-> "Finding available actions, for Page for the page path: " + findAvailableActionsForm.getPath()
-                + ", host id: " + findAvailableActionsForm.getHostId()
-                + ", lang: " + findAvailableActionsForm.getLanguageId());
+        Logger.debug(this, () -> String.format("Finding available actions for page path: '%s' / Site ID: '%s' / Lang ID: %s",
+                findAvailableActionsForm.getPath(), findAvailableActionsForm.getHostId(), findAvailableActionsForm.getLanguageId()));
 
         final long languageId  = -1 != findAvailableActionsForm.getLanguageId()? findAvailableActionsForm.getLanguageId():
                 WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
@@ -1124,7 +1253,45 @@ public class PageResource {
                     actions.stream().map(WorkflowResource::convertToWorkflowActionView).collect(Collectors.toList())
             ));
         }
-
-        throw new DoesNotExistException("The page: " + findAvailableActionsForm.getPath() + " do not exist");
+        throw new DoesNotExistException(String.format("HTML Page path '%s' with language ID '%s' in Site " +
+                        "'%s' does not exist", findAvailableActionsForm.getPath(),
+                findAvailableActionsForm.getLanguageId(), findAvailableActionsForm.getHostId()));
     } // findAvailableActions.
+
+    /**
+     * Receives the Identifier of an HTML Page, returns all the available languages in dotCMS and,
+     * for each of them, adds a flag indicating whether the page is available in that language or
+     * not. This may be particularly useful when requiring the system to provide a specific action
+     * when a page is NOT available in a given language. Here's an example of how you can use it:
+     * <pre>
+     *     GET <a href="http://localhost:8080/api/v1/page/${PAGE_ID}/languages">http://localhost:8080/api/v1/page/${PAGE_ID}/languages</a>
+     * </pre>
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param pageId   The Identifier of the HTML Page whose available languages will be checked.
+     *
+     * @return A {@link Response} object containing the list of languages and the flag indicating
+     * whether the page is available in such a language or not.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    @GET
+    @Path("/{pageId}/languages")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response checkPageLanguageVersions(@Context final HttpServletRequest request,
+                                              @Context final HttpServletResponse response,
+                                              @PathParam("pageId") final String pageId) throws DotDataException {
+        final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredBackendUser(true)
+                .init().getUser();
+        Logger.debug(this, () -> String.format("Check the languages that page '%s' is available on", pageId));
+        final List<ExistingLanguagesForPageView> languagesForPage =
+                this.pageResourceHelper.getExistingLanguagesForPage(pageId, user);
+        return Response.ok(new ResponseEntityView<>(languagesForPage)).build();
+    }
+
 } // E:O:F:PageResource

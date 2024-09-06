@@ -1,0 +1,41 @@
+@use "variables" as *;
+@import "mixins";
+
+.p-galleria {
+    & .p-galleria-item-nav {
+        background: $color-palette-white-op-60;
+        color: $color-palette-gray-800;
+        width: $spacing-6;
+        height: $spacing-6;
+        transition:
+            background-color $basic-speed,
+            color $basic-speed,
+            box-shadow $basic-speed;
+        border-radius: $border-radius-circular;
+        margin: -$spacing-3 $spacing-1 0;
+        z-index: 1;
+
+        .p-galleria-item-prev-icon,
+        .p-galleria-item-next-icon {
+            font-size: $font-size-default;
+        }
+
+        .p-icon-wrapper .p-icon {
+            width: $spacing-2;
+            height: $spacing-2;
+        }
+
+        &:not(.p-disabled):hover {
+            background: $color-palette-white-op-80;
+        }
+
+        &.p-disabled {
+            background: $color-palette-white-op-60;
+            color: $color-palette-gray-500;
+        }
+
+        &:focus {
+            @include field-focus;
+        }
+    }
+}

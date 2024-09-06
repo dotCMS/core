@@ -5,8 +5,7 @@ import { ChangeDetectorRef, Component, HostBinding, OnDestroy, OnInit } from '@a
 import { filter, takeUntil } from 'rxjs/operators';
 
 import { DotEventsService } from '@dotcms/data-access';
-import { DotEvent } from '@dotcms/dotcms-models';
-import { DotGlobalMessage } from '@models/dot-global-message/dot-global-message.model';
+import { DotEvent, DotGlobalMessage } from '@dotcms/dotcms-models';
 
 /**
  * Set a listener to display Global Messages in the main top toolbar
@@ -36,7 +35,10 @@ export class DotGlobalMessageComponent implements OnInit, OnDestroy {
     };
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(private dotEventsService: DotEventsService, private cd: ChangeDetectorRef) {}
+    constructor(
+        private dotEventsService: DotEventsService,
+        private cd: ChangeDetectorRef
+    ) {}
 
     ngOnDestroy(): void {
         this.destroy$.next(true);

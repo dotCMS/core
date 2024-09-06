@@ -1,6 +1,7 @@
 import { of, Observable } from 'rxjs';
 
 import { DotTheme } from '@dotcms/dotcms-models';
+
 import { mockDotThemes } from './dot-themes.mock';
 
 export class DotThemesServiceMock {

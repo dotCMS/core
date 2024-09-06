@@ -22,7 +22,7 @@ public class TestUtil {
     }
 
     public static boolean isIntegrationTest() {
-        return System.getProperty("DOTCMS_INTEGRATION_TEST") != null;
+        return System.getProperty(DOTCMS_INTEGRATION_TEST) != null;
     }
 
 

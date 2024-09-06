@@ -10,10 +10,10 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import {
     DotCrudService,
     DotMessageService,
+    DotTempFileUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -102,7 +102,10 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             const field = de.query(By.css('dot-binary-file'));
 
             expect(field.attributes).toEqual(
-                jasmine.objectContaining({ accept: 'image/*', style: 'height: 3.35rem;' })
+                jasmine.objectContaining({
+                    accept: 'image/*',
+                    style: 'height: 3.35rem;'
+                })
             );
 
             expect(field.nativeNode.previewImageUrl).toBeNull();
@@ -122,7 +125,10 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             const field = de.query(By.css('dot-binary-file'));
 
             expect(field.attributes).toEqual(
-                jasmine.objectContaining({ accept: 'image/*', style: 'height: 7.14rem;' })
+                jasmine.objectContaining({
+                    accept: 'image/*',
+                    style: 'height: 7.14rem;'
+                })
             );
 
             expect(field.nativeNode.previewImageUrl).toBe('/dA/123inode');

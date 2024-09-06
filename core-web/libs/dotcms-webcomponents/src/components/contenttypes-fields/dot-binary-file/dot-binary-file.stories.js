@@ -32,6 +32,6 @@ const Template = (args) => {
     }
 
     return binaryfield;
-}
+};
 
-export const BinaryField = Template.bind({})
+export const BinaryField = Template.bind({});

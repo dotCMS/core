@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { CanDeactivateGuardService } from '@services/guards/can-deactivate-guard.service';
+import { CanDeactivateGuardService } from '@dotcms/data-access';
 
 import { DotTemplateNewRoutingModule } from './dot-template-new-routing.module';
 import { DotTemplateNewComponent } from './dot-template-new.component';

@@ -1,16 +1,14 @@
-<div class="field" [formGroup]="group">
-    <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>{{
-        'contenttypes.field.properties.validation_regex.label' | dm
-    }}</label>
+<div [formGroup]="group" class="field">
+    <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>
+        {{ 'contenttypes.field.properties.validation_regex.label' | dm }}
+    </label>
     <div class="form__validation-input-container">
         <input [id]="property.name" [formControlName]="property.name" pInputText type="text" />
         <p-dropdown
+            (onChange)="templateSelect($event)"
             [style]="{ width: '125px' }"
             [options]="regexCheckTemplates"
             [formControlName]="property.name"
-            (onChange)="templateSelect($event)"
-            appendTo="body"
-        >
-        </p-dropdown>
+            appendTo="body"></p-dropdown>
     </div>
 </div>

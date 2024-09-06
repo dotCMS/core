@@ -16,11 +16,13 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import javax.ws.rs.ext.Provider;
 
 
 /**
  * @author Geoff M. Granum
  */
+@Provider
 public class CorsFilter implements ContainerResponseFilter {
 
 
@@ -30,16 +32,18 @@ public class CorsFilter implements ContainerResponseFilter {
 
     public CorsFilter() {
         Map<String, List<String[]>> loadingMap  = new HashMap<>();
-        Config.subset(CORS_PREFIX ).forEachRemaining(key -> {
-            final String[] splitter = key.split("\\.", 2);
-            final String mapping = splitter[0];
-            final String header = fixHeaderCase(splitter[1]);
+        final List<String> props = Config.subsetContainsAsList(CORS_PREFIX);
+        props.forEach(key -> {
+            final String convertedKeyToEnvKey = Config.envKey(key);
+            final String[] splitter = convertedKeyToEnvKey.split("_", 5);
+            final String mapping = splitter[3].toLowerCase();
+            final String header = fixHeaderCase(splitter[4]);
             List<String[]> keys = loadingMap.getOrDefault(mapping,  new ArrayList<>());
 
-            keys.add(new String[] {header, Config.getStringProperty(CORS_PREFIX + "." + key, "")});
+            keys.add(new String[] {header, Config.getStringProperty(key, "")});
 
             loadingMap.put(mapping, keys);
-            
+
         });
         this.headerMap = ImmutableMap.copyOf(loadingMap);
     }
@@ -73,8 +77,9 @@ public class CorsFilter implements ContainerResponseFilter {
     }
 
 
-    protected final String fixHeaderCase(final String propertyName) {
+    protected final String fixHeaderCase(String propertyName) {
 
+        propertyName = propertyName.toLowerCase().replace("_","-");
         final StringWriter sw = new StringWriter();
         boolean upperCaseNextChar = true;
         for (final char c : propertyName.toCharArray()) {

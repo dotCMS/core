@@ -35,12 +35,19 @@ import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+/**
+ * This class implements the {@link ContentTypeDestroyAPI} for information stored in a database.
+ *
+ * @author Fabrizzio Araya
+ * @since Apr 10th, 2023
+ */
 public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
     /**
@@ -219,46 +226,53 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
 
     /**
-     * This method isn't meant to be transactional.
-     * So DO NOT ADD a WrapInTransaction annotation here
-     * It is meant to operate destroying small batches of contentlets transactionally every time.
-     * @param type
-     * @param user
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Deletes absolutely all contents of the specified Content Type. It is meant to operate
+     * destroying <b>small batches of contentlets transactionally every time</b>.
+     * <p>It's very important t note that this method isn't meant to be transactional. So, <b>DO NOT
+     * ADD</b> any {@link WrapInTransaction} annotation here.</p>
+     *
+     * @param type The {@link ContentType} to be destroyed.
+     * @param user The {@link User} performing the operation.
+     *
+     * @throws DotDataException     An error occurred when interacting with the database.
+     * @throws DotSecurityException The specified user does not have the necessary permissions to
+     *                              perform the operation.
      */
     @Override
-    public void destroy(ContentType type, User user) throws DotDataException, DotSecurityException {
+    public void destroy(final ContentType type, final User user) throws DotDataException, DotSecurityException {
         final long t1 = System.currentTimeMillis();
         final long allCount = countByType(type);
         final int limit = pullLimitProp.get();
-        Logger.info(getClass(), String.format(
-                "There are (%d) contents of type (%s). Will remove them sequentially using (%d) batchSize ",
-                allCount, type.name(), limit));
+        if (allCount > 0) {
+            Logger.info(getClass(), String.format(
+                    "There are (%d) contents of type (%s). Will remove them sequentially using (%d) batchSize ",
+                    allCount, type.name(), limit));
 
-        int offset = 0;
+            int offset = 0;
 
-        while (true) {
+            while (true) {
 
-            Map<String, List<ContentletVersionInfo>> batch = nextBatch(type, limit, offset);
-            if (batch.isEmpty()) {
-                //We're done lets get out of here
-                Logger.debug(getClass(), "We're done collecting contentlets to destroy.");
-                break;
+                Map<String, List<ContentletVersionInfo>> batch = nextBatch(type, limit, offset);
+                if (batch.isEmpty()) {
+                    //We're done lets get out of here
+                    Logger.debug(getClass(), "We're done collecting contentlets to destroy.");
+                    break;
+                }
+
+                Logger.debug(getClass(), String.format(" For (%s) This batch is (%d) Big. ", type.name(), batch.size()));
+
+                batch.forEach((identifier, versions) -> destroy(identifier, versions, type, user));
+
+                offset += limit;
+                Logger.debug(getClass(),
+                        String.format(" Offset is (%d) of (%d) total. ", offset, allCount));
             }
 
-            Logger.debug(getClass(), String.format(" For (%s) This batch is (%d) Big. ",type.name(), batch.size()));
-
-            batch.forEach((identifier, versions) -> destroy(identifier, versions, type, user));
-
-            offset += limit;
-            Logger.debug(getClass(),
-                    String.format(" Offset is (%d) of (%d) total. ", offset, allCount));
+            final long leftovers = countByType(type);
+            Logger.info(getClass(), String.format(" :: for (%s) allCount is (%d) with leftovers (%d) :: ", type.name(), allCount, leftovers));
+        } else {
+            Logger.info(getClass(), String.format("There are no contents of type '%s' to be deleted", type.name()));
         }
-
-        final long leftovers = countByType(type);
-        Logger.info(getClass(),String.format(" :: for (%s) allCount is (%d) with leftovers (%d) :: ", type.name(), allCount, leftovers));
-
         internalDestroy(type);
 
         //Some custom formatted stats logging
@@ -267,12 +281,8 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
         final long minutes = TimeUnit.MILLISECONDS.toMinutes(diff);
         final long seconds = TimeUnit.MILLISECONDS.toSeconds(diff);
         final String timeInHHMMSS = String.format("%02d:%02d:%02d", hours, minutes, seconds);
-        Logger.info(getClass(),
-            String.format(
-                    " I'm done destroying (%d) pieces of Content of type (%s). it took me : [%s] ", allCount, type.variable(), timeInHHMMSS
-            )
-        );
-
+        Logger.info(getClass(), String.format("Finished destroying '%d' contents of type '%s'. Processing time: '%s' ",
+                allCount, type.variable(), timeInHHMMSS));
     }
 
     /**

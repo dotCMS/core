@@ -1,5 +1,3 @@
-import { mockDotLanguage } from './dot-language.mock';
-import { dotcmsContentTypeBasicMock } from './dot-content-types.mock';
 import {
     DotPage,
     DotLayout,
@@ -9,6 +7,9 @@ import {
     DotTemplate,
     DotPageContainerStructure
 } from '@dotcms/dotcms-models';
+
+import { dotcmsContentTypeBasicMock } from './dot-content-types.mock';
+import { mockDotLanguage } from './dot-language.mock';
 
 export const mockDotPage = (): DotPage => {
     return {
@@ -72,12 +73,204 @@ export const mockDotContainers = (): DotPageContainerStructure => {
     return {
         '/default/': {
             container: processedContainers[0].container,
-            containerStructures: [{ contentTypeVar: 'Banner' }]
+            containerStructures: [{ contentTypeVar: 'Banner' }],
+            contentlets: {
+                '123': [
+                    {
+                        baseType: '123',
+                        contentType: '123',
+                        folder: '123',
+                        dateCreated: '123',
+                        host: '123',
+                        identifier: '123',
+                        dateModifed: '123',
+                        content: 'something',
+                        languageId: 123,
+                        live: false,
+                        inode: '123',
+                        locked: false,
+                        modDate: '123',
+                        url: '123',
+                        owner: '123',
+                        modUser: '123',
+                        image: '123',
+                        working: false,
+                        titleImage: '123',
+                        stInode: '123',
+                        deleted: false,
+                        sortOrder: 123,
+                        hostName: '123',
+                        archived: false,
+                        hasTitleImage: false,
+                        modUserName: '123',
+                        title: '123',
+                        __icon__: '123'
+                    },
+                    {
+                        baseType: '456',
+                        inode: '456',
+                        identifier: '456',
+                        contentType: '456',
+                        content: 'something',
+                        dateCreated: '456',
+                        archived: false,
+                        live: false,
+                        host: '456',
+                        folder: '456',
+                        dateModifed: '456',
+                        modDate: '456',
+                        languageId: 456,
+                        working: false,
+                        title: '456',
+                        url: '456',
+                        owner: '456',
+                        sortOrder: 456,
+                        __icon__: '456',
+                        modUser: '456',
+                        locked: false,
+                        deleted: false,
+                        titleImage: '456',
+                        hasTitleImage: false,
+                        stInode: '456',
+                        image: '456',
+                        modUserName: '456',
+                        hostName: '456'
+                    }
+                ],
+                '456': [
+                    {
+                        contentType: '123',
+                        content: 'something',
+                        dateCreated: '123',
+                        folder: '123',
+                        identifier: '123',
+                        dateModifed: '123',
+                        host: '123',
+                        baseType: '123',
+                        live: false,
+                        inode: '123',
+                        working: false,
+                        languageId: 123,
+                        owner: '123',
+                        locked: false,
+                        modDate: '123',
+                        archived: false,
+                        modUser: '123',
+                        title: '123',
+                        titleImage: '123',
+                        image: '123',
+                        hasTitleImage: false,
+                        __icon__: '123',
+                        deleted: false,
+                        sortOrder: 123,
+                        url: '123',
+                        hostName: '123',
+                        modUserName: '123',
+                        stInode: '123'
+                    }
+                ]
+            }
         },
 
         '/banner/': {
             container: processedContainers[1].container,
-            containerStructures: [{ contentTypeVar: 'Contact' }]
+            containerStructures: [{ contentTypeVar: 'Contact' }],
+            contentlets: {
+                '123': [
+                    {
+                        dateModifed: '123',
+                        baseType: '123',
+                        content: 'something',
+                        contentType: '123',
+                        identifier: '123',
+                        folder: '123',
+                        dateCreated: '123',
+                        live: false,
+                        inode: '123',
+                        languageId: 123,
+                        locked: false,
+                        host: '123',
+                        working: false,
+                        modUser: '123',
+                        owner: '123',
+                        archived: false,
+                        url: '123',
+                        modDate: '123',
+                        stInode: '123',
+                        deleted: false,
+                        hasTitleImage: false,
+                        image: '123',
+                        __icon__: '123',
+                        hostName: '123',
+                        sortOrder: 123,
+                        titleImage: '123',
+                        modUserName: '123',
+                        title: '123'
+                    },
+                    {
+                        contentType: '456',
+                        baseType: '456',
+                        content: 'something',
+                        dateCreated: '456',
+                        inode: '456',
+                        identifier: '456',
+                        folder: '456',
+                        live: false,
+                        title: '456',
+                        dateModifed: '456',
+                        languageId: 456,
+                        modDate: '456',
+                        host: '456',
+                        locked: false,
+                        archived: false,
+                        working: false,
+                        owner: '456',
+                        deleted: false,
+                        modUser: '456',
+                        __icon__: '456',
+                        url: '456',
+                        hasTitleImage: false,
+                        hostName: '456',
+                        titleImage: '456',
+                        modUserName: '456',
+                        sortOrder: 456,
+                        stInode: '456',
+                        image: '456'
+                    }
+                ],
+                '456': [
+                    {
+                        dateCreated: '123',
+                        dateModifed: '123',
+                        content: 'something',
+                        baseType: '123',
+                        inode: '123',
+                        contentType: '123',
+                        host: '123',
+                        folder: '123',
+                        identifier: '123',
+                        modDate: '123',
+                        live: false,
+                        modUser: '123',
+                        owner: '123',
+                        languageId: 123,
+                        locked: false,
+                        working: false,
+                        archived: false,
+                        image: '123',
+                        stInode: '123',
+                        titleImage: '123',
+                        hostName: '123',
+                        title: '123',
+                        deleted: false,
+                        hasTitleImage: false,
+                        __icon__: '123',
+                        url: '123',
+                        modUserName: '123',
+                        sortOrder: 123
+                    }
+                ]
+            }
         }
     };
 };
@@ -114,7 +307,7 @@ export const mockDotTemplate = () => {
     return {
         anonymous: false,
         friendlyName: '',
-        identifier: '',
+        identifier: '111',
         inode: '123',
         name: '',
         title: 'Template Name',
@@ -123,7 +316,7 @@ export const mockDotTemplate = () => {
         drawed: true,
         canEdit: true,
         theme: '',
-        layout: null,
+        layout: null as unknown as DotLayout,
         hasLiveVersion: true,
         working: true
     };

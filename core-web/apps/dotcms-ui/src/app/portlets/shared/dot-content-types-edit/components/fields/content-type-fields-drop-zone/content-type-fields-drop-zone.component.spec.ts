@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as _ from 'lodash';
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { Observable, of, Subject } from 'rxjs';
 
@@ -27,21 +26,28 @@ import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotEventsService,
+    DotFormatDateService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { CoreWebService, DotEventsSocket, LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
+    DotDialogActions,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotDialogComponent,
+    DotDialogModule,
+    DotFieldValidationMessageComponent,
+    DotIconModule,
+    DotMessagePipe
+} from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     cleanUpDialog,
@@ -212,7 +218,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 DotIconModule,
                 DragulaModule,
                 TableModule,
-                DotFieldValidationMessageModule,
+                DotFieldValidationMessageComponent,
                 ReactiveFormsModule,
                 HttpClientTestingModule,
                 DotMessagePipe,
@@ -484,7 +490,6 @@ describe('Load fields and drag and drop', () => {
                     }
                 ]),
                 DragulaModule,
-                DotFieldValidationMessageModule,
                 DotContentTypeFieldsVariablesModule,
                 FormsModule,
                 CheckboxModule,
@@ -812,9 +817,9 @@ describe('Load fields and drag and drop', () => {
         fixture.detectChanges();
 
         const fieldMoved = [
-            _.cloneDeep(comp.fieldRows[1]),
-            _.cloneDeep(comp.fieldRows[0]),
-            _.cloneDeep(comp.fieldRows[2])
+            structuredClone(comp.fieldRows[1]),
+            structuredClone(comp.fieldRows[0]),
+            structuredClone(comp.fieldRows[2])
         ];
 
         comp.saveFields.subscribe((data) => {
@@ -846,9 +851,9 @@ describe('Load fields and drag and drop', () => {
         fixture.detectChanges();
 
         const fieldMoved = [
-            _.cloneDeep(comp.fieldRows[1]),
-            _.cloneDeep(comp.fieldRows[0]),
-            _.cloneDeep(comp.fieldRows[2])
+            structuredClone(comp.fieldRows[1]),
+            structuredClone(comp.fieldRows[0]),
+            structuredClone(comp.fieldRows[2])
         ];
 
         comp.saveFields.subscribe(() => {

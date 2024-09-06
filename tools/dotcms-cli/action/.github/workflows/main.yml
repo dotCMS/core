@@ -1,0 +1,101 @@
+name: dotCMS sync
+
+on: [push]
+
+jobs:
+  sync-with-dotcms:
+    runs-on: ubuntu-latest
+    env:
+      # Global environment expected by dotCMS CLI
+      # This is how we instruct the cli the target server
+      DOT_API_URL: ${{ vars.DOT_API_URL }}
+      # This is how we instruct the cli the target folder in the repo
+      # By default it must be the root of the repo this allows setting up a different folder on top of the root
+      DOT_REPO_BASE_PATH: ${{ vars.DOT_REPO_BASE_PATH }}
+      # This is how we instruct the cli to create the workspace if it does not exist
+      DOT_CREATE_WORKSPACE: ${{ vars.DOT_CREATE_WORKSPACE || 'true' }}
+      # This is the CLI version to use, but we can always override this value
+      DOT_CLI_JAR_DOWNLOAD_URL: ${{ vars.DOT_CLI_JAR_DOWNLOAD_URL || 'https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/dotcms-cli/1.0.0-SNAPSHOT/dotcms-cli-1.0.0-20231002.205953-1.jar' }}
+      # In case we want to force the download of the CLI jar
+      DOT_FORCE_DOWNLOAD: ${{ vars.DOT_FORCE_DOWNLOAD || 'false' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        id: checkout
+        with:
+          fetch-depth: 0
+
+      - name: Load .env file
+        uses: aarcangeli/load-dotenv@v1.0.0
+        with:
+          if-file-not-found: 'warn'
+
+      - name: Print env vars
+        run: |
+          echo "$GITHUB_ENV"
+
+      - name: Get changes
+        run: |
+          git diff --name-only ${{ github.event.before }} ${{ github.event.after }} > changed_files.txt
+
+      - name: List changed files
+        run: |
+          while IFS= read -r line
+          do
+            echo "\"$line\" was changed"
+          done < changed_files.txt
+
+      - name: Github Event Context properties
+        run: |
+          echo "Event: ${{ github.event }}"
+          echo "Event Name: ${{ github.event_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "Commit Ref: ${{ github.ref }}"
+          echo "Head Ref: ${{ github.head_ref }}"
+          echo "Base Ref: ${{ github.base_ref }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo "Workflow: ${{ github.workflow }}"
+          echo "PR: ${{ github.pull_request }}"
+          echo "Workspace: ${{ github.workspace }}"
+
+      - name: Create workspace if not exists
+        id: dot-workspace
+        run: |
+          if [ ${{ env.DOT_CREATE_WORKSPACE }} = true ]; then
+            echo "Creating workspace ::: "             
+            chmod +x ./.github/workflows/scripts/workspace.sh
+            source ./.github/workflows/scripts/workspace.sh
+            workspace_updated=$(create_workspace "${{github.workspace}}${{env.DOT_REPO_BASE_PATH}}" )          
+            echo "workspace-updated=$workspace_updated" >> "$GITHUB_OUTPUT"
+          fi
+        shell: bash
+
+      # This step requires permission to push to the repo
+      # you need to grant read/write permission for workflows in the repo settings
+      - name: Persist updated workspace
+        run: |
+          saveChanges="${{ steps.dot-workspace.outputs.workspace-updated }}"
+          if [ -n "${saveChanges}" ]; then            
+            git config user.name "${{ secrets.CI_MACHINE_USER }}"
+            git config user.email "dotCMS-Machine-User@dotcms.com"
+            git add .
+            git commit -m "pushing workspace changes"
+            git push
+            echo "Workspace has been updated."
+          fi
+
+      - name: Run dotCMS CLI
+        id: dot-push
+        run: |
+          chmod +x ./.github/workflows/scripts/run-push.sh
+          source ./.github/workflows/scripts/run-push.sh
+          install_cli "${{env.DOT_CLI_JAR_DOWNLOAD_URL}}" "${{env.DOT_FORCE_DOWNLOAD}}"
+          run_cli_push "${{github.workspace}}${{env.DOT_REPO_BASE_PATH}}" "${{ secrets.DOT_TOKEN }}" "${{ env.DOT_CLI_OPTS }}"
+          echo "exit-code=$exit_code" >> "$GITHUB_OUTPUT"
+          print_log
+          if [ $exit_code -ne 0 ]; then
+            echo "Error running dotCMS CLI"
+            exit 1
+          fi
+        shell: bash

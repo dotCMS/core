@@ -13,14 +13,13 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotGlobalMessageModule } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.module';
 import { DotPropertiesService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 
-import { DotFavoritePageModule } from '../../../components/dot-favorite-page/dot-favorite-page.module';
 import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
@@ -38,9 +37,9 @@ import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-ac
         FormsModule,
         ToolbarModule,
         TooltipModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotGlobalMessageModule,
-        DotFavoritePageModule,
+        DotFavoritePageComponent,
         DotEditPageNavDirective,
         RouterLink,
         TagModule,

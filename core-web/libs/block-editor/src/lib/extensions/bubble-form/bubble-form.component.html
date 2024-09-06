@@ -1,61 +1,57 @@
-<form *ngIf="form" [ngClass]="options?.customClass" [formGroup]="form" (ngSubmit)="onSubmit()">
-    <div class="field form-row" *ngFor="let control of dynamicControls" [ngClass]="control.type">
-        <ng-container [ngSwitch]="control.type">
-            <ng-container *ngSwitchCase="'checkbox'">
-                <p-checkbox
-                    [formControlName]="control.key"
-                    [binary]="true"
-                    [id]="control.key"
-                ></p-checkbox>
-                <label
-                    [checkIsRequiredControl]="control.key"
-                    [for]="control.key"
-                    dotFieldRequired
-                    >{{ control.label | titlecase }}</label
-                >
-            </ng-container>
-            <ng-container *ngSwitchDefault>
-                <label
-                    [ngClass]="{ 'p-label-input-required': control.required }"
-                    [for]="control.key"
-                    >{{ control.label | titlecase }}</label
-                >
-                <input
-                    #group
-                    *ngSwitchDefault
-                    [formControlName]="control.key"
-                    [id]="control.key"
-                    [type]="control.type"
-                    [min]="control.min"
-                    [style]="{ width: '100%', fontSize: '14px', height: '40px' }"
-                    pInputText
-                    type="control.type"
-                />
-            </ng-container>
-        </ng-container>
-        <span
-            class="error-message"
-            *ngIf="form.controls[control.key].invalid && form.controls[control.key].dirty"
-            >This field is required</span
-        >
-    </div>
-
-    <div class="form-action">
-        <button
-            class="p-button-outlined"
-            [style]="{ width: '120px' }"
-            (click)="hide.emit(true)"
-            pButton
-            type="button"
-            label="CANCEL"
-        ></button>
-        <button
-            class="p-button"
-            [disabled]="form.invalid"
-            [style]="{ padding: '11.5px 24px' }"
-            pButton
-            type="submit"
-            label="APPLY"
-        ></button>
-    </div>
-</form>
+@if (form) {
+    <form (ngSubmit)="onSubmit()" [ngClass]="options?.customClass" [formGroup]="form">
+        @for (control of dynamicControls; track control) {
+            <div [ngClass]="control.type" class="field form-row">
+                @switch (control.type) {
+                    @case ('checkbox') {
+                        <p-checkbox
+                            [formControlName]="control.key"
+                            [binary]="true"
+                            [id]="control.key"></p-checkbox>
+                        <label
+                            [checkIsRequiredControl]="control.key"
+                            [for]="control.key"
+                            dotFieldRequired>
+                            {{ control.label | titlecase }}
+                        </label>
+                    }
+                    @default {
+                        <label
+                            [ngClass]="{ 'p-label-input-required': control.required }"
+                            [for]="control.key">
+                            {{ control.label | titlecase }}
+                        </label>
+                        <input
+                            [formControlName]="control.key"
+                            [id]="control.key"
+                            [type]="control.type"
+                            [min]="control.min"
+                            [style]="{ width: '100%', fontSize: '14px', height: '40px' }"
+                            #group
+                            pInputText
+                            type="control.type" />
+                    }
+                }
+                @if (form.controls[control.key].invalid && form.controls[control.key].dirty) {
+                    <span class="error-message">This field is required</span>
+                }
+            </div>
+        }
+        <div class="form-action">
+            <button
+                (click)="hide.emit(true)"
+                [style]="{ width: '120px' }"
+                class="p-button-outlined"
+                pButton
+                type="button"
+                label="CANCEL"></button>
+            <button
+                [disabled]="form.invalid"
+                [style]="{ padding: '11.5px 24px' }"
+                class="p-button"
+                pButton
+                type="submit"
+                label="APPLY"></button>
+        </div>
+    </form>
+}

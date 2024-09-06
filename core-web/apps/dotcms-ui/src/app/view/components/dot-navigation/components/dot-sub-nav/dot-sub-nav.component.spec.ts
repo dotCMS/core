@@ -4,7 +4,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotMenu } from '@models/navigation';
+import { DotMenu } from '@dotcms/dotcms-models';
 
 import { DotSubNavComponent } from './dot-sub-nav.component';
 

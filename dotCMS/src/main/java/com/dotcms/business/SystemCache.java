@@ -1,6 +1,7 @@
 package com.dotcms.business;
 
 import com.dotmarketing.business.Cachable;
+import com.dotmarketing.business.CachableSupport;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
@@ -9,7 +10,7 @@ import com.dotmarketing.util.Logger;
 /**
  * Created by jasontesser on 3/17/17.
  */
-public class SystemCache implements Cachable {
+public class SystemCache implements CachableSupport<String, Object> {
 
     protected static String PRIMARY_GROUP = "SYSTEM_GROUP";
     private String[] groupNames = {PRIMARY_GROUP};
@@ -32,7 +33,8 @@ public class SystemCache implements Cachable {
         cache.flushGroup(PRIMARY_GROUP);
     }
 
-    public Object get(String key) {
+    @Override
+    public Object get(final String key) {
         Object o = null;
         try{
             o = (Object) cache.get(key,PRIMARY_GROUP);
@@ -43,7 +45,8 @@ public class SystemCache implements Cachable {
         return o;
     }
 
-    public Object put(String key, Object object) {
+    @Override
+    public Object put(final String key, final Object object) {
         if(object == null){
             return null;
         }
@@ -56,7 +59,8 @@ public class SystemCache implements Cachable {
     /* (non-Javadoc)
      * @see org.apache.velocity.runtime.resource.ResourceCache#remove(java.lang.Object)
      */
-    public void remove(String key) {
+    @Override
+    public void remove(final String key) {
 
         try{
             cache.remove(key,getPrimaryGroup());

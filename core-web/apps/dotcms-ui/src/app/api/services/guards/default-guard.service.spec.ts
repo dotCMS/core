@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotRouterService } from '@dotcms/data-access';
 
 import { DefaultGuardService } from './default-guard.service';
 

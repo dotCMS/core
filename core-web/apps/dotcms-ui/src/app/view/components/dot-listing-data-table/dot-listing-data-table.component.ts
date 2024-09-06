@@ -17,12 +17,11 @@ import { Table } from 'primeng/table';
 
 import { take } from 'rxjs/operators';
 
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { OrderDirection, PaginatorService } from '@dotcms/data-access';
 import { LoggerService } from '@dotcms/dotcms-js';
+import { DotActionMenuItem } from '@dotcms/dotcms-models';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table/data-table-column';
-import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 
 function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent) {
     return dotListingDataTableComponent.dataTable;
@@ -84,8 +83,7 @@ export class DotListingDataTableComponent implements OnInit {
 
     constructor(
         public loggerService: LoggerService,
-        public paginatorService: PaginatorService,
-        private dotFormatDateService: DotFormatDateService
+        public paginatorService: PaginatorService
     ) {
         this.paginatorService.url = this.url;
     }

@@ -10,6 +10,20 @@
         max-height: 21.5rem;
         overflow: auto !important;
     }
+
+    ::ng-deep {
+        .p-field-hint {
+            markdown pre {
+                background-color: $color-palette-secondary-100;
+                padding: $spacing-0 $spacing-1;
+
+                // This padding prevents the code to overlap between lines
+                code {
+                    padding: 0;
+                }
+            }
+        }
+    }
 }
 
 .p-field {
@@ -21,7 +35,7 @@
 
     input,
     textarea {
-        font-size: $font-size-lg;
+        font-size: $font-size-lmd;
         width: 100%;
     }
 
@@ -38,7 +52,7 @@
         }
 
         p-checkbox label {
-            font-size: $font-size-lg;
+            font-size: $font-size-lmd;
         }
 
         p-checkbox.required label:before,

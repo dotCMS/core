@@ -5,7 +5,9 @@ import { By } from '@angular/platform-browser';
 import { DraggableDirective } from './draggable.directive';
 
 @Component({
-    template: `<div tiptapDraggable>Hello Tiptap!</div>`
+    template: `
+        <div tiptapDraggable>Hello Tiptap!</div>
+    `
 })
 class TestComponent {}
 

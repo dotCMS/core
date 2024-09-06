@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.hostvariable.bussiness;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -23,10 +24,17 @@ public class HostVariableFactoryImpl extends HostVariableFactory{
 	    object = (HostVariable) HibernateUtil.load(HostVariable.class, object.getId());
 	 
 		HibernateUtil.delete(object);
-		CacheLocator.getHostVariablesCache().clearCache();
+		CacheLocator.getHostVariablesCache().clearVariablesForSite(object.getHostId());
 	}
-	
-	
+
+	public void deleteAllVariablesForSite(final String siteId) throws DotDataException {
+		new DotConnect().setSQL("DELETE FROM host_variable WHERE host_id=?")
+				.addParam(siteId)
+				.loadResult();
+
+		CacheLocator.getHostVariablesCache().clearVariablesForSite(siteId);
+	}
+
 	protected HostVariable find (String id) throws DotDataException {
 		 HostVariable hvar= new HostVariable();
 			try {
@@ -40,8 +48,7 @@ public class HostVariableFactoryImpl extends HostVariableFactory{
 	}
 
 
-
-	protected void save(HostVariable object) throws DotDataException {
+	protected HostVariable save(HostVariable object) throws DotDataException {
 		String id = object.getId();
 		
 		if( InodeUtils.isSet(id)) {
@@ -56,7 +63,10 @@ public class HostVariableFactoryImpl extends HostVariableFactory{
 		}else{
 			HibernateUtil.save(object);
 		}
-		CacheLocator.getHostVariablesCache().clearCache();
+
+		CacheLocator.getHostVariablesCache().clearVariablesForSite(object.getHostId());
+
+		return object;
 	}
   
 	protected List <HostVariable> getAllVariables() throws DotDataException {
@@ -69,14 +79,25 @@ public class HostVariableFactoryImpl extends HostVariableFactory{
 		}
 		return hostVariables;
 	}
-	
 
-	protected List<HostVariable> getVariablesForHost (String hostId ) throws DotDataException {
-		return TransformerLocator.createHostVariableTransformer(
-				new DotConnect().setSQL("SELECT * FROM host_variable WHERE host_id=?")
-				.addParam(hostId)
-				.loadObjectResults()
-		).asList();
+	@VisibleForTesting
+	public List<HostVariable> getVariablesForHost(final String siteId) throws DotDataException {
+
+		List<HostVariable> siteVariables = CacheLocator.getHostVariablesCache()
+				.getVariablesForSite(siteId);
+		if (siteVariables == null) {
+			siteVariables = TransformerLocator.createHostVariableTransformer(
+					new DotConnect().setSQL("SELECT * FROM host_variable "
+									+ "WHERE host_id=? "
+									+ "ORDER BY variable_key")
+							.addParam(siteId)
+							.loadObjectResults()
+			).asList();
+
+			CacheLocator.getHostVariablesCache().putVariablesForSite(siteId, siteVariables);
+		}
+
+		return siteVariables;
 	}
 
 	/**

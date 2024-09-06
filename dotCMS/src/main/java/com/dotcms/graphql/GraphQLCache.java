@@ -108,7 +108,6 @@ public class GraphQLCache implements Cachable {
 
         DotConcurrentFactory.getInstance()
                 .getSingleSubmitter().submit(()-> {
-                        remove(key);
                         put(key, Try.of(valueSupplier::get).getOrElse(Strings.EMPTY), cacheTTL);
                 });
     }

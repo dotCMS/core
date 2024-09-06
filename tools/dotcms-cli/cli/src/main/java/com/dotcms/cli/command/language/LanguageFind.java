@@ -1,14 +1,14 @@
 package com.dotcms.cli.command.language;
 
 import com.dotcms.api.LanguageAPI;
-import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.language.Language;
 import java.util.List;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import picocli.CommandLine;
 
 @ActivateRequestContext

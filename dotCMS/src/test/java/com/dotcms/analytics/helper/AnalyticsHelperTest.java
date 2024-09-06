@@ -48,36 +48,6 @@ public class AnalyticsHelperTest extends UnitTestBase {
     }
 
     /**
-     * Given an int status code
-     * Then evaluate it does have a SUCCESS http status
-     */
-    @Test
-    public void test_isSuccessStatusCode() {
-        assertTrue(AnalyticsHelper.get().isSuccessResponse(HttpStatus.SC_ACCEPTED));
-        assertTrue(AnalyticsHelper.get().isSuccessResponse(HttpStatus.SC_OK));
-        assertFalse(AnalyticsHelper.get().isSuccessResponse(HttpStatus.SC_BAD_REQUEST));
-        assertFalse(AnalyticsHelper.get().isSuccessResponse(HttpStatus.SC_FORBIDDEN));
-        assertFalse(AnalyticsHelper.get().isSuccessResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR));
-    }
-
-    /**
-     * Given a {@link Response}
-     * Then evaluate it does have a SUCCESS http status
-     */
-    @Test
-    public void test_isSuccessResponse() {
-        assertTrue(AnalyticsHelper.get().isSuccessResponse(response));
-        when(response.getStatusCode()).thenReturn(HttpStatus.SC_ACCEPTED);
-        assertTrue(AnalyticsHelper.get().isSuccessResponse(response));
-        when(response.getStatusCode()).thenReturn(HttpStatus.SC_BAD_REQUEST);
-        assertFalse(AnalyticsHelper.get().isSuccessResponse(response));
-        when(response.getStatusCode()).thenReturn(HttpStatus.SC_FORBIDDEN);
-        assertFalse(AnalyticsHelper.get().isSuccessResponse(response));
-        when(response.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        assertFalse(AnalyticsHelper.get().isSuccessResponse(response));
-    }
-
-    /**
      * Given an {@link Response}
      * Then verify that an {@link AccessToken} can be extracted as an entity
      */

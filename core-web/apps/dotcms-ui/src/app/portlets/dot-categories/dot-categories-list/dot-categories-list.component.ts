@@ -1,11 +1,11 @@
 import { Observable } from 'rxjs';
 
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, ViewChild } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
 import { Table } from 'primeng/table';
 
-import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
+import { DotCategory } from '@dotcms/dotcms-models';
 
 import { DotCategoriesListState, DotCategoriesListStore } from './store/dot-categories-list-store';
 
@@ -16,7 +16,9 @@ import { DotCategoriesListState, DotCategoriesListStore } from './store/dot-cate
     providers: [DotCategoriesListStore]
 })
 export class DotCategoriesListComponent {
-    vm$: Observable<DotCategoriesListState> = this.store.vm$;
+    readonly #store = inject(DotCategoriesListStore);
+
+    vm$: Observable<DotCategoriesListState> = this.#store.vm$;
     selectedCategories: DotCategory[] = [];
     breadCrumbHome = { icon: 'pi pi-home' };
     isContentFiltered = false;
@@ -24,7 +26,6 @@ export class DotCategoriesListComponent {
     dataTable: Table;
     @ViewChild('gf')
     globalSearch: ElementRef;
-    constructor(private store: DotCategoriesListStore) {}
 
     /**
      * Add category in breadcrumb
@@ -34,7 +35,7 @@ export class DotCategoriesListComponent {
     addBreadCrumb(category: DotCategory) {
         this.dataTable.filter(category.inode, 'inode', null);
         this.dataTable.filter(null, 'global', null);
-        this.store.addCategoriesBreadCrumb({ label: category.categoryName, id: category.inode });
+        this.#store.addCategoriesBreadCrumb({ label: category.categoryName, id: category.inode });
     }
 
     /**5
@@ -44,7 +45,7 @@ export class DotCategoriesListComponent {
      */
     updateBreadCrumb(event) {
         const { item } = event;
-        this.store.updateCategoriesBreadCrumb(item);
+        this.#store.updateCategoriesBreadCrumb(item);
         // for getting child categories need to pass category ID
         this.dataTable.filter(item.id || null, 'inode', null);
         this.dataTable.filter(null, 'global', null);
@@ -55,7 +56,7 @@ export class DotCategoriesListComponent {
      * @memberof DotCategoriesListComponent
      */
     handleRowCheck(): void {
-        this.store.updateSelectedCategories(this.selectedCategories);
+        this.#store.updateSelectedCategories(this.selectedCategories);
     }
 
     /**
@@ -76,9 +77,9 @@ export class DotCategoriesListComponent {
      */
     loadCategories(event: LazyLoadEvent) {
         if (event?.filters?.inode) {
-            this.store.getChildrenCategories(event);
+            this.#store.getChildrenCategories(event);
         } else {
-            this.store.getCategories(event);
+            this.#store.getCategories(event);
         }
 
         // for reset search field

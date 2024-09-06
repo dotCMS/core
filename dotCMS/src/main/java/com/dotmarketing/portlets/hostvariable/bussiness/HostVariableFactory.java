@@ -16,6 +16,14 @@ public abstract  class HostVariableFactory {
 	 */
 	
 	protected abstract  void delete(HostVariable object) throws DotDataException ;
+
+	/**
+	 * Deletes all site variables associated with a specific site.
+	 *
+	 * @param siteId the ID of the site
+	 * @throws DotDataException if an error occurs while deleting the variables
+	 */
+	public abstract void deleteAllVariablesForSite(String siteId) throws DotDataException;
 	
 	/**
 	 * This method get a  Host Variable  object from the cache based
@@ -34,7 +42,7 @@ public abstract  class HostVariableFactory {
 	 * @throws DotDataException
 	 */
 
-	protected abstract void save(HostVariable object) throws DotDataException ;
+	protected abstract HostVariable save(HostVariable object) throws DotDataException ;
 	/**
 	 * Retrieves the list of all Host Variables
 	 * 
@@ -42,19 +50,18 @@ public abstract  class HostVariableFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	
-	protected abstract  List <HostVariable> getAllVariables() throws DotDataException ;
+
+	protected abstract List<HostVariable> getAllVariables() throws DotDataException;
 
 	/**
-	 * Retrieves the list of  Host Variables associated
-	 * to the given id.
-	 * 
-	 * @param id
-	 * @return
+	 * Retrieves the list of Site Variables associated to the given id.
+	 *
+	 * @param siteId The ID of the site whose variables will be retrieved.
+	 * @return The list of Site Variables
 	 * @throws DotDataException
 	 */
-	
-	protected abstract List<HostVariable> getVariablesForHost (String hostId ) throws DotDataException ;
+	public abstract List<HostVariable> getVariablesForHost(String siteId)
+			throws DotDataException;
 
 	protected abstract void updateUserReferences(String userToDelete, String userToReplace) throws DotDataException ;
 

@@ -17,13 +17,13 @@ import { SliderModule } from 'primeng/slider';
 
 import { take } from 'rxjs/operators';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { ComponentStatus, StepStatus, TrafficProportion } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
-import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotSidebarDirective, DotSidebarHeaderComponent } from '@dotcms/ui';
 
-import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
+import {
+    ConfigurationTrafficStepViewModel,
+    DotExperimentsConfigurationStore
+} from '../../store/dot-experiments-configuration-store';
 
 @Component({
     selector: 'dot-experiments-configuration-traffic-allocation-add',
@@ -32,7 +32,6 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         CommonModule,
         ReactiveFormsModule,
 
-        DotFieldValidationMessageModule,
         DotMessagePipe,
         DotSidebarHeaderComponent,
         DotSidebarDirective,
@@ -52,12 +51,8 @@ export class DotExperimentsConfigurationTrafficAllocationAddComponent implements
     trafficAllocation: string;
     stepStatus = ComponentStatus;
 
-    vm$: Observable<{
-        experimentId: string;
-        trafficProportion: TrafficProportion;
-        trafficAllocation: number;
-        status: StepStatus;
-    }> = this.dotExperimentsConfigurationStore.trafficStepVm$;
+    vm$: Observable<ConfigurationTrafficStepViewModel> =
+        this.dotExperimentsConfigurationStore.trafficStepVm$;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore

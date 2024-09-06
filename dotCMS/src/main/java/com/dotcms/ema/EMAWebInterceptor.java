@@ -47,6 +47,8 @@ public class EMAWebInterceptor implements WebInterceptor {
     @Deprecated(forRemoval = true)
     public static final String INCLUDE_RENDERED_VAR = "includeRendered";
     public static final String AUTHENTICATION_TOKEN_VAR = "authenticationToken";
+    public static final String PAGE_DATA_PARAM = "dotPageData";
+    public static final String DEPTH_PARAM = "depth";
     private static final String API_CALL = "/api/v1/page/render";
     public static final String EMA_APP_CONFIG_KEY = "dotema-config";
     private static final ProxyTool proxy = new ProxyTool();
@@ -63,14 +65,13 @@ public class EMAWebInterceptor implements WebInterceptor {
 
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) {
+        final Host currentSite = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
 
-        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-
-        if (!this.existsConfiguration(currentHost.getIdentifier())) {
+        if (!this.existsConfiguration(currentSite.getIdentifier())) {
             return Result.NEXT;
         }
 
-        final Optional<String> proxyUrl = proxyUrl(currentHost, request);
+        final Optional<String> proxyUrl = proxyUrl(currentSite, request);
         final PageMode mode             = PageMode.get(request);
 
         if (proxyUrl.isEmpty() || mode == PageMode.LIVE) {
@@ -79,6 +80,12 @@ public class EMAWebInterceptor implements WebInterceptor {
 
         Logger.info(this.getClass(), "GOT AN EMA Call --> " + request.getRequestURI());
         request.setAttribute(EMA_REQUEST_ATTR, true);
+        final Optional<EMAConfigurationEntry> emaConfig = this.getEmaConfigByURL(currentSite, request.getRequestURI());
+        final String depth =
+                emaConfig.map(emaConfigurationEntry -> emaConfigurationEntry.getHeader(DEPTH_PARAM)).orElse(null);
+        if (UtilMethods.isSet(depth)) {
+            request.setAttribute(DEPTH_PARAM, depth);
+        }
         return new Result.Builder().wrap(new MockHttpCaptureResponse(response)).next().build();
     }
 
@@ -89,12 +96,13 @@ public class EMAWebInterceptor implements WebInterceptor {
             if (response instanceof MockHttpCaptureResponse) {
                 final Optional<EMAConfigurationEntry> emaConfig = this.getEmaConfigByURL(currentSite, request.getRequestURI());
                 final Optional<String> proxyUrlOpt = emaConfig.map(EMAConfigurationEntry::getUrlEndpoint);
-                final String proxyUrl = proxyUrlOpt.orElse("[ EMPTY ]");
+                final String proxyUrl = getProxyURL(request).isPresent() ?
+                        getProxyURL(request).get() : proxyUrlOpt.orElse("[ EMPTY ]");
                 final MockHttpCaptureResponse mockResponse = (MockHttpCaptureResponse)response;
                 final String postJson                      = new String(mockResponse.getBytes());
                 final String authToken =
                         emaConfig.map(emaConfigurationEntry -> emaConfigurationEntry.getHeader(AUTHENTICATION_TOKEN_VAR)).orElse(null);
-                final Map<String, String> params           = ImmutableMap.of("dotPageData", postJson);
+                final Map<String, String> params = ImmutableMap.of(PAGE_DATA_PARAM, postJson);
                 
                 Logger.info(this.getClass(), "Proxying Request --> " + proxyUrl);
 
@@ -102,12 +110,12 @@ public class EMAWebInterceptor implements WebInterceptor {
                 final String authTokenFromEma = this.getHeaderValue(pResponse.getHeaders(), EMA_AUTH_HEADER);
                 if (UtilMethods.isSet(authToken) && (UtilMethods.isNotSet(authTokenFromEma) || (UtilMethods.isSet(authToken) && !authToken.equals(authTokenFromEma)))) {
                     this.sendHttpResponse(this.generateErrorPage("Invalid Authentication Token",
-                            proxyUrl, pResponse), postJson, response);
+                            proxyUrl, pResponse), postJson, response, true);
                 } else if (pResponse.getResponseCode() != HttpStatus.SC_OK) {
                     this.sendHttpResponse(this.generateErrorPage("Unable to connect with the rendering engine",
-                            proxyUrl, pResponse), postJson, response);
+                            proxyUrl, pResponse), postJson, response, true);
                 } else {
-                    this.sendHttpResponse(new String(pResponse.getResponse(), StandardCharsets.UTF_8.name()), postJson, response);
+                    this.sendHttpResponse(new String(pResponse.getResponse(), StandardCharsets.UTF_8), postJson, response, false);
                 }
             }
         } catch (final Exception e) {
@@ -164,25 +172,23 @@ public class EMAWebInterceptor implements WebInterceptor {
      * @return An Optional with the overridden Proxy URL, if present.
      */
     protected Optional<String> getProxyURL (final HttpServletRequest request) {
-
         Optional<String> proxyURL = Optional.empty();
         if (null != request.getParameter(PROXY_EDIT_MODE_URL_VAR)) {
-
             final String proxyURLParamValue = request.getParameter(PROXY_EDIT_MODE_URL_VAR);
             proxyURL = UtilMethods.isSet(proxyURLParamValue)?Optional.of(proxyURLParamValue):Optional.empty();
             if (null != request.getSession(false)) {
-                if (UtilMethods.isSet(proxyURLParamValue)) { // if the proxy is set, stores in the session
+                if (UtilMethods.isSet(proxyURLParamValue)) {
+                    // If the proxy is set, store it in the session
                     request.getSession(false).setAttribute(PROXY_EDIT_MODE_URL_VAR, proxyURLParamValue);
-                } else { // if it is set but it is empty or null, remove it
+                } else {
+                    // If it's set, but it's empty or null, just remove it
                     request.getSession(false).removeAttribute(PROXY_EDIT_MODE_URL_VAR);
                 }
             }
         } else if (null != request.getSession(false) &&
                 UtilMethods.isSet(request.getSession(false).getAttribute(PROXY_EDIT_MODE_URL_VAR))) {
-
             proxyURL = Optional.ofNullable(request.getSession(false).getAttribute(PROXY_EDIT_MODE_URL_VAR).toString());
         }
-
         return proxyURL;
     }
 
@@ -244,16 +250,20 @@ public class EMAWebInterceptor implements WebInterceptor {
     }
 
     /**
-     * Generates the HTTP Response with specific contents that will be returned to the User.
+     * Generates the HTTP Response with specific information that will be returned to the User.
      *
      * @param contents The HTML response.
      * @param postJson The JSON response from the EMA Server.
      * @param response The current {@link HttpServletResponse} object.
+     * @param isError  If {@code true}, the JSON POST will be printed in the log.
      *
      * @throws IOException An error occurred when writing to the Response object.
      */
-    protected void sendHttpResponse(final String contents, final String postJson, final HttpServletResponse response) throws IOException {
+    protected void sendHttpResponse(final String contents, final String postJson, final HttpServletResponse response, final boolean isError) throws IOException {
         final JSONObject json = new JSONObject(postJson);
+        if (isError) {
+            Logger.error(this, "An error occurred with EMA: dotPageData = " + json);
+        }
         json.getJSONObject("entity").getJSONObject("page").put("rendered", contents);
         json.getJSONObject("entity").getJSONObject("page").put("remoteRendered", true);
         response.setContentType(MediaType.APPLICATION_JSON);

@@ -1,0 +1,26 @@
+{
+    "extends": ["plugin:@nrwl/nx/react", "../../../.eslintrc.base.json"],
+    "ignorePatterns": ["!**/*"],
+    "overrides": [
+        {
+            "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+            "rules": {
+                "padding-line-between-statements": [
+                    "error",
+                    { "blankLine": "always", "prev": "const", "next": "*" },
+                    { "blankLine": "always", "prev": "*", "next": "if" },
+                    { "blankLine": "always", "prev": "if", "next": "*" },
+                    { "blankLine": "always", "prev": "*", "next": "const" }
+                ]
+            }
+        },
+        {
+            "files": ["*.ts", "*.tsx"],
+            "rules": {}
+        },
+        {
+            "files": ["*.js", "*.jsx"],
+            "rules": {}
+        }
+    ]
+}

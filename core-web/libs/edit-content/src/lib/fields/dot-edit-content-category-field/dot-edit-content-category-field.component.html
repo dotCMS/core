@@ -1,0 +1,26 @@
+@if (store.confirmedCategories().length) {
+    <dot-category-field-chips
+        data-testId="category-chip-list"
+        [categories]="store.confirmedCategories()"
+        (remove)="store.removeConfirmedCategories($event)" />
+}
+
+<div class="dot-category-field__select">
+    <button
+        type="button"
+        (click)="openCategoriesDialog()"
+        [disabled]="$showCategoriesDialog()"
+        [label]="'edit.content.category-field.show-categories-dialog' | dm"
+        class="p-button-sm p-button-text p-button-secondary"
+        data-testId="show-dialog-btn"
+        pButton></button>
+</div>
+
+@if ($showCategoriesDialog()) {
+    @defer (when $showCategoriesDialog()) {
+        <dot-category-field-dialog
+            [isVisible]="$showCategoriesDialog()"
+            (closedDialog)="closeCategoriesDialog()"
+            data-testId="dialog-placeholder" />
+    }
+}

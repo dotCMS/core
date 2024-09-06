@@ -8,6 +8,7 @@ import {
     DotAlertConfirmService,
     DotLicenseService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService
 } from '@dotcms/data-access';
 import {
@@ -18,8 +19,6 @@ import {
     DotPersona,
     DotVariantData
 } from '@dotcms/dotcms-models';
-
-import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 
 @Component({
     selector: 'dot-edit-page-view-as-controller',

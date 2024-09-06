@@ -54,6 +54,7 @@ public final class ESMappingConstants {
     public static final String SYSTEM_TYPE = "systemType";
 
     public static final String MOD_DATE = "modDate";
+    public static final String CREATION_DATE = "creationDate";
     public static final String OWNER = "owner";
     public static final String MOD_USER = "modUser";
     public static final String LIVE = "live";
@@ -80,6 +81,8 @@ public final class ESMappingConstants {
     public static final String PUBLISH_DATE = "pubdate";
     public static final String EXPIRE_DATE = "expdate";
     public static final String VERSION_TS = "versionTs";
+    public static final String SYS_PUBLISH_DATE = "sysPublishDate";
+    public static final String SYS_PUBLISH_USER = "sysPublishUser";
     public static final String URL_MAP = "urlMap";
     public static final String VANITY_URL = "vanityUrl";
     public static final String CATEGORIES = "categories";

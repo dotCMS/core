@@ -1,32 +1,29 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
+import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import {
     DotContentletLockerService,
     DotESContentService,
+    DotEditPageResolver,
+    DotExperimentsService,
+    DotFavoritePageService,
     DotPageLayoutService,
     DotPageRenderService,
+    DotPageStateService,
     DotSessionStorageService
 } from '@dotcms/data-access';
 import {
     DotExperimentExperimentResolver,
-    DotExperimentsConfigResolver,
-    DotExperimentsService
+    DotExperimentsConfigResolver
 } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import {
-    DotPushPublishEnvironmentsResolver,
-    DotEnterpriseLicenseResolver
-} from '@portlets/shared/resolvers';
+import { DotEnterpriseLicenseResolver, DotPushPublishEnvironmentsResolver } from '@dotcms/ui';
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 
-import { DotPageStateService } from './content/services/dot-page-state/dot-page-state.service';
 import { DotEditPageRoutingModule } from './dot-edit-page-routing.module';
 import { DotEditLayoutModule } from './layout/dot-edit-layout.module';
 import { DotEditPageMainModule } from './main/dot-edit-page-main/dot-edit-page-main.module';
-import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
 
 @NgModule({
     imports: [
@@ -34,11 +31,11 @@ import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/do
         DotEditLayoutModule,
         DotEditPageMainModule,
         DotEditPageRoutingModule,
-        DotDirectivesModule,
-        DotPipesModule
+        DotDirectivesModule
     ],
     declarations: [],
     providers: [
+        DotAppsService,
         DotContentletLockerService,
         DotEditPageResolver,
         DotExperimentExperimentResolver,

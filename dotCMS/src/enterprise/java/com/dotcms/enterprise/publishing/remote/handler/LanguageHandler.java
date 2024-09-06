@@ -53,6 +53,7 @@ import com.dotcms.publisher.pusher.wrapper.LanguageWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -64,7 +65,6 @@ import com.dotmarketing.util.PushPublishLogger.PushPublishHandler;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 
 import java.io.File;
 import java.io.InputStream;
@@ -116,7 +116,7 @@ public class LanguageHandler implements IHandler {
 	    try{
 
 			final List<Language> publishCollectedLanguages = new ArrayList<>();
-	        final XStream xstream = new XStream(new DomDriver());
+	        final XStream xstream = XStreamHandler.newXStreamInstance();
 
 	        for(final File languageFile: languages) {
                 workingOn = languageFile;

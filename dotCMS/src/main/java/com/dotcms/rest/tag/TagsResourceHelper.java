@@ -1,11 +1,10 @@
 package com.dotcms.rest.tag;
 
-import com.dotmarketing.util.json.JSONException;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.TagResource;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -16,9 +15,13 @@ import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -28,11 +31,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 /**
- * Tags Resource  helper class
+ * Provides common-use or utility methods for the {@link com.dotcms.rest.api.v2.tags.TagResource}
+ * class and the deprecated {@link TagResource} class.
+ *
+ * @author Fabrizzio Araya
+ * @since Apr 25th, 2022
  */
 public class TagsResourceHelper {
 
@@ -53,16 +58,34 @@ public class TagsResourceHelper {
     }
 
     /**
-     * makes sure we're on a valid site
-     * @param siteId
-     * @param request
-     * @return
+     * Verifies that the provided Site or Folder ID points to an existing Site or Folder. If no
+     * value is provided, the currently selected Site in the HTTP Request will be returned instead.
+     *
+     * @param siteOrFolderId The Site or Folder ID to verify.
+     * @param request        The current instance of the {@link HttpServletRequest}.
+     * @param user           The {@link User} performing this action.
+     *
+     * @return The Site ID to use.
+     *
+     * @throws BadRequestException If the provided Site or Folder ID is not valid.
      */
-    public String getSiteId (final String siteId, final HttpServletRequest request) {
-        if (UtilMethods.isSet(siteId)) {
-            final Host host = Try.of(()->hostAPI.find(siteId, APILocator.systemUser(), false)).getOrNull();
-            if(null == host || UtilMethods.isNotSet(host.getIdentifier())){
-               throw new BadRequestException(String.format("Given site id `%s` isn't valid.",siteId));
+    public String getSiteId (final String siteOrFolderId, final HttpServletRequest request, final User user) {
+        String siteId = siteOrFolderId;
+        if (UtilMethods.isSet(siteOrFolderId)) {
+            final boolean frontEndRequest = user != null && user.isFrontendUser();
+            Host siteOrFolder = Try.of(()->hostAPI.find(siteOrFolderId, user, frontEndRequest)).getOrNull();
+
+            if ((!UtilMethods.isSet(siteOrFolder) || !UtilMethods.isSet(siteOrFolder.getInode()))
+                    && UtilMethods.isSet(siteOrFolderId)) {
+                siteOrFolder = Try.of(()->folderAPI
+                        .find(siteOrFolderId, user, frontEndRequest).getHost()).getOrNull();
+                if (siteOrFolder != null) {
+                    siteId = siteOrFolder.getIdentifier();
+                }
+            }
+
+            if(null == siteOrFolder || UtilMethods.isNotSet(siteOrFolder.getIdentifier())){
+               throw new BadRequestException(String.format("Site or Folder ID '%s' isn't valid.",siteOrFolderId));
             }
         } else {
             final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
@@ -70,33 +93,20 @@ public class TagsResourceHelper {
                 return currentHost.getIdentifier();
             }
         }
-
         return siteId;
     }
 
     /**
      * Search tags method
      * @param tagName
-     * @param siteOrFolderId
-     * @param user
+     * @param siteId
      * @return
      */
-    public List<Tag> searchTagsInternal(final String tagName, final String siteOrFolderId,
-            final User user) {
+    public List<Tag> searchTagsInternal(final String tagName, final String siteId) {
         List<Tag> tags;
-
         try {
-            final boolean frontEndRequest = user.isFrontendUser();
-            final Host host = hostAPI.find(siteOrFolderId, user, frontEndRequest);
-            String internalSiteOrFolderId = siteOrFolderId;
-            if ((!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode()))
-                    && UtilMethods.isSet(siteOrFolderId)) {
-                internalSiteOrFolderId = folderAPI
-                        .find(siteOrFolderId, user, frontEndRequest).getHostId();
-            }
-
-            tags = tagAPI.getSuggestedTag(tagName, internalSiteOrFolderId);
-        } catch (DotDataException | DotSecurityException e) {
+            tags = tagAPI.getSuggestedTag(tagName, siteId);
+        } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
         }
         return tags;
@@ -211,8 +221,9 @@ public class TagsResourceHelper {
             while ((str = reader.readLine()) != null) {
                 final String[] tokens = str.split(",");
                 if (tokens.length != 2 || tokens[0].isEmpty()) {
-                    Logger.error(TagsResourceHelper.class,
-                            "Tag can not be imported because the tag_name or the host_id is empty, trying with the next Tag");
+                    Logger.error(TagsResourceHelper.class, String.format("Tag in line %d cannot " +
+                            "be imported because the tag_name or the host_id is empty. Trying " +
+                            "with the next Tag...", count + 1));
                     continue;
                 }
                 String tagName = tokens[0];
@@ -229,15 +240,15 @@ public class TagsResourceHelper {
                     if(null != tag){
                        count++;
                     }
-                } catch (GenericTagException e) {
+                } catch (final GenericTagException e) {
                     Logger.error(TagsResourceHelper.class, String.format(
-                            "Tag (name: %s  - host ID: %s ) can not be imported because %s , trying with the next Tag",
-                            tagName, siteId, e.getMessage()));
+                            "Tag '%s' under Site ID '%s' cannot be imported: %s . Trying with the next Tag...",
+                            tagName, siteId, ExceptionUtil.getErrorMessage(e)));
                 }
             }
         }
         final int finalCount = count;
-        Logger.debug(TagsResourceHelper.class,()->String.format("import done with %d tags successfully created.",finalCount));
+        Logger.debug(TagsResourceHelper.class, String.format("Tag import has finished. A total of %d Tags were created successfully.",finalCount));
         return inputFile;
     }
 

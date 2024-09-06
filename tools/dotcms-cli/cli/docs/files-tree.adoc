@@ -1,0 +1,85 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Files Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= files-tree(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+files-tree - *dotCMS Files Tree*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*files tree* [*-h*] [*-ee*] [*-d*=_<depth>_] [*--dotcms-url*=_<remoteURL>_] [*-ea*=_patterns_]
+           [*-ef*=_patterns_] [*-ia*=_patterns_] [*-if*=_patterns_] [*-tk*=_<token>_] _path_
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+ This command displays a hierarchical tree view of the files and 
+ subdirectories within a specified directory.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*-d*, *--depth*=_<depth>_::
+  Limits the depth of the directory tree to <number> levels. The default value is 0, which means that only the files and directories in the root directory are displayed. If the <number> argument is not provided, there is no limit on the depth of the directory tree.
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
+
+*-ea, --excludeAsset*=_patterns_::
+  Exclude assets matching the given glob patterns. Multiple patterns can be specified, separated by commas.
+
+*-ee, --excludeEmptyFolders*::
+  When this option is enabled, the tree display will exclude folders that do not contain any assets, as well as folders that have no children with assets. This can be useful for users who want to focus on the folder structure that contains assets, making the output more concise and easier to navigate. By default, this option is disabled, and all folders, including empty ones, will be displayed in the tree.
+
+*-ef, --excludeFolder*=_patterns_::
+  Exclude directories matching the given glob patterns. Multiple patterns can be specified, separated by commas.
+
+*-h*, *--help*::
+  Display this help message.
+
+*-ia, --includeAsset*=_patterns_::
+  Include assets matching the given glob patterns. Multiple patterns can be specified, separated by commas.
+
+*-if, --includeFolder*=_patterns_::
+  Include directories matching the given glob patterns. Multiple patterns can be specified, separated by commas.
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+== Arguments
+
+_path_::
+  dotCMS path to the directory to list the contents of - Format: //{site}/{folder}
+
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

@@ -1,8 +1,14 @@
 package com.dotcms.common;
 
 import static com.dotcms.common.LocationUtils.encodePath;
+import static com.dotcms.common.WorkspaceManager.resolvePath;
+import static com.dotcms.model.config.Workspace.FILES_NAMESPACE;
 
-import com.dotcms.model.config.Workspace;
+import com.dotcms.model.asset.AbstractAssetSync.PushType;
+import com.dotcms.model.asset.AssetSync;
+import com.dotcms.model.asset.AssetView;
+import com.dotcms.model.asset.FolderSync;
+import com.dotcms.model.asset.FolderView;
 import com.google.common.base.Strings;
 import java.io.File;
 import java.net.URI;
@@ -12,11 +18,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AssetsUtils {
 
     private static final String STATUS_LIVE = "live";
     private static final String STATUS_WORKING = "working";
+
+    private static final Logger logger = LoggerFactory.getLogger(AssetsUtils.class);
 
     private AssetsUtils() {
         //Hide public constructor
@@ -88,7 +101,7 @@ public class AssetsUtils {
         if (!emptyFolderPath) {
             remoteFolderPath = String.format("//%s/%s", site, cleanedFolderPath);
         } else {
-            remoteFolderPath = String.format("//%s/", site);
+            remoteFolderPath = String.format("//%s", site);
         }
 
         if (assetName != null && !assetName.isEmpty()) {
@@ -148,24 +161,36 @@ public class AssetsUtils {
             throw new IllegalArgumentException(error, e);
         }
 
+        final AbstractRemotePathStructure.Builder builder = AbstractRemotePathStructure.builder();
+
         // Represents the site and folder path components of the parsed path.
-        return new RemotePathStructure(site, dotCMSPath, isFolder);
+        if(isFolder){
+            return builder
+                    .site(site)
+                    .folder(dotCMSPath)
+                    .build();
+        } else {
+            return builder
+                    .site(site)
+                    .asset(dotCMSPath)
+                    .build();
+        }
     }
 
     /**
      * Parses the root paths based on the workspace and source files.
      *
      * @param workspace the workspace directory
-     * @param source               the source file or directory
+     * @param source  the source file or directory within the workspace to parse
      * @return a list of root paths
      * @throws IllegalArgumentException if the source path is outside the workspace or does not follow the required
      *                                  structure
      */
-    public static List<String> parseRootPaths(File workspace, File source) {
+    public static List<String> parseRootPaths(final File workspace, final File source) {
 
-        var sourcePath = source.toPath();
-        var workspacePath = workspace.toPath();
-
+        //Call resolve Path to get an absolute path
+        var sourcePath = resolvePath(source.toPath());
+        var workspacePath = workspace.toPath().toAbsolutePath().normalize();
         var workspaceCount = workspacePath.getNameCount();
         var sourceCount = sourcePath.getNameCount();
 
@@ -173,47 +198,48 @@ public class AssetsUtils {
             throw new IllegalArgumentException("Source path cannot be outside of the workspace");
         }
 
+        final Path filesPath = Path.of(workspace.getAbsolutePath(), FILES_NAMESPACE)
+                .toAbsolutePath().normalize();
         // Check if we are inside the workspace but also inside the files folder
-        if (sourceCount > workspaceCount + 1) {
-            if (!source.getAbsolutePath().startsWith(
-                    workspace.getAbsolutePath() + File.separator + Workspace.FILES_NAMESPACE + File.separator
-            )) {
-                throw new IllegalArgumentException("Invalid source path. Source path must be inside the files folder or " +
-                        "at the root of the workspace");
-            }
-        } else if (sourceCount == workspaceCount + 1) {
-            if (!source.getName().equals(Workspace.FILES_NAMESPACE)) {
-                throw new IllegalArgumentException("Invalid source path. Source path must be inside the files folder or " +
-                        "at the root of the workspace");
-            }
+        if (sourceCount > workspaceCount + 1 || (sourceCount == workspaceCount + 1 && !sourcePath.startsWith(filesPath))) {
+            logger.warn("Invalid source path provided for a files push {}. Source path must be inside the files folder. otherwise it will fall back to workspace. {}", sourcePath, workspacePath);
+            //if a source path is provided, but it is not inside the files folder but still is a valid folder then we will fall back to the workspace
+            return parseRootPaths(workspacePath, workspaceCount, workspaceCount);
         }
 
+        return parseRootPaths(sourcePath, workspaceCount, sourceCount);
+    }
+
+    /**
+     * Parses the root paths based on the workspace and source paths.
+     * @param sourcePath the source path
+     * @param workspaceCount the workspace path components count
+     * @param sourceCount the source path components count
+     * @return a list of root paths
+     */
+    private static List<String> parseRootPaths(final Path sourcePath, final int workspaceCount,
+            final int sourceCount) {
         var rootPaths = new ArrayList<String>();
 
-        if (workspaceCount == sourceCount) {// We are at the root of the workspace
-            if (source.exists()) {
-                rootPaths.addAll(fromRootFolder(source));
-            }
-        } else if (workspaceCount + 1 == sourceCount) {// We should be at the files level
-            if (source.exists()) {
-                rootPaths.addAll(fromFilesFolder(source));
-            }
-        } else if (workspaceCount + 2 == sourceCount) {// We should be at the status level
-            if (source.exists()) {
-                rootPaths.addAll(fromStatusFolder(source));
-            }
-        } else if (workspaceCount + 3 == sourceCount) {// We should be at the language level
-            if (source.exists()) {
-                rootPaths.addAll(fromLanguageFolder(source));
-            }
-        } else if (workspaceCount + 4 == sourceCount) {// We should be at the site level
-            if (source.exists()) {
-                rootPaths.add(fromSiteFolder(source));
-            }
-        } else {
-            rootPaths.add(source.getAbsolutePath());
+        final File sourcePathFile = sourcePath.toFile();
+
+        if (!sourcePathFile.exists()) {
+            return rootPaths;
         }
 
+        Map<Integer, Function<File, List<String>>> levelFunctions = Map.of(
+                workspaceCount, AssetsUtils::fromRootFolder,
+                workspaceCount + 1, AssetsUtils::fromFilesFolder,
+                workspaceCount + 2, AssetsUtils::fromStatusFolder,
+                workspaceCount + 3, AssetsUtils::fromLanguageFolder,
+                workspaceCount + 4, AssetsUtils::fromSiteFolder
+        );
+
+        if (levelFunctions.containsKey(sourceCount)) {
+            rootPaths.addAll(levelFunctions.get(sourceCount).apply(sourcePathFile));
+        } else {
+            rootPaths.add(sourcePathFile.getAbsolutePath());
+        }
         return rootPaths;
     }
 
@@ -224,7 +250,7 @@ public class AssetsUtils {
      * @return a list of root paths
      */
     private static List<String> fromRootFolder(File source) {
-        return fromFilesFolder(new File(source, Workspace.FILES_NAMESPACE));
+        return fromFilesFolder(new File(source, FILES_NAMESPACE));
     }
 
     /**
@@ -300,7 +326,7 @@ public class AssetsUtils {
                 }
 
                 // This is our root path to analyze
-                rootPaths.add(fromSiteFolder(siteFolder));
+                rootPaths.addAll(fromSiteFolder(siteFolder));
             }
         }
 
@@ -313,8 +339,8 @@ public class AssetsUtils {
      * @param siteFolder the site folder
      * @return the root path
      */
-    private static String fromSiteFolder(File siteFolder) {
-        return siteFolder.getAbsolutePath();
+    private static List<String> fromSiteFolder(File siteFolder) {
+        return List.of(siteFolder.getAbsolutePath());
     }
 
     /**
@@ -332,9 +358,9 @@ public class AssetsUtils {
         var workspacePath = workspace.toPath();
         var isDirectory = source.isDirectory();
 
-        var pathStructureBuilder = new LocalPathStructure.Builder();
-        pathStructureBuilder.withFilePath(sourcePath);
-        pathStructureBuilder.withIsDirectory(source.isDirectory());
+        var pathStructureBuilder = LocalPathStructure.builder();
+        pathStructureBuilder.filePath(sourcePath);
+        pathStructureBuilder.isDirectory(source.isDirectory());
 
         var workspaceCount = workspacePath.getNameCount();
         var sourceCount = sourcePath.getNameCount();
@@ -349,33 +375,33 @@ public class AssetsUtils {
 
         // Finding the files section
         var sourcePart = sourcePath.getName(workspaceCount);
-        if (sourcePart.getFileName().toString().equals(Workspace.FILES_NAMESPACE)) {
+        if (sourcePart.getFileName().toString().equals(FILES_NAMESPACE)) {
 
             // Finding the status section
             var statusPart = sourcePath.getName(++workspaceCount);
             if (!Strings.isNullOrEmpty(statusPart.getFileName().toString())) {
 
                 statusToBoolean(statusPart.getFileName().toString());
-                pathStructureBuilder.withStatus(statusPart.getFileName().toString());
+                pathStructureBuilder.status(statusPart.getFileName().toString());
 
                 // Finding the language section
                 var languagePart = sourcePath.getName(++workspaceCount);
                 if (!Strings.isNullOrEmpty(languagePart.getFileName().toString())) {
 
-                    pathStructureBuilder.withLanguage(languagePart.getFileName().toString());
+                    pathStructureBuilder.language(languagePart.getFileName().toString());
 
                     // Finding the site section
                     var site = sourcePath.getName(++workspaceCount);
                     if (!Strings.isNullOrEmpty(site.getFileName().toString())) {
 
-                        pathStructureBuilder.withSite(site.getFileName().toString());
+                        pathStructureBuilder.site(site.getFileName().toString());
 
                         var folderPath = File.separator;
                         // Now calculate the folder path
                         for (var i = workspaceCount + 1; i < sourcePath.getNameCount(); i++) {
 
                             if (!isDirectory && i == sourcePath.getNameCount() - 1) {
-                                pathStructureBuilder.withFileName(source.getName());
+                                pathStructureBuilder.fileName(source.getName());
                                 continue;
                             }
 
@@ -383,7 +409,7 @@ public class AssetsUtils {
                                     concat(sourcePath.getName(i).getFileName().toString()).
                                     concat(File.separator);
                         }
-                        pathStructureBuilder.withFolderPath(folderPath);
+                        pathStructureBuilder.folderPath(folderPath);
                     }
                 }
             }
@@ -392,218 +418,69 @@ public class AssetsUtils {
         return pathStructureBuilder.build();
     }
 
+
     /**
-     * Represents the site, folder path and file name components of the parsed remote path.
+     * Checks if the given folder hs any sync metadata indicating that it  must be removed
+     * @param folder
+     * @return
      */
-    public static class RemotePathStructure {
-
-        /**
-         * The site component of the parsed path.
-         */
-        private final String site;
-
-        /**
-         * The folder path component of the parsed path.
-         */
-        private final Path folderPath;
-
-        /**
-         * The file name component of the parsed path.
-         */
-        private final String fileName;
-
-        /**
-         * Constructs an RemotePathStructure object with the given site and folder path.
-         *
-         * @param site the site component
-         * @param path the folder path component
-         */
-        public RemotePathStructure(String site, Path path, boolean isFolder) {
-
-            this.site = site;
-
-            if (isFolder) {
-                this.folderPath = path;
-                this.fileName = null;
-            } else {
-                this.folderPath = path.getParent();
-                this.fileName = path.getFileName().toString();
-            }
-        }
-
-        public String site() {
-            return site;
-        }
-
-        public Path folderPath() {
-            return folderPath;
-        }
-
-        public String fileName() {
-            return fileName;
-        }
-
-        public String folderName() {
-
-            int nameCount = folderPath.getNameCount();
-
-            String folderName = "/";
-
-            if (nameCount > 1) {
-                folderName = folderPath.subpath(nameCount - 1, nameCount).toString();
-            } else if (nameCount == 1) {
-                folderName = folderPath.subpath(0, nameCount).toString();
-            }
-
-            return folderName;
-        }
-
+    public static boolean isMarkedForDelete(FolderView folder) {
+        return  folder.sync().map(FolderSync::markedForDelete).orElse(false);
     }
 
     /**
-     * Represents the structure of a local file or directory path within the workspace.
+     * Checks if the given folder hs any sync metadata indicating that it  must be pushed
+     * @param folder
+     * @return
      */
-    public static class LocalPathStructure {
+    public static boolean isMarkedForPush(FolderView folder) {
+        return  folder.sync().map(FolderSync::markedForPush).orElse(false);
+    }
 
-        private boolean isDirectory;
-        private String status;
-        private String language;
-        private String site;
-        private String fileName;
-        private String folderPath;
-        private Path filePath;
-        private boolean languageExists;
+    /**
+     * Checks if the given asset hs any sync metadata indicating that it  must be removed
+     * @param asset
+     * @return
+     */
+    public static boolean isMarkedForDelete(AssetView asset) {
+        return  asset.sync().map(AssetSync::markedForDelete).orElse(false);
+    }
 
-        private LocalPathStructure(Builder builder) {
-            this.isDirectory = builder.isDirectory;
-            this.status = builder.status;
-            this.language = builder.language;
-            this.site = builder.site;
-            this.fileName = builder.fileName;
-            this.folderPath = builder.folderPath;
-            this.filePath = builder.filePath;
-            this.languageExists = true;
+    /**
+     * Checks if the given asset hs any sync metadata indicating that it  must be pushed
+     * @param asset
+     * @return
+     */
+    public static boolean isMarkedForPush(AssetView asset) {
+        return  asset.sync().map(AssetSync::markedForPush).orElse(false);
+    }
+
+    /**
+     * Checks if the given asset hs any sync metadata indicating that it  must be pushed as existing but modified content
+     * @param asset
+     * @return
+     */
+    public static boolean isPushModified(AssetView asset) {
+        final Optional<AssetSync> optional = asset.sync();
+        if (optional.isPresent()) {
+            final AssetSync sync = optional.get();
+            return sync.markedForPush() && sync.pushType() == PushType.MODIFIED;
         }
+        return false;
+    }
 
-        public boolean isDirectory() {
-            return isDirectory;
+    /**
+     * Checks if the given asset hs any sync metadata indicating that it  must be pushed as new content
+     * @param asset
+     * @return
+     */
+    public static boolean isPushNew(AssetView asset) {
+        final Optional<AssetSync> optional = asset.sync();
+        if (optional.isPresent()) {
+            final AssetSync sync = optional.get();
+            return sync.markedForPush() && sync.pushType() == PushType.NEW;
         }
-
-        public String status() {
-            return status;
-        }
-
-        public String language() {
-            return language;
-        }
-
-        public String site() {
-            return site;
-        }
-
-        public String fileName() {
-            return fileName;
-        }
-
-        public String folderPath() {
-            return folderPath;
-        }
-
-        public Path filePath() {
-            return filePath;
-        }
-
-        public String folderName() {
-
-            int nameCount = filePath().getNameCount();
-
-            String folderName = File.separator;
-
-            if (nameCount > 1) {
-                folderName = filePath().subpath(nameCount - 1, nameCount).toString();
-            } else if (nameCount == 1) {
-                folderName = filePath().subpath(0, nameCount).toString();
-            }
-
-            if (folderName.equalsIgnoreCase(this.site())) {
-                folderName = File.separator;
-            }
-
-            return folderName;
-        }
-
-        public void setLanguageExists(boolean languageExists) {
-            this.languageExists = languageExists;
-        }
-
-        public boolean languageExists() {
-            return this.languageExists;
-        }
-
-        @Override
-        public String toString() {
-            return "LocalPathStructure{" +
-                    "status='" + status + '\'' +
-                    ", language='" + language + '\'' +
-                    ", site='" + site + '\'' +
-                    ", fileName='" + fileName + '\'' +
-                    ", folderPath='" + folderPath + '\'' +
-                    ", filePath='" + filePath + '\'' +
-                    ", isDirectory='" + isDirectory + '\'' +
-                    '}';
-        }
-
-        public static class Builder {
-            private boolean isDirectory;
-            private String status;
-            private String language;
-            private String site;
-            private String fileName;
-            private String folderPath;
-            private Path filePath;
-
-            public Builder() {
-            }
-
-            public Builder withIsDirectory(boolean isDirectory) {
-                this.isDirectory = isDirectory;
-                return this;
-            }
-
-            public Builder withStatus(String status) {
-                this.status = status;
-                return this;
-            }
-
-            public Builder withLanguage(String language) {
-                this.language = language;
-                return this;
-            }
-
-            public Builder withSite(String site) {
-                this.site = site;
-                return this;
-            }
-
-            public Builder withFileName(String fileName) {
-                this.fileName = fileName;
-                return this;
-            }
-
-            public Builder withFolderPath(String folderPath) {
-                this.folderPath = folderPath;
-                return this;
-            }
-
-            public Builder withFilePath(Path filePath) {
-                this.filePath = filePath;
-                return this;
-            }
-
-            public LocalPathStructure build() {
-                return new LocalPathStructure(this);
-            }
-        }
+        return false;
     }
 
 }

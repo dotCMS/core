@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business.sql;
 
 
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -15,7 +16,6 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -188,7 +188,7 @@ public class FixTaskFixStructureTable  implements FixTask {
 	public List <Map<String, String>> getModifiedData() {
 
 		if (modifiedData.size() > 0) {
-			XStream _xstream = new XStream(new DomDriver());
+			XStream xStreamInstance = XStreamHandler.newXStreamInstance();
 			Date date = new Date();
 			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
 			String lastmoddate = sdf.format(date);
@@ -201,7 +201,7 @@ public class FixTaskFixStructureTable  implements FixTask {
 					+ "FixTask00001CheckAssetsMissingIdentifiers" + ".xml");
 
 			try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()))){
-				_xstream.toXML(modifiedData, _bout);
+				xStreamInstance.toXML(modifiedData, _bout);
 			} catch (IOException e) {
 				Logger.error(this, "Error trying to get modified data from XML.", e);
 			}

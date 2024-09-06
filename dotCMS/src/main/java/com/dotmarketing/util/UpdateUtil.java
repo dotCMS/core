@@ -28,7 +28,6 @@ public class UpdateUtil {
 
         Map<String, String> pars = new HashMap<>();
         pars.put( "version", ReleaseInfo.getVersion() );
-        //pars.put("minor", ReleaseInfo.getBuildNumber() + "");
         pars.put( "check_version", "true" );
         pars.put( "level", Long.toString(LicenseUtil.getLevel()));
         if ( LicenseUtil.getSerial() != null ) {

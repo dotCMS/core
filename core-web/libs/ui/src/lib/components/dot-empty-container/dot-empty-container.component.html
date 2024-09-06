@@ -1,47 +1,43 @@
 <div class="message__wrapper flex gap-4 flex-column w-30rem">
     <div
         class="message__principal-wrapper flex align-items-center flex-column gap-2"
-        data-Testid="message-principal"
-    >
-        <i
-            class="message__icon pi"
-            *ngIf="configuration?.icon"
-            [ngClass]="[configuration.icon]"
-            data-Testid="message-icon"
-        ></i>
-        <h1 class="message__title" data-Testid="message-title">{{ configuration?.title }}</h1>
-        <h2
-            class="message__subtitle"
-            *ngIf="configuration?.subtitle"
-            data-Testid="message-subtitle"
-        >
-            {{ configuration?.subtitle }}
-        </h2>
+        data-testid="message-principal">
+        @if (configuration.icon) {
+            <i [class]="'message__icon pi ' + configuration.icon" data-testid="message-icon"></i>
+        }
+        <h1 class="message__title" data-testid="message-title">{{ configuration.title }}</h1>
+        @if (configuration.subtitle) {
+            <h2 class="message__subtitle" data-testid="message-subtitle">
+                {{ configuration.subtitle }}
+            </h2>
+        }
     </div>
 
-    <ng-container *ngIf="!hideContactUsLink || buttonLabel">
+    @if (!hideContactUsLink || buttonLabel) {
         <div
             class="message__extra-wrapper flex align-items-center flex-column gap-2"
-            data-Testid="message-extra"
-        >
-            <p-button
-                *ngIf="buttonLabel"
-                [label]="buttonLabel"
-                (onClick)="buttonAction.emit()"
-                data-Testid="message-button"
-            ></p-button>
-            <ng-container *ngIf="!hideContactUsLink">
-                <span *ngIf="!hideContactUsLink && buttonLabel">{{
-                    'dot.common.or.text' | dm
-                }}</span>
+            data-testid="message-extra">
+            @if (buttonLabel) {
+                <button
+                    pButton
+                    [label]="buttonLabel"
+                    [class.p-button-outlined]="secondaryButton"
+                    (click)="buttonAction.emit()"
+                    data-testid="message-button"></button>
+            }
+
+            @if (!hideContactUsLink) {
+                @if (buttonLabel) {
+                    <span>{{ 'dot.common.or.text' | dm }}</span>
+                }
                 <a
                     class="message__external-link"
-                    data-Testid="message-contact-link"
+                    data-testid="message-contact-link"
                     href="https://dotcms.com/contact-us/"
-                    target="_blank"
-                    >{{ 'Contact-Us-for-more-Information' | dm }}</a
-                >
-            </ng-container>
+                    target="_blank">
+                    {{ 'Contact-Us-for-more-Information' | dm }}
+                </a>
+            }
         </div>
-    </ng-container>
+    }
 </div>

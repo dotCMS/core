@@ -1,15 +1,17 @@
 <dot-portlet-base *ngIf="vm$ | async as vm">
     <div class="px-3 py-2">
         <p-breadcrumb
-            [model]="vm.categoryBreadCrumbs"
-            [home]="breadCrumbHome"
             (onItemClick)="updateBreadCrumb($event)"
-        >
-        </p-breadcrumb>
+            [model]="vm.categoryBreadCrumbs"
+            [home]="breadCrumbHome"></p-breadcrumb>
     </div>
     <div class="category_listing">
         <p-table
-            #dataTable
+            (onLazyLoad)="loadCategories($event)"
+            (onRowSelect)="handleRowCheck()"
+            (onRowUnselect)="handleRowCheck()"
+            (onHeaderCheckboxToggle)="handleRowCheck()"
+            (onFilter)="handleFilter()"
             [(selection)]="selectedCategories"
             [value]="vm.categories"
             [lazy]="true"
@@ -18,74 +20,63 @@
             [paginator]="true"
             [reorderableColumns]="true"
             [columns]="vm.tableColumns"
-            (onLazyLoad)="loadCategories($event)"
-            (onRowSelect)="handleRowCheck($event)"
-            (onRowUnselect)="handleRowCheck($event)"
-            (onHeaderCheckboxToggle)="handleRowCheck($event)"
-            (onFilter)="handleFilter()"
+            #dataTable
             selectionMode="checkbox"
             loadingIcon="pi pi-spin pi-spinner"
-            dataKey="categoryId"
-        >
+            dataKey="categoryId">
             <ng-template pTemplate="caption">
                 <div class="flex justify-content-between p-3">
                     <div>
                         <button
-                            class="p-button-outlined p-button"
+                            (click)="actionsMenu.toggle($event)"
                             [disabled]="vm.selectedCategories.length === 0"
                             [label]="'Actions' | dm"
-                            (click)="actionsMenu.toggle($event)"
+                            class="p-button-outlined p-button"
                             type="button"
                             pButton
                             icon="pi pi-ellipsis-v"
-                            attr.data-testId="actions"
-                        ></button>
+                            data-testId="actions"></button>
                         <p-menu
-                            #actionsMenu
                             [popup]="true"
                             [model]="vm.categoriesBulkActions"
-                            appendTo="body"
-                        ></p-menu>
+                            #actionsMenu
+                            appendTo="body"></p-menu>
                     </div>
                     <div class="w-2">
                         <div class="p-inputgroup">
-                            <span class="border-right-none p-inputgroup-addon"
-                                ><i class="pi pi-search"></i
-                            ></span>
+                            <span class="border-right-none p-inputgroup-addon">
+                                <i class="pi pi-search"></i>
+                            </span>
                             <input
+                                [placeholder]="'message.category.search' | dm"
                                 class="border-left-none"
                                 #gf
-                                [placeholder]="'message.category.search' | dm"
-                                (input)="dataTable.filterGlobal($event.target.value, 'contains')"
+                                (input)="dataTable.filterGlobal(gf.value, 'contains')"
                                 type="text"
-                                pInputText
-                            />
+                                pInputText />
                         </div>
                     </div>
                     <div>
                         <button
-                            class="p-button-outlined"
                             [label]="'message.category.import' | dm"
+                            class="p-button-outlined"
                             pButton
                             pRipple
                             type="button"
-                            icon="pi pi-upload"
-                        ></button>
+                            icon="pi pi-upload"></button>
                         <button
-                            class="p-button-outlined mx-4"
                             [label]="'message.category.export' | dm"
+                            class="p-button-outlined mx-4"
                             pButton
                             pRipple
                             type="button"
-                            icon="pi pi-download"
-                        ></button>
+                            icon="pi pi-download"></button>
                         <button
                             class="p-button-raised p-button-rounded text-white"
                             pButton
                             pRipple
                             type="button"
-                            icon="pi pi-plus"
-                        ></button>
+                            icon="pi pi-plus"></button>
                     </div>
                 </div>
             </ng-template>
@@ -96,11 +87,10 @@
                         <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
                     </th>
                     <th
-                        class="tableHeader"
                         *ngFor="let col of columns"
                         [ngStyle]="{ width: col.width }"
                         [pSortableColumn]="col.fieldName"
-                    >
+                        class="tableHeader">
                         {{ col.header }}
                         <p-sortIcon *ngIf="col.sortable" [field]="col.fieldName"></p-sortIcon>
                     </th>
@@ -108,11 +98,10 @@
             </ng-template>
             <ng-template pTemplate="body" let-category let-index="rowIndex" let-columns="columns">
                 <tr
+                    (click)="addBreadCrumb(category)"
                     [pReorderableRow]="index"
                     [pSelectableRow]="category"
-                    (click)="addBreadCrumb(category)"
-                    data-testId="testTableRow"
-                >
+                    data-testId="testTableRow">
                     <td>
                         <span class="pi pi-bars" pReorderableRowHandle></span>
                     </td>
@@ -122,17 +111,15 @@
                     <td *ngFor="let col of columns" [ngStyle]="{ width: col.width }">
                         <ng-container *ngIf="col.fieldName === 'sortOrder'; else Actions">
                             <p-inplace
-                                #editText
                                 (click)="$event.stopPropagation()"
-                                styleClass="category_listing__sortOrder"
-                            >
+                                #editText
+                                styleClass="category_listing__sortOrder">
                                 <ng-template pTemplate="content">
                                     <span class="p-input-icon-right">
-                                        <i class="pi pi-times" (click)="editText.deactivate()"></i>
+                                        <i (click)="editText.deactivate()" class="pi pi-times"></i>
                                         <p-inputNumber
                                             [ngModel]="category.sortOrder"
-                                            inputStyleClass="category_listing__sortOrder__field"
-                                        ></p-inputNumber>
+                                            inputStyleClass="category_listing__sortOrder__field"></p-inputNumber>
                                     </span>
                                 </ng-template>
                                 <ng-template pTemplate="display">
@@ -144,13 +131,11 @@
                         <ng-template #Actions>
                             <ng-container *ngIf="col.fieldName === 'Actions'; else last">
                                 <dot-action-menu-button
-                                    class="listing-categories__action-button"
+                                    (click)="$event.stopPropagation()"
                                     [attr.data-testId]="category.categoryId"
                                     [actions]="vm.categoriesActions"
                                     [item]="category"
-                                    (click)="$event.stopPropagation()"
-                                >
-                                </dot-action-menu-button>
+                                    class="listing-categories__action-button"></dot-action-menu-button>
                             </ng-container>
                         </ng-template>
                         <ng-template #last>
@@ -161,12 +146,11 @@
             </ng-template>
             <ng-template pTemplate="emptymessage" let-columns>
                 <tr>
-                    <td class="p-0" [attr.colspan]="columns.length + 3">
+                    <td [attr.colspan]="columns.length + 3" class="p-0">
                         <div
-                            class="category_listing-datatable__empty"
                             *ngIf="isContentFiltered; else emptyState"
-                            data-testId="category_listing-datatable__empty"
-                        >
+                            class="category_listing-datatable__empty"
+                            data-testId="category_listing-datatable__empty">
                             {{ 'No-Results-Found' | dm }}
                         </div>
                         <ng-template #emptyState>
@@ -176,9 +160,7 @@
                                 [title]="'message.category.empty.title' | dm"
                                 [content]="'message.category.empty.content' | dm"
                                 [buttonLabel]="'message.category.empty.button.label' | dm"
-                                icon="web"
-                            >
-                            </dot-empty-state>
+                                icon="web"></dot-empty-state>
                         </ng-template>
                     </td>
                 </tr>

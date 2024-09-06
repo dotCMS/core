@@ -20,6 +20,10 @@
 export class MockDotMessageService {
     constructor(private messages: MessageConfig) {}
 
+    init() {
+        // do nothing
+    }
+
     get(key: string, ...args: string[]): string {
         return this.messages[key]
             ? args.length

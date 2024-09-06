@@ -28,6 +28,7 @@ export class LazyVerify {
                 empty = LazyVerify.emptyObject(value);
             }
         }
+
         return empty;
     }
 
@@ -61,18 +62,20 @@ export class LazyVerify {
      *
      */
     static hasOnly(object, properties = [], allowMissing = false) {
-        let keys = Object.keys(object);
-        let has = {};
+        const keys = Object.keys(object);
+        const has = {};
         let count = 0;
         keys.forEach((key) => {
             has[key] = true;
             count++;
         });
-        let hasAllOfDems = properties.every((propKey) => {
+        const hasAllOfDems = properties.every((propKey) => {
             count--;
-            let x = has[propKey];
+            const x = has[propKey];
+
             return x === undefined || x === true;
         });
+
         return hasAllOfDems && (allowMissing ? count <= 0 : count === 0);
     }
 
@@ -83,14 +86,15 @@ export class LazyVerify {
      *
      */
     static hasAll(object, properties = []) {
-        let keys = Object.keys(object);
-        let has = {};
+        const keys = Object.keys(object);
+        const has = {};
         keys.forEach((key) => {
             has[key] = true;
         });
-        let hasAllOfDems = properties.every((propKey) => {
+        const hasAllOfDems = properties.every((propKey) => {
             return has[propKey];
         });
+
         return hasAllOfDems;
     }
 

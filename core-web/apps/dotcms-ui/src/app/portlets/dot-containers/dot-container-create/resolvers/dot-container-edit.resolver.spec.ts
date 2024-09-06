@@ -5,8 +5,8 @@ import { of } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 
 import { DotContainersService } from '@dotcms/app/api/services/dot-containers/dot-containers.service';
+import { DotRouterService } from '@dotcms/data-access';
 import { MockDotRouterService } from '@dotcms/utils-testing';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotContainerEditResolver } from './dot-container-edit.resolver';
 

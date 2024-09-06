@@ -32,12 +32,14 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.dotmarketing.util.Constants.TEMPLATE_FOLDER_PATH;
+import static com.dotmarketing.util.Constants.THEME_FOLDER_PATH;
 import static com.dotmarketing.util.StringUtils.builder;
 
 /**
@@ -124,6 +126,37 @@ public class FileAssetTemplateUtil {
         } catch (Exception e) {
             Logger.error(FileAssetTemplateUtil.class, String.format(
                     "An error occurred while extracting host name from path `%s` defaulting to systemHost ",
+                    path), e);
+            return null;
+        }
+    }
+
+    /**
+     * Retrieve the site name from the path for a theme
+     * @param path String
+     * @return String
+     */
+    public String getSiteNameForTheme(final String path) {
+        try {
+            String tmp = path;
+
+            for (final String prefix : pageModePrefixList) {
+                if (tmp.startsWith(prefix)) {
+                    tmp = tmp.substring(prefix.length());
+                    break;
+                }
+            }
+
+            tmp = tmp.replaceAll(HOST_INDICATOR, StringPool.BLANK);
+            tmp = tmp.substring(0, tmp.indexOf(THEME_FOLDER_PATH));
+            final String finalString = UtilMethods.isSet(tmp) ? tmp : StringPool.NULL;
+            Logger.debug(FileAssetTemplateUtil.class,
+                    () -> String.format(" extracted hostName `%s`", finalString));
+
+            return UtilMethods.isSet(tmp) ? tmp : null;
+        } catch (Exception e) {
+            Logger.error(FileAssetTemplateUtil.class, String.format(
+                    "An error occurred while extracting host name from path `%s`",
                     path), e);
             return null;
         }
@@ -387,5 +420,32 @@ public class FileAssetTemplateUtil {
 
     public String getFullPath(final String hostName, final String templatePath) {
         return builder(HOST_INDICATOR, hostName, templatePath).toString();
+    }
+
+    /**
+     * If the templatePath is actually a path (starts with host indicator)
+     * will retrieve the folder id associated to the theme id
+     * Otherwise will retrieve whatever is pass as a parameter
+     * @param themePath String
+     * @return String
+     */
+    public String getThemeIdFromPath (final String themePath)  {
+
+        if (Objects.nonNull(themePath) && themePath.startsWith(HOST_INDICATOR)) {
+
+            try {
+                final String hostname = this.getSiteNameForTheme(themePath);
+                final Host host = this.getHostFromHostname(hostname);
+                final String path = this.getPathFromFullPath(hostname, themePath);
+                final Folder folder = APILocator.getFolderAPI().findFolderByPath(path, host, APILocator.systemUser(), false);
+                return Objects.nonNull(folder) ? folder.getInode() : themePath;
+            } catch (Exception e) {
+
+                Logger.error(this, e.getMessage());
+                Logger.debug(this, e.getMessage(), e);
+            }
+        }
+
+        return themePath;
     }
 }

@@ -7,10 +7,9 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DotDialogComponent, DotDialogModule } from '@dotcms/ui';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotIframeDialogComponent } from './dot-iframe-dialog.component';

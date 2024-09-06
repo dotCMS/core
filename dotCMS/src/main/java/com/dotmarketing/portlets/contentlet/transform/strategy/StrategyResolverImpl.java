@@ -4,16 +4,26 @@ import com.dotcms.api.APIProvider;
 import com.dotcms.api.APIProvider.Builder;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.util.CollectionsUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.*;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.DATETIME_FIELDS_TO_TIMESTAMP;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILEASSET_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.JSON_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.RENDER_FIELDS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.SITE_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.STORY_BLOCK_VIEW;
 import static com.google.common.collect.ImmutableMap.of;
 
 /**
@@ -59,21 +69,28 @@ public class StrategyResolverImpl implements StrategyResolver {
                 BaseContentType.DOTASSET, () -> new DotAssetViewStrategy(toolBox),
                 BaseContentType.WIDGET, () -> new WidgetViewStrategy(toolBox)
                 ),
-             CollectionsUtils.map(
-                 CATEGORIES_VIEW, () -> new CategoryViewStrategy(toolBox),
-                 BINARIES_VIEW,   () -> new BinaryViewStrategy(toolBox),
-                 IDENTIFIER_VIEW, () -> new IdentifierViewStrategy(toolBox),
-                 LANGUAGE_VIEW,   ()-> new  LanguageViewStrategy(toolBox),
-                 KEY_VALUE_VIEW,  ()-> new  KeyValueViewStrategy(toolBox),
-                 FILEASSET_VIEW,  ()-> new  FileViewStrategy(toolBox),
-                 SITE_VIEW,       ()-> new  SiteViewStrategy(toolBox),
-                 STORY_BLOCK_VIEW,()-> new  StoryBlockViewStrategy(toolBox),
-                 RENDER_FIELDS,   ()-> new  RenderFieldStrategy(toolBox),
-                 JSON_VIEW,   ()-> new  JSONViewStrategy(toolBox),
-                 DATETIME_FIELDS_TO_TIMESTAMP,   ()-> new DateTimeFieldsToTimeStampStrategy(toolBox)
-             ),
+                getStrategyTriggeredByOptionMap(toolBox),
              ()-> new DefaultTransformStrategy(toolBox)
         );
+    }
+
+    private static Map<TransformOptions, Supplier<AbstractTransformStrategy>> getStrategyTriggeredByOptionMap(final APIProvider toolBox) {
+
+        final Map<TransformOptions, Supplier<AbstractTransformStrategy>> strategyTriggeredByOptionMap = new HashMap<>();
+
+        strategyTriggeredByOptionMap.put(CATEGORIES_VIEW, () -> new CategoryViewStrategy(toolBox));
+        strategyTriggeredByOptionMap.put(BINARIES_VIEW, () -> new BinaryViewStrategy(toolBox));
+        strategyTriggeredByOptionMap.put(IDENTIFIER_VIEW, () -> new IdentifierViewStrategy(toolBox));
+        strategyTriggeredByOptionMap.put(LANGUAGE_VIEW, () -> new LanguageViewStrategy(toolBox));
+        strategyTriggeredByOptionMap.put(KEY_VALUE_VIEW, () -> new KeyValueViewStrategy(toolBox));
+        strategyTriggeredByOptionMap.put(FILEASSET_VIEW, () -> new FileViewStrategy(toolBox));
+        strategyTriggeredByOptionMap.put(SITE_VIEW, () -> new SiteViewStrategy(toolBox));
+        strategyTriggeredByOptionMap.put(STORY_BLOCK_VIEW, () -> new StoryBlockViewStrategy(toolBox));
+        strategyTriggeredByOptionMap.put(RENDER_FIELDS, () -> new RenderFieldStrategy(toolBox));
+        strategyTriggeredByOptionMap.put(JSON_VIEW, () -> new JSONViewStrategy(toolBox));
+        strategyTriggeredByOptionMap.put(DATETIME_FIELDS_TO_TIMESTAMP, () -> new DateTimeFieldsToTimeStampStrategy(toolBox));
+
+        return strategyTriggeredByOptionMap;
     }
 
     /**

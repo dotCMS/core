@@ -1,10 +1,9 @@
 <ng-container *ngIf="!isLoading; else loadingStateTpl">
-    <div class="flex flex-column gap-2" *ngIf="!isEmpty; else emptyStateTpl">
+    <div *ngIf="!isEmpty; else emptyStateTpl" class="flex flex-column gap-2">
         <div
-            class="header-title flex flex-row flex-wrap align-items-center"
             *ngIf="title"
-            data-testId="header-title"
-        >
+            class="header-title flex flex-row flex-wrap align-items-center"
+            data-testId="header-title">
             <ng-container *dotStringTemplateOutlet="title">
                 {{ title }}
             </ng-container>
@@ -13,19 +12,22 @@
         <div class="flex flex-column gap-3 details">
             <div class="details__headers grid grid-nogutter">
                 <ng-container
-                    *ngTemplateOutlet="headers || defaultHeaders; context: { $implicit: data }"
-                ></ng-container>
+                    *ngTemplateOutlet="
+                        headers || defaultHeaders;
+                        context: { $implicit: data }
+                    "></ng-container>
             </div>
 
             <div class="details__rows-wrapper flex flex-column gap-2">
                 <div
-                    class="details__row grid grid-nogutter"
                     *ngFor="let row of data"
-                    data-testId="detail-row"
-                >
+                    class="details__row grid grid-nogutter"
+                    data-testId="detail-row">
                     <ng-container
-                        *ngTemplateOutlet="rows || defaultRowsTemplate; context: { $implicit: row }"
-                    ></ng-container>
+                        *ngTemplateOutlet="
+                            rows || defaultRowsTemplate;
+                            context: { $implicit: row }
+                        "></ng-container>
                 </div>
             </div>
         </div>
@@ -33,21 +35,19 @@
         <ng-template #defaultHeaders let-data>
             <ng-container *ngIf="data">
                 <div
-                    class="flex col flex-wrap align-items-center capitalize"
                     *ngFor="let header of data[0] | keyvalue; let last = last"
                     [ngClass]="{ 'justify-content-end': last }"
-                    data-testId="default-header-columns"
-                >
+                    class="flex col flex-wrap align-items-center capitalize"
+                    data-testId="default-header-columns">
                     {{ header.key }}
                 </div>
             </ng-container>
         </ng-template>
         <ng-template #defaultRowsTemplate let-row>
             <div
-                class="flex col flex-wrap align-items-center capitalize"
                 *ngFor="let r of row | keyvalue"
-                data-testId="default-row"
-            >
+                class="flex col flex-wrap align-items-center capitalize"
+                data-testId="default-row">
                 {{ r.value }}
             </div>
         </ng-template>
@@ -68,8 +68,7 @@
 <ng-template #emptyStateTpl>
     <div
         class="empty flex justify-content-center align-items-center flex-column"
-        data-testId="empty-template"
-    >
+        data-testId="empty-template">
         <i class="empty__icon pi pi-table mb-2"></i>
         <p class="empty__message m-0" data-testId="empty-title">
             {{ 'experiments.reports.summary.empty.title' | dm }}

@@ -45,75 +45,53 @@
 
 package com.dotcms.enterprise.achecker.tinymce;
 
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.achecker.ACheckerResponse;
+import com.dotcms.enterprise.achecker.model.GuideLineBean;
+import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rest.api.v1.accessibility.ACheckerResource;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Logger;
+
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.achecker.ACheckerRequest;
-import com.dotcms.enterprise.achecker.ACheckerResponse;
-import com.dotcms.enterprise.achecker.dao.GuidelinesDAO;
-import com.dotcms.enterprise.achecker.dao.LangCodesDAO;
-import com.dotcms.enterprise.achecker.impl.ACheckerImpl;
-import com.dotcms.enterprise.achecker.model.GuideLineBean;
-import com.dotcms.enterprise.achecker.tinymce.DaoLocator;
-import com.dotcms.enterprise.license.LicenseLevel;
-
-
+/**
+ * @deprecated This one and all DWR-related classes will be deprecated in the near future. Please
+ * use the REST {@link ACheckerResource} Endpoint instead.
+ */
+@Deprecated(forRemoval = true)
 public class ACheckerDWR {
 
-	private List<GuideLineBean> listaGuidelines = null;
-
 	private List<GuideLineBean> getListaGudelines() throws Exception {
-	    if(LicenseUtil.getLevel()< LicenseLevel.STANDARD.level)
-	        throw new RuntimeException("need enterprise license");
-		try{
-			if( listaGuidelines == null ){
-				GuidelinesDAO gLines = DaoLocator.getGuidelinesDAO();
-				listaGuidelines = gLines.getOpenGuidelines();		 
-			}
-			return listaGuidelines;
-		}catch (Exception e) {
-			throw e; 
-		}
+	    return APILocator.getACheckerAPI().getAccessibilityGuidelineList();
 	}
 
-
 	public List<GuideLineBean> getSupportedGudelines(){	 	
-	    if(LicenseUtil.getLevel()<LicenseLevel.STANDARD.level)
-            throw new RuntimeException("need enterprise license");
-		try{
+	    if (LicenseUtil.getLevel()<LicenseLevel.STANDARD.level) {
+			throw new RuntimeException("need enterprise license");
+		}
+		try {
 			 return  getListaGudelines();
-		}catch (Exception e) {
-			e.printStackTrace();
+		} catch (final Exception e) {
+			Logger.error(this, String.format("Failed to retrieve Accessibility Guidelines: %s",
+					ExceptionUtil.getErrorMessage(e)), e);
 		}
 		return null;		
 	}
 
- 
-	public ACheckerResponse validate(Map<String, String> params) {
-	    if(LicenseUtil.getLevel()<LicenseLevel.STANDARD.level)
-            throw new RuntimeException("need enterprise license");
+	public ACheckerResponse validate(final Map<String, String> params) {
+	    if (LicenseUtil.getLevel()<LicenseLevel.STANDARD.level) {
+			throw new RuntimeException("need enterprise license");
+		}
 		try {
-			String lang = params.get("lang");
-			String content = params.get("content");
-			String guidelines = params.get("guidelines");
-			String fragment = params.get("fragment");
-			if( lang != null && lang.trim().length() == 2  ){
-				LangCodesDAO langCodeDao = DaoLocator.getLangCodesDAO();  
-				langCodeDao .getLangCodeBy3LetterCode( lang  );
-			}
-	 		String toValidate =  content ;
-			ACheckerRequest request = new ACheckerRequest(lang, toValidate, guidelines, Boolean.parseBoolean(fragment) );	
-			ACheckerImpl achecker = new ACheckerImpl();
-			return achecker.validate(request);
-		} catch (Exception e) {
-			e.printStackTrace();
+			return APILocator.getACheckerAPI().validate(params);
+		} catch (final Exception e) {
+			Logger.error(this, String.format("Failed to validate Accessibility Guidelines in content with params: " +
+							"[ %s ] : %s", params, ExceptionUtil.getErrorMessage(e)), e);
 		}
 		return null;
-
 	}
-	
-	
-	
 
 }

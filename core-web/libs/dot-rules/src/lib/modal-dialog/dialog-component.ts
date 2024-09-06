@@ -1,44 +1,43 @@
 import { Component, ChangeDetectionStrategy, Input, Output, EventEmitter } from '@angular/core';
+
 import { KeyCode } from '../services/util/key-util';
 
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'cw-modal-dialog',
-    template: `<p-dialog
-        [style]="{ width: '900px' }"
-        [header]="headerText"
-        [visible]="!hidden"
-        [modal]="true"
-        [dismissableMask]="true"
-        [closable]="false"
-        appendTo="body"
-        [draggable]="false"
-    >
-        <p-message
-            *ngIf="errorMessage"
-            style="margin-bottom: 16px; display: block;"
-            severity="error"
-            [text]="errorMessage"
-        ></p-message>
+    template: `
+        <p-dialog
+            [style]="{ width: '900px' }"
+            [header]="headerText"
+            [visible]="!hidden"
+            [modal]="true"
+            [dismissableMask]="true"
+            [closable]="false"
+            [draggable]="false"
+            appendTo="body">
+            <p-message
+                *ngIf="errorMessage"
+                [text]="errorMessage"
+                style="margin-bottom: 16px; display: block;"
+                severity="error"></p-message>
 
-        <ng-content></ng-content>
-        <p-footer>
-            <button
-                type="button"
-                pButton
-                (click)="ok.emit()"
-                [label]="okButtonText"
-                [disabled]="!okEnabled"
-            ></button>
-            <button
-                type="button"
-                pButton
-                (click)="cancel.emit(true)"
-                label="Cancel"
-                class="ui-button-secondary"
-            ></button>
-        </p-footer>
-    </p-dialog> `
+            <ng-content></ng-content>
+            <p-footer>
+                <button
+                    (click)="ok.emit()"
+                    [label]="okButtonText"
+                    [disabled]="!okEnabled"
+                    type="button"
+                    pButton></button>
+                <button
+                    (click)="cancel.emit(true)"
+                    type="button"
+                    pButton
+                    label="Cancel"
+                    class="ui-button-secondary"></button>
+            </p-footer>
+        </p-dialog>
+    `
 })
 export class ModalDialogComponent {
     @Input() okEnabled = true;
@@ -84,6 +83,7 @@ export class ModalDialogComponent {
                     this.ok.emit(true);
                 }
             };
+
             document.body.addEventListener('keyup', this._keyListener);
         }
     }

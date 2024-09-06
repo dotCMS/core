@@ -10,16 +10,16 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,7 +41,7 @@ public class ViewRelationshipsAction extends DotPortletAction {
 		req.setAttribute(ASCENDING + orderBy, ascending);
 
 		structureId = (UtilMethods.isSet(structureId) ? structureId : "all");
-		orderBy = orderBy + ((StringUtils.TRUE.equalsIgnoreCase(ascending))? SQLUtil._ASC:SQLUtil._DESC);
+		orderBy = orderBy + ((StringPool.TRUE.equalsIgnoreCase(ascending))? SQLUtil._ASC:SQLUtil._DESC);
 		_loadRelationships(form, req, res, orderBy, structureId);
 
 		return mapping.findForward("portlet.ext.structure.view_relationships");

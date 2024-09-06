@@ -5,7 +5,9 @@ import { By } from '@angular/platform-browser';
 import { DotMaxlengthDirective } from './dot-maxlength.directive';
 
 @Component({
-    template: `<div contenteditable="true" dotMaxlength="10"></div>`
+    template: `
+        <div contenteditable="true" dotMaxlength="10"></div>
+    `
 })
 class TestComponent {}
 

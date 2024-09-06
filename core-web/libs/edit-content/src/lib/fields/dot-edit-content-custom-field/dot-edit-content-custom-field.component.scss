@@ -1,0 +1,23 @@
+@use "variables" as *;
+
+iframe {
+    display: block;
+    width: 100%;
+}
+
+.legacy-custom-field--fullscreen {
+    width: 100%;
+    height: 100%;
+    z-index: 99999;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+p-button {
+    position: absolute;
+    top: $spacing-4;
+    right: $spacing-9;
+    z-index: 99999;
+    cursor: pointer;
+}

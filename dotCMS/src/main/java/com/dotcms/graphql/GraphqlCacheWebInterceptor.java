@@ -1,9 +1,5 @@
 package com.dotcms.graphql;
 
-import static com.dotcms.graphql.GraphQLCache.GRAPHQL_CACHE_RESULTS_CONFIG_PROPERTY;
-import static com.dotcms.util.HttpRequestDataUtil.getHeaderCaseInsensitive;
-import static com.dotcms.util.HttpRequestDataUtil.getParamCaseInsensitive;
-
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
@@ -17,13 +13,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.http.HttpServletResponse;
+
+import static com.dotcms.graphql.GraphQLCache.GRAPHQL_CACHE_RESULTS_CONFIG_PROPERTY;
+import static com.dotcms.util.HttpRequestDataUtil.getHeaderCaseInsensitive;
+import static com.dotcms.util.HttpRequestDataUtil.getParamCaseInsensitive;
 
 /**
  * This interceptor returns the response for a GraphQL request from cache, if available.
@@ -65,6 +66,8 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
                     .getBooleanProperty(GRAPHQL_CACHE_RESULTS_CONFIG_PROPERTY, true));
 
     private final DotGraphQLHttpServlet graphQLHttpServlet = new DotGraphQLHttpServlet();
+
+    private final Lazy<Integer> defaultTTL = Lazy.of(()->Config.getIntProperty("cache.graphqlquerycache.seconds", 15));
 
     @Override
     public String[] getFilters() {
@@ -173,7 +176,7 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             ).getOrElse(Optional.empty());
         }
 
-        return Optional.empty();
+        return Optional.of(defaultTTL.get());
     }
 
     @Override
@@ -213,8 +216,12 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     }
 
     private String processGraphQLRequest(final HttpServletRequest request,
-            final HttpServletResponse response) {
-        graphQLHttpServlet.init();
+            final HttpServletResponse response)  {
+        try {
+            graphQLHttpServlet.init();
+        } catch (ServletException e) {
+            throw new RuntimeException(e);
+        }
         MockHttpWriterCaptureResponse mockHttpResponse = new MockHttpWriterCaptureResponse(response);
         graphQLHttpServlet.doPost(request, mockHttpResponse);
         return mockHttpResponse.writer.toString();

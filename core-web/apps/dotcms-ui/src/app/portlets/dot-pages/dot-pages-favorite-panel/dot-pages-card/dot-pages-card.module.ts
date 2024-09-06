@@ -5,11 +5,9 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotPagesFavoritePageEmptySkeletonComponent, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotPagesCardComponent } from './dot-pages-card.component';
-
-import { DotPagesFavoritePageEmptySkeletonComponent } from '../../dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 
 @NgModule({
     imports: [
@@ -18,7 +16,7 @@ import { DotPagesFavoritePageEmptySkeletonComponent } from '../../dot-pages-favo
         DotPagesFavoritePageEmptySkeletonComponent,
         ButtonModule,
         TooltipModule,
-        DotPipesModule
+        DotSafeHtmlPipe
     ],
     declarations: [DotPagesCardComponent],
     exports: [DotPagesCardComponent]

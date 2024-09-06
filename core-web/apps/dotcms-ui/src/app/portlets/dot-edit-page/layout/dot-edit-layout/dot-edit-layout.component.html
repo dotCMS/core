@@ -1,30 +1,8 @@
-<!--Advance template support was removed on commit https://github.com/dotCMS/core-web/pull/589-->
-<ng-template #enabledComponent>
-    <dotcms-template-builder-lib
-        [layout]="pageState.layout"
-        [themeId]="pageState.template.theme"
-        [containerMap]="pageState.containerMap"
-        (templateChange)="nextUpdateTemplate($event)"
-        data-testId="new-template-builder"
-    >
-        <dot-global-message toolbar-left></dot-global-message>
-    </dotcms-template-builder-lib>
-</ng-template>
-
-<ng-template #disabledComponent>
-    <dot-edit-layout-designer
-        [layout]="pageState.layout"
-        [title]="pageState.page.title"
-        [theme]="pageState.template.theme"
-        [apiLink]="apiLink"
-        [url]="pageState.page.pageURI"
-        (save)="onSave($event)"
-        (updateTemplate)="nextUpdateTemplate($event)"
-    >
-    </dot-edit-layout-designer>
-</ng-template>
-
-<ng-container
-    *dotShowHideFeature="featureFlag; alternate: disabledComponent"
-    [ngTemplateOutlet]="enabledComponent"
-></ng-container>
+<dotcms-template-builder-lib
+    (templateChange)="nextUpdateTemplate($event)"
+    [layout]="pageState.layout"
+    [template]="pageState.template"
+    [containerMap]="containerMap"
+    data-testId="new-template-builder">
+    <dot-global-message toolbar-left></dot-global-message>
+</dotcms-template-builder-lib>

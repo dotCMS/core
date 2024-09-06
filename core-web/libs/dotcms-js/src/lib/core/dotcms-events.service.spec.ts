@@ -1,11 +1,13 @@
-import { ReflectiveInjector } from '@angular/core';
 import { Observable, Subject, of } from 'rxjs';
+
+import { ReflectiveInjector } from '@angular/core';
+
 import { DotcmsEventsService } from './dotcms-events.service';
-import { StringUtils } from './string-utils.service';
 import { LoggerService } from './logger.service';
 import { DotEventTypeWrapper } from './models';
-import { DotEventMessage } from './util/models/dot-event-message';
+import { StringUtils } from './string-utils.service';
 import { DotEventsSocket } from './util/dot-event-socket';
+import { DotEventMessage } from './util/models/dot-event-message';
 
 class DotEventsSocketMock {
     _messages: Subject<any> = new Subject();
@@ -14,6 +16,7 @@ class DotEventsSocketMock {
 
     connect(): Observable<any> {
         this.connected = true;
+
         return of(true);
     }
 

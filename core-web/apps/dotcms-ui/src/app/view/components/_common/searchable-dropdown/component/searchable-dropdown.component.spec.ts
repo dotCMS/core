@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as _ from 'lodash';
-
 import { Component, DebugElement, Input } from '@angular/core';
 import {
     ComponentFixture,
@@ -15,9 +13,8 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
 
@@ -25,23 +22,23 @@ import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
 
 @Component({
     selector: 'dot-host-component',
-    template: ` <dot-searchable-dropdown
-        [action]="action"
-        [cssClass]="cssClass"
-        [data]="data"
-        [labelPropertyName]="labelPropertyName"
-        [multiple]="multiple"
-        [pageLinkSize]="pageLinkSize"
-        [persistentPlaceholder]="persistentPlaceholder"
-        [placeholder]="placeholder"
-        [rows]="rows"
-        [totalRecords]="totalRecords"
-        [valuePropertyName]="valuePropertyName"
-        [overlayWidth]="overlayWidth"
-        [width]="width"
-        [disabled]="disabled"
-    >
-    </dot-searchable-dropdown>`
+    template: `
+        <dot-searchable-dropdown
+            [action]="action"
+            [cssClass]="cssClass"
+            [data]="data"
+            [labelPropertyName]="labelPropertyName"
+            [multiple]="multiple"
+            [pageLinkSize]="pageLinkSize"
+            [persistentPlaceholder]="persistentPlaceholder"
+            [placeholder]="placeholder"
+            [rows]="rows"
+            [totalRecords]="totalRecords"
+            [valuePropertyName]="valuePropertyName"
+            [overlayWidth]="overlayWidth"
+            [width]="width"
+            [disabled]="disabled" />
+    `
 })
 class HostTestComponent {
     @Input()
@@ -109,7 +106,7 @@ describe('SearchableDropdownComponent', () => {
                 ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
                 DotIconModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
@@ -199,7 +196,7 @@ describe('SearchableDropdownComponent', () => {
         const dataviewDataEl = de.query(
             By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
         );
-        expect(dataviewDataEl.nativeElement.textContent).toEqual('site-0');
+        expect(dataviewDataEl.nativeElement.textContent.trim()).toEqual('site-0');
         expect(comp.selectedOptionIndex).toBe(0);
         expect(comp.selectedOptionValue).toBe(data[0].name);
     });
@@ -258,7 +255,7 @@ describe('SearchableDropdownComponent', () => {
         const dataviewDataEl = de.query(
             By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
         );
-        expect(dataviewDataEl.nativeElement.textContent).toEqual('site-0 - demo.dotcms.com');
+        expect(dataviewDataEl.nativeElement.textContent).toContain('site-0 - demo.dotcms.com');
     });
 
     it('should the pageChange call the paginate method', async () => {
@@ -305,7 +302,7 @@ describe('SearchableDropdownComponent', () => {
             hostFixture.detectChanges();
             items = de.queryAll(By.css('.searchable-dropdown__data-list-item'));
 
-            dataExpected = _.cloneDeep(data[0]);
+            dataExpected = structuredClone(data[0]);
             dataExpected.label = dataExpected.name;
         });
 
@@ -340,8 +337,8 @@ describe('SearchableDropdownComponent', () => {
         expect(hostComp.placeholder).toEqual(comp.valueString);
     });
 
-    describe('star class', () => {
-        it('should add the star css class when item has default property set to true', () => {
+    describe('selected class', () => {
+        it('should add the selected css class when item has been clicked', () => {
             hostComp.data = [
                 {
                     id: 1,
@@ -356,13 +353,14 @@ describe('SearchableDropdownComponent', () => {
 
             hostFixture.detectChanges();
 
-            const item = de.query(
-                By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
-            );
+            const item = de.query(By.css('[data-testid="searchable-dropdown-data-list-item"]'));
 
-            expect(item.classes['star']).toBeTruthy();
+            item.triggerEventHandler('click', null);
+            hostFixture.detectChanges();
+
+            expect(item.classes['selected']).toBeTruthy();
         });
-        it('should not add css star class when item default property is set to false', () => {
+        it('should not add selected star class when is not clicked', () => {
             hostComp.data = [
                 {
                     id: 1,
@@ -377,10 +375,7 @@ describe('SearchableDropdownComponent', () => {
 
             hostFixture.detectChanges();
 
-            const item = de.query(
-                By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
-            );
-
+            const item = de.query(By.css('[data-testid="searchable-dropdown-data-list-item"]'));
             expect(item.classes['star']).toBeFalsy();
         });
     });
@@ -388,38 +383,40 @@ describe('SearchableDropdownComponent', () => {
 
 @Component({
     selector: 'dot-host-component',
-    template: ` <dot-searchable-dropdown
-        #searchableDropdown
-        [action]="action"
-        [cssClass]="cssClass"
-        [data]="data"
-        [labelPropertyName]="labelPropertyName"
-        [multiple]="multiple"
-        [pageLinkSize]="pageLinkSize"
-        [persistentPlaceholder]="persistentPlaceholder"
-        [placeholder]="placeholder"
-        [rows]="rows"
-        [totalRecords]="totalRecords"
-        [valuePropertyName]="valuePropertyName"
-        [width]="width"
-    >
-        <ng-template let-data="item" pTemplate="listItem">
-            <div
-                class="searchable-dropdown__data-list-item templateTestItem"
-                (click)="handleClick(item)"
-            >
-                {{ data.label }}
-            </div>
-        </ng-template>
-        <ng-template let-persona="item" pTemplate="select">
-            <div
-                class="dot-persona-selector__testContainer"
-                (click)="searchableDropdown.toggleOverlayPanel($event)"
-            >
-                Test
-            </div>
-        </ng-template>
-    </dot-searchable-dropdown>`
+    template: `
+        <dot-searchable-dropdown
+            [action]="action"
+            [cssClass]="cssClass"
+            [data]="data"
+            [labelPropertyName]="labelPropertyName"
+            [multiple]="multiple"
+            [pageLinkSize]="pageLinkSize"
+            [persistentPlaceholder]="persistentPlaceholder"
+            [placeholder]="placeholder"
+            [rows]="rows"
+            [totalRecords]="totalRecords"
+            [valuePropertyName]="valuePropertyName"
+            [width]="width"
+            #searchableDropdown
+            cssClassDataList="site_selector__data-list">
+            <ng-template let-data="data" pTemplate="list">
+                @for (item of data; track $index) {
+                    <div
+                        (click)="handleClick(item)"
+                        class="searchable-dropdown__data-list-item templateTestItem">
+                        {{ item.label }}
+                    </div>
+                }
+            </ng-template>
+            <ng-template let-persona="item" pTemplate="select">
+                <div
+                    (click)="searchableDropdown.toggleOverlayPanel($event)"
+                    class="dot-persona-selector__testContainer">
+                    Test
+                </div>
+            </ng-template>
+        </dot-searchable-dropdown>
+    `
 })
 class HostTestExternalTemplateComponent {
     @Input() data: any[];
@@ -455,6 +452,9 @@ class HostTestExternalTemplateComponent {
 
     @Input()
     multiple: boolean;
+
+    @Input()
+    cssClassDataList: string;
 }
 
 describe('SearchableDropdownComponent', () => {
@@ -480,7 +480,7 @@ describe('SearchableDropdownComponent', () => {
                 ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
                 DotIconModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
@@ -565,5 +565,12 @@ describe('SearchableDropdownComponent', () => {
             By.css('.searchable-dropdown__data-list-item.templateTestItem')
         );
         expect(listItems.length).toBe(6);
+    });
+
+    it('should display as site selector data list', () => {
+        hostFixture.detectChanges();
+
+        const siteSelectorDataList: DebugElement = de.query(By.css('.site_selector__data-list'));
+        expect(siteSelectorDataList).not.toBeNull();
     });
 });

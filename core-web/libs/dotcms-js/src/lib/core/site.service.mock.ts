@@ -1,6 +1,8 @@
 import { of as observableOf, Observable, Subject, merge, of } from 'rxjs';
-import { Site } from '@dotcms/dotcms-js';
+
 import { switchMap } from 'rxjs/operators';
+
+import { Site } from '@dotcms/dotcms-js';
 
 export const mockSites: Site[] = [
     {

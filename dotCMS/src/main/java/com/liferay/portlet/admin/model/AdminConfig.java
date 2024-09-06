@@ -22,10 +22,9 @@
 
 package com.liferay.portlet.admin.model;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.SystemException;
-import com.liferay.util.xml.Serializer;
-import org.exolab.castor.xml.CastorException;
 
 /**
  * <a href="AdminConfig.java.html"><b><i>View Source</i></b></a>
@@ -66,11 +65,11 @@ public class AdminConfig extends AdminConfigModel {
 				c = UserConfig.class;
 			}
 
-			_configObj = Serializer.readObject(c, config);
+
 
 			super.setConfig(config);
 		}
-		catch (CastorException ce) {
+		catch (Exception ce) {
 			Logger.error(this,ce.getMessage(),ce);
 		}
 	}
@@ -83,9 +82,9 @@ public class AdminConfig extends AdminConfigModel {
 		_configObj = configObj;
 
 		try {
-			super.setConfig(Serializer.writeObject(configObj));
+			throw new DotRuntimeException("Cannot Use this method");
 		}
-		catch (CastorException ce) {
+		catch (Exception ce) {
 			Logger.error(this,ce.getMessage(),ce);
 		}
 	}

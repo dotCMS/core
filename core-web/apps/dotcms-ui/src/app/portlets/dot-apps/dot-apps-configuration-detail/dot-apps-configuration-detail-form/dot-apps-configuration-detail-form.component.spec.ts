@@ -1,20 +1,19 @@
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 import { MarkdownService } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component } from '@angular/core';
 import { FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
-import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DropdownModule } from 'primeng/dropdown';
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotIconModule, DotFieldRequiredDirective } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotIconModule } from '@dotcms/ui';
 
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 
@@ -27,7 +26,10 @@ const secrets = [
         label: 'Name:',
         required: true,
         type: 'STRING',
-        value: 'test'
+        value: 'test',
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     },
     {
         dynamic: false,
@@ -37,7 +39,10 @@ const secrets = [
         label: 'Password:',
         required: true,
         type: 'STRING',
-        value: '****'
+        value: '****',
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     },
     {
         dynamic: false,
@@ -47,7 +52,10 @@ const secrets = [
         label: 'Enabled:',
         required: false,
         type: 'BOOL',
-        value: 'true'
+        value: 'true',
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     },
     {
         dynamic: false,
@@ -67,7 +75,10 @@ const secrets = [
         ],
         required: true,
         type: 'SELECT',
-        value: '1'
+        value: '1',
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     },
     {
         dynamic: false,
@@ -77,7 +88,10 @@ const secrets = [
         label: 'Integration:',
         required: false,
         type: 'BUTTON',
-        value: 'urlLink'
+        value: 'urlLink',
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     }
 ];
 
@@ -92,202 +106,235 @@ const formState = {
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'markdown',
-    template: `<ng-content></ng-content>`
+    template: `
+        <ng-content></ng-content>
+    `
 })
 class MockMarkdownComponent {}
 
 describe('DotAppsConfigurationDetailFormComponent', () => {
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [
-                HttpClientTestingModule,
-                ButtonModule,
-                CommonModule,
-                CheckboxModule,
-                DropdownModule,
-                DotIconModule,
-                InputTextareaModule,
-                InputTextModule,
-                ReactiveFormsModule,
-                TooltipModule,
-                DotFieldRequiredDirective
-            ],
-            declarations: [DotAppsConfigurationDetailFormComponent, MockMarkdownComponent],
-            providers: [MarkdownService, FormGroupDirective]
-        });
+    let spectator: Spectator<DotAppsConfigurationDetailFormComponent>;
+    const createComponent = createComponentFactory({
+        component: DotAppsConfigurationDetailFormComponent,
+        imports: [
+            HttpClientTestingModule,
+            ButtonModule,
+            CommonModule,
+            CheckboxModule,
+            DropdownModule,
+            DotIconModule,
+            InputTextareaModule,
+            InputTextModule,
+            ReactiveFormsModule,
+            TooltipModule,
+            DotFieldRequiredDirective
+        ],
+        providers: [MarkdownService, FormGroupDirective],
+        declarations: [MockMarkdownComponent]
     });
 
     describe('Without warnings', () => {
-        let component: DotAppsConfigurationDetailFormComponent;
-        let fixture: ComponentFixture<DotAppsConfigurationDetailFormComponent>;
-        let de: DebugElement;
-
         beforeEach(() => {
-            fixture = TestBed.createComponent(DotAppsConfigurationDetailFormComponent);
-            de = fixture.debugElement;
-            component = de.componentInstance;
-            component.formFields = secrets;
-            spyOn(component.data, 'emit');
-            spyOn(component.valid, 'emit');
-            fixture.detectChanges();
+            spectator = createComponent({
+                props: {
+                    formFields: secrets
+                }
+            });
+            spectator.detectChanges();
         });
 
         it('should load form components', () => {
-            expect(de.queryAll(By.css('.field')).length).toBe(secrets.length);
+            const fields = spectator.queryAll('.field');
+            expect(fields.length).toBe(secrets.length);
         });
 
         it('should not have warning icon', () => {
-            expect(de.query(By.css('dot-icon'))).toBeFalsy();
+            const element = spectator.query('dot-icon');
+            expect(element).toBeFalsy();
         });
 
         it('should focus the first form field after view init', async () => {
-            fixture.detectChanges();
-            await fixture.whenStable();
-            const firstFormField = fixture.nativeElement.querySelector(
-                `#${component.formFields[0].name}`
-            );
+            spectator.detectComponentChanges();
+            await spectator.fixture.whenStable();
+
+            const field = spectator.component.formFields[0];
+            const firstFormField = spectator.query<HTMLInputElement>(`#${field.name}`);
             spyOn(firstFormField, 'focus');
-            component.ngAfterViewInit();
+            spectator.component.ngAfterViewInit();
             expect(firstFormField.focus).toHaveBeenCalled();
             expect(document.activeElement).toEqual(firstFormField);
         });
 
         it('should load Label, Textarea & Hint with right attributes', () => {
-            const row = de.query(By.css('[data-testid="name"]'));
-            expect(row.query(By.css('markdown'))).toBeTruthy();
-            expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[0].label);
-            expect(
-                row
-                    .query(By.css('label'))
-                    .nativeElement.classList.contains('p-label-input-required')
-            ).toBeTruthy();
-            expect(row.query(By.css('textarea')).nativeElement.attributes.id.value).toBe(
-                secrets[0].name
-            );
-            expect(row.query(By.css('textarea')).nativeElement.attributes.autoResize.value).toBe(
-                'autoResize'
-            );
-            expect(row.query(By.css('textarea')).nativeElement.value).toBe(secrets[0].value);
-            expect(row.query(By.css('.p-field-hint')).nativeElement.textContent).toBe(
-                secrets[0].hint
-            );
+            const row = spectator.query(byTestId('name'));
+
+            const markdownElement = row.querySelector('markdown');
+            expect(markdownElement).toBeTruthy();
+
+            const field = secrets[0];
+
+            const labelElement = row.querySelector('label');
+            expect(labelElement.textContent.trim()).toBe(field.label);
+            expect(labelElement.classList).toContain('p-label-input-required');
+
+            const textareaElement = row.querySelector('textarea');
+            expect(textareaElement.getAttribute('id')).toBe(field.name);
+            expect(textareaElement.getAttribute('autoResize')).toBe('autoResize');
+            expect(textareaElement.value).toBe(field.value);
+
+            const hintElement = row.querySelector('.p-field-hint');
+            expect(hintElement.textContent).toBe(field.hint);
         });
 
         it('should load Checkbox & Hint with right attributes', () => {
-            const row = de.query(By.css('[data-testid="enabled"]'));
-            expect(row.query(By.css('markdown'))).toBeTruthy();
-            expect(row.query(By.css('p-checkbox')).nativeElement.attributes.id.value).toBe(
-                secrets[2].name
-            );
-            expect(row.query(By.css('p-checkbox')).componentInstance.label).toBe(secrets[2].label);
-            expect(row.query(By.css('input')).nativeElement.value).toBe(secrets[2].value);
-            expect(row.query(By.css('.p-field-hint')).nativeElement.textContent).toBe(
-                secrets[2].hint
-            );
+            const row = spectator.query(byTestId('enabled'));
+
+            const markdownElement = row.querySelector('markdown');
+            expect(markdownElement).toBeTruthy();
+
+            const field = secrets[2];
+
+            const checkboxElement = row.querySelector('p-checkbox');
+            expect(checkboxElement.getAttribute('id')).toBe(field.name);
+
+            const labelElement = checkboxElement.querySelector('label');
+            expect(labelElement.textContent).toContain(field.label);
+
+            const inputElement = row.querySelector('input');
+            expect(inputElement.value).toBe(field.value);
+
+            const hintElement = row.querySelector('.p-field-hint');
+            expect(hintElement.textContent).toBe(field.hint);
         });
 
         it('should load Label, Select & Hint with right attributes', () => {
-            const row = de.query(By.css('[data-testid="select"]'));
-            expect(row.query(By.css('markdown'))).toBeTruthy();
-            expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[3].label);
-            expect(row.query(By.css('p-dropdown')).nativeElement.id).toBe(secrets[3].name);
-            expect(row.query(By.css('p-dropdown')).componentInstance.options).toBe(
-                secrets[3].options
-            );
-            expect(row.query(By.css('p-dropdown')).componentInstance.value).toBe(
-                secrets[3].options[0].value
-            );
-            expect(row.query(By.css('.p-field-hint')).nativeElement.textContent).toBe(
-                secrets[3].hint
-            );
+            const row = spectator.query(byTestId('select'));
+
+            const markdownElement = row.querySelector('markdown');
+            expect(markdownElement).toBeTruthy();
+
+            const field = secrets[3];
+
+            const labelElement = row.querySelector('label');
+            expect(labelElement.textContent.trim()).toBe(field.label);
+
+            const dropdownComponent = spectator.query(Dropdown);
+            expect(dropdownComponent.id).toBe(field.name);
+            expect(dropdownComponent.options).toBe(field.options);
+            expect(dropdownComponent.value).toBe(field.value);
+
+            const hintElement = row.querySelector('.p-field-hint');
+            expect(hintElement.textContent).toBe(field.hint);
         });
 
         it('should load Label, Button & Hint with right attributes', () => {
-            const row = de.query(By.css('[data-testid="integration"]'));
-            expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[4].label);
-            expect(row.query(By.css('button')).nativeElement.id).toBe(secrets[4].name);
-            expect(row.query(By.css('.form__group-hint')).nativeElement.textContent).toBe(
-                secrets[4].hint
-            );
+            const row = spectator.query(byTestId('integration'));
+
+            const field = secrets[4];
+
+            const labelElement = row.querySelector('label');
+            expect(labelElement.textContent.trim()).toBe(field.label);
+
+            const buttonElement = row.querySelector('button');
+            expect(buttonElement.id).toBe(field.name);
+
+            const hintElement = row.querySelector('.form__group-hint');
+            expect(hintElement.textContent).toBe(field.hint);
         });
 
         it('should Button be disabled when no configured app', () => {
-            const row = de.query(By.css('[data-testid="integration"]'));
-            const button = row.query(By.css('button')).nativeElement;
-            expect(button.disabled).toBe(true);
+            const row = spectator.query(byTestId('integration'));
+            const buttonElement = row.querySelector('button');
+            expect(buttonElement.disabled).toBe(true);
         });
 
         it('should Button open link on new tab when clicked on a configured app', () => {
-            component.appConfigured = true;
-            fixture.detectChanges();
+            spectator.setInput('appConfigured', true);
+            spectator.detectChanges();
+
+            const field = secrets[4];
+
             const openMock = jasmine.createSpy();
             window.open = openMock;
-            const row = de.query(By.css('[data-testid="integration"]'));
-            const button = row.query(By.css('button')).nativeElement;
+            const row = spectator.query(byTestId('integration'));
+            const buttonElement = row.querySelector('button');
 
-            button.click();
-            expect(openMock).toHaveBeenCalledWith(secrets[4].value, '_blank');
+            buttonElement.click();
+            expect(openMock).toHaveBeenCalledWith(field.value, '_blank');
         });
 
         it('should emit form state when loaded', async () => {
-            fixture.detectChanges();
-            await fixture.whenStable();
-            expect(component.data.emit).toHaveBeenCalledWith(formState);
-            expect(component.valid.emit).toHaveBeenCalledWith(true);
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+
+            spectator.output('data').subscribe((data) => {
+                expect(data).toEqual(formState);
+            });
+
+            spectator.output('valid').subscribe((data) => {
+                expect(data).toEqual(true);
+            });
         });
 
         it('should emit form state when value changed', () => {
-            component.myFormGroup.get('name').setValue('Test2');
-            component.myFormGroup.get('password').setValue('Password2');
-            component.myFormGroup.get('enabled').setValue('false');
-            expect(component.data.emit).toHaveBeenCalledTimes(3);
-            expect(component.valid.emit).toHaveBeenCalledTimes(3);
+            const spyDataOutput = spyOn(spectator.component.data, 'emit');
+            const spyValidOutput = spyOn(spectator.component.valid, 'emit');
+
+            spectator.component.myFormGroup.get('name').setValue('Test2');
+            spectator.component.myFormGroup.get('password').setValue('Password2');
+            spectator.component.myFormGroup.get('enabled').setValue('false');
+
+            expect(spyDataOutput).toHaveBeenCalledTimes(3);
+            expect(spyValidOutput).toHaveBeenCalledTimes(3);
         });
 
         it('should emit form state disabled when required field empty', () => {
-            component.myFormGroup.get('name').setValue('');
-            expect(component.valid.emit).toHaveBeenCalledWith(false);
+            const spyValidOutput = spyOn(spectator.component.valid, 'emit');
+
+            spectator.component.myFormGroup.get('name').setValue('');
+            expect(spyValidOutput).toHaveBeenCalledWith(false);
         });
     });
 
     describe('With warnings', () => {
-        let component: DotAppsConfigurationDetailFormComponent;
-        let fixture: ComponentFixture<DotAppsConfigurationDetailFormComponent>;
-        let de: DebugElement;
-
         beforeEach(() => {
-            fixture = TestBed.createComponent(DotAppsConfigurationDetailFormComponent);
-            de = fixture.debugElement;
-            component = de.componentInstance;
-            component.formFields = secrets.map((item, i) => {
-                if (i < 3) {
-                    return {
-                        ...item,
-                        warnings: [`error ${i}`]
-                    };
-                }
+            spectator = createComponent({
+                props: {
+                    formFields: secrets.map((item, i) => {
+                        if (i < 3) {
+                            return {
+                                ...item,
+                                warnings: [`error ${i}`]
+                            };
+                        }
 
-                return item;
+                        return item;
+                    })
+                }
             });
-            fixture.detectChanges();
+            spectator.detectChanges();
         });
 
         it('should have warning icons', () => {
-            const warningIcons = de.queryAll(By.css('dot-icon'));
-            expect(warningIcons[0].attributes['name']).toBe('warning');
-            expect(warningIcons[0].attributes['size']).toBe('18');
-            expect(warningIcons[0].attributes['ng-reflect-text']).toBe(
-                component.formFields[0].warnings[0]
+            const warningIcons = spectator.queryAll('dot-icon');
+            const formFields = spectator.component.formFields;
+
+            expect(warningIcons[0].getAttribute('name')).toBe('warning');
+            expect(warningIcons[0].getAttribute('size')).toBe('18');
+            expect(warningIcons[0].getAttribute('ng-reflect-content')).toBe(
+                formFields[0].warnings[0]
             );
-            expect(warningIcons[1].attributes['name']).toBe('warning');
-            expect(warningIcons[1].attributes['size']).toBe('18');
-            expect(warningIcons[1].attributes['ng-reflect-text']).toBe(
-                component.formFields[1].warnings[0]
+
+            expect(warningIcons[1].getAttribute('name')).toBe('warning');
+            expect(warningIcons[1].getAttribute('size')).toBe('18');
+            expect(warningIcons[1].getAttribute('ng-reflect-content')).toBe(
+                formFields[1].warnings[0]
             );
-            expect(warningIcons[2].attributes['name']).toBe('warning');
-            expect(warningIcons[2].attributes['size']).toBe('18');
-            expect(warningIcons[2].attributes['ng-reflect-text']).toBe(
-                component.formFields[2].warnings[0]
+
+            expect(warningIcons[2].getAttribute('name')).toBe('warning');
+            expect(warningIcons[2].getAttribute('size')).toBe('18');
+            expect(warningIcons[2].getAttribute('ng-reflect-content')).toBe(
+                formFields[2].warnings[0]
             );
         });
     });

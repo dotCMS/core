@@ -8,20 +8,20 @@ import { MenuItem } from 'primeng/api';
 
 import { mergeMap, pluck, take, takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import {
     DotContentTypesInfoService,
     DotCrudService,
     DotEventsService,
-    DotMessageService
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotRouterService
 } from '@dotcms/data-access';
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
-    DotCMSWorkflow
+    DotCMSWorkflow,
+    DotDialogActions
 } from '@dotcms/dotcms-models';
 
 import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';

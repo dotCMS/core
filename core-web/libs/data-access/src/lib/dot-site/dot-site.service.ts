@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
@@ -13,24 +13,24 @@ export interface SiteParams {
     system: boolean;
 }
 
+export const BASE_SITE_URL = '/api/v1/site';
+
+export const DEFAULT_PER_PAGE = 10;
+
 @Injectable({
     providedIn: 'root'
 })
 export class DotSiteService {
-    private BASE_SITE_URL = '/api/v1/site';
-    private params: SiteParams = {
+    #defaultParams: SiteParams = {
         archived: false,
         live: true,
         system: true
     };
-
-    private readonly defaultPerpage = 10;
+    readonly #http = inject(HttpClient);
 
     set searchParam(params: SiteParams) {
-        this.params = params;
+        this.#defaultParams = params;
     }
-
-    constructor(private http: HttpClient) {}
 
     /**
      * Get sites by filter
@@ -41,22 +41,33 @@ export class DotSiteService {
      * @return {*}  {Observable<Site[]>}
      * @memberof DotSiteService
      */
-    getSites(filter: string = '*', perPage?: number): Observable<Site[]> {
-        return this.http
-            .get<{ entity: Site[] }>(this.siteURL(filter, perPage))
+    getSites(filter = '*', perPage?: number): Observable<Site[]> {
+        return this.#http
+            .get<{ entity: Site[] }>(this.getSiteURL(filter, perPage))
             .pipe(pluck('entity'));
     }
 
-    private siteURL(filter: string, perPage?: number): string {
-        const paramPerPage = perPage || this.defaultPerpage;
-        const searchParam = `filter=${filter}&perPage=${paramPerPage}&${this.getQueryParams()}`;
+    private getSiteURL(filter: string, perPage?: number): string {
+        const searchParams = new URLSearchParams({
+            filter,
+            per_page: `${perPage || DEFAULT_PER_PAGE}`,
+            archived: `${this.#defaultParams.archived}`,
+            live: `${this.#defaultParams.live}`,
+            system: `${this.#defaultParams.system}`
+        });
 
-        return `${this.BASE_SITE_URL}?${searchParam}`;
+        return `${BASE_SITE_URL}?${searchParams.toString()}`;
     }
 
-    private getQueryParams(): string {
-        return Object.keys(this.params)
-            .map((key: string) => `${key}=${this.params[key as keyof SiteParams]}`)
-            .join('&');
+    /**
+     * Get current site
+     *
+     * @return {*}  {Observable<Site>}
+     * @memberof DotSiteService
+     */
+    getCurrentSite(): Observable<Site> {
+        return this.#http
+            .get<{ entity: Site }>(`${BASE_SITE_URL}/currentSite`)
+            .pipe(pluck('entity'));
     }
 }

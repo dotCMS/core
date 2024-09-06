@@ -1,8 +1,5 @@
 package com.dotcms.publisher.business;
 
-import static com.dotcms.publisher.ajax.RemotePublishAjaxAction.ADD_ALL_CATEGORIES_TO_BUNDLE_KEY;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -15,10 +12,14 @@ import com.google.common.base.CaseFormat;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.StringPool;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static com.dotcms.publisher.ajax.RemotePublishAjaxAction.ADD_ALL_CATEGORIES_TO_BUNDLE_KEY;
 
 /**
  * Util class to transform {@link PublishQueueElement} into Map
@@ -105,14 +106,16 @@ public class PublishQueueElementTransformer {
                 }
             }
 
-            result = map(TITLE_KEY, UtilMethods.isSet(title) ? title : StringPool.BLANK);
+            result = new HashMap<>(Map.of(TITLE_KEY, UtilMethods.isSet(title) ? title : StringPool.BLANK));
         }
 
-        result.putAll(map(
-                TYPE_KEY, type,
-                OPERATION_KEY, operation,
-                ASSET_KEY, id
-        ));
+        if (Objects.nonNull(result)) {
+            result.putAll(Map.of(
+                    TYPE_KEY, type,
+                    OPERATION_KEY, operation,
+                    ASSET_KEY, id
+            ));
+        }
 
         return result;
     }
@@ -121,20 +124,22 @@ public class PublishQueueElementTransformer {
 
         final Language language = APILocator.getLanguageAPI().getLanguage(id);
 
-        return UtilMethods.isSet(language) ? map(
+        return new HashMap<>(UtilMethods.isSet(language) ?
+                Map.of(
                     TITLE_KEY, String.format( "%s(%s)", language.getLanguage(), language.getCountryCode()),
                     LANGUAGE_CODE_KEY, language.getLanguageCode(),
                     COUNTRY_CODE_KEY, language.getCountryCode(),
                     CONTENT_TYPE_NAME_KEY,  CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL,
                             PusheableAsset.LANGUAGE.getType())
-            ) : map(TITLE_KEY, id);
+                ) :
+                Map.of(TITLE_KEY, id));
     }
 
     private static Map<String, Object> getMapForCategory(){
         try {
-            return map(TITLE_KEY, LanguageUtil.get("Syncing_all_Categories"));
+            return new HashMap<>(Map.of(TITLE_KEY, LanguageUtil.get("Syncing_all_Categories")));
         } catch (LanguageException e) {
-            return map(TITLE_KEY, "Syncing All Categories ");
+            return new HashMap<>(Map.of(TITLE_KEY, "Syncing All Categories "));
         }
     }
 
@@ -146,12 +151,13 @@ public class PublishQueueElementTransformer {
             contentlet = PublishAuditUtil.getInstance()
                     .findContentletByIdentifier(id);
 
-            return UtilMethods.isSet(contentlet) ? map(
+            return new HashMap<>(UtilMethods.isSet(contentlet) ?
+                    Map.of(
                         TITLE_KEY, contentlet.getTitle(),
                         INODE_KEY, contentlet.getInode(),
                         CONTENT_TYPE_NAME_KEY, contentlet.getContentType().name(),
                         HTML_PAGE_KEY, contentlet.isHTMLPage()
-                ) : map(TITLE_KEY, id, INODE_KEY, id);
+                    ) : Map.of(TITLE_KEY, id, INODE_KEY, id));
         } catch (DotSecurityException | DotDataException e) {
             Logger.error(PublishQueueElementTransformer.class, e.getMessage());
             return null;

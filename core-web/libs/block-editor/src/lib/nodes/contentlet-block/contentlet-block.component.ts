@@ -1,10 +1,6 @@
-import { Component, OnInit } from '@angular/core';
-
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { Component, OnInit, signal } from '@angular/core';
 
 import { AngularNodeViewComponent } from '../../NodeViewRenderer';
-
-// Models
 
 @Component({
     selector: 'dot-contentlet-block',
@@ -12,9 +8,9 @@ import { AngularNodeViewComponent } from '../../NodeViewRenderer';
     styleUrls: ['./contentlet-block.component.scss']
 })
 export class ContentletBlockComponent extends AngularNodeViewComponent implements OnInit {
-    public data: DotCMSContentlet;
+    protected readonly data = signal(null);
 
     ngOnInit() {
-        this.data = this.node.attrs.data;
+        this.data.set(this.node.attrs.data);
     }
 }

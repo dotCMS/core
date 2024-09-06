@@ -2,12 +2,10 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotCopyButtonComponent, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotRelationshipTreeComponent } from './dot-relationship-tree.component';
 
@@ -25,11 +23,12 @@ const fakeContentType: DotCMSContentType = {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-relationship-tree
-        [velocityVar]="velocityVar"
-        [contentType]="contentType"
-        [isParentField]="isParentField"
-    ></dot-relationship-tree>`
+    template: `
+        <dot-relationship-tree
+            [velocityVar]="velocityVar"
+            [contentType]="contentType"
+            [isParentField]="isParentField"></dot-relationship-tree>
+    `
 })
 class TestHostComponent {
     velocityVar = 'Parent.Children';
@@ -46,7 +45,7 @@ describe('DotRelationshipTreeComponent', () => {
         beforeEach(async () => {
             await TestBed.configureTestingModule({
                 declarations: [TestHostComponent, DotRelationshipTreeComponent],
-                imports: [DotIconModule, DotPipesModule, DotMessagePipe, DotCopyButtonModule],
+                imports: [DotIconModule, DotSafeHtmlPipe, DotMessagePipe, DotCopyButtonComponent],
                 providers: [
                     {
                         provide: DotMessageService,
@@ -91,7 +90,7 @@ describe('DotRelationshipTreeComponent', () => {
         beforeEach(async () => {
             await TestBed.configureTestingModule({
                 declarations: [TestHostComponent, DotRelationshipTreeComponent],
-                imports: [DotIconModule, DotPipesModule, DotMessagePipe, DotCopyButtonModule],
+                imports: [DotIconModule, DotSafeHtmlPipe, DotMessagePipe, DotCopyButtonComponent],
                 providers: [
                     {
                         provide: DotMessageService,

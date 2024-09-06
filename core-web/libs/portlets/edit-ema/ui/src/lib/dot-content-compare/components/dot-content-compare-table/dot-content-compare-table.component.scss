@@ -1,0 +1,73 @@
+@use "variables" as *;
+
+.dot-content-compare-table__controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: $spacing-3;
+
+    p-dropdown {
+        margin-right: $spacing-3;
+    }
+
+    button {
+        margin-left: auto;
+    }
+}
+
+.dot-content-compare-table__title {
+    color: $black;
+    font-size: $font-size-lmd;
+}
+
+:host ::ng-deep .p-datatable {
+    table {
+        border-collapse: separate;
+        border-spacing: 0;
+
+        th {
+            border-top: 1px solid $color-palette-gray-300;
+            border-bottom: 1px solid $color-palette-gray-300;
+            border-right: 1px solid $color-palette-gray-300;
+        }
+
+        td {
+            vertical-align: top;
+            border-bottom: 1px solid $color-palette-gray-300;
+            border-right: 1px solid $color-palette-gray-300;
+
+            img {
+                max-width: 100%;
+                height: auto;
+            }
+
+            video {
+                aspect-ratio: 16/9;
+                max-width: 100%;
+                height: 300px;
+            }
+        }
+
+        th:first-child,
+        td:first-child {
+            border-left: 1px solid $color-palette-gray-300;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+
+            &:not(:first-of-type) {
+                width: 45%;
+            }
+        }
+
+        .p-datatable-tbody tr > td {
+            &:last-child {
+                padding-right: $spacing-2;
+            }
+        }
+    }
+}

@@ -1,0 +1,40 @@
+<div class="wrapper">
+    <div class="options">
+        <label data-testId="option1" for="option1">
+            <input
+                [(ngModel)]="value"
+                [value]="firstOption.value"
+                id="option1"
+                type="radio"
+                name="options" />
+            <div class="item">
+                <span class="material-icons">{{ firstOption.icon }}</span>
+                <span data-testId="label-op1">{{ firstOption.label | dm }}</span>
+            </div>
+        </label>
+        <label data-testId="option2" for="option2">
+            <input
+                [(ngModel)]="value"
+                [value]="secondOption.value"
+                id="option2"
+                type="radio"
+                name="options" />
+            <div class="item">
+                <span class="material-icons">{{ secondOption.icon }}</span>
+                <span data-testId="label-op2">{{ secondOption.label | dm }}</span>
+            </div>
+        </label>
+    </div>
+
+    <p [innerHTML]="message | dm" class="message" data-testId="description"></p>
+</div>
+
+<div class="dialog__container__actions">
+    <button
+        (click)="onSelect()"
+        [autofocus]="true"
+        [label]="btnLabel | dm"
+        pButton
+        pAutoFocus
+        data-testId="button"></button>
+</div>

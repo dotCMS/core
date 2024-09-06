@@ -8,13 +8,13 @@
         <meta name="referrer" content="origin" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>DotCMS API Playground</title>
-        <link rel="stylesheet" type="text/css" href="swagger-ui.css">
+        <link rel="stylesheet" type="text/css" href="swagger-ui.css?v=20240819">
     </head>
     <body>
         <div id="swagger-ui"></div>
 
-        <script src="swagger-ui-bundle.js"></script>
-        <script src="swagger-ui-standalone-preset.js"></script>
+        <script src="swagger-ui-bundle.js?v=20240819"></script>
+        <script src="swagger-ui-standalone-preset.js?v=20240819"></script>
 
         <script>
             const HideSchemes = function() {
@@ -37,6 +37,7 @@
                     ],
                     plugins: [HideSchemes],
                     layout: "BaseLayout",
+                    operationsSorter: 'alpha',
                 })
 
                 window.ui = ui

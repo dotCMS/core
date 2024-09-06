@@ -1,13 +1,12 @@
 <button
-    class="p-button-text p-button-sm"
-    [pTooltip]="tooltipText"
     (click)="copyUrlToClipboard($event)"
+    [pTooltip]="tooltipText"
+    class="p-button-text p-button-sm"
     appendTo="body"
     hideDelay="300"
     tooltipPosition="bottom"
     data-testId="button"
-    pButton
->
+    pButton>
     <i class="pi pi-copy" data-testId="icon"></i>
     <span class="p-button-label">{{ label }}</span>
 </button>

@@ -1,25 +1,23 @@
 <div class="dot-loop-editor__pre-post-loop">
-    <div class="dot-loop-editor__pre-post-loop-inplace" *ngIf="!isEditorVisible">
+    <div *ngIf="!isEditorVisible" class="dot-loop-editor__pre-post-loop-inplace">
         <button
-            class="p-button-outlined p-button-secondary"
-            [label]="'message.containers.create.add_pre_post' | dm"
             (click)="handleClick()"
+            [label]="'message.containers.create.add_pre_post' | dm"
+            class="p-button-outlined p-button-secondary"
             data-testId="showEditorBtn"
             pButton
-            type="button"
-        ></button>
+            type="button"></button>
     </div>
-    <div class="field mb-0" *ngIf="isEditorVisible" [@enterAnimation]>
-        <label class="block" data-testId="label">{{
-            'message.containers.create.' + label | dm
-        }}</label>
+    <div *ngIf="isEditorVisible" class="field mb-0" [@enterAnimation]>
+        <label class="block" data-testId="label">
+            {{ 'message.containers.create.' + label | dm }}
+        </label>
         <dot-textarea-content
+            (blur)="onTouched()"
+            (input)="onTouched()"
             [formControl]="loopControl"
             [show]="['code']"
             [customStyles]="{ height: '140px' }"
-            (blur)="onTouched()"
-            (input)="onTouched()"
-            language="html"
-        ></dot-textarea-content>
+            language="html"></dot-textarea-content>
     </div>
 </div>

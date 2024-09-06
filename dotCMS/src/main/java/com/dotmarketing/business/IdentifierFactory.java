@@ -5,6 +5,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
+
 import java.util.List;
 
 /**
@@ -18,6 +19,17 @@ import java.util.List;
  * 
  */
 public abstract class IdentifierFactory {
+
+	public static final String ID = "id";
+	public static final String PARENT_PATH = "parent_path";
+	public static final String ASSET_NAME = "asset_name";
+	public static final String HOST_INODE = "host_inode";
+	public static final String ASSET_TYPE = "asset_type";
+	public static final String SYS_PUBLISH_DATE = "syspublish_date";
+	public static final String SYS_EXPIRE_DATE = "sysexpire_date";
+	public static final String OWNER = "owner";
+	public static final String CREATE_DATE = "create_date";
+	public static final String ASSET_SUBTYPE = "asset_subtype";
 
 	/**
 	 * Retrieves all identifiers matching a URI pattern.

@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -24,24 +25,35 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.apache.commons.codec.digest.DigestUtils;
 
-
+/**
+ * This class is an implementation of the {@link DeterministicIdentifierAPI} interface.
+ *
+ * @author Fabrizzio Araya
+ * @since Jun 24th, 2021
+ */
 public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAPI {
 
     static final String GENERATE_DETERMINISTIC_IDENTIFIERS = "GENERATE_DETERMINISTIC_IDENTIFIERS";
@@ -49,6 +61,10 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     private static final int MAX_ATTEMPTS = 3;
 
     static final String NON_DETERMINISTIC_IDENTIFIER = "[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
+    public static final String S_S = "%s:%s";
+
+    final IdentifierFactory identifierFactory = FactoryLocator.getIdentifierFactory();
+    final Predicate<String> testIdentifier =  identifierFactory::isIdentifier;
 
     private final FolderAPI folderAPI;
     private final HostAPI hostAPI;
@@ -59,15 +75,15 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
 
     DeterministicIdentifierAPIImpl() {
         this(APILocator.getFolderAPI(),
-             APILocator.getHostAPI(),
-             APILocator.getContentTypeAPI(APILocator.systemUser()),
-             APILocator.getCategoryAPI(),
-             UUIDGenerator::generateUuid,
-             DigestUtils::sha256Hex);
+                APILocator.getHostAPI(),
+                APILocator.getContentTypeAPI(APILocator.systemUser()),
+                APILocator.getCategoryAPI(),
+                UUIDGenerator::generateUuid,
+                DigestUtils::sha256Hex);
     }
 
     @VisibleForTesting
-    DeterministicIdentifierAPIImpl(final FolderAPI folderAPI, final HostAPI hostAPI, final ContentTypeAPI contentTypeAPI, final CategoryAPI categoryAPI, final Supplier<String> uuidSupplier, final Function<String, String> hashFunction) {
+    DeterministicIdentifierAPIImpl(final FolderAPI folderAPI, final HostAPI hostAPI, final ContentTypeAPI contentTypeAPI, final CategoryAPI categoryAPI, final Supplier<String> uuidSupplier, final UnaryOperator<String> hashFunction) {
         this.folderAPI = folderAPI;
         this.hostAPI = hostAPI;
         this.contentTypeAPI = contentTypeAPI;
@@ -82,69 +98,64 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * @return
      */
     @VisibleForTesting
-    String resolveAssetName(final Versionable asset) {
+    Optional<String> resolveAssetName(final Versionable asset) throws IOException {
 
+        String seed = null;
         if (asset instanceof Contentlet) {
-
             final Contentlet contentlet = (Contentlet) asset;
 
-            try {
-
-                if (contentlet.isHost()) {
-                    return contentlet.getStringProperty(Host.HOST_NAME_KEY);
-                }
-
-                if (contentlet.isFileAsset()) {
-                    return contentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName();
-                }
-
-                if (contentlet.isHTMLPage()) {
-                    return contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
-                }
-
-                if (contentlet.isPersona()) {
-                    return contentlet.getStringProperty(PersonaAPI.KEY_TAG_FIELD);
-                }
-
+            if (contentlet.isHost()) {
+                seed = contentlet.getStringProperty(Host.HOST_NAME_KEY);
+            } else if (contentlet.isFileAsset()) {
+                seed = contentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName();
+            } else if (Boolean.TRUE.equals(contentlet.isHTMLPage())) {
+                seed = contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+            } else if (contentlet.isPersona()) {
+                seed = contentlet.getStringProperty(PersonaAPI.KEY_TAG_FIELD);
+            } else {
                 //This should handle cases like a multi-binary contentlets
-
-                final List<String> binaryNames = contentlet.getContentType().fields(BinaryField.class)
-                        .stream()
-                        .map(field -> Try.of(() -> contentlet.getBinary(field.variable()).getName())
-                                .getOrNull()).filter(Objects::nonNull).collect(Collectors
-                                .toList());
-                if(!binaryNames.isEmpty()) {
-                    final StringBuilder builder = new StringBuilder();
-                    final Iterator<String> iterator = binaryNames.iterator();
-                    while(iterator.hasNext()){
-                       builder.append(iterator.next());
-                       if(iterator.hasNext()){
-                         builder.append(StringPool.COLON);
-                       }
-                    }
-                    if (builder.length() > 0) {
-                        return builder.toString();
-                    }
-                }
-
-
-            } catch (Exception e) {
-                Logger.error(DeterministicIdentifierAPIImpl.class, e);
-                throw new DotRuntimeException(String.format(
-                        "Failed resolving asset name for contentlet with title `%s` and id `%s` ",
-                        contentlet.getTitle(), contentlet.getIdentifier()), e);
+                final Optional<String> optional = resolveAssetName(contentlet);
+                seed = optional.orElseGet(contentlet::getTitle);
             }
         } else if (asset instanceof WebAsset) {
-                return ((WebAsset) asset).getTitle();
+            seed = ((WebAsset) asset).getTitle();
         }
-        return uuidSupplier.get();
+
+        return Optional.ofNullable(seed);
 
     }
 
     /**
      * Resolves the name used to generate a seed for the given params
-     * @param asset
-     * @return
+     * @param contentlet the contentlet
+     * @return the name
+     */
+    Optional<String> resolveAssetName(final Contentlet contentlet) {
+        final List<String> binaryNames = contentlet.getContentType().fields(BinaryField.class)
+                .stream()
+                .map(field -> Try.of(() -> contentlet.getBinary(field.variable()).getName())
+                        .getOrNull()).filter(Objects::nonNull).collect(Collectors
+                        .toList());
+        if(!binaryNames.isEmpty()) {
+            final StringBuilder builder = new StringBuilder();
+            final Iterator<String> iterator = binaryNames.iterator();
+            while(iterator.hasNext()){
+                builder.append(iterator.next());
+                if(iterator.hasNext()){
+                    builder.append(StringPool.COLON);
+                }
+            }
+            if (builder.length() > 0) {
+                return Optional.of(builder.toString());
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Resolves the name used to generate a seed for the given params
+     * @param asset the asset
+     * @return the name
      */
     @VisibleForTesting
     String resolveAssetType(final Versionable asset) {
@@ -160,40 +171,62 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
 
     /**
      * Generates the seed to the deterministic id for the given set of params
-     * @param asset
-     * @param parent
-     * @return
+     * @param asset the asset
+     * @param parent the parent
+     * @return the seed
      */
-    private String deterministicIdSeed(final Versionable asset, final Treeable parent) {
+    private Optional<String> deterministicIdSeed(final Versionable asset, final Treeable parent) {
 
-        final Host parentHost = (parent instanceof Host) ? (Host) parent : Try.of(
-                () -> hostAPI
-                        .find(((Folder) parent).getHostId(), APILocator.systemUser(), false))
-                .getOrElseThrow(DotRuntimeException::new);
+        try {
+            final Host parentHost = (parent instanceof Host) ? (Host) parent : Try.of(
+                            () -> hostAPI
+                                    .find(((Folder) parent).getHostId(), APILocator.systemUser(), false))
+                    .getOrElseThrow(DotRuntimeException::new);
 
-        if ((null == parentHost || null == parentHost.getHostname()) && parent instanceof Folder){
-            throw new DotRuntimeException(
-                    String.format(" Error finding host with ID: %s. Asset Title: %s", ((Folder)parent).getHostId(), asset.getTitle()));
+            if ((null == parentHost || null == parentHost.getHostname())
+                    && parent instanceof Folder) {
+                throw new DotRuntimeException(
+                        String.format(" Error finding host with ID: %s. Asset Title: %s",
+                                ((Folder) parent).getHostId(), asset.getTitle()));
+            }
+
+            final Folder parentFolder = (parent instanceof Folder) ? (Folder) parent
+                    : Try.of(folderAPI::findSystemFolder)
+                            .getOrElseThrow(DotRuntimeException::new);
+
+            final Optional<String> assetName = resolveAssetName(asset);
+            if(assetName.isPresent()) {
+                final String assetType = resolveAssetType(asset);
+                assert parentHost != null : "parentHost should never be null";
+                final String deterministicId = formattedString(assetType, parentHost, parentFolder, assetName.get());
+
+                Logger.debug(DeterministicIdentifierAPIImpl.class,
+                        String.format(" assetType: %s, assetName: %s,  deterministicId: %s",
+                                assetType,
+                                assetName,
+                                deterministicId));
+
+                return Optional.of(deterministicId);
+            }
+        }catch (Exception e){
+            Logger.error(DeterministicIdentifierAPIImpl.class, "Error generating deterministic id", e);
         }
-
-
-        final Folder parentFolder = (parent instanceof Folder) ? (Folder) parent
-                : Try.of(folderAPI::findSystemFolder)
-                        .getOrElseThrow(DotRuntimeException::new);
-
-        final String assetType = resolveAssetType(asset);
-        final String assetName = resolveAssetName(asset);
-        final String deterministicId = (assetType + StringPool.COLON + parentHost.getHostname() +
-                parentFolder.getPath() + assetName).toLowerCase();
-
-        Logger.debug(DeterministicIdentifierAPIImpl.class,
-                String.format(" assetType: %s, assetName: %s,  deterministicId: %s", assetType, assetName,
-                        deterministicId));
-
-        return deterministicId;
-
+        return Optional.empty();
     }
 
+    /**
+     * Generates the seed to the deterministic id for the given set of params
+     * @param asset the asset
+     * @param parent the parent
+     * @return the seed
+     */
+    private static String formattedString(final String assetType, final Host parentHost, final Folder parentFolder, final String assetName) {
+        return String.format("%s:%s%s%s",
+                assetType,
+                parentHost.getHostname(),
+                parentFolder.getPath(),
+                assetName).toLowerCase();
+    }
 
     /**
      * Generates the seed to the deterministic id for the given set of params
@@ -201,13 +234,12 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * @param parent
      * @return
      */
-    private String deterministicIdSeed(final Folder folder, final Treeable parent) {
+    private Optional<String> deterministicIdSeed(final Folder folder, final Treeable parent) {
 
         final Host parentHost = (parent instanceof Host) ? (Host) parent : Try.of(
                         () -> hostAPI
                                 .find(((Folder) parent).getHostId(), APILocator.systemUser(), false))
                 .getOrElseThrow(DotRuntimeException::new);
-
 
         final Folder parentFolder = (parent instanceof Folder) ? (Folder) parent
                 : Try.of(folderAPI::findSystemFolder)
@@ -217,10 +249,11 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         final String assetName = folder.getName();
 
         if ((null == parentHost || null == parentHost.getHostname()) && parent instanceof Folder){
-            throw new DotRuntimeException(
-                    String.format(" Error finding host with ID: %s. Folder Name: %s", ((Folder)parent).getHostId(), folder.getName()));
+            Logger.error(DeterministicIdentifierAPIImpl.class, String.format(" Error finding host with ID: %s. Folder Name: %s", ((Folder)parent).getHostId(), folder.getName()));
+            return Optional.empty();
         }
 
+        assert parentHost != null : "parentHost should never be null" ;
         final String deterministicId = (assetType + StringPool.COLON + parentHost.getHostname()
                 + parentFolder.getPath() + assetName).toLowerCase();
 
@@ -228,7 +261,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
                 String.format(" assetType: %s, assetName: %s,  deterministicId: %s", assetType, assetName,
                         deterministicId));
 
-        return deterministicId;
+        return Optional.of(deterministicId);
 
     }
 
@@ -248,32 +281,32 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
 
     /**
      * This method is used by ContentTypes if the CT does not have a predefined variable-name installed on it we rely on the supplier.
-     * @param contentType
-     * @param contentTypeVarName
-     * @return
+     * @param contentType the ContentType
+     * @param contentTypeVarName the variable name
+     * @return the name
      */
     @VisibleForTesting
     String resolveName(final ContentType contentType, final Supplier<String>contentTypeVarName) {
         String name = contentType.variable();
         if(UtilMethods.isNotSet(name)){
-           name = contentTypeVarName.get();
+            name = contentTypeVarName.get();
         }
         return name;
     }
 
     /**
      * Generates the seed to the deterministic id for the given set of params
-     * @param contentType
-     * @param contentTypeVarName
-     * @return
+     * @param contentType the ContentType
+     * @param contentTypeVarName the variable name
+     * @return the seed
      */
     private String deterministicIdSeed(final ContentType contentType, final Supplier<String>contentTypeVarName) {
-       final String assetType = resolveAssetType(contentType);
-       final String name = resolveName(contentType, contentTypeVarName);
-       final String seedId = String.format("%s:%s",assetType, name).toLowerCase();
+        final String assetType = resolveAssetType(contentType);
+        final String name = resolveName(contentType, contentTypeVarName);
+        final String seedId = String.format(S_S, assetType, name).toLowerCase();
 
-       Logger.debug(DeterministicIdentifierAPIImpl.class, String.format(" contentType: %s, assetName: %s,  seedId: %s", assetType, name, seedId));
-       return seedId;
+        Logger.debug(DeterministicIdentifierAPIImpl.class, String.format(" contentType: %s, assetName: %s,  seedId: %s", assetType, name, seedId));
+        return seedId;
     }
 
     /**
@@ -289,7 +322,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
             name = field.variable();
         }
         //amplify the dispersion of the seed by adding the field type
-        return  String.format("%s:%s", name, field.typeName());
+        return  String.format(S_S, name, field.typeName());
     }
 
     /**
@@ -302,7 +335,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     private String deterministicIdSeed(final ContentType contentType, final Field field, final Supplier<String>fieldVarName) {
         final String assetType = deterministicIdSeed(contentType, contentType::variable);
         final String name = resolveName(field, fieldVarName);
-        final String seedId = String.format("%s:%s", assetType, name).toLowerCase();
+        final String seedId = String.format(S_S, assetType, name).toLowerCase();
 
         Logger.debug(DeterministicIdentifierAPIImpl.class, String.format(" contentType: %s, assetName: %s,  seedId: %s", assetType, name, seedId));
         return seedId;
@@ -315,7 +348,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      */
     @VisibleForTesting
     String deterministicIdSeed(final Language lang){
-       return  String.format("%s:%s:%s", Language.class.getSimpleName(),lang.getLanguageCode(),lang.getCountryCode()).trim();
+        return  String.format("%s:%s:%s", Language.class.getSimpleName(),lang.getLanguageCode(),lang.getCountryCode()).trim();
     }
 
     /**
@@ -325,8 +358,8 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      */
     private String hash(final String stringToHash) {
         final String hashed = hashFunction.apply(stringToHash).substring(0, 32);
-        Logger.info(DeterministicIdentifierAPIImpl.class,
-                "hashing id: " + stringToHash + " to " + hashed);
+        Logger.debug(DeterministicIdentifierAPIImpl.class,
+                () -> "hashing id: " + stringToHash + " to " + hashed);
         return hashed;
     }
 
@@ -335,15 +368,15 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * if not we use it as the next identifier but if it has been already taken then we rely on the fallback function.
      * The fallback function basically does what it was done before the introduction of the deterministic identifier api.
      * @param hash candidate hash that aspires to become an id
-     * @param testIdentifierFunction Function that tests if the candidate hash is already in use.
+     * @param testIdentifier Function that tests if the candidate hash is already in use.
      * @param fallbackIdentifier if the candidate is found to be already in use then we relay on the fallback id generator
      * @param <T> hash data-type
      * @return the new identifier ready to be inserted on a db
      */
-    private <T> T bestEffortDeterministicId(final T hash, final Function<T,Boolean> testIdentifierFunction, final Supplier<T> fallbackIdentifier) {
+    private <T> T bestEffortDeterministicId(final T hash, final Predicate<T> testIdentifier, final Supplier<T> fallbackIdentifier) {
         T candidateId = hash;
         for (int i = 1; i <= MAX_ATTEMPTS; i++) {
-            if (!testIdentifierFunction.apply(candidateId)) {
+            if (!testIdentifier.test(candidateId)) {
                 return candidateId;
             }
             candidateId = fallbackIdentifier.get();
@@ -364,10 +397,15 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     public String generateDeterministicIdBestEffort(final Versionable asset,
             final Treeable parent) {
 
-        final IdentifierFactory identifierFactory = FactoryLocator.getIdentifierFactory();
-        final Function<String, Boolean> testIdentifierFunction = identifierFactory::isIdentifier;
-        return isEnabled() ? bestEffortDeterministicId(hash(deterministicIdSeed(asset, parent)),
-                testIdentifierFunction, uuidSupplier) : uuidSupplier.get();
+
+        if (isEnabled()){
+            final Optional<String> seed = deterministicIdSeed(asset, parent);
+            if(seed.isPresent()){
+                final String hash = hash(seed.get());
+                return bestEffortDeterministicId(hash, testIdentifier, uuidSupplier);
+            }
+        }
+        return uuidSupplier.get();
     }
 
     /**
@@ -381,10 +419,14 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     public String generateDeterministicIdBestEffort(final Folder folder,
             final Treeable parent) {
 
-        final IdentifierFactory identifierFactory = FactoryLocator.getIdentifierFactory();
-        final Function<String, Boolean> testIdentifierFunction = identifierFactory::isIdentifier;
-        return isEnabled() ? bestEffortDeterministicId(hash(deterministicIdSeed(folder, parent)),
-                testIdentifierFunction, uuidSupplier) : uuidSupplier.get();
+        if (isEnabled()){
+            final Optional<String> seed = deterministicIdSeed(folder, parent);
+            if(seed.isPresent()) {
+                final String hash = hash(seed.get());
+                return bestEffortDeterministicId(hash, testIdentifier, uuidSupplier);
+            }
+        }
+        return uuidSupplier.get();
     }
 
     /**
@@ -402,6 +444,22 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         return isEnabled() ? bestEffortDeterministicId(
                 hash(deterministicIdSeed(contentType, contentTypeVarName)),
                 this::isContentTypeInode, uuidSupplier) : uuidSupplier.get();
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public String generateDeterministicIdBestEffort(final WorkflowScheme scheme) {
+
+        if (isEnabled()) {
+
+            final var hash = hash(scheme.getVariableName());
+            // For legacy reasons, mainly because of short IDs we should keep using the UUID format (-)
+            final var deterministicUUID = UUIDUtil.uuidIfy(hash);
+
+            return bestEffortDeterministicId(deterministicUUID, this::isWorkflowId, uuidSupplier);
+        }
+
+        return uuidSupplier.get();
     }
 
     /**
@@ -555,6 +613,29 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     }
 
     /**
+     * Test the calculated hash has already been used as a workflow identifier
+     *
+     * @param hash the hash to test
+     * @return true if the hash has been used as a workflow identifier
+     */
+    private boolean isWorkflowId(final String hash) {
+
+        try {
+            final var result = APILocator.getWorkflowAPI().findScheme(hash);
+            return result != null &&
+                    org.apache.commons.lang.StringUtils.isNotEmpty(result.getId());
+        } catch (DoesNotExistException e) {
+            return false;
+        } catch (DotDataException | DotSecurityException e) {
+            final var message = String.format(
+                    "Error validating if the hash [%s] is an existing workflow scheme ID", hash
+            );
+            Logger.error(this.getClass(), message, e);
+            throw new DotRuntimeException(message, e);
+        }
+    }
+
+    /**
      * Basically takes a string and hash it into a long number (not extremely long though).
      * As this is meant to be used as an id take into account that not every java long can be represented in javascript therefore this number can be excessively large
      * That is why this has is relatively simple
@@ -562,8 +643,8 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * @param string
      * @return
      */
-     @VisibleForTesting
-     long simpleHash(final String string) {
+    @VisibleForTesting
+    long simpleHash(final String string) {
         final int len = string.length();
         long hash = 0;
         for (int i = 0; i < len; i++) {
@@ -578,15 +659,15 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * @return
      */
     public boolean isDeterministicId(final String id){
-       return isUUID(id) && !id.matches(NON_DETERMINISTIC_IDENTIFIER);
+        return isUUID(id) && !id.matches(NON_DETERMINISTIC_IDENTIFIER);
     }
 
     /**
      * Tells us if this generator has been disabled
      * @return
      */
-   public boolean isEnabled(){
-       return (Config.getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true));
-   }
+    public boolean isEnabled(){
+        return (Config.getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true));
+    }
 
 }

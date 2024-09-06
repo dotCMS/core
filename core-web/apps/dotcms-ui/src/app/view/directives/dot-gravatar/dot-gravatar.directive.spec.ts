@@ -11,7 +11,9 @@ import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-servic
 import { DotGravatarDirective } from './dot-gravatar.directive';
 
 @Component({
-    template: `<p-avatar [email]="email" dotGravatar></p-avatar> `
+    template: `
+        <p-avatar [email]="email" dotGravatar></p-avatar>
+    `
 })
 class TestHostComponent {
     //Some dummy email from this post https://stackoverflow.com/questions/41786225/what-is-a-good-gravatar-example-email

@@ -9,7 +9,7 @@ import {
     ViewChild
 } from '@angular/core';
 
-import { DotMenu, DotMenuItem } from '@models/navigation';
+import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 @Component({
     animations: [

@@ -2,7 +2,6 @@ import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/j
 
 import { FormArray, FormControl, FormGroup, FormGroupDirective, Validators } from '@angular/forms';
 
-import { DotFieldValidationMessageComponent } from '@components/_common/dot-field-validation-message/dot-field-validation-message';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     DefaultGoalConfiguration,
@@ -11,6 +10,7 @@ import {
     GOAL_TYPES,
     Goals
 } from '@dotcms/dotcms-models';
+import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsGoalConfigurationUrlParameterComponentComponent } from './dot-experiments-goal-configuration-url-parameter-component.component';

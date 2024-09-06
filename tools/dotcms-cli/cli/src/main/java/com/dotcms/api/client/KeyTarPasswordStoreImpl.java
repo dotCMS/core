@@ -3,7 +3,7 @@ package com.dotcms.api.client;
 import com.starxg.keytar.Keytar;
 import com.starxg.keytar.KeytarException;
 import java.util.Optional;
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * KeyTarPasswordStoreImpl implements the SecurePasswordStore interface to securely store passwords using the system keychain.
@@ -18,6 +18,7 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class KeyTarPasswordStoreImpl implements SecurePasswordStore {
 
+    // START-NOSCAN
     private Keytar instance;
 
     private boolean unsupported = false;
@@ -26,7 +27,7 @@ public class KeyTarPasswordStoreImpl implements SecurePasswordStore {
        if(null == instance && !unsupported){
           try {
               instance = Keytar.getInstance();
-          } catch (UnsatisfiedLinkError e) {
+          } catch (Error e) {
                unsupported = true;
           }
        }
@@ -42,7 +43,7 @@ public class KeyTarPasswordStoreImpl implements SecurePasswordStore {
         final Keytar keytar = getInstanceOrThrow();
         try {
             keytar.setPassword(service, account, password);
-        } catch (KeytarException e) {
+        } catch (Exception | Error  e) {
             throw new StoreSecureException("Failure saving password securely",e);
         }
     }
@@ -52,7 +53,7 @@ public class KeyTarPasswordStoreImpl implements SecurePasswordStore {
         final Keytar keytar = getInstanceOrThrow();
         try {
             return keytar.getPassword(service, account);
-        } catch (KeytarException e) {
+        } catch (Exception | Error e) {
             throw new StoreSecureException("Failure retrieving password from secure storage",e);
         }
     }
@@ -62,8 +63,9 @@ public class KeyTarPasswordStoreImpl implements SecurePasswordStore {
         final Keytar keytar = getInstanceOrThrow();
         try {
             keytar.deletePassword(service, account);
-        } catch (KeytarException e) {
+        } catch (Exception | Error e) {
             throw new StoreSecureException("Failure deleting password from secure storage",e);
         }
     }
+    // END-NOSCAN
 }

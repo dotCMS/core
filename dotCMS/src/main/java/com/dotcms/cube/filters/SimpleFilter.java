@@ -1,9 +1,7 @@
 package com.dotcms.cube.filters;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
-import com.dotcms.cube.filters.Filter;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -72,8 +70,15 @@ public class SimpleFilter implements Filter {
     }
 
     @Override
-    public Map<String, Object> asMap(){
-        return map("member", member, "operator", operator.getKey(), "values", values);
+    public Map<String, Object> asMap() {
+
+        final Map<String, Object> map = new HashMap<>();
+
+        map.put("member", member);
+        map.put("operator", operator.getKey());
+        map.put("values", values);
+
+        return map;
     }
 
     public enum Operator {

@@ -1,29 +1,25 @@
-<div class="dot-pages__container" *ngIf="vm$ | async as vm">
-    <div class="dot-pages__inner-container" *ngIf="!vm.isPortletLoading; else loading">
+<div *ngIf="vm$ | async as vm" class="dot-pages__container">
+    <div *ngIf="!vm.isPortletLoading; else loading" class="dot-pages__inner-container">
         <dot-pages-favorite-panel
             (goToUrl)="goToUrl($event)"
-            (showActionsMenu)="showActionsMenu($event)"
-        ></dot-pages-favorite-panel>
+            (showActionsMenu)="showActionsMenu($event)"></dot-pages-favorite-panel>
 
         <p-menu
-            #menu
+            (onHide)="closedActionsMenu($event)"
             [popup]="true"
             [model]="vm.pages.menuActions"
-            (onHide)="closedActionsMenu($event)"
-        ></p-menu>
+            #menu></p-menu>
 
         <dot-pages-listing-panel
             (goToUrl)="goToUrl($event)"
             (showActionsMenu)="showActionsMenu($event)"
             (pageChange)="scrollToTop()"
-            data-testId="pages-listing-panel"
-        ></dot-pages-listing-panel>
+            data-testId="pages-listing-panel"></dot-pages-listing-panel>
 
         <dot-add-to-bundle
             *ngIf="vm.pages.addToBundleCTId"
-            [assetIdentifier]="vm.pages.addToBundleCTId"
             (cancel)="vm.pages.addToBundleCTId = null"
-        ></dot-add-to-bundle>
+            [assetIdentifier]="vm.pages.addToBundleCTId"></dot-add-to-bundle>
     </div>
 
     <ng-template #loading>

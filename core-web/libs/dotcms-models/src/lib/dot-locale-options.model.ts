@@ -1,3 +1,5 @@
+import { Locale } from 'date-fns';
+
 export interface DotLocaleOptions {
-    locale: unknown;
+    locale: Locale;
 }

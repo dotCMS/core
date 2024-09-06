@@ -1,11 +1,14 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
-import { UntypedFormControl } from '@angular/forms';
-import { ServerSideFieldModel } from '../../services/ServerSideFieldModel';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { I18nService } from '../.././services/system/locale/I18n';
+
+import { DecimalPipe } from '@angular/common';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { UntypedFormControl } from '@angular/forms';
+
 import { LoggerService } from '@dotcms/dotcms-js';
+
+import { I18nService } from '../.././services/system/locale/I18n';
 import { GCircle } from '../../models/gcircle.model';
+import { ServerSideFieldModel } from '../../services/ServerSideFieldModel';
 
 interface Param<T> {
     key: string;
@@ -26,16 +29,17 @@ const I8N_BASE = 'api.sites.ruleengine';
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DecimalPipe],
     selector: 'cw-visitors-location-container',
-    template: `<cw-visitors-location-component
-        [circle]="circle$ | async"
-        [preferredUnit]="preferredUnit"
-        [comparisonValue]="comparisonValue"
-        [comparisonControl]="comparisonControl"
-        [comparisonOptions]="comparisonOptions"
-        [fromLabel]="fromLabel"
-        (comparisonChange)="onComparisonChange($event)"
-        (areaChange)="onUpdate($event)"
-    ></cw-visitors-location-component> `
+    template: `
+        <cw-visitors-location-component
+            (comparisonChange)="onComparisonChange($event)"
+            (areaChange)="onUpdate($event)"
+            [circle]="circle$ | async"
+            [preferredUnit]="preferredUnit"
+            [comparisonValue]="comparisonValue"
+            [comparisonControl]="comparisonControl"
+            [comparisonOptions]="comparisonOptions"
+            [fromLabel]="fromLabel"></cw-visitors-location-component>
+    `
 })
 export class VisitorsLocationContainer {
     @Input() componentInstance: ServerSideFieldModel;
@@ -85,6 +89,7 @@ export class VisitorsLocationContainer {
             x = this.resources.get(subkey);
             this._rsrcCache[subkey] = x;
         }
+
         return x;
     }
 
@@ -99,6 +104,7 @@ export class VisitorsLocationContainer {
             const rsrcKey = i18nBaseKey + '.inputs.comparison.';
             const optsAry = Object.keys(opts).map((key) => {
                 const sOpt = opts[key];
+
                 return {
                     value: sOpt.value,
                     label: this.rsrc(rsrcKey + sOpt.i18nKey),

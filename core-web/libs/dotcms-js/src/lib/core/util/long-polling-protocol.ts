@@ -1,7 +1,9 @@
-import { Protocol } from './protocol';
-import { LoggerService } from '../logger.service';
-import { CoreWebService } from '../core-web.service';
 import { pluck, take } from 'rxjs/operators';
+
+import { Protocol } from './protocol';
+
+import { CoreWebService } from '../core-web.service';
+import { LoggerService } from '../logger.service';
 
 export class LongPollingProtocol extends Protocol {
     private isClosed = false;
@@ -36,6 +38,7 @@ export class LongPollingProtocol extends Protocol {
     private getLastCallback(data): number {
         this.lastCallback =
             data.length > 0 ? data[data.length - 1].creationDate + 1 : this.lastCallback;
+
         return this.lastCallback;
     }
 

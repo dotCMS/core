@@ -15,7 +15,7 @@
     margin-bottom: $spacing-1;
 
     &:hover {
-        box-shadow: $md-shadow-5;
+        box-shadow: $shadow-m;
         z-index: 1;
     }
 
@@ -101,7 +101,7 @@
     width: fit-content;
     max-height: 3.875rem;
     border-radius: $border-radius-md;
-    box-shadow: $md-shadow-3;
+    box-shadow: $shadow-s;
 
     .p-overlaypanel-content {
         padding: $spacing-1 $spacing-3;
@@ -124,5 +124,11 @@
                 margin-top: $spacing-1;
             }
         }
+    }
+}
+
+::ng-deep {
+    .p-button .p-button-label {
+        text-transform: none;
     }
 }

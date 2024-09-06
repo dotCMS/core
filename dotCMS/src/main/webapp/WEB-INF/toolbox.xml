@@ -317,4 +317,9 @@
         <scope>application</scope>
         <class>com.dotcms.rendering.velocity.viewtools.dotcache.DotCacheTool</class>
     </tool>
+	<tool>
+		<key>ai</key>
+		<scope>request</scope>
+		<class>com.dotcms.ai.viewtool.AIViewTool</class>
+	</tool>
 </toolbox>

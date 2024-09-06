@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { pluck, take } from 'rxjs/operators';
 
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/data-access';
 import { DotContainerEntity } from '@dotcms/dotcms-models';
 
 @Component({

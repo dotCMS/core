@@ -951,5 +951,19 @@ public interface PermissionAPI {
 	 */
 	void checkPermission(Permissionable permissionable, PermissionLevel level, User user) throws DotSecurityException;
 
-
+	/**
+	 *
+	 * This method checks the inheritable permissions of the host, removes unnecessary roles,
+	 * validates if the host has the minimum permissions required,
+	 * and returns true or false depending on whether the condition is met.
+	 *
+	 * @param permissionable The Permissionable from which we want to obtain permissions
+	 * @param user Logged in user
+	 * @param respectFrontendRoles Determines if we need to remove the frontend roles
+	 * @param expectedPermissionType The PERMISSION TYPE that must be contained by the role
+	 *
+	 * @return true or false, depending on if the host meets the expected permissions
+	 * @throws DotDataException
+	 */
+	boolean doesSystemHostHavePermissions(Permissionable permissionable , User user, boolean respectFrontendRoles, String expectedPermissionType) throws DotDataException;
 }

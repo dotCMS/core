@@ -1,0 +1,484 @@
+{
+	"info": {
+		"_postman_id": "a5e4fa5f-1e75-4ab4-ae8b-defb8a2b302b",
+		"name": "LangVariables",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "10041132",
+		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/dot~8a141846-66a2-409b-bc2e-5d0018676287/collection/10041132-a5e4fa5f-1e75-4ab4-ae8b-defb8a2b302b?action=share&source=collection_link&creator=10041132"
+	},
+	"item": [
+		{
+			"name": "CreateBelgiumEnglish",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"let jsonData = pm.response.json();",
+							"let newLang = jsonData.entity;",
+							"",
+							"pm.expect(newLang).to.not.eql(null);",
+							"pm.expect(newLang.id).to.not.eql(null);",
+							"",
+							"pm.collectionVariables.set(\"belgiumEnglish.id\", newLang.id);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"name": "Content-Type",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"languageCode\":\"en\",\n\t\"language\":\"English\", \n\t\"countryCode\":\"BE\", \n\t\"country\":\"Belgium\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/languages",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"languages"
+					]
+				},
+				"description": "a valid existing lang will be required to test trying to access assets under a different lang other than the one they were created with."
+			},
+			"response": []
+		},
+		{
+			"name": "CreateBelgiumSpanish",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"let jsonData = pm.response.json();",
+							"let newLang = jsonData.entity;",
+							"",
+							"pm.expect(newLang).to.not.eql(null);",
+							"pm.expect(newLang.id).to.not.eql(null);",
+							"",
+							"pm.collectionVariables.set(\"belgiumSpanish.id\", newLang.id);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"name": "Content-Type",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"languageCode\":\"es\",\n\t\"language\":\"Spanish\", \n\t\"countryCode\":\"BE\", \n\t\"country\":\"Belgium\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/languages",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"languages"
+					]
+				},
+				"description": "a valid existing lang will be required to test trying to access assets under a different lang other than the one they were created with."
+			},
+			"response": []
+		},
+		{
+			"name": "CreateBelgiumFrench",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"let jsonData = pm.response.json();",
+							"let newLang = jsonData.entity;",
+							"",
+							"pm.expect(newLang).to.not.eql(null);",
+							"pm.expect(newLang.id).to.not.eql(null);",
+							"",
+							"pm.collectionVariables.set(\"belgiumFrench.id\", newLang.id);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"name": "Content-Type",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"languageCode\":\"fr\",\n\t\"language\":\"French\", \n\t\"countryCode\":\"BE\", \n\t\"country\":\"Belgium\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/languages",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"languages"
+					]
+				},
+				"description": "a valid existing lang will be required to test trying to access assets under a different lang other than the one they were created with."
+			},
+			"response": []
+		},
+		{
+			"name": "Save Multiple Generic Contentlets Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"",
+							"pm.test(\"No errors\", function () {    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.errors.length).to.eql(0);",
+							"});",
+							"",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Information Saved Correctly\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity).to.not.eql(null);",
+							"    pm.expect(jsonData.entity.results.length).to.gt(0);",
+							"    let objects = jsonData.entity.results;",
+							"    ",
+							"     let identifiers = [];",
+							"",
+							"    objects.forEach(function(obj) {",
+							"        // Accede a la primera (y única) propiedad del objeto dentro del arreglo",
+							"        var key = Object.keys(obj)[0];",
+							"        console.log(\"Identificador:\", key);",
+							"        // Puedes acceder a las propiedades de este objeto utilizando la clave/key",
+							"        var properties = obj[key];",
+							"        console.log(\"Propiedades:\", properties);",
+							"",
+							"        identifiers.push(key);",
+							"",
+							"    });",
+							"",
+							"    pm.collectionVariables.set(\"langVarIdentifiers\", identifiers);",
+							"    ",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\n    \"contentlets\":[\n        {\n            \"contentType\":\"LanguageVariable\",            \n            \"languageId\":{{belgiumEnglish.id}},\n            \"key\":\"my.lang.var.cat\",\n            \"value\":\"cat\"\n        },\n        {\n            \"contentType\":\"LanguageVariable\",            \n            \"languageId\":{{belgiumEnglish.id}},\n            \"key\":\"my.lang.var.dog\",\n            \"value\":\"dog\"\n        },\n        {\n            \"contentType\":\"LanguageVariable\",            \n            \"languageId\":{{belgiumSpanish.id}},\n            \"key\":\"my.lang.var.cat\",\n            \"value\":\"gato\"\n        },\n        {\n            \"contentType\":\"LanguageVariable\",            \n            \"languageId\":{{belgiumSpanish.id}},\n            \"key\":\"my.lang.var.dog\",\n            \"value\":\"perro\"\n        },\n        {\n            \"contentType\":\"LanguageVariable\",            \n            \"languageId\":{{belgiumFrench.id}},\n            \"key\":\"my.lang.var.cat\",\n            \"value\":\"chat\"\n        },\n        {\n            \"contentType\":\"LanguageVariable\",            \n            \"languageId\":{{belgiumFrench.id}},\n            \"key\":\"my.lang.var.dog\",\n            \"value\":\"chien\"\n        }      \n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions",
+						"default",
+						"fire",
+						"PUBLISH"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Retrieve Language Vriables",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code should be ok 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Test data is retrieved correctly\", function () {",
+							"    const jsonData = pm.response.json();    ",
+							"    pm.expect(jsonData.entity.variables).to.not.eql(null);    ",
+							"    pm.expect(jsonData.entity.total).to.be.eql(2);    ",
+							"    const variables = jsonData.entity.variables;    ",
+							"",
+							"   const languageMap = {",
+							"        \"my.lang.var.cat\": {",
+							"            \"en-be\": { \"value\": \"cat\" },",
+							"            \"en-us\": null,",
+							"            \"es-be\": { \"value\": \"gato\" },",
+							"            \"fr-be\": { \"value\": \"chat\" }",
+							"        },",
+							"        \"my.lang.var.dog\": {",
+							"            \"en-be\": { \"value\": \"dog\" },",
+							"            \"en-us\": null,",
+							"            \"es-be\": { \"value\": \"perro\" },",
+							"            \"fr-be\": { \"value\": \"chien\" }",
+							"        }",
+							"    };",
+							"    ",
+							"    ",
+							"    let vars = Object.keys(variables); ",
+							"    vars.forEach(function(langVarKey) {                                 ",
+							"          let langVarObject = variables[langVarKey];                     ",
+							"          // For some reason I have to wrap the ky within double quotes for this to work. This does not happen in the chorome engine ",
+							"          let validationData = languageMap[langVarKey] || languageMap[\"\\\"\"+langVarKey+\"\\\"\"]; ;",
+							"          if (validationData) {                                          ",
+							"            pm.expect(validationData['en-be']['value']).to.be.eql(langVarObject[\"en-be\"]['value']);",
+							"            pm.expect(validationData['en-us']).to.be.eql(null);",
+							"            pm.expect(validationData['es-be']['value']).to.be.eql(langVarObject[\"es-be\"].value);",
+							"            pm.expect(validationData['fr-be']['value']).to.be.eql(langVarObject[\"fr-be\"].value);",
+							"          } else {",
+							"            console.log(\"Validation data not found for key: \" + langVarKey);",
+							"          }",
+							"     });",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\n    \"contentlets\":[\n        {\n            \"contentType\":\"LanguageVariable\",            \n            \"languageId\":{{belgiumEnglish.id}},\n            \"key\":\"my.lang.var.cat\",\n            \"value\":\"cat\"\n        },\n        {\n            \"contentType\":\"LanguageVariable\",            \n            \"languageId\":{{belgiumEnglish.id}},\n            \"key\":\"my.lang.var.dog\",\n            \"value\":\"dog\"\n        },\n        {\n            \"contentType\":\"LanguageVariable\",            \n            \"languageId\":{{belgiumSpanish.id}},\n            \"key\":\"my.lang.var.cat\",\n            \"value\":\"gato\"\n        },\n        {\n            \"contentType\":\"LanguageVariable\",            \n            \"languageId\":{{belgiumSpanish.id}},\n            \"key\":\"my.lang.var.dog\",\n            \"value\":\"perro\"\n        },\n        {\n            \"contentType\":\"LanguageVariable\",            \n            \"languageId\":{{belgiumFrench.id}},\n            \"key\":\"my.lang.var.cat\",\n            \"value\":\"chat\"\n        },\n        {\n            \"contentType\":\"LanguageVariable\",            \n            \"languageId\":{{belgiumFrench.id}},\n            \"key\":\"my.lang.var.dog\",\n            \"value\":\"chien\"\n        }      \n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/languages/variables",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"languages",
+						"variables"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "siteId",
+			"value": ""
+		},
+		{
+			"key": "folderId",
+			"value": ""
+		},
+		{
+			"key": "assetId",
+			"value": ""
+		},
+		{
+			"key": "belgiumEnglish",
+			"value": ""
+		},
+		{
+			"key": "belgiumSpanish",
+			"value": ""
+		},
+		{
+			"key": "belgiumFrench",
+			"value": ""
+		},
+		{
+			"key": "belgiumEnglish.id",
+			"value": ""
+		},
+		{
+			"key": "belgiumSpanish.id",
+			"value": ""
+		},
+		{
+			"key": "belgiumFrench.id",
+			"value": ""
+		},
+		{
+			"key": "langVarIdentifiers",
+			"value": ""
+		}
+	]
+}

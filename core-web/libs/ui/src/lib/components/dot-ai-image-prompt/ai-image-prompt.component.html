@@ -1,0 +1,61 @@
+@if (vm$ | async; as vm) {
+    <p-dialog
+        [(visible)]="vm.showDialog"
+        [appendTo]="'body'"
+        [closeOnEscape]="false"
+        [draggable]="false"
+        [header]="'block-editor.extension.ai-image.dialog-title' | dm"
+        [keepInViewport]="false"
+        [maskStyleClass]="'p-dialog-mask-transparent'"
+        [modal]="true"
+        [resizable]="false"
+        [style]="{ width: '90%', maxWidth: '1040px' }"
+        (onHide)="store.hideDialog()">
+        <div class="dialog-prompt__wrapper">
+            @if (vm.showDialog) {
+                <dot-ai-image-prompt-form
+                    (valueChange)="store.setFormValue($event)"
+                    (generate)="store.generateImage()"
+                    [value]="vm.images[vm.galleryActiveIndex]"
+                    [isLoading]="vm.isLoading"
+                    [hasEditorContent]="vm.hasEditorContent" />
+            }
+
+            <div [class.dialog-prompt_gallery]="vm.images.length || vm.isLoading">
+                <dot-ai-image-prompt-gallery
+                    (activeIndexChange)="store.setGalleryActiveIndex($event)"
+                    (regenerate)="store.generateImage()"
+                    [isLoading]="vm.isLoading"
+                    [images]="vm.images"
+                    [activeImageIndex]="vm.galleryActiveIndex"
+                    [orientation]="vm.formValue?.size" />
+                @if (vm.images.length || vm.isLoading) {
+                    <div class="dot-ai-image__buttons">
+                        <button
+                            (click)="closeDialog()"
+                            [label]="'Cancel' | dm"
+                            class="p-button-text"
+                            data-testid="close-btn"
+                            type="button"
+                            pButton></button>
+                        <button
+                            (click)="store.setSelectedImage(vm.images[vm.galleryActiveIndex])"
+                            [disabled]="vm.isLoading || vm.images[vm.galleryActiveIndex].error"
+                            [label]="'block-editor.extension.ai-image.insert' | dm"
+                            class="align-self-end"
+                            data-testid="submit-btn"
+                            pButton
+                            type="submit"
+                            icon="pi pi-check"></button>
+                    </div>
+                }
+            </div>
+            <p-confirmDialog
+                [style]="{ width: '500px' }"
+                key="ai-image-prompt"
+                rejectButtonStyleClass="p-button-outlined"
+                acceptIcon="null"
+                rejectIcon="null" />
+        </div>
+    </p-dialog>
+}

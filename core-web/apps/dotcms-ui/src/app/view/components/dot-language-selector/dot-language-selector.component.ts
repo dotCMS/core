@@ -1,75 +1,60 @@
+import { NgIf } from '@angular/common';
 import {
+    ChangeDetectionStrategy,
     Component,
     EventEmitter,
     HostBinding,
+    inject,
     Input,
     OnChanges,
-    OnInit,
     Output,
+    signal,
     SimpleChanges
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
-import { take } from 'rxjs/operators';
+import { DropdownModule } from 'primeng/dropdown';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
 
 @Component({
+    standalone: true,
     selector: 'dot-language-selector',
     templateUrl: './dot-language-selector.component.html',
-    styleUrls: ['./dot-language-selector.component.scss']
+    imports: [DropdownModule, FormsModule, NgIf],
+    providers: [DotLanguagesService],
+    styleUrls: ['./dot-language-selector.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotLanguageSelectorComponent implements OnInit, OnChanges {
+export class DotLanguageSelectorComponent implements OnChanges {
     @Input() value: DotLanguage;
     @Input() readonly: boolean;
     @Output() selected = new EventEmitter<DotLanguage>();
     @HostBinding('class.disabled') disabled: boolean;
 
-    options: DotLanguage[] = [];
+    languagesList = signal<DotLanguage[]>([]);
 
-    constructor(private dotLanguagesService: DotLanguagesService) {}
+    private dotLanguagesService = inject(DotLanguagesService);
 
-    ngOnInit() {
-        this.loadOptions();
+    _pageId = signal<string | undefined>(undefined);
+
+    @Input({ required: true }) set pageId(value: string) {
+        this._pageId.set(value);
     }
 
-    ngOnChanges(changes: SimpleChanges) {
-        if (changes.contentInode && !changes.contentInode.firstChange) {
-            this.loadOptions();
+    selectedItem(value: DotLanguage) {
+        this.selected.emit(value);
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        const { value } = changes;
+        if (value && value.currentValue) {
+            this.dotLanguagesService
+                .getLanguagesUsedPage(this._pageId())
+                .subscribe((languages: DotLanguage[]) => {
+                    this.languagesList.set(languages);
+                });
         }
-    }
-
-    /**
-     * Track changes in the dropdown
-     * @param DotLanguage language
-     */
-    change(language: DotLanguage): void {
-        this.selected.emit(language);
-    }
-
-    private decorateLabels(languages: DotLanguage[]): DotLanguage[] {
-        return languages.map((language: DotLanguage) => {
-            const countryCodeLabel = language.countryCode ? ` (${language.countryCode})` : '';
-
-            return {
-                ...language,
-                language: `${language.language}${countryCodeLabel}`
-            };
-        });
-    }
-
-    private loadOptions(): void {
-        this.dotLanguagesService
-            .get()
-            .pipe(take(1))
-            .subscribe(
-                (languages: DotLanguage[]) => {
-                    this.options = this.decorateLabels(languages);
-                    this.disabled = this.options.length === 0;
-                },
-                () => {
-                    this.disabled = true;
-                }
-            );
     }
 }

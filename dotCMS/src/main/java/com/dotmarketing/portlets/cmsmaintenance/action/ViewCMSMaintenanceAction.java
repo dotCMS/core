@@ -27,7 +27,6 @@ import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.starter.ExportStarterUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
@@ -36,10 +35,16 @@ import com.dotmarketing.util.TrashUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.ZipUtil;
+import com.dotmarketing.util.starter.ExportStarterUtil;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
+import org.apache.commons.io.output.TeeOutputStream;
+import org.apache.commons.lang.StringUtils;
+
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.jsp.PageContext;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -53,10 +58,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipOutputStream;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.jsp.PageContext;
-import org.apache.commons.io.output.TeeOutputStream;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * This class group all the CMS Maintenance Task
@@ -80,7 +81,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	private static String assetRealPath = null;
 	private static String assetPath = File.separator + "assets";
 
-	private ContentletAPI conAPI = APILocator.getContentletAPI();
+	private final ContentletAPI conAPI = APILocator.getContentletAPI();
 
 	public ActionForward render(
 			ActionMapping mapping, ActionForm form, PortletConfig config,
@@ -98,7 +99,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 		try {
 			//gets the user
-			_initCacheValues(req);
+			initCacheValues(req);
 
 			if (req.getWindowState().equals(WindowState.MAXIMIZED)) {
 				Logger.debug(this, "Showing view action cms maintenance maximized");
@@ -370,44 +371,41 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	}
 
 	/**
-	 * Initialice cache values
-	 * @param req
+	 * Initialize cache values.
+	 *
+	 * @param req The current {@link RenderRequest} instance.
 	 */
-	private void _initCacheValues(RenderRequest req)
-	{
+	private void initCacheValues(final RenderRequest req) {
 		int liveCount = 0;
 		int workingCount = 0;
-		try
-		{
+		try {
 			Logger.debug(this, "Initializing Cache Values");
 			String velocityRootPath =ConfigUtils.getDynamicVelocityPath();
 			if (velocityRootPath.startsWith(File.separator + "WEB-INF")) {
 				velocityRootPath = FileUtil.getRealPath(velocityRootPath);
 			}
-			String livePath = velocityRootPath + File.separator + "live";
-			String workingPath = velocityRootPath + File.separator + "working";
+			final String livePath = velocityRootPath + File.separator + "live";
+			final String workingPath = velocityRootPath + File.separator + "working";
 
 			//Count the Live Files
 			File file = new File(livePath);
-			liveCount = _numberRoot(file);
-			Logger.debug(this, "Found "+liveCount+" live Files");
-
+			if (file.exists()) {
+				liveCount = _numberRoot(file);
+				Logger.debug(this, "Found " + liveCount + " live Files in the Velocity path");
+			}
 			//Count the working files
 			file = new File(workingPath);
-			workingCount = _numberRoot(file);
-			Logger.debug(this, "Found "+workingCount+" working Files");
-		}
-		catch(Exception ex)
-		{
-			Logger.error(ViewCMSMaintenanceAction.class,"Error calculating the number of files");
-		}
-		finally
-		{
-			req.setAttribute(WebKeys.Cache.CACHE_NUMBER_LIVE_FILES,Integer.valueOf(liveCount));
-			req.setAttribute(WebKeys.Cache.CACHE_NUMBER_WORKING_FILES,Integer.valueOf(workingCount));
+			if (file.exists()) {
+				workingCount = _numberRoot(file);
+				Logger.debug(this, "Found " + workingCount + " working Files in the Velocity path");
+			}
+		} catch(final Exception ex) {
+			Logger.error(ViewCMSMaintenanceAction.class,"Error calculating the number of live/working Velocity files");
+		} finally {
+			req.setAttribute(WebKeys.Cache.CACHE_NUMBER_LIVE_FILES, liveCount);
+			req.setAttribute(WebKeys.Cache.CACHE_NUMBER_WORKING_FILES, workingCount);
 		}
 	}
-
 
 	private Map<String,String> searchAndReplace(CmsMaintenanceForm form) throws DotDataException{
 

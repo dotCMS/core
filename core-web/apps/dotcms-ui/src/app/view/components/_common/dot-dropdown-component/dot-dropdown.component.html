@@ -1,29 +1,23 @@
+<div *ngIf="show" (click)="onToggle()" class="dot-mask"></div>
 <button
-    class="p-button-rounded p-button-text"
     *ngIf="icon"
+    (click)="onToggle()"
     [disabled]="disabled"
     [icon]="icon"
-    (click)="onToggle()"
+    class="p-button-rounded p-button-text"
     pButton
-    data-testid="icon-button"
-></button>
+    data-testid="icon-button"></button>
 
 <button
     *ngIf="title"
+    (click)="onToggle()"
     [label]="title"
     [disabled]="disabled"
-    (click)="onToggle()"
     pButton
     icon="pi pi-chevron-down"
     iconPos="right"
-    data-testid="title-button"
-></button>
+    data-testid="title-button"></button>
 
-<div
-    class="dropdown-content"
-    *ngIf="show"
-    [@enterAnimation]="show"
-    [ngStyle]="!position || position === 'left' ? { left: 0 } : { right: 0 }"
->
+<div *ngIf="show" [ngStyle]="positionStyle" class="dropdown-content" [@enterAnimation]="show">
     <ng-content></ng-content>
 </div>

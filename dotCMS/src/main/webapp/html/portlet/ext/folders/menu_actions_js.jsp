@@ -6,7 +6,7 @@
 
 <script language="Javascript">
     var inFrame=<%=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (Boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false%>;
-    
+
     // view_folders.js
 	var previousRedFolder = '';
 	var previousOpenFolder = '';
@@ -137,7 +137,7 @@
 			}else{
 				self.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /></portlet:actionURL>&cmd=delete&parent=' + parentId + "&inode=" + objId + '&referer=' + referer + openNodes;
 			}
-			
+
 		}
 	}
 	function deleteContentlet(objId,openNodes,referer, contentStructureType, structure_id) {
@@ -592,13 +592,15 @@
 		}
 	}
 
-	function editContentlet (objId, userId, referer, live, working, write) {
-        if (!clickTimeOut) {  
+	function editContentlet (objId, userId, referer, live, working, write, contentType) {
+
+		if (!clickTimeOut) {
             var customEvent = document.createEvent("CustomEvent");
             customEvent.initCustomEvent("ng-event", false, false,  {
                 name: "edit-contentlet",
                 data: {
-                    inode: objId
+                    inode: objId,
+										contentType
                 }
             });
             document.dispatchEvent(customEvent);
@@ -714,8 +716,8 @@
 
 	//Events
 
-	function editEvent (objId, userId, referer, live, working, write) {
-        editContentlet(objId);
+	function editEvent (objId, userId, referer, live, working, write, contentType) {
+        editContentlet(objId, userId, referer, live, working, write, contentType);
 	}
 
 	function publishEvent (objId, userId, referer, live, working, write) {

@@ -1,5 +1,6 @@
 package com.dotcms.jitsu;
 
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,8 +25,9 @@ public class EventsPayload {
         jsonObject.put(key, value);
     }
 
-    public void addExperiment(final String name, final String runningId, final String variant, final String lookBackWindow){
-        shortExperiments.add(new LiteExperiment(name, runningId, variant, lookBackWindow));
+    public void addExperiment(final Map<String, Object> experimentFromEvent){
+
+        shortExperiments.add(new LiteExperiment(experimentFromEvent));
     }
 
     public Iterable<EventPayload> payloads() {
@@ -39,6 +41,8 @@ public class EventsPayload {
             experimentJsonPayload.put("runningId", shortExperiment.runningId);
             experimentJsonPayload.put("variant", shortExperiment.variant);
             experimentJsonPayload.put("lookBackWindow", shortExperiment.lookBackWindow);
+            experimentJsonPayload.put("isExperimentPage", shortExperiment.isExperimentPage);
+            experimentJsonPayload.put("isTargetPage", shortExperiment.isTargetPage);
 
             eventPayloads.add(new EventPayload(experimentJsonPayload));
         }
@@ -46,10 +50,14 @@ public class EventsPayload {
         return eventPayloads;
     }
 
+    public boolean isEmpty() {
+        return shortExperiments.isEmpty();
+    }
+
     public static class EventPayload {
         private JSONObject jsonObject;
 
-        public EventPayload(JSONObject jsonObject) {
+        public EventPayload(final JSONObject jsonObject) {
             this.jsonObject = jsonObject;
         }
 
@@ -64,13 +72,18 @@ public class EventsPayload {
         final String variant;
         final String lookBackWindow;
         final String runningId;
+        final boolean isExperimentPage;
+        final boolean isTargetPage;
 
-        public LiteExperiment(final String name, final String runningId, final String variant,
-                final String lookBackWindow) {
-            this.name = name;
-            this.variant = variant;
-            this.lookBackWindow = lookBackWindow;
-            this.runningId = runningId;
+        public LiteExperiment(final Map<String, Object> experimentFromEvent) {
+
+            this.name = experimentFromEvent.get("experiment").toString();
+            this.runningId = experimentFromEvent.get("runningId").toString();
+            this.variant =  experimentFromEvent.get("variant").toString();
+            this.lookBackWindow = experimentFromEvent.get("lookBackWindow").toString();
+            this.isExperimentPage = (Boolean) experimentFromEvent.get("isExperimentPage");
+            this.isTargetPage = (Boolean) experimentFromEvent.get("isTargetPage");
+
         }
     }
 

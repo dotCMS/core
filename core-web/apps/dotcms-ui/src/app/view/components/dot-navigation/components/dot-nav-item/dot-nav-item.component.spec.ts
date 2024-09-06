@@ -6,8 +6,8 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotMenu } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
-import { DotMenu } from '@models/navigation';
 import { LABEL_IMPORTANT_ICON } from '@pipes/dot-radom-icon/dot-random-icon.pipe';
 import { DotRandomIconPipeModule } from '@pipes/dot-radom-icon/dot-random-icon.pipe.module';
 
@@ -19,7 +19,9 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-nav-item [data]="menu" [collapsed]="collapsed"></dot-nav-item> `
+    template: `
+        <dot-nav-item [data]="menu" [collapsed]="collapsed"></dot-nav-item>
+    `
 })
 class TestHostComponent {
     menu: DotMenu = {

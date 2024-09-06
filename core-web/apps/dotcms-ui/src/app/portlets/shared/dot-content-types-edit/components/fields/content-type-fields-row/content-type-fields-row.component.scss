@@ -15,7 +15,7 @@
     display: flex;
     background: $white;
     padding: $spacing-1;
-    border-radius: $border-radius-xl;
+    border-radius: 0 0 $border-radius-xl $border-radius-xl;
 }
 
 .row-columns__item {
@@ -83,16 +83,16 @@
 }
 
 .row-header {
-    opacity: 0.25;
-    text-align: center;
-    transition: opacity $basic-speed;
-    margin: 0 -#{$spacing-3};
+    background: #ffffff;
+    border-radius: $border-radius-xl $border-radius-xl 0 0;
+    display: flex;
+    justify-content: center;
 }
 
 .row-header__drag {
     cursor: move;
     display: block;
-    width: 100%;
+    color: $color-palette-gray-400;
 }
 
 .row-header__remove {

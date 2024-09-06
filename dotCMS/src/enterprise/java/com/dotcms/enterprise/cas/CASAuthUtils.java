@@ -58,7 +58,6 @@ import com.dotcms.repackage.com.novell.ldap.LDAPResponseQueue;
 import com.dotcms.repackage.com.novell.ldap.LDAPSearchResults;
 import com.dotcms.repackage.com.novell.ldap.LDAPSocketFactory;
 import com.dotmarketing.auth.model.UserAttribute;
-import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -78,7 +77,6 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import org.apache.commons.beanutils.BeanUtils;
 
 public class CASAuthUtils {
 	

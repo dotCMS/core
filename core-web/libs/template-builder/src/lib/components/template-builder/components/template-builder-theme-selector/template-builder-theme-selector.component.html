@@ -1,16 +1,14 @@
 <div class="theme__header">
     <p-dropdown
-        #siteSelector
+        (onChange)="siteChange($event.value)"
         [filter]="true"
         [showClear]="true"
         [showClear]="false"
         [style]="{ width: '12rem' }"
-        (onChange)="siteChange($event.value)"
+        #siteSelector
         dotSiteSelector
         optionLabel="name"
-        filterBy="name"
-    >
-    </p-dropdown>
+        filterBy="name"></p-dropdown>
 
     <div class="theme-header__search-box">
         <input
@@ -18,14 +16,13 @@
             pInputText
             type="text"
             data-testId="searchInput"
-            placeholder="{{ 'editpage.layout.theme.search' | dm }} "
-        />
+            placeholder="{{ 'editpage.layout.theme.search' | dm }} " />
     </div>
 </div>
 
 <div class="theme__container">
     <p-dataView
-        #dataView
+        (onLazyLoad)="paginate($event)"
         [alwaysShowPaginator]="false"
         [emptyMessage]="'editpage.layout.theme.no.records.found' | dm"
         [lazy]="true"
@@ -33,41 +30,42 @@
         [rows]="paginationPerPage"
         [totalRecords]="totalRecords"
         [value]="themes"
-        (onLazyLoad)="paginate($event)"
-        layout="grid"
-    >
-        <ng-template let-theme pTemplate="gridItem">
-            <div
-                class="theme__item"
-                [ngClass]="{ 'theme__item--active': theme.inode === currentTheme?.inode }"
-                (click)="selectTheme(theme); $event.stopImmediatePropagation()"
-                data-testId="theme-item"
-            >
-                <svg
-                    *ngIf="!theme?.themeThumbnail"
-                    width="130"
-                    height="130"
-                    viewBox="0 0 130 130"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <path
-                        d="M130 121.56V7.5045C130 -0.439943 129.445 0.00450051 121.514 0.00450051H6.19998C-1.73165 0.00450051 0.209671 0.00450039 0.209671 7.5045V121.56C0.209671 129.505 -1.73165 130.005 6.19998 130.005H121.514C129.445 130.005 130 129.505 130 121.56ZM39.8678 75.8378L57.8943 97.5767L83.1313 65.0045L115.579 108.338H14.6308L39.8678 75.8378Z"
-                        transform="translate(0.789978 0.995499)"
-                    />
-                </svg>
-                <img
-                    class="item__image"
-                    *ngIf="theme?.themeThumbnail"
-                    [src]="
-                        theme.identifier === 'SYSTEM_THEME'
-                            ? theme.themeThumbnail
-                            : '/dA/' + theme.themeThumbnail + '/130w/130h/thumbnail.png'
-                    "
-                    alt="theme image"
-                    data-testId="themeImage"
-                />
-                <h5 class="item__title">{{ theme.name }}</h5>
+        #dataView
+        layout="grid">
+        <ng-template let-themes pTemplate="grid">
+            <div class="grid grid-nogutter">
+                @for (theme of themes; track $index) {
+                    <div
+                        (click)="selectTheme(theme); $event.stopImmediatePropagation()"
+                        [ngClass]="{ 'theme__item--active': theme.inode === currentTheme?.inode }"
+                        class="theme__item"
+                        data-testId="theme-item">
+                        @if (!theme?.themeThumbnail) {
+                            <svg
+                                width="130"
+                                height="130"
+                                viewBox="0 0 130 130"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M130 121.56V7.5045C130 -0.439943 129.445 0.00450051 121.514 0.00450051H6.19998C-1.73165 0.00450051 0.209671 0.00450039 0.209671 7.5045V121.56C0.209671 129.505 -1.73165 130.005 6.19998 130.005H121.514C129.445 130.005 130 129.505 130 121.56ZM39.8678 75.8378L57.8943 97.5767L83.1313 65.0045L115.579 108.338H14.6308L39.8678 75.8378Z"
+                                    transform="translate(0.789978 0.995499)" />
+                            </svg>
+                        }
+                        @if (theme?.themeThumbnail) {
+                            <img
+                                [src]="
+                                    theme.identifier === 'SYSTEM_THEME'
+                                        ? theme.themeThumbnail
+                                        : '/dA/' + theme.themeThumbnail + '/130w/130h/thumbnail.png'
+                                "
+                                class="item__image"
+                                alt="theme image"
+                                data-testId="themeImage" />
+                        }
+                        <h5 class="item__title">{{ theme.name }}</h5>
+                    </div>
+                }
             </div>
         </ng-template>
     </p-dataView>
@@ -77,11 +75,9 @@
     <p-button
         (onClick)="close()"
         styleClass="p-button-outlined"
-        label="{{ 'dot.common.cancel' | dm }}"
-    ></p-button>
+        label="{{ 'dot.common.cancel' | dm }}"></p-button>
     <p-button
-        [disabled]="!currentTheme || currentTheme?.inode === themeId"
         (onClick)="apply()"
-        label="{{ 'dot.common.apply' | dm }}"
-    ></p-button>
+        [disabled]="!currentTheme || currentTheme?.inode === themeId"
+        label="{{ 'dot.common.apply' | dm }}"></p-button>
 </div>

@@ -54,7 +54,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.ConversionUtils.toInt;
 
 /**
@@ -206,7 +205,7 @@ public class UserResourceHelper implements Serializable {
 		} else {
 			host = this.hostWebAPI.findDefaultHost(systemUser, false);
 		}
-		final Map<String, Object> sessionData = map(WebKeys.PRINCIPAL_USER_ID, currentUser.getUserId(), WebKeys.USER_ID,
+		final Map<String, Object> sessionData = Map.of(WebKeys.PRINCIPAL_USER_ID, currentUser.getUserId(), WebKeys.USER_ID,
 				loginAsUserId, com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
 		return sessionData;
 	}
@@ -295,7 +294,7 @@ public class UserResourceHelper implements Serializable {
 		} else {
 			host = this.hostWebAPI.findDefaultHost(systemUser, false);
 		}
-		final Map<String, Object> sessionData = map(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
+		final Map<String, Object> sessionData = Map.of(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
 		return sessionData;
 	}
 
@@ -339,7 +338,7 @@ public class UserResourceHelper implements Serializable {
 			}
 		}
 
-		Map<String, Object> mapResponse = map("users", userList);
+		Map<String, Object> mapResponse = Map.of("users", userList);
 
 		if (includeUsersCount) {
 			long countUsersByNameOrEmail = userAPI.getCountUsersByNameOrEmail(StringPool.BLANK);
@@ -352,20 +351,20 @@ public class UserResourceHelper implements Serializable {
 	/**
 	 * Update a user
 	 *
-	 * @param updateUserForm data to update the user, the {@link UpdateUserForm#getUserId()} is the if of the user to update,
-	 *                       {@link UpdateUserForm#getCurrentPassword()} is the current password
-	 * @param modUser User who is updating the user, if modUser.getUserId() is equals to {@link UpdateUserForm#getUserId()},
+	 * @param updateUserForm data to update the user, the {@link UpdateCurrentUserForm#getUserId()} is the if of the user to update,
+	 *                       {@link UpdateCurrentUserForm#getCurrentPassword()} is the current password
+	 * @param modUser User who is updating the user, if modUser.getUserId() is equals to {@link UpdateCurrentUserForm#getUserId()},
 	 *                then the current password is need
 	 * @param request
 	 * @param locale
 	 * @return User updated
 	 * @throws DotSecurityException if modUser doesn't has permission to update the user
 	 * @throws DotDataException
-	 * @throws IncorrectPasswordException if modUser is equals to {@link UpdateUserForm#getUserId()} and
-	 * 									  {@link UpdateUserForm#getCurrentPassword()} is incorrect
+	 * @throws IncorrectPasswordException if modUser is equals to {@link UpdateCurrentUserForm#getUserId()} and
+	 * 									  {@link UpdateCurrentUserForm#getCurrentPassword()} is incorrect
      */
-	public User updateUser(final UpdateUserForm updateUserForm, final User modUser,
-						   final HttpServletRequest request, Locale locale)
+	public User updateUser(final UpdateCurrentUserForm updateUserForm, final User modUser,
+                           final HttpServletRequest request, Locale locale)
 			throws DotSecurityException, DotDataException, IncorrectPasswordException {
 
 		final HttpSession session = request.getSession();

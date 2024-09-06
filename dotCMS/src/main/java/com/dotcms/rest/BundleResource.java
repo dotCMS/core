@@ -54,8 +54,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.Reader;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.StreamingOutput;
@@ -85,11 +84,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 
 import static com.dotcms.publisher.business.PublishAuditAPIImpl.NO_LIMIT_ASSETS;
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_BUNDLE;
@@ -136,12 +130,14 @@ public class BundleResource {
                 .init();
 
         try {
-
             PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance()
                     .getPublishAuditStatus(bundleId, 0);
 
-            if (publishAuditStatus == null) {
-                throw new NotFoundException(String.format("Bundle %s not exists", bundleId));
+            if (!UtilMethods.isSet(publishAuditStatus)) {
+                final Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+                if (!UtilMethods.isSet(bundle)) {
+                    throw new NotFoundException(String.format("Bundle %s not exists", bundleId));
+                }
             }
 
             final List<PublishQueueElement> queueElements = PublisherAPIImpl.getInstance()
@@ -156,10 +152,14 @@ public class BundleResource {
                 publishAuditStatus = PublishAuditAPI.getInstance()
                         .getPublishAuditStatus(bundleId, limit);
 
-                final Map<String, String> assets = publishAuditStatus.getStatusPojo().getAssets();
-                detailedAssets = assets.entrySet().stream()
-                        .map(entry -> publishQueueElementTransformer.getMap(entry.getKey(), entry.getValue()))
-                        .collect(Collectors.toList());
+                if (!UtilMethods.isSet(publishAuditStatus)) {
+                    detailedAssets = ImmutableList.of();
+                } else {
+                    final Map<String, String> assets = publishAuditStatus.getStatusPojo().getAssets();
+                    detailedAssets = assets.entrySet().stream()
+                            .map(entry -> publishQueueElementTransformer.getMap(entry.getKey(), entry.getValue()))
+                            .collect(Collectors.toList());
+                }
             }
 
             return Response.ok(detailedAssets).build();
@@ -368,7 +368,7 @@ public class BundleResource {
     @Produces("application/json")
     public Response deleteBundlesByIdentifiers(@Context   final HttpServletRequest request,
                                                @Context   final HttpServletResponse response,
-                                               final DeleteBundlesByIdentifierForm  deleteBundlesByIdentifierForm) {
+                                               final DeleteBundlesByIdentifierForm  deleteBundlesByIdentifierForm) throws DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -376,6 +376,10 @@ public class BundleResource {
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
+
+        if (!UtilMethods.isSet(deleteBundlesByIdentifierForm) || !UtilMethods.isSet(deleteBundlesByIdentifierForm.getIdentifiers())) {
+            throw new IllegalArgumentException("List of body to delete is mandatory");
+        }
 
         Logger.info(this, "Deleting the bundles: " + deleteBundlesByIdentifierForm.getIdentifiers()
                 + " by the user: " + initData.getUser().getUserId());
@@ -407,9 +411,47 @@ public class BundleResource {
             }
         });
 
-        return Response.ok(new ResponseEntityView(
-                "Removing bundles in a separated process, the result of the operation will be notified")).build();
+        return buildResponseToDeleteEndpoint(deleteBundlesByIdentifierForm);
     } // deleteBundlesByIdentifiers.
+
+    private static Response buildResponseToDeleteEndpoint(final DeleteBundlesByIdentifierForm deleteBundlesByIdentifierForm)
+            throws DotDataException {
+
+        final List<String> existingBundles = new ArrayList<>();
+        final List<String> notExistingBundles = new ArrayList<>();
+
+        for (String identifier : deleteBundlesByIdentifierForm.getIdentifiers()) {
+            final Bundle bundleById = APILocator.getBundleAPI().getBundleById(identifier);
+
+            if (UtilMethods.isSet(bundleById)) {
+                existingBundles.add(identifier);
+            } else {
+                notExistingBundles.add(identifier);
+            }
+        }
+
+        final StringBuffer message = new StringBuffer();
+
+        if (!existingBundles.isEmpty()) {
+            message.append(String.format(
+                        "Removing the follow bundles in a separated process, the result of the operation will be notified: %s",
+                        existingBundles.stream().collect(Collectors.joining(", ")))
+                    );
+        }
+
+        if (!existingBundles.isEmpty() && !notExistingBundles.isEmpty()) {
+            message.append(", ");
+        }
+
+        if (!notExistingBundles.isEmpty()) {
+            message.append(String.format(
+                    "The following bundles were not deleted because they don't exist: %s",
+                    notExistingBundles.stream().collect(Collectors.joining(", ")))
+            );
+        }
+
+        return Response.ok(new ResponseEntityView(message)).build();
+    }
 
     private void sendErrorDeleteBundleMessage(final InitDataObject initData,
                                               final Locale locale,

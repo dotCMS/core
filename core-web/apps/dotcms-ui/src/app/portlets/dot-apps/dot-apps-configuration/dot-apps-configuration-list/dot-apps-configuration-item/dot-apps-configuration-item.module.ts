@@ -5,8 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCopyLinkModule } from '@dotcms/app/view/components/dot-copy-link/dot-copy-link.module';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item.component';
 
@@ -17,7 +16,7 @@ import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item
         TooltipModule,
         DotMessagePipe,
         ButtonModule,
-        DotPipesModule
+        DotSafeHtmlPipe
     ],
     declarations: [DotAppsConfigurationItemComponent],
     exports: [DotAppsConfigurationItemComponent]

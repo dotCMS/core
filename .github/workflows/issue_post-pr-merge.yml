@@ -1,0 +1,15 @@
+name: Post PR Merge
+on:
+  pull_request:
+    types:
+      [closed]
+
+jobs:
+  post-pr-merge:
+    name: Post Merge PR
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/issue_comp_link-pr-to-issue.yml
+    with:
+      pr_number: ${{ github.event.pull_request.number }}
+      pr_branch: ${{ github.event.pull_request.head.ref }}
+      validate_merge: true

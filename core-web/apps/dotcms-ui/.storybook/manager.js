@@ -1,6 +1,6 @@
-import { addons } from '@storybook/addons';
-import dotcmsTheme from '../../../.storybook/dotcms-theme';
+import { addons } from '@storybook/manager-api';
+import dotcmsTheme from './dotcms-theme';
 
 addons.setConfig({
-  theme: dotcmsTheme,
+    theme: dotcmsTheme
 });

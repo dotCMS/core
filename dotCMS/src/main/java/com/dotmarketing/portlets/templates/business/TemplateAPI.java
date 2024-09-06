@@ -7,17 +7,21 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.templates.business.TemplateFactory.HTMLPageVersion;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.LayoutChanges;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Api to interact with Templates
@@ -419,4 +423,28 @@ public interface TemplateAPI {
 	 */
 	List<HTMLPageVersion> getPages(final String templateId) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Save and Update the Layout of a Template
+	 * This method calculate the changes on the current {@link TemplateLayout} of the Template and then update
+	 * the {@link com.dotmarketing.beans.MultiTree} using the {@link com.dotmarketing.factories.MultiTreeAPI#updateMultiTrees(LayoutChanges, Collection)}
+	 *
+	 *
+	 * @param template
+	 * @param newLayout
+	 * @param site
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+    Template saveAndUpdateLayout(final TemplateSaveParameters templateSaveParameters, User user,
+								 boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Retrieve the image content associated to the template
+	 * @param template {@link Template}
+	 * @return Content
+	 */
+	Optional<Contentlet> getImageContentlet(Template template) throws DotDataException, DotSecurityException;
 }

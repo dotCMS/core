@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { animate, AnimationEvent, state, style, transition, trigger } from '@angular/animations';
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, Input, ViewChild } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
 
@@ -32,22 +32,19 @@ import { DotPaletteState, DotPaletteStore } from './store/dot-palette.store';
         ])
     ]
 })
-export class DotPaletteComponent implements OnInit {
+export class DotPaletteComponent {
+    readonly #store = inject(DotPaletteStore);
+
     @Input() set allowedContent(items: string[]) {
-        this.store.setAllowedContent(items);
+        this.#store.setAllowedContent(items);
     }
-    @Input() languageId: string;
-    vm$: Observable<DotPaletteState> = this.store.vm$;
+    @Input() set languageId(languageId: string) {
+        this.#store.switchLanguage(languageId);
+    }
+    vm$: Observable<DotPaletteState> = this.#store.vm$;
 
     @ViewChild('contentlets') contentlets: DotPaletteContentletsComponent;
     @ViewChild('contentTypes') contentTypes: DotPaletteContentTypeComponent;
-
-    constructor(private store: DotPaletteStore) {}
-
-    ngOnInit(): void {
-        this.store.setLanguageId(this.languageId);
-        this.store.getContenttypesData();
-    }
 
     /**
      * Sets value on store to show/hide components on the UI
@@ -56,7 +53,7 @@ export class DotPaletteComponent implements OnInit {
      * @memberof DotPaletteContentletsComponent
      */
     switchView(variableName?: string): void {
-        this.store.switchView(variableName);
+        this.#store.switchView(variableName);
     }
 
     /**
@@ -66,7 +63,7 @@ export class DotPaletteComponent implements OnInit {
      * @memberof DotPaletteComponent
      */
     filterContentlets(value: string): void {
-        this.store.filterContentlets(value);
+        this.#store.filterContentlets(value);
     }
 
     /**
@@ -76,7 +73,7 @@ export class DotPaletteComponent implements OnInit {
      * @memberof DotPaletteComponent
      */
     filterContentTypes(value: string): void {
-        this.store.filterContentTypes(value);
+        this.#store.filterContentTypes(value);
     }
 
     /**
@@ -86,7 +83,7 @@ export class DotPaletteComponent implements OnInit {
      * @memberof DotPaletteComponent
      */
     paginateContentlets(event: LazyLoadEvent): void {
-        this.store.getContentletsData(event);
+        this.#store.getContentletsData(event);
     }
 
     /**

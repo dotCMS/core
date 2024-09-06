@@ -1,9 +1,12 @@
-import { Component, EventEmitter, Input, Output, OnDestroy } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
-import { RuleModel, RULE_CREATE } from './services/Rule';
-import { I18nService } from './services/system/locale/I18n';
-import { CwFilter } from './services/util/CwFilter';
-import { ServerSideTypeModel } from './services/ServerSideFieldModel';
+import { EMPTY, Observable, Subject } from 'rxjs';
+
+import { Component, EventEmitter, Input, Output, OnDestroy, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+
+import { pluck, switchMap, take, takeUntil } from 'rxjs/operators';
+
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+
 import {
     ConditionActionEvent,
     RuleActionActionEvent,
@@ -12,8 +15,10 @@ import {
 } from './rule-engine.container';
 import { IPublishEnvironment } from './services/bundle-service';
 import { RuleViewService, DotRuleMessage } from './services/dot-view-rule-service';
-import { take, takeUntil } from 'rxjs/operators';
-import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { RuleModel, RULE_CREATE } from './services/Rule';
+import { ServerSideTypeModel } from './services/ServerSideFieldModel';
+import { I18nService } from './services/system/locale/I18n';
+import { CwFilter } from './services/util/CwFilter';
 
 const I8N_BASE = 'api.sites.ruleengine';
 
@@ -23,74 +28,71 @@ const I8N_BASE = 'api.sites.ruleengine';
 @Component({
     selector: 'cw-rule-engine',
     template: `
-        <div class="cw-modal-glasspane" [class.cw-loading]="loading" *ngIf="loading"></div>
+        <div *ngIf="loading" [class.cw-loading]="loading" class="cw-modal-glasspane"></div>
         <div
             *ngIf="
                 !loading &&
                 globalError &&
                 globalError.errorKey !== 'dotcms.api.error.license.required'
             "
-            class="ui negative message cw-message"
-        >
+            class="ui negative message cw-message">
             <div class="header">{{ globalError.message }}</div>
             <p>{{ rsrc('contact.admin.error') | async }}</p>
             <i
                 *ngIf="showCloseButton"
-                class="material-icons"
-                class="close-button"
                 (click)="globalError.message = ''"
-                >X</i
-            >
+                class="material-icons"
+                class="close-button">
+                X
+            </i>
         </div>
-        <dot-unlicense
+        <dot-not-license
             *ngIf="
                 !loading &&
                 globalError &&
                 globalError.errorKey === 'dotcms.api.error.license.required'
-            "
-        ></dot-unlicense>
-        <div class="cw-rule-engine" *ngIf="!loading && showRules">
+            " />
+        <div *ngIf="!loading && showRules" class="cw-rule-engine">
             <div class="cw-header">
                 <div flex layout="row" style="align-items:center">
                     <input
-                        pInputText
-                        placeholder="{{ rsrc('inputs.filter.placeholder') | async }}"
-                        [value]="filterText"
                         (keyup)="filterText = $event.target.value"
-                    />
+                        [value]="filterText"
+                        pInputText
+                        placeholder="{{ rsrc('inputs.filter.placeholder') | async }}" />
                     <div flex="2"></div>
-                    <button class="dot-icon-button" (click)="addRule()">
+                    <button (click)="addRule()" class="dot-icon-button">
                         <i class="material-icons">add</i>
                     </button>
                 </div>
                 <div class="cw-filter-links">
                     <span>{{ rsrc('inputs.filter.status.show.label') | async }}:</span>
                     <a
-                        href="javascript:void(0)"
-                        class="cw-filter-link"
-                        [class.active]="!isFilteringField('enabled')"
                         (click)="setFieldFilter('enabled', null)"
-                        >{{ rsrc('inputs.filter.status.all.label') | async }}</a
-                    >
+                        [class.active]="!isFilteringField('enabled')"
+                        class="cw-filter-link"
+                        href="javascript:void(0)">
+                        {{ rsrc('inputs.filter.status.all.label') | async }}
+                    </a>
                     <span>&#124;</span>
                     <a
-                        href="javascript:void(0)"
-                        class="cw-filter-link"
-                        [class.active]="isFilteringField('enabled', true)"
                         (click)="setFieldFilter('enabled', true)"
-                        >{{ rsrc('inputs.filter.status.active.label') | async }}</a
-                    >
+                        [class.active]="isFilteringField('enabled', true)"
+                        class="cw-filter-link"
+                        href="javascript:void(0)">
+                        {{ rsrc('inputs.filter.status.active.label') | async }}
+                    </a>
                     <span>&#124;</span>
                     <a
-                        href="javascript:void(0)"
-                        class="cw-filter-link"
-                        [class.active]="isFilteringField('enabled', false)"
                         (click)="setFieldFilter('enabled', false)"
-                        >{{ rsrc('inputs.filter.status.inactive.label') | async }}</a
-                    >
+                        [class.active]="isFilteringField('enabled', false)"
+                        class="cw-filter-link"
+                        href="javascript:void(0)">
+                        {{ rsrc('inputs.filter.status.inactive.label') | async }}
+                    </a>
                 </div>
             </div>
-            <div class="cw-rule-engine__empty" *ngIf="!rules.length">
+            <div *ngIf="!rules.length" class="cw-rule-engine__empty">
                 <i class="material-icons">tune</i>
                 <h2>
                     {{ rsrc('inputs.no.rules') | async }}
@@ -99,27 +101,17 @@ const I8N_BASE = 'api.sites.ruleengine';
                             | async
                     }}{{ rsrc('inputs.add.one.now') | async }}
                 </h2>
-                <span *ngIf="pageId && !isContentletHost">{{
-                    rsrc('inputs.page.rules.fired.every.time') | async
-                }}</span>
+                <span *ngIf="pageId && !isContentletHost">
+                    {{ rsrc('inputs.page.rules.fired.every.time') | async }}
+                </span>
                 <button
+                    (click)="addRule()"
                     pButton
                     label="{{ rsrc('inputs.addRule.label') | async }}"
-                    (click)="addRule()"
-                    icon="fa fa-plus"
-                ></button>
+                    icon="fa fa-plus"></button>
             </div>
             <rule
                 *ngFor="let rule of rules"
-                [rule]="rule"
-                [hidden]="isFiltered(rule) == true"
-                [environmentStores]="environmentStores"
-                [ruleActions]="rule._ruleActions"
-                [ruleActionTypes]="ruleActionTypes"
-                [conditionTypes]="conditionTypes"
-                [saved]="rule._saved"
-                [saving]="rule._saving"
-                [errors]="rule._errors"
                 (updateName)="updateName.emit($event)"
                 (updateFireOn)="updateFireOn.emit($event)"
                 (updateEnabledState)="updateEnabledState.emit($event)"
@@ -137,7 +129,15 @@ const I8N_BASE = 'api.sites.ruleengine';
                 (updateConditionOperator)="updateConditionOperator.emit($event)"
                 (deleteCondition)="deleteCondition.emit($event)"
                 (deleteRule)="deleteRule.emit($event)"
-            ></rule>
+                [rule]="rule"
+                [hidden]="isFiltered(rule) == true"
+                [environmentStores]="environmentStores"
+                [ruleActions]="rule._ruleActions"
+                [ruleActionTypes]="ruleActionTypes"
+                [conditionTypes]="conditionTypes"
+                [saved]="rule._saved"
+                [saving]="rule._saving"
+                [errors]="rule._errors"></rule>
         </div>
     `
 })
@@ -188,6 +188,8 @@ export class RuleEngineComponent implements OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private pushPublishTitleLabel = '';
 
+    private readonly route = inject(ActivatedRoute);
+
     constructor(
         resources: I18nService,
         private ruleViewService: RuleViewService,
@@ -199,6 +201,18 @@ export class RuleEngineComponent implements OnDestroy {
         this.rules = [];
         this._rsrcCache = {};
         this.status = null;
+
+        this.route.data
+            .pipe(takeUntil(this.destroy$), pluck('haveLicense'))
+            .subscribe((haveLicense) => {
+                if (!haveLicense) {
+                    this.globalError = {
+                        message: 'push_publish.end_point.license_required_message',
+                        allowClose: false,
+                        errorKey: 'dotcms.api.error.license.required'
+                    };
+                }
+            });
 
         this.ruleViewService.message
             .pipe(takeUntil(this.destroy$))
@@ -225,6 +239,7 @@ export class RuleEngineComponent implements OnDestroy {
             x = this.resources.get(I8N_BASE + '.rules.' + subkey);
             this._rsrcCache[subkey] = x;
         }
+
         return x;
     }
 
@@ -264,6 +279,7 @@ export class RuleEngineComponent implements OnDestroy {
         } else {
             isFiltering = this.filterText.indexOf(field + ':' + value) >= 0;
         }
+
         return isFiltering;
     }
 

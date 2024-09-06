@@ -1,0 +1,71 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Site Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= site-create(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+site-create - *Quick way to create a Site *
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*site create* [*-h*] [*--dotcms-url*=_<remoteURL>_] [*-tk*=_<token>_] _<siteName>_
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+ This command is the quickest way to create a site. Simply pass a site name.
+ The resulting site is created empty with no content.
+ For a more elaborate way to create a site, use the *site:pull* command.
+ which takes a detailed descriptor file as input.
+ This might come handy on certain situations
+ e.g. you can use the *site:create* command to create an empty site
+ Then pull it and start working on it.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
+
+*-h*, *--help*::
+  Display this help message.
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+== Arguments
+
+_<siteName>_::
+   Site name. 
+
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

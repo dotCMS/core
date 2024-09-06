@@ -1,1 +1,0 @@
-var I;!function(I){I[I.REQUIRED=0]="REQUIRED",I[I.INVALID=1]="INVALID",I[I.URLINVALID=2]="URLINVALID"}(I||(I={}));export{I as D};

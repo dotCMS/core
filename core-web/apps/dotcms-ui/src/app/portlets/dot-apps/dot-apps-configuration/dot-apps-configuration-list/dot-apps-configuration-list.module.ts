@@ -3,8 +3,7 @@ import { NgModule } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotAppsConfigurationItemModule } from './dot-apps-configuration-item/dot-apps-configuration-item.module';
 import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list.component';
@@ -14,7 +13,7 @@ import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list
         ButtonModule,
         CommonModule,
         DotAppsConfigurationItemModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe
     ],
     declarations: [DotAppsConfigurationListComponent],

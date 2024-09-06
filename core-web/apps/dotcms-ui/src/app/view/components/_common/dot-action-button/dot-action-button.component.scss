@@ -11,12 +11,12 @@
 
         &:not([disabled]) {
             background-color: $color-palette-primary;
-            box-shadow: $md-shadow-1;
+            box-shadow: $shadow-xs;
             opacity: 1;
 
             &:hover {
                 background: $color-palette-primary-400;
-                box-shadow: $md-shadow-3;
+                box-shadow: $shadow-s;
             }
 
             &:active,

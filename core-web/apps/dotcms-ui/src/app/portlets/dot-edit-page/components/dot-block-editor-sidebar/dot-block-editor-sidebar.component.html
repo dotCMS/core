@@ -1,44 +1,37 @@
 <p-sidebar
-    #sidebar
+    (onHide)="sidebar.destroyModal(); closeSidebar()"
     [blockScroll]="true"
-    [visible]="!!blockEditorInput"
+    [closeOnEscape]="false"
     [dismissible]="false"
     [showCloseIcon]="false"
-    [closeOnEscape]="false"
-    (onHide)="sidebar.destroyModal(); closeSidebar()"
-    position="right"
+    [visible]="!!blockEditorInput"
+    #sidebar
     data-testid="sidebar"
->
-    <div class="container" *ngIf="blockEditorInput">
+    position="right">
+    <div *ngIf="blockEditorInput" class="container">
         <dot-block-editor
-            #blockEditor
-            [showVideoThumbnail]="showVideoThumbnail"
-            [lang]="blockEditorInput.language"
-            [allowedBlocks]="blockEditorInput.fieldVariables.allowedBlocks"
-            [allowedContentTypes]="blockEditorInput.fieldVariables.allowedContentTypes"
-            [value]="blockEditorInput.content"
-            [customStyles]="blockEditorInput.fieldVariables.styles"
             [contentletIdentifier]="blockEditorInput.contentletIdentifier"
-        >
-        </dot-block-editor>
+            [field]="blockEditorInput.field"
+            [languageId]="blockEditorInput.languageId"
+            [showVideoThumbnail]="showVideoThumbnail"
+            [value]="blockEditorInput.content"
+            #blockEditor></dot-block-editor>
         <footer>
             <button
-                class="p-button-outlined"
-                [label]="'Cancel' | dm"
                 (click)="closeSidebar()"
-                pButton
-                type="button"
+                [label]="'Cancel' | dm"
+                class="p-button-outlined"
                 data-testid="cancelBtn"
-            ></button>
-            <button
-                [disabled]="saving"
-                [loading]="saving"
-                [label]="'Update' | dm"
-                (click)="saveEditorChanges()"
                 pButton
-                type="button"
+                type="button"></button>
+            <button
+                (click)="saveEditorChanges()"
+                [disabled]="saving"
+                [label]="'Update' | dm"
+                [loading]="saving"
                 data-testid="updateBtn"
-            ></button>
+                pButton
+                type="button"></button>
         </footer>
     </div>
 </p-sidebar>

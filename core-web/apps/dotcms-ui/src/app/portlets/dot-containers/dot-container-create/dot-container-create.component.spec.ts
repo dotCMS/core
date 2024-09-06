@@ -4,7 +4,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE } from '@dotcms/dotcms-models';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';

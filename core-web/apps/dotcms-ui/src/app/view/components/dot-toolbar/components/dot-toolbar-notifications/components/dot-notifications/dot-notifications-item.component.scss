@@ -10,6 +10,7 @@ $notification-icon-size: 16px;
 dot-custom-time {
     color: $color-palette-gray-700;
     display: block;
+    font-size: $font-size-sm;
 }
 
 a {
@@ -18,26 +19,11 @@ a {
 
 .notification-item {
     border-top: solid 1px $color-palette-gray-200;
-    position: relative;
-}
-
-.notification-item__content {
-    margin-left: 1.71rem;
-}
-
-.notification-item__close {
-    position: absolute;
-    right: 0;
-    top: 1rem;
-    z-index: 1;
 }
 
 .notification-item__icon {
-    font-size: $font-size-lg;
-    left: 0;
-    position: absolute;
-    top: 1rem;
-    width: $notification-icon-size;
+    padding-top: $spacing-0;
+    color: $color-palette-primary;
 }
 
 .notification-item__title {
@@ -54,8 +40,11 @@ a {
 }
 
 .notification-item__wrapper {
-    padding: 1rem 0;
-    position: relative;
+    display: flex;
+    flex-direction: row;
+    padding: $spacing-3 0;
+    align-items: self-start;
+    gap: $spacing-3;
 }
 
 .warning {

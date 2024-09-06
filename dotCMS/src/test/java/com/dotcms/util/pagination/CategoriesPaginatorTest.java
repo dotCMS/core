@@ -3,6 +3,7 @@ package com.dotcms.util.pagination;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.portlets.categories.business.CategorySearchCriteria;
 import com.dotmarketing.portlets.categories.business.PaginatedCategories;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -42,7 +43,17 @@ public class CategoriesPaginatorTest {
 
         when(topLevelCategories.getTotalCount()).thenReturn(categories.size());
         when(topLevelCategories.getCategories()).thenReturn(categories);
-        when(categoryAPI.findTopLevelCategories(user, false, offset, limit, filter, "sort_order"))
+
+        final CategorySearchCriteria searchingCriteria = new CategorySearchCriteria.Builder()
+                .filter(filter)
+                .limit(limit)
+                .offset(offset)
+                .orderBy("sort_order")
+                .direction(OrderDirection.ASC )
+                .rootInode("")
+                .build();
+
+        when(categoryAPI.findAll(searchingCriteria, user, false))
                 .thenReturn(topLevelCategories);
 
         final CategoriesPaginator categoriesPaginator = new CategoriesPaginator(categoryAPI);
@@ -68,7 +79,17 @@ public class CategoriesPaginatorTest {
 
         when(topLevelCategories.getTotalCount()).thenReturn(0);
         when(topLevelCategories.getCategories()).thenReturn(null);
-        when(categoryAPI.findTopLevelCategories(user, false, offset, limit, filter, "sort_order"))
+
+        final CategorySearchCriteria searchingCriteria = new CategorySearchCriteria.Builder()
+                .filter(filter)
+                .limit(limit)
+                .offset(offset)
+                .orderBy("sort_order")
+                .direction(OrderDirection.ASC )
+                .rootInode("")
+                .build();
+
+        when(categoryAPI.findAll(searchingCriteria, user, false))
                 .thenReturn(topLevelCategories);
 
         final Map<String, Object> extraParams = new HashMap<>();

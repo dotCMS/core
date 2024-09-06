@@ -3,8 +3,8 @@ package com.dotcms.rest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -77,13 +77,20 @@ public abstract class RestUtilTest extends UnitTestBase {
         };
 
         Config.CONTEXT=context;
+
         when(context.getInitParameter("company_id")).thenReturn(DEFAULT_COMPANY);
 
         LogMapper mockLogMapper = mock(LogMapper.class);
         when ( mockLogMapper.isLogEnabled( any() ) ).thenReturn( false );
 
         LogMapper.setLogMapper( mockLogMapper );
+
     }
+
+    public static void cleanupContext(){
+        Config.CONTEXT=null;
+    }
+
 
     public static WebResource getMockWebResource(final User user, final HttpServletRequest req) {
         WebResource webResource  = mock(WebResource.class);

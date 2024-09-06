@@ -1,10 +1,5 @@
 package com.dotcms.api.system.user;
 
-import static com.dotcms.util.CollectionsUtils.getMapValue;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.ConversionUtils.toBoolean;
-import static com.dotcms.util.ConversionUtils.toInt;
-
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
 import com.dotcms.rest.api.v1.authentication.url.UrlStrategy;
 import com.dotcms.util.MessageAPI;
@@ -27,15 +22,19 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.Validator;
+import org.apache.commons.lang.StringUtils;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.apache.commons.lang.StringUtils;
+
+import static com.dotcms.util.CollectionsUtils.getMapValue;
+import static com.dotcms.util.ConversionUtils.toBoolean;
+import static com.dotcms.util.ConversionUtils.toInt;
 
 /**
  * This factory creates a singleton instance of the {@link UserService} class.
@@ -241,7 +240,7 @@ public class UserServiceFactory implements Serializable {
 						int pageSize = realUserCount;
 						list = new ArrayList<>(pageSize);
 						for (User aUser : users) {
-							final Map<String, String> aRecord = map(
+							final Map<String, String> aRecord = Map.of(
 									"id", aUser.getUserId(), 
 									"type", USER_TYPE_VALUE, 
 									"name", UtilMethods.isSet(aUser.getFullName()) ? aUser.getFullName() : " ",
@@ -402,7 +401,7 @@ public class UserServiceFactory implements Serializable {
 				company = CompanyUtil.findByPrimaryKey(companyId);
 
 				url = UrlStrategyUtil.getURL(company,
-						map(UrlStrategy.USER, user, UrlStrategy.TOKEN, token, UrlStrategy.LOCALE, locale),
+						Map.of(UrlStrategy.USER, user, UrlStrategy.TOKEN, token, UrlStrategy.LOCALE, locale),
 						resetPasswordUrlStrategy);
 				body    = LanguageUtil.format(locale, "reset-password-email-body", url, false);
 				subject = LanguageUtil.get(locale, "reset-password-email-subject");

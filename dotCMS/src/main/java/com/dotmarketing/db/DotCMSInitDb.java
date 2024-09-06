@@ -10,31 +10,32 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.startup.runonce.Task210321RemoveOldMetadataFiles;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.starter.ImportStarterUtil;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.PasswordGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.starter.ImportStarterUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.apache.commons.lang.StringUtils;
-import org.apache.felix.framework.OSGISystem;
-import org.apache.felix.framework.OSGIUtil;
 
 public class DotCMSInitDb {
 
     static final String INITIAL_ADMIN_PASSWORD = "INITIAL_ADMIN_PASSWORD";
     static final String ADMIN_DEFAULT_MAIL = "admin@dotcms.com";
+    static final String DEFAULT_STARTER_PATH = "/WEB-INF/classes/starter.zip";
+
 
     @CloseDBIfOpened
 	private static boolean isConfigured () {
@@ -63,32 +64,28 @@ public class DotCMSInitDb {
 
     
     @WrapInTransaction
-    private static void loadStarterSiteData() throws Exception{
-        String starter = Config.getStringProperty("STARTER_DATA_LOAD", null);
-        File starterZip = null;
-        
-        if(UtilMethods.isSet(starter)){
+    private static void loadStarterSiteData() throws Exception {
+        var starterProperty = Optional.ofNullable(Config.getStringProperty("STARTER_DATA_LOAD", null));
 
-            // First we try using the real path
-            starterZip = new File(FileUtil.getRealPath(starter));
+        starterProperty.ifPresent(s -> Logger.info(DotCMSInitDb.class,
+                "STARTER_DATA_LOAD property is set to " + s + ", loading starter data"));
 
-            // Then we try to see if there is an absolute path (or relative in case of integration tests)
-            if (!starterZip.exists()) {
-                starterZip = new File(starter);
-            }
-        }
-        
-        if(starterZip==null || (starterZip!=null && !starterZip.exists())){
-            String starterSitePath = "/starter.zip";
-            String zipPath = FileUtil.getRealPath(starterSitePath);
-            starterZip = new File(zipPath); 
-         }
-        
-        ImportStarterUtil ieu = new ImportStarterUtil(starterZip);
+        var starterZipPath = starterProperty
+                .map(Paths::get)
+                .filter(Files::exists)
+                .orElseGet(() -> {
+                    var embeddedStarterPath = Paths.get(FileUtil.getRealPath(DEFAULT_STARTER_PATH));
+                    if (!Files.exists(embeddedStarterPath)) {
+                        var starterBuildVersion = Config.getStringProperty("STARTER_BUILD_VERSION", "unknown");
+                        Logger.info(DotCMSInitDb.class, "Using embedded starter version " + starterBuildVersion);
+                    }
+                    return embeddedStarterPath;
+                });
 
+        var ieu = new ImportStarterUtil(starterZipPath.toFile());
         ieu.doImport();
-
     }
+
     @CloseDBIfOpened
 	private static void loadStarterSite() throws Exception{
 		
@@ -171,7 +168,7 @@ public class DotCMSInitDb {
         Logger.info(DotCMSInitDb.class, "Setting up initial password.");
 
         final Tuple2<Boolean,String> initialPassword = loadInitialPassword();
-        if(initialPassword._1){
+        if(Boolean.TRUE.equals(initialPassword._1)){
             //Only generated passwords are meant to be printed as notice
             printNotice(initialPassword._2);
         }

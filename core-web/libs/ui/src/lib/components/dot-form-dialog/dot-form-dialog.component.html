@@ -1,0 +1,20 @@
+<div class="dot-form-dialog__content">
+    <ng-content pFocusTrap></ng-content>
+</div>
+
+<div class="dot-form-dialog__actions">
+    <ng-content select="[footerActions]"></ng-content>
+    <button
+        (click)="onSecondaryClick($event)"
+        [label]="'cancel' | dm"
+        class="p-button-outlined"
+        data-testid="dotFormDialogCancel"
+        pButton></button>
+    <button
+        (click)="onPrimaryClick($event)"
+        [label]="'save' | dm"
+        [disabled]="saveButtonDisabled"
+        [loading]="saveButtonLoading"
+        data-testid="dotFormDialogSave"
+        pButton></button>
+</div>

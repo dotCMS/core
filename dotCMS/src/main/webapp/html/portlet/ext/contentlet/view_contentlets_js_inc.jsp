@@ -337,13 +337,15 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 var write = userHasWritePermission (data, userId)?"1":"0";
                 var publish = userHasPublishPermission (data, userId)?"1":"0";
                 var structure_id = data["structureInode"];
-
+                var typeVariable = data["typeVariable"];
                 var editRef ='';
 
                 if(structure_id == '<%=calendarEventInode %>'){
-              editRef = " editEvent('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
+
+
+                editRef = `editEvent('${inode}','<%=user.getUserId()%>','<%= referer %>','${liveSt}','${workingSt}','${write}','${typeVariable}')`;
             }else{
-              editRef = " editContentlet('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
+                editRef = `editContentlet('${inode}','<%=user.getUserId()%>','<%= referer %>',${liveSt},${workingSt},${write},'${typeVariable}')`;
             }
 
             var ref = "<div class='content-search__result-item'><tr>";
@@ -372,7 +374,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 }
 
                 ref+=  "<td valign='top'>"
-                ref+=   "<a  href=\"javascript: " + editRef + "\">";
+                ref+=   "<a draggable='false' href=\"javascript: " + editRef + "\">";
                 ref+=   text;
                 ref+=   "</a>";
                 ref+=   "</td>";
@@ -393,13 +395,14 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 var permissions = data["permissions"];
                 var write = userHasWritePermission (data, userId)?"1":"0";
                 var structure_id = data["structureInode"];
+                var typeVariable = data["typeVariable"];
 
                 var editRef = '';
 
             if(structure_id == '<%=calendarEventInode %>'){
-              editRef = " editEvent('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
+              editRef = " editEvent('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + typeVariable + "') ";
             }else{
-              editRef = " editContentlet('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
+              editRef = " editContentlet('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + typeVariable + "') ";
             }
 
             var ref = "<a onMouseOver=\"style.cursor='pointer'\" href=\"javascript: " + editRef + "\">";
@@ -829,27 +832,51 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 		function updateSelectedStructAux(){
 			structureInode = dijit.byId('selectedStructAux').value;
 			addNewContentlet(structureInode);
+
+
 		}
 
-        function dispatchCreateContentletEvent(url) {
+        function dispatchCreateContentletEvent(url, contentType) {
             var customEvent = document.createEvent("CustomEvent");
+
             customEvent.initCustomEvent("ng-event", false, false,  {
                 name: "create-contentlet",
                 data: {
-                    url: url
+                    url,
+                    contentType
                 }
             });
+
             document.dispatchEvent(customEvent);
             dijit.byId("selectStructureDiv").hide();
         }
 
 
-        function addNewContentlet(structureInode){
-			if(structureInode == undefined || structureInode==""){
+        function addNewContentlet(structureInode, contentType){
+
+                if(!contentType){
+
+                        // This is the same way they get the current var name on downloadToExcel method
+
+                        let structureVelraw = dojo.byId("structureVelocityVarNames").value;
+
+                        let structInoderaw = dojo.byId("structureInodesList").value;
+
+                        let structureVelArray = structureVelraw.split(";");
+
+                        let structureInodeArray = structInoderaw.split(";");
+
+                        let contentTypeInode = dijit.byId('structure_inode').value;
+
+                        contentType = structureVelArray.find((varName, i) => structureInodeArray[i] === contentTypeInode)
+                }
+
+		if(structureInode == undefined || structureInode==""){
+                                // This gets the catchall and opens the dialog to select a contentType, and also retrieves the content type when is a custom portlet
         		structureInode = dijit.byId('structure_inode').value;
         	}
 			if(structureInode == undefined || structureInode=="" || structureInode == "catchall"){
-				dijit.byId("selectStructureDiv").show();
+                                dijit.byId("selectStructureDiv").show();
 				return;
 			}
           else if(structureInode == '<%=calendarEventInode %>'){
@@ -861,7 +888,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 href += "</portlet:actionURL>";
                 href += "&selectedStructure=" + structureInode ;
                 href += "&lang=" + getSelectedLanguageId();
-                dispatchCreateContentletEvent(href);
+                dispatchCreateContentletEvent(href, contentType);
           }else{
                 var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
                 href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
@@ -871,33 +898,33 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 href += "</portlet:actionURL>";
                 href += "&selectedStructure=" + structureInode ;
                 href += "&lang=" + getSelectedLanguageId();
-                dispatchCreateContentletEvent(href)
+                dispatchCreateContentletEvent(href, contentType);
           }
         }
 
-        function donwloadToExcel(){
+        function donwloadToExcel() {
                 var structureInode = dijit.byId('structure_inode').value;
 
-                if(structureInode ==""){
-                        dijit.byId('structure_inode').focus() ;
+                if (structureInode == "") {
+                        dijit.byId('structure_inode').focus();
                         return false;
                 }
                 cbContentInodeList = new Array();
-                var fieldsValues = new Array ();
-                if(currentStructureFields == undefined){
+                var fieldsValues = new Array();
+                if (currentStructureFields == undefined) {
                         currentStructureFields = Array();
                 }
 
-                var structureVelraw=dojo.byId("structureVelocityVarNames").value;
-                var structInoderaw=dojo.byId("structureInodesList").value;
-                var structureVel=structureVelraw.split(";");
-                var structInode=structInoderaw.split(";");
-                var selectedStruct="";
-                for(var m2=0; m2 <= structInode.length ; m2++ ){
-             if(structureInode==structInode[m2]){
-                 selectedStruct=structureVel[m2];
-                 }
+                var structureVelraw = dojo.byId("structureVelocityVarNames").value;
+                var structInoderaw = dojo.byId("structureInodesList").value;
+                var structureVel = structureVelraw.split(";");
+                var structInode = structInoderaw.split(";");
+                var selectedStruct = "";
+                for (var m2 = 0; m2 <= structInode.length; m2++) {
+                        if (structureInode == structInode[m2]) {
+                                selectedStruct = structureVel[m2];
                         }
+                }
 
                 if (hasHostFolderField) {
                         getHostValue();
@@ -913,39 +940,39 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         }
                 }
 
-				var allField = dijit.byId("allFieldTB").getValue();
-				if (allField != undefined && allField.length>0 ) {
+                var allField = dijit.byId("allFieldTB").getValue();
+                if (allField != undefined && allField.length > 0) {
 
                         fieldsValues[fieldsValues.length] = "catchall";
                         fieldsValues[fieldsValues.length] = allField + "*";
-				}
+                }
 
                 for (var j = 0; j < currentStructureFields.length; j++) {
                         var field = currentStructureFields[j];
-            var fieldId = selectedStruct+"."+field["fieldVelocityVarName"] + "Field";
+                        var fieldId = selectedStruct + "." + field["fieldVelocityVarName"] + "Field";
                         var formField = document.getElementById(fieldId);
                         var fieldValue = "";
 
-                        if(formField != null){
-                                                                if(dojo.attr(formField.id,DOT_FIELD_TYPE) == 'select'){
+                        if (formField != null) {
+                                if (dojo.attr(formField.id, DOT_FIELD_TYPE) == 'select') {
 
                                         var tempDijitObj = dijit.byId(formField.id);
-                                        fieldsValues[fieldsValues.length] = selectedStruct+"."+field["fieldVelocityVarName"];
+                                        fieldsValues[fieldsValues.length] = selectedStruct + "." + field["fieldVelocityVarName"];
                                         fieldsValues[fieldsValues.length] = tempDijitObj.value;
 
-                                }else if(formField.type=='select-one' || formField.type=='select-multiple') {
+                                } else if (formField.type == 'select-one' || formField.type == 'select-multiple') {
 
-                                     var values = "";
-                                     for (var i=0; i<formField.options.length; i++) {
-                                            if (formField.options[i].selected) {
-                                              fieldsValues[fieldsValues.length] = selectedStruct+"."+field["fieldVelocityVarName"];
-                                              fieldsValues[fieldsValues.length] = formField.options[i].value;
+                                        var values = "";
+                                        for (var i = 0; i < formField.options.length; i++) {
+                                                if (formField.options[i].selected) {
+                                                        fieldsValues[fieldsValues.length] = selectedStruct + "." + field["fieldVelocityVarName"];
+                                                        fieldsValues[fieldsValues.length] = formField.options[i].value;
 
-                                            }
-                                          }
+                                                }
+                                        }
 
-                                }else {
-                                        fieldsValues[fieldsValues.length] = selectedStruct+"."+field["fieldVelocityVarName"];
+                                } else {
+                                        fieldsValues[fieldsValues.length] = selectedStruct + "." + field["fieldVelocityVarName"];
                                         fieldsValues[fieldsValues.length] = formField.value;
 
                                 }
@@ -954,10 +981,10 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                 }
 
-        for(var i=0;i < radiobuttonsIds.length ;i++ ){
+                for (var i = 0; i < radiobuttonsIds.length; i++) {
                         var formField = document.getElementById(radiobuttonsIds[i]);
-                        if(formField != null && formField.type=='radio') {
-                            var values = "";
+                        if (formField != null && formField.type == 'radio') {
+                                var values = "";
                                 if (formField.checked) {
                                         values = formField.value;
                                         fieldsValues[fieldsValues.length] = formField.name;
@@ -966,10 +993,10 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         }
                 }
 
-                for(var i=0;i < checkboxesIds.length ;i++ ){
+                for (var i = 0; i < checkboxesIds.length; i++) {
                         var formField = document.getElementById(checkboxesIds[i]);
-                        if(formField != null && formField.type=='checkbox') {
-                            var values = "";
+                        if (formField != null && formField.type == 'checkbox') {
+                                var values = "";
                                 if (formField.checked) {
                                         values = formField.value;
                                         fieldsValues[fieldsValues.length] = formField.name;
@@ -978,26 +1005,26 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         }
                 }
 
-                if( getSelectedLanguageId() != 0 ){
-                	fieldsValues[fieldsValues.length] = "languageId";
-                	fieldsValues[fieldsValues.length] = getSelectedLanguageId();
+                if (getSelectedLanguageId() != 0) {
+                        fieldsValues[fieldsValues.length] = "languageId";
+                        fieldsValues[fieldsValues.length] = getSelectedLanguageId();
                 }
 
                 // if we have an identifier
-            if(isInodeSet(document.getElementById("Identifier").value)){
-            var contentId = "";
-                fieldsValues[fieldsValues.length] = "identifier";
-                contentId = document.getElementById("Identifier").value;
-                    fieldsValues[fieldsValues.length] = contentId;
-            }
-
-                var allField = dijit.byId("allFieldTB").getValue();
-                if (allField != undefined && allField.length>0 ) {
-                    fieldsValues[fieldsValues.length] = "catchall";
-                    fieldsValues[fieldsValues.length] = allField + "*";
+                if (isInodeSet(document.getElementById("Identifier").value)) {
+                        var contentId = "";
+                        fieldsValues[fieldsValues.length] = "identifier";
+                        contentId = document.getElementById("Identifier").value;
+                        fieldsValues[fieldsValues.length] = contentId;
                 }
 
-                var categoriesValues = new Array ();
+                var allField = dijit.byId("allFieldTB").getValue();
+                if (allField != undefined && allField.length > 0) {
+                        fieldsValues[fieldsValues.length] = "catchall";
+                        fieldsValues[fieldsValues.length] = allField + "*";
+                }
+
+                var categoriesValues = new Array();
                 var form = document.getElementById("search_form");
                 var categories = document.getElementsByName("categories");
                 if (categories != null) {
@@ -1023,7 +1050,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         }
                 }
 
-                 var filterSystemHost = false;
+                var filterSystemHost = false;
                 if (document.getElementById("filterSystemHostCB").checked && document.getElementById("filterSystemHostTable").style.display != "none") {
                         filterSystemHost = true;
                 }
@@ -1036,7 +1063,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                 var filterUnpublish = false;
                 if (dijit.byId("showingSelect").getValue() == "unpublished") {
-                       filterUnpublish = true;
+                        filterUnpublish = true;
                 }
 
                 var showDeleted = false;
@@ -1046,6 +1073,14 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                 dijit.byId("searchButton").attr("disabled", true);
                 //dijit.byId("clearButton").attr("disabled", false);
+
+                fieldsValues = fieldsValues.map(value => {
+                        if (value.includes('[') || value.includes(']')) {
+                                return encodeURIComponent(value);
+                        } else {
+                                return value;
+                        }
+                });
 
                 document.getElementById('fieldsValues').value = fieldsValues;
                 document.getElementById('categoriesValues').value = categoriesValues;
@@ -1063,26 +1098,29 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 href += "&expStructureInode="+structureInode+"&expFieldsValues="+fieldsValues+"&expCategoriesValues="+categoriesValues+"&showDeleted="+showDeleted+"&expCurrentSortBy="+currentSortBy+"&filterSystemHost="+filterSystemHost+"&filterLocked="+filterLocked+"&filterUnpublish="+filterUnpublish;
 
                 /*if we have a date*/
-                        var dateFrom= null;
-                        var dateTo= null;
-                        if((document.getElementById("lastModDateFrom").value!="")){
-                                dateFrom = document.getElementById("lastModDateFrom").value;
-                                var dateFromsplit = dateFrom.split("/");
-                                if(dateFromsplit[0]< 10) dateFromsplit[0]= "0"+dateFromsplit[0]; if(dateFromsplit[1]< 10) dateFromsplit[1]= "0"+dateFromsplit[1];
-                                dateFrom= dateFromsplit[2]+dateFromsplit[0]+dateFromsplit[1]+"000000";
-                                href+= "&modDateFrom="+dateFrom;
-                        }
+                var dateFrom = null;
+                var dateTo = null;
+                if ((document.getElementById("lastModDateFrom").value != "")) {
+                        dateFrom = document.getElementById("lastModDateFrom").value;
+                        var dateFromsplit = dateFrom.split("/");
+                        if (dateFromsplit[0] < 10) dateFromsplit[0] = "0" + dateFromsplit[0]; if (dateFromsplit[1] < 10) dateFromsplit[1] = "0" + dateFromsplit[1];
+                        dateFrom = dateFromsplit[2] + dateFromsplit[0] + dateFromsplit[1] + "000000";
+                        href += "&modDateFrom=" + dateFrom;
+                }
 
-                        if((document.getElementById("lastModDateTo").value!="")){
-                                dateTo = document.getElementById("lastModDateTo").value;
-                                var dateTosplit = dateTo.split("/");
-                                if(dateTosplit[0]< 10) dateTosplit[0]= "0"+dateTosplit[0]; if(dateTosplit[1]< 10) dateTosplit[1]= "0"+dateTosplit[1];
-                                dateTo= dateTosplit[2]+dateTosplit[0]+dateTosplit[1]+"235959";
-                                href+= "&modDateTo="+dateTo;
-                        }
+                if ((document.getElementById("lastModDateTo").value != "")) {
+                        dateTo = document.getElementById("lastModDateTo").value;
+                        var dateTosplit = dateTo.split("/");
+                        if (dateTosplit[0] < 10) dateTosplit[0] = "0" + dateTosplit[0]; if (dateTosplit[1] < 10) dateTosplit[1] = "0" + dateTosplit[1];
+                        dateTo = dateTosplit[2] + dateTosplit[0] + dateTosplit[1] + "235959";
+                        href += "&modDateTo=" + dateTo;
+                }
 
-                window.location.href=href;
-
+                if (href.length > 6584) {
+                        showDotCMSErrorMessage("Error: The URL has exceeded the size limit due to the large number of content filters. Please reduce them.");
+                } else {
+                        window.location.href = href;
+                }
         }
 
 
@@ -1893,11 +1931,12 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 			var liveSt = data.live === "true" ? "1" : "0";
 			var workingSt = data.working === "true" ? "1" : "0";
 			var write = userHasWritePermission (data, userId) ? "1" : "0";
+			var typeVariable = data.typeVariable;
 
 			if (data.structureInode == '<%=calendarEventInode %>') {
-				editEvent(inode, '<%=user.getUserId()%>', '<%= referer %>', liveSt, workingSt, write);
+				editEvent(inode, '<%=user.getUserId()%>', '<%= referer %>', liveSt, workingSt, write, typeVariable);
 			}else{
-				editContentlet(inode, '<%=user.getUserId()%>', '<%= referer %>', liveSt, workingSt, write);
+				editContentlet(inode, '<%=user.getUserId()%>', '<%= referer %>', liveSt, workingSt, write, typeVariable);
 			}
 		};
 
@@ -1917,6 +1956,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 			const contentStructureType = data["contentStructureType"];
 			const structure_id = data["structureInode"];
 			const hasLiveVersion = data["hasLiveVersion"];
+			const typeVariable = data.typeVariable;
 
 			const contentAdmin = new dotcms.dijit.contentlet.ContentAdmin(data.identifier, data.inode, data.languageId);
 			const wfActionMapList = JSON.parse(data["wfActionMapList"]);
@@ -1924,11 +1964,11 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 			if ((live || working) && (read=="1") && (!deleted)) {
 				if(structure_id == '<%=calendarEventInode %>'){
 					actions.push({ label: write === '1' ? '<%=LanguageUtil.get(pageContext, "Edit") %>' : '<%=LanguageUtil.get(pageContext, "View") %>',
-						action: () => { editEvent(data.inode, '<%= user.getUserId() %>', '<%= referer %>', liveSt, workingSt, write)}
+						action: () => { editEvent(data.inode, '<%= user.getUserId() %>', '<%= referer %>', liveSt, workingSt, write, typeVariable)}
 					});
 				} else {
 					actions.push({ label: write === '1' ? '<%=LanguageUtil.get(pageContext, "Edit") %>' : '<%=LanguageUtil.get(pageContext, "View") %>',
-						action: () => { editContentlet(data.inode, '<%= user.getUserId() %>', '<%= referer %>', liveSt, workingSt, write)}
+						action: () => { editContentlet(data.inode, '<%= user.getUserId() %>', '<%= referer %>', liveSt, workingSt, write, typeVariable)}
 					});
 				}
 			}
@@ -2049,6 +2089,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 var wfActionMapList;
                 var structure_id;
                 var contentStructureType;
+                var typeVariable;
 
                 cbContentInodeList = data;
 
@@ -2077,7 +2118,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                     let cardThumbnail = document.createElement("dot-contentlet-thumbnail");
 
                     cardThumbnail.iconSize="48px";
-                    cardThumbnail.cover="true";
+                    cardThumbnail.backgroundImage="true";
                     cardThumbnail.contentlet=cellData;
 
                     holderDiv.appendChild(cardThumbnail);
@@ -2093,15 +2134,17 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                     write = userHasWritePermission (cellData, userId)?"1":"0";
                     publish = userHasPublishPermission (cellData, userId)?"1":"0";
                     contentStructureType = cellData["contentStructureType"];
+                    typeVariable = cellData["typeVariable"];
                     structure_id = cellData["structureInode"];
                     hasLiveVersion = cellData["hasLiveVersion"];
                     holderDiv.setAttribute('data-inode', cellData["inode"]);
                     holderDiv.setAttribute('data-live', liveSt);
                     holderDiv.setAttribute('data-working', workingSt);
                     holderDiv.setAttribute('data-write', write);
+                    holderDiv.setAttribute('data-typevariable', typeVariable);
                     holderDiv.addEventListener('click', function(e){
                         let dataSet =  e.currentTarget.dataset;
-                        editContentlet(dataSet["inode"],'<%= user.getUserId() %>','<%= referer %>', dataSet["live"] , dataSet["working"] , dataSet["write"] );
+                        editContentlet(dataSet["inode"],'<%= user.getUserId() %>','<%= referer %>', dataSet["live"] , dataSet["working"] , dataSet["write"], dataSet["typevariable"] );
                     }, false);
 
 
@@ -2196,15 +2239,15 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                     if ((live || working) && (read=="1") && (!deleted)) {
                             if(structure_id == '<%=calendarEventInode %>'){
                                 if (write=="1"){
-                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
+                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ",'" + typeVariable + "');\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
                                 }else{
-                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "View") %></div>";
+                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ",'" + typeVariable + "');\"><%=LanguageUtil.get(pageContext, "View") %></div>";
                                 }
                             }else{
                                 if (write=="1"){
-                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
+                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ",'" + typeVariable + "');\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
                                 }else{
-                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "View") %></div>";
+                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ",'" + typeVariable + "');\"><%=LanguageUtil.get(pageContext, "View") %></div>";
                                 }
                             }
                     }

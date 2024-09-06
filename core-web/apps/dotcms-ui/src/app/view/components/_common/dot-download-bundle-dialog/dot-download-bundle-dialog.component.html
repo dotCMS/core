@@ -1,35 +1,30 @@
 <dot-dialog
+    (hide)="close()"
     [(visible)]="showDialog"
     [header]="'download.bundle.header' | dm"
-    [actions]="dialogActions"
-    (hide)="close()"
->
+    [actions]="dialogActions">
     <form
-        class="p-fluid"
         *ngIf="showDialog"
-        [formGroup]="form"
         (ngSubmit)="handleSubmit()"
         (keyup.enter)="handleSubmit()"
-    >
+        [formGroup]="form"
+        class="p-fluid">
         <div class="field">
             <label dotFieldRequired for="download-btn">{{ 'download.bundle.i.want' | dm }}</label>
             <p-selectButton
+                [options]="downloadOptions"
                 class="p-button-tabbed"
                 id="download-btn"
-                [options]="downloadOptions"
-                formControlName="downloadOptionSelected"
-            >
-            </p-selectButton>
+                formControlName="downloadOptionSelected"></p-selectButton>
         </div>
         <div class="field">
             <label for="filterKey">{{ 'download.bundle.filter' | dm }}</label>
             <p-dropdown
-                id="filterKey"
                 [options]="filterOptions"
+                id="filterKey"
                 formControlName="filterKey"
-                appendTo="body"
-            ></p-dropdown>
+                appendTo="body"></p-dropdown>
         </div>
     </form>
-    <span class="download-bundle__error" *ngIf="errorMessage">{{ errorMessage }}</span>
+    <span *ngIf="errorMessage" class="download-bundle__error">{{ errorMessage }}</span>
 </dot-dialog>

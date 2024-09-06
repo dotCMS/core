@@ -107,7 +107,8 @@ const storeMock = jasmine.createSpyObj(
         'filterContentlets',
         'filterContentTypes',
         'loadContentlets',
-        'switchView'
+        'switchView',
+        'switchLanguage'
     ],
     {
         vm$: of({
@@ -233,5 +234,14 @@ describe('DotPaletteComponent', () => {
         await fixture.whenStable();
 
         expect(store.setAllowedContent).toHaveBeenCalledWith(allowedContent);
+    });
+
+    it('should switch language', async () => {
+        comp.languageId = '2';
+
+        fixture.detectChanges();
+        await fixture.whenStable();
+
+        expect(store.switchLanguage).toHaveBeenCalledWith('2');
     });
 });

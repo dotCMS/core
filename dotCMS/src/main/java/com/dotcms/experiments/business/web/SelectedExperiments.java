@@ -17,14 +17,13 @@ public class SelectedExperiments {
     private List<String> includedExperimentIds;
     private List<String> excludedExperimentIds;
 
-    public SelectedExperiments(
-            final List<SelectedExperiment> experiments,
-            final List<String> includeExperimentIds,
-            final List<String> excludedExperimentIds
-    ) {
-        this.experiments = experiments;
-        this.includedExperimentIds = includeExperimentIds;
-        this.excludedExperimentIds = excludedExperimentIds;
+    private List<String> excludedExperimentIdsEnded;
+
+    private SelectedExperiments(final Builder builder) {
+        this.experiments = builder.experiments;
+        this.includedExperimentIds = builder.included;
+        this.excludedExperimentIds = builder.excluded;
+        this.excludedExperimentIdsEnded = builder.excludedExperimentIdsEnded;
     }
 
     public List<SelectedExperiment> getExperiments() {
@@ -37,5 +36,41 @@ public class SelectedExperiments {
 
     public List<String> getExcludedExperimentIds() {
         return excludedExperimentIds;
+    }
+
+    public List<String> getExcludedExperimentIdsEnded() {
+        return excludedExperimentIdsEnded;
+    }
+
+    public static class Builder {
+        private List<SelectedExperiment> experiments;
+        private List<String> included;
+        private List<String> excluded;
+
+        private List<String> excludedExperimentIdsEnded;
+
+        public Builder experiments(List<SelectedExperiment> experiments) {
+            this.experiments = experiments;
+            return this;
+        }
+
+        public Builder included(List<String> included) {
+            this.included = included;
+            return this;
+        }
+
+        public Builder excluded(List<String> excluded) {
+            this.excluded = excluded;
+            return this;
+        }
+
+        public Builder excludedExperimentIdsEnded(List<String> excludedExperimentIdsEnded) {
+            this.excludedExperimentIdsEnded = excludedExperimentIdsEnded;
+            return this;
+        }
+
+        public SelectedExperiments build() {
+            return new SelectedExperiments(this);
+        }
     }
 }

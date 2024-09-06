@@ -1,7 +1,8 @@
-import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { DotApiLanguage } from './DotApiLanguage';
 import { DotApiPage } from './DotApiPage';
+
 import { DotCMSPageFormat } from '../models';
+import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 
 describe('DotApiPage', () => {
     let httpClient: DotCMSHttpClient;

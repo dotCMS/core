@@ -1,7 +1,5 @@
 package com.dotmarketing.startup.runonce;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.DbType;
@@ -13,6 +11,7 @@ import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+
 import java.util.Map;
 
 /**
@@ -24,7 +23,7 @@ public class Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSys
     protected static final String INSERT_ACTION            = "insert into workflow_action (id, scheme_id, name, condition_to_progress, next_step_id, next_assign, my_order, assignable, commentable, icon, use_role_hierarchy_assign, requires_checkout, show_on) values (?, ?, ?, ?, ?, ?, ?,?, ?, ?,?,?,?)";
     protected static final String INSERT_ACTION_FOR_STEP   = "insert into workflow_action_step(action_id, step_id, action_order) values (?,?,?)";
     protected static final String INSERT_ACTION_CLASS      = "insert into workflow_action_class (id, action_id, name, my_order, clazz) values (?,?, ?, ?, ?)";
-    protected static final Map<DbType, String> insertPermissionMap   = map(
+    protected static final Map<DbType, String> insertPermissionMap   = Map.of(
             DbType.POSTGRESQL,   "insert into permission(id, permission_type, inode_id, roleid, permission) values (nextval('permission_seq'), ?, ?, ?, ?)",
             DbType.ORACLE,       "insert into permission(id, permission_type, inode_id, roleid, permission) values (permission_seq.NEXTVAL,    ?, ?, ?, ?)",
             DbType.MYSQL,        "insert into permission(permission_type, inode_id, roleid, permission) values (?, ?, ?, ?)",
@@ -113,7 +112,7 @@ public class Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSys
                 .setSQL("select id,role_name,role_key from cms_role where role_key = ?")
                 .addParam(roleKey)
                 .loadObjectResults()
-                .stream().findFirst().orElse(map("id", defaultValue))
+                .stream().findFirst().orElse(Map.of("id", defaultValue))
                 .get("id");
     }
 

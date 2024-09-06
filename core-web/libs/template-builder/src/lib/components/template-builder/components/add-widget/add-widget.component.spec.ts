@@ -8,7 +8,9 @@ import { colIcon, rowIcon } from '../../assets/icons';
 
 @Component({
     selector: 'dotcms-host-component',
-    template: ` <dotcms-add-widget [label]="label" [icon]="icon"></dotcms-add-widget> `
+    template: `
+        <dotcms-add-widget [label]="label" [icon]="icon"></dotcms-add-widget>
+    `
 })
 class HostComponent {
     @Input() label = 'Add Widget';

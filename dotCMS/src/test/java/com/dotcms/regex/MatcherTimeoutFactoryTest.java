@@ -27,7 +27,7 @@ public class MatcherTimeoutFactoryTest {
     
     static final String[][] evilPatternAndMatchingString = {
             {
-                "([a-z0-9\\-]*)*?$",
+                MatcherTimeoutFactory.MATCHER_TIMEOUT_PATTERN,
                 "abababababababababababab a"
             }
     };

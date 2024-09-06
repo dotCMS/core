@@ -1,5 +1,6 @@
 package com.dotcms.storage;
 
+import com.dotcms.storage.model.BasicMetadataFields;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 
@@ -8,13 +9,20 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * This class is in charge of resolve File (on diff repositories), metadata, etc.
+ * This Storage API is in charge of generating, removing and storing file metadata in dotCMS using
+ * the File System as its storage volume.
+ *
  * @author jsanca
+ * @since Oct 19th, 2020
  */
 public interface FileStorageAPI {
 
     int SIZE                       = 1024;
     int DEFAULT_META_DATA_MAX_SIZE = 5;
+
+    ObjectReaderDelegate DEFAULT_OBJECT_READER_DELEGATE = new JsonReaderDelegate<>(Map.class);
+    ObjectWriterDelegate DEFAULT_OBJECT_WRITER_DELEGATE = new JsonWriterDelegate();
+    MetadataGenerator DEFAULT_METADATA_GENERATOR = new MetadataGeneratorImpl();
 
     /**
      * Returns the default configured max length
@@ -52,9 +60,23 @@ public interface FileStorageAPI {
             throws DotDataException;
 
     /**
-     * Retrieve the metadata
-     * @param requestMetaData {@link FetchMetadataParams}
-     * @return  Map with the metadata
+     * Retrieves the metadata object from the configured Storage Provider. There are a couple of
+     * aspects to take into consideration when calling this method:
+     * <ul>
+     *     <li>Depending on the configuration of the {@link FetchMetadataParams} parameter, the
+     *     resulting metadata object may be cached.</li>
+     *     <li>For performance reasons, the {@link BasicMetadataFields#EDITABLE_AS_TEXT} property
+     *     is always calculated <b>UNLESS</b> it's already present in the metadata Map. This way,
+     *     Files don't need to be re-indexed for it to be available.</li>
+     * </ul>
+     *
+     * @param requestMetaData The {@link FetchMetadataParams} object specifying how the metadata
+     *                        should be retrieved.
+     *
+     * @return A key/value Map with the expected metadata properties.
+     *
+     * @throws DotDataException An error occurred when retrieving the metadata from the Storage
+     *                          Provider.
      */
     Map<String, Serializable> retrieveMetaData(final FetchMetadataParams requestMetaData) throws DotDataException;
 

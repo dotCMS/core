@@ -1,4 +1,5 @@
 import { Observable, Subject } from 'rxjs';
+
 import { DotEventTypeWrapper } from '@dotcms/dotcms-js';
 
 export class DotcmsEventsServiceMock {

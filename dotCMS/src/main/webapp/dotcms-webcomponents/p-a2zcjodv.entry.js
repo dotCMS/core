@@ -1,1 +1,0 @@
-import{r,h as s}from"./p-17c4ed33.js";const t=class{constructor(s){r(this,s)}render(){return s("slot",null)}static get style(){return"dot-error-message:not(:empty){border:1px solid currentColor;color:#cd5c5c;display:block;padding:.5rem .75rem}"}};export{t as dot_error_message};

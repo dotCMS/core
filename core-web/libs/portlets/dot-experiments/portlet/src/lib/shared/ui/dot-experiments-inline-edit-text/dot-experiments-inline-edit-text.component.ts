@@ -21,10 +21,14 @@ import { SharedModule } from 'primeng/api';
 import { Inplace, InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { MAX_INPUT_DESCRIPTIVE_LENGTH } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotAutofocusDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe,
+    DotTrimInputDirective,
+    DotValidators
+} from '@dotcms/ui';
 
 type InplaceInputSize = 'small' | 'large';
 const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; input: string }> = {
@@ -46,11 +50,12 @@ const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; inp
         NgIf,
         ReactiveFormsModule,
         DotMessagePipe,
-        DotAutofocusModule,
-        DotFieldValidationMessageModule,
+        DotAutofocusDirective,
+        DotFieldValidationMessageComponent,
         InplaceModule,
         InputTextModule,
-        SharedModule
+        SharedModule,
+        DotTrimInputDirective
     ],
     templateUrl: './dot-experiments-inline-edit-text.component.html',
     styleUrls: ['./dot-experiments-inline-edit-text.component.scss'],
@@ -97,7 +102,7 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
      * Flag to make the text required
      */
     @Input()
-    required: boolean;
+    required = false;
 
     /**
      * Flag to hide the error message
@@ -115,7 +120,7 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
     form: FormGroup;
 
     protected readonly inplaceSizes = InplaceInputSizeMapPrimeNg;
-    private validatorsFn: ValidatorFn[] = [];
+    private validatorsFn: ValidatorFn[] = [DotValidators.noWhitespace];
 
     constructor() {
         this.initForm();
@@ -133,6 +138,10 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
         if (isLoading && isLoading.previousValue === true && isLoading.currentValue === false) {
             this.deactivateInplace();
         }
+
+        isLoading && isLoading.currentValue
+            ? this.textControl.disable()
+            : this.textControl.enable();
 
         if (maxCharacterLength && maxCharacterLength.currentValue) {
             this.validatorsFn.push(Validators.maxLength(maxCharacterLength.currentValue));

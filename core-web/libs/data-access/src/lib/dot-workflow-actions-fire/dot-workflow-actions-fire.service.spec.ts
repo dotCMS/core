@@ -1,11 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpHeaders } from '@angular/common/http';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotActionBulkRequestOptions, DotActionBulkResult } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { dotcmsContentletMock } from '@dotcms/utils-testing';
 
 import { DotWorkflowActionsFireService } from './dot-workflow-actions-fire.service';
 
@@ -32,234 +30,229 @@ const mockBulkOptions: DotActionBulkRequestOptions = {
 };
 
 describe('DotWorkflowActionsFireService', () => {
-    let injector: TestBed;
-    let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
-    let httpMock: HttpTestingController;
+    let spectator: SpectatorHttp<DotWorkflowActionsFireService>;
+    const createHttp = createHttpFactory(DotWorkflowActionsFireService);
+    const defaultHeaders = new HttpHeaders()
+        .set('Accept', '*/*')
+        .set('Content-Type', 'application/json');
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotWorkflowActionsFireService
-            ]
-        });
-        injector = getTestBed();
-        dotWorkflowActionsFireService = injector.get(DotWorkflowActionsFireService);
-        httpMock = injector.inject(HttpTestingController);
-    });
+    beforeEach(() => (spectator = createHttp()));
 
-    it('should SAVE and return a new contentlet', () => {
-        dotWorkflowActionsFireService
-            .newContentlet('persona', { name: 'Test' })
-            .subscribe((res) => {
-                expect(res).toEqual([
-                    {
-                        name: 'test'
-                    }
-                ]);
-            });
+    it('should SAVE and return a new contentlet', (done) => {
+        const mockResult = {
+            name: 'test'
+        };
 
-        const req = httpMock.expectOne('v1/workflow/actions/default/fire/NEW');
-        expect(req.request.method).toBe('PUT');
-        expect(req.request.body).toEqual({
+        const requestBody = {
             contentlet: {
                 contentType: 'persona',
                 name: 'Test'
             }
+        };
+
+        spectator.service.newContentlet('persona', { name: 'Test' }).subscribe((res) => {
+            expect(res).toEqual([mockResult]);
+            done();
         });
+
+        const req = spectator.expectOne(
+            '/api/v1/workflow/actions/default/fire/NEW',
+            HttpMethod.PUT
+        );
+
+        expect(req.request.body).toEqual(requestBody);
+        expect(req.request.headers).toEqual(defaultHeaders);
+
         req.flush({
-            entity: [
-                {
-                    name: 'test'
-                }
-            ]
+            entity: [mockResult]
         });
     });
 
-    it('should EDIT and return the updated contentlet', () => {
-        const fieldName = 'title';
+    it('should EDIT and return the updated contentlet', (done) => {
+        const mockResult = {
+            inode: '123'
+        };
 
-        dotWorkflowActionsFireService
-            .saveContentlet({ inode: '123', [fieldName]: 'hello world' })
+        spectator.service
+            .saveContentlet({ inode: '123', title: 'hello world' })
             .subscribe((res) => {
-                expect(res).toEqual([
-                    {
-                        inode: '123'
-                    }
-                ]);
+                expect(res).toEqual([mockResult]);
+                done();
             });
 
-        const req = httpMock.expectOne('v1/workflow/actions/default/fire/EDIT?inode=123');
-        expect(req.request.method).toBe('PUT');
-        // expect(req.request.body).toEqual({
-        //     contentlet: {
-        //         inode: '123',
-        //         [fieldName]: 'hello world'
-        //     }
-        // });
+        const req = spectator.expectOne(
+            '/api/v1/workflow/actions/default/fire/EDIT?inode=123',
+            HttpMethod.PUT
+        );
         req.flush({
-            entity: [
-                {
-                    inode: '123'
-                }
-            ]
+            entity: [mockResult]
         });
     });
 
-    it('should DESTROY and return the deleted contentlet', () => {
-        dotWorkflowActionsFireService.deleteContentlet({ inode: '123' }).subscribe((res) => {
-            expect(res).toEqual([
-                {
-                    inode: '123'
-                }
-            ]);
+    it('should DESTROY and return the deleted contentlet', (done) => {
+        const mockResult = {
+            inode: '123'
+        };
+
+        spectator.service.deleteContentlet({ inode: '123' }).subscribe((res) => {
+            expect(res).toEqual([mockResult]);
+            done();
         });
 
-        const req = httpMock.expectOne('v1/workflow/actions/default/fire/DESTROY?inode=123');
-        expect(req.request.method).toBe('PUT');
+        const req = spectator.expectOne(
+            '/api/v1/workflow/actions/default/fire/DESTROY?inode=123',
+            HttpMethod.PUT
+        );
 
         req.flush({
-            entity: [
-                {
-                    inode: '123'
-                }
-            ]
+            entity: [mockResult]
         });
     });
 
-    it('should PUBLISH and return a new contentlet', () => {
-        dotWorkflowActionsFireService
-            .publishContentlet('persona', { name: 'test' })
-            .subscribe((res) => {
-                expect(res).toEqual([
-                    {
-                        name: 'test'
-                    }
-                ]);
-            });
+    it('should PUBLISH and return a new contentlet', (done) => {
+        const mockResult = {
+            name: 'test'
+        };
 
-        const req = httpMock.expectOne('v1/workflow/actions/default/fire/PUBLISH');
-        expect(req.request.method).toBe('PUT');
-        expect(req.request.body).toEqual({
+        const requestBody = {
             contentlet: {
                 contentType: 'persona',
                 name: 'test'
             }
+        };
+
+        spectator.service.publishContentlet('persona', { name: 'test' }).subscribe((res) => {
+            expect(res).toEqual([mockResult]);
+            done();
         });
+
+        const req = spectator.expectOne(
+            '/api/v1/workflow/actions/default/fire/PUBLISH',
+            HttpMethod.PUT
+        );
+
+        expect(req.request.body).toEqual(requestBody);
+        expect(req.request.headers).toEqual(defaultHeaders);
+
         req.flush({
-            entity: [
-                {
-                    name: 'test'
-                }
-            ]
+            entity: [mockResult]
         });
     });
 
-    it('should PUBLISH, wait for index and return a new contentlet', () => {
-        dotWorkflowActionsFireService
-            .publishContentletAndWaitForIndex('persona', { name: 'test' })
-            .subscribe((res) => {
-                expect(res).toEqual([
-                    {
-                        name: 'test'
-                    }
-                ]);
-            });
-
-        const req = httpMock.expectOne('v1/workflow/actions/default/fire/PUBLISH');
-        expect(req.request.method).toBe('PUT');
-        expect(req.request.body).toEqual({
+    it('should PUBLISH, wait for index and return a new contentlet', (done) => {
+        const mockResult = {
+            name: 'test'
+        };
+        const requestBody = {
             contentlet: {
                 contentType: 'persona',
                 name: 'test',
                 indexPolicy: 'WAIT_FOR'
             }
-        });
+        };
+
+        spectator.service
+            .publishContentletAndWaitForIndex('persona', { name: 'test' })
+            .subscribe((res) => {
+                expect(res).toEqual([mockResult]);
+                done();
+            });
+
+        const req = spectator.expectOne(
+            '/api/v1/workflow/actions/default/fire/PUBLISH',
+            HttpMethod.PUT
+        );
+
+        expect(req.request.body).toEqual(requestBody);
+        expect(req.request.headers).toEqual(defaultHeaders);
+
         req.flush({
-            entity: [
-                {
-                    name: 'test'
-                }
-            ]
+            entity: [mockResult]
         });
     });
 
-    it('should PUBLISH and Wait For Index with Individual Permissions', () => {
-        dotWorkflowActionsFireService
-            .publishContentletAndWaitForIndex(
-                'persona',
-                { name: 'test' },
-                { READ: ['123'], WRITE: ['456'] }
-            )
-            .subscribe((res) => {
-                expect(res).toEqual([
-                    {
-                        name: 'test'
-                    }
-                ]);
-            });
+    it('should PUBLISH and Wait For Index with Individual Permissions', (done) => {
+        const mockResult = {
+            name: 'test'
+        };
 
-        const req = httpMock.expectOne('v1/workflow/actions/default/fire/PUBLISH');
-        expect(req.request.method).toBe('PUT');
-        expect(req.request.body).toEqual({
+        const requestBody = {
             contentlet: {
                 contentType: 'persona',
                 name: 'test',
                 indexPolicy: 'WAIT_FOR'
             },
             individualPermissions: { READ: ['123'], WRITE: ['456'] }
-        });
-        req.flush({
-            entity: [
-                {
-                    name: 'test'
-                }
-            ]
-        });
-    });
+        };
 
-    it('should create and return a new Content', () => {
-        const data = { id: '123' };
-        dotWorkflowActionsFireService.fireTo('123', 'new', data).subscribe((res: any) => {
-            expect(res).toEqual([
-                {
-                    name: 'test'
-                }
-            ]);
-        });
+        spectator.service
+            .publishContentletAndWaitForIndex(
+                'persona',
+                { name: 'test' },
+                { READ: ['123'], WRITE: ['456'] }
+            )
+            .subscribe((res) => {
+                expect(res).toEqual([mockResult]);
+                done();
+            });
 
-        const req = httpMock.expectOne(
-            'v1/workflow/actions/new/fire?inode=123&indexPolicy=WAIT_FOR'
+        const req = spectator.expectOne(
+            '/api/v1/workflow/actions/default/fire/PUBLISH',
+            HttpMethod.PUT
         );
-        expect(req.request.method).toBe('PUT');
+
+        expect(req.request.body).toEqual(requestBody);
+        expect(req.request.headers).toEqual(defaultHeaders);
+
         req.flush({
-            entity: [
-                {
-                    name: 'test'
-                }
-            ]
+            entity: [mockResult]
         });
     });
 
-    it('should fire bulk request', () => {
+    it('should create and return a new Content', (done) => {
+        spectator.service
+            .fireTo({
+                inode: '123',
+                actionId: 'new',
+                data: { id: '123' }
+            })
+            .subscribe((res) => {
+                expect(res).toEqual(dotcmsContentletMock);
+                done();
+            });
+
+        const req = spectator.expectOne(
+            '/api/v1/workflow/actions/new/fire?inode=123&indexPolicy=WAIT_FOR',
+            HttpMethod.PUT
+        );
+
+        req.flush({
+            entity: dotcmsContentletMock
+        });
+    });
+
+    it('should fire bulk request', (done) => {
         const mockResult: DotActionBulkResult = {
             skippedCount: 1,
             successCount: 2,
             fails: []
         };
-        dotWorkflowActionsFireService.bulkFire(mockBulkOptions).subscribe((res) => {
+
+        spectator.service.bulkFire(mockBulkOptions).subscribe((res) => {
             expect(res).toEqual(mockResult);
+            done();
         });
 
-        const req = httpMock.expectOne('/api/v1/workflow/contentlet/actions/bulk/fire');
-        expect(req.request.method).toBe('PUT');
+        const req = spectator.expectOne(
+            '/api/v1/workflow/contentlet/actions/bulk/fire',
+            HttpMethod.PUT
+        );
         req.flush({
             entity: mockResult
         });
     });
 
     afterEach(() => {
-        httpMock.verify();
+        spectator.controller.verify();
     });
 });

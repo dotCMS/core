@@ -6,8 +6,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotContentTypeService } from '@dotcms/data-access';
+import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
 import {

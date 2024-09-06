@@ -20,7 +20,7 @@ export default {
         max: '',
         step: '',
         dateLabel: '',
-        timeLabel: '',
+        timeLabel: ''
     }
 };
 

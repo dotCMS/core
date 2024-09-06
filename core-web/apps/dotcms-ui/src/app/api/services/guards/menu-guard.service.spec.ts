@@ -1,11 +1,13 @@
+import { mockProvider } from '@ngneat/spectator';
 import { of as observableOf } from 'rxjs';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotRouterService, DotSessionStorageService } from '@dotcms/data-access';
 
 import { MenuGuardService } from './menu-guard.service';
 
@@ -27,24 +29,35 @@ describe('ValidMenuGuardService', () => {
     let menuGuardService: MenuGuardService;
     let dotMenuService: DotMenuService;
     let dotNavigationService: DotNavigationService;
+    let dotRouterService: DotRouterService;
     let mockRouterStateSnapshot: RouterStateSnapshot;
     let mockActivatedRouteSnapshot: ActivatedRouteSnapshot;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
             providers: [
                 MenuGuardService,
+                {
+                    provide: DotRouterService,
+                    useValue: {
+                        getPortletId: () => 'test',
+                        isJSPPortletURL: () => false
+                    }
+                },
                 { provide: DotMenuService, useClass: MockDotMenuService },
                 {
                     provide: DotNavigationService,
                     useClass: MockDotNavigationService
-                }
+                },
+                mockProvider(DotSessionStorageService)
             ]
         });
 
-        menuGuardService = TestBed.get(MenuGuardService);
-        dotMenuService = TestBed.get(DotMenuService);
-        dotNavigationService = TestBed.get(DotNavigationService);
+        menuGuardService = TestBed.inject(MenuGuardService);
+        dotMenuService = TestBed.inject(DotMenuService);
+        dotRouterService = TestBed.inject(DotRouterService);
+        dotNavigationService = TestBed.inject(DotNavigationService);
         mockRouterStateSnapshot = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', [
             'toString'
         ]);
@@ -61,7 +74,7 @@ describe('ValidMenuGuardService', () => {
         menuGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
-        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test');
+        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test', false);
         expect(result).toBe(true);
     });
 
@@ -72,7 +85,7 @@ describe('ValidMenuGuardService', () => {
         menuGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
-        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test');
+        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test', false);
         expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
         expect(result).toBe(false);
     });
@@ -84,7 +97,7 @@ describe('ValidMenuGuardService', () => {
         menuGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
-        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test');
+        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test', false);
         expect(result).toBe(true);
     });
 
@@ -95,8 +108,43 @@ describe('ValidMenuGuardService', () => {
         menuGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
-        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test');
+        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test', false);
         expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
         expect(result).toBe(false);
+    });
+
+    describe('JSPPortlet', () => {
+        beforeEach(() => {
+            spyOn(dotRouterService, 'isJSPPortletURL').and.returnValue(true);
+            mockRouterStateSnapshot.url = '/c/test';
+        });
+
+        it('should allow children access to Menu Portlets if JSPPortlet is in menu', (done) => {
+            const spy = spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(
+                observableOf(true)
+            );
+            menuGuardService
+                .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
+                .subscribe((res) => {
+                    expect(res).toBe(true);
+                    done();
+                });
+            expect(spy).toHaveBeenCalledWith('test', true);
+            expect(dotNavigationService.goToFirstPortlet).not.toHaveBeenCalled();
+        });
+
+        it('should prevent children access to Menu Portlets if JSPPortlet is in menu', (done) => {
+            const spy = spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(
+                observableOf(false)
+            );
+            menuGuardService
+                .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
+                .subscribe((res) => {
+                    expect(res).toBe(false);
+                    done();
+                });
+            expect(spy).toHaveBeenCalledWith('test', true);
+            expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
+        });
     });
 });

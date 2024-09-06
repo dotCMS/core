@@ -9,7 +9,9 @@ import { DotRemoveConfirmPopupWithEscapeDirective } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-escape-confirm-popup-host',
-    template: `<p-confirmPopup dotRemoveConfirmPopupWithEscape></p-confirmPopup>`,
+    template: `
+        <p-confirmPopup dotRemoveConfirmPopupWithEscape></p-confirmPopup>
+    `,
     imports: [ConfirmPopupModule]
 })
 class CustomHostComponent {}

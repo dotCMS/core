@@ -1,18 +1,21 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
+import { DeferModule } from 'primeng/defer';
+import { TableModule } from 'primeng/table';
+import { ToastModule } from 'primeng/toast';
 
 export interface Car {
-    vin?;
-    year?;
-    brand?;
-    color?;
-    price?;
-    saleDate?;
+    vin: string;
+    year: number;
+    brand: string;
+    color: string;
 }
 
 @Component({
     selector: 'dot-p-defer',
+    standalone: true,
+    imports: [ToastModule, TableModule, DeferModule],
     template: `
         <div style="height:1200px">Table is not loaded yet, scroll down to initialize it.</div>
 
@@ -43,7 +46,7 @@ export interface Car {
     `
 })
 export class DeferComponent {
-    cars: [];
+    @Input() cars: Car[] = [];
 
     constructor(private messageService: MessageService) {}
 

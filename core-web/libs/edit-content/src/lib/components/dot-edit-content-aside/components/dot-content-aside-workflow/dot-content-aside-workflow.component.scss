@@ -1,0 +1,35 @@
+@use "variables" as *;
+@import "mixins";
+
+.content-aside__workflow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-1 $spacing-3;
+    padding: $spacing-1 $spacing-4;
+    overflow: hidden;
+    margin: 0;
+
+    dd,
+    dt {
+        margin: 0;
+    }
+}
+
+.workflow-column__title {
+    font-weight: $font-weight-medium-bold;
+}
+
+.item__description {
+    color: $color-palette-gray-800;
+    margin: 0;
+}
+
+.workflow-column__title,
+.workflow-column__description {
+    color: $black;
+    height: 32px;
+    font-size: $font-size-sm;
+    line-height: $line-height;
+    width: 100%;
+    @include truncate-text;
+}

@@ -17,22 +17,24 @@ import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotESContentService,
     DotEventsService,
+    DotHttpErrorManagerService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
-    DotPropertiesService
+    DotPropertiesService,
+    DotRouterService,
+    DotSessionStorageService,
+    DotGlobalMessageService,
+    DotIframeService,
+    DotFormatDateService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -55,7 +57,7 @@ import {
     ESContent,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -69,14 +71,12 @@ import {
     mockUser,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
 import { dotVariantDataMock } from '@portlets/dot-edit-page/seo/components/dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component.spec';
 import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
 
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 
-import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
@@ -162,7 +162,7 @@ describe('DotEditPageToolbarComponent', () => {
                 DotEditPageStateControllerModule,
                 DotEditPageInfoModule,
                 DotEditPageWorkflowsActionsModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 DotWizardModule,
                 TooltipModule,
@@ -176,6 +176,7 @@ describe('DotEditPageToolbarComponent', () => {
                 ])
             ],
             providers: [
+                DotSessionStorageService,
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
                 {
                     provide: DotMessageService,

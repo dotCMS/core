@@ -235,8 +235,7 @@ export class DotBinaryFileComponent {
                     label={this.label}
                     required={this.required}
                     name={this.name}
-                    tabindex="0"
-                >
+                    tabindex="0">
                     {this.previewImageName ? (
                         <dot-binary-file-preview
                             onClick={(e: MouseEvent) => {

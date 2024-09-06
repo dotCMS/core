@@ -5,10 +5,12 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
@@ -111,10 +113,13 @@ public class PersonalizationResource {
             return Response.status(Status.FORBIDDEN).build();
         }
 
+        final String newPersonalization = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON +
+                personalizationPersonaPageForm.getPersonaTag();
+        final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+
         return Response.ok(new ResponseEntityView<>(
                         this.multiTreeAPI.copyPersonalizationForPage(
-                            personalizationPersonaPageForm.getPageId(),
-                            Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personalizationPersonaPageForm.getPersonaTag())
+                            personalizationPersonaPageForm.getPageId(), newPersonalization, currentVariantId)
                         )).build();
     } // personalizePageContainers
 
@@ -160,7 +165,10 @@ public class PersonalizationResource {
             return Response.status(Status.FORBIDDEN).build();
         }
 
-        this.multiTreeAPI.deletePersonalizationForPage(pageId, Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personalization);
+        final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+        this.multiTreeAPI.deletePersonalizationForPage(pageId,
+                Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personalization,
+                currentVariantId);
 
         return Response.ok(new ResponseEntityView("OK")).build();
     } // personalizePageContainers

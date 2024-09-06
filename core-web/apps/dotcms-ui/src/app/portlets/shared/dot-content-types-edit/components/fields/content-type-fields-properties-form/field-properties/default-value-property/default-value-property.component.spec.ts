@@ -8,11 +8,9 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DotFieldValidationMessageComponent } from '@components/_common/dot-field-validation-message/dot-field-validation-message';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFieldValidationMessageComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DefaultValuePropertyComponent } from './index';
 
@@ -30,8 +28,13 @@ describe('DefaultValuePropertyComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DefaultValuePropertyComponent, DotFieldValidationMessageComponent],
-            imports: [ReactiveFormsModule, DotPipesModule, DotMessagePipe],
+            declarations: [DefaultValuePropertyComponent],
+            imports: [
+                ReactiveFormsModule,
+                DotSafeHtmlPipe,
+                DotMessagePipe,
+                DotFieldValidationMessageComponent
+            ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
 

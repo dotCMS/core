@@ -1,14 +1,18 @@
-import { WebSocketProtocol } from './websockets-protocol';
-import { Protocol } from './protocol';
-import { LoggerService } from '../logger.service';
+import { Subject, Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
+import { tap, pluck } from 'rxjs/operators';
+
 import { LongPollingProtocol } from './long-polling-protocol';
+import { DotEventMessage } from './models/dot-event-message';
+import { DotEventsSocketURL } from './models/dot-event-socket-url';
+import { Protocol } from './protocol';
+import { WebSocketProtocol } from './websockets-protocol';
+
 import { CoreWebService } from '../core-web.service';
 import { ConfigParams, DotcmsConfigService, WebSocketConfigParams } from '../dotcms-config.service';
-import { Subject, Observable } from 'rxjs';
-import { DotEventsSocketURL } from './models/dot-event-socket-url';
-import { DotEventMessage } from './models/dot-event-message';
-import { Injectable } from '@angular/core';
-import { tap, pluck } from 'rxjs/operators';
+import { LoggerService } from '../logger.service';
 
 enum ConnectionStatus {
     NONE,

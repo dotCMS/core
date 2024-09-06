@@ -141,14 +141,12 @@ export class DotMultiSelectComponent {
                         class={getErrorClass(this.status.dotValid)}
                         id={getId(this.name)}
                         disabled={this.shouldBeDisabled()}
-                        onChange={() => this.setValue()}
-                    >
+                        onChange={() => this.setValue()}>
                         {this._options.map((item: DotOption) => {
                             return (
                                 <option
                                     selected={this.value === item.value ? true : null}
-                                    value={item.value}
-                                >
+                                    value={item.value}>
                                     {item.label}
                                 </option>
                             );

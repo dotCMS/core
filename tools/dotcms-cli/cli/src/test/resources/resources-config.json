@@ -1,0 +1,16 @@
+{
+  "resources": [
+    {
+      "pattern": ".*\\.dylib$"
+    },
+    {
+      "pattern": ".*\\.so$"
+    },
+    {
+      "pattern": ".*\\.dll$"
+    },
+    {
+      "pattern": "(.*\\/)?build\\.properties$"
+    }
+  ]
+}

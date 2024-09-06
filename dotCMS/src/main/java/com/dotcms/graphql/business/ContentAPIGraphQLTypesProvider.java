@@ -46,6 +46,7 @@ import com.dotcms.graphql.exception.FieldGenerationException;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
+import com.dotcms.util.LowerKeyMap;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
@@ -56,6 +57,7 @@ import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
@@ -70,6 +72,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * This singleton class provides all the {@link GraphQLType}s needed for the Content Delivery API
@@ -130,10 +133,10 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     private void fillTypesMap() throws DotDataException {
         typesMap.clear();
         // we want to generate them always - no cache
-        Set<GraphQLType> contentAPITypes = getContentAPITypes();
+        final Set<GraphQLType> contentAPITypes = getContentAPITypes();
 
         for (GraphQLType graphQLType : contentAPITypes) {
-            typesMap.put(graphQLType.getName(), graphQLType);
+            typesMap.put(TypeUtil.getName(graphQLType), graphQLType);
         }
     }
 
@@ -146,7 +149,8 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
     private Set<GraphQLType> getContentAPITypes() throws DotDataException {
 
-        Set<GraphQLType> contentAPITypes = new HashSet<>(InterfaceType.valuesAsSet());
+        Logger.debug(this, ()-> "Getting all Content Types for GraphQL Schema");
+        final Set<GraphQLType> contentAPITypes = new HashSet<>(InterfaceType.valuesAsSet());
 
         contentAPITypes.addAll(CustomFieldType.getCustomFieldTypes());
 
@@ -164,6 +168,8 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
         allTypes.forEach((type) -> {
             try {
+
+                Logger.debug(this, ()-> "Generating GraphQL Type for type: " + type.variable());
                 contentAPITypes.add(createType(type));
             }catch (IllegalArgumentException e) {
                 Logger.error(this, "Unable to generate GraphQL Type for type: " + type.variable());
@@ -205,6 +211,9 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
             if (!(field instanceof RowField) && !(field instanceof ColumnField)) {
                 try {
+
+                    Logger.debug(this, ()-> "Generating GraphQL Field for field: " + field.variable()
+                            + " of type: " + contentType.variable());
                     fieldDefinitions.add(fieldGeneratorFactory.getGenerator(field).generateField(field));
                 } catch(FieldGenerationException e) {
                     Logger.error(this, "Unable to generate GraphQL Field for field: " + field.variable(), e);
@@ -217,7 +226,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 .argument(GraphQLArgument.newArgument()
                         .name("render")
                         .type(GraphQLBoolean)
-                        .defaultValue(null)
+                        .defaultValueProgrammatic(null)
                         .build())
                 .type(ExtendedScalars.Json)
                 .dataFetcher(new DotJSONDataFetcher()).build());
@@ -266,23 +275,26 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
      * @return
      */
     public boolean isFieldVariableGraphQLCompatible(final String variable, final Field field) {
+        final Map<String, TypeUtil.TypeFetcher> lowerNewFieldMap = new LowerKeyMap<>();
+        // making the keys lowercase
+        lowerNewFieldMap.putAll(ContentFields.getContentFields());
+
         // first let's check if there's an inherited field with the same variable
-        if (ContentFields.getContentFields().containsKey(variable)) {
-            // now let's check if the graphql types are compatible
+            if (lowerNewFieldMap.containsKey(variable.toLowerCase())) {
+                // now let's check if the graphql types are compatible
 
-            // get inherited field's graphql type
-            final GraphQLType inheritedFieldGraphQLType = ContentFields.getContentFields()
-                    .get(variable).getType();
+                // get inherited field's graphql type
+                final GraphQLType inheritedFieldGraphQLType = lowerNewFieldMap.get(variable).getType();
 
-            // get new field's type
-            final GraphQLType fieldGraphQLType = getGraphqlTypeForFieldClass(field.type(), field);
+                // get new field's type
+                final GraphQLType fieldGraphQLType = getGraphqlTypeForFieldClass(field.type(), field);
 
-            // if at least one of them is a custom type, they need to be equal to be compatible
-            return (!isCustomFieldType(inheritedFieldGraphQLType)
-                    && !isCustomFieldType(fieldGraphQLType))
-                    || inheritedFieldGraphQLType.equals(fieldGraphQLType)
-                    || inheritedFieldGraphQLType.getName().equals(fieldGraphQLType.getName());
-        }
+                // if at least one of them is a custom type, they need to be equal to be compatible
+                return (!isCustomFieldType(inheritedFieldGraphQLType)
+                        && !isCustomFieldType(fieldGraphQLType))
+                        || inheritedFieldGraphQLType.equals(fieldGraphQLType)
+                        || TypeUtil.getName(inheritedFieldGraphQLType).equals(TypeUtil.getName(fieldGraphQLType));
+            }
 
         return true;
     }
@@ -292,4 +304,6 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
             GraphQLFieldGeneratorFactory fieldGeneratorFactory) {
         this.fieldGeneratorFactory = fieldGeneratorFactory;
     }
+
+
 }

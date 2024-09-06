@@ -170,10 +170,10 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
                                 if (typeof payload === 'string')
                                     return (
                                         // This method returns true if it was able to set the youtube video
-                                        chain().setYoutubeVideo({ src: payload }).run() ||
-                                        chain().insertVideo(payload, position).run()
+                                        chain().setYoutubeVideo?.({ src: payload }).run() ||
+                                        chain().insertVideo?.(payload, position).run()
                                     );
-                                else return chain().insertVideo(payload, position).run();
+                                else return chain().insertVideo?.(payload, position).run();
                             }
 
                             case 'image':
@@ -193,7 +193,7 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
                             onStart,
                             onHide,
                             onDestroy
-                        } as RenderProps)
+                        }) as RenderProps
                 })
             ];
         }

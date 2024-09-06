@@ -1,23 +1,23 @@
 @use "variables" as *;
 
 .p-tooltip .p-tooltip-text {
-    background: $color-palette-gray-900;
-    color: $white;
-    padding: $spacing-2 $spacing-3;
-    font-size: 1rem;
-    box-shadow: none;
-    border-radius: $border-radius-xs;
+    background: $white;
+    box-shadow: $shadow-m;
+    padding: $spacing-1 $spacing-3;
+    font-size: $font-size-sm;
+    line-height: 140%;
+    border-radius: $border-radius-md;
 }
 
 .p-tooltip.p-tooltip-right .p-tooltip-arrow {
-    border-right-color: $color-palette-gray-900;
+    border-right-color: $white;
 }
 .p-tooltip.p-tooltip-left .p-tooltip-arrow {
-    border-left-color: $color-palette-gray-900;
+    border-left-color: $white;
 }
 .p-tooltip.p-tooltip-top .p-tooltip-arrow {
-    border-top-color: $color-palette-gray-900;
+    border-top-color: $white;
 }
 .p-tooltip.p-tooltip-bottom .p-tooltip-arrow {
-    border-bottom-color: $color-palette-gray-900;
+    border-bottom-color: $white;
 }

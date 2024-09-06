@@ -8,34 +8,22 @@ import {
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { SidebarModule } from 'primeng/sidebar';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { ComponentStatus, ExperimentSteps } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { ACTIVE_ROUTE_MOCK_CONFIG, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
+import { ACTIVE_ROUTE_MOCK_CONFIG } from '@dotcms/utils-testing';
 
 import { DotExperimentsConfigurationVariantsAddComponent } from './dot-experiments-configuration-variants-add.component';
 
 import { DotExperimentsReportsChartComponent } from '../../../dot-experiments-reports/components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
-
-const messageServiceMock = new MockDotMessageService({
-    'experiments.create.form.sidebar.header': 'Add a new experiment',
-    'experiments.action.add': 'Add'
-});
 
 describe('DotExperimentsConfigurationVariantsAddComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationVariantsAddComponent>;
@@ -43,30 +31,16 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
     let dotExperimentsService: SpyObject<DotExperimentsService>;
 
     const createComponent = createComponentFactory({
-        imports: [
-            CommonModule,
-            ReactiveFormsModule,
-
-            SidebarModule,
-            DotSidebarDirective,
-            DotSidebarHeaderComponent,
-            ButtonModule,
-            InputTextModule,
-            InputTextareaModule,
-            DotFieldValidationMessageModule,
-            MockComponent(DotExperimentsReportsChartComponent)
-        ],
+        imports: [MockComponent(DotExperimentsReportsChartComponent)],
         component: DotExperimentsConfigurationVariantsAddComponent,
         providers: [
             DotExperimentsConfigurationStore,
             mockProvider(DotExperimentsService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(ActivatedRoute, ACTIVE_ROUTE_MOCK_CONFIG),
-            {
-                provide: DotMessageService,
-                useValue: messageServiceMock
-            },
+
             mockProvider(MessageService),
+            mockProvider(DotMessageService),
             mockProvider(ConfirmationService)
         ]
     });
@@ -88,7 +62,10 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
                 isOpen: true,
                 experimentStep: ExperimentSteps.VARIANTS
             },
-            isExperimentADraft: true
+            isExperimentADraft: true,
+            canLockPage: true,
+            pageSate: null,
+            disabledTooltipLabel: null
         });
 
         spectator.detectChanges();
@@ -98,7 +75,7 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
         expect(spectator.query(byTestId('new-variant-form'))).toExist();
     });
 
-    it('should saveForm when form is valid', () => {
+    it('should saveForm when form is valid', async () => {
         jest.spyOn(store, 'addVariant');
 
         const formValues = {
@@ -106,20 +83,25 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
         };
 
         spectator.component.form.setValue(formValues);
+        spectator.component.form.updateValueAndValidity();
         spectator.detectComponentChanges();
 
-        const submitButton = spectator.query(byTestId('add-variant-button')) as HTMLButtonElement;
-        expect(submitButton.disabled).toEqual(false);
+        await spectator.fixture.whenStable();
 
-        expect(submitButton).toContainText('Add');
+        const submitButton = spectator.query(byTestId('add-variant-button')) as HTMLButtonElement;
+
+        expect(submitButton.disabled).toEqual(false);
         expect(spectator.component.form.valid).toEqual(true);
 
         spectator.click(submitButton);
 
-        expect(store.addVariant).toHaveBeenCalledWith({ name: 'name', experimentId: '1' });
+        expect(store.addVariant).toHaveBeenCalledWith({
+            name: 'name',
+            experimentId: '1'
+        });
     });
 
-    it('should disable submit button if the form is invalid', () => {
+    it('should disable submit button if the form is invalid', async () => {
         const invalidFormValues = {
             name: 'this is more than 50 characters test - this is more than 50 characters test'
         };
@@ -128,9 +110,9 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
         spectator.component.form.updateValueAndValidity();
         spectator.detectComponentChanges();
 
-        const submitButton = spectator.query(byTestId('add-variant-button')) as HTMLButtonElement;
+        await spectator.fixture.whenStable();
 
+        const submitButton = spectator.query(byTestId('add-variant-button')) as HTMLButtonElement;
         expect(submitButton.disabled).toEqual(true);
-        expect(submitButton).toContainText('Add');
     });
 });

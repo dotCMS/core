@@ -1,29 +1,21 @@
 package com.dotcms.util.pagination;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.rest.api.v1.template.TemplateHelper;
 import com.dotcms.rest.api.v1.template.TemplateView;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.Versionable;
-import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
-import io.vavr.control.Try;
-import java.util.Map;
-import java.util.Optional;
 import org.junit.Test;
+
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * test {@link TemplatePaginator}
@@ -42,7 +34,7 @@ public class TemplatePaginatorTest {
         final int totalRecords = 10;
         final User user = mock(User.class);
         final String filter = "filter";
-        final Map<String, Object> params = map("filter", filter);
+        final Map<String, Object> params = Map.of("filter", filter);
         final String hostId = "1";
         final int offset = 5;
         final int limit = 10;
@@ -72,7 +64,7 @@ public class TemplatePaginatorTest {
         final TemplatePaginator templatePaginator = new TemplatePaginator(templateAPI, templateHelper);
 
         final PaginatedArrayList<TemplateView> templateViews = templatePaginator.getItems(user, filter, limit, offset, orderby,
-                OrderDirection.ASC, map(ContainerPaginator.HOST_PARAMETER_ID, host.getIdentifier()));
+                OrderDirection.ASC, Map.of(ContainerPaginator.HOST_PARAMETER_ID, host.getIdentifier()));
 
         assertEquals(totalRecords, templateViews.getTotalResults());
     }

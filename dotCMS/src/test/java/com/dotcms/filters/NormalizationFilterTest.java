@@ -1,6 +1,5 @@
 package com.dotcms.filters;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -13,15 +12,13 @@ import javax.servlet.http.HttpServletResponse;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import com.dotcms.UnitTestBase;
-import com.dotcms.ema.proxy.MockHttpCaptureResponse;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.MockHttpStatusResponse;
 
 public class NormalizationFilterTest extends UnitTestBase {
 
-    private final static NormalizationFilter normalizationFilter = new NormalizationFilter();
+    private static final NormalizationFilter normalizationFilter = new NormalizationFilter();
     private static HttpServletResponse mockResponse;
     private static HttpServletRequest mockRequest;
     private static FilterChain chain;

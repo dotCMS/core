@@ -1,0 +1,93 @@
+@use "variables" as *;
+
+:host ::ng-deep {
+    .p-accordion-tab:not(.p-accordion-tab-active) {
+        .p-toggleable-content {
+            height: 0;
+            overflow: hidden;
+        }
+    }
+
+    .p-accordion-tab.p-accordion-tab-active {
+        .p-toggleable-content {
+            height: auto;
+            overflow: auto;
+        }
+    }
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    justify-content: center;
+}
+
+.ai-image-prompt__input {
+    display: flex;
+    flex-direction: column;
+
+    > div {
+        display: flex;
+        align-items: center;
+    }
+
+    > span {
+        display: flex;
+        margin: $spacing-0 0 $spacing-1 $spacing-5;
+        font-size: $font-size-sm;
+        color: $color-palette-gray-700;
+        word-break: break-word;
+    }
+}
+
+.ai-image-prompt__text {
+    .field:last-child {
+        margin-bottom: 0;
+    }
+
+    .ai-image-prompt__textarea {
+        height: 23rem;
+    }
+
+    &.ai-image-prompt__text--generated {
+        .ai-image-prompt__textarea {
+            height: 6rem;
+        }
+
+        .ai-image-prompt__rewritten-textarea {
+            height: 14rem;
+        }
+    }
+}
+
+.ai-image-prompt__text-wrapper {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    .p-inputtext.p-inputtextarea {
+        padding: $spacing-1 $spacing-5 $spacing-1 $spacing-4;
+        min-height: $spacing-8;
+    }
+
+    dot-copy-button {
+        position: absolute;
+        right: $spacing-3;
+        bottom: $spacing-0;
+    }
+}
+
+.ai-image-prompt__orientation {
+    margin-bottom: 9rem;
+}
+
+.ai-image-prompt__rewritten-label {
+    display: flex;
+    gap: $spacing-1;
+    align-items: center;
+}
+
+p-accordion {
+    min-height: 37rem;
+}

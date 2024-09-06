@@ -35,7 +35,9 @@
     padding: 2px 6px 2px 4px;
     text-decoration: none;
     text-transform: uppercase;
-    transition: background-color 150ms ease, color 150ms ease;
+    transition:
+        background-color 150ms ease,
+        color 150ms ease;
 
     &:hover {
         background-color: $color-palette-secondary-500;

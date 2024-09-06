@@ -20,15 +20,15 @@ import {
 
 import { take, takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     dialogAction,
-    DotApps,
+    DotApp,
     DotAppsExportConfiguration,
     DotAppsImportConfiguration,
-    DotAppsSites
+    DotAppsSite,
+    DotDialogActions
 } from '@dotcms/dotcms-models';
 
 @Component({
@@ -39,8 +39,8 @@ import {
 export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy {
     @ViewChild('importFile') importFile: ElementRef;
     @Input() action?: string;
-    @Input() app?: DotApps;
-    @Input() site?: DotAppsSites;
+    @Input() app?: DotApp;
+    @Input() site?: DotAppsSite;
     @Input() show? = false;
     @Output() resolved: EventEmitter<boolean> = new EventEmitter();
     @Output() shutdown: EventEmitter<boolean> = new EventEmitter();
@@ -195,7 +195,7 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
     private getAllKeySitesConfig(): { [key: string]: string[] } {
         const keySitesConf = {};
         if (this.app) {
-            this.app.sites.forEach((site: DotAppsSites) => {
+            this.app.sites.forEach((site: DotAppsSite) => {
                 if (site.configured) {
                     keySitesConf[site.id] = [this.app.key];
                 }

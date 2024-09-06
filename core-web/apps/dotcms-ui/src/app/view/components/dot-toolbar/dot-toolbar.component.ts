@@ -1,9 +1,9 @@
 import { BehaviorSubject } from 'rxjs';
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, inject, Input, OnInit } from '@angular/core';
 
 import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService, Site, SiteService } from '@dotcms/dotcms-js';
 
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
@@ -15,14 +15,15 @@ import { DotNavigationService } from '../dot-navigation/services/dot-navigation.
     templateUrl: './dot-toolbar.component.html'
 })
 export class DotToolbarComponent implements OnInit {
+    readonly #dotNavLogoService = inject(DotNavLogoService);
+
     @Input()
     collapsed: boolean;
-    logo$: BehaviorSubject<string> = this.dotNavLogoService.navBarLogo$;
+    logo$: BehaviorSubject<string> = this.#dotNavLogoService.navBarLogo$;
 
     constructor(
         private dotRouterService: DotRouterService,
         private dotcmsEventsService: DotcmsEventsService,
-        private dotNavLogoService: DotNavLogoService,
         private siteService: SiteService,
         public dotNavigationService: DotNavigationService,
         public iframeOverlayService: IframeOverlayService

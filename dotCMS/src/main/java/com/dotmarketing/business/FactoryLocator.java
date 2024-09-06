@@ -22,6 +22,8 @@ import com.dotcms.enterprise.linkchecker.LinkCheckerFactoryImpl;
 import com.dotcms.enterprise.rules.RulesFactory;
 import com.dotcms.experiments.business.ExperimentsFactory;
 import com.dotcms.experiments.business.ExperimentsFactoryImpl;
+import com.dotcms.languagevariable.business.LanguageVariableFactory;
+import com.dotcms.languagevariable.business.LanguageVariableFactoryImpl;
 import com.dotcms.notifications.business.NotificationFactory;
 import com.dotcms.notifications.business.NotificationFactoryImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsFactory;
@@ -268,6 +270,14 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (CubeJSClientFactory) getInstance(FactoryIndex.CUBEJS_CLIENT_FACTORY);
     }
 
+    /**
+     * Returns the Factory object that handles operations related to {@link LanguageVariable} in dotCMS.
+     * @return
+     */
+    public static LanguageVariableFactory getLanguageVariableFactory() {
+        return (LanguageVariableFactory) getInstance(FactoryIndex.LANGUAGE_VARIABLE_FACTORY);
+    }
+
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -345,7 +355,9 @@ enum FactoryIndex
     VARIANT_FACTORY,
     EXPERIMENTS_FACTORY,
     SYSTEM_TABLE_FACTORY,
-    CUBEJS_CLIENT_FACTORY;
+    CUBEJS_CLIENT_FACTORY,
+    LANGUAGE_VARIABLE_FACTORY
+    ;
 
 	Object create() {
 		switch(this) {
@@ -384,10 +396,11 @@ enum FactoryIndex
             case TAG_FACTORY: return new TagFactoryImpl();
             case FileAsset_Factory: return new FileAssetFactoryImpl();
             case HOST_FACTORY : return new HostFactoryImpl();
-            case VARIANT_FACTORY:_FACTORY : return new VariantFactoryImpl();
+            case VARIANT_FACTORY : return new VariantFactoryImpl();
             case EXPERIMENTS_FACTORY: return new ExperimentsFactoryImpl();
             case SYSTEM_TABLE_FACTORY: return new SystemTableFactoryImpl();
             case CUBEJS_CLIENT_FACTORY: return new CubeJSClientFactoryImpl();
+            case LANGUAGE_VARIABLE_FACTORY: return new LanguageVariableFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

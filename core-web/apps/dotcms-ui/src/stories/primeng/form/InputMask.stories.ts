@@ -1,11 +1,15 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
+import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { InputMask, InputMaskModule } from 'primeng/inputmask';
 
-export default {
+const InputMaskTemplate = `<p-inputMask [(ngModel)]="val" mask="99-9999" placeholder="99-9999" />`;
+
+type Args = InputMask & { val: string };
+
+const meta: Meta<Args> = {
     title: 'PrimeNG/Form/InputText/InputMask',
     component: InputMask,
     parameters: {
@@ -18,38 +22,33 @@ export default {
     },
     decorators: [
         moduleMetadata({
-            imports: [InputMaskModule, BrowserAnimationsModule]
+            imports: [InputMaskModule, BrowserAnimationsModule, FormsModule]
         })
     ],
     args: {
         val: ''
-    }
-} as Meta;
-
-const InputMaskTemplate = `<p-inputMask [(ngModel)]="val" mask="99-9999" placeholder="99-9999"></p-inputMask>`;
-
-const Template: Story<InputMask> = (props: InputMask) => {
-    const template = InputMaskTemplate;
-
-    return {
-        props,
-        template
-    };
+    },
+    argTypes: {
+        val: {
+            name: 'val',
+            description: 'Input text'
+        }
+    },
+    render: (args) => ({
+        props: args,
+        template: InputMaskTemplate
+    })
 };
+export default meta;
 
-export const Basic: Story = Template.bind({});
+type Story = StoryObj<Args>;
 
-Basic.argTypes = {
-    val: {
-        name: 'val',
-        description: 'Input text'
-    }
-};
-
-Basic.parameters = {
-    docs: {
-        source: {
-            code: InputMaskTemplate
+export const Basic: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: InputMaskTemplate
+            }
         }
     }
 };

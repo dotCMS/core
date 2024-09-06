@@ -27,8 +27,7 @@ import java.util.concurrent.Callable;
                 SiteStart.class,
                 SiteStop.class,
                 SiteArchive.class,
-                SiteUnarchive.class,
-                SiteCurrent.class,
+                SiteUnarchive.class
         }
 )
 public class SiteCommand implements Callable<Integer>, DotCommand {

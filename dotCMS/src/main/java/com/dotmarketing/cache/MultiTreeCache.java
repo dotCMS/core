@@ -1,22 +1,24 @@
 package com.dotmarketing.cache;
 
 
+import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.variant.VariantAPI;
-import com.dotmarketing.business.Cachable;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheAdministrator;
-import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.*;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.PersonalizedContentlet;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Table;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
 /**
  * Provides the data structres used for caching Multi-Tree information in dotCMS.
@@ -31,6 +33,16 @@ public class MultiTreeCache implements Cachable {
     private static final String[] GROUPS = {LIVE_GROUP, WORKING_GROUP, CONTENTLET_REFERENCES_GROUP};
 
     private final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+    private final ExperimentsAPI experimentsAPI;
+
+    @VisibleForTesting
+    public MultiTreeCache(final ExperimentsAPI experimentsAPI){
+        this.experimentsAPI = experimentsAPI;
+    }
+
+    public MultiTreeCache(){
+        this(APILocator.getExperimentsAPI());
+    }
 
     @Override
     public String getPrimaryGroup() {
@@ -38,68 +50,87 @@ public class MultiTreeCache implements Cachable {
     }
 
 
+    private String getCacheKey(final String pageIdentifier, final String variantName){
+        return pageIdentifier + "_" + variantName;
+    }
+
     @SuppressWarnings("unchecked")
     public Optional<Table<String, String, Set<PersonalizedContentlet>>> getPageMultiTrees(
             final String pageIdentifier, final String variantName, final boolean live) {
-        final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
+        try{
+            final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
+            final String cacheKey = getCacheKey(pageIdentifier, variantName);
 
-        final Optional<Map<String, Table<String, String, Set<PersonalizedContentlet>>>> allPageMultiTress =
-                getMultiTreeMap(pageIdentifier, group);
+            final Table<String, String, Set<PersonalizedContentlet>> allPageMultiTress =
+                    (Table<String, String, Set<PersonalizedContentlet>>) cache.get(cacheKey, group);
 
-        return allPageMultiTress.isPresent() ? Optional.ofNullable(allPageMultiTress.get().get(variantName))
-                : Optional.empty();
-    }
-
-    private Optional<Map<String, Table<String, String, Set<PersonalizedContentlet>>>> getMultiTreeMap(
-            final String pageIdentifier, final String group) {
-
-        try {
-            return Optional.ofNullable((Map<String, Table<String, String, Set<PersonalizedContentlet>>>) cache.get(
-                            pageIdentifier, group));
+            return Optional.ofNullable(allPageMultiTress);
         } catch (final DotCacheException e) {
-            Logger.warn(this.getClass(), String.format("An error occurred when getting Multi-Tree cache data for page " +
-                    "ID '%s': %s", pageIdentifier, e.getMessage()));
+            Logger.warn(this.getClass(), String.format("An error occurred when getting Multi-Tree cache data for page ID '%s': %s",
+                    pageIdentifier, e.getMessage()));
             return Optional.empty();
         }
     }
 
+
     public void putPageMultiTrees(final String pageIdentifier, final String variantName,
-            final boolean live, final Table<String, String, Set<PersonalizedContentlet>> multiTreesToPut) {
+                                  final boolean live, final Table<String, String, Set<PersonalizedContentlet>> multiTreesToPut) {
         final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
-        final Map<String, Table<String, String, Set<PersonalizedContentlet>>> multiTreeMap =
-                getMultiTreeMap(pageIdentifier, group).orElseGet(() -> new HashMap<>());
+        final String cacheKey = getCacheKey(pageIdentifier, variantName);
 
-        multiTreeMap.put(variantName, multiTreesToPut);
-        cache.put(pageIdentifier, multiTreeMap, group);
+        cache.put(cacheKey, multiTreesToPut, group);
     }
-
 
     public void removePageMultiTrees(final String pageIdentifier, final String variantName, final boolean live) {
 
         final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
-        removePageMultiTrees(pageIdentifier, variantName, group);
+        final String cacheKey = getCacheKey(pageIdentifier, variantName);
+
+        cache.remove(cacheKey, group);
     }
 
     public void removePageMultiTrees(final String pageIdentifier) {
-        Arrays.asList(getGroups()).forEach(group -> cache.remove(pageIdentifier, group));
+        list(CONTENTLET_REFERENCES_GROUP).forEach(group -> cache.remove(pageIdentifier, group));
+
+        getVariants(pageIdentifier).stream().forEach(variantName ->
+                removeFromLiveAndWorking(pageIdentifier, variantName));
+
+    }
+
+    /**
+     * Return the Variant's name of the Experiments that are RUNNING, DRAFT or SCHEDULED on the same host.
+     * 'Experiment Active'
+     *
+     * @param pageIdentifier
+     * @return
+     */
+    private Collection<String> getVariants(final String pageIdentifier){
+        try {
+            final Collection<String> activeExperimentsVariants =  experimentsAPI.listActive(pageIdentifier).stream()
+                    .flatMap(experiment -> experiment.trafficProportion().variants().stream())
+                    .map(ExperimentVariant::id)
+                    .collect(Collectors.toList());
+
+            return Stream.concat(activeExperimentsVariants.stream(), Stream.of(DEFAULT_VARIANT.name()))
+                    .distinct()
+                    .collect(Collectors.toList());
+
+        } catch (DotDataException e) {
+            Logger.error(MultiTreeCache.class, e);
+            return Collections.emptyList();
+        }
     }
 
     public void removePageMultiTrees(final String pageIdentifier, final String variantName) {
-        Arrays.asList(getGroups()).forEach(group -> removePageMultiTrees(pageIdentifier, variantName, group));
+        cache.remove(pageIdentifier, CONTENTLET_REFERENCES_GROUP);
+        removeFromLiveAndWorking(pageIdentifier, variantName);
+
     }
 
-    public void removePageMultiTrees(final String pageIdentifier, final String variantName, final String group) {
-
-        final Map<String, Table<String, String, Set<PersonalizedContentlet>>> multiTreeMap =
-                getMultiTreeMap(pageIdentifier, group).orElseGet(() -> new HashMap<>());
-
-        multiTreeMap.remove(variantName);
-
-        if (multiTreeMap.isEmpty()) {
-            cache.remove(pageIdentifier, group);
-        } else {
-            cache.put(pageIdentifier, multiTreeMap, group);
-        }
+    private void removeFromLiveAndWorking(String pageIdentifier, String variantName) {
+        final String cacheKey = getCacheKey(pageIdentifier, variantName);
+        cache.remove(cacheKey, WORKING_GROUP);
+        cache.remove(cacheKey, LIVE_GROUP);
     }
 
     @Override
@@ -125,7 +156,7 @@ public class MultiTreeCache implements Cachable {
             return Optional.ofNullable((Integer) this.cache.get(contentletId, CONTENTLET_REFERENCES_GROUP));
         } catch (final DotCacheException e) {
             Logger.warn(this.getClass(), String.format("An error occurred when getting reference count for contentlet" +
-                                                               " ID '%s': %s", contentletId, e.getMessage()));
+                    " ID '%s': %s", contentletId, e.getMessage()));
             return Optional.empty();
         }
     }
@@ -149,12 +180,5 @@ public class MultiTreeCache implements Cachable {
      */
     public void removeContentletReferenceCount(final String contentletId) {
         this.cache.remove(contentletId, CONTENTLET_REFERENCES_GROUP);
-    }
-
-    public Collection<String> getVariantsInCache(final String pageId) {
-        return Arrays.stream(getGroups())
-                .flatMap(group -> getMultiTreeMap(pageId, group).stream())
-                .flatMap(map -> map.keySet().stream())
-                .collect(Collectors.toSet());
     }
 }

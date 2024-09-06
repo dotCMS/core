@@ -5,6 +5,8 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 
+import java.util.List;
+
 public abstract class IdentifierCache implements Cachable {
 
 	abstract protected void addIdentifierToCache(Identifier id);
@@ -69,5 +71,10 @@ public abstract class IdentifierCache implements Cachable {
 	public String get404Group() {
 	    return "Identifier404Cache";
 	}
+
+	public abstract void putContentVersionInfos(String identifier,
+												List<ContentletVersionInfo> cvis);
+
+	public abstract List<ContentletVersionInfo> getContentVersionInfos(String identifier);
 
 }

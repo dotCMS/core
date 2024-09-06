@@ -1,24 +1,20 @@
-<div class="field" [formGroup]="group">
+<div [formGroup]="group" class="field">
     <label dotFieldRequired for="categories">{{ 'categories' | dm }}</label>
     <dot-searchable-dropdown
-        id="categories"
-        #searchableDropdown
+        (filterChange)="handleFilterChange($event)"
+        (pageChange)="handlePageChange($event)"
         [data]="categoriesCurrentPage"
         [formControlName]="property.name"
         [pageLinkSize]="paginationService.maxLinksPage"
         [rows]="paginationService.paginationPerPage"
         [totalRecords]="paginationService.totalRecords"
-        (filterChange)="handleFilterChange($event)"
-        (pageChange)="handlePageChange($event)"
+        id="categories"
+        #searchableDropdown
         labelPropertyName="categoryName"
-        placeholder="{{ placeholder }}"
-        width="100%"
-    >
-    </dot-searchable-dropdown>
+        [placeholder]="placeholder"
+        width="100%" />
 
     <dot-field-validation-message
         [field]="group.controls[property.name]"
-        [message]="'contenttypes.field.properties.category.error.required' | dm"
-    >
-    </dot-field-validation-message>
+        [message]="'contenttypes.field.properties.category.error.required' | dm" />
 </div>

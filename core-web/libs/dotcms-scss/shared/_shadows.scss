@@ -1,8 +1,6 @@
 @use "./colors" as *;
 
-$md-shadow-1: 0 1px 3px $color-palette-black-op-10, 0 1px 2px $color-palette-black-op-20;
-$md-shadow-2: 0 3px 6px $color-palette-black-op-10, 0 3px 6px $color-palette-black-op-20;
-$md-shadow-3: 0 10px 24px 0 $color-palette-black-op-20;
-$md-shadow-4: 0 2px 4px 0 $color-palette-black-op-10;
-$md-shadow-5: 0 10px 20px 0 $color-palette-black-op-10;
-$md-shadow-6: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
+$shadow-xs: 0px 2px 8px 0px hsla(230, 13%, 9%, 0.02);
+$shadow-s: 0px 4px 8px 0px hsla(230, 13%, 9%, 0.06);
+$shadow-m: 0px 8px 16px 0px hsla(230, 13%, 9%, 0.08);
+$shadow-l: 0px 10px 18px 0px hsla(230, 13%, 9%, 0.1);

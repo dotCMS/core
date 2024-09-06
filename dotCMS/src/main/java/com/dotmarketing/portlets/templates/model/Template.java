@@ -1,22 +1,15 @@
 package com.dotmarketing.portlets.templates.model;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
+import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.links.model.Link;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -26,9 +19,15 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /** @author Hibernate CodeGenerator */
 @JsonIgnoreProperties(ignoreUnknown = true)

@@ -11,7 +11,8 @@ import {
     pIcon,
     quoteIcon,
     ulIcon,
-    listStarsIcon
+    listStarsIcon,
+    mountsStarsIcon
 } from '../components/suggestions/suggestion-icons';
 import { DotMenuItem } from '../components/suggestions/suggestions.component';
 
@@ -79,6 +80,11 @@ const block: DotMenuItem[] = [
         label: 'AI Content',
         icon: sanitizeUrl(listStarsIcon),
         id: 'aiContentPrompt'
+    },
+    {
+        label: 'AI Image',
+        icon: sanitizeUrl(mountsStarsIcon),
+        id: 'aiImagePrompt'
     },
     {
         label: 'Blockquote',

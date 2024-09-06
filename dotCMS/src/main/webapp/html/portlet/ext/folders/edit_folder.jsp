@@ -24,8 +24,8 @@
 <script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
 <script language="Javascript">
 
-dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
-dojo.require("dotcms.dojo.data.StructureReadStore");
+	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
+	dojo.require("dotcms.dojo.data.StructureReadStore");
 	function encode(str) {
 		var result = "";
 
@@ -39,19 +39,19 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 
 	var formName;
 	function save(formName) {
-        dijit.byId('processingDialog').show();
+		dijit.byId('processingDialog').show();
 		this.formName = formName;
 
 		var form = document.getElementById(this.formName);
 		form.cmd.value = '<%=com.liferay.portal.util.Constants.ADD%>';
-		if (document.getElementById("titleField")) {
-			var name = document.getElementById("titleField").value;
+		if (document.getElementById("nameField")) {
+			var name = document.getElementById("nameField").value;
 			if(typeof String.prototype.trim !== 'function') {
-				document.getElementById("titleField").value = name.replace(/^\s+|\s+$/g, '');
+				document.getElementById("nameField").value = name.replace(/^\s+|\s+$/g, '');
 			} else {
-				document.getElementById("titleField").value = name.trim();
+				document.getElementById("nameField").value = name.trim();
 			}
-			if (document.getElementById("titleField").value === ""){
+			if (document.getElementById("nameField").value === ""){
 				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.required.url")) %>');
 				dijit.byId('processingDialog').hide();
 				return false;
@@ -65,20 +65,22 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 		window.location.href = '<%=request.getParameter("referer")%>';
 	}
 
-	function beLazy(){
-		var titleField = document.getElementById("friendlyNameField");
-		var ele = document.getElementById("titleField");
+	function populateFolderNameAndFolderPath(){
+		var titleField = document.getElementById("titleField");
+		var nameField = document.getElementById("nameField");
 		var title = titleField.value;
 		title = title.replace(/^\s+/g, "");
 		title = title.replace(/\s/g, "-");
 		var arg=/[\+\%\&\!\"\'\#\$\/\\\=\?\�\�}\:\;\*\<\>\`\�\|]/g ;
 		title = title.replace(arg,"");
 		title = title.replace(/-{2,}/g, "-");
-		ele.value = title;
+		<% if(Config.getBooleanProperty("AUTOPOPULATE_FOLDER_NAME_FIELD",true)){ %>
+		nameField.value = title;
+		<% } %>
 		<% if (parentFolder != null) { %>
-		 	dojo.byId("pathToFolder").innerText = "<%= APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath() %>"+title;
+		dojo.byId("pathToFolder").innerText = "<%= APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath() %>"+title;
 		<% } else { %>
-		 	dojo.byId("pathToFolder").innerText = "/"+title;
+		dojo.byId("pathToFolder").innerText = "/"+title;
 		<% } %>
 	}
 
@@ -122,158 +124,155 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 
 
 <html:form action='/ext/folders/edit_folder' styleId="fm">
-<input name="<%= Constants.CMD %>" type="hidden" value="add">
-<html:hidden property="inode" />
-<html:hidden property="hostId" />
-<html:hidden property="path" />
-<input name="admin_g_list" type="hidden" value="">
-<input type="hidden" name="phostId" value="<%=parentHost != null?parentHost.getIdentifier():""%>">
-<input type="hidden" name="pfolderId" value="<%=parentFolder != null?parentFolder.getInode():""%>">
-<input type="hidden" name="referer" value="<%=request.getParameter("referer")%>">
-<input type="hidden" name="openNodes" value="<%=request.getParameter("openNodes")%>">
-<input type="hidden" name="view" value="<%=request.getParameter("view")%>">
-<input type="hidden" name="content" value="<%=request.getParameter("content")%>">
+	<input name="<%= Constants.CMD %>" type="hidden" value="add">
+	<html:hidden property="inode" />
+	<html:hidden property="hostId" />
+	<html:hidden property="path" />
+	<input name="admin_g_list" type="hidden" value="">
+	<input type="hidden" name="phostId" value="<%=parentHost != null?parentHost.getIdentifier():""%>">
+	<input type="hidden" name="pfolderId" value="<%=parentFolder != null?parentFolder.getInode():""%>">
+	<input type="hidden" name="referer" value="<%=request.getParameter("referer")%>">
+	<input type="hidden" name="openNodes" value="<%=request.getParameter("openNodes")%>">
+	<input type="hidden" name="view" value="<%=request.getParameter("view")%>">
+	<input type="hidden" name="content" value="<%=request.getParameter("content")%>">
 
 
-<liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
-<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"edit-folder\") %>" />
+	<liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
+		<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"edit-folder\") %>" />
 
-<div class="portlet-main">
+		<div class="portlet-main">
 
-	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
+			<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
-	<!-- START basic properties -->
-		<div id="folderPropertiesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>" onShow="showEditButtonsRow()" >
-			<div class="form-horizontal">
+				<!-- START basic properties -->
+				<div id="folderPropertiesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>" onShow="showEditButtonsRow()" >
+					<div class="form-horizontal">
 
-				<% if (InodeUtils.isSet(folder.getInode())) { %>
-					<dl>
-						<dt><%= LanguageUtil.get(pageContext, "Identity") %></dt>
-						<dd><%= folder.getInode() %></dd>
-					</dl>
-				<%}%>
+						<% if (InodeUtils.isSet(folder.getInode())) { %>
+						<dl>
+							<dt><%= LanguageUtil.get(pageContext, "Identity") %></dt>
+							<dd><%= folder.getInode() %></dd>
+						</dl>
+						<%}%>
 
-				<dl>
-					<%if(InodeUtils.isSet(folder.getInode())){%>
-						<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %></dt>
-						<dd style="width:80%">
-							<% if (parentFolder != null) { %>
-								<div id="pathToFolder" style="word-break: break-all;"><%= APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath() %><%= folder.getName() %></div>
-							<% } else { %>
-								<div id="pathToFolder" style="word-break: break-all;">/<%= folder.getName() %></div>
-							<% } %>
-							<!--<html:hidden property="name" />-->
-						</dd>
-					<%}else{%>
-						<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %>:</dt>
+						<dl>
+							<%if(InodeUtils.isSet(folder.getInode())){%>
+							<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %></dt>
 							<dd style="width:80%">
 								<% if (parentFolder != null) { %>
-									<div id="pathToFolder" style="word-break: break-all;"><%= APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath() %></div>
+								<div id="pathToFolder" style="word-break: break-all;"><%= APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath() %><%= folder.getName() %></div>
 								<% } else { %>
-									<div id="pathToFolder" style="word-break: break-all;">/</div>
+								<div id="pathToFolder" style="word-break: break-all;">/<%= folder.getName() %></div>
 								<% } %>
-								<!--<html:hidden property="name" />-->
 							</dd>
-					<%}%>
-				</dl>
-				<dl>
-					<dt><label for="friendlyNameField"><%= LanguageUtil.get(pageContext, "Title") %></label></dt>
-					<dd><input type="text" dojoType="dijit.form.TextBox"  onchange="beLazy();" style="width:250px" name="title"  id="friendlyNameField" value="<%= UtilMethods.isSet(folder.getTitle()) ? UtilMethods.escapeDoubleQuotes(folder.getTitle()) : "" %>" /></dd>
-				</dl>
-				<dl>
-					<dt>
-						<label for="titleField" class="required">
-							<%= LanguageUtil.get(pageContext, "Name-URL") %>
-						</label>
-					</dt>
-					<dd><input type="text" dojoType="dijit.form.TextBox"   style="width:250px" name="name"  id="titleField" value="<%= UtilMethods.isSet(folder.getName()) ? UtilMethods.escapeDoubleQuotes(folder.getName()) : "" %>" /></dd>
-				</dl>
-				<dl>
-					<dt><label for="sortOrder"><%= LanguageUtil.get(pageContext, "Sort-Order") %></label></dt>
-					<dd><input type="text" dojoType="dijit.form.TextBox" id="sortOrder"  style="width:60px" name="sortOrder"  value="<%= UtilMethods.isSet(folder.getSortOrder()+"") ? UtilMethods.escapeDoubleQuotes(folder.getSortOrder()+"") : "" %>" /></dd>
-				</dl>
-				<dl>
-					<dt><label for="showOnMenu"><%= LanguageUtil.get(pageContext, "Show-on-Menu") %></label></dt>
-					<dd><input type="checkbox" dojoType="dijit.form.CheckBox" id="showOnMenu" name="showOnMenu"  <%if(folder.isShowOnMenu()){ %> checked="checked" <% } %>/></dd>
-				</dl>
-				<dl>
-					<dt><label for="filesMasks"><%= LanguageUtil.get(pageContext, "Allowed-File-Extensions") %></label></dt>
-					<dd>
-						<input type="text" dojoType="dijit.form.TextBox" id="filesMasks" style="width:250px" name="filesMasks"  value="<%= UtilMethods.isSet(folder.getFilesMasks()) ? UtilMethods.escapeDoubleQuotes(folder.getFilesMasks()) : "" %>" />
-						<div class="hint-text" >(<%= LanguageUtil.get(pageContext, "a-comma-separated-list") %>)</div>
-					</dd>
-				</dl>
-				<dl>
-					<dt>
-						<label for="defaultFileType" class="required">
-							<%= LanguageUtil.get(pageContext, "Default-File-Structure-Type") %>:</dt>
-						</label>
-					<dd>
-						<span dojoType="dotcms.dojo.data.StructureReadStore" jsId="fileAssetStructureStore" dojoId="fileAssetStructureStoreDojo" structureType="<%=Structure.STRUCTURE_TYPE_FILEASSET %>" ></span>
-						<select id="defaultFileType"
-								name="defaultFileType"
-								dojoType="dijit.form.FilteringSelect"
-								style="width:200px;"
-								store="fileAssetStructureStore"
-								searchDelay="300"
-								pageSize="15"
-								autoComplete="false"
-								ignoreCase="true"
-								labelAttr="name"
-								searchAttr="name"
-								value="<%=InodeUtils.isSet(folder.getInode())?folder.getDefaultFileType():(parentFolder!=null?parentFolder.getDefaultFileType():defaultFileAssetStructure.getInode()) %>"
-							    invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
-						</select>
-					</dd>
-				</dl>
+							<%}else{%>
+							<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %>:</dt>
+							<dd style="width:80%">
+								<% if (parentFolder != null) { %>
+								<div id="pathToFolder" style="word-break: break-all;"><%= APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath() %></div>
+								<% } else { %>
+								<div id="pathToFolder" style="word-break: break-all;">/</div>
+								<% } %>
+							</dd>
+							<%}%>
+						</dl>
+						<dl>
+							<dt><label for="titleField"><%= LanguageUtil.get(pageContext, "Title") %></label></dt>
+							<dd><input type="text" dojoType="dijit.form.TextBox"  onchange="populateFolderNameAndFolderPath();" style="width:250px" name="title"  id="titleField" value="<%= UtilMethods.isSet(folder.getTitle()) ? UtilMethods.escapeDoubleQuotes(folder.getTitle()) : "" %>" /></dd>
+						</dl>
+						<dl>
+							<dt>
+								<label for="nameField" class="required">
+									<%= LanguageUtil.get(pageContext, "Name-URL") %>
+								</label>
+							</dt>
+							<dd><input type="text" dojoType="dijit.form.TextBox"   style="width:250px" name="name"  id="nameField" value="<%= UtilMethods.isSet(folder.getName()) ? UtilMethods.escapeDoubleQuotes(folder.getName()) : "" %>" /></dd>
+						</dl>
+						<dl>
+							<dt><label for="sortOrder"><%= LanguageUtil.get(pageContext, "Sort-Order") %></label></dt>
+							<dd><input type="text" dojoType="dijit.form.TextBox" id="sortOrder"  style="width:60px" name="sortOrder"  value="<%= UtilMethods.isSet(folder.getSortOrder()+"") ? UtilMethods.escapeDoubleQuotes(folder.getSortOrder()+"") : "" %>" /></dd>
+						</dl>
+						<dl>
+							<dt><label for="showOnMenu"><%= LanguageUtil.get(pageContext, "Show-on-Menu") %></label></dt>
+							<dd><input type="checkbox" dojoType="dijit.form.CheckBox" id="showOnMenu" name="showOnMenu"  <%if(folder.isShowOnMenu()){ %> checked="checked" <% } %>/></dd>
+						</dl>
+						<dl>
+							<dt><label for="filesMasks"><%= LanguageUtil.get(pageContext, "Allowed-File-Extensions") %></label></dt>
+							<dd>
+								<input type="text" dojoType="dijit.form.TextBox" id="filesMasks" style="width:250px" name="filesMasks"  value="<%= UtilMethods.isSet(folder.getFilesMasks()) ? UtilMethods.escapeDoubleQuotes(folder.getFilesMasks()) : "" %>" />
+								<div class="hint-text" >(<%= LanguageUtil.get(pageContext, "a-comma-separated-list") %>)</div>
+							</dd>
+						</dl>
+						<dl>
+							<dt>
+								<label for="defaultFileType" class="required">
+											<%= LanguageUtil.get(pageContext, "Default-File-Structure-Type") %>:</dt>
+							</label>
+							<dd>
+								<span dojoType="dotcms.dojo.data.StructureReadStore" jsId="fileAssetStructureStore" dojoId="fileAssetStructureStoreDojo" structureType="<%=Structure.STRUCTURE_TYPE_FILEASSET %>" ></span>
+								<select id="defaultFileType"
+										name="defaultFileType"
+										dojoType="dijit.form.FilteringSelect"
+										style="width:200px;"
+										store="fileAssetStructureStore"
+										searchDelay="300"
+										pageSize="15"
+										ignoreCase="true"
+										labelAttr="name"
+										searchAttr="name"
+										value="<%=InodeUtils.isSet(folder.getInode())?folder.getDefaultFileType():(parentFolder!=null?parentFolder.getDefaultFileType():defaultFileAssetStructure.getInode()) %>"
+										invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
+								</select>
+							</dd>
+						</dl>
+					</div>
+
+					<!-- START Buttons -->
+					<div class="buttonRow" id="editFolderButtonRow">
+						<button dojoType="dijit.form.Button" onClick="goBack();" class="dijitButtonFlat" type="button">
+							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+						</button>
+						<button dojoType="dijit.form.Button" onClick="save('fm');" type="button">
+							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save" )) %>
+						</button>
+					</div>
+					<!-- END Buttons -->
+				</div>
+				<!-- END HostVariables -->
+
+				<!-- START permissions -->
+				<%
+					PermissionAPI perAPI = APILocator.getPermissionAPI();
+
+					if (UtilMethods.isSet(folder.getIdentifier()) &&
+							perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
+									user)) {
+				%>
+				<div id="permissionsTab" refreshOnShow="true" preload="true"  dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="hideEditButtonsRow()" >
+					<%
+						request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, folder);
+					%>
+					<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
+				</div>
+
+				<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_push_history") %>" onShow="hideEditButtonsRow();">
+					<div>
+						<%
+							request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, folder);
+						%>
+						<%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
+					</div>
+				</div>
+				<%
+					}
+				%>
+				<!-- END permissions -->
 			</div>
-
-			<!-- START Buttons -->
-			<div class="buttonRow" id="editFolderButtonRow">
-			<button dojoType="dijit.form.Button" onClick="goBack();" class="dijitButtonFlat" type="button">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-			</button>
-			<button dojoType="dijit.form.Button" onClick="save('fm');" type="button">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save" )) %>
-			</button>
-			</div>
-			<!-- END Buttons -->
-		</div>
-	<!-- END HostVariables -->
-
-	<!-- START permissions -->
-	<%
-		PermissionAPI perAPI = APILocator.getPermissionAPI();
-
-		if (UtilMethods.isSet(folder.getIdentifier()) &&
-				perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
-						user)) {
-	%>
-		<div id="permissionsTab" refreshOnShow="true" preload="true"  dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="hideEditButtonsRow()" >
-			<%
-				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, folder);
-			%>
-			<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
 		</div>
 
-		<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_push_history") %>" onShow="hideEditButtonsRow();">
-			<div>
-			<%
-				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, folder);
-			%>
-			<%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
-			</div>
+		<div id="processingDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext,"Processing")%>" style="display: none;">
+			<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="processingLoading" id="processingLoading"></div>
 		</div>
-	<%
-		}
-	%>
-	<!-- END permissions -->
-	</div>
-</div>
 
-<div id="processingDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext,"Processing")%>" style="display: none;">
-    <div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="processingLoading" id="processingLoading"></div>
-</div>
-
-</liferay:box>
+	</liferay:box>
 </html:form>

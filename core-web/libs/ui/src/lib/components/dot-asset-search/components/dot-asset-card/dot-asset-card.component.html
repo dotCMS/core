@@ -1,0 +1,20 @@
+<p-card>
+    <ng-template pTemplate="header">
+        <div class="thumbnail-container">
+            <dot-contentlet-thumbnail
+                [contentlet]="contentlet"
+                [iconSize]="'72px'"
+                [showVideoThumbnail]="true"
+                data-testId="dot-contentlet-thumbnail"></dot-contentlet-thumbnail>
+        </div>
+    </ng-template>
+    <h2 *pTemplate="'title'" class="title" data-testId="dot-card-title">
+        {{ contentlet?.fileName || contentlet?.title }}
+    </h2>
+    <ng-template pTemplate="footer">
+        <div class="state">
+            <span class="badge" data-testId="dot-card-language">{{ contentlet?.language }}</span>
+            <dot-state-icon [state]="contentlet" size="16px"></dot-state-icon>
+        </div>
+    </ng-template>
+</p-card>

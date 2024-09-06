@@ -1,8 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { Observable, Subject } from 'rxjs';
-
-import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -10,24 +7,12 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
-import { DotIconComponent, DotIconModule } from '@dotcms/ui';
+import { DotMessageDisplayService } from '@dotcms/data-access';
+import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
+import { DotMessageDisplayServiceMock } from '@dotcms/utils-testing';
 
 import { DotMessageDisplayComponent } from './dot-message-display.component';
-import { DotMessage, DotMessageSeverity, DotMessageType } from './model';
-import { DotMessageDisplayService } from './services';
-
-@Injectable()
-export class DotMessageDisplayServiceMock {
-    messages$: Subject<DotMessage> = new Subject<DotMessage>();
-
-    messages(): Observable<DotMessage> {
-        return this.messages$.asObservable();
-    }
-
-    push(_message: DotMessage): void {}
-
-    unsubscribe(): void {}
-}
 
 describe('DotMessageDisplayComponent', () => {
     let component: DotMessageDisplayComponent;
@@ -40,7 +25,10 @@ describe('DotMessageDisplayComponent', () => {
             imports: [ToastModule, DotIconModule, BrowserAnimationsModule],
             declarations: [DotMessageDisplayComponent],
             providers: [
-                { provide: DotMessageDisplayService, useValue: dotMessageDisplayServiceMock }
+                {
+                    provide: DotMessageDisplayService,
+                    useValue: dotMessageDisplayServiceMock
+                }
             ]
         }).compileComponents();
     }));
@@ -76,9 +64,7 @@ describe('DotMessageDisplayComponent', () => {
             type: DotMessageType.SIMPLE_MESSAGE
         });
         fixture.detectChanges();
-        const icon: DotIconComponent = fixture.debugElement.query(
-            By.css('dot-icon')
-        ).componentInstance;
+        const icon = fixture.debugElement.query(By.css('dot-icon')).componentInstance;
         expect(icon.name).toEqual('check');
     });
 

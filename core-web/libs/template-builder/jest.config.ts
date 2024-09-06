@@ -3,12 +3,7 @@ export default {
     displayName: 'template-builder',
     preset: '../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-    globals: {
-        'ts-jest': {
-            tsconfig: '<rootDir>/tsconfig.spec.json',
-            stringifyContentPathRegex: '\\.(html|svg)$'
-        }
-    },
+    globals: {},
     coverageReporters: [['lcovonly', { file: 'TEST-template-builder.lcov' }]],
     reporters: [
         'default',
@@ -22,7 +17,13 @@ export default {
         ]
     ],
     transform: {
-        '^.+\\.(ts|mjs|js|html)$': 'jest-preset-angular'
+        '^.+\\.(ts|mjs|js|html)$': [
+            'jest-preset-angular',
+            {
+                tsconfig: '<rootDir>/tsconfig.spec.json',
+                stringifyContentPathRegex: '\\.(html|svg)$'
+            }
+        ]
     },
     // https://github.com/nrwl/nx/issues/7844#issuecomment-1016624608
     transformIgnorePatterns: ['<rootDir>/node_modules/(?!.*\\.mjs$)'],

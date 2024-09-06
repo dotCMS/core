@@ -7,18 +7,18 @@ import { BadgeModule } from 'primeng/badge';
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsCardComponent } from './dot-apps-card.component';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'markdown',
-    template: `<ng-content></ng-content>`
+    template: `
+        <ng-content></ng-content>
+    `
 })
 class MockMarkdownComponent {}
 
@@ -41,7 +41,7 @@ describe('DotAppsCardComponent', () => {
                 BadgeModule,
                 DotIconModule,
                 TooltipModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe
             ],
             declarations: [DotAppsCardComponent, MockMarkdownComponent],
@@ -128,7 +128,7 @@ describe('DotAppsCardComponent', () => {
             expect(warningIcon).toBeTruthy();
             expect(warningIcon.attributes['name']).toBe('warning');
             expect(warningIcon.attributes['size']).toBe('18');
-            expect(warningIcon.attributes['ng-reflect-text']).toBe(
+            expect(warningIcon.attributes['ng-reflect-content']).toBe(
                 `${component.app.sitesWithWarnings} ${messageServiceMock.get(
                     'apps.invalid.configurations'
                 )}`

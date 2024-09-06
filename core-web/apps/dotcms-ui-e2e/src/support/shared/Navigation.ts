@@ -17,6 +17,7 @@ class Navigation {
                     resolve(url.toString());
                 });
         });
+
         return text;
     }
 }

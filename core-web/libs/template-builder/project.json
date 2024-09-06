@@ -6,26 +6,16 @@
     "prefix": "dotcms",
     "targets": {
         "test": {
-            "executor": "@nrwl/jest:jest",
+            "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "libs/template-builder/jest.config.ts"
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true
-                }
+                "jestConfig": "libs/template-builder/jest.config.ts",
+                "passWithNoTests": false
             }
         },
         "lint": {
-            "executor": "@nrwl/linter:eslint",
-            "outputs": ["{options.outputFile}"],
-            "options": {
-                "lintFilePatterns": [
-                    "libs/template-builder/**/*.ts",
-                    "libs/template-builder/**/*.html"
-                ]
-            }
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"]
         },
         "storybook": {
             "executor": "@storybook/angular:start-storybook",

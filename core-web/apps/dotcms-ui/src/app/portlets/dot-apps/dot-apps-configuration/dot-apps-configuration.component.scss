@@ -2,10 +2,9 @@
 
 :host {
     background: $color-palette-gray-200;
-    box-shadow: $md-shadow-4;
+    box-shadow: $shadow-m;
     display: flex;
     height: 100%;
-    min-width: 75.25rem;
     padding: $spacing-4;
 }
 
@@ -17,11 +16,13 @@
 
 .dot-apps-configuration__action_header {
     display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-1;
     justify-content: space-between;
     width: 100%;
 
     input {
-        width: 31.5rem;
+        flex-grow: 1;
     }
 
     button {
@@ -38,19 +39,20 @@
 }
 
 .dot-apps-configuration__add-configurations-title {
-    font-size: $font-size-xxl;
+    font-size: $font-size-xl;
     font-weight: bold;
 }
 
 .dot-apps-configuration__add-configurations-description {
-    font-size: $font-size-lg;
+    font-size: $font-size-lmd;
     margin-bottom: $spacing-9;
     margin-top: $spacing-4;
 }
 
 .dot-apps-configuration__container {
     background-color: $white;
-    box-shadow: $md-shadow-4;
+    box-shadow: $shadow-m;
     overflow-y: auto;
     width: 100%;
+    font-size: $font-size-md;
 }

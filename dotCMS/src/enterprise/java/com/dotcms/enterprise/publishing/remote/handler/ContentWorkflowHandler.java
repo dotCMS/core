@@ -52,6 +52,7 @@ import com.dotcms.publisher.pusher.wrapper.PushContentWorkflowWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -74,7 +75,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
@@ -164,7 +164,7 @@ public class ContentWorkflowHandler implements IHandler {
 			final ExistingContentMapping existingContentMap =
 					HandlerUtil.getExistingContentByBundleId(config.getId());
 
-			XStream xstream=new XStream(new DomDriver());
+			XStream xstream = XStreamHandler.newXStreamInstance();
             for (final File wFile : wFiles) {
             	workingOn = wFile;
                 if(wFile.isDirectory()) continue;

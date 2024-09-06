@@ -6,7 +6,7 @@
     "prefix": "dot",
     "targets": {
         "build": {
-            "executor": "@angular-devkit/build-angular:browser",
+            "executor": "@nx/angular:browser-esbuild",
             "options": {
                 "baseHref": "./",
                 "outputPath": "dist/apps/dotcms-ui",
@@ -18,6 +18,11 @@
                 "assets": [
                     "apps/dotcms-ui/src/favicon.ico",
                     "apps/dotcms-ui/src/assets",
+                    {
+                        "glob": "**/*",
+                        "input": "node_modules/tinymce",
+                        "output": "/tinymce/"
+                    },
                     {
                         "glob": "**/*",
                         "input": "node_modules/monaco-editor",
@@ -32,12 +37,16 @@
                         "glob": "**/*",
                         "input": "./libs/block-editor/src/lib/assets",
                         "output": "./assets/block-editor"
+                    },
+                    {
+                        "glob": "**/*",
+                        "input": "./libs/portlets/edit-ema/portlet/src/lib/assets",
+                        "output": "./assets/edit-ema"
                     }
                 ],
                 "styles": [
+                    "node_modules/primeicons/primeicons.css",
                     "libs/dotcms-scss/angular/styles.scss",
-                    "node_modules/primeicons/primeicons.css",
-                    "node_modules/primeicons/primeicons.css",
                     "node_modules/primeflex/primeflex.css",
                     "node_modules/primeng/resources/primeng.min.css",
                     "node_modules/gridstack/dist/gridstack.min.css"
@@ -82,7 +91,8 @@
                     ]
                 },
                 "development": {
-                    "deployUrl": "dotAdmin/",
+                    "deployUrl": "/dotAdmin/",
+                    "outputPath": "../../tomcat9/webapps/ROOT/dotAdmin",
                     "baseHref": "",
                     "optimization": false,
                     "sourceMap": true,
@@ -91,27 +101,25 @@
                     "buildOptimizer": false
                 }
             },
-            "defaultConfiguration": "",
+            "defaultConfiguration": "production",
             "dependsOn": ["^build"]
         },
         "serve": {
+            "dependsOn": ["dotcms-webcomponents:build"],
             "executor": "@angular-devkit/build-angular:dev-server",
             "options": {
-                "browserTarget": "dotcms-ui:build:development",
-                "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs"
+                "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
+                "buildTarget": "dotcms-ui:build:development"
             }
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",
             "options": {
-                "browserTarget": "dotcms-ui:build"
+                "buildTarget": "dotcms-ui:build"
             }
         },
         "lint": {
-            "executor": "@nrwl/linter:eslint",
-            "options": {
-                "lintFilePatterns": ["apps/dotcms-ui/src/**/*.ts", "apps/dotcms-ui/src/**/*.html"]
-            },
+            "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
         },
         "test": {

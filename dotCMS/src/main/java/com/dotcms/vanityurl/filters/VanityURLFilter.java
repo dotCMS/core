@@ -1,24 +1,5 @@
 package com.dotcms.vanityurl.filters;
 
-import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
-
-import com.dotcms.http.CircuitBreakerUrl;
-import com.dotcms.vanityurl.cache.VanityUrlCache;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.StringPool;
-import io.vavr.control.Try;
-import java.io.IOException;
-import java.util.Optional;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
@@ -31,6 +12,20 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Config;
+
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Optional;
+
+import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
 
 /**
  * This Filter handles the vanity url logic
@@ -40,12 +35,12 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 // todo: change this to an interceptor
 public class VanityURLFilter implements Filter {
 
-
   private final CMSUrlUtil urlUtil;
   private final HostWebAPI hostWebAPI;
   private final LanguageWebAPI languageWebAPI;
   private final VanityUrlAPI vanityApi;
   private final boolean addVanityHeader;
+
   public VanityURLFilter() {
 
     this(CMSUrlUtil.getInstance(), WebAPILocator.getHostWebAPI(), WebAPILocator.getLanguageWebAPI(),
@@ -89,17 +84,15 @@ public class VanityURLFilter implements Filter {
           if (null != cachedVanity
                   && cachedVanity.isPresent()
                   && null != cachedVanity.get()
-                  // if it is not 404
-                 // && !VanityUrlCache.NOT_FOUND404.vanityUrlId.equals(cachedVanity.get().vanityUrlId)
                   // checks if the current destiny is not exactly the forward of the vanity
                   // we do this to avoid infinite loop
-                 && this.forwardToIsnotTheSameOfUri(cachedVanity.get(), uri)) {
+                 && !vanityApi.isSelfReferenced(cachedVanity.get(), uri)) {
 
               request.setAttribute(VANITY_URL_OBJECT, cachedVanity.get());
               if(addVanityHeader) {
-                  response.setHeader("X-DOT-VanityUrl",cachedVanity.get().vanityUrlId );
+                  response.setHeader(VanityUrlAPI.VANITY_URL_RESPONSE_HEADER, cachedVanity.get().vanityUrlId);
               }
-              final VanityUrlResult vanityUrlResult = cachedVanity.get().handle( uri, response);
+              final VanityUrlResult vanityUrlResult = cachedVanity.get().handle(uri);
               final VanityUrlRequestWrapper vanityUrlRequestWrapper = new VanityUrlRequestWrapper(request, vanityUrlResult);
               // If the handler already resolved the requested URI we stop the processing here
               if (this.vanityApi.handleVanityURLRedirects(vanityUrlRequestWrapper, response, vanityUrlResult)) {
@@ -114,20 +107,9 @@ public class VanityURLFilter implements Filter {
       filterChain.doFilter(request, response);
   } // doFilter.
 
-    private boolean forwardToIsnotTheSameOfUri(final CachedVanityUrl cachedVanityUrl, final String uri) {
-
-        // if the forward to is not actually the same of uri, is ok
-        return null != cachedVanityUrl && null != cachedVanityUrl.forwardTo && null != uri?
-                !cachedVanityUrl.forwardTo.equals(uri): false;
-    }
-
   @Override
   public void destroy() {
- 
-    
+    // Not implemented
   }
-
-
-
 
 } // E:O:F:VanityURLFilter.

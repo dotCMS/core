@@ -8,9 +8,8 @@ import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, PushPublishService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -43,12 +42,13 @@ export class PushPublishServiceMock {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <form [formGroup]="group">
-        <dot-push-publish-env-selector
-            showList="true"
-            formControlName="environment"
-        ></dot-push-publish-env-selector>
-    </form>`
+    template: `
+        <form [formGroup]="group">
+            <dot-push-publish-env-selector
+                showList="true"
+                formControlName="environment"></dot-push-publish-env-selector>
+        </form>
+    `
 })
 class TestHostComponent {
     group: UntypedFormGroup;

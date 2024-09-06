@@ -1,0 +1,71 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Files Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= files(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+files - *Files operations.*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*files* [*-h*] [COMMAND]
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+ Use the list of available sub-commands to manage files.
+ Use --help to see the available subcommands.
+ For help on a specific subcommand do files [SUBCOMMAND] --help
+ to see all available options and params.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*-h*, *--help*::
+  Display this help message.
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+== Commands
+
+xref:files-tree.adoc[*tree*]::
+  *dotCMS Files Tree*
+
+xref:files-ls.adoc[*ls*]::
+  *dotCMS Files ls*
+
+xref:files-pull.adoc[*pull*]::
+  *dotCMS Files pull*
+
+xref:files-push.adoc[*push*]::
+  *dotCMS Files push*
+
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

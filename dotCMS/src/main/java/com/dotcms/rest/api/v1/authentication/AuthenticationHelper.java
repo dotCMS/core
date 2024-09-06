@@ -11,9 +11,8 @@ import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * {@link AuthenticationResource}'s helper
@@ -64,7 +63,9 @@ class AuthenticationHelper {
             loginAsUser = this.loginService.getLoggedInUser( request );
         }
 
-        return map(AuthenticationResource.USER, principalUser != null ? principalUser.toMap() : null, AuthenticationResource.LOGIN_AS_USER,
-                loginAsUser != null ? loginAsUser.toMap() : null);
+        final Map<String, Map> resultMap = new HashMap<>();
+        resultMap.put(AuthenticationResource.USER, principalUser != null ? principalUser.toMap() : null);
+        resultMap.put(AuthenticationResource.LOGIN_AS_USER, loginAsUser != null ? loginAsUser.toMap() : null);
+        return resultMap;
     }
 }

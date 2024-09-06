@@ -13,7 +13,7 @@
 .p-dataview .p-dataview-header {
     background: $white;
     color: #000001;
-    border: 1px solid $table-border-color;
+    border: 1px solid $color-palette-gray-300;
     border-width: 0 0 1px 0;
     padding: 0.75rem 0.75rem;
     font-weight: $font-weight-semi-bold;
@@ -34,7 +34,7 @@
 .p-dataview .p-dataview-footer {
     background: $white;
     color: #000001;
-    border: 1px solid $table-border-color;
+    border: 1px solid $color-palette-gray-300;
     border-width: 0 0 1px 0;
     padding: 0.75rem 0.75rem;
     font-weight: $font-weight-semi-bold;
@@ -43,7 +43,7 @@
 }
 
 .p-dataview .p-dataview-loading-icon {
-    font-size: 2rem;
+    font-size: $font-size-xxl;
 }
 
 .p-dataview .p-dataview-emptymessage {

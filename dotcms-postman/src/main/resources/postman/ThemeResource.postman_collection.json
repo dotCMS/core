@@ -1,0 +1,342 @@
+{
+	"info": {
+		"_postman_id": "05515f22-7675-45b9-8173-15dafe0b1158",
+		"name": "ThemeResource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "findThemes",
+			"item": [
+				{
+					"name": "FindThemes siteId Not Exists NotFound",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/themes?hostId=48190c8c-42c4-46af-8d1a-0cd5db8947",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"themes"
+							],
+							"query": [
+								{
+									"key": "hostId",
+									"value": "48190c8c-42c4-46af-8d1a-0cd5db8947"
+								}
+							]
+						},
+						"description": "Request to get the themes of a host id that does not belong to any host, not found should be returned"
+					},
+					"response": []
+				},
+				{
+					"name": "FindThemes SiteId Not Sent BadRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/themes",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"themes"
+							]
+						},
+						"description": "Request to get the themes but the host id is not send, bad request should be returned. B/c host id is required."
+					},
+					"response": []
+				},
+				{
+					"name": "FindThemes SiteId is System Host Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json().entity;",
+									"",
+									"pm.test(\"Identifier check\", function () {",
+									"    pm.expect(\"SYSTEM_THEME\").to.eql(jsonData[0].identifier);",
+									"});",
+									"// Test for directory traversal",
+									"pm.test(\"Directory traversal should not be possible\", function () {",
+									"    var filesMasks = pm.response.json().entity[0].filesMasks;",
+									"    pm.expect(filesMasks).to.be.null;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/themes?hostId=SYSTEM_HOST",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"themes"
+							],
+							"query": [
+								{
+									"key": "hostId",
+									"value": "SYSTEM_HOST"
+								}
+							]
+						},
+						"description": "Request to get the themes sending the SystemHost, system theme should be returned."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "findThemeById",
+			"item": [
+				{
+					"name": "FindThemeById Id Not Exists NotFound",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/themes/id/Id-Not-Exist",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"themes",
+								"id",
+								"Id-Not-Exist"
+							]
+						},
+						"description": "Request to get the theme of a id that does not belong to theme, not found should be returned"
+					},
+					"response": []
+				},
+				{
+					"name": "FindThemeById Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json().entity;",
+									"",
+									"pm.test(\"Identifier check\", function () {",
+									"    pm.expect(\"SYSTEM_THEME\").to.eql(jsonData.identifier);",
+									"});",
+									"// Test to check for directory traversal",
+									"pm.test(\"No directory traversal in the path\", function () {",
+									"    var path = pm.response.json().entity.path;",
+									"    pm.expect(path).to.not.include('..');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/themes/id/system_theme",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"themes",
+								"id",
+								"system_theme"
+							]
+						},
+						"description": "Request to get the theme by Id, in this case system theme."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

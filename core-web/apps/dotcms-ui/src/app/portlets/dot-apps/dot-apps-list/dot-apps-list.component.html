@@ -1,59 +1,50 @@
 <dot-portlet-base>
-    <dot-not-licensed-component
-        *ngIf="!canAccessPortlet; else licensed"
-    ></dot-not-licensed-component>
-    <ng-template #licensed
-        ><div class="dot-apps__container">
+    <dot-not-license *ngIf="!canAccessPortlet; else licensed" />
+    <ng-template #licensed>
+        <div class="dot-apps__container">
             <div class="dot-apps__header">
                 <input
-                    #searchInput
                     [placeholder]="('apps.search.placeholder' | dm) || ''"
+                    #searchInput
                     pInputText
-                    type="text"
-                />
+                    type="text" />
                 <div class="dot-apps__header-actions">
                     <div class="dot-apps__header-info">
                         <dot-icon name="help" size="18"></dot-icon>
-                        <a
-                            href="https://dotcms.com/docs/latest/apps-integrations"
-                            target="_blank"
-                            >{{ 'apps.link.info' | dm }}</a
-                        >
+                        <a href="https://dotcms.com/docs/latest/apps-integrations" target="_blank">
+                            {{ 'apps.link.info' | dm }}
+                        </a>
                     </div>
                     <button
-                        class="dot-apps-configuration__action_import_button"
-                        [label]="'apps.confirmation.import.button' | dm"
                         (click)="confirmImportExport('Import')"
+                        [label]="'apps.confirmation.import.button' | dm"
+                        class="dot-apps-configuration__action_import_button"
                         pButton
                         link
-                        icon="pi pi-upload"
-                    ></button>
+                        icon="pi pi-upload"></button>
                     <button
-                        class="dot-apps-configuration__action_export_button"
+                        (click)="confirmImportExport('Export')"
                         [label]="'apps.confirmation.export.all.button' | dm"
                         [disabled]="!isExportButtonDisabled()"
-                        (click)="confirmImportExport('Export')"
+                        class="dot-apps-configuration__action_export_button"
                         pButton
                         link
-                        icon="pi pi-download"
-                    ></button>
+                        icon="pi pi-download"></button>
                 </div>
             </div>
             <div class="dot-apps__body">
                 <dot-apps-card
                     *ngFor="let app of appsCopy"
-                    [app]="app"
                     (actionFired)="goToApp($event)"
-                ></dot-apps-card>
+                    [app]="app"></dot-apps-card>
             </div>
         </div>
     </ng-template>
 
     <dot-apps-import-export-dialog
-        #importExportDialog
-        [action]="importExportDialogAction"
-        [show]="showDialog"
         (resolved)="reloadAppsData()"
         (shutdown)="onClosedDialog()"
-    ></dot-apps-import-export-dialog>
+        [action]="importExportDialogAction"
+        [show]="showDialog"
+        #importExportDialog></dot-apps-import-export-dialog>
 </dot-portlet-base>

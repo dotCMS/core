@@ -10,25 +10,26 @@ import { filter, pluck, take, takeUntil } from 'rxjs/operators';
 
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import {
     DotAlertConfirmService,
+    DotMessageDisplayService,
     DotMessageService,
+    DotRouterService,
     DotSiteBrowserService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, Site, SiteService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkResult,
+    DotActionMenuItem,
     DotBulkFailItem,
     DotContentState,
+    DotMessageSeverity,
+    DotMessageType,
     DotTemplate
 } from '@dotcms/dotcms-models';
 import { ActionHeaderOptions } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
-import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 
 @Component({
     selector: 'dot-template-list',
@@ -111,7 +112,8 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      * @param {DotTemplate} { template }
      * @memberof DotTemplateListComponent
      */
-    editTemplate(template: DotTemplate): void {
+    editTemplate(event: unknown): void {
+        const template = event as DotTemplate;
         this.isTemplateAsFile(template)
             ? this.dotSiteBrowserService.setSelectedFolder(template.identifier).subscribe(() => {
                   this.dotRouterService.goToSiteBrowser();
@@ -138,7 +140,8 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      *
      * @memberof DotTemplateListComponent
      */
-    updateSelectedTemplates(templates: DotTemplate[]): void {
+    updateSelectedTemplates(event: unknown): void {
+        const templates = event as DotTemplate[];
         this.selectedTemplates = templates;
     }
 
@@ -173,7 +176,8 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      * @param {DotTemplate} template
      * @memberof DotTemplateListComponent
      */
-    setContextMenu(template: DotTemplate): void {
+    setContextMenu(event: unknown): void {
+        const template = event as DotTemplate;
         this.listing.contextMenuItems = this.setTemplateActions(template).map(
             ({ menuItem }: DotActionMenuItem) => menuItem
         );
@@ -201,6 +205,21 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
             revision: this.dotMessageService.get('Revision'),
             draft: this.dotMessageService.get('Draft')
         };
+    }
+
+    /**
+     * Set the selected folder in the Site Browser portlet.
+     *
+     * @param {Event} event
+     * @param {string} path
+     * @memberof DotTemplateListComponent
+     */
+    goToFolder(event: Event, path: string) {
+        event.stopPropagation();
+
+        this.dotSiteBrowserService.setSelectedFolder(path).subscribe(() => {
+            this.dotRouterService.goToSiteBrowser();
+        }); // This takes one under the hood
     }
 
     /**
@@ -245,6 +264,10 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 width: '8%'
             },
             {
+                fieldName: 'theme',
+                header: this.dotMessageService.get('templates.fieldName.theme')
+            },
+            {
                 fieldName: 'friendlyName',
                 header: this.dotMessageService.get('templates.fieldName.description')
             },
@@ -252,7 +275,8 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 fieldName: 'modDate',
                 format: 'date',
                 header: this.dotMessageService.get('templates.fieldName.lastEdit'),
-                sortable: true
+                sortable: true,
+                textAlign: 'left'
             }
         ];
     }

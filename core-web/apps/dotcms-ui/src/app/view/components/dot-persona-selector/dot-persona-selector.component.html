@@ -1,50 +1,50 @@
 <div class="h-full flex">
     <dot-searchable-dropdown
-        class="h-full flex-auto flex"
-        #searchableDropdown
+        (display)="iframeOverlayService.show()"
+        (filterChange)="handleFilterChange($event)"
+        (hide)="iframeOverlayService.hide()"
+        (pageChange)="handlePageChange($event)"
+        (switch)="personaChange($event)"
         [(ngModel)]="value"
         [action]="addAction"
         [data]="personas"
         [disabled]="disabled"
         [rows]="paginationPerPage"
         [totalRecords]="paginationService.totalRecords"
-        (display)="iframeOverlayService.show()"
-        (filterChange)="handleFilterChange($event)"
-        (hide)="iframeOverlayService.hide()"
-        (pageChange)="handlePageChange($event)"
-        (switch)="personaChange($event)"
+        class="h-full flex-auto flex"
+        #searchableDropdown
         labelPropertyName="name"
         width="448px">
+        <ng-template let-data="data" pTemplate="list">
+            @for (personaData of data; track $index) {
+                <dot-persona-selector-option
+                    (delete)="delete.emit(personaData)"
+                    (switch)="personaChange($event)"
+                    [canDespersonalize]="canDespersonalize"
+                    [class.highlight]="
+                        value?.identifier === personaData?.identifier ||
+                        (!value && personaData?.identifier === defaultPersonaIdentifier)
+                    "
+                    [persona]="value?.identifier === personaData?.identifier ? value : personaData"
+                    [selected]="
+                        value?.identifier === personaData?.identifier ||
+                        (!value && personaData?.identifier === defaultPersonaIdentifier)
+                    " />
+            }
+        </ng-template>
         <ng-template let-persona="item" pTemplate="select">
             <dot-persona-selected-item
+                (click)="!disabled && !readonly && searchableDropdown.toggleOverlayPanel($event)"
                 [class.readonly]="readonly"
                 [disabled]="disabled"
                 [isEditMode]="isEditMode"
                 [pTooltip]="!disabled ? persona?.name || ('modes.persona.no.persona' | dm) : ''"
                 [persona]="persona"
                 [readonly]="readonly"
-                (click)="!disabled && !readonly && searchableDropdown.toggleOverlayPanel($event)"
                 appendTo="target"
-                tooltipPosition="bottom"></dot-persona-selected-item>
-        </ng-template>
-        <ng-template let-personaData="item" pTemplate="listItem">
-            <dot-persona-selector-option
-                [canDespersonalize]="canDespersonalize"
-                [class.highlight]="
-                    value?.identifier === personaData.identifier ||
-                    (!value && personaData.identifier === defaultPersonaIdentifier)
-                "
-                [persona]="value?.identifier === personaData.identifier ? value : personaData"
-                [selected]="
-                    value?.identifier === personaData.identifier ||
-                    (!value && personaData.identifier === defaultPersonaIdentifier)
-                "
-                (delete)="delete.emit(personaData)"
-                (switch)="personaChange($event)"></dot-persona-selector-option>
+                tooltipPosition="bottom" />
         </ng-template>
     </dot-searchable-dropdown>
 </div>
 
-<dot-add-persona-dialog
-    #personaDialog
-    (createdPersona)="handleNewPersona($event)"></dot-add-persona-dialog>
+<dot-add-persona-dialog (createdPersona)="handleNewPersona($event)" #personaDialog />

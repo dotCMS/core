@@ -1,9 +1,10 @@
 package com.dotcms.model.annotation;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.github.jonpeterson.jackson.module.versioning.JsonVersionedModel;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.QueryParam;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.QueryParam;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Style.ImplementationVisibility;
 
@@ -18,7 +19,8 @@ import org.immutables.value.Value.Style.ImplementationVisibility;
         typeImmutable = "*",
         // Make generated public, leave underscored as package private
         visibility = ImplementationVisibility.PUBLIC,
-        passAnnotations = {JsonVersionedModel.class, QueryParam.class, HeaderParam.class}
+        jakarta = true,
+        passAnnotations = {JsonVersionedModel.class, QueryParam.class, HeaderParam.class, JsonInclude.class}
 )
 @JsonSerialize()
 public @interface ValueType {}

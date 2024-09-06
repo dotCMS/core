@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -13,17 +12,24 @@ export interface DropZoneFileEvent {
     validity: DropZoneFileValidity;
 }
 
+export enum DropZoneErrorType {
+    FILE_TYPE_MISMATCH = 'FILE_TYPE_MISMATCH',
+    MAX_FILE_SIZE_EXCEEDED = 'MAX_FILE_SIZE_EXCEEDED',
+    MULTIPLE_FILES_DROPPED = 'MULTIPLE_FILES_DROPPED'
+}
+
 export interface DropZoneFileValidity {
     fileTypeMismatch: boolean;
     maxFileSizeExceeded: boolean;
     multipleFilesDropped: boolean;
+    errorsType: DropZoneErrorType[];
     valid: boolean;
 }
 
 @Component({
     selector: 'dot-drop-zone',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './dot-drop-zone.component.html',
     styleUrls: ['./dot-drop-zone.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -31,22 +37,31 @@ export interface DropZoneFileValidity {
 export class DotDropZoneComponent {
     @Output() fileDropped = new EventEmitter<DropZoneFileEvent>();
     @Output() fileDragEnter = new EventEmitter<boolean>();
+    @Output() fileDragOver = new EventEmitter<boolean>();
     @Output() fileDragLeave = new EventEmitter<boolean>();
 
+    /*
+     * Max file size in bytes.
+     * See Docs: https://www.dotcms.com/docs/latest/binary-field#FieldVariables
+     */
     @Input() maxFileSize: number;
 
     @Input() set accept(types: string[]) {
-        this._accept = types.map((type) => {
-            // Remove the wildcard character
-            return type.toLowerCase().replace(/\*/g, '');
-        });
+        this._accept = types
+            ?.filter((value) => value !== '*/*')
+            .map((type) => {
+                // Remove the wildcard character
+                return type.toLowerCase().replace(/\*/g, '');
+            });
     }
 
     private _accept: string[] = [];
+    private errorsType: DropZoneErrorType[] = [];
     private _validity: DropZoneFileValidity = {
         fileTypeMismatch: false,
         maxFileSizeExceeded: false,
         multipleFilesDropped: false,
+        errorsType: [],
         valid: true
     };
 
@@ -66,9 +81,6 @@ export class DotDropZoneComponent {
         if (files.length === 0) return;
 
         this.setValidity(files);
-
-        dataTransfer.items?.clear();
-        dataTransfer.clearData();
         this.fileDropped.emit({
             file, // Only one file is allowed
             validity: this._validity
@@ -87,6 +99,7 @@ export class DotDropZoneComponent {
         // Prevent the default behavior to allow drop
         event.stopPropagation();
         event.preventDefault();
+        this.fileDragOver.emit(true);
     }
 
     @HostListener('dragleave', ['$event'])
@@ -115,6 +128,10 @@ export class DotDropZoneComponent {
         const isValidType = this._accept.some(
             (type) => mimeType.includes(type) || type.includes(`.${extension}`)
         );
+
+        if (!isValidType) {
+            this.errorsType.push(DropZoneErrorType.FILE_TYPE_MISMATCH);
+        }
 
         return isValidType;
     }
@@ -152,7 +169,31 @@ export class DotDropZoneComponent {
             return false;
         }
 
-        return file.size > this.maxFileSize;
+        const isTooLong = file.size > this.maxFileSize;
+
+        if (isTooLong) {
+            this.errorsType.push(DropZoneErrorType.MAX_FILE_SIZE_EXCEEDED);
+        }
+
+        return isTooLong;
+    }
+
+    /**
+     * Check if multiple files were dropped
+     *
+     * @private
+     * @param {File[]} files
+     * @return {*}  {boolean}
+     * @memberof DotDropZoneComponent
+     */
+    private multipleFilesDropped(files: File[]): boolean {
+        const multipleFilesDropped = files.length > 1;
+
+        if (multipleFilesDropped) {
+            this.errorsType.push(DropZoneErrorType.MULTIPLE_FILES_DROPPED);
+        }
+
+        return multipleFilesDropped;
     }
 
     /**
@@ -163,8 +204,9 @@ export class DotDropZoneComponent {
      * @memberof DotDropZoneComponent
      */
     private setValidity(files: File[]): void {
+        this.errorsType = []; // Reset the errors type
         const file = files[0]; // Only one file is allowed
-        const multipleFilesDropped = files.length > 1;
+        const multipleFilesDropped = this.multipleFilesDropped(files);
         const fileTypeMismatch = !this.typeMatch(file);
         const maxFileSizeExceeded = this.isFileTooLong(file);
         const valid = !fileTypeMismatch && !maxFileSizeExceeded && !multipleFilesDropped;
@@ -174,6 +216,7 @@ export class DotDropZoneComponent {
             multipleFilesDropped,
             fileTypeMismatch,
             maxFileSizeExceeded,
+            errorsType: this.errorsType,
             valid
         };
     }

@@ -1,0 +1,14 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  namespace: foo
+  name: foo-prod-pp
+spec:
+  selector:
+    fullname: dotcms-foo-prod
+  ports:
+  - protocol: TCP
+    port: 8082
+    targetPort: 8082
+  clusterIP: None

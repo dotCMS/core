@@ -25,11 +25,11 @@ import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
@@ -48,26 +48,6 @@ public class AnalyticsHelper {
     }
 
     private  AnalyticsHelper() {}
-
-    /**
-     * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
-     *
-     * @param statusCode http status code
-     * @return true if the response http status is considered tobe successful, otherwise false
-     */
-    public boolean isSuccessResponse(final int statusCode) {
-        return Response.Status.Family.familyOf(statusCode) == Response.Status.Family.SUCCESSFUL;
-    }
-
-    /**
-     * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
-     *
-     * @param response http response representation
-     * @return true if the response http status is considered tobe successful, otherwise false
-     */
-    public boolean isSuccessResponse(@NotNull final CircuitBreakerUrl.Response<?> response) {
-        return isSuccessResponse(response.getStatusCode());
-    }
 
     /**
      * Given a {@link CircuitBreakerUrl.Response<AccessToken>} instance, extracts JSON representing the token and
@@ -249,7 +229,7 @@ public class AnalyticsHelper {
      */
     public void throwFromResponse(final CircuitBreakerUrl.Response<AccessToken> response,
                                          final String message) throws AnalyticsException {
-        if (isSuccessResponse(response)) {
+        if (CircuitBreakerUrl.isSuccessResponse(response)) {
             return;
         }
 
@@ -440,6 +420,38 @@ public class AnalyticsHelper {
                             AnalyticsHelper.get().extractMissingAnalyticsProps(e)))
                     .getOrElse(String.format("Analytics App not found for host: %s", currentHost.getHostname())));
         }
+    }
+
+    /**
+     * Resolves a cache key from token client id and audience.
+     *
+     * @param clientId token client id
+     * @param audience token audience
+     * @return key to use as key to cache for a specific access token
+     */
+    public String resolveKey(final String clientId, final String audience) {
+        final List<String> keyChunks = new ArrayList<>();
+        keyChunks.add(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_KEY_PREFIX);
+
+        if (StringUtils.isNotBlank(clientId)) {
+            keyChunks.add(clientId);
+        }
+
+        if (StringUtils.isNotBlank(audience)) {
+            keyChunks.add(audience);
+        }
+
+        return String.join(StringPool.UNDERLINE, keyChunks);
+    }
+
+    /**
+     * Creates a cache key from given {@link AccessToken} evaluating several conditions.
+     *
+     * @param accessToken provided access token
+     * @return key to use as key to cache for a specific access token
+     */
+    public String resolveKey(final AccessToken accessToken) {
+        return resolveKey(accessToken.clientId(), accessToken.aud());
     }
 
 }

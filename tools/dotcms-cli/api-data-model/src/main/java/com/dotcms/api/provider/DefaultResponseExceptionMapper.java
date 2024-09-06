@@ -2,16 +2,17 @@ package com.dotcms.api.provider;
 
 import com.dotcms.model.ResponseEntityView;
 import com.fasterxml.jackson.databind.JsonNode;
-import io.quarkus.arc.Priority;
 import io.quarkus.security.UnauthorizedException;
+import jakarta.annotation.Priority;
+import jakarta.validation.ValidationException;
+import jakarta.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
-import javax.validation.ValidationException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.MediaType;
+
 import org.eclipse.microprofile.rest.client.ext.ResponseExceptionMapper;
 
 /**
@@ -53,6 +54,9 @@ public class DefaultResponseExceptionMapper implements
                 break;
             case 401:
                 re = new UnauthorizedException(message);
+                break;
+            case 403:
+                re = new ForbiddenException(message);
                 break;
             case 404:
                 re = new NotFoundException(message);

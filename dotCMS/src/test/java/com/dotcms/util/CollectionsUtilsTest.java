@@ -7,6 +7,7 @@ import io.vavr.Tuple2;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,9 +19,9 @@ import java.util.stream.Collectors;
 import static com.dotcms.util.CollectionsUtils.Merge;
 import static com.dotcms.util.CollectionsUtils.groupByKey;
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.CollectionsUtils.partition;
 import static com.dotcms.util.CollectionsUtils.set;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -308,29 +309,29 @@ public class CollectionsUtilsTest extends UnitTestBase {
         assertTrue(set4.contains(3.1f));
         assertTrue(set4.contains(3.2f));
 
-        final Map<String, Integer> map1 = map();
+        final Map<String, Integer> map1 = new HashMap<>();
         assertNotNull(map1);
         assertTrue(0 == map1.size());
 
-        final Map<String, Integer> map2 = map("one", 1);
+        final Map<String, Integer> map2 = Map.of("one", 1);
         assertNotNull(map2);
         assertTrue(1 == map2.size());
         assertEquals(Integer.valueOf(1), map2.get("one"));
 
-        final Map<String, Integer> map3 = map("one", 1, "two", 2);
+        final Map<String, Integer> map3 = Map.of("one", 1, "two", 2);
         assertNotNull(map3);
         assertTrue(2 == map3.size());
         assertEquals(Integer.valueOf(1), map3.get("one"));
         assertEquals(Integer.valueOf(2), map3.get("two"));
 
-        final Map<String, Integer> map4 = map("one", 1, "two", 2, "three", 3);
+        final Map<String, Integer> map4 = Map.of("one", 1, "two", 2, "three", 3);
         assertNotNull(map4);
         assertTrue(3 == map4.size());
         assertEquals(Integer.valueOf(1), map4.get("one"));
         assertEquals(Integer.valueOf(2), map4.get("two"));
         assertEquals(Integer.valueOf(3), map4.get("three"));
 
-        final Map<String, Integer> map5 = map("one", 1, "two", 2, "three", 3, "four", 4);
+        final Map<String, Integer> map5 = Map.of("one", 1, "two", 2, "three", 3, "four", 4);
         assertNotNull(map5);
         assertTrue(4 == map5.size());
         assertEquals(Integer.valueOf(1), map5.get("one"));
@@ -338,7 +339,7 @@ public class CollectionsUtilsTest extends UnitTestBase {
         assertEquals(Integer.valueOf(3), map5.get("three"));
         assertEquals(Integer.valueOf(4), map5.get("four"));
 
-        final Map<String, Integer> map6 = map("one", 1, "two", 2, "three", 3, "four", 4, "five", 5);
+        final Map<String, Integer> map6 = Map.of("one", 1, "two", 2, "three", 3, "four", 4, "five", 5);
         assertNotNull(map6);
         assertTrue(5 == map6.size());
         assertEquals(Integer.valueOf(1), map6.get("one"));
@@ -364,5 +365,59 @@ public class CollectionsUtilsTest extends UnitTestBase {
         CollectionsUtils.renameKey( map, "key1", "key2");
         assertEquals( map.get("key1"), null);
         assertEquals( map.get("key2"), null);
+    }
+
+    /**
+     * Method to test: {@link CollectionsUtils#concat(Object[], Object[])}
+     * Given Scenario: concat two arrays
+     * ExpectedResult: a resulting array with the elements of both arrays
+     *
+     */
+    @Test
+    public void testConcatPrimitive(){
+        Integer [] array1 = {1,2,3};
+        Integer [] array2 = {4,5,6};
+        Integer [] array3 = CollectionsUtils.concat( array1, array2);
+        assertArrayEquals( array3, new Integer[]{1,2,3,4,5,6});
+    }
+
+    private final static String JS_JSON_MAP = "(function test(context) {\n" +
+            "\n" +
+            "    \n" +
+            "    const contentJsonOut = {\n" +
+            "        \"message\":\"Contentlet 1 deleted\",\n" +
+            "        \"inner\": {\n" +
+            "            \"inner-message\":\"Contentlet 2 deleted\"\n" +
+            "        }\n" +
+            "    }\n" +
+            "\n" +
+            "    return contentJsonOut;\n" +
+            "})\n";
+
+    /**
+     * Method to test: {@link CollectionsUtils#toSerializableMap(Map)}
+     * Given Scenario: Convert an non serializable Map to a serializable map, should have inner non serializable maps
+     * ExpectedResult: a resulting Map should be serializable
+     *
+     */
+    @Test
+    public void test_toSerializableMap(){
+
+        final Map nonsSerializableMap = new NoSerializableMap();
+        nonsSerializableMap.put("object", new Object());
+        nonsSerializableMap.put("string", "string");
+
+        final Map nonsSerializableMap2 = new NoSerializableMap();
+        nonsSerializableMap2.put("object", new Object());
+        nonsSerializableMap2.put("string", "string");
+        nonsSerializableMap.put("inner", nonsSerializableMap2);
+        final Object resultMap =  CollectionsUtils.toSerializableMap(nonsSerializableMap);
+
+        Assert.assertNotNull(resultMap);
+        Assert.assertTrue(resultMap instanceof Map);
+        Assert.assertTrue(resultMap instanceof Serializable);
+        Assert.assertTrue(Map.class.cast(resultMap).get("inner") instanceof Map);
+        Assert.assertTrue(Map.class.cast(resultMap).get("inner") instanceof Serializable);
+
     }
 }

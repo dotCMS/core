@@ -3,8 +3,7 @@
 </h3>
 <p
     [innerHTML]="'contenttypes.field.properties.wysiwyg.convert.info.content' | dm"
-    data-testId="infoContent"
-></p>
+    data-testId="infoContent"></p>
 
 <h4 data-testId="header">
     {{ 'contenttypes.field.properties.wysiwyg.convert.header' | dm }}
@@ -12,18 +11,17 @@
 
 <p
     [innerHTML]="'contenttypes.field.properties.wysiwyg.convert.content' | dm"
-    data-testId="content"
-></p>
+    data-testId="content"></p>
 
 <div class="field-checkbox">
-    <p-checkbox inputId="agreed" [(ngModel)]="accept" [binary]="true"></p-checkbox>
-    <label for="agreed" data-testId="iUnderstand">{{
-        'contenttypes.field.properties.wysiwyg.convert.iunderstand' | dm
-    }}</label>
+    <p-checkbox [(ngModel)]="accept" [binary]="true" inputId="agreed"></p-checkbox>
+    <label for="agreed" data-testId="iUnderstand">
+        {{ 'contenttypes.field.properties.wysiwyg.convert.iunderstand' | dm }}
+    </label>
 </div>
 
 <p>
-    <button [disabled]="!accept" pButton (click)="convert.emit($event)" data-testId="buttonConvert">
+    <button (click)="convert.emit($event)" [disabled]="!accept" pButton data-testId="buttonConvert">
         {{ 'contenttypes.field.properties.wysiwyg.convert.button' | dm }}
     </button>
 </p>

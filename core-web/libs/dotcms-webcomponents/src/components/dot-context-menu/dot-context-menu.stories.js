@@ -5,7 +5,7 @@ export default {
     parameters: {
         docs: {
             page: readme
-        },
+        }
     },
     args: {
         options: [
@@ -33,7 +33,6 @@ const Template = (args) => {
     }
 
     return menu;
-}
-
+};
 
 export const ContextMenu = Template.bind({});

@@ -1,7 +1,7 @@
 <div
-    class="dot-persona-selector__container h-full flex-auto flex align-items-center gap-3"
     [pTooltip]="disabled ? ('editpage.personalization.content.add.message' | dm) : null"
-    [tooltipPosition]="disabled ? 'bottom' : null">
+    [tooltipPosition]="disabled ? 'bottom' : null"
+    class="dot-persona-selector__container h-full flex-auto flex align-items-center gap-3">
     <p-avatar
         *ngIf="persona"
         [text]="persona?.name"
@@ -12,9 +12,9 @@
 
     <p-avatar *ngIf="!persona" [text]="'modes.persona.no.persona' | dm" dotAvatar></p-avatar>
 
-    <span class="dot-persona-selector__name">{{
-        persona?.name || ('modes.persona.no.persona' | dm)
-    }}</span>
+    <span class="dot-persona-selector__name">
+        {{ persona?.name || ('modes.persona.no.persona' | dm) }}
+    </span>
 
     <ng-container *ngIf="!readonly">
         <i class="pi pi-chevron-down"></i>

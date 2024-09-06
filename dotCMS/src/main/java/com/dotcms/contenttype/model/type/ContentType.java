@@ -10,7 +10,12 @@ import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -37,6 +42,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import java.util.function.Function;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.immutables.value.Value;
@@ -46,7 +52,11 @@ import org.immutables.value.Value.Default;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @JsonTypeInfo(
@@ -83,7 +93,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     }
   }
 
-  static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
   Boolean hasStoryBlockFields = null;
 
@@ -223,6 +233,12 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return 0;
   }
 
+  @Nullable
+  @Value.Default
+  public Map<String, ? extends Object> metadata() {
+    return null;
+  }
+
   @JsonIgnore
   @Value.Lazy
   public List<Field> fields() {
@@ -271,6 +287,27 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     }
     return ImmutableMap.copyOf(fmap);
   }
+
+    /**
+     * Alternative method to get a map of fields using a custom key generator, useful when you want
+     * to use an alternative to the field variable as the key.
+     * <p>
+     * Calling the regular fieldMap() method with fields that have null variables will throw a
+     * NullPointerException.
+     *
+     * @param keyGenerator A function that generates a key for the field
+     * @return A map of fields with the generated key as the key
+     */
+    @JsonIgnore
+    @Value.Lazy
+    public Map<String, Field> fieldMap(Function<Field, String> keyGenerator) {
+        Map<String, Field> fmap = new HashMap<>();
+        for (Field f : this.fields()) {
+            fmap.put(keyGenerator.apply(f), f);
+        }
+        return Map.copyOf(fmap);
+    }
+
   private List<Field> innerFields = null;
 
   public void constructWithFields(List<Field> fields) {

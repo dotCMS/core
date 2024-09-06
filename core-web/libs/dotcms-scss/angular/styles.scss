@@ -11,6 +11,8 @@
 @include assistant-font-face(500, "SemiBold");
 @include assistant-font-face(700, "Bold");
 
+@include redhatmono-font-face(400, "Regular");
+
 // MATERIAL DESIGN ICONS
 @font-face {
     font-family: "Material Icons";
@@ -57,7 +59,6 @@ body {
 html {
     color: $black;
     font-family: $font-default;
-    font-size: $font-size-default;
 }
 
 body {
@@ -85,6 +86,10 @@ a {
     }
 }
 
+button {
+    font-family: $font-default;
+}
+
 /*
 
 Dragula clone and append dragged element to the body we need to have their styles globally.
@@ -104,4 +109,24 @@ However this is for the dragula we use in the angular components the one in the 
 }
 .gu-unselectable {
     user-select: none !important;
+}
+
+code {
+    color: $color-accessible-text-purple;
+    background-color: $color-accessible-text-purple-bg;
+    padding: $spacing-0 $spacing-1;
+    font-family: $font-code;
+    line-break: anywhere;
+}
+
+.dot-mask {
+    background-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    pointer-events: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 }

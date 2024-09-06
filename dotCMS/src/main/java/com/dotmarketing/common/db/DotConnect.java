@@ -1,28 +1,8 @@
 package com.dotmarketing.common.db;
 
-import java.math.BigDecimal;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-import org.apache.commons.collections.map.LRUMap;
-import org.apache.commons.lang.StringUtils;
-import org.postgresql.util.PGobject;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -36,6 +16,27 @@ import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import io.vavr.control.Try;
+import org.apache.commons.collections.map.LRUMap;
+import org.apache.commons.lang.StringUtils;
+import org.postgresql.util.PGobject;
+
+import java.math.BigDecimal;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * Description of the Class
@@ -71,6 +72,8 @@ public class DotConnect {
     final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
             .getDefaultObjectMapper();
 
+    private static final String LOAD_INT_FAILED_ERROR_MSG = "Failed to load the Integer value on column '%s': %s";
+
     public DotConnect() {
         Logger.debug(this, "------------ DotConnect() --------------------");
     }
@@ -95,12 +98,42 @@ public class DotConnect {
         }
     }
 
+    /**
+     * Loads the value of the selected column in the SQL query and parses it into an {@code int}.
+     *
+     * @param columnName The name of the column containing the integer value.
+     * @param conn       The current {@link Connection} object.
+     *
+     * @return The value of the column as an {@code int}.
+     *
+     * @throws DotDataException An error occurred when retrieving the column's value.
+     */
+    public int loadInt(final String columnName, final Connection conn) throws DotDataException {
+
+        final String lowerColumnName = columnName.toLowerCase();
+        try {
+            return Integer.parseInt(String.valueOf(loadObjectResults(conn).get(0).get(lowerColumnName)));
+        } catch (final Exception e) {
+            Logger.debug(this, String.format(LOAD_INT_FAILED_ERROR_MSG, columnName, ExceptionUtil.getErrorMessage(e)));
+            throw new DotDataException(e.toString(), e);
+        }
+    }
+
+    /**
+     * Loads the value of the selected column in the SQL query and parses it into an {@code int}.
+     *
+     * @param x The name of the column containing the integer value.
+     *
+     * @return The value of the column as an {@code int}.
+     *
+     * @throws DotDataException An error occurred when retrieving the column's value.
+     */
     public int loadInt(String x) throws DotDataException {
         x = x.toLowerCase();
         try {
             return Integer.parseInt(String.valueOf(loadObjectResults().get(0).get(x)));
-        } catch (Exception e) {
-            Logger.debug(this, "loadInt: " + e);
+        } catch (final Exception e) {
+            Logger.debug(this, String.format(LOAD_INT_FAILED_ERROR_MSG, x, ExceptionUtil.getErrorMessage(e)));
             throw new DotDataException(e.toString(), e);
         }
     }
@@ -109,8 +142,8 @@ public class DotConnect {
         x = x.toLowerCase();
         try {
             return Long.parseLong(String.valueOf(loadObjectResults().get(0).get(x)));
-        } catch (Exception e) {
-            Logger.debug(this, "loadInt: " + e);
+        } catch (final Exception e) {
+            Logger.debug(this, "loadLong: " + e);
             throw new DotDataException(e.toString(), e);
         }
     }
@@ -244,6 +277,7 @@ public class DotConnect {
         try {
             executeQuery(conn);
         } catch (Exception e) {
+            Logger.debug(this, "getResult(): unable to execute query " + e.getMessage(), e);
             throw new DotDataException(e.getMessage(), e);
         }
 
@@ -828,7 +862,6 @@ public class DotConnect {
     /**
      * Returns the correct bit AND operation syntax for a particular RDBMS
      * 
-     * @param elements
      * @return result
      */
 
@@ -856,7 +889,6 @@ public class DotConnect {
     /**
      * Returns the correct bit OR operation syntax for a particular RDBMS
      * 
-     * @param elements
      * @return result
      */
 
@@ -890,7 +922,6 @@ public class DotConnect {
     /**
      * Returns the correct bit XOR operation syntax for a particular RDBMS
      * 
-     * @param elements
      * @return result
      */
 
@@ -924,7 +955,6 @@ public class DotConnect {
     /**
      * Returns the correct bit XOR operation syntax for a particular RDBMS
      * 
-     * @param elements
      * @return result
      */
 
@@ -1203,8 +1233,6 @@ public class DotConnect {
      * atomic transaction.
      * 
      * @param preparedStatement String
-     * @param logException when an exception occurs, whether or not to log the exception as Error in log
-     *        file
      * @param parameters Object array of parameters for the preparedStatement (if it does not have any,
      *        can be null). Not any checking of them
      * @return int rows affected

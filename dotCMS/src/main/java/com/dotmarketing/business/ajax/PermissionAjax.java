@@ -157,7 +157,7 @@ public class PermissionAjax {
 						    permParent = InodeUtils.getInode(assetInode);
 						}
 
-						if(permParent !=null || InodeUtils.isSet(permParent.getPermissionId())){
+						if(permParent !=null && InodeUtils.isSet(permParent.getPermissionId())){
 							inodeCache.put(permParent.getPermissionId(), permParent);
 
 						}

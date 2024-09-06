@@ -23,10 +23,10 @@ export namespace Components {
          */
         "createAssetsText": string;
         "customUploadFiles": (props: {
-        files: File[],
-        onSuccess: () => void,
-        updateProgress: (progress: number) => void,
-        onError: (header: string, message: string) => void
+        files: File[];
+        onSuccess: () => void;
+        updateProgress: (progress: number) => void;
+        onError: (header: string, message: string) => void;
     }) => Promise<any>;
         /**
           * Labels to be shown in error dialog
@@ -348,10 +348,12 @@ export namespace Components {
     }
     interface DotContentletThumbnail {
         "alt": string;
+        "backgroundImage": boolean;
         "contentlet": DotContentletItem;
-        "cover": boolean;
+        "fieldVariable": string;
         "height": string;
         "iconSize": string;
+        "playableVideo": boolean;
         "showVideoThumbnail": boolean;
         "width": string;
     }
@@ -1119,6 +1121,17 @@ export namespace Components {
           * @memberof DotVideoThumbnail
          */
         "cover": boolean;
+        /**
+          * If the video is playable or not.
+          * @type {boolean}
+          * @memberof DotVideoThumbnail
+         */
+        "playable": boolean;
+        /**
+          * @type {string}
+          * @memberof variable
+         */
+        "variable": string;
     }
     interface KeyValueForm {
         /**
@@ -1661,10 +1674,10 @@ declare namespace LocalJSX {
          */
         "createAssetsText"?: string;
         "customUploadFiles"?: (props: {
-        files: File[],
-        onSuccess: () => void,
-        updateProgress: (progress: number) => void,
-        onError: (header: string, message: string) => void
+        files: File[];
+        onSuccess: () => void;
+        updateProgress: (progress: number) => void;
+        onError: (header: string, message: string) => void;
     }) => Promise<any>;
         /**
           * Labels to be shown in error dialog
@@ -1992,10 +2005,12 @@ declare namespace LocalJSX {
     }
     interface DotContentletThumbnail {
         "alt"?: string;
+        "backgroundImage"?: boolean;
         "contentlet"?: DotContentletItem;
-        "cover"?: boolean;
+        "fieldVariable"?: string;
         "height"?: string;
         "iconSize"?: string;
+        "playableVideo"?: boolean;
         "showVideoThumbnail"?: boolean;
         "width"?: string;
     }
@@ -2744,6 +2759,17 @@ declare namespace LocalJSX {
           * @memberof DotVideoThumbnail
          */
         "cover"?: boolean;
+        /**
+          * If the video is playable or not.
+          * @type {boolean}
+          * @memberof DotVideoThumbnail
+         */
+        "playable"?: boolean;
+        /**
+          * @type {string}
+          * @memberof variable
+         */
+        "variable"?: string;
     }
     interface KeyValueForm {
         /**

@@ -10,14 +10,17 @@ import { TableModule } from 'primeng/table';
 
 import { DotCrudService } from '@dotcms/data-access';
 import { DotcmsConfigService, LoggerService } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import {
+    DotActionMenuButtonComponent,
+    DotIconModule,
+    DotMessagePipe,
+    DotRelativeDatePipe,
+    DotSafeHtmlPipe,
+    DotStringFormatPipe
+} from '@dotcms/ui';
 
 import { ActionHeaderModule } from './action-header/action-header.module';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
-
-import { DotRelativeDatePipe } from '../../pipes/dot-relative-date/dot-relative-date.pipe';
-import { DotActionMenuButtonModule } from '../_common/dot-action-menu-button/dot-action-menu-button.module';
 
 @NgModule({
     declarations: [DotListingDataTableComponent],
@@ -29,13 +32,14 @@ import { DotActionMenuButtonModule } from '../_common/dot-action-menu-button/dot
         TableModule,
         FormsModule,
         InputTextModule,
-        DotActionMenuButtonModule,
+        DotActionMenuButtonComponent,
         DotIconModule,
         RouterModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         CheckboxModule,
         ContextMenuModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotStringFormatPipe
     ],
     providers: [DotCrudService, DotcmsConfigService, LoggerService]
 })

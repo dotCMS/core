@@ -3,10 +3,9 @@ import { Component, Input, OnChanges, OnInit, ViewChild } from '@angular/core';
 import { catchError, take } from 'rxjs/operators';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotDiffPipe } from '@dotcms/app/view/pipes';
-import { DotEditPageService } from '@dotcms/data-access';
+import { DotEditPageService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotWhatChanged } from '@dotcms/dotcms-models';
+import { DotDiffPipe } from '@dotcms/ui';
 import { DotDOMHtmlUtilService } from '@portlets/dot-edit-page/content/services/html/dot-dom-html-util.service';
 
 export const SHOW_DIFF_STYLES =
@@ -27,7 +26,11 @@ export class DotWhatsChangedComponent implements OnInit, OnChanges {
     @ViewChild('dotIframe', { static: false }) dotIframe: IframeComponent;
 
     private dotDiffPipe = new DotDiffPipe();
-    whatsChanged: DotWhatChanged = { diff: true, renderLive: '', renderWorking: '' };
+    whatsChanged: DotWhatChanged = {
+        diff: true,
+        renderLive: '',
+        renderWorking: ''
+    };
 
     constructor(
         private dotEditPageService: DotEditPageService,

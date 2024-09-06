@@ -298,7 +298,7 @@ public class RuleTest extends UnitTestBase {
         TestCase withGroup(LogicalOperator op, boolean result) {
             ConditionGroup g = mock(ConditionGroup.class);
             when(g.getOperator()).thenReturn(op);
-            when(g.evaluate(Mockito.eq(request), Mockito.eq(response), Mockito.anyListOf(Condition.class))).thenReturn(result);
+            when(g.evaluate(Mockito.eq(request), Mockito.eq(response), Mockito.anyList())).thenReturn(result);
             groups.add(g);
             return this;
         }

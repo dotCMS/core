@@ -1,11 +1,9 @@
 <p-dropdown
     (onChange)="switch.emit($event.value)"
-    data-testId="dropdown"
     [ngModel]="value"
     [disabled]="disabled"
-    optionValue="id"
     [options]="options | async"
     [style]="{ width: '100%' }"
-    appendTo="body"
->
-</p-dropdown>
+    data-testId="dropdown"
+    optionValue="id"
+    appendTo="body"></p-dropdown>

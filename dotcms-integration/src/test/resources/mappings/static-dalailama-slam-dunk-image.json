@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPattern": "/s/dalailama.*"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "image/jpeg"
+    },
+    "bodyFileName": "dalailama.jpeg"
+  }
+}

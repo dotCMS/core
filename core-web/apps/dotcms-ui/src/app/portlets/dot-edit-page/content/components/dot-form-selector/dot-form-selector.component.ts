@@ -14,9 +14,9 @@ import { Table } from 'primeng/table';
 
 import { take } from 'rxjs/operators';
 
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotDialogComponent } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-form-selector',

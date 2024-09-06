@@ -1,6 +1,5 @@
 <dot-searchable-dropdown
     *ngIf="moreThanOneSite || asField; else hostName"
-    #searchableDropdown
     (switch)="siteChange($event)"
     (filterChange)="handleFilterChange($event)"
     (hide)="hide.emit()"
@@ -13,12 +12,10 @@
     [totalRecords]="paginationService.totalRecords"
     [class]="'site-selector__field ' + cssClass"
     [width]="width"
+    #searchableDropdown
     labelPropertyName="hostname"
->
-</dot-searchable-dropdown>
+    cssClassDataList="site_selector__data-list" />
 
 <ng-template #hostName>
-    <span class="site-selector__title">
-       {{ currentSite?.hostname }}
-    </span>
+    <span class="site-selector__title">{{ currentSite?.hostname }}</span>
 </ng-template>

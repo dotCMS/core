@@ -192,10 +192,10 @@
 
 
 			</td>
-			<td onClick="editTask(event, '<%=task.getId()%>', '<%=contentlet.getLanguageId()%>')">
+			<td onClick="editTask(event, '<%=task.getId()%>', '<%=contentlet.getLanguageId()%>', '<%= contentlet.getContentType().variable()%>')">
 				<%=contentlet.getTitle() %>
 			</td>
-			<td nowrap="true" align="center" width="1%" onClick="editTask('<%=task.getId()%>', '<%=contentlet.getLanguageId()%>')">
+			<td nowrap="true" align="center" width="1%" onClick="editTask(event, '<%=task.getId()%>', '<%=contentlet.getLanguageId()%>' , '<%= contentlet.getContentType().variable()%>')">
 				<%if (contentlet.isLive()) {%>
 				<span class="liveIcon"></span>
 				<%} else if (contentlet.isArchived()) {%>
@@ -228,7 +228,7 @@
 			</td>
 
 
-			<td align="center" onClick="editTask('<%=task.getId()%>', '<%=contentlet.getLanguageId()%>')" <%if(step.isResolved()) {%>style="text-decoration: line-through;"<%} %> >
+			<td align="center" onClick="editTask(event, '<%=task.getId()%>', '<%=contentlet.getLanguageId()%>', '<%= contentlet.getContentType().variable()%>')" <%if(step.isResolved()) {%>style="text-decoration: line-through;"<%} %> >
 
 				<%=step.getName() %>
 

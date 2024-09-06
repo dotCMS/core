@@ -5,16 +5,18 @@ import { ActivatedRouteSnapshot, CanActivate, RouterStateSnapshot } from '@angul
 
 import { map } from 'rxjs/operators';
 
+import { DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-
-import { DotRouterService } from '../dot-router/dot-router.service';
 
 /**
  * Route Guard that checks if a User is logged in.
  */
 @Injectable()
 export class AuthGuardService implements CanActivate {
-    constructor(private dotRouterService: DotRouterService, private loginService: LoginService) {}
+    constructor(
+        private dotRouterService: DotRouterService,
+        private loginService: LoginService
+    ) {}
 
     canActivate(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
         return this.loginService.isLogin$.pipe(

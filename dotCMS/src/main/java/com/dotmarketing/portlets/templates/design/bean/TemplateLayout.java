@@ -15,11 +15,10 @@ import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtml
 
 import java.io.Serializable;
 
-import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -52,7 +51,11 @@ public class TemplateLayout implements Serializable {
     private Body body;
     private Sidebar sidebar;
 
-
+    /**
+     * This count how many times the TemplateLayout have changed, but it counts just layout movement
+     * it means if A Container is moved, remove or added.
+     */
+    private int version = 1;
 
     public String getPageWidth () {
         return pageWidth;
@@ -187,6 +190,19 @@ public class TemplateLayout implements Serializable {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TemplateLayout that = (TemplateLayout) o;
+        return toString().equals(that.toString());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(toString());
+    }
+
     /**
      * Return true if the container exists into the TemplateLayout
      *
@@ -257,4 +273,11 @@ public class TemplateLayout implements Serializable {
             : uuid1.equals(uuid2);
     }
 
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
 }

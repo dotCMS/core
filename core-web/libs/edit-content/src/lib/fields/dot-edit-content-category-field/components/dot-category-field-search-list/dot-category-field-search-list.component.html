@@ -1,0 +1,65 @@
+<div #tableContainer class="category-field__search-list">
+    @if (!$isLoading()) {
+        <p-table
+            data-testId="categories-table"
+            [scrollHeight]="$scrollHeight()"
+            [scrollable]="true"
+            [value]="$categories()"
+            dataKey="key"
+            selectionMode="multiple"
+            [(selection)]="itemsSelected"
+            (onHeaderCheckboxToggle)="onHeaderCheckboxToggle($event)"
+            (onRowSelect)="onSelectItem($event)"
+            (onRowUnselect)="onRemoveItem($event)"
+            styleClass="dotTable">
+            <ng-template pTemplate="header">
+                <tr data-testId="table-header">
+                    <th id="checkbox" scope="col" data-testId="table-header-checkbox">
+                        <p-tableHeaderCheckbox style="width: 4rem"></p-tableHeaderCheckbox>
+                    </th>
+                    <th data-testId="table-header-category-name" id="category-name" scope="col">
+                        {{ 'edit.content.category-field.search.name' | dm }}
+                    </th>
+                    <th id="parents" data-testId="table-header-parents" scope="col">
+                        {{ 'edit.content.category-field.search.assignee' | dm }}
+                    </th>
+                </tr>
+            </ng-template>
+
+            <ng-template let-category pTemplate="body">
+                <tr data-testId="table-row">
+                    <td>
+                        <p-tableCheckbox [value]="category"></p-tableCheckbox>
+                    </td>
+                    <td>{{ category.value }}</td>
+                    <td>
+                        <span [pTooltip]="category.path" tooltipPosition="top">
+                            {{
+                                category.path || 'edit.content.category-field.category.root-name'
+                                    | dm
+                            }}
+                        </span>
+                    </td>
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="3">
+                        <dot-empty-container
+                            [configuration]="$emptyOrErrorMessage()"
+                            [hideContactUsLink]="true" />
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    } @else {
+        <dot-table-skeleton
+            data-testId="categories-skeleton"
+            [columns]="[
+                '',
+                'edit.content.category-field.search.name' | dm,
+                'edit.content.category-field.search.assignee' | dm
+            ]" />
+    }
+</div>

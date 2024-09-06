@@ -1,5 +1,6 @@
-import { DotCMSAuthorizationLoginParams, DotCMSError } from '../models';
 import fetch, { Response } from 'cross-fetch';
+
+import { DotCMSAuthorizationLoginParams, DotCMSError } from '../models';
 
 function getErrorMessage(data: { [key: string]: any }) {
     if (data.errors) {

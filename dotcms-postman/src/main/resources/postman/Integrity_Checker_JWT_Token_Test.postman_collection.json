@@ -1,0 +1,1074 @@
+{
+	"info": {
+		"_postman_id": "715ececa-9725-4a67-8448-ec7b26abf20c",
+		"name": "Integrity Checker JWT Token Test",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "generate",
+			"item": [
+				{
+					"name": "with_admin_user",
+					"item": [
+						{
+							"name": "request_token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"    pm.expect(jsonData.entity).to.not.eq(undefined);",
+											"    pm.expect(jsonData.entity.jwt).to.not.eq(undefined);",
+											"    pm.collectionVariables.set(\"token\", jsonData.entity.jwt);",
+											"});",
+											"",
+											"pm.test('Response has a valid JWT', function () {",
+											"    pm.expect(pm.response.json().entity.jwt).to.match(/^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_.+/=]*$/);",
+											"})",
+											"",
+											"pm.test(\"Token ID should be unique\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    const tokenID = jsonData.entity.token.id;",
+											"    pm.collectionVariables.get(\"tokenIDs\") || pm.collectionVariables.set(\"tokenIDs\", []);",
+											"    const tokenIDs = pm.collectionVariables.get(\"tokenIDs\");",
+											"    pm.expect(tokenIDs).to.not.include(tokenID);",
+											"    tokenIDs.push(tokenID);",
+											"    pm.collectionVariables.set(\"tokenIDs\", tokenIDs);",
+											"});",
+											""
+		
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 94571365,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/apitoken",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"apitoken"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "logout",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/logout",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"logout"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "request_integrity_checker_generate",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var transactionId = pm.response.text();",
+											"    pm.collectionVariables.set(\"transactionId\", transactionId);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/integrity/_generateintegritydata",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"integrity",
+										"_generateintegritydata"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "check_transaction_id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/integrity/{{transactionId}}/integrityData",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"integrity",
+										"{{transactionId}}",
+										"integrityData"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "using_basic_authentication_instead_JWT_token",
+					"item": [
+						{
+							"name": "request_pp",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/octet-stream",
+										"type": "text"
+									},
+									{
+										"key": "Content-Disposition",
+										"value": "attachment",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "file",
+									"file": {
+										"src": "resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundlePublisher/publish",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundlePublisher",
+										"publish"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "fail_not_token_sent",
+					"item": [
+						{
+							"name": "request_integrity_generate",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"",
+											"pm.test(\"Check WWW-Authenticate header\", function () {",
+											"    expected = 'Bearer realm=\"example\",error=\"invalid_token\",error_key=\"__invalid_token__\",error_description=\"\"';",
+											"",
+											"    pm.response.to.be.header('WWW-Authenticate', expected);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/octet-stream"
+									},
+									{
+										"key": "Content-Disposition",
+										"type": "text",
+										"value": "attachment"
+									}
+								],
+								"body": {
+									"mode": "file",
+									"file": {
+										"src": "resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/integrity/_generateintegritydata",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"integrity",
+										"_generateintegritydata"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "fail_not_valid_token",
+					"item": [
+						{
+							"name": "request_integrity_generate",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"",
+											"pm.test(\"Check WWW-Authenticate header\", function () {",
+											"    expected = 'Bearer realm=\"example\",error=\"invalid_token\",error_key=\"__invalid_token__\",error_description=\"\"';",
+											"",
+											"    pm.response.to.be.header('WWW-Authenticate', expected);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "not_valid_token",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/octet-stream"
+									},
+									{
+										"key": "Content-Disposition",
+										"type": "text",
+										"value": "attachment"
+									}
+								],
+								"body": {
+									"mode": "file",
+									"file": {
+										"src": ""
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/integrity/_generateintegritydata",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"integrity",
+										"_generateintegritydata"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Fix conflicts",
+			"item": [
+				{
+					"name": "with_admin_user",
+					"item": [
+						{
+							"name": "create folder",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData);",
+											"",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"folder_integrity_test_demo.tar.gz\");",
+											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/octet-stream"
+									},
+									{
+										"key": "Content-Disposition",
+										"type": "text",
+										"value": "attachment"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"contentType": "application/tar+gzip ",
+											"type": "file",
+											"src": "resources/Push_publish/folder_integrity_test_demo.tar.gz"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/sync",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"sync"
+									]
+								},
+								"description": "Imports a Bundle that includes:\n*  A piece of content of type \"Rich text\" with \"test Content\" as title and body"
+							},
+							"response": []
+						},
+						{
+							"name": "request_token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"    pm.expect(jsonData.entity).to.not.eq(undefined);",
+											"    pm.expect(jsonData.entity.jwt).to.not.eq(undefined);",
+											"    pm.collectionVariables.set(\"token\", jsonData.entity.jwt);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 94571365,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/apitoken",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"apitoken"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "logout",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/logout",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"logout"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Execute Task Upgrade",
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"upgradeTaskClass\":\"com.dotmarketing.startup.runonce.Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTables\"\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/upgradetask",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"upgradetask"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "request_fix_conflicts",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"warning": "This is a duplicate header and will be overridden by the Content-Type header generated by Postman.",
+										"key": "Content-Type",
+										"value": "multipart/form-data",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "DATA_TO_FIX",
+											"type": "file",
+											"src": "resources/Push_publish/DataToFix_demo.zip"
+										},
+										{
+											"key": "TYPE",
+											"value": "FOLDERS",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/integrity/_fixconflictsfromremote",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"integrity",
+										"_fixconflictsfromremote"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "check folder id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData[\"entity\"][\"inode\"]).to.eql(\"8b30893d-8b91-4c1f-8289-1308032961a0\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/folder/sitename/demo.dotcms.com/uri/folder_integrity_test",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"folder",
+										"sitename",
+										"demo.dotcms.com",
+										"uri",
+										"folder_integrity_test"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete folder",
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "{{serverURL}}/",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{serverURL}}/c/portal/layout?p_l_id=b7ab5d3c-5ee0-4195-a17e-8f5579d718dd&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&angularCurrentPortlet=site-browser&p_p_mode=view&_site_browser_struts_action=%2Fext%2Ffolders%2Fedit_folder&_site_browser_cmd=delete&inode=8b30893d-8b91-4c1f-8289-1308032961a0",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"c",
+										"portal",
+										"layout"
+									],
+									"query": [
+										{
+											"key": "p_l_id",
+											"value": "b7ab5d3c-5ee0-4195-a17e-8f5579d718dd"
+										},
+										{
+											"key": "p_p_id",
+											"value": "site-browser"
+										},
+										{
+											"key": "p_p_action",
+											"value": "1"
+										},
+										{
+											"key": "p_p_state",
+											"value": "maximized"
+										},
+										{
+											"key": "angularCurrentPortlet",
+											"value": "site-browser"
+										},
+										{
+											"key": "p_p_mode",
+											"value": "view"
+										},
+										{
+											"key": "_site_browser_struts_action",
+											"value": "%2Fext%2Ffolders%2Fedit_folder"
+										},
+										{
+											"key": "_site_browser_cmd",
+											"value": "delete"
+										},
+										{
+											"key": "inode",
+											"value": "8b30893d-8b91-4c1f-8289-1308032961a0"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "create folder again",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData);",
+											"",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"folder_integrity_test_demo.tar.gz\");",
+											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/octet-stream"
+									},
+									{
+										"key": "Content-Disposition",
+										"type": "text",
+										"value": "attachment"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"contentType": "application/tar+gzip ",
+											"type": "file",
+											"src": "resources/Push_publish/folder_integrity_test_demo.tar.gz"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/sync",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"sync"
+									]
+								},
+								"description": "Imports a Bundle that includes:\n*  A piece of content of type \"Rich text\" with \"test Content\" as title and body"
+							},
+							"response": []
+						},
+						{
+							"name": "request_fix_conflicts again",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"warning": "This is a duplicate header and will be overridden by the Content-Type header generated by Postman.",
+										"key": "Content-Type",
+										"value": "multipart/form-data",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "DATA_TO_FIX",
+											"type": "file",
+											"src": "resources/Push_publish/DataToFix_demo.zip"
+										},
+										{
+											"key": "TYPE",
+											"value": "FOLDERS",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/integrity/_fixconflictsfromremote",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"integrity",
+										"_fixconflictsfromremote"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "check folder id again",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData[\"entity\"][\"inode\"]).to.eql(\"8b30893d-8b91-4c1f-8289-1308032961a0\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/folder/sitename/demo.dotcms.com/uri/folder_integrity_test",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"folder",
+										"sitename",
+										"demo.dotcms.com",
+										"uri",
+										"folder_integrity_test"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "serverURL",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "token",
+			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk2NTdmY2ZhMy02YWRlLTQ3NWMtOGY5OS03YzM2NDg0Y2E2YWEiLCJ4bW9kIjoxNjA0NDE3NzA3MDAwLCJuYmYiOjE2MDQ0MTc3MDcsImlzcyI6IjhlNTFiMGFiOGUiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTg5ODkwNzIsImlhdCI6MTYwNDQxNzcwNywianRpIjoiN2VjZDE1ODEtMDc2OS00YWZkLWIxYWUtODlhOTQ3M2M1ZjRiIn0.ZIr7ZJSv5UJSPFB0QGxy3Ye2tyA8LK_tqDx6987OP34"
+		},
+		{
+			"key": "bundle_id",
+			"value": "bundle_1598948729120"
+		},
+		{
+			"key": "transactionId",
+			"value": "48db03da-d303-47cc-af29-9be490e99648"
+		}
+	]
+}

@@ -15,14 +15,14 @@ p-panel {
 }
 
 .p-panel-header {
-    font-size: $font-size-xl;
+    font-size: $font-size-lg;
     margin: $spacing-1 0;
     padding: $spacing-3 0;
     position: relative;
 
     .p-panel-icons span {
         color: $color-palette-primary;
-        font-size: $font-size-xl;
+        font-size: $font-size-lg;
         margin-left: $spacing-1;
         margin-right: $spacing-2;
     }

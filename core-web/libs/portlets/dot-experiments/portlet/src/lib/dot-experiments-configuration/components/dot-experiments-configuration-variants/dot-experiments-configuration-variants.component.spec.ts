@@ -15,8 +15,12 @@ import { ConfirmPopup } from 'primeng/confirmpopup';
 import { Inplace } from 'primeng/inplace';
 import { Tooltip } from 'primeng/tooltip';
 
-import { DotCopyButtonComponent } from '@components/dot-copy-button/dot-copy-button.component';
-import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotSessionStorageService
+} from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
@@ -24,15 +28,13 @@ import {
     DotPageMode,
     ExperimentSteps
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,
     MockDotMessageService,
     PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
 
@@ -51,6 +53,9 @@ const messageServiceMock = new MockDotMessageService({
     'dot.common.dialog.reject': 'Cancel'
 });
 
+const LOCAL_PARENT_RESOLVERS_ACTIVE_ROUTE_DATA = PARENT_RESOLVERS_ACTIVE_ROUTE_DATA;
+LOCAL_PARENT_RESOLVERS_ACTIVE_ROUTE_DATA.parent.parent.snapshot.data.content.page.canLock = true;
+
 const ActivatedRouteMock = {
     snapshot: {
         params: {
@@ -59,7 +64,7 @@ const ActivatedRouteMock = {
         data: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data
     },
     parent: {
-        ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
+        ...LOCAL_PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
     }
 };
 
@@ -204,7 +209,13 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 url: 'link1',
                 promoted: false
             },
-            { id: '1111111', name: 'test', weight: 33.33, url: 'link2', promoted: false }
+            {
+                id: '1111111',
+                name: 'test',
+                weight: 33.33,
+                url: 'link2',
+                promoted: false
+            }
         ];
         beforeEach(() => {
             loadExperiment(EXPERIMENT_MOCK, variants);
@@ -276,7 +287,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(confirmationService.confirm).toHaveBeenCalled();
         });
 
-        it('should disable tooltip if is on draft', () => {
+        it('should disable tooltip if not have a valid error label', () => {
             spectator.detectChanges();
 
             spectator
@@ -287,7 +298,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 });
         });
 
-        it('should disable button and show tooltip when experiment is nos on draft', () => {
+        it('should disable button and show tooltip when experiment have an error label', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK_2,

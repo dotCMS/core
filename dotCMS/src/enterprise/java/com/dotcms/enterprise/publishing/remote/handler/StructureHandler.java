@@ -54,6 +54,7 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -74,7 +75,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -118,7 +118,7 @@ public class StructureHandler implements IHandler {
         }
 
 		try{
-	        XStream xstream=new XStream(new DomDriver());
+	        XStream xstream = XStreamHandler.newXStreamInstance();
 	        //Handle folders
 	        for(File structureFile: structures) {
 	        	if(structureFile.isDirectory()) continue;

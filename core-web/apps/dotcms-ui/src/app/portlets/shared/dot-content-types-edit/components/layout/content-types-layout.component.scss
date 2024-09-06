@@ -87,10 +87,6 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
         flex-direction: column;
         flex-shrink: 0;
 
-        dot-content-types-fields-list {
-            overflow: auto;
-        }
-
         dot-content-type-fields-row-list {
             height: 200px;
         }
@@ -105,7 +101,7 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
     }
 
     .content-type__title {
-        font-size: $font-size-lg;
+        font-size: $font-size-lmd;
         display: flex;
         flex-flow: column wrap;
 
@@ -149,7 +145,7 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
     }
 
     .content-type__dot-separator {
-        font-size: $font-size-xl;
+        font-size: $font-size-lg;
         margin: 0 4px;
         vertical-align: middle;
     }

@@ -1,0 +1,41 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/c",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matches": ".*\"content\":\"What is the cultural significance of the Day of the Dead in Mexico.*"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "cmpl-8",
+      "object": "text_completion",
+      "created": 1699999999,
+      "model": "gpt-3.5-turbo-16k",
+      "choices": [
+        {
+          "text": "The Day of the Dead (Día de los Muertos) is a Mexican holiday celebrated on November 1st and 2nd to honor and remember deceased loved ones. It is a blend of indigenous and Catholic traditions, featuring vibrant altars (ofrendas), marigold flowers, sugar skulls, and parades. The holiday reflects a view of death as a natural part of life and a time for family and community gatherings.",
+          "index": 0,
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 14,
+        "completion_tokens": 58,
+        "total_tokens": 72
+      }
+    }
+  }
+}

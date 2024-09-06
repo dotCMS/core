@@ -3,16 +3,14 @@
 
     <div class="device-selector__field flex-grow-1">
         <p-dropdown
-            class="p-dropdown-sm"
-            id="device-selector"
+            (onChange)="change($event.value)"
             [(ngModel)]="value"
             [disabled]="disabled"
             [options]="options"
             [placeholder]="placeholder"
-            (onChange)="change($event.value)"
+            class="p-dropdown-sm"
+            id="device-selector"
             dataKey="inode"
-            optionLabel="name"
-        >
-        </p-dropdown>
+            optionLabel="name"></p-dropdown>
     </div>
 </div>

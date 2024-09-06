@@ -1,0 +1,9 @@
+@use "variables" as *;
+
+p-tag {
+    cursor: pointer;
+}
+
+.experiments__icon {
+    margin-right: $spacing-1;
+}

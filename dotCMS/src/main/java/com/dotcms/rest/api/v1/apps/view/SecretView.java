@@ -119,7 +119,6 @@ public class SecretView {
             ViewUtil.pushSecret(map);
             final String json = mapper.writeValueAsString(map);
             jsonGenerator.writeRawValue(json);
-
         }
 
         private void buildCommonJson(final AbstractProperty property,
@@ -127,6 +126,9 @@ public class SecretView {
             final Type type = property.getType();
             map.put("type", type);
             map.put("hidden", property.isHidden());
+            map.put("hasEnvVar", property.hasEnvVar());
+            map.put("envShow", property.isEnvShow());
+            map.put("hasEnvVarValue", property.hasEnvVarValue());
             if (type.equals(Type.BOOL)) {
                 map.put("value", property.getBoolean());
             } else {
@@ -148,9 +150,7 @@ public class SecretView {
                     }
                 } else {
                     final String value = property.getString();
-                    map.put("value",
-                            property.isHidden() && UtilMethods.isSet(value) ? HIDDEN_SECRET_MASK
-                                    : value);
+                    map.put("value", property.isHidden() && UtilMethods.isSet(value) ? HIDDEN_SECRET_MASK : value);
                 }
             }
         }

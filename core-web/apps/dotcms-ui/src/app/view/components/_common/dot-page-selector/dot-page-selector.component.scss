@@ -13,11 +13,6 @@
         .p-autocomplete-list-item {
             white-space: nowrap;
         }
-
-        .p-autocomplete-input {
-            // important because p-autocomplete can add inline styles.
-            padding-right: $spacing-9 !important;
-        }
     }
 
     dot-field-helper {

@@ -10,15 +10,12 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { skip } from 'rxjs/operators';
 
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotEventsService } from '@dotcms/data-access';
+import { DotEventsService, DotRouterService, DotIframeService } from '@dotcms/data-access';
 import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { DotMenu } from '@dotcms/dotcms-models';
 import { LoginServiceMock } from '@dotcms/utils-testing';
-import { DotMenu } from '@models/navigation';
 
 import { DotNavigationService } from './dot-navigation.service';
-
-import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
 
 class RouterMock {
     _events: Subject<any> = new Subject();

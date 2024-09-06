@@ -1,0 +1,223 @@
+name: 'Deploy Artifact to Artifactory'
+description: 'Deploy the dotCMS artifacts to Artifactory'
+inputs:
+  modules:
+    description: 'Comma-separated list of modules to deploy, if not provided, will be extracted from the project POM file.'
+    required: false
+  exclude-ext:
+    description: 'Comma-separated list of extensions to be excluded.'
+    required: false
+  dry-run:
+    description: 'Enable dry-run mode'
+    required: false
+  version:
+    description: 'Version of the artifacts to deploy, if not provided, will be extracted from the project POM file.'
+    required: false
+  artifactory-repository:
+    description: 'Artifactory Repository, if not provided, will be extracted from the project POM file.'
+    required: false
+  artifactory-url:
+    description: 'Artifactory URL, if not provided, will be extracted from the project POM file.'
+    required: false
+  artifactory-access-token:
+    description: 'Artifactory Access Token. It takes precedence over artifactory-username and artifactory-password.'
+    required: false
+  artifactory-username:
+    description: 'Artifactory username'
+    required: false
+  artifactory-password:
+    description: 'Artifactory password'
+    required: false
+  github-token:
+    description: 'GitHub Token'
+    required: true
+  artifact-run-id:
+    default: ${{ github.run_id }}
+    description: 'The run id of the core artifacts'
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+
+    - name: Install xmllint
+      run: |
+        sudo apt-get update && sudo apt-get install -y libxml2-utils
+      shell: bash
+
+    - uses: ./.github/actions/core-cicd/maven-job
+      with:
+        github-token: ${{ inputs.github-token }}
+        stage-name: "Deploy Artifacts Validate"
+        maven-args: "validate" # We don't need to build just get the repo and use validate to check everything exists
+        artifacts-from: ${{ inputs.artifact-run-id }}
+
+    - uses: jfrog/setup-jfrog-cli@v4
+
+    - name: 'Extract project modules'
+      if: ${{ inputs.modules == '' || inputs.modules == null }}
+      id: maven-modules
+      run: |
+        echo "::group::Extract project modules"
+        POM_PATH="${{ inputs.pom-path }}"
+        artifact_ids=""
+
+        # Function to extract artifact ID from POM file
+        extract_artifact_id() {
+          mvn -f "$1" help:evaluate -Dexpression=project.artifactId -q -DforceStdout 2>/dev/null || true
+        }
+
+        # Function to get submodules from POM file
+        get_submodules() {
+          mvn -f "$1" help:evaluate -Dexpression=project.modules -q -DforceStdout 2>/dev/null | sed 's/<[^>]*>//g' | tr -d '\n' | tr -s ' ' | tr ' ' ',' || true
+        }
+
+        # Function to process each module and its submodules
+        process_module() {
+        
+          local module_path="$1"
+          local module_pom="$module_path/pom.xml"
+        
+          if [ -f "$module_pom" ]; then
+            artifactId=$(extract_artifact_id "$module_pom")
+        
+            if [[ -z "$artifactId" || "$artifactId" == *"[ERROR]"* ]]; then
+              artifact_ids+="$module_path,"
+            else
+              artifact_ids+="$artifactId,"
+            fi
+
+            submodules=$(get_submodules "$module_pom")
+            if [[ -z "$submodules" || "$submodules" == *"[ERROR]"* ]]; then
+              return
+            fi
+
+            submodules=$(echo $submodules | sed 's/^,//' || true)
+
+            # Process each module and submodule recursively
+            for submodule in ${submodules//,/ }; do
+              process_module "$module_path/$submodule"
+            done
+          else
+            artifact_ids+="$module_path,"
+          fi
+        }
+
+        modules=$(mvn -f "$POM_PATH" help:evaluate -Dexpression=project.modules -q -DforceStdout 2>/dev/null | sed 's/<[^>]*>//g' | tr -d '\n' | tr -s ' ' | tr ' ' ',' || true)
+        modules=$(echo $modules | sed 's/^,//' || true)
+
+        for module in ${modules//,/ }; do
+          process_module "$module"
+        done
+
+        artifact_ids=$(echo $artifact_ids | sed 's/,$/,dotcms-root/' || true)
+        echo "::notice::modules: $artifact_ids"
+        echo "artifact-ids=${artifact_ids}" >> $GITHUB_OUTPUT
+        echo "::endgroup::"
+      shell: bash
+
+    - name: 'Extract project version'
+      if: ${{ inputs.version == '' || inputs.version == null }}
+      id: maven-version
+      run: |
+        echo "::group::Extract project version"
+        version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+        echo "::notice::version: $version"
+        echo "version=$version" >> $GITHUB_OUTPUT
+        echo "::endgroup::"
+      shell: bash
+
+    - name: 'Extract project repo'
+      if: ${{ inputs.artifactory-repository == '' || inputs.artifactory-repository == null }}
+      id: maven-artifact-repository
+      env:
+        VERSION: ${{ inputs.version || steps.maven-version.outputs.version }}
+      run: |
+        echo "::group::Extract artifact repository"
+        echo ""
+        
+        POM_FILE="pom.xml"
+        
+        if [[ ! -f "$POM_FILE" ]]; then
+          echo "$POM_FILE file is missing."
+          exit 1
+        fi
+
+        # Determine the node type based on the version
+        if [[ "$VERSION" =~ [Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt] ]]; then
+          NODE_TYPE="snapshotRepository"
+        else 
+          NODE_TYPE="repository"
+        fi
+
+        echo "NODE_TYPE=$NODE_TYPE"
+
+        # Extract the repository URL from the POM file
+        REPO=$(xmllint --xpath "//*[local-name()='distributionManagement']/*[local-name()='$NODE_TYPE']/*[local-name()='url']/text()" "$POM_FILE" 2>/dev/null)
+        
+        if [[ "$REPO" =~ ^(https://[^/]+/[^/]+)/(.+)$ ]]; then
+          SERVER_URL="${BASH_REMATCH[1]}"
+          REPO_NAME="${BASH_REMATCH[2]}"
+        
+          echo "url=$SERVER_URL" >> $GITHUB_OUTPUT
+          echo "repo=$REPO_NAME" >> $GITHUB_OUTPUT
+        else
+          echo "Invalid REPO format"
+          exit 1
+        fi
+
+        echo "::notice::ARTIFACTORY_URL=$SERVER_URL"
+        echo "::notice::ARTIFACTORY_REPO=$REPO_NAME"
+        
+        echo "::endgroup::"
+      shell: bash
+
+    - name: 'JFrog CLI context'
+      env:
+        ARTIFACTORY_URL: ${{ inputs.artifactory-url || steps.maven-artifact-repository.outputs.url }}
+        ARTIFACTORY_ACCESS_TOKEN: ${{ inputs.artifactory-access-token }}
+      run: |
+        echo "::group::JFrog CLI context"
+        jf rt ping --url=$ARTIFACTORY_URL --access-token=$ARTIFACTORY_ACCESS_TOKEN
+        echo "::endgroup::"
+      shell: bash
+
+    - name: 'Deploy artifacts'
+      env:
+        ARTIFACTORY_ACCESS_TOKEN: ${{ inputs.artifactory-access-token }}
+        ARTIFACTORY_URL: ${{ inputs.artifactory-url || steps.maven-artifact-repository.outputs.url }}
+        ARTIFACTORY_USERNAME: ${{ inputs.artifactory-username }}
+        ARTIFACTORY_PASSWORD: ${{ inputs.artifactory-password }}
+        ARTIFACTORY_REPO: ${{ inputs.artifactory-repository || steps.maven-artifact-repository.outputs.repo }}
+        VERSION: ${{ inputs.version || steps.maven-version.outputs.version }}
+        PRJ_MODULES: ${{ inputs.modules || steps.maven-modules.outputs.artifact-ids }}
+        EXCLUDE_EXT: ${{ inputs.exclude-ext || 'repositories,excludeext' }}
+        DRY_RUN_MODE: ${{ inputs.dry-run }}
+      run: |
+        echo "::group::Deploy Artifacts"
+        
+        MAVEN_DIR=${HOME}/.m2/repository
+        cd $MAVEN_DIR
+
+        # Replace ',' with '|'
+        MODULES=$(echo $PRJ_MODULES | sed 's/,/|/g')
+        # Replace '.' with '\.'
+        ESCAPED_VERSION=$(echo $VERSION | sed 's/\./\\./g')
+        # Replace ',' with '|'
+        EXCLUDE=$(echo $EXCLUDE_EXT | sed 's/,/|/g')
+
+        if [[ $DRY_RUN_MODE == true ]]; then
+          DRY_RUN='--dry-run'
+        fi
+
+        # Deploy the artifacts using JFrog CLI with appropriate credentials and options
+        if [[ -n "$ARTIFACTORY_ACCESS_TOKEN" ]]; then
+          jf rt u "com/dotcms/(${MODULES})/${ESCAPED_VERSION}" $ARTIFACTORY_REPO --url=$ARTIFACTORY_URL --access-token=$ARTIFACTORY_ACCESS_TOKEN --flat=false --exclusions ".*\.(${EXCLUDE})$" --recursive --regexp $DRY_RUN
+        elif [[ -n "$ARTIFACTORY_USERNAME" && -n "$ARTIFACTORY_PASSWORD" ]]; then
+          jf rt u "com/dotcms/(${MODULES})/${ESCAPED_VERSION}" $ARTIFACTORY_REPO --url=$ARTIFACTORY_URL --user=$ARTIFACTORY_USERNAME --password=$ARTIFACTORY_PASSWORD --flat=false --exclusions ".*\.(${EXCLUDE})$" --recursive --regexp $DRY_RUN
+        else
+          echo "Credentials not provided."
+          exit 1          
+        fi
+        echo "::endgroup::"
+      shell: bash

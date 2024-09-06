@@ -9,6 +9,7 @@
 .page-info {
     &__locked-by-message {
         color: $red;
+        padding: $spacing-3;
     }
 
     &__locked-by-message--blink {

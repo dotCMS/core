@@ -1,6 +1,10 @@
 package com.dotcms.contenttype.model.field.layout;
 
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.ColumnField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldDivider;
+import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
@@ -187,9 +191,9 @@ public class FieldUtil {
      * Set the {@link Field#sortOrder()} to be equals the fields list index
      *
      * @param fields new List with all sort order equals to list's index
-     * @return
+     * @return a new {@link SortOrderFix} with the ordered fields
      */
-    static SortOrderFix fixSortOrder(final List<Field> fields) {
+    public static SortOrderFix fixSortOrder(final List<Field> fields) {
         final List<Field> newFieldsWithSorOrder = new ArrayList<>();
         final List<Field> fieldsUpdated = new ArrayList<>();
 

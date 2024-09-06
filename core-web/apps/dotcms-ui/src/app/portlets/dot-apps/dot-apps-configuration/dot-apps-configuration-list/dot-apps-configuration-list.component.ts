@@ -2,7 +2,7 @@ import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@
 
 import { LazyLoadEvent } from 'primeng/api';
 
-import { DotAppsSites } from '@dotcms/dotcms-models';
+import { DotAppsSite } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-apps-configuration-list',
@@ -14,12 +14,12 @@ export class DotAppsConfigurationListComponent {
 
     @Input() hideLoadDataButton: boolean;
     @Input() itemsPerPage: number;
-    @Input() siteConfigurations: DotAppsSites[];
+    @Input() siteConfigurations: DotAppsSite[];
 
     @Output() loadData = new EventEmitter<LazyLoadEvent>();
-    @Output() edit = new EventEmitter<DotAppsSites>();
-    @Output() export = new EventEmitter<DotAppsSites>();
-    @Output() delete = new EventEmitter<DotAppsSites>();
+    @Output() edit = new EventEmitter<DotAppsSite>();
+    @Output() export = new EventEmitter<DotAppsSite>();
+    @Output() delete = new EventEmitter<DotAppsSite>();
 
     /**
      * Emits action to load next configuration page

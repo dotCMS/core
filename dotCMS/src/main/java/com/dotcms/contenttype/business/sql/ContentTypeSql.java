@@ -29,7 +29,7 @@ public abstract class ContentTypeSql {
 
 	public static String SELECT_ALL_STRUCTURE_FIELDS = "select  inode.inode as inode, owner, idate as idate, name, "
 			+ "description, default_structure, page_detail, structuretype, system, fixed, velocity_var_name , "
-			+ "url_map_pattern , host, folder, expire_date_var , publish_date_var , mod_date, icon, marked_for_deletion, sort_order "
+			+ "url_map_pattern , host, folder, expire_date_var , publish_date_var , mod_date, icon, marked_for_deletion, sort_order, metadata "
 			+ "from inode, structure  where inode.type='structure' and inode.inode = structure.inode ";
 
 	public static String SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE = SELECT_ALL_STRUCTURE_FIELDS + NON_MARKED_FOR_DELETION;
@@ -49,8 +49,8 @@ public abstract class ContentTypeSql {
 	public static String INSERT_TYPE_INODE = "insert into inode (inode, idate, owner, type) values (?,?,?,'structure')";
 
 	public static String INSERT_TYPE = "insert into structure(inode,name,description,default_structure,page_detail,"
-			+ "structuretype,system,fixed,velocity_var_name,url_map_pattern,host,folder,expire_date_var,publish_date_var,mod_date,icon,sort_order,marked_for_deletion) "
-			+ "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+			+ "structuretype,system,fixed,velocity_var_name,url_map_pattern,host,folder,expire_date_var,publish_date_var,mod_date,icon,sort_order,marked_for_deletion,metadata) "
+			+ "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 	public static String UPDATE_TYPE = "update structure set "
 			+ "name=?, "
@@ -68,25 +68,24 @@ public abstract class ContentTypeSql {
 			+ "mod_date=?,"
 			+ "icon=?,"
 			+ "sort_order=?, "
-			+ "marked_for_deletion=? "
+			+ "marked_for_deletion=?, "
+			+ "metadata=? "
 			+ "where inode=?";
 
 	public static String SELECT_QUERY_CONDITION = SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE
 			+ " and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "  //search
 			+ " %s" //if we have a condition
-			+ " and host like ? "
-			+ " and structuretype>=? and structuretype<= ? "
+			+ " and (host like %s) "
+			+ " and structuretype >= ? and structuretype <= ? "
 			+ " order by %s";
 
 	public static String SELECT_INODE_ONLY_QUERY_CONDITION = SELECT_ONLY_INODE_FIELD
 			+ " and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "  //search
 			+ " %s" //if we have a condition
-			+ " and host like ? "
-			+ " and structuretype>=? and structuretype<= ? "
+			+ " and (host like %s) "
+			+ " and structuretype >= ? and structuretype <= ? "
 			+  NON_MARKED_FOR_DELETION
 			+ " order by %s";
-
-
 
 	public static final String SELECT_COUNT_CONDITION = "select count(*) as test from structure, inode "
 			+ "where inode.type='structure' and inode.inode=structure.inode and "
@@ -108,5 +107,9 @@ public abstract class ContentTypeSql {
 	public static String ORDER_BY = " ORDER BY %s";
 
 	public static final String MARK_FOR_DELETION = "update structure set marked_for_deletion = "+DbConnectionFactory.getDBTrue()+" where inode = ?";
+
+	public static String COUNT_CONTENT_TYPES_USING_NOT_SYSTEM_WORKFLOW = "select count(distinct structure_id) from workflow_scheme_x_structure " +
+			"INNER JOIN workflow_scheme ON workflow_scheme.id=workflow_scheme_x_structure.scheme_id " +
+			"where name != 'System Workflow'";
 
 }

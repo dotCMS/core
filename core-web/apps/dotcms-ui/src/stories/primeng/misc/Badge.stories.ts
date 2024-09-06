@@ -1,9 +1,8 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { ButtonModule } from 'primeng/button';
 
-export default {
+const meta: Meta = {
     title: 'PrimeNG/Misc/Badge',
     parameters: {
         docs: {
@@ -18,7 +17,10 @@ export default {
             imports: [ButtonModule]
         })
     ]
-} as Meta;
+};
+export default meta;
+
+type Story = StoryObj;
 
 const TooltipPrimaryTemplate = `
   <p><span class="p-badge">2</span></p>
@@ -26,38 +28,36 @@ const TooltipPrimaryTemplate = `
   <p><span class="p-badge p-badge-xl">6</span></p>
 `;
 
+export const Primary: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: TooltipPrimaryTemplate
+            }
+        }
+    },
+    render: (args) => ({
+        props: args,
+        template: TooltipPrimaryTemplate
+    })
+};
+
 const TooltipSecondaryTemplate = `
   <p><span class="p-badge p-badge-secondary p-badge-secondary">2</span></p>
   <p><span class="p-badge p-badge-secondary p-badge-lg p-badge-sucess">4</span></p>
   <p><span class="p-badge p-badge-secondary p-badge-xl">6</span></p>
 `;
 
-export const Primary: Story<never> = (props: never) => {
-    return {
-        props,
-        template: TooltipPrimaryTemplate
-    };
-};
-
-Primary.parameters = {
-    docs: {
-        source: {
-            code: TooltipPrimaryTemplate
+export const Secondary: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: TooltipSecondaryTemplate
+            }
         }
-    }
-};
-
-export const Secondary: Story = (props: never) => {
-    return {
-        props,
+    },
+    render: (args) => ({
+        props: args,
         template: TooltipSecondaryTemplate
-    };
-};
-
-Secondary.parameters = {
-    docs: {
-        source: {
-            code: TooltipSecondaryTemplate
-        }
-    }
+    })
 };

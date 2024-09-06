@@ -1,20 +1,12 @@
 package com.dotcms.rest.annotation;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Proxy;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
+
 import javax.annotation.Priority;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -23,6 +15,14 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MultivaluedMap;
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import javax.ws.rs.ext.Provider;
 
 /**
  * This decorator reads the annotations on the resources and includes header based on it based on them.
@@ -32,6 +32,7 @@ import javax.ws.rs.core.MultivaluedMap;
  */
 @Singleton
 @Priority(Priorities.HEADER_DECORATOR)
+@Provider
 public class HeaderFilter implements ContainerResponseFilter {
 
 	private final PermissionsUtil  permissionsUtil			= PermissionsUtil.getInstance();
@@ -45,7 +46,7 @@ public class HeaderFilter implements ContainerResponseFilter {
 	public static final String EXPIRES_DEFAULT_DATE 		= "Mon, 26 Jul 1997 05:00:00 GMT";
 
 	private final Map<Class, HeaderDecorator> responseHeaderDecorators =
-			map(
+			Map.of(
 					AccessControlAllowOrigin.class,
 					(final Annotation annotation, final MultivaluedMap<String, Object> headers, final ContainerRequestContext requestContext,
 					 final ContainerResponseContext responseContext) -> {

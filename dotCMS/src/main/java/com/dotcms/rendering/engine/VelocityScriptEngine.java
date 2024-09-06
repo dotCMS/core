@@ -3,7 +3,6 @@ package com.dotcms.rendering.engine;
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
@@ -14,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -47,7 +47,7 @@ public class VelocityScriptEngine implements ScriptEngine {
             }
         }
 
-        return CollectionsUtils.map("output", evalResult, "dotJSON", context.get("dotJSON"));
+        return new HashMap<>(Map.of("output", evalResult, "dotJSON", context.get("dotJSON")));
     }
 
 }

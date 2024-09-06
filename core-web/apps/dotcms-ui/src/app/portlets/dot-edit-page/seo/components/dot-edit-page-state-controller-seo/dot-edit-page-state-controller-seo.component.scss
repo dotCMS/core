@@ -39,7 +39,9 @@ p-inputSwitch {
             position: absolute;
             text-rendering: auto;
             top: 0;
-            transition: transform $basic-speed ease-in, color $basic-speed ease-in;
+            transition:
+                transform $basic-speed ease-in,
+                color $basic-speed ease-in;
         }
 
         .p-inputswitch-checked .p-inputswitch-slider:after {
@@ -58,7 +60,7 @@ p-inputSwitch {
     }
 
     &.warn ::ng-deep .p-inputswitch-slider:after {
-        color: $orange;
+        color: $white;
     }
 }
 
@@ -69,5 +71,9 @@ p-inputSwitch {
 
     dot-edit-page-lock-info {
         display: none;
+    }
+
+    .edit-page-variant-mode dot-edit-page-lock-info {
+        display: block;
     }
 }

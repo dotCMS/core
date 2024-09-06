@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
+import javax.ws.rs.HttpMethod;
 
 public class DotCMSMockRequest implements HttpServletRequest {
 
@@ -41,6 +42,8 @@ public class DotCMSMockRequest implements HttpServletRequest {
     private String servletPath;
     final private Map<String, Object> attributes = new HashMap<>();
     protected byte[] content;
+    private String method = HttpMethod.GET;
+
 
     @Override
     public String getRequestURI() {
@@ -168,9 +171,12 @@ public class DotCMSMockRequest implements HttpServletRequest {
         return 0;
     }
 
+    public void setMethod(String method) {
+        this.method = method;
+    }
     @Override
     public String getMethod() {
-        return null;
+        return method;
     }
 
     @Override

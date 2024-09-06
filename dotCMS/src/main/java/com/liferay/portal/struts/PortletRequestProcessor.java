@@ -22,7 +22,6 @@
 
 package com.liferay.portal.struts;
 
-import com.dotcms.repackage.com.oroad.stxx.plugin.StxxTilesRequestProcessor;
 import com.dotcms.repackage.org.apache.struts.action.Action;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -37,6 +36,7 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
 import com.dotcms.repackage.org.apache.struts.config.ForwardConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.org.apache.struts.tiles.TilesRequestProcessor;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
@@ -69,7 +69,7 @@ import org.apache.commons.logging.LogFactory;
  * @version $Revision: 1.24 $
  *
  */
-public class PortletRequestProcessor extends StxxTilesRequestProcessor {
+public class PortletRequestProcessor extends TilesRequestProcessor {
 
 	public PortletRequestProcessor(ActionServlet servlet, ModuleConfig config)
 		throws ServletException {

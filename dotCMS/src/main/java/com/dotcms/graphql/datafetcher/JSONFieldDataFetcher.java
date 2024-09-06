@@ -21,6 +21,8 @@ public class JSONFieldDataFetcher implements DataFetcher<Map<String, Object>> {
         try {
             final Contentlet contentlet = environment.getSource();
             final String var = environment.getField().getName();
+
+            Logger.debug(this, ()-> "Fetching JSON field for contentlet: " + contentlet.getIdentifier() + " field: " + var);
             String jsonAsString = (String) contentlet.get(var);
             return Try.of(()-> JsonUtil.getJsonFromString(jsonAsString))
                     .getOrElse(Collections.emptyMap());

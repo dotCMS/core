@@ -1,7 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
@@ -117,17 +116,17 @@ public class SQLResultsViewTool implements ViewTool {
     ArrayList<Object> parameterList, int startRow, int maxRow) {
         if (dataSource.equals(DEFAULT_DATASOURCE) && !Config.getBooleanProperty
                 ("ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB", false)) {
-            return reportError(CollectionsUtils.map(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool failed to execute " +
+            return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool failed to execute " +
                     "query on default connection pool because ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false" +
-                    "."), "ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false.");
+                    ".")), "ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false.");
         }
         if (!UtilMethods.isSet(sql)) {
             // SQL Query is not Set. So, return an empty list
             return new ArrayList<>();
         }
         if (!UtilMethods.isSet(dataSource)) {
-            return reportError(CollectionsUtils.map(DOT_CONNECT_SQL_ERROR, "Failed to call the SQLResultsViewTool. " +
-                    "Invalid Data Source."));
+            return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the SQLResultsViewTool. " +
+                    "Invalid Data Source.")));
         }
         if (startRow < 0) {
             startRow = 0;
@@ -138,8 +137,8 @@ public class SQLResultsViewTool implements ViewTool {
         try {
             final Contentlet contentlet = getDbAccessorContentlet();
             if (null == contentlet || !UtilMethods.isSet(contentlet.getIdentifier())) {
-                return reportError(CollectionsUtils.map(DOT_CONNECT_SQL_ERROR, "Failed to call the SQLResultsViewTool" +
-                        ". User failed to execute SQL queries."));
+                return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the SQLResultsViewTool" +
+                        ". User failed to execute SQL queries.")));
             }
             if (!isSQLValid(sql, contentlet)) {
                 return this.errorResults;
@@ -149,8 +148,8 @@ public class SQLResultsViewTool implements ViewTool {
                 final int totalParams = StringUtils.countMatches(sql, "?");
                 if (totalParams != parameterList.size()) {
                     // The amount of params is different. Check them
-                    return reportError(CollectionsUtils.map(DOT_CONNECT_SQL_ERROR, "The number of params in SQL query" +
-                            " is different from the params list size."));
+                    return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "The number of params in SQL query" +
+                            " is different from the params list size.")));
                 }
                 for (final Object parameter : parameterList) {
                     if (isSQLValid(parameter.toString(), contentlet)) {
@@ -165,8 +164,8 @@ public class SQLResultsViewTool implements ViewTool {
             }
             return dc.getResults(dataSource);
         } catch (final Exception e) {
-            return reportError(CollectionsUtils.map(DOT_CONNECT_SQL_ERROR, "An error occurred when executing the SQL " +
-                    "query: " + e.getMessage()));
+            return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "An error occurred when executing the SQL " +
+                    "query: " + e.getMessage())));
         }
     }
 
@@ -217,18 +216,18 @@ public class SQLResultsViewTool implements ViewTool {
     protected boolean isSQLValid(final String sql, final Contentlet contentlet) {
         final String lowerCasedSql = sql.toLowerCase();
         if (lowerCasedSql.contains("user_")) {
-            reportError(CollectionsUtils.map(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool access to user_ table is " +
-                    "forbidden."), "Check content with id: " + contentlet.getIdentifier());
+            reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool access to user_ table is " +
+                    "forbidden.")), "Check content with id: " + contentlet.getIdentifier());
             return Boolean.FALSE;
         }
         if (lowerCasedSql.contains("cms_role")) {
-            reportError(CollectionsUtils.map(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool access to cms_role table is " +
-                    "forbidden."), "Check content with id: " + contentlet.getIdentifier());
+            reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool access to cms_role table is " +
+                    "forbidden.")), "Check content with id: " + contentlet.getIdentifier());
             return Boolean.FALSE;
         }
         if (SQLUtil.containsEvilSqlWords(lowerCasedSql)) {
-            reportError(CollectionsUtils.map(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool is trying to execute a " +
-                    "forbidden query."), "Check content with id: " + contentlet.getIdentifier());
+            reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool is trying to execute a " +
+                    "forbidden query.")), "Check content with id: " + contentlet.getIdentifier());
             return Boolean.FALSE;
         }
         return Boolean.TRUE;

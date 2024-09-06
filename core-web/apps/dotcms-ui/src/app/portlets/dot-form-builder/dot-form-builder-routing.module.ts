@@ -1,17 +1,17 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
+import { portletHaveLicenseResolver } from '@dotcms/ui';
 import { DotContentTypeEditResolver } from '@portlets/shared/dot-content-types-edit/dot-content-types-edit-resolver.service';
 
 import { DotFormBuilderComponent } from './dot-form-builder.component';
-import { DotFormResolver } from './resolvers/dot-form-resolver.service';
 
 const routes: Routes = [
     {
         component: DotFormBuilderComponent,
         path: '',
         resolve: {
-            unlicensed: DotFormResolver
+            haveLicense: portletHaveLicenseResolver
         },
         data: {
             filterBy: 'FORM'

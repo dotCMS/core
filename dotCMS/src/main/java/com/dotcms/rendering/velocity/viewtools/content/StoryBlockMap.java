@@ -16,6 +16,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.velocity.context.Context;
 
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.io.StringWriter;
 
 /**
@@ -25,7 +26,7 @@ import java.io.StringWriter;
  * $contentlet.storyBlock.content
  * $contentlet.storyBlock.toHtml
  */
-public class StoryBlockMap implements Renderable {
+public class StoryBlockMap implements Renderable, Serializable {
 
     final static String DEFAULT_TEMPLATE_STOCK_BLOCK_PATH = "static/storyblock/";
     final static RenderableFactory renderableFactory = new RenderableFactory();

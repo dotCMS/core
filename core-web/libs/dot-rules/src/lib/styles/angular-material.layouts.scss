@@ -11072,11 +11072,21 @@
         -ms-flex-direction: row;
         flex-direction: row;
     }
-    [hide]:not([show-gt-xs]):not([show-gt-sm]):not([show-gt-md]):not([show-gt-lg]):not([show-xl]):not([show]),
-    [hide-gt-xs]:not([show-gt-xs]):not([show-gt-sm]):not([show-gt-md]):not([show-gt-lg]):not([show-xl]):not([show]),
-    [hide-gt-sm]:not([show-gt-xs]):not([show-gt-sm]):not([show-gt-md]):not([show-gt-lg]):not([show-xl]):not([show]),
-    [hide-gt-md]:not([show-gt-xs]):not([show-gt-sm]):not([show-gt-md]):not([show-gt-lg]):not([show-xl]):not([show]),
-    [hide-gt-lg]:not([show-gt-xs]):not([show-gt-sm]):not([show-gt-md]):not([show-gt-lg]):not([show-xl]):not([show]) {
+    [hide]:not([show-gt-xs]):not([show-gt-sm]):not([show-gt-md]):not([show-gt-lg]):not(
+            [show-xl]
+        ):not([show]),
+    [hide-gt-xs]:not([show-gt-xs]):not([show-gt-sm]):not([show-gt-md]):not([show-gt-lg]):not(
+            [show-xl]
+        ):not([show]),
+    [hide-gt-sm]:not([show-gt-xs]):not([show-gt-sm]):not([show-gt-md]):not([show-gt-lg]):not(
+            [show-xl]
+        ):not([show]),
+    [hide-gt-md]:not([show-gt-xs]):not([show-gt-sm]):not([show-gt-md]):not([show-gt-lg]):not(
+            [show-xl]
+        ):not([show]),
+    [hide-gt-lg]:not([show-gt-xs]):not([show-gt-sm]):not([show-gt-md]):not([show-gt-lg]):not(
+            [show-xl]
+        ):not([show]) {
         display: none;
     }
     [hide-xl]:not([show-xl]):not([show-gt-lg]):not([show]) {

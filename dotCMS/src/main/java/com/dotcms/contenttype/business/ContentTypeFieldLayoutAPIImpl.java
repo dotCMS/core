@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotcms.util.CollectionsUtils.list;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -13,13 +15,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * Create, delete, Update and Move Field making sure that the {@link ContentType} keep with a right layout after the operation
@@ -155,30 +154,25 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
         return new DeleteFieldResult(fieldLayoutUpdated, deletedIds);
     }
 
-    /**
-     * Analyzes the field layout for the field that is being updated or deleted in order to check if it also needs to be
-     * fixed. Layout inconsistencies include, for example: Having more than the allowed number of columns, invalid or
-     * missing Row or Column fields, among others.
-     *
-     * @param contentType The {@link ContentType} whose field layout will be validated.
-     * @param user        The {@link User} performing this action.
-     *
-     * @return
-     *
-     * @throws DotDataException     An error occurred when interacting with the data source.
-     * @throws DotSecurityException The specified user doesn't have the required permissions to perform this action.
-     */
-    private FieldLayout fixLayoutIfNecessary(final ContentType contentType, final User user)
+    @Override
+    public FieldLayout fixLayoutIfNecessary(final ContentType contentType, final User user)
             throws DotDataException, DotSecurityException {
 
         final FieldLayout fieldLayout = new FieldLayout(contentType);
 
         if (!fieldLayout.isValidate()) {
-            this.fixLayout(fieldLayout, user);
-            return fieldLayout.getLayoutFixed();
+            return this.fixLayout(fieldLayout, user);
         } else {
             return fieldLayout;
         }
+    }
+
+    @Override
+    public FieldLayout fixLayout(final FieldLayout fieldLayout, final User user)
+            throws DotDataException, DotSecurityException {
+
+        this.internalFixLayout(fieldLayout, user);
+        return fieldLayout.getLayoutFixed();
     }
 
     private Optional<Field> checkFieldExists(final Field fieldToUpdate, final ContentType contentType) {
@@ -199,7 +193,7 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
      * @throws DotSecurityException The specified user doesn't have the required permissions to perform this action.
      * @throws DotDataException     An error occurred when interacting with the data source.
      */
-    private void fixLayout(final FieldLayout fieldLayout, final User user)
+    private void internalFixLayout(final FieldLayout fieldLayout, final User user)
             throws DotSecurityException, DotDataException {
         deleteUnecessaryLayoutFields(fieldLayout, user);
         final List<Field> fields = addSkipForRelationshipCreation(fieldLayout.getLayoutFieldsToCreateOrUpdate());

@@ -1,5 +1,4 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -10,53 +9,11 @@ import { AccordionModule } from 'primeng/accordion';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
-import { CodeHighlighterModule } from 'primeng/codehighlighter';
 import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { FocusTrapModule } from 'primeng/focustrap';
 import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
-
-export default {
-    title: 'PrimeNG/Misc/FocusTrap',
-    parameters: {
-        docs: {
-            description: {
-                component:
-                    'Focus Trap keeps focus within a certain DOM element while tabbing: https://primefaces.org/primeng/showcase/#/focustrap'
-            }
-        }
-    },
-    decorators: [
-        moduleMetadata({
-            imports: [
-                BrowserModule,
-                BrowserAnimationsModule,
-                FormsModule,
-                DialogModule,
-                ButtonModule,
-                InputTextModule,
-                AccordionModule,
-                CodeHighlighterModule,
-                FocusTrapModule,
-                AutoCompleteModule,
-                CalendarModule,
-                MultiSelectModule,
-                DropdownModule,
-                HttpClientModule
-            ]
-        })
-    ],
-    args: {
-        cities: [
-            { name: 'New York', code: 'NY' },
-            { name: 'Rome', code: 'RM' },
-            { name: 'London', code: 'LDN' },
-            { name: 'Istanbul', code: 'IST' },
-            { name: 'Paris', code: 'PRS' }
-        ]
-    }
-} as Meta;
 
 const FocusTrapTemplate = `
   <div pFocusTrap class="card">
@@ -89,26 +46,54 @@ const FocusTrapTemplate = `
 </div>
 `;
 
-type City = {
-    name: string;
-    code: string;
-};
-
-const Template: Story<City[]> = (props: City[]) => {
-    const template = FocusTrapTemplate;
-
-    return {
-        props,
-        template
-    };
-};
-
-export const Primary: Story = Template.bind({});
-
-Primary.parameters = {
-    docs: {
-        source: {
-            code: FocusTrapTemplate
+const meta: Meta = {
+    title: 'PrimeNG/Misc/FocusTrap',
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'Focus Trap keeps focus within a certain DOM element while tabbing: https://primefaces.org/primeng/showcase/#/focustrap'
+            },
+            source: {
+                code: FocusTrapTemplate
+            }
         }
-    }
+    },
+    decorators: [
+        moduleMetadata({
+            imports: [
+                BrowserModule,
+                BrowserAnimationsModule,
+                FormsModule,
+                DialogModule,
+                ButtonModule,
+                InputTextModule,
+                AccordionModule,
+                FocusTrapModule,
+                AutoCompleteModule,
+                CalendarModule,
+                MultiSelectModule,
+                DropdownModule,
+                HttpClientModule
+            ]
+        })
+    ],
+    args: {
+        cities: [
+            { name: 'New York', code: 'NY' },
+            { name: 'Rome', code: 'RM' },
+            { name: 'London', code: 'LDN' },
+            { name: 'Istanbul', code: 'IST' },
+            { name: 'Paris', code: 'PRS' }
+        ]
+    },
+    render: (args) => ({
+        props: args,
+        template: FocusTrapTemplate
+    })
 };
+export default meta;
+
+type Story = StoryObj;
+
+export const Primary: Story = {};

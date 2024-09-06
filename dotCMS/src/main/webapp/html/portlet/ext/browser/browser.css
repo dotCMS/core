@@ -10,12 +10,12 @@
 
 .assetRef {width: 100%; display: block;}
 
-.nameTD{width: 30%;}
-.menuTD{width: 5%;text-align: center;}
-.statusTD{width: 8%;text-align: center;}
-.descriptionTD{width: 30%;}
-.modUserTD{width: 10%;}
-.modDateTD{width: 17%;}
+td.nameTD{width: 30%; padding: 0;}
+td.menuTD{width: 5%;text-align: center; padding: 0;}
+td.statusTD{width: 8%;text-align: center; padding: 0;}
+td.descriptionTD{width: 30%; padding: 0;}
+td.modUserTD{width: 10%; padding: 0;}
+td.modDateTD{width: 17%; padding: 0;}
 .nameTD img, .nameTD span {vertical-align: middle;}
 
 /* if scolling, add these.. */

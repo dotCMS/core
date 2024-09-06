@@ -1,0 +1,87 @@
+version: '3.7'
+
+networks:
+    db_net:
+    es_net:
+
+volumes:
+    cms-shared:
+    cms-local:
+
+services:
+    elasticsearch-test:
+        image: ghcr.io/dotcms/elasticsearch:7.9.1
+        environment:
+            - cluster.name=elastic-cluster
+            - discovery.type=single-node
+            - data
+            - bootstrap.memory_lock=true
+            - CLI_JAVA_OPTS="-Xms3g -Xmx3g"
+        ports:
+            - 9200:9200
+            - 9600:9600
+        ulimits:
+            memlock:
+                soft: -1
+                hard: -1
+        networks:
+            - es_net
+
+    dejavu:
+        image: appbaseio/dejavu:3.6.0
+        container_name: dejavu
+        ports:
+            - '1358:1358'
+        links:
+            - elasticsearch-test
+    db-test:
+        image: postgres:15
+        command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
+        environment:
+            POSTGRES_USER: ${DB_USER:-postgres}
+            POSTGRES_PASSWORD: ${DB_PWD:-postgres}
+            POSTGRES_DB: ${DB_DB:-dotcms}
+        volumes:
+            - ./setup/db/postgres/init-scripts:/docker-entrypoint-initdb.d/
+        tmpfs:
+            - /var/lib/postgresql/data:rw
+        networks:
+            - db_net
+        ports:
+            - '${DB_HOST_PORT:-5432}:5432'
+
+    dotcms-test:
+        image: ${DOTCMS_IMAGE}
+        environment:
+            CATALINA_OPTS: '-XX:+PrintFlagsFinal'
+            DB_BASE_URL: 'jdbc:postgresql://db-test/dotcms'
+            DB_USERNAME: 'postgres'
+            DB_PASSWORD: 'postgres'
+            DOT_ES_ENDPOINTS: 'http://elasticsearch-test:9200'
+            DOT_ES_PROTOCOL: 'http'
+            DOT_DOTCMS_DEV_MODE: 'true'
+            DB_MAX_TOTAL: 15
+            DOT_INDEX_POLICY_SINGLE_CONTENT: 'FORCE'
+            DOT_ASYNC_REINDEX_COMMIT_LISTENERS: 'false'
+            DOT_ASYNC_COMMIT_LISTENERS: 'false'
+            DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS: 600
+            WAIT_FOR_DEPS: 30
+            JVM_ENDPOINT_TEST_PASS: 'obfuscate_me'
+            DOT_ENABLE_SCRIPTING: 'true'
+            DOT_ANNOUNCEMENTS_BASE_URL: 'http://localhost:8080'
+        ports:
+            - 8080:8080
+            - 8443:8443
+            - 8000:8000
+        depends_on:
+            - db-test
+            - elasticsearch-test
+        volumes:
+            - cms-shared:/data/shared
+            - cms-local:/data/local
+            - type: bind
+              source: ./license/license.dat
+              target: /data/local/dotsecure/license/license.dat
+        networks:
+            - db_net
+            - es_net

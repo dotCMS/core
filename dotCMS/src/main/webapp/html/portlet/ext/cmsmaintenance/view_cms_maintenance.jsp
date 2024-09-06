@@ -357,7 +357,7 @@ dojo.ready(function () {
             function (evt) {
                 selectedTab = tab.selectedChildWidget;
                 if (selectedTab.id == "systemProps") {
-                    showSystemVars();
+                    initLoadConfigsAPI();
                 }
 
             });
@@ -791,22 +791,22 @@ var createRow = function (tableId, rowInnerHtml, className, id) {
     }, tableNode );
 };
 
-function killSessionById(sessionId) {
-    var invalidateButtonElem = dijit.byId("invalidateButtonNode-"+sessionId);
+function killSessionById(obfSessionId) {
+    var invalidateButtonElem = dijit.byId("invalidateButtonNode-"+obfSessionId);
 
 	dojo.style(invalidateButtonElem.domNode,{display:"none",visibility:"hidden"});
-	dojo.query('#killSessionProgress-'+sessionId).style({display:"block"});
-	UserSessionAjax.invalidateSession(sessionId,{
+	dojo.query('#killSessionProgress-'+obfSessionId).style({display:"block"});
+	UserSessionAjax.invalidateSession(obfSessionId,{
 			callback:function() {
 				dojo.style(invalidateButtonElem.domNode,{display:"block",visibility:"visible"});
-			    dojo.query('#killSessionProgress-'+sessionId).style({display:"none"});
+			    dojo.query('#killSessionProgress-'+obfSessionId).style({display:"none"});
 			    invalidateButtonElem.set('disabled',true);
 
 			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killed"))%>');
 			},
 			errorHandler:function(message) {
 				dojo.style(invalidateButtonElem.domNode,{display:"block",visibility:"visible"});
-			    dojo.query('#killSessionProgress-'+sessionId).style({display:"none"});
+			    dojo.query('#killSessionProgress-'+obfSessionId).style({display:"none"});
 
 			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
 			}
@@ -855,21 +855,21 @@ function loadUsers() {
 					html+="<td>"+session.userEmail+"</td> ";
 					html+="<td>"+session.userFullName+"</td> ";
 					html+="<td> ";
-					if("<%=session.getId()%>" !=session.sessionId ){
-						html+=" <img style='display:none;' id='killSessionProgress-"+session.sessionId+"' src='/html/images/icons/round-progress-bar.gif'/> ";
-						html+=" <button id='" + invalidateButtonIdPrefix + session.sessionId + "'></button>";
+					if( "true" !== session.isCurrent ){
+						html+=" <img style='display:none;' id='killSessionProgress-"+session.obfSession+"' src='/html/images/icons/round-progress-bar.gif'/> ";
+						html+=" <button id='" + invalidateButtonIdPrefix + session.obfSession + "'></button>";
 					}
 
 					html+=" </td>";
 
                     //Creating the row and adding it to the table
-                    createRow(tableId, html, rowsClass, "loggedUser-"+session.sessionId)
+                    createRow(tableId, html, rowsClass, "loggedUser-"+session.obfSession)
 				}
 
 				for(var i=0;i<sessionList.length;i++) {
                     var session=sessionList[i];
 
-                    var id = invalidateButtonIdPrefix + session.sessionId;
+                    var id = invalidateButtonIdPrefix + session.obfSession;
 
                     //Verify if a button widget with this id exist, if it exist we must delete firts before to try to create a new one
                     if (dojo.byId(id)) {
@@ -883,11 +883,11 @@ function loadUsers() {
                             label: "<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killsession")) %>",
                             iconClass: "deleteIcon",
                             "class": "killsessionButton",
-                            sid : session.sessionId,
+                            obsid : session.obfSession,
                             onClick: function(){
-                                killSessionById(this.sid);
+                                killSessionById(this.obsid);
                             }
-                        }, invalidateButtonIdPrefix + session.sessionId);
+                        }, invalidateButtonIdPrefix + session.obfSession);
                     }
 				}
 			}
@@ -1131,61 +1131,6 @@ function assetHostListTable_deleteHost(hostId){
 	}
 }
 
-function showSystemVars(){
-
-
-
-    const keys = ["release", "jvm", "host" ,"environment","system"];
-    const currentDiv = document.getElementById("systemInfoDiv");
-
-    currentDiv.innerHTML="";
-    fetch('/api/v1/jvm')
-    .then(response => response.json())
-    .then(data => {
-        const headerDiv = document.createElement("h2");
-        headerDiv.innerHTML="Version: " + data.release.version + " (" +data.release.buildDate + ")" ;
-        currentDiv.appendChild(headerDiv);
-
-
-        keys.forEach(key=>{
-            const myDiv = document.createElement("div");
-            myDiv.className="propDiv";
-            const fieldSet = document.createElement("fieldset");
-            fieldSet.className="propFieldSet";
-            const label = document.createElement("label");
-            label.className="propLabel";
-            label.innerHTML=key;
-            const table = document.createElement("table");
-
-            myDiv.appendChild(fieldSet);
-            currentDiv.appendChild(myDiv);
-            fieldSet.appendChild(label);
-
-            table.className="listingTable propTable";
-            fieldSet.appendChild(table)
-
-            Object.entries(data[key]).forEach(([key, value]) =>{
-                const tr = document.createElement("tr");
-
-                const th = document.createElement("th");
-                th.className="propTh";
-                const td = document.createElement("td");
-                td.className="propTd";
-                table.appendChild(tr)
-                tr.appendChild(th);
-                tr.appendChild(td);
-                th.innerHTML=key;
-                td.innerHTML=value;
-
-            })
-
-        });
-
-
-
-
-    });
-}
 
     /**
      * When the User needs to download dotCMS assets, this function will display a dialog asking them whether they want
@@ -1276,35 +1221,7 @@ dd.leftdl {
     font-size: 1%;
 }
 
-.propDiv{
 
-    margin:30px;
-}
-.propTh{
-    width:40%;
-    text-align: right;
-    font-size:14px;
-}
-.propTd{
-    font-family: monospace;
-    max-width: 400px;
-    overflow-wrap: break-word;
-    font-size:14px;
-}
-.propLabel{
-    background-color: white;
-    font-size:24px;
-    margin-top: -48px;
-    padding:10px;
-
-    display:inline-block;
-
-    max-width:50%;
-}
-
-.propFieldSet{
-    margin-bottom:40px;
-}
 
 </style>
 
@@ -1855,11 +1772,11 @@ dd.leftdl {
     <!-- START System Info TAB -->
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <div id="systemProps" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "System-Properties") %>" >
-      <div style="width:80%;margin: 0 auto;" id="systemInfoDiv">
-
-      </div>
-
+        <%@ include file="/html/portlet/ext/cmsmaintenance/system_config.jsp" %>
     </div>
+
+
+
 
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <!-- START Threads TAB -->

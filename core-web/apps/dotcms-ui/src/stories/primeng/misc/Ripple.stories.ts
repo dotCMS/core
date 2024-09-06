@@ -1,5 +1,4 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -8,8 +7,10 @@ import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
 
 import { RippleComponent } from './Ripple.component';
-export default {
+
+const meta: Meta = {
     title: 'PrimeNG/Misc/Ripple',
+    component: RippleComponent,
     parameters: {
         docs: {
             description: {
@@ -23,9 +24,9 @@ export default {
             imports: [RippleModule, ButtonModule, BrowserModule, BrowserAnimationsModule]
         })
     ]
-} as Meta;
+};
+export default meta;
 
-export const Default = () => ({
-    component: RippleComponent,
-    props: {}
-});
+type Story = StoryObj;
+
+export const Default: Story = {};

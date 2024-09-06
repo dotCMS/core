@@ -30,6 +30,7 @@ public class PushedAssetUtil {
         this.config = config;
 
         environments = getEnvironments(config);
+        final List<Environment> environmentsToRemove = new ArrayList<>();
 
         try {
             for (Environment environment : environments) {
@@ -58,9 +59,14 @@ public class PushedAssetUtil {
                             endpointIds);
                     environmentsEndpointsAndPublisher.put(environment.getId() + PUBLISHER_SUFFIX,
                             publisher);
+                } else {
+                    //Remove env since env is Static, we don't to insert into publishing_pushed_assets table
+                    environmentsToRemove.add(environment);
                 }
 
             }
+
+            environments.removeAll(environmentsToRemove);
 
         } catch (SecurityException | IllegalArgumentException | DotDataException e) {
             Logger.error(getClass(), "Can't get environments endpoints and publishers", e);

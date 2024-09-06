@@ -150,7 +150,7 @@
 	}
 
 	function add(x){
-		insertAtCursor("$!{dotContentMap." + x + "}\n", 'codeMaskMulti');
+		insertAtCursor("$!{" + x + "}\n", 'codeMaskMulti');
 		dijit.byId('variablesDialog').hide();
 	}
 
@@ -161,24 +161,24 @@
 	}	
 
 	function addImage(velocityVarName){
-		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"ImageURI})) \n   <img src=\"$!{dotContentMap."+velocityVarName+"ImageURI}\" alt=\"$!{dotContentMap."+velocityVarName+"ImageTitle}\"  /> \n#end \n";
+		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"ImageURI})) \n   <img src=\"$!{"+velocityVarName+"ImageURI}\" alt=\"$!{"+velocityVarName+"ImageTitle}\"  /> \n#end \n";
 		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
 	function addLink(velocityVarName) {
-		var insert = "#if ($" + "{" + velocityVarName+"LinkURL}) \n   <a href=\"$!{dotContentMap."+velocityVarName+"LinkProtocol}$!{dotContentMap."+velocityVarName+"LinkURL}\" target=\"$!{dotContentMap."+velocityVarName+"LinkTarget}\">$!{dotContentMap."+velocityVarName+"LinkTitle}</a> \n#end \n";
+		var insert = "#if ($" + "{" + velocityVarName+"LinkURL}) \n   <a href=\"$!{"+velocityVarName+"LinkProtocol}$!{"+velocityVarName+"LinkURL}\" target=\"$!{"+velocityVarName+"LinkTarget}\">$!{"+velocityVarName+"LinkTitle}</a> \n#end \n";
 		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
 	function addFile(velocityVarName) {
-		var insert = "#if ($" + "{" + velocityVarName+"FileURI}) \n   <a href=\"$!{dotContentMap."+velocityVarName+"FileURI}\">$!{dotContentMap."+velocityVarName+"FileTitle}</a> \n#end \n";
+		var insert = "#if ($" + "{" + velocityVarName+"FileURI}) \n   <a href=\"$!{"+velocityVarName+"FileURI}\">$!{"+velocityVarName+"FileTitle}</a> \n#end \n";
 		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 	function addBinaryFile(velocityVarName) {
-		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"BinaryFileURI})) \n   <a href=\"$!{dotContentMap."+velocityVarName+"BinaryFileURI}?force_download=1&filename=$!{dotContentMap."+velocityVarName+"BinaryFileTitle}\">$!{dotContentMap."+velocityVarName+"BinaryFileTitle}</a> \n#end \n";
+		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"BinaryFileURI})) \n   <a href=\"$!{"+velocityVarName+"BinaryFileURI}?force_download=1&filename=$!{"+velocityVarName+"BinaryFileTitle}\">$!{"+velocityVarName+"BinaryFileTitle}</a> \n#end \n";
 		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
@@ -205,26 +205,26 @@
 	}
 
 	function addInodeField(velocityVarName) {
-		var insert = "$!{dotContentMap." + velocityVarName + "}\n";
+		var insert = "$!{" + velocityVarName + "}\n";
 		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
 	function addTextArea(velocityVarName) {
-		var insert = "<textarea name=\"" + velocityVarName + "\" id=\"" + velocityVarName + "\">$!{dotContentMap." + velocityVarName + "}</textarea> \n";
+		var insert = "<textarea name=\"" + velocityVarName + "\" id=\"" + velocityVarName + "\">$!{" + velocityVarName + "}</textarea> \n";
 		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
 	function addCustomField(velocityVarName) {
-		var insert = "#if ($" + "{" + velocityVarName+"Code}) \n  $!{dotContentMap."+ velocityVarName + "Code} \n#end \n" ;
+		var insert = "#if ($" + "{" + velocityVarName+"Code}) \n  $!{"+ velocityVarName + "Code} \n#end \n" ;
 		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 
 	}
 
 	function addButton(buttonValue, velocityVarName) {
-		var insert = "<input type=\"button\" value=\"" + buttonValue + "\" name=\"" + velocityVarName + "\" id=\"" + velocityVarName + "\" onClick=\"$!{dotContentMap." + velocityVarName + "ButtonCode}\">\n";
+		var insert = "<input type=\"button\" value=\"" + buttonValue + "\" name=\"" + velocityVarName + "\" id=\"" + velocityVarName + "\" onClick=\"$!{" + velocityVarName + "ButtonCode}\">\n";
 		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
@@ -251,7 +251,7 @@
 	}
 
 	function addIdentifierField(velocityVarName) {
-		var insert = "$!{dotContentMap." + velocityVarName + "}\n";
+		var insert = "$!{" + velocityVarName + "}\n";
 		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}

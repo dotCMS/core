@@ -1,6 +1,3 @@
-<div
-    class="column grid-stack-item"
-    *ngFor="let _ of columnList"
-    gs-w="1"
-    data-testId="column"
-></div>
+@for (_ of columnList; track _) {
+    <div class="column grid-stack-item" gs-w="1" data-testId="column"></div>
+}

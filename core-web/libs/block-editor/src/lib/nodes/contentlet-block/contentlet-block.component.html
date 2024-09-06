@@ -1,21 +1,29 @@
-<p-card>
-    <ng-template pTemplate="header">
-        <dot-contentlet-thumbnail
-            [width]="94"
-            [height]="94"
-            [iconSize]="'72px'"
-            [contentlet]="data"
-        >
-        </dot-contentlet-thumbnail>
-    </ng-template>
+@if (data(); as data) {
+    <p-card>
+        <ng-template pTemplate="header">
+            <dot-contentlet-thumbnail
+                [width]="94"
+                [height]="94"
+                [iconSize]="'72px'"
+                [contentlet]="data"></dot-contentlet-thumbnail>
+        </ng-template>
 
-    <h3 class="title" *pTemplate="'title'">{{ data.title }}</h3>
-    <span *pTemplate="'subtitle'">{{ data.contentType }}</span>
+        <h3 *pTemplate="'title'" class="title">{{ data.title }}</h3>
+        <span *pTemplate="'subtitle'">{{ data.contentType }}</span>
 
-    <ng-template pTemplate="footer">
-        <div class="state">
-            <dot-state-icon [state]="data | contentletState" size="16px"> </dot-state-icon>
-            <dot-badge [bordered]="true">{{ data.language | lowercase }}</dot-badge>
+        <ng-template pTemplate="footer">
+            <div class="state">
+                <dot-state-icon [state]="data | contentletState" size="16px"></dot-state-icon>
+                @if (data.language) {
+                    <dot-badge [bordered]="true">{{ data.language | lowercase }}</dot-badge>
+                }
+            </div>
+        </ng-template>
+    </p-card>
+} @else {
+    <p-card>
+        <div class="spinner__container">
+            <dot-spinner />
         </div>
-    </ng-template>
-</p-card>
+    </p-card>
+}

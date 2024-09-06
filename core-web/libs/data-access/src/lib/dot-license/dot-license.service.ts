@@ -1,10 +1,11 @@
 import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { pluck, map, take, tap } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { ResponseView } from '@dotcms/dotcms-js';
 import { DotLicense } from '@dotcms/dotcms-models';
 
 export interface DotUnlicensedPortletData {
@@ -15,54 +16,64 @@ export interface DotUnlicensedPortletData {
 
 const enterprisePorlets: DotUnlicensedPortletData[] = [
     {
-        icon: 'tune',
+        icon: 'sliders-h',
         titleKey: 'com.dotcms.repackage.javax.portlet.title.rules',
         url: '/rules'
     },
     {
-        icon: 'cloud_upload',
+        icon: 'send',
         titleKey: 'com.dotcms.repackage.javax.portlet.title.publishing-queue',
         url: '/c/publishing-queue'
     },
     {
-        icon: 'find_in_page',
+        icon: 'search',
         titleKey: 'com.dotcms.repackage.javax.portlet.title.site-search',
         url: '/c/site-search'
     },
     {
-        icon: 'person',
+        icon: 'user',
         titleKey: 'com.dotcms.repackage.javax.portlet.title.personas',
         url: '/c/c_Personas'
     },
     {
-        icon: 'update',
+        icon: 'history',
         titleKey: 'com.dotcms.repackage.javax.portlet.title.time-machine',
         url: '/c/time-machine'
     },
     {
-        icon: 'device_hub',
+        icon: 'sitemap',
         titleKey: 'com.dotcms.repackage.javax.portlet.title.workflow-schemes',
         url: '/c/workflow-schemes'
     },
     {
-        icon: 'find_in_page',
+        icon: 'search',
         titleKey: 'com.dotcms.repackage.javax.portlet.title.es-search',
         url: '/c/es-search'
     },
     {
-        icon: 'business',
-        titleKey: 'Forms-and-Form-Builder',
+        icon: 'list',
+        titleKey: 'com.dotcms.repackage.javax.app.title.edit-ema',
         url: '/forms'
     },
     {
-        icon: 'apps',
+        icon: 'th-large',
         titleKey: 'com.dotcms.repackage.javax.portlet.title.apps',
         url: '/apps'
     },
     {
-        icon: 'integration_instructions',
+        icon: 'code',
         titleKey: 'com.dotcms.repackage.javax.portlet.title.velocity',
         url: '/c/velocity_playground'
+    },
+    {
+        icon: 'file-edit',
+        titleKey: 'com.dotcms.repackage.javax.portlet.title.edit-ema',
+        url: '/edit-ema'
+    },
+    {
+        icon: 'bolt',
+        titleKey: 'com.dotcms.repackage.javax.portlet.title.dotai',
+        url: '/c/dotai'
     }
 ];
 
@@ -82,8 +93,8 @@ export class DotLicenseService {
 
     private license?: DotLicense;
 
-    constructor(private coreWebService: CoreWebService) {
-        this.licenseURL = 'v1/appconfiguration';
+    constructor(private readonly http: HttpClient) {
+        this.licenseURL = '/api/v1/appconfiguration';
     }
 
     /**
@@ -128,16 +139,12 @@ export class DotLicenseService {
     private getLicense(): Observable<DotLicense> {
         if (this.license) return of(this.license);
 
-        return this.coreWebService
-            .requestView({
-                url: this.licenseURL
+        return this.http.get<ResponseView>(this.licenseURL).pipe(
+            pluck('entity', 'config', 'license'),
+            tap((license) => {
+                this.setLicense(license);
             })
-            .pipe(
-                pluck('entity', 'config', 'license'),
-                tap((license) => {
-                    this.setLicense(license);
-                })
-            );
+        );
     }
 
     /**
@@ -146,10 +153,8 @@ export class DotLicenseService {
      * @memberof DotLicenseService
      */
     updateLicense(): void {
-        this.coreWebService
-            .requestView({
-                url: this.licenseURL
-            })
+        this.http
+            .get<ResponseView>(this.licenseURL)
             .pipe(pluck('entity', 'config', 'license'))
             .subscribe((license) => {
                 this.setLicense(license);

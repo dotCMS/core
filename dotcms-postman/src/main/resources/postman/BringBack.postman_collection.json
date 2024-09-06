@@ -1,0 +1,1103 @@
+{
+	"info": {
+		"_postman_id": "07fa881b-476f-49a9-9e00-997cc61e4840",
+		"name": "Bring-Back Version Feature",
+		"description": "Verifies that the Bring-Back Version feature available in the **History** tab of Templates, Containers and Contentlets -- i.e., Contents, Files, Sites, etc. -- is working as expected.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Bring-back call on Contentlet",
+			"item": [
+				{
+					"name": "Create New Generic Contentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is NOT 200, or error messages were returned\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Content data was NOT saved correctly\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.baseType).to.eql(\"CONTENT\");",
+									"    pm.expect(jsonData.entity.contentType).to.eql(\"webPageContent\");",
+									"    //pm.expect(jsonData.entity.body.content[0].content[0].text).to.eql(\"Test content first version.\");",
+									"    ",
+									"    pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);",
+									"    pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
+									"});",
+									"",
+									"pm.test(\"Input validation is applied\", function () {",
+									"    pm.expect(pm.response.json().errors).to.be.empty; ",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"webPageContent\",\n        \"title\": \"testContent\",\n        \"body\": \"Test content first version.\",\n        \"contentHost\": \"SYSTEM_HOST\"\n}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Generic Contentlet - Version2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is NOT 200, or error messages were returned\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Content data was NOT updated correctly\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.baseType).to.eql(\"CONTENT\");",
+									"    pm.expect(jsonData.entity.contentType).to.eql(\"webPageContent\");",
+									"    pm.expect(jsonData.entity.body).to.eql(\"Test content second version.\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"identifier\":\"{{identifier}}\",\n        \"contentType\":\"webPageContent\",\n        \"title\":\"testContent\",\n        \"body\":\"Test content second version.\",\n        \"contentHost\":\"SYSTEM_HOST\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Generic Contentlet - Version3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is NOT 200, or error messages were returned\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Content data was NOT updated correctly\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.baseType).to.eql(\"CONTENT\");",
+									"    pm.expect(jsonData.entity.contentType).to.eql(\"webPageContent\");",
+									"    pm.expect(jsonData.entity.body).to.eql(\"Test content third version.\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"identifier\":\"{{identifier}}\",\n        \"contentType\":\"webPageContent\",\n        \"title\":\"testContent\",\n        \"body\":\"Test content third version.\",\n        \"contentHost\":\"SYSTEM_HOST\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Bring First Version Back",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is NOT 200, or error messages were returned\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed to bring First Version back as expected\", function () {",
+									"    var inode = pm.collectionVariables.get(\"inode\");    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.versionType).to.eql(\"content\");",
+									"    pm.expect(jsonData.entity.inode).to.eql(inode);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/versionables/{{inode}}/_bringback",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"versionables",
+								"{{inode}}",
+								"_bringback"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check Working Version",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is NOT 200, or error messages were returned\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Current Contentlet version is NOT the First Version\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.baseType).to.eql(\"CONTENT\");",
+									"    pm.expect(jsonData.entity.contentType).to.eql(\"webPageContent\");",
+									"    pm.expect(jsonData.entity.body).to.eql(\"Test content first version.\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/{{identifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"{{identifier}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Bring-back call on Template",
+			"item": [
+				{
+					"name": "Create New Template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is NOT 200, or error messages were returned\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Template data was NOT saved correctly\", function () {",
+									"    var jsonData = pm.response.json();    ",
+									"    pm.expect(jsonData.entity.title).to.eql(\"Test1\");",
+									"    pm.expect(jsonData.entity.body).to.eql(\"Test 1\");",
+									"    ",
+									"    pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);",
+									"    pm.collectionVariables.set(\"inode\", jsonData.entity.inode);    ",
+									"});",
+									"",
+									"// Check for sensitive data exposure",
+									"pm.test(\"No Sensitive Data Exposure\", function () {",
+									"    var sensitiveFields = [\"password\", \"token\", \"secret\"]; // Add fields to check for sensitivity",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    sensitiveFields.forEach(function (field) {",
+									"        pm.expect(jsonData.entity[field]).to.not.be.ok;",
+									"    });",
+									"});",
+									"",
+									"// Check for proper authentication and authorization",
+									"pm.test(\"Proper Authentication and Authorization\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    // Add checks for authentication and authorization based on your API response structure",
+									"    pm.expect(jsonData.entity.canRead).to.be.true;",
+									"    pm.expect(jsonData.entity.canWrite).to.be.true;",
+									"    pm.expect(jsonData.entity.canPublish).to.be.true;",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"Test1\",\n    \"body\":\"Test 1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Template - Version 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is NOT 200, or error messages were returned\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Template data was NOT updated correctly\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.title).to.eql(\"Test1\");",
+									"    pm.expect(jsonData.entity.body).to.eql(\"Test 2\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"identifier\":\"{{identifier}}\",\n    \"title\":\"Test1\",\n    \"body\":\"Test 2\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Template - Version 3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is NOT 200, or error messages were returned\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Template data was NOT updated correctly\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.title).to.eql(\"Test1\");",
+									"    pm.expect(jsonData.entity.body).to.eql(\"Test 3\");    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"identifier\":\"{{identifier}}\",\n    \"title\":\"Test1\",\n    \"body\":\"Test 3\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Bring First Version Back",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is NOT 200, or error messages were returned\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed to bring First Version back as expected\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.versionType).to.eql(\"template\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/versionables/{{inode}}/_bringback",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"versionables",
+								"{{inode}}",
+								"_bringback"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check Working Version",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is NOT 200, or error messages were returned\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Current Template version is NOT the First Version\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.body).to.eql(\"Test 1\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/{{identifier}}/working",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"{{identifier}}",
+								"working"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Bring-back call on Container",
+			"item": [
+				{
+					"name": "Create New Container",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is NOT 200, or error messages were returned\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Container data was NOT saved correctly\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.title).to.eql(\"Test1\");",
+									"    pm.expect(jsonData.entity.notes).to.eql(\"Notes\");",
+									"    ",
+									"    pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);",
+									"    pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
+									"});",
+									"",
+									"// Check for sensitive data exposure",
+									"pm.test(\"No Sensitive Data Exposure\", function () {",
+									"    var sensitiveFields = [\"password\", \"token\", \"secret\"]; // Add fields to check for sensitivity",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    sensitiveFields.forEach(function (field) {",
+									"        pm.expect(jsonData.entity[field]).to.not.be.ok;",
+									"    });",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"Test1\",\n    \"friendlyName\":\"Test 1 description\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes\",\n    \"preLoop\":\"preLoop xxxx\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"2a3e91e4-fbbf-4876-8c5b-2233c1739b05\",\n            \"code\":\" code xxxx\"\n        }\n    ]\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Container - Version 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is NOT 200, or error messages were returned\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Container data was NOT updated correctly\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.title).to.eql(\"Test1\");",
+									"    pm.expect(jsonData.entity.notes).to.eql(\"Notes 1\");    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"identifier\":\"{{identifier}}\",\n    \"title\":\"Test1\",\n    \"friendlyName\":\"Test 2 description\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes 1\",\n    \"preLoop\":\"preLoop xxxx\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"2a3e91e4-fbbf-4876-8c5b-2233c1739b05\",\n            \"code\":\" code xxxx\"\n        }\n    ]\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Container - Version 3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is NOT 200, or error messages were returned\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Container data was NOT updated correctly\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.title).to.eql(\"Test1\");",
+									"    pm.expect(jsonData.entity.notes).to.eql(\"Notes 2\");    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"identifier\":\"{{identifier}}\",\n    \"title\":\"Test1\",\n    \"friendlyName\":\"Test 2 description\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes 2\",\n    \"preLoop\":\"preLoop xxxx\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"2a3e91e4-fbbf-4876-8c5b-2233c1739b05\",\n            \"code\":\" code xxxx\"\n        }\n    ]\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Bring First Version Back",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is NOT 200, or error messages were returned\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed to bring First Version back as expected\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.versionType).to.eql(\"containers\");",
+									"    ",
+									"    pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/versionables/{{inode}}/_bringback",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"versionables",
+								"{{inode}}",
+								"_bringback"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check Working Version",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is NOT 200, or error messages were returned\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Current Container version is NOT the First Version\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.title).to.eql(\"Test1\");",
+									"    pm.expect(jsonData.entity.notes).to.eql(\"Notes\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/working?containerId={{identifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"working"
+							],
+							"query": [
+								{
+									"key": "containerId",
+									"value": "{{identifier}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "identifier",
+			"value": ""
+		},
+		{
+			"key": "inode",
+			"value": ""
+		}
+	]
+}

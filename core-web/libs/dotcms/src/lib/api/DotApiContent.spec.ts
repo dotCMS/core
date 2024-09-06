@@ -1,6 +1,7 @@
+import { DotApiContent } from './DotApiContent';
+
 import { DotCMSError } from '../models/DotCMSError.model';
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { DotApiContent } from './DotApiContent';
 
 describe('DotApiContent', () => {
     let httpClient: DotCMSHttpClient;

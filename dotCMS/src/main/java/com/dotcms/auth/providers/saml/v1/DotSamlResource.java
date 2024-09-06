@@ -51,6 +51,7 @@ import java.util.List;
 public class DotSamlResource implements Serializable {
 
 	private static final long serialVersionUID = 8015545653539491684L;
+	public static final String REDIRECT_AFTER_LOGIN_CONFIG = "redirect.after.login";
 
 	private final SamlConfigurationService             samlConfigurationService;
 	private final SAMLHelper           				   samlHelper;
@@ -214,14 +215,18 @@ public class DotSamlResource implements Serializable {
 					String loginPath = (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
 					Logger.debug(this,"LoginPath: " + loginPath);
 					if (null == loginPath) {
-						// At this stage we cannot determine whether this was a front
-						// end or back end request since we cannot determine
-						// original request.
-						//
-						// REDIRECT_AFTER_LOGIN should have already been set in relay
-						// request to IdP. 'autoLogin' will check the ORIGINAL_REQUEST
-						// session attribute.
-						loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
+						if (identityProviderConfiguration.containsOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG)) {
+							loginPath = identityProviderConfiguration.getOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG).toString();
+						}else {
+							// At this stage we cannot determine whether this was a front
+							// end or back end request since we cannot determine
+							// original request.
+							//
+							// REDIRECT_AFTER_LOGIN should have already been set in relay
+							// request to IdP. 'autoLogin' will check the ORIGINAL_REQUEST
+							// session attribute.
+							loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
+						}
 					} else {
 
 						session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);

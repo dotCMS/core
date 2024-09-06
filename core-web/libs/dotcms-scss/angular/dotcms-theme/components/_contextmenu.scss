@@ -5,7 +5,9 @@
     background: $white;
     color: $black;
     border: 0 none;
-    box-shadow: 0 2px 4px -1px $color-palette-black-op-20, 0 4px 5px 0 $color-palette-black-op-10,
+    box-shadow:
+        0 2px 4px -1px $color-palette-black-op-20,
+        0 4px 5px 0 $color-palette-black-op-10,
         0 1px 10px 0 $color-palette-black-op-10;
     width: 12.5rem;
 }
@@ -57,7 +59,9 @@
     padding: $spacing-1 0;
     background: $white;
     border: 0 none;
-    box-shadow: 0 2px 4px -1px $color-palette-black-op-20, 0 4px 5px 0 $color-palette-black-op-10,
+    box-shadow:
+        0 2px 4px -1px $color-palette-black-op-20,
+        0 4px 5px 0 $color-palette-black-op-10,
         0 1px 10px 0 $color-palette-black-op-10;
 }
 
@@ -80,5 +84,5 @@
 }
 
 .p-contextmenu .p-submenu-icon {
-    font-size: 0.875rem;
+    font-size: $font-size-sm;
 }

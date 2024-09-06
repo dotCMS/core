@@ -16,6 +16,7 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Arrays;
@@ -23,6 +24,15 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * Provides utility methods for DWR-related classes that allow developers to retrieve common-use
+ * information such as:
+ * <ul>
+ *     <li>The current Session, Servlet Context, and DWR objects.</li>
+ *     <li>The currently logged-in User and their Roles.</li>
+ *     <li>Portlet validation data.</li>>
+ * </ul>
+ * Available methods can be added as required.
+ *
  * @author Jonathan Gamba 11/29/17
  */
 public class DwrUtil {
@@ -97,7 +107,7 @@ public class DwrUtil {
         }
         if (loggedInUser == null) {
             SecurityLogger.logInfo(DwrUtil.class,
-                    "unauthorized attempt to call getUserById by user " + userId + " from "
+                    "Unauthorized attempt to call getLoggedInUser by user " + userId + " from "
                             + remoteIp);
             throw new DotSecurityException("not authorized");
         }
@@ -154,6 +164,16 @@ public class DwrUtil {
         final WebContext ctx = WebContextFactory.get();
         final HttpServletRequest request = ctx.getHttpServletRequest();
         return request.getSession();
+    }
+
+    /**
+     * Returns the current Servlet Context object from the DWR Web Context Factory.
+     *
+     * @return The current instance of the {@link ServletContext} object.
+     */
+    public static ServletContext getServletContext() {
+        final WebContext ctx = WebContextFactory.get();
+        return ctx.getServletContext();
     }
 
 }

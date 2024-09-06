@@ -5,9 +5,8 @@ import { Resolve } from '@angular/router';
 
 import { map, take } from 'rxjs/operators';
 
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import { DotLicenseService } from '@dotcms/data-access';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
+import { DotLicenseService, PushPublishService } from '@dotcms/data-access';
+import { DotEnvironment } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotTemplateListResolver implements Resolve<[boolean, boolean]> {

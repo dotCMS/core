@@ -1,4 +1,4 @@
-import { NgClass, NgIf } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -18,13 +18,13 @@ export interface PrincipalConfiguration {
 @Component({
     selector: 'dot-empty-container',
     standalone: true,
-    imports: [ButtonModule, NgIf, NgClass, DotMessagePipe],
+    imports: [ButtonModule, NgClass, DotMessagePipe],
     templateUrl: './dot-empty-container.component.html',
     styleUrls: ['./dot-empty-container.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEmptyContainerComponent {
-    //Todo: make required when Angular 16 updated
+    //Todo: change to input signal when ui migrated to jest
     /**
      * Principal configuration of the component
      */
@@ -36,6 +36,12 @@ export class DotEmptyContainerComponent {
      */
     @Input()
     buttonLabel: string;
+
+    /**
+     * Change the button type to secondary
+     */
+    @Input()
+    secondaryButton = false;
 
     /**
      * Hide the contact us link

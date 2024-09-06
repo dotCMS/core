@@ -1,107 +1,74 @@
 @use "variables" as *;
+@import "common";
 
-p-checkbox.ng-dirty.ng-invalid > .p-checkbox > .p-checkbox-box {
-    border-color: $error;
-}
+p-checkbox.p-element {
+    gap: $spacing-1;
 
-@keyframes checkbox-check {
-    0% {
-        width: 0;
-        height: 0;
-        border-color: $white;
-        transform: translate3d(0, 0, 0) rotate(45deg);
+    &.ng-dirty.ng-invalid {
+        .p-checkbox {
+            border-color: $color-alert-red;
+        }
     }
 
-    33% {
-        width: 4px;
-        height: 0;
-        transform: translate3d(0, 0, 0) rotate(45deg);
-    }
+    &.p-checkbox-sm {
+        .p-checkbox {
+            height: 1.25rem;
+        }
 
-    100% {
-        width: 4px;
-        height: 10px;
-        border-color: $white;
-        transform: translate3d(0, -10px, 0) rotate(45deg);
-    }
-}
+        .p-checkbox-box {
+            height: 1rem;
+        }
 
-.p-chips .p-chips-multiple-container:not(.p-disabled).p-focus {
-    box-shadow: $input-inset-shadow;
+        .p-checkbox-icon {
+            width: $font-size-sm;
+            height: $font-size-sm;
+        }
+    }
 }
 
 .p-checkbox {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    transition: box-shadow 0.2s;
-}
+    height: 1.5rem;
+    aspect-ratio: 1/1;
+    border-radius: $border-radius-sm;
+    border: $select-border-size solid $color-palette-gray-400;
+    background-color: $white;
 
-.p-checkbox .p-checkbox-box {
-    border: 2px solid $color-palette-gray-700;
-    background: $white;
-    width: 18px;
-    height: 18px;
-    color: $black;
-    border-radius: $border-radius-xs;
-    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
-        background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
-    position: relative;
-}
+    &.p-checkbox-checked,
+    &:has(.p-highlight) {
+        border-color: $color-palette-primary-500;
+    }
 
-.p-checkbox .p-checkbox-box .p-checkbox-icon {
-    transition-duration: 0.2s;
-    color: $white;
-    font-size: 14px;
-}
+    &.p-checkbox-disabled {
+        border-color: $color-palette-gray-400;
+        background-color: $color-palette-gray-200;
 
-.p-checkbox .p-checkbox-box:not(.p-disabled).p-focus {
-    outline: 0 none;
-    outline-offset: 0;
-    box-shadow: none;
-    border-color: $color-palette-primary;
-}
+        .p-checkbox-box.p-highlight {
+            .p-checkbox-icon {
+                color: $color-palette-gray-400;
+            }
+        }
+    }
 
-.p-checkbox .p-checkbox-box.p-highlight {
-    border-color: $color-palette-primary;
-    background: $color-palette-primary; // needs to be the primary color
-}
+    .p-checkbox-box {
+        height: 1.25rem;
+        aspect-ratio: 1/1;
+    }
 
-.p-checkbox .p-checkbox-box.p-highlight:not(.p-disabled):hover {
-    border-color: $color-palette-primary;
-    background: $color-palette-primary;
-    color: $white;
-}
+    & + .p-checkbox-label {
+        &.p-disabled {
+            color: $color-palette-gray-500;
+        }
+        &:hover {
+            cursor: pointer;
+        }
+    }
 
-.p-checkbox.p-error > .p-checkbox-box,
-.p-checkbox.p-invalid > .p-checkbox-box {
-    border-color: $error;
-}
+    &:hover:not(:has(.p-checkbox-disabled)) {
+        cursor: pointer;
+        border-color: $color-palette-primary-400;
+    }
 
-.p-checkbox-label {
-    margin-left: $spacing-1;
-}
-
-.p-checkbox .p-checkbox-box.p-highlight:not(.p-disabled).p-focus {
-    border-color: $color-palette-primary;
-}
-
-.p-checkbox .p-checkbox-box.p-highlight .p-checkbox-icon:before {
-    content: "";
-    position: absolute;
-    top: 8px;
-    left: 2px;
-    border-right: 2px solid transparent;
-    border-bottom: 2px solid transparent;
-    transform: rotate(45deg);
-    transform-origin: 0% 100%;
-    -webkit-animation: checkbox-check 125ms 50ms linear forwards;
-    animation: checkbox-check 125ms 50ms linear forwards;
-}
-
-.p-checkbox:not(.p-checkbox-disabled):hover,
-.p-checkbox:not(.p-checkbox-disabled).p-checkbox-focused,
-.p-checkbox.p-checkbox-checked:not(.p-checkbox-disabled):hover,
-.p-checkbox.p-checkbox-checked:not(.p-checkbox-disabled).p-checkbox-focused {
-    box-shadow: 0 0 1px 10px $bg-highlight;
+    &.p-checkbox-focused {
+        outline: $field-border-size solid $color-palette-primary-op-20;
+    }
 }

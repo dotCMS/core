@@ -26,6 +26,9 @@ public class FileFieldDataFetcher implements DataFetcher<Contentlet> {
                 return null;
             }
 
+            Logger.debug(this, ()-> "Fetching file field for contentlet: " + contentlet.getIdentifier() + " field: " + var +
+                    " fileAssetIdentifier: " + fileAssetIdentifier);
+
             Optional<Contentlet> fileAsContentOptional = APILocator.getContentletAPI()
                 .findContentletByIdentifierOrFallback(fileAssetIdentifier, contentlet.isLive(), contentlet.getLanguageId(),
                     user, true);

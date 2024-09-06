@@ -1,0 +1,58 @@
+@use "variables" as *;
+
+.category-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.category-list__item {
+    display: grid;
+    grid-template-columns: 1fr $spacing-5;
+    align-items: center;
+    padding: $spacing-1 0;
+    gap: $spacing-1;
+    border-bottom: 1px solid $color-palette-gray-300;
+}
+
+.category-list__item-content {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    overflow: hidden;
+    gap: $spacing-1;
+    flex-direction: column;
+}
+
+.category-list__title {
+    color: $black;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium-bold;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.category-list__path {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.category-list__path-content {
+    font-size: $font-size-sm;
+    color: $color-palette-gray-700;
+    font-weight: $font-weight-regular-bold;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: rtl;
+    text-align: left;
+}
+
+.category-list__remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

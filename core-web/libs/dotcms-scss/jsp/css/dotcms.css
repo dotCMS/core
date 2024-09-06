@@ -4,7 +4,8 @@
 @font-face {
     font-family: 'FontAwesome';
     src: url('../fonts/fontawesome-webfont.eot?v=4.7.0');
-    src: url('../fonts/fontawesome-webfont.eot?#iefix&v=4.7.0') format('embedded-opentype'),
+    src:
+        url('../fonts/fontawesome-webfont.eot?#iefix&v=4.7.0') format('embedded-opentype'),
         url('../fonts/fontawesome-webfont.woff2?v=4.7.0') format('woff2'),
         url('../fonts/fontawesome-webfont.woff?v=4.7.0') format('woff'),
         url('../fonts/fontawesome-webfont.ttf?v=4.7.0') format('truetype'),
@@ -2834,6 +2835,12 @@
     content: '\f2e0';
 }
 
+/*
+  ========================== WARNING ==========================
+  Don't use this in your components, use $font-size-md instead,
+  this is only for the root element
+  =============================================================
+*/
 *,
 *:before,
 *:after {
@@ -3054,6 +3061,12 @@
     --empty-message: '';
 }
 
+/*
+  ========================== WARNING ==========================
+  Don't use this in your components, use $font-size-md instead,
+  this is only for the root element
+  =============================================================
+*/
 .dojoDndItem {
     padding: 0;
 }
@@ -3753,9 +3766,11 @@
     background-color: #ffffff;
     border: solid 1.5px #d1d4db;
     color: #14151a;
-    font-family: Roboto, 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
+    font-family: Assistant, 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
     padding: 0.5rem;
     font-size: 1rem;
+    min-height: 9.375rem;
+    resize: vertical;
 }
 .dijitTextAreaHover {
     background-color: #ffffff;
@@ -4331,10 +4346,10 @@
 
 .dijitCheckBox {
     border-radius: 2px;
-    border: solid 1px #14151a;
+    border: solid 2px #14151a;
     background-color: #ffffff;
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
 }
 .dijitCheckBoxChecked {
     border: solid 1px var(--color-palette-primary-500);
@@ -4343,42 +4358,49 @@
         center center no-repeat;
 }
 .dijitCheckBoxDisabled {
-    border: solid 1px transparent;
+    border: solid 2px transparent;
     background: #afb3c0;
 }
 .dijitCheckBoxCheckedDisabled {
-    border: solid 1px transparent;
+    border: solid 2px transparent;
     background: #afb3c0
         url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=')
         center center no-repeat;
 }
 
 .dijitRadio {
-    border-radius: 9px;
+    border-radius: 12px;
     background-color: #ffffff;
-    border: solid 1px #14151a;
-    height: 18px;
-    width: 18px;
+    border: solid 2px #afb3c0;
+    height: 24px;
+    width: 24px;
 }
 .dijitRadioChecked {
-    border: solid 1px var(--color-palette-primary-500);
+    border: solid 2px var(--color-palette-primary-500);
     position: relative;
 }
 .dijitRadioChecked:before {
-    border-radius: 5px;
+    border-radius: 7px;
     background-color: var(--color-palette-primary-500);
     content: '';
-    height: 10px;
+    height: 14px;
     left: 50%;
-    margin-left: -5px;
-    margin-top: -5px;
+    margin-left: -7px;
+    margin-top: -7px;
     position: absolute;
     top: 50%;
-    width: 10px;
+    width: 14px;
+}
+.dijitRadioHover {
+    border-color: var(--color-palette-primary-400);
+    cursor: pointer;
+}
+.dijitRadioFocused {
+    outline: 1.5px solid var(--color-palette-primary-op-20);
 }
 .dijitRadioDisabled {
     background-color: transparent;
-    border: solid 1px #d1d4db;
+    border: solid 2px #d1d4db;
     position: relative;
 }
 .dijitRadioDisabled:before {
@@ -4806,11 +4828,13 @@
 
 .dijitTitlePane {
     border-radius: 1px;
-    box-shadow: 0 1px 3px var(--color-palette-black-op-10),
+    box-shadow:
+        0 1px 3px var(--color-palette-black-op-10),
         0 1px 2px var(--color-palette-black-op-20);
 }
 .dijitTitlePaneHover {
-    box-shadow: 0 3px 6px var(--color-palette-black-op-10),
+    box-shadow:
+        0 3px 6px var(--color-palette-black-op-10),
         0 3px 6px var(--color-palette-black-op-20);
 }
 .dijitTitlePaneHover .dijitTitlePaneContentOuter {
@@ -4867,7 +4891,8 @@
     background-color: #ffffff;
     border-radius: 0px;
     border: none;
-    box-shadow: 0 3px 6px var(--color-palette-black-op-10),
+    box-shadow:
+        0 3px 6px var(--color-palette-black-op-10),
         0 3px 6px var(--color-palette-black-op-20);
 }
 .dijitDialogCloseIcon {
@@ -4922,7 +4947,9 @@
     color: #14151a;
     border: 0 none;
     border-radius: 0.375rem;
-    box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
+    box-shadow:
+        0px 0px 4px rgba(20, 21, 26, 0.04),
+        0px 8px 16px rgba(20, 21, 26, 0.08);
     padding: 0.5rem;
     margin-top: 0.5rem;
 }
@@ -5323,12 +5350,10 @@
     position: relative;
     width: 2.5rem;
 }
-.dijitCalendarDecrementArrow,
-.dijitCalendarDecrease {
+.dijitCalendarDecrementArrow {
     position: absolute;
 }
-.dijitCalendarDecrementArrow:before,
-.dijitCalendarDecrease:before {
+.dijitCalendarDecrementArrow:before {
     position: relative;
     left: 50%;
     margin-left: -2.5px;
@@ -5342,13 +5367,11 @@
     height: 0;
     width: 0;
 }
-.dijitCalendarIncrementArrow,
-.dijitCalendarIncrease {
+.dijitCalendarIncrementArrow {
     position: absolute;
     right: 0.5rem;
 }
-.dijitCalendarIncrementArrow:before,
-.dijitCalendarIncrease:before {
+.dijitCalendarIncrementArrow:before {
     position: relative;
     left: 50%;
     margin-left: -2.5px;
@@ -5373,6 +5396,7 @@
     line-height: 1.875rem;
 }
 .dijitCalendarMonthContainer .dijitDropDownButton {
+    margin-top: 0.25rem;
     border-radius: 0;
     background-color: transparent;
     height: calc(1.875rem + 3px);
@@ -5452,6 +5476,14 @@
     padding: 0;
     border: 0 none;
 }
+.dijitMenu#templateSel_popup .dijitMenuItem {
+    height: auto;
+    padding: 0.5rem 0.75rem;
+    gap: 0.25rem;
+}
+.dijitMenu#templateSel_popup .dijitMenuItem small {
+    color: #6c7389;
+}
 .dijitMenu .dijitMenuItem {
     display: flex;
     padding: 0 0.75rem;
@@ -5487,24 +5519,34 @@
     border-bottom: 1px solid #d1d4db;
 }
 
+.dijitComboBoxMenuPopup#widget_cache_list_dropdown {
+    max-height: 17.5rem !important;
+}
+
 .dijitComboBoxMenuPopup {
     background: #ffffff;
     color: #14151a;
     border: 0 none;
     border-radius: 0.375rem;
-    box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
+    box-shadow:
+        0px 0px 4px rgba(20, 21, 26, 0.04),
+        0px 8px 16px rgba(20, 21, 26, 0.08);
     padding: 0.5rem;
     margin-top: 0.5rem;
-    max-height: 17.5rem !important;
 }
 .dijitComboBoxMenuPopup .dijitMenuItem {
+    padding: 0 0.75rem;
+    color: #14151a;
+    height: 2.5rem;
+}
+.dijitComboBoxMenuPopup .dijitMenuItem .dijitComboBoxHighlightMatch {
+    font-weight: 700;
+}
+.dijitComboBoxMenuPopup .dijitMenuItem:has(small) {
     display: flex;
     align-items: start;
     flex-direction: column;
     justify-content: center;
-    padding: 0 0.75rem;
-    color: #14151a;
-    height: 2.5rem;
 }
 .dijitComboBoxMenuPopup .dijitComboBoxMenu {
     min-width: 200px;
@@ -5623,7 +5665,7 @@
 }
 .dojoxGrid .dojoxGridRow .dojoxGridRowTable .dojoxGridCell,
 .dojoxGrid .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
-    font-family: Roboto, 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
+    font-family: Assistant, 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
     padding: 10px 0.5rem;
 }
 .dojoxGrid .dojoxGridPaginator {
@@ -6518,7 +6560,9 @@ select[multiple]:hover {
 }
 
 .tailerBody {
-    font-family: Andale Mono, monospace;
+    font-family:
+        Andale Mono,
+        monospace;
     font-size: 9pt;
     white-space: nowrap;
 }
@@ -9367,12 +9411,13 @@ Styles for commons fields along the backend
     background: var(--color-palette-primary-200);
     border-radius: 0.25rem;
     color: var(--color-palette-primary-500);
-    font-size: 0.875rem;
+    font-size: 0.813rem;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.25rem;
     text-decoration: none;
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 .tagLink.persona:before {
     content: '\f007';
@@ -9381,7 +9426,7 @@ Styles for commons fields along the backend
 .tagLink:after {
     color: var(--color-palette-primary-500);
     content: '✕';
-    font-size: 0.875rem;
+    font-size: 0.813rem;
     text-align: center;
 }
 .tagLink:hover {
@@ -9420,10 +9465,8 @@ Styles for commons fields along the backend
 #label,
 .fieldName,
 dl.vertical dt label {
-    color: #14151a;
     display: block;
-    font-size: 0.875rem;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
 }
 
 #checkbox-radio,
@@ -9437,7 +9480,7 @@ dl.vertical dt label {
 #checkbox-radio > .dijit,
 .radio > .dijit,
 .checkbox > .dijit {
-    margin-right: 0.25rem;
+    margin-right: 0.5rem;
 }
 
 .required::after {
@@ -10837,7 +10880,6 @@ a.tag_higlighted {
 .tag-manager__tags-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell:first-child,
 .tag-manager__tags-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell:first-child {
     width: 48px !important;
-    padding-left: 1.5rem;
 }
 
 .add-relationship dt {
@@ -10877,7 +10919,8 @@ a.tag_higlighted {
 }
 
 .context-menu {
-    box-shadow: 0 3px 6px var(--color-palette-black-op-10),
+    box-shadow:
+        0 3px 6px var(--color-palette-black-op-10),
         0 3px 6px var(--color-palette-black-op-20);
     position: absolute;
     background: #ffffff;
@@ -10908,8 +10951,8 @@ a.tag_higlighted {
     display: none;
 }
 .context-menu__item .arrowRightIcon {
-    font-size: 0.875rem;
-    margin-top: -0.4375rem;
+    font-size: 0.813rem;
+    margin-top: -0.4065rem;
     position: absolute;
     right: 0.5rem;
     top: 50%;
@@ -11028,7 +11071,8 @@ a.tag_higlighted {
 }
 
 .file-selector-tree__card {
-    box-shadow: 0 1px 3px var(--color-palette-black-op-10),
+    box-shadow:
+        0 1px 3px var(--color-palette-black-op-10),
         0 1px 2px var(--color-palette-black-op-20);
     cursor: pointer;
     display: flex;
@@ -11039,7 +11083,8 @@ a.tag_higlighted {
     margin: 0.25rem;
 }
 .file-selector-tree__card:hover {
-    box-shadow: 0 3px 6px var(--color-palette-black-op-10),
+    box-shadow:
+        0 3px 6px var(--color-palette-black-op-10),
         0 3px 6px var(--color-palette-black-op-20);
 }
 .file-selector-tree__card .thumbnail {
@@ -11607,7 +11652,9 @@ Resize Handle
     padding: 2px 6px 2px 4px;
     text-decoration: none;
     text-transform: uppercase;
-    transition: background-color 150ms ease, color 150ms ease;
+    transition:
+        background-color 150ms ease,
+        color 150ms ease;
 }
 .api-link:hover {
     background-color: var(--color-palette-secondary-500);
@@ -11652,13 +11699,43 @@ Resize Handle
     border: solid 1px #f3f3f4;
     border-radius: 0.375rem;
     color: #6c7389;
-    font-family: Roboto, 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
+    font-family: Assistant, 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
     font-size: 1rem;
     line-height: 2.5rem;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
 }
 
+@font-face {
+    font-family: 'Assistant';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src:
+        local(''),
+        url('/dotAdmin/assets/Assistant-Regular.woff2') format('woff2'),
+        url('/dotAdmin/assets/Assistant-Regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+@font-face {
+    font-family: 'Assistant';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src:
+        local(''),
+        url('/dotAdmin/assets/Assistant-SemiBold.woff2') format('woff2'),
+        url('/dotAdmin/assets/Assistant-SemiBold.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+@font-face {
+    font-family: 'Assistant';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src:
+        local(''),
+        url('/dotAdmin/assets/Assistant-Bold.woff2') format('woff2'),
+        url('/dotAdmin/assets/Assistant-Bold.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
 @font-face {
     font-family: 'Material Icons';
     font-style: normal;
@@ -11676,35 +11753,8 @@ Resize Handle
     border-top: 1px solid #d1d4db;
 }
 
-/* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-@font-face {
-    font-family: 'Roboto';
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-    src: local(''), url('/dotAdmin/assets/Assistant-Regular.woff2') format('woff2'),
-        url('/dotAdmin/assets/Assistant-Regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
-}
-/* roboto-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-@font-face {
-    font-family: 'Roboto';
-    font-style: normal;
-    font-weight: 500;
-    font-display: swap;
-    src: local(''), url('/dotAdmin/assets/Assistant-SemiBold.woff2') format('woff2'),
-        url('/dotAdmin/assets/Assistant-SemiBold.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
-}
-/* roboto-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-@font-face {
-    font-family: 'Roboto';
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: local(''), url('/dotAdmin/assets/Assistant-Bold.woff2') format('woff2'),
-        url('/dotAdmin/assets/Assistant-Bold.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
-}
 html {
-    font-family: Roboto, 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
+    font-family: Assistant, 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
     font-size: 1rem;
     color: #14151a;
 }
@@ -11729,6 +11779,15 @@ body {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     -moz-osx-font-smoothing: grayscale;
+}
+
+.edit-content-full-screen {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0px;
+    max-height: none;
+    padding: 0;
+    height: calc(100vh - 3rem - 20px - 1rem - 0.5rem - 20px - 61px - 1rem);
 }
 
 /*# sourceMappingURL=dotcms.css.map */

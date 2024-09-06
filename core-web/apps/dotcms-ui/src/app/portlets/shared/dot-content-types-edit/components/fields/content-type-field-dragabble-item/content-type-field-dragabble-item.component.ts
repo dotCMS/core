@@ -47,7 +47,10 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
     fieldAttributesString: string;
     icon: string;
 
-    constructor(private dotMessageService: DotMessageService, public fieldService: FieldService) {}
+    constructor(
+        private dotMessageService: DotMessageService,
+        public fieldService: FieldService
+    ) {}
 
     ngOnInit(): void {
         this.fieldTypeLabel = this.field.fieldTypeLabel ? this.field.fieldTypeLabel : null;

@@ -31,7 +31,7 @@ import picocli.CommandLine;
  */
 public class LanguageCommand implements Callable<Integer>, DotCommand {
 
-    static final String NAME = "language";
+    public static final String NAME = "language";
     static final String ALIAS = "lang";
 
     @CommandLine.Mixin(name = "output")
@@ -49,8 +49,7 @@ public class LanguageCommand implements Callable<Integer>, DotCommand {
     @Override
     public Integer call() throws Exception {
         output.throwIfUnmatchedArguments(spec.commandLine());
-        spec.commandLine().usage(System.out);
-        output.info("Listing languages (default action)");
+        output.info("Listing languages (default action, see --help)");
         return spec.commandLine().execute(NAME, LanguageFind.NAME);
     }
 

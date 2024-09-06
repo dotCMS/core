@@ -1,0 +1,27 @@
+<p-table
+    [columns]="columns()"
+    [tableStyle]="{ 'min-width': '50rem' }"
+    [value]="$data()"
+    styleClass="dotTable">
+    <ng-template let-columns pTemplate="header">
+        <tr>
+            @for (col of columns; track $index) {
+                <th id="head" scope="col" [style.width.px]="$index === 0 ? 40 : null">{{ col }}</th>
+            }
+        </tr>
+    </ng-template>
+
+    <ng-template let-columns="columns" pTemplate="body">
+        <tr>
+            @for (col of columns; track $index) {
+                <td>
+                    @if (col === '') {
+                        <p-skeleton size="1rem" styleClass="mr-1" />
+                    } @else {
+                        <p-skeleton />
+                    }
+                </td>
+            }
+        </tr>
+    </ng-template>
+</p-table>

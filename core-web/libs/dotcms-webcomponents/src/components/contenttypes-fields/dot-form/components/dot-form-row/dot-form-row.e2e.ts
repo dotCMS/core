@@ -26,7 +26,9 @@ describe('dot-form-row', () => {
 
         it('should set values on dot-form-row', async () => {
             const firstColumn = await element.find('dot-form-column');
-            expect(await firstColumn.getProperty('column')).toEqual(dotFormLayoutMock[0].columns[0]);
+            expect(await firstColumn.getProperty('column')).toEqual(
+                dotFormLayoutMock[0].columns[0]
+            );
             expect(await firstColumn.getProperty('fieldsToShow')).toEqual('test');
         });
     });

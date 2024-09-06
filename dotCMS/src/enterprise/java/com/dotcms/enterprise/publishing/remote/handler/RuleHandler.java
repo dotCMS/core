@@ -55,6 +55,7 @@ import com.dotcms.publisher.pusher.wrapper.RuleWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -71,7 +72,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -173,7 +173,7 @@ public class RuleHandler implements IHandler {
 	 */
 	private void handleRules(final Collection<File> rules) throws DotPublishingException {
 
-		final XStream xStream = new XStream(new DomDriver());
+		final XStream xStream = XStreamHandler.newXStreamInstance();
 		String ruleToProcess  = StringPool.BLANK;
 		File ruleFileToRead   = null;
 		User systemUser;

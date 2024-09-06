@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import com.dotcms.mock.request.FakeHttpRequest;
+import com.dotcms.rendering.util.ActionletUtil;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.exception.DotDataException;
 import java.io.File;
 import java.util.ArrayList;
@@ -11,8 +12,6 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-
-import com.dotcms.mock.response.BaseResponse;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -28,8 +27,7 @@ import com.dotmarketing.util.DNSUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.velocity.context.Context;
 
 public class EmailActionlet extends WorkFlowActionlet {
 
@@ -110,9 +108,9 @@ public class EmailActionlet extends WorkFlowActionlet {
                 host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false);
             }
 
-            HttpServletRequest requestProxy = new FakeHttpRequest(host.getHostname(), null).request();
-            HttpServletResponse responseProxy = new BaseResponse().response();
-            org.apache.velocity.context.Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
+            final HttpServletRequest request = ActionletUtil.getRequest(processor.getUser());
+            final HttpServletResponse response = ActionletUtil.getResponse();
+            final Context ctx = VelocityUtil.getInstance().getContext(request, response);
             ctx.put("host", host);
             ctx.put("host_id", host.getIdentifier());
             ctx.put("user", processor.getUser());
@@ -228,12 +226,15 @@ public class EmailActionlet extends WorkFlowActionlet {
                 }
             }
 
-            mail.sendMessage();
-
+            sendEmail(mail, processor);
         } catch (Exception e) {
             Logger.error(EmailActionlet.class, e.getMessage(), e);
         }
 
+    }
+
+    protected void sendEmail(final Mailer mail, final WorkflowProcessor processor) {
+        mail.sendMessage();
     }
 
 }

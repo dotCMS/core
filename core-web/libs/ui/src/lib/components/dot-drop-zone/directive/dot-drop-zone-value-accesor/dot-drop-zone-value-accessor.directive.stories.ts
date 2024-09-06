@@ -1,5 +1,5 @@
 import { action } from '@storybook/addon-actions';
-import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { moduleMetadata, StoryObj, Meta } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
@@ -42,10 +42,18 @@ import { DotDropZoneComponent } from '../../dot-drop-zone.component';
                 dotDropZoneValueAccessor>
                 <div class="dot-drop-zone__content" id="dot-drop-zone__content">
                     Drop files here.
-
-                    <div *ngIf="accept.length"><strong>Allowed Type:</strong> {{ accept }}</div>
-
-                    <div *ngIf="maxFileSize"><strong>Max File Size:</strong> {{ maxFileSize }}</div>
+                    @if (accept.length) {
+                        <div>
+                            <strong>Allowed Type:</strong>
+                            {{ accept }}
+                        </div>
+                    }
+                    @if (maxFileSize) {
+                        <div>
+                            <strong>Max File Size:</strong>
+                            {{ maxFileSize }}
+                        </div>
+                    }
                 </div>
             </dot-drop-zone>
         </form>
@@ -78,7 +86,7 @@ class DotDropZoneValueAccessorTestComponent implements OnInit {
     }
 }
 
-export default {
+const meta: Meta = {
     title: 'Library/ui/Components/DropZone/ValueAccessor',
     component: DotDropZoneValueAccessorTestComponent,
     decorators: [
@@ -93,17 +101,14 @@ export default {
             // detect if the component is emitting the correct HTML events
             handles: ['formChanged', 'formErrors']
         }
-    }
-} as Meta<DotDropZoneComponent>;
-
-const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
-    props: {
-        ...args,
-        // https://storybook.js.org/docs/6.5/angular/essentials/actions#action-args
+    },
+    args: {
         formChanged: action('formChanged'),
         formErrors: action('formErrors')
     },
-    template: `
+    render: (args) => ({
+        props: args,
+        template: `
         <dot-drop-zone-value-accessor
             [accept]="accept"
             [maxFileSize]="maxFileSize"
@@ -111,11 +116,15 @@ const Template: Story<DotDropZoneComponent> = (args: DotDropZoneComponent) => ({
             (formErrors)="formErrors($event)"
         ></dot-drop-zone-value-accessor>
     `
-});
+    })
+};
+export default meta;
 
-export const Base = Template.bind({});
+type Story = StoryObj;
 
-Base.args = {
-    accept: [],
-    maxFileSize: 1000000
+export const Base: Story = {
+    args: {
+        accept: [],
+        maxFileSize: 1000000
+    }
 };

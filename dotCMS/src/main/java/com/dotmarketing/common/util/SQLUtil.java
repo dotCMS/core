@@ -1,7 +1,9 @@
 package com.dotmarketing.common.util;
 
+import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.util.SecurityLoggerServiceAPI;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -12,10 +14,6 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.sql.QueryTokenizer;
@@ -27,12 +25,23 @@ import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenize
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import static com.liferay.util.StringPool.SPACE;
+
 /**
- * Util class for sanitize, tokenize, etc
+ * Utility class for sanitizing, tokenizing, and providing several common-use methods to create,
+ * verify and transform SQL queries.
+ *
+ * @author root
+ * @since Mar 22nd, 2012
  */
 public class SQLUtil {
 
-	private static SecurityLoggerServiceAPI securityLoggerServiceAPI =
+	private static final SecurityLoggerServiceAPI securityLoggerServiceAPI =
 			APILocator.getSecurityLogger();
 
 	public static final String ASC  = "asc";
@@ -392,4 +401,29 @@ public class SQLUtil {
 		return UtilMethods.isSet(evilWord) ? Boolean.TRUE : Boolean.FALSE;
 	}
 
-} // E:O:F:SQLUtil.
+	/**
+	 * Takes the 'orderBy' and 'direction' parameters and returns a valid SQL order-by clause. If
+	 * the 'orderBy' parameter is not set, the method will default to the 'mod_date' column in
+	 * descending order instead.
+	 *
+	 * @param orderBy   The column name used to order the results by.
+	 * @param direction The sort direction of the results.
+	 *
+	 * @return A valid SQL order-by clause.
+	 */
+	public static String getOrderByAndDirectionSql(final String orderBy, final OrderDirection direction) {
+		final String ascOrder = OrderDirection.ASC.name().toLowerCase();
+		final String descOrder = OrderDirection.DESC.name().toLowerCase();
+		String orderByParam = UtilMethods.isSet(orderBy)
+				? orderBy.trim().toLowerCase()
+				: ContentTypeFactory.MOD_DATE_COLUMN + SPACE + descOrder;
+
+		if (!orderByParam.endsWith(SPACE + ascOrder) && !orderByParam.endsWith(SPACE + descOrder)) {
+			orderByParam = orderByParam + SPACE + (UtilMethods.isSet(direction)
+					? direction.toString().toLowerCase()
+					: ascOrder);
+		}
+		return orderByParam;
+	}
+
+}

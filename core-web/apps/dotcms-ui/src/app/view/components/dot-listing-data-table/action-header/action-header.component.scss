@@ -10,6 +10,7 @@
     flex-direction: row-reverse;
     align-items: center;
     padding: $spacing-3 $spacing-5;
+    font-size: $font-size-md;
 
     &.selected {
         .action-header__primary-button {
@@ -51,7 +52,9 @@
     color: $white;
     display: flex;
     transform: translateY(0px);
-    transition: transform 0.2s ease, visibility 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        visibility 0.2s ease;
     visibility: hidden;
 }
 

@@ -1,10 +1,14 @@
 package com.dotcms.common;
 
+import static com.dotcms.common.WorkspaceManager.*;
+
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.config.WorkspaceInfo;
+import com.dotcms.model.config.WorkspaceInfo.Builder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.arc.DefaultBean;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -12,8 +16,7 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 @DefaultBean
 @ApplicationScoped
@@ -49,13 +52,19 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
         }
 
         final Path rootPath = workspace.root().resolve(DOT_WORKSPACE_YML);
+
+        final Builder builder = WorkspaceInfo.builder();
+        if (null != workspace.id()) {
+            builder.id(workspace.id());
+        }
+        final WorkspaceInfo info = builder.build();
         if (!Files.exists(rootPath)) {
             try (var outputStream = Files.newOutputStream(rootPath)) {
-                mapper.writeValue(outputStream, WorkspaceInfo.builder().name("default").build());
+                mapper.writeValue(outputStream, info);
             }
         }
 
-        return workspace;
+        return Workspace.builder().from(workspace).id(info.id()).build();
     }
 
     Workspace workspace(final Path path) {
@@ -64,9 +73,12 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
                     String.format("Path [%s] must be a directory", path)
             );
         }
-        //All other fields are derived therefore we only need to set the root
-        return Workspace.builder().root(path)
-                .build();
+
+        return workspaceInfo(path)
+                //if the workspace info is present, we will use it to create the workspace extracting the id
+                .map(info -> Workspace.builder().id(info.id()).root(path).build())
+                //if the workspace info is not present, we will create a new empty workspace
+                .orElseGet(() -> Workspace.builder().root(path).build());
     }
 
     Optional<Path> findProjectRoot(Path currentPath) {
@@ -94,7 +106,7 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
     public Workspace getOrCreate(Path currentPath) throws IOException {
         final Optional<Workspace> workspace = findWorkspace(currentPath);
         if (workspace.isPresent()) {
-            //calling persist to make sure all the directories were not removed
+            //calling persist to make sure all the directories are still there
             return persist(
                  workspace.get()
             );
@@ -106,19 +118,53 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
         }
     }
 
-    @Override
-    public Workspace getOrCreate() throws IOException {
-        return getOrCreate(Path.of("").toAbsolutePath());
+    public Workspace getOrCreate(final Path currentPath, final boolean findWorkspace) throws IOException {
+
+        if(findWorkspace){
+            return getOrCreate(currentPath);
+        }
+
+        //This will force that use of the current path as the workspace. If no workspace info is found, it will create one.
+        return persist(
+                workspace(currentPath)
+        );
     }
 
     public Optional<Workspace> findWorkspace(Path currentPath) {
-        final Optional<Path> projectRoot = findProjectRoot(currentPath);
+        // Resolve the path as it may be relative
+        final Path resolvedPath = resolvePath(currentPath);
+        logger.debugf("currentPath = %s", resolvedPath);
+
+        final File file = resolvedPath.toFile();
+        if (!file.exists()) {
+            throw new IllegalArgumentException(
+                    String.format("Path [%s] does not exist", resolvedPath)
+            );
+        }
+        final Optional<Path> projectRoot = findProjectRoot(resolvedPath);
         return projectRoot.map(this::workspace);
     }
 
-    public Optional<Workspace> findWorkspace() {
-        final Optional<Path> projectRoot = findProjectRoot(Path.of("").toAbsolutePath());
-        return projectRoot.map(this::workspace);
+    /**
+     * Reads the file
+     * @param path the path to the workspace
+     * @return the workspace info
+     */
+    Optional<WorkspaceInfo> workspaceInfo(final Path path) {
+        if (!Files.isDirectory(path)) {
+            throw new IllegalArgumentException(
+                    String.format("Path [%s] must be a directory", path)
+            );
+        }
+        final Path resolved = path.resolve(DOT_WORKSPACE_YML);
+        if (Files.exists(resolved)) {
+            try {
+                return Optional.of(mapper.readValue(resolved.toFile(), WorkspaceInfo.class));
+            } catch (IOException e) {
+                logger.error("Error reading workspace info", e);
+            }
+        }
+        return Optional.empty();
     }
 
     @Override

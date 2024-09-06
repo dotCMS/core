@@ -27,7 +27,10 @@ export class DotStarterComponent implements OnInit {
     showCreatePageLink: boolean;
     showCreateTemplateLink: boolean;
 
-    constructor(private route: ActivatedRoute, private dotAccountService: DotAccountService) {}
+    constructor(
+        private route: ActivatedRoute,
+        private dotAccountService: DotAccountService
+    ) {}
 
     ngOnInit() {
         this.userData$ = this.route.data.pipe(

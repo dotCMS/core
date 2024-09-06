@@ -2,7 +2,7 @@
 
 :host {
     background: $color-palette-gray-200;
-    box-shadow: $md-shadow-4;
+    box-shadow: $shadow-m;
     display: flex;
     height: 100%;
     padding: $spacing-4;
@@ -28,7 +28,7 @@
     color: $black;
     display: flex;
     justify-content: space-between;
-    font-size: $font-size-lg;
+    font-size: $font-size-lmd;
     font-weight: $font-weight-semi-bold;
     padding: $spacing-3;
 
@@ -44,9 +44,10 @@
 
 .dot-apps-configuration-detail__container {
     background-color: $white;
-    box-shadow: $md-shadow-4;
+    box-shadow: $shadow-m;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
     width: 100%;
+    font-size: $font-size-md;
 }

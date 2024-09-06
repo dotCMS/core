@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
+
 import { StringUtils } from './string-utils.service';
-import { environment } from '../environments/environment';
 import { HttpRequestUtils } from './util/http-request-utils';
+
+import { environment } from '../environments/environment';
 const DEV_MODE_PARAM = 'devMode';
 
 /**
@@ -60,6 +62,7 @@ export class LoggerService {
      */
     shouldShowLogs(): boolean {
         const devMode: string = this.httpRequestUtils.getQueryStringParam(DEV_MODE_PARAM);
+
         return !environment.production || devMode === 'on';
     } // isProduction.
 
@@ -74,6 +77,7 @@ export class LoggerService {
         } catch (e) {
             caller = this.cleanCaller(this.stringUtils.getLine(e.stack, 4));
         }
+
         return caller;
     }
 

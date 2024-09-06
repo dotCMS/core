@@ -1,0 +1,35 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    flex-direction: column;
+}
+
+.locale-confirmation__message {
+    display: flex;
+    gap: $spacing-2;
+    word-break: break-word;
+    align-items: flex-start;
+
+    i {
+        color: $color-alert-yellow;
+        font-size: $font-size-md;
+    }
+}
+
+.locale-confirmation__confirmation {
+    display: flex;
+    gap: $spacing-1;
+    margin: $spacing-4 0;
+    align-items: center;
+
+    input {
+        flex: 1;
+    }
+}
+
+.locale-confirmation__buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: $spacing-1;
+}

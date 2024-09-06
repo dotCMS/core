@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import graphql.schema.GraphQLArgument;
@@ -53,6 +54,9 @@ class RelationshipFieldGenerator implements GraphQLFieldGenerator {
         final ContentType relatedContentType;
         ContentType contentType = null;
 
+        Logger.debug(this, ()->
+                "Creating relationship field for field: " + field.variable() + " of content type: "
+                        + field.contentTypeId());
         try {
             contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                     .find(field.contentTypeId());
@@ -66,6 +70,9 @@ class RelationshipFieldGenerator implements GraphQLFieldGenerator {
         Relationship relationship;
 
         try {
+
+            Logger.debug(this, ()-> "Getting relationship for field: " + field.variable() + " of content type: "
+                    + field.contentTypeId() + " and related content type: " + relatedContentType.variable());
             relationship = relationshipAPI.getRelationshipFromField(field,
                     APILocator.systemUser());
         } catch (DotDataException | DotSecurityException e) {

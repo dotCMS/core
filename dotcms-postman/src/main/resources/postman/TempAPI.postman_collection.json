@@ -1,0 +1,515 @@
+{
+	"info": {
+		"_postman_id": "9e085c53-f753-4769-afc0-137832a74039",
+		"name": "Temp API Resource",
+		"description": "This API allows for the creation and retrieval of temporary files in the content repository.\n\ndotCMS allows you to upload temporary files in situations where users/developers need to store temporary information somewhere in the repository without having to worry how/when it must be deleted. For instance, this very API is used by dotCMS when content authors upload binary files via the UI and haven't saved or published them.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "11174695"
+	},
+	"item": [
+		{
+			"name": "Basic Temp API Operations",
+			"item": [
+				{
+					"name": "Upload Multiple with one wrong file",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"File name check\", function () {",
+									"",
+									"    for(let i = 0; i < jsonData.tempFiles.lenght;++i) {",
+									"",
+									"        if (jsonData.tempFiles[i].fileName && sonData.tempFiles[i].fileName == 'Landscape_2009_romantic_country_garden.jpeg') {",
+									"",
+									"            pm.expect(jsonData.tempFiles[i].fileName).to.eql('Landscape_2009_romantic_country_garden.jpeg');",
+									"             pm.expect(jsonData.tempFiles[i].metadata.contentType).to.eql('image/jpeg');",
+									"        } else if (jsonData.tempFiles[i].fileName && sonData.tempFiles[i].fileName == '16475687531_eac8a30914_b.jpeg') {",
+									"",
+									"            pm.expect(jsonData.tempFiles[i].fileName).to.eql('16475687531_eac8a30914_b.jpeg');",
+									"             pm.expect(jsonData.tempFiles[i].metadata.contentType).to.eql('image/jpeg');",
+									"        } else {",
+									"             pm.expect(jsonData.tempFiles[i].errorCode).to.eql('400');",
+									"        }",
+									"    }",
+									"  ",
+									"});",
+									"",
+									"pm.test('File size exceeded', () => {",
+									"  // Check if the response body contains the error message",
+									"  pm.expect(pm.response.text()).to.include('Invalid Binary Part, Message: The maximum file size for this field is 1024.0 K.');",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "{{serverURL}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/image/Landscape_2008_urban_park_and_plaza_Ankaran.jpeg"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/image/Landscape_2009_romantic_country_garden.jpeg"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/image/16475687531_eac8a30914_b.jpeg"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/temp?maxFileLength=1MB",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"temp"
+							],
+							"query": [
+								{
+									"key": "maxFileLength",
+									"value": "1MB"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Multiple with filename with non-ascii chars",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Temp file should be created', function() {",
+									"    pm.expect(jsonData.tempFiles[0].fileName, 'Temp filename should be sanitized').equals('Screenshot 2024-07-19 at 10.26.21AM.png');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "{{serverURL}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/Screenshot 2024-07-19 at 10.26.21 AM.png"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/temp",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"temp"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload file greater than 50MB",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check that the uploaded file has the expected properties\", function () {",
+									"    var jsonData = pm.response.json().tempFiles[0];",
+									"    pm.expect(jsonData.fileName).to.eql('test-video-71megabytes.mov', 'The uploaded file name does not match the file name in the request');",
+									"    pm.expect(jsonData.length).to.be.gte(50000000, 'The uploaded file is NOT greater than the expected 50MB');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "{{serverURL}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/test-video-71megabytes.mov"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/temp",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"temp"
+							]
+						},
+						"description": "The `MultiPartSecurityRequestWrapper` must be able to handle the upload of safe harmless files of any size. However, by default, if such a file is greater than 50MB, it must be cached to disk. This feature must always work."
+					},
+					"response": []
+				},
+				{
+					"name": "Given_AnonUser_Unable_To_Upload",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "{{serverURL}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/image/Landscape_2009_romantic_country_garden.jpeg"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/image/16475687531_eac8a30914_b.jpeg"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/temp?maxFileLength=1MB",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"temp"
+							],
+							"query": [
+								{
+									"key": "maxFileLength",
+									"value": "1MB"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Verifies that simple operations on the Temp API are working as expected. The difference is that they don't need any complex setup or test content to perform any check."
+		},
+		{
+			"name": "Uploading Temp Files by URL",
+			"item": [
+				{
+					"name": "Creating Temp Image File - With Extension",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var entity = pm.response.json().tempFiles[0];",
+									"",
+									"pm.test(\"Check that the Temporary File properties are correct\", function () {",
+									"    pm.expect(pm.response.json().tempFiles.length).to.eql(1, \"Only one temporary file should have been created\");",
+									"",
+									"    const fileName = entity.fileName;",
+									"    const fileExtension = fileName.split('.').pop();",
+									"    pm.expect(fileExtension).to.equal(\"png\", \"The returned file extension is not the expected one.\");",
+									"});",
+									"",
+									"pm.test(\"Check that the Temporary File metadata is correct\", function () {",
+									"    const fileName = entity.fileName;",
+									"    const fileExtension = fileName.split('.').pop();",
+									"    pm.expect(entity.metadata.contentType.includes(fileExtension)).to.equal(true, \"The returned content type does not point to a JPEG file.\");",
+									"    pm.expect(entity.metadata.isImage).to.equal(true, \"The returned file must be an image file.\");",
+									"    pm.expect(entity.metadata.name).to.equal(fileName, \"The returned name in the metadata does not match the expected file name.\");",
+									"    pm.expect(entity.referenceUrl.endsWith(fileName)).to.equal(true, \"The returned referenceUrl does not end with the expected file name.\");",
+									"    pm.expect(entity.thumbnailUrl.endsWith(fileName)).to.equal(true, \"The returned referenceUrl does not end with the expected file name.\"); ",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://localhost"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"remoteUrl\": \"https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/temp/byUrl",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"temp",
+								"byUrl"
+							]
+						},
+						"description": "Creates a Temporary File by URL which URL includes the file's extension."
+					},
+					"response": []
+				},
+				{
+					"name": "Creating Temp Image File - No Extension",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var entity = pm.response.json().tempFiles[0];",
+									"",
+									"pm.test(\"Check that the Temporary File properties are correct\", function () {",
+									"    pm.expect(pm.response.json().tempFiles.length).to.eql(1, \"Only one temporary file should have been created\");",
+									"",
+									"    const fileName = entity.fileName;",
+									"    const fileExtension = fileName.split('.').pop();",
+									"    pm.expect(fileExtension).to.equal(\"jpeg\", \"The returned file extension is not the expected one.\");",
+									"});",
+									"",
+									"pm.test(\"Check that the Temporary File metadata is correct\", function () {",
+									"    const fileName = entity.fileName;",
+									"    const fileExtension = fileName.split('.').pop();",
+									"    pm.expect(entity.metadata.contentType.includes(fileExtension)).to.equal(true, \"The returned content type does not point to a JPEG file.\");",
+									"    pm.expect(entity.metadata.isImage).to.equal(true, \"The returned file must be an image file.\");",
+									"    pm.expect(entity.metadata.name).to.equal(fileName, \"The returned name in the metadata does not match the expected file name.\");",
+									"    pm.expect(entity.referenceUrl.endsWith(fileName)).to.equal(true, \"The returned referenceUrl does not end with the expected file name.\");",
+									"    pm.expect(entity.thumbnailUrl.endsWith(fileName)).to.equal(true, \"The returned referenceUrl does not end with the expected file name.\"); ",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://localhost"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"remoteUrl\": \"https://images.unsplash.com/photo-1575936123452-b67c3203c357?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aW1hZ2V8ZW58MHx8MHx8fDA%3D&w=1000&q=80\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/temp/byUrl",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"temp",
+								"byUrl"
+							]
+						},
+						"description": "Creates a Temporary File by URL which URL does NOT include the file's extension. This forces the API to access the file's metadata to try to infer the file's extension."
+					},
+					"response": []
+				}
+			],
+			"description": "Verifies that uploading a Temporary File by URL generates the expected metadata. The API must be able to handle situations in which the temporary file already has its extension, or if it must be inferred by inspecting its metadata.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"HTTP Status code must be successful\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						]
+					}
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"if (!pm.environment.get('jwt')) {",
+					"    console.log(\"generating....\")",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = pm.environment.get(\"user\");",
+					"        const password = pm.environment.get(\"password\");",
+					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"                console.log(jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

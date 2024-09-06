@@ -2,9 +2,9 @@
 
 .p-toolbar {
     background-color: $white;
-    border-bottom: solid 1px $color-palette-gray-500;
+    border-bottom: solid 1px $color-palette-gray-200;
     display: flex;
-    padding: $spacing-3 $spacing-4;
+    padding: $spacing-1 $spacing-4;
 
     &.p-corner-all {
         border-radius: 0;
@@ -24,4 +24,5 @@
 
 .p-toolbar-group-right {
     justify-content: flex-end;
+    gap: $spacing-3;
 }

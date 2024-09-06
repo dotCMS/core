@@ -91,11 +91,11 @@ public class HttpRequestDataUtil {
 	 *         . Otherwise, returns {@code false}.
 	 */
 	public static boolean isIpMatchingNetmask(String ipAddress, String netmask) {
-		boolean isMatching = false;
+		final boolean isMatching;
 		// function only handles IPv4 addresses - this check for period prevents exceptions until IPv6 functionality is added
 		if (UtilMethods.isSet(ipAddress) && ipAddress.contains(".") && UtilMethods.isSet(netmask) && netmask.contains(".")) {
 			String[] netmaskParts = netmask.split("/");
-			if (netmaskParts != null && netmaskParts.length == 2) {
+			if (netmaskParts.length == 2) {
 				SubnetUtils subnetUtils = null;
 				Pattern pattern = Pattern
 						.compile("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
@@ -137,28 +137,6 @@ public class HttpRequestDataUtil {
 				UtilMethods.getCharsetConfiguration());
 		return uri;
 	}
-
-	/**
-	 * Retrieves the value of the specified parameter sent through the query
-	 * String.
-	 * 
-	 * @param request
-	 *            - The {@link HttpServletRequest} object.
-	 * @param name
-	 *            - The name of the query String parameter.
-	 * @return The value of the URL parameter. If the request or the parameter
-	 *         name are null/empty, or if the parameter is not present in the
-	 *         request, it returns {@code null}.
-	 */
-	public static String getUrlParameterValue(HttpServletRequest request,
-			String name) {
-		if (request == null || !UtilMethods.isSet(name)) {
-			return null;
-		}
-		String value = request.getParameter(name);
-		return value;
-	}
-
 
 	/**
 	 * Return the Query parameters from a URL String.
@@ -305,4 +283,5 @@ public class HttpRequestDataUtil {
 		}
 		return valueFromParam;
 	}
+
 }

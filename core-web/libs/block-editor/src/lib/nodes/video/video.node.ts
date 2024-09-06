@@ -2,6 +2,8 @@ import { mergeAttributes, Node } from '@tiptap/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
+import { contentletToJSON } from '../../shared';
+
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         videoBlock: {
@@ -9,6 +11,27 @@ declare module '@tiptap/core' {
         };
     }
 }
+
+const getVideoAttrs = (attrs: DotCMSContentlet | string) => {
+    if (typeof attrs === 'string') {
+        return { src: attrs };
+    }
+
+    const { assetMetaData, asset, mimeType, fileAsset } = attrs;
+    const { width = 'auto', height = 'auto', contentType } = assetMetaData || {};
+    const orientation = height > width ? 'vertical' : 'horizontal';
+
+    return {
+        src: fileAsset || asset,
+        data: {
+            ...attrs
+        },
+        width,
+        height,
+        mimeType: mimeType || contentType,
+        orientation
+    };
+};
 
 export const VideoNode = Node.create({
     name: 'dotVideo',
@@ -93,10 +116,15 @@ export const VideoNode = Node.create({
         };
     },
 
+    /**
+     * Return the node for the renderHTML method
+     *
+     * @param {*} { HTMLAttributes }
+     * @return {*}
+     */
     renderHTML({ HTMLAttributes }) {
         return [
             'div',
-            { class: 'video-container' },
             [
                 'video',
                 mergeAttributes(HTMLAttributes, {
@@ -104,26 +132,38 @@ export const VideoNode = Node.create({
                 })
             ]
         ];
+    },
+
+    /**
+     * Return the node view for Block Editor in Development mode
+     *
+     * @return {*}
+     */
+    addNodeView() {
+        return ({ node, HTMLAttributes }) => {
+            const dom = document.createElement('div');
+            dom.classList.add('video-container');
+
+            const video = document.createElement('video');
+            video.controls = true;
+
+            Object.entries(HTMLAttributes).forEach(([key, value]) => {
+                if (typeof value === 'object' && value !== null) {
+                    value = JSON.stringify(value);
+                }
+
+                video.setAttribute(key, value);
+            });
+
+            dom.appendChild(video);
+
+            // Override toJSON method to include the contentlet data
+            node.toJSON = contentletToJSON.bind({ node });
+
+            return {
+                dom,
+                node
+            };
+        };
     }
 });
-
-const getVideoAttrs = (attrs: DotCMSContentlet | string) => {
-    if (typeof attrs === 'string') {
-        return { src: attrs };
-    }
-
-    const { assetMetaData, asset, mimeType, fileAsset } = attrs;
-    const { width = 'auto', height = 'auto', contentType } = assetMetaData || {};
-    const orientation = height > width ? 'vertical' : 'horizontal';
-
-    return {
-        src: fileAsset || asset,
-        data: {
-            ...attrs
-        },
-        width,
-        height,
-        mimeType: mimeType || contentType,
-        orientation
-    };
-};

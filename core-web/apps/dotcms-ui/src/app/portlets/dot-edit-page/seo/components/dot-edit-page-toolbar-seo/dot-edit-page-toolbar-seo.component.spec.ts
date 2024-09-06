@@ -6,6 +6,7 @@ import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -17,22 +18,26 @@ import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotESContentService,
     DotEventsService,
+    DotHttpErrorManagerService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
-    DotPropertiesService
+    DotPropertiesService,
+    DotRouterService,
+    DotSessionStorageService,
+    DotGlobalMessageService,
+    DotIframeService,
+    DotFormatDateService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -55,24 +60,27 @@ import {
     ESContent,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
     DotFormatDateServiceMock,
     LoginServiceMock,
+    mockDotContainers,
+    mockDotLanguage,
+    mockDotLayout,
     MockDotMessageService,
+    mockDotPage,
     mockDotPersona,
     mockDotRenderedPage,
     mockDotRenderedPageState,
     MockDotRouterService,
+    mockDotTemplate,
     mockUser,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotEditPageViewAsControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageWorkflowsActionsModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
-import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
 import { DotEditPageStateControllerSeoComponent } from '@portlets/dot-edit-page/seo/components/dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component';
 import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
 
@@ -115,7 +123,7 @@ class MockDotPageStateService {
 
 @Injectable()
 export class MockDotPropertiesService {
-    getKey(): Observable<true> {
+    getFeatureFlag(): Observable<true> {
         return of(true);
     }
 }
@@ -157,20 +165,23 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 DotEditPageStateControllerSeoComponent,
                 DotEditPageInfoSeoComponent,
                 DotEditPageWorkflowsActionsModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 DotWizardModule,
                 TooltipModule,
                 TagModule,
                 DotExperimentClassDirective,
+                DotLanguageSelectorComponent,
                 RouterTestingModule.withRoutes([
                     {
                         path: 'edit-page/experiments/pageId/id/reports',
                         component: TestHostComponent
                     }
-                ])
+                ]),
+                NoopAnimationsModule
             ],
             providers: [
+                DotSessionStorageService,
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
                 {
                     provide: DotMessageService,
@@ -199,6 +210,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 DotEventsService,
                 DotcmsEventsService,
                 DotEventsSocket,
+                DotContentletEditorService,
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -234,7 +246,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
         dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
         dotDialogService = de.injector.get(DialogService);
         dotPropertiesService = TestBed.inject(DotPropertiesService);
-        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
+        spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(true));
     });
 
     describe('elements', () => {
@@ -477,5 +489,39 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 expect(component.whatschange.emit).not.toHaveBeenCalled();
             });
         });
+    });
+
+    it('should have a new api link', async () => {
+        const initialLink = component.apiLink;
+
+        const host = `api/v1/page/render${componentHost.pageState.page.pageURI}`;
+        const newLanguageId = 2;
+        const expectedLink = `${host}?language_id=${newLanguageId}`;
+
+        fixtureHost.componentRef.setInput(
+            'pageState',
+            new DotPageRenderState(
+                mockUser(),
+                new DotPageRender({
+                    containers: mockDotContainers(),
+                    layout: mockDotLayout(),
+                    page: { ...mockDotPage(), languageId: 2 },
+                    template: mockDotTemplate(),
+                    canCreateTemplate: true,
+                    numberContents: 1,
+                    viewAs: {
+                        language: mockDotLanguage,
+                        mode: DotPageMode.PREVIEW
+                    }
+                }),
+                dotcmsContentletMock
+            )
+        );
+
+        fixtureHost.detectChanges();
+        await fixtureHost.whenStable();
+
+        expect(component.apiLink).toBe(expectedLink);
+        expect(component.apiLink).not.toBe(initialLink);
     });
 });

@@ -1,4 +1,4 @@
-import { Component, h} from '@stencil/core';
+import { Component, h } from '@stencil/core';
 
 @Component({
     tag: 'dot-card',
@@ -6,10 +6,7 @@ import { Component, h} from '@stencil/core';
     shadow: true
 })
 export class DotCard {
-
     render() {
-        return (
-            <slot />
-        );
+        return <slot />;
     }
 }

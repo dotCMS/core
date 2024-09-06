@@ -15,6 +15,8 @@ import { AngularRenderer } from './AngularRenderer';
 import type { Node as ProseMirrorNode } from 'prosemirror-model';
 import type { Decoration } from 'prosemirror-view';
 
+export type toJSONFn = (this: { node: ProseMirrorNode }) => Record<string, unknown>;
+
 @Component({ template: '' })
 export class AngularNodeViewComponent implements NodeViewProps {
     @Input() editor!: NodeViewProps['editor'];
@@ -29,6 +31,7 @@ export class AngularNodeViewComponent implements NodeViewProps {
 
 interface AngularNodeViewRendererOptions extends NodeViewRendererOptions {
     update?: ((node: ProseMirrorNode, decorations: Decoration[]) => boolean) | null;
+    toJSON?: toJSONFn;
     injector: Injector;
 }
 
@@ -40,7 +43,7 @@ class AngularNodeView extends NodeView<
     renderer!: AngularRenderer<AngularNodeViewComponent, NodeViewProps>;
     contentDOMElement!: HTMLElement | null;
 
-    mount() {
+    override mount() {
         const injector = this.options.injector as Injector;
 
         const props: NodeViewProps = {
@@ -64,6 +67,11 @@ class AngularNodeView extends NodeView<
             };
         }
 
+        //
+        if (this.options.toJSON) {
+            this.node.toJSON = this.options.toJSON.bind(this);
+        }
+
         this.contentDOMElement = this.node.isLeaf
             ? null
             : document.createElement(this.node.isInline ? 'span' : 'div');
@@ -77,11 +85,11 @@ class AngularNodeView extends NodeView<
         }
     }
 
-    get dom() {
+    override get dom() {
         return this.renderer.dom;
     }
 
-    get contentDOM() {
+    override get contentDOM() {
         if (this.node.isLeaf) {
             return null;
         }
@@ -106,6 +114,10 @@ class AngularNodeView extends NodeView<
     update(node: ProseMirrorNode, decorations: DecorationWithType[]): boolean {
         if (this.options.update) {
             return this.options.update(node, decorations);
+        }
+
+        if (this.options.toJSON) {
+            this.node.toJSON = this.options.toJSON.bind(this);
         }
 
         if (node.type !== this.node.type) {

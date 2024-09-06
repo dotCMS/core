@@ -21,11 +21,16 @@ dot-contentlet-icon {
     }
 }
 
-.cover {
+.background-image {
     position: absolute;
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
+
+    &.svg-thumbnail {
+        background-size: contain;
+    }
+
     img {
         width: 0px;
         height: 0px;

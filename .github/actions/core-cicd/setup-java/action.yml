@@ -1,0 +1,167 @@
+# Setup Java Action
+#
+# This composite action sets up Java using SDKMan, with optional GraalVM installation.
+# It supports caching for faster subsequent runs and can use a specified Java version
+# or read from an .sdkmanrc file.
+#
+# Features:
+# - Installs SDKMan if not already present
+# - Installs specified Java version or uses version from .sdkmanrc
+# - Optionally installs GraalVM
+# - Caches SDKMan and Java installations for faster runs
+# - Supports different architectures
+# - Sets up JAVA_HOME and PATH environment variables
+
+name: 'Setup Java'
+description: 'Setup Java using SDKMan including optionally setting up GraalVM for native images'
+inputs:
+  java-version:
+    description: 'Override the java version to install'
+    required: false
+  require-graalvm:
+    description: 'Require GraalVM to be installed'
+    required: true
+    default: 'false'
+  graalvm-version:
+    description: 'Override the sdkman version of GraalVM to install'
+    required: false
+runs:
+  using: 'composite'
+  steps:
+    - name: Determine Architecture
+      id: determine-arch
+      shell: bash
+      run: echo "ARCHITECTURE=$(uname -m)" >> $GITHUB_ENV
+
+    - name: Get Requested Version
+      id: get-requested-version
+      shell: bash
+      run: |
+        DEFAULT_GRAALVM="21.0.2-graalce"
+        
+        if [ -z "${{ inputs.java-version }}" ] && [ -f .sdkmanrc ]; then
+          REQUESTED_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
+          echo "using default Java version from .sdkmanrc: REQUESTED_VERSION"
+        else
+          REQUESTED_VERSION="${{ inputs.java-version }}"
+          echo "using Java version from inputs: REQUESTED_VERSION"
+        fi
+        echo "requested_version=$REQUESTED_VERSION" >> $GITHUB_OUTPUT
+        GRAALVM_VERSION="${{ inputs.graalvm-version }}"
+        if [ -z "$GRAALVM_VERSION" ]; then
+          GRAALVM_VERSION=${DEFAULT_GRAALVM}
+          echo "No GraalVM version provided, using default: $GRAALVM_VERSION"
+        else
+          echo "Using provided GraalVM version: $GRAALVM_VERSION"
+        fi
+        echo "graalvm_version=$GRAALVM_VERSION" >> $GITHUB_OUTPUT
+    - name: Restore Cache SDKMan install
+      id: restore-cache-sdkman
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.sdkman
+        key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-install
+    - name: Install SDKMan
+      id: install-sdkman
+      if: ${{ steps.restore-cache-sdkman.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: |
+        if [ ! -f "$HOME/.sdkman/bin/sdkman-init.sh" ]; then
+        echo "Downloading SDKMAN install"
+        curl -s "https://get.sdkman.io" | bash
+        fi
+    - name: Save Cache SDKMan install
+      id: save-cache-sdkman
+      if: ${{ steps.restore-cache-sdkman.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.sdkman
+        key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-install
+
+    - name: Restore Cache Java SDK
+      id: restore-cache-java
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.sdkman/candidates/java/${{ steps.get-requested-version.outputs.requested_version }}
+        key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-java-${{ steps.get-requested-version.outputs.requested_version }}
+
+    - name: Restore Cache GraalVM SDK
+      id: restore-cache-graalvm
+      if: ${{ inputs.require-graalvm == 'true' }}
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.sdkman/candidates/java/${{ steps.get-requested-version.outputs.graalvm_version }}
+        key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-java-${{ steps.get-requested-version.outputs.graalvm_version }}
+
+    - name: 'Setup SDKMan'
+      id: sdkman-java
+      shell: bash
+      run: |
+        
+        source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+        REQUESTED_VERSION="${{ steps.get-requested-version.outputs.requested_version }}"
+        REQUIRE_GRAALVM="${{ inputs.require-graalvm }}"
+        GRAALVM_VERSION="${{ steps.get-requested-version.outputs.graalvm_version }}"
+        
+        
+        TEST_HOME=$(sdk home java "$REQUESTED_VERSION" 2>/dev/null) || true
+        if [ -z "$TEST_HOME" ]; then
+          echo "Java version $REQUESTED_VERSION is not installed. Installing now..."
+          echo "y" | sdk install java "$REQUESTED_VERSION"
+          sdk use java "$REQUESTED_VERSION"
+          TEST_HOME=$(sdk home java "$REQUESTED_VERSION")
+        else
+          echo "Java version $REQUESTED_VERSION is already installed."
+          sdk use java "$REQUESTED_VERSION"
+        fi
+
+        echo "JAVA_HOME=$TEST_HOME" >> $GITHUB_ENV
+        JAVA_BIN_PATH="$HOME/.sdkman/candidates/java/current/bin"
+        echo "$JAVA_BIN_PATH" >> $GITHUB_PATH
+
+        export JAVA_HOME=$TEST_HOME
+        export PATH=$JAVA_BIN_PATH:$PATH
+
+        if [[ "$REQUESTED_VERSION" == *"-graalce" || "$REQUESTED_VERSION" == *"-mandrel" || "$REQUESTED_VERSION" == *"-graal" ]]; then
+          echo "GRAALVM_HOME=$TEST_HOME" >> $GITHUB_ENV
+        fi
+
+        if [[ "$REQUIRE_GRAALVM" == "true" ]]; then
+          if [ -z "$GRAALVM_HOME" ] && [ "$REQUESTED_VERSION" != "$GRAALVM_VERSION" ]; then
+            echo "Requested version does not match required GraalVM version and GRAALVM_HOME is not set. Installing GraalVM version $GRAALVM_VERSION..."
+            echo "n" | sdk install java "$GRAALVM_VERSION"
+            GRAALVM_HOME=$(sdk home java "$GRAALVM_VERSION")
+            echo "GRAALVM_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
+            echo "GRAALVM_HOME installed and set to $GRAALVM_HOME"
+          elif [ -n "$GRAALVM_HOME" ]; then
+            echo "GRAALVM_HOME is already set to $GRAALVM_HOME, skipping installation of GraalVM."
+          fi
+        fi
+        
+        CURRENT_JAVA_HOME=$(readlink -f "$HOME/.sdkman/candidates/java/current")
+        if [ "$CURRENT_JAVA_HOME" != "$TEST_HOME" ]; then
+          echo "Updating default Java version to $REQUESTED_VERSION"
+          sdk default java "$REQUESTED_VERSION"
+        else
+          echo "Default Java version is already set to $REQUESTED_VERSION"
+        fi
+        
+        echo "JAVA_HOME is set to: $JAVA_HOME"
+        echo "Path to java command: $(which java)"
+        echo "Java version:"
+        java -version
+
+    - name: Save Cache Java SDK
+      uses: actions/cache/save@v4
+      if: ${{ steps.restore-cache-java.outputs.cache-hit != 'true' }}
+      with:
+        path: ~/.sdkman/candidates/java/${{ steps.get-requested-version.outputs.requested_version }}
+        key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-java-${{ steps.get-requested-version.outputs.requested_version }}
+
+    - name: Save Cache GraalVM SDK
+      if: ${{ inputs.require-graalvm == 'true' && steps.restore-cache-graalvm.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.sdkman/candidates/java/${{ steps.get-requested-version.outputs.graalvm_version }}
+        key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-java-${{ steps.get-requested-version.outputs.graalvm_version }}

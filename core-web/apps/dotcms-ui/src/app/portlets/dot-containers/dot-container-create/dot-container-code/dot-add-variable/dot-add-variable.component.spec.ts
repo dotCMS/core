@@ -19,17 +19,17 @@ import { ButtonModule } from 'primeng/button';
 import { DataViewModule } from 'primeng/dataview';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotEventsService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
     DotMessageService,
-    DotSiteBrowserService
+    DotRouterService,
+    DotSiteBrowserService,
+    DotGlobalMessageService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -46,11 +46,13 @@ import { DotMessagePipe } from '@dotcms/ui';
 import {
     ActivatedRouteMock,
     CoreWebServiceMock,
+    DotMessageDisplayServiceMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotAddVariableComponent } from './dot-add-variable.component';
+import { FilteredFieldTypes } from './dot-add-variable.models';
+import { DOT_CONTENT_MAP, DotFieldsService } from './services/dot-fields.service';
 
 @Component({
     selector: 'dot-form-dialog',
@@ -68,11 +70,11 @@ const mockContentTypes: DotCMSContentType = {
     defaultType: false,
     fields: [
         {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
             contentTypeId: 'ce930143870e11569f93f8a9fff5da19',
             dataType: 'SYSTEM',
-            fieldType: 'Binary',
-            fieldTypeLabel: 'Binary',
+            fieldType: 'Text',
+            fieldTypeLabel: 'Text',
             fieldVariables: [],
             fixed: false,
             iDate: 1667904275000,
@@ -80,13 +82,13 @@ const mockContentTypes: DotCMSContentType = {
             indexed: false,
             listed: false,
             modDate: 1667904276000,
-            name: 'Screenshot',
+            name: 'Sub Title',
             readOnly: false,
             required: false,
             searchable: false,
             sortOrder: 0,
             unique: false,
-            variable: 'screenshot'
+            variable: 'subTitle'
         },
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
@@ -108,6 +110,27 @@ const mockContentTypes: DotCMSContentType = {
             sortOrder: 1,
             unique: false,
             variable: 'title'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableImageField',
+            contentTypeId: '60b5bce270de216d36eb1a07674c773b',
+            dataType: 'TEXT',
+            fieldType: 'Image',
+            fieldTypeLabel: 'Image',
+            fieldVariables: [],
+            fixed: false,
+            iDate: 1696260470000,
+            id: '27b59164438e70f11ead3a7318884af8',
+            indexed: false,
+            listed: false,
+            modDate: 1696260470000,
+            name: 'Test Image',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 2,
+            unique: false,
+            variable: 'testImage'
         }
     ],
     fixed: false,
@@ -153,7 +176,15 @@ const mockContentTypes: DotCMSContentType = {
 
 const messageServiceMock = new MockDotMessageService({
     'containers.properties.add.variable.title': 'Title',
-    Add: 'Add'
+    Add: 'Add',
+    'Content-Identifier-value': 'Content Identifier Value',
+    'Content-Identifier': 'Content Identifier',
+    Image: 'Image',
+    'Image-Identifier': 'Image Identifier',
+    'Image-Title': 'Image Title',
+    'Image-Width': 'Image Width',
+    'Image-Extension': 'Image Extension',
+    'Image-Height': 'Image Height'
 });
 
 describe('DotAddVariableComponent', () => {
@@ -174,6 +205,7 @@ describe('DotAddVariableComponent', () => {
                 DotMessagePipe
             ],
             providers: [
+                DotFieldsService,
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
@@ -202,7 +234,10 @@ describe('DotAddVariableComponent', () => {
                 DotcmsEventsService,
                 DotEventsSocket,
                 DotcmsConfigService,
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 DialogService,
                 DotSiteBrowserService,
                 DotContentTypeService,
@@ -249,6 +284,46 @@ describe('DotAddVariableComponent', () => {
             expect(dialogConfig.data.onSave).toHaveBeenCalledTimes(1);
             expect(dialogConfig.data.onSave).toHaveBeenCalledWith(
                 `$!{dotContentMap.${mockContentTypes.fields[0].variable}}`
+            );
+            expect(dialogRef.close).toHaveBeenCalled();
+        });
+
+        it('should be a field list without FielteredTypes', () => {
+            const fieldTypes = fixture.nativeElement.querySelectorAll('small');
+            fieldTypes.forEach((field) => {
+                const content = field.textContent.trim();
+                expect(content).not.toEqual(FilteredFieldTypes.Column);
+                expect(content).not.toEqual(FilteredFieldTypes.Row);
+            });
+        });
+
+        it('should contain a field with the text "Content Identifier Value"', () => {
+            const contentIdentifier = de.query(By.css(`[data-testId="h3ContentIdentifier"]`));
+
+            expect(contentIdentifier.nativeElement.textContent.trim()).toEqual(
+                'Content Identifier Value'
+            );
+        });
+
+        it('should contain 6 fields with the text label as "Image"', () => {
+            const fieldTypes = Array.from(fixture.nativeElement.querySelectorAll('small')).filter(
+                (fieldElement: HTMLElement) => {
+                    return fieldElement.textContent.trim() === 'Image';
+                }
+            );
+
+            expect(fieldTypes.length).toEqual(6);
+        });
+
+        it("should call dialog config on save with the custom codeTemplate when click on 'Add' button for Image field", () => {
+            const dialog = de.query(
+                By.css(`[data-testId="${mockContentTypes.fields[2].variable}.image"]`)
+            );
+
+            dialog.triggerEventHandler('click');
+
+            expect(dialogConfig.data.onSave).toHaveBeenCalledWith(
+                `#if ($!{${DOT_CONTENT_MAP}.${mockContentTypes.fields[2].variable}.rawUri})\n    <img src="$!{${DOT_CONTENT_MAP}.${mockContentTypes.fields[2].variable}.rawUri}" alt="$!{${DOT_CONTENT_MAP}.${mockContentTypes.fields[2].variable}.title}" />\n#elseif($!{${DOT_CONTENT_MAP}.${mockContentTypes.fields[2].variable}.identifier})\n    <img src="/dA/\${${DOT_CONTENT_MAP}.${mockContentTypes.fields[2].variable}.identifier}" alt="$!{${DOT_CONTENT_MAP}.${mockContentTypes.fields[2].variable}.title}"/>\n#end`
             );
             expect(dialogRef.close).toHaveBeenCalled();
         });

@@ -1,0 +1,507 @@
+{
+	"info": {
+		"_postman_id": "ce070bf0-e702-4ae1-a6e6-615cfe50ec8c",
+		"name": "SystemTable",
+		"description": "This Postman test verifies that CRUD operations executed on the System Table API work as expected. This API allows users and developers to store global properties in the application.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "5403727",
+		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-66446a0d-a484-449f-8b78-a69e14929ad1?action=share&source=collection_link&creator=5403727"
+	},
+	"item": [
+		{
+			"name": "Getting an Non-Existing Key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Expecting a Status 404 when asking for a non-existing key\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/system-table/key-404",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"system-table",
+						"key-404"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Saving a New Key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Saving a new key in the System Table\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"key\":\"MY_KEY1\",\n    \"value\":\"value1\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/system-table",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"system-table"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Getting the Previously Added Key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Expecting a Status 200 response\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"No errors should be thrown\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.errors.length).to.eql(0);",
+							"});",
+							"",
+							"pm.test(\"Expecting the correct value of the previously added key\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity).to.eql(\"value1\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/system-table/MY_KEY1",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"system-table",
+						"MY_KEY1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Updating the Existing Key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Updating the existing key in the System Table\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"key\":\"MY_KEY1\",\n    \"value\":\"value2\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/system-table",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"system-table"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Upserting a New Key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Upserting a new key in the System Table\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"key\":\"MY_KEY2\",\n    \"value\":\"value1\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/system-table",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"system-table"
+					]
+				},
+				"description": "Adds a new key or updates an existing one. In this case, a new property is created."
+			},
+			"response": []
+		},
+		{
+			"name": "Upserting an Existing Key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Upserting an existing key in the System Table\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"key\":\"MY_KEY1\",\n    \"value\":\"upserted value3\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/system-table",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"system-table"
+					]
+				},
+				"description": "Adds a new key or updates an existing one. In this case, the previously created `MY_KEY1` property is updated."
+			},
+			"response": []
+		},
+		{
+			"name": "Getting the Previously Updated Key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Expecting a Status 200 response\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"No errors should be thrown\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.errors.length).to.eql(0);",
+							"});",
+							"",
+							"pm.test(\"Expecting the correct updated value of the key\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity).to.eql(\"upserted value3\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/system-table/MY_KEY1",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"system-table",
+						"MY_KEY1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Deleting the Key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Deleting the existing key\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/system-table/MY_KEY1",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"system-table",
+						"MY_KEY1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Getting a 404 for the Previously Deleted Key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Retrieving the key after it was deleted\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/system-table/MY_KEY1",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"system-table",
+						"MY_KEY1"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

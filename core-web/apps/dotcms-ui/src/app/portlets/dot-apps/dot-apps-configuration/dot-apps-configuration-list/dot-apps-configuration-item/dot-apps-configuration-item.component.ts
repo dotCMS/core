@@ -1,7 +1,7 @@
 import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotAppsSites } from '@dotcms/dotcms-models';
+import { DotAppsSite } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-apps-configuration-item',
@@ -9,11 +9,11 @@ import { DotAppsSites } from '@dotcms/dotcms-models';
     styleUrls: ['./dot-apps-configuration-item.component.scss']
 })
 export class DotAppsConfigurationItemComponent {
-    @Input() site: DotAppsSites;
+    @Input() site: DotAppsSite;
 
-    @Output() edit = new EventEmitter<DotAppsSites>();
-    @Output() export = new EventEmitter<DotAppsSites>();
-    @Output() delete = new EventEmitter<DotAppsSites>();
+    @Output() edit = new EventEmitter<DotAppsSite>();
+    @Output() export = new EventEmitter<DotAppsSite>();
+    @Output() delete = new EventEmitter<DotAppsSite>();
 
     constructor(
         private dotMessageService: DotMessageService,
@@ -33,7 +33,7 @@ export class DotAppsConfigurationItemComponent {
      * @param DotAppsSites site
      * @memberof DotAppsConfigurationItemComponent
      */
-    editConfigurationSite($event: MouseEvent, site?: DotAppsSites): void {
+    editConfigurationSite($event: MouseEvent, site?: DotAppsSite): void {
         $event.stopPropagation();
         this.edit.emit(site);
     }
@@ -45,7 +45,7 @@ export class DotAppsConfigurationItemComponent {
      * @param DotAppsSites site
      * @memberof DotAppsConfigurationItemComponent
      */
-    exportConfiguration($event: MouseEvent, site: DotAppsSites): void {
+    exportConfiguration($event: MouseEvent, site: DotAppsSite): void {
         $event.stopPropagation();
         this.export.emit(site);
     }
@@ -57,7 +57,7 @@ export class DotAppsConfigurationItemComponent {
      * @param DotAppsSites site
      * @memberof DotAppsConfigurationItemComponent
      */
-    confirmDelete($event: MouseEvent, site: DotAppsSites): void {
+    confirmDelete($event: MouseEvent, site: DotAppsSite): void {
         $event.stopPropagation();
         this.dotAlertConfirmService.confirm({
             accept: () => {

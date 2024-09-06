@@ -14,7 +14,10 @@ import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 export class DotLegacyTemplateAdditionalActionsComponent implements OnInit {
     url: Observable<string>;
 
-    constructor(private route: ActivatedRoute, private dotMenuService: DotMenuService) {}
+    constructor(
+        private route: ActivatedRoute,
+        private dotMenuService: DotMenuService
+    ) {}
 
     ngOnInit(): void {
         this.url = this.route.params.pipe(

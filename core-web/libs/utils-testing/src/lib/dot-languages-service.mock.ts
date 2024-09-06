@@ -8,4 +8,8 @@ export class DotLanguagesServiceMock {
     get(): Observable<DotLanguage[]> {
         return of(mockLanguageArray);
     }
+
+    getLanguagesUsedPage(): Observable<DotLanguage[]> {
+        return of(mockLanguageArray);
+    }
 }

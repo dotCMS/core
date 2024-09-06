@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { mockProvider } from '@ngneat/spectator';
 import { Observable, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, forwardRef, Injectable, Input } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
     AbstractControl,
     ControlValueAccessor,
@@ -13,35 +14,43 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
 import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
 import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import {
+    DotAlertConfirmService,
     DotContentTypesInfoService,
+    DotHttpErrorManagerService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotcmsConfigService, LoginService, SiteService } from '@dotcms/dotcms-js';
-import { DotCMSContentTypeLayoutRow, DotCMSSystemActionType } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { CoreWebService, DotcmsConfigService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
+    DotCMSContentTypeLayoutRow,
+    DotCMSSystemActionType,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
+import { DotFieldValidationMessageComponent, DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import {
+    CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
+    DotMessageDisplayServiceMock,
     DotWorkflowServiceMock,
     LoginServiceMock,
     MockDotMessageService,
@@ -80,6 +89,16 @@ class MockDotLicenseService {
         return of(false);
     }
 }
+
+const mockActivatedRoute = {
+    snapshot: {
+        data: {
+            featuredFlags: {
+                [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+            }
+        }
+    }
+};
 
 describe('ContentTypesFormComponent', () => {
     let comp: ContentTypesFormComponent;
@@ -120,6 +139,7 @@ describe('ContentTypesFormComponent', () => {
             ]
         }
     ];
+    let activatedRoute: ActivatedRoute;
 
     beforeEach(waitForAsync(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -155,7 +175,7 @@ describe('ContentTypesFormComponent', () => {
 
         const siteServiceMock = new SiteServiceMock();
 
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [ContentTypesFormComponent, DotSiteSelectorComponent],
             imports: [
                 RouterTestingModule.withRoutes([
@@ -165,13 +185,14 @@ describe('ContentTypesFormComponent', () => {
                 ButtonModule,
                 DotDirectivesModule,
                 DotFieldHelperModule,
-                DotFieldValidationMessageModule,
+                DotFieldValidationMessageComponent,
                 DotIconModule,
                 DotPageSelectorModule,
                 DotWorkflowsActionsSelectorFieldModule,
                 DotWorkflowsSelectorFieldModule,
                 DropdownModule,
                 InputTextModule,
+                CheckboxModule,
                 OverlayPanelModule,
                 ReactiveFormsModule,
                 RouterTestingModule,
@@ -181,21 +202,33 @@ describe('ContentTypesFormComponent', () => {
                 DotMessagePipe
             ],
             providers: [
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 { provide: LoginService, useClass: LoginServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: SiteService, useValue: siteServiceMock },
                 { provide: DotWorkflowService, useClass: DotWorkflowServiceMock },
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotcmsConfigService,
-                DotContentTypesInfoService
+                DotContentTypesInfoService,
+                mockProvider(DotHttpErrorManagerService),
+                mockProvider(DotAlertConfirmService),
+                mockProvider(ConfirmationService),
+                {
+                    provide: ActivatedRoute,
+                    useValue: mockActivatedRoute
+                }
             ]
         });
 
-        fixture = DOTTestBed.createComponent(ContentTypesFormComponent);
+        fixture = TestBed.createComponent(ContentTypesFormComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
         dotLicenseService = de.injector.get(DotLicenseService);
+        activatedRoute = de.injector.get(ActivatedRoute);
     }));
 
     it('should be invalid by default', () => {
@@ -373,7 +406,7 @@ describe('ContentTypesFormComponent', () => {
         };
         fixture.detectChanges();
 
-        expect(Object.keys(comp.form.controls).length).toBe(13);
+        expect(Object.keys(comp.form.controls).length).toBe(14);
         expect(comp.form.get('icon')).not.toBeNull();
         expect(comp.form.get('clazz')).not.toBeNull();
         expect(comp.form.get('name')).not.toBeNull();
@@ -391,6 +424,7 @@ describe('ContentTypesFormComponent', () => {
 
         expect(comp.form.get('detailPage')).toBeNull();
         expect(comp.form.get('urlMapPattern')).toBeNull();
+        expect(comp.form.get('newEditContent')).not.toBeNull();
     });
 
     it('should render basic fields for non-content base types', () => {
@@ -422,7 +456,7 @@ describe('ContentTypesFormComponent', () => {
         };
         fixture.detectChanges();
 
-        expect(Object.keys(comp.form.controls).length).toBe(15);
+        expect(Object.keys(comp.form.controls).length).toBe(16);
         expect(comp.form.get('clazz')).not.toBeNull();
         expect(comp.form.get('name')).not.toBeNull();
         expect(comp.form.get('icon')).not.toBeNull();
@@ -437,6 +471,7 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.form.get('fixed')).not.toBeNull();
         expect(comp.form.get('system')).not.toBeNull();
         expect(comp.form.get('folder')).not.toBeNull();
+        expect(comp.form.get('newEditContent')).not.toBeNull();
 
         const workflowAction = comp.form.get('systemActionMappings');
         expect(workflowAction.get(DotCMSSystemActionType.NEW)).not.toBeNull();
@@ -481,7 +516,8 @@ describe('ContentTypesFormComponent', () => {
                     creationDate: jasmine.any(Date),
                     modDate: jasmine.any(Date)
                 }
-            ]
+            ],
+            newEditContent: false
         });
     });
 
@@ -572,6 +608,44 @@ describe('ContentTypesFormComponent', () => {
         expect(dateFieldMsg).toBeTruthy();
         expect(comp.form.get('publishDateVar').disabled).toBe(true);
         expect(comp.form.get('expireDateVar').disabled).toBe(true);
+    });
+
+    it('should render the new content banner when the feature flag is enabled', () => {
+        comp.data = {
+            ...dotcmsContentTypeBasicMock,
+            baseType: 'CONTENT',
+            id: '123'
+        };
+
+        activatedRoute.snapshot.data.featuredFlags[
+            FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
+        ] = true;
+
+        fixture.detectChanges();
+
+        const newContentBanner = de.query(
+            By.css('[data-test-id="content-type__new-content-banner"]')
+        );
+        expect(newContentBanner).not.toBeNull();
+    });
+
+    it('should hide the new content banner when the feature flag is disabled', () => {
+        comp.data = {
+            ...dotcmsContentTypeBasicMock,
+            baseType: 'CONTENT',
+            id: '123'
+        };
+
+        activatedRoute.snapshot.data.featuredFlags[
+            FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
+        ] = false;
+
+        fixture.detectChanges();
+
+        const newContentBanner = de.query(
+            By.css('[data-test-id="content-type__new-content-banner"]')
+        );
+        expect(newContentBanner).toBeNull();
     });
 
     describe('fields dates enabled', () => {
@@ -673,6 +747,8 @@ describe('ContentTypesFormComponent', () => {
         });
 
         it('should submit form correctly', () => {
+            const metadata = {};
+            metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = false;
             comp.submitForm();
 
             expect(data).toEqual({
@@ -701,7 +777,8 @@ describe('ContentTypesFormComponent', () => {
                 ],
                 systemActionMappings: { NEW: '' },
                 detailPage: '',
-                urlMapPattern: ''
+                urlMapPattern: '',
+                metadata
             });
         });
     });

@@ -7,9 +7,9 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     CHARTJS_DATA_MOCK_EMPTY,
     DAILY_CHARTJS_DATA_MOCK_WITH_DATA,
+    DotMessagePipe,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 import { DotExperimentsReportsChartComponent } from './dot-experiments-reports-chart.component';
 
@@ -21,7 +21,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 // spyOn an exported function with Jest
-jest.spyOn(Utilities, 'getRandomUUID').mockReturnValue('1234');
+jest.spyOn(Utilities, 'getRandomUUID').mockReturnValue('1-2-3-4-5');
 
 describe('DotExperimentsReportsChartComponent', () => {
     let spectator: Spectator<DotExperimentsReportsChartComponent>;

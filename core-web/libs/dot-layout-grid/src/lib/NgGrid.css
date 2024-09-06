@@ -6,10 +6,22 @@
 
 .grid-item {
     background-color: #ffffff;
-    -webkit-transition: width 0.25s, height 0.25s, transform 0.5s;
-    -moz-transition: width 0.25s, height 0.25s, transform 0.5s;
-    -o-transition: width 0.25s, height 0.25s, transform 0.5s;
-    transition: width 0.25s, height 0.25s, transform 0.5s;
+    -webkit-transition:
+        width 0.25s,
+        height 0.25s,
+        transform 0.5s;
+    -moz-transition:
+        width 0.25s,
+        height 0.25s,
+        transform 0.5s;
+    -o-transition:
+        width 0.25s,
+        height 0.25s,
+        transform 0.5s;
+    transition:
+        width 0.25s,
+        height 0.25s,
+        transform 0.5s;
     overflow: hidden;
 }
 

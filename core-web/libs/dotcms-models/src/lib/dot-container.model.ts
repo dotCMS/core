@@ -1,3 +1,5 @@
+import { DotCMSContentlet } from './dot-contentlet.model';
+
 export enum CONTAINER_SOURCE {
     FILE = 'FILE',
     DB = 'DB'
@@ -65,5 +67,6 @@ export interface DotPageContainerStructure {
     [key: string]: {
         container: DotContainer;
         containerStructures?: DotContainerStructure[];
+        contentlets?: { [key: string]: DotCMSContentlet[] };
     };
 }

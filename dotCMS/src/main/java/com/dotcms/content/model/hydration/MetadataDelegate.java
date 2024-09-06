@@ -1,14 +1,10 @@
 package com.dotcms.content.model.hydration;
 
-import static com.dotcms.content.model.hydration.HydrationUtils.findLinkedBinary;
-import static com.dotcms.storage.FileMetadataAPI.DEFAULT_METADATA_GROUP_NAME;
-import static com.dotcms.storage.StoragePersistenceProvider.METADATA_GROUP_NAME;
-import static com.dotcms.util.ReflectionUtils.setValue;
-
 import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.FileStorageAPI;
 import com.dotcms.storage.GenerateMetadataConfig;
@@ -25,6 +21,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import io.vavr.control.Try;
+
 import java.io.File;
 import java.io.Serializable;
 import java.nio.file.Path;
@@ -35,6 +32,11 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.dotcms.content.model.hydration.HydrationUtils.findLinkedBinary;
+import static com.dotcms.storage.FileMetadataAPI.DEFAULT_METADATA_GROUP_NAME;
+import static com.dotcms.storage.StoragePersistenceProvider.METADATA_GROUP_NAME;
+import static com.dotcms.util.ReflectionUtils.setValue;
 
 /**
  * Little reusable component meant to populate a field in the FieldValue Object through the FieldValue's Builder
@@ -88,8 +90,10 @@ public class MetadataDelegate implements HydrationDelegate {
                     }
                 }
             }
-        } catch (Throwable e) {
-            Logger.warnAndDebug(MetadataDelegate.class, "error calculating metadata ", e);
+        } catch (final Throwable e) {
+            Logger.warnAndDebug(MetadataDelegate.class, String.format("Error calculating metadata" +
+                    " for field '%s' [ %s ] in Contentlet '%s': %s", field.variable(), field.id()
+                    , contentlet.getIdentifier(), ExceptionUtil.getErrorMessage(e)), e);
         }
         return (metadataMap == null || metadataMap.isEmpty() ? null : filterMetadataFields(metadataMap));
     }

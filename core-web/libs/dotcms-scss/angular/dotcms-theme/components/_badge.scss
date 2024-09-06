@@ -19,12 +19,12 @@
 }
 
 .p-badge.p-badge-lg {
-    font-size: 1.125rem;
+    font-size: $font-size-lmd;
     min-width: $spacing-6;
     height: $spacing-6;
 }
 .p-badge.p-badge-xl {
-    font-size: 1.5rem;
+    font-size: $font-size-lg;
     min-width: $spacing-7;
     height: $spacing-7;
 }

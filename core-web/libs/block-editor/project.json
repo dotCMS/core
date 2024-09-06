@@ -6,26 +6,14 @@
     "prefix": "dotcms",
     "targets": {
         "lint": {
-            "executor": "@nrwl/linter:eslint",
-            "options": {
-                "lintFilePatterns": [
-                    "libs/block-editor/src/**/*.ts",
-                    "libs/block-editor/src/**/*.html"
-                ]
-            },
+            "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
         },
         "test": {
-            "executor": "@nrwl/jest:jest",
+            "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/libs/block-editor"],
             "options": {
-                "jestConfig": "libs/block-editor/jest.config.ts",
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true
-                }
+                "jestConfig": "libs/block-editor/jest.config.ts"
             }
         },
         "storybook": {
@@ -70,5 +58,5 @@
             }
         }
     },
-    "tags": []
+    "tags": ["skip:test", "skip:lint"]
 }

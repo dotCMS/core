@@ -55,6 +55,7 @@ import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.workflow.helper.SystemActionMappingsHandlerMerger;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -81,7 +82,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -153,7 +153,7 @@ public class WorkflowHandler implements IHandler {
         File workingOn = null;
         try {
 
-            final XStream xstream = new XStream(new DomDriver());
+            final XStream xstream = XStreamHandler.newXStreamInstance();
             final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
             //Handle folders
             for (final File workflowFile : workflows) {

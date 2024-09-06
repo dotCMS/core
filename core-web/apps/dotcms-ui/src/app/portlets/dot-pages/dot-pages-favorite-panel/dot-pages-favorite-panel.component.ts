@@ -1,16 +1,19 @@
 import { Observable } from 'rxjs';
 
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, inject, OnInit, Output } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotMessageService, DotPageRenderService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotPageRenderService
+} from '@dotcms/data-access';
 import { HttpCode } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 
-import { DotFavoritePageComponent } from '../../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
 import {
     DotPagesState,
     DotPageStore,
@@ -24,17 +27,18 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     styleUrls: ['./dot-pages-favorite-panel.component.scss']
 })
 export class DotPagesFavoritePanelComponent implements OnInit {
+    readonly #store = inject(DotPageStore);
+
     @Output() goToUrl = new EventEmitter<string>();
     @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
 
-    vm$: Observable<DotPagesState> = this.store.vm$;
+    vm$: Observable<DotPagesState> = this.#store.vm$;
 
     timeStamp = this.getTimeStamp();
 
     private currentLimitSize = FAVORITE_PAGE_LIMIT;
 
     constructor(
-        private store: DotPageStore,
         private dotMessageService: DotMessageService,
         private dialogService: DialogService,
         private dotPageRenderService: DotPageRenderService,
@@ -42,7 +46,7 @@ export class DotPagesFavoritePanelComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        this.store.getFavoritePages(this.currentLimitSize);
+        this.#store.getFavoritePages(this.currentLimitSize);
     }
 
     /**
@@ -52,8 +56,8 @@ export class DotPagesFavoritePanelComponent implements OnInit {
      * @memberof DotPagesComponent
      */
     toggleFavoritePagesPanel($event: Event): void {
-        this.store.setLocalStorageFavoritePanelCollapsedParams($event['collapsed']);
-        this.store.setFavoritePages({ collapsed: $event['collapsed'] as boolean });
+        this.#store.setLocalStorageFavoritePanelCollapsedParams($event['collapsed']);
+        this.#store.setFavoritePages({ collapsed: $event['collapsed'] as boolean });
     }
 
     /**
@@ -107,11 +111,11 @@ export class DotPagesFavoritePanelComponent implements OnInit {
                 },
                 onSave: () => {
                     this.timeStamp = this.getTimeStamp();
-                    this.store.getFavoritePages(this.currentLimitSize);
+                    this.#store.getFavoritePages(this.currentLimitSize);
                 },
                 onDelete: () => {
                     this.timeStamp = this.getTimeStamp();
-                    this.store.getFavoritePages(this.currentLimitSize);
+                    this.#store.getFavoritePages(this.currentLimitSize);
                 }
             }
         });

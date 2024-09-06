@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.apps;
 
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 
+import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotmarketing.util.json.JSONException;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.apps.view.AppView;
@@ -45,6 +46,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -63,16 +65,19 @@ class AppsHelper {
     private final HostAPI hostAPI;
     private final PermissionAPI permissionAPI;
 
+    private final SecurityLoggerServiceAPI securityLoggerAPI;
+
     @VisibleForTesting
     AppsHelper(
-            final AppsAPI appsAPI, final HostAPI hostAPI, final PermissionAPI permissionAPI) {
+            final AppsAPI appsAPI, final HostAPI hostAPI, final PermissionAPI permissionAPI, final SecurityLoggerServiceAPI securityLoggerAPI) {
         this.appsAPI = appsAPI;
         this.hostAPI = hostAPI;
         this.permissionAPI = permissionAPI;
+        this.securityLoggerAPI = securityLoggerAPI;
     }
 
     AppsHelper() {
-        this(APILocator.getAppsAPI(), APILocator.getHostAPI(), APILocator.getPermissionAPI());
+        this(APILocator.getAppsAPI(), APILocator.getHostAPI(), APILocator.getPermissionAPI(), APILocator.getSecurityLogger());
     }
 
     private static Comparator<AppView> compareByCountAndName = (o1, o2) -> {
@@ -276,6 +281,8 @@ class AppsHelper {
                     String.format(" Couldn't find any site with identifier `%s` ", siteId));
         }
         appsAPI.deleteSecrets(key, host, user);
+        securityLoggerAPI.logInfo(this.getClass(),
+                String.format("User `%s` deleted secret for app `%s` on host `%s`", user, key, siteId));
     }
 
 
@@ -327,7 +334,7 @@ class AppsHelper {
             final AppDescriptor appDescriptor, final SecretForm form, final User user) throws DotSecurityException, DotDataException {
         final Optional<AppSecrets> appSecretsOptional = appsAPI.getSecrets(key, host, user);
 
-        final Map<String, Input> params = validateFormForSave(form, appDescriptor);
+        final Map<String, Input> params = validateFormForSave(form, appDescriptor, appSecretsOptional);
         //Create a brand new secret for the present app.
         final AppSecrets.Builder builder = new AppSecrets.Builder();
         builder.withKey(key);
@@ -335,47 +342,49 @@ class AppsHelper {
             final String name = stringParamEntry.getKey();
             final ParamDescriptor describedParam = appDescriptor.getParams().get(name);
             final Input inputParam = stringParamEntry.getValue();
-            final boolean dynamic = null == describedParam;
-            final Secret secret;
+            final Optional<Secret> secret;
 
-            if(dynamic){
-                secret = Secret.newSecret(inputParam.getValue(), Type.STRING, inputParam.isHidden());
+            if (Objects.isNull(describedParam)) {
+                secret = AppsUtil.dynamicSecret(key, name, inputParam);
             } else {
-                if(describedParam.isHidden() && isAllFilledWithAsters(inputParam.getValue())){
-                    //If we're dealing with a hidden param and there's a secret already saved...
-                    //The param must be override and replaced for that reason we must delete the existing saved secret.
-                    //In order to keep all existing secrets we grab the saved one and push it into the new.
-                    Logger.debug(AppsHelper.class, ()->"found hidden secret sent with no value.");
-                    if(appSecretsOptional.isPresent()) {
-                        final AppSecrets appSecrets = appSecretsOptional.get();
-                        final Map<String, Secret> secrets = appSecrets.getSecrets();
-                        final Secret hiddenSecret = secrets.get(name);
-                        if(null != hiddenSecret){
-                          secret = Secret.newSecret(hiddenSecret.getValue(), describedParam.getType(), describedParam.isHidden());
-                          Logger.debug(AppsHelper.class, ()->" hidden secret sent with masked value we must grab the value from the saved secret so we dont lose it.");
-                        } else {
-                           //There is an AppSecrets but the secret in particular is grabbed from the default value provided by the yml.
-                           continue;
-                        }
-                    } else {
-                       //The secret isn't there at all. Let's just continue.
-                       continue;
-                    }
+                //If we're dealing with a hidden param and there's a secret already saved...
+                //The param must be overridden and replaced for that reason we must delete the existing saved secret.
+                //In order to keep all existing secrets we grab the saved one and push it into the new.
+                Logger.debug(AppsHelper.class, () -> "found hidden secret sent with no value.");
+                if (isHidden(describedParam, inputParam)) {
+                    secret = appSecretsOptional
+                            .flatMap(appSecrets -> {
+                                Logger.debug(
+                                        AppsHelper.class,
+                                        () -> " hidden secret sent with masked value we must grab the value from the saved secret so we dont lose it.");
+                                return AppsUtil.hiddenSecret(key, name, describedParam, appSecrets);
+                            });
                 } else {
-                   secret = Secret.newSecret(inputParam.getValue(), describedParam.getType(), describedParam.isHidden());
+                    secret = AppsUtil.paramSecret(key, name, inputParam.getValue(), describedParam);
                 }
             }
-            builder.withSecret(name, secret);
+            secret.ifPresent(s -> builder.withSecret(name, s));
         }
+
+        // Make sure if omitted params correspond to secrets which have their values managed by an env-vars and that
+        // they're not editable.
+        appSecretsOptional
+                .map(appSecrets -> appSecrets.getSecrets().entrySet())
+                .orElse(Set.of())
+                .stream()
+                .filter(entry -> !entry.getValue().isEditable() && !params.containsKey(entry.getKey()))
+                .forEach(entry -> builder.withSecret(entry.getKey(), entry.getValue()));
+
         // We're gonna build the secret upfront and have it ready.
         // Since the next step is potentially risky (delete a secret that already exist).
         final AppSecrets secrets = builder.build();
         if (appSecretsOptional.isPresent()) {
-            Logger.debug(AppsHelper.class, ()->"Secrets already exist in storage. We must override it.");
+            Logger.debug(AppsHelper.class, () -> "Secrets already exist in storage. We must override it.");
             appsAPI.deleteSecrets(key, host, user);
         }
         appsAPI.saveSecrets(secrets, host, user);
-
+        securityLoggerAPI.logInfo(this.getClass(),
+                String.format("User `%s` saved secret for app `%s` on host `%s`", user, key, host.getIdentifier()));
         //This operation needs to be executed at the very end.
         appSecretsOptional.ifPresent(AppSecrets::destroy);
     }
@@ -417,22 +426,25 @@ class AppsHelper {
                     final Input inputParam = stringParamEntry.getValue();
                     final String name = stringParamEntry.getKey();
                     final ParamDescriptor describedParam = appDescriptor.getParams().get(name);
-                    final boolean dynamic = null == describedParam;
-                    final Secret secret;
-                    if (dynamic) {
-                        secret = Secret.newSecret(inputParam.getValue(), Type.STRING,
-                                inputParam.isHidden());
+                    final Optional<Secret> secret;
+                    if (Objects.isNull(describedParam)) {
+                        secret = AppsUtil.dynamicSecret(key, name, inputParam);
                     } else {
-                        if(describedParam.isHidden() && isAllFilledWithAsters(inputParam.getValue())){
-                            Logger.debug(AppsHelper.class, ()->"skipping secret sent with no value.");
+                        if (isHidden(describedParam, inputParam)) {
+                            Logger.debug(AppsHelper.class, () -> "skipping secret sent with no value.");
                             continue;
                         }
-                        secret = Secret.newSecret(inputParam.getValue(), describedParam.getType(),
-                                describedParam.isHidden());
+
+                        secret = AppsUtil.paramSecret(key, name, inputParam.getValue(), describedParam);
                     }
-                    appsAPI.saveSecret(key, Tuple.of(name, secret), host, user);
+
+                    if (secret.isPresent()) {
+                        appsAPI.saveSecret(key, Tuple.of(name, secret.get()), host, user);
+                    }
                 }
-            }finally {
+                securityLoggerAPI.logInfo(this.getClass(),
+                        String.format("User `%s` updated secret for app `%s` on host `%s`", user, key, host.getIdentifier()));
+            } finally {
                 form.destroySecretTraces();
             }
         }
@@ -478,19 +490,34 @@ class AppsHelper {
             throw new DoesNotExistException(String.format("Unable to find a secret for app with Key `%s`.",key));
         } else {
             appsAPI.deleteSecret(key, params, host, user);
+            securityLoggerAPI.logInfo(this.getClass(),
+                    String.format("User `%s` deleted secret for app `%s` on host `%s`", user, key, host.getIdentifier()));
         }
+    }
+
+    /**
+     * This method allows deleting a single secret/property from a stored integration.
+     *
+     * @param describedParam the param descriptor
+     * @param inputParam the input param
+     */
+    private boolean isHidden(final ParamDescriptor describedParam, final Input inputParam) {
+        return describedParam.isHidden() && isAllFilledWithStars(inputParam.getValue());
     }
 
     /**
      * Validate the incoming params match the params described by an appDescriptor yml.
      * This validation is intended to behave as a form validation. It'll make sure that all required values are present at save time.
      * And nothing else besides the params described are allowed. Unless they app-descriptor establishes that extraParams are allowed.
-     * @param form a set of paramNames.
-     * @param appDescriptor the app template.
+     *
+     * @param form               a set of paramNames.
+     * @param appDescriptor      the app template.
+     * @param appSecretsOptional the app secrets.
      * @throws IllegalArgumentException This will give back an exception if you send an invalid param.
      */
     private Map<String, Input> validateFormForSave(final SecretForm form,
-            final AppDescriptor appDescriptor)
+                                                   final AppDescriptor appDescriptor,
+                                                   final Optional<AppSecrets> appSecretsOptional)
             throws IllegalArgumentException {
 
         if (!UtilMethods.isSet(form.getInputParams())) {
@@ -502,14 +529,14 @@ class AppsHelper {
                         Entry::getValue));
 
 
-        AppsUtil.validateForSave(mapForValidation(params), appDescriptor);
+        AppsUtil.validateForSave(mapForValidation(params), appDescriptor, appSecretsOptional);
 
         return params;
     }
 
     /**
      * Map of optionals is a middle ground between {@link SecretForm} and {@link AppSecrets}
-     * used by {@link com.dotcms.security.apps.AppsUtil#validateForSave(Map, AppDescriptor)}
+     * used by {@link AppsUtil#validateForSave(Map, AppDescriptor, Optional)}
      * @return
      */
     private Map<String, Optional<char[]>> mapForValidation(final Map<String, Input> params) {
@@ -582,9 +609,9 @@ class AppsHelper {
     /**
      * Validate the incoming param names match the params described by an appDescriptor yml.
      * This is mostly useful to validate a delete param request
-     * @param inputParamNames
-     * @param appDescriptor
-     * @throws DotDataException
+     * @param inputParamNames a set of paramNames.
+     * @param appDescriptor the app template.
+     * @throws DotDataException This will give back an exception if you send an invalid param.
      */
     private void validateFormForDelete(final Set<String> inputParamNames, final AppDescriptor appDescriptor)
             throws IllegalArgumentException {
@@ -610,7 +637,7 @@ class AppsHelper {
     /**
      * This is used to manipulate a FormDataMultiPart and extract all the files it might contain
      * Internally the file os analyzed and then processed to create new file integrations
-     * @param multipart The multi-part form
+     * @param multipart The multipart form
      * @param user Logged in dude.
      * @throws IOException
      * @throws DotDataException
@@ -622,6 +649,8 @@ class AppsHelper {
             final AppDescriptor appDescriptor;
             try {
                 appDescriptor = appsAPI.createAppDescriptor(file, user);
+                securityLoggerAPI.logInfo(this.getClass(),
+                        String.format("User `%s` created app descriptor `%s`", user, appDescriptor.getKey()));
                 return new AppView(appDescriptor, 0, 0);
             } catch (AlreadyExistException | DotSecurityException  e) {
                 throw new DotDataException(e.getMessage(), e);
@@ -632,14 +661,21 @@ class AppsHelper {
 
     /**
      *
-     * @param key
-     * @param user
+     * @param key The app key
+     * @param user The user
      * @throws DotSecurityException
      * @throws DotDataException
      */
     void removeApp(final String key, final User user, final boolean removeDescriptor)
             throws DotSecurityException, DotDataException {
         appsAPI.removeApp(key, user, removeDescriptor);
+        if(removeDescriptor){
+            securityLoggerAPI.logInfo(this.getClass(),
+                    String.format("User `%s` removed apps and descriptor `%s`", user, key));
+        } else  {
+            securityLoggerAPI.logInfo(this.getClass(),
+                   String.format("User `%s` removed apps `%s`", user, key));
+        }
     }
 
     /**
@@ -647,7 +683,7 @@ class AppsHelper {
      * @param chars
      * @return
      */
-    private boolean isAllFilledWithAsters(final char [] chars){
+    private boolean isAllFilledWithStars(final char [] chars){
          if(isNotSet(chars)){
            return false;
          }
@@ -673,8 +709,13 @@ class AppsHelper {
 
         Logger.info(AppsHelper.class,"Secrets export: "+form);
         final Key key = AppsUtil.generateKey(AppsUtil.loadPass(form::getPassword));
-            return  Files.newInputStream(appsAPI
+        try {
+            return Files.newInputStream(appsAPI
                     .exportSecrets(key, form.isExportAll(), form.getAppKeysBySite(), user));
+        } finally {
+            securityLoggerAPI.logInfo(this.getClass(),
+                    String.format("User `%s` exported secrets for `%s` ", user, form));
+        }
     }
 
     /**
@@ -699,6 +740,8 @@ class AppsHelper {
                 }
                 try {
                     appsAPI.importSecretsAndSave(file.toPath(), key, user);
+                    securityLoggerAPI.logInfo(this.getClass(),
+                            String.format("User `%s` imported secrets from file `%s`", user, file.getName()));
                     return null;
                 } catch (DotSecurityException | IOException | EncryptorException e) {
                     throw new DotDataException(e.getMessage(), e);
@@ -714,7 +757,7 @@ class AppsHelper {
          * Whatever need to happen with the file and the multipart.Should be halded
          * @param file
          * @param bodyMultipart
-         * @return
+         * @return the result
          * @throws DotDataException
          */
         T apply (File file, Map<String, Object> bodyMultipart)
@@ -724,9 +767,9 @@ class AppsHelper {
     /**
      * Multipart common process function
      * whatever specific needs be done in between has to take place in the fileConsumer
-     * @param multipart
-     * @param consumer
-     * @param <T>
+     * @param multipart the multipart
+     * @param consumer the consumer
+     * @param <T> the type of the result
      * @return
      * @throws IOException
      * @throws DotDataException
@@ -764,17 +807,17 @@ class AppsHelper {
 
     /**
      * cleanup our mess
-     * @param parentFolder
+     * @param parentFolder the parent folder
      */
     private void removeTempFolder(final File parentFolder) {
         final String parentFolderName = parentFolder.getName();
         if (parentFolder.isDirectory() && parentFolderName.startsWith("tmp_upload")) {
             if (parentFolder.delete()) {
-                Logger.info(AppsHelper.class,
+                Logger.debug(AppsHelper.class,
                         String.format(" tmp upload directory `%s` removed successfully. ",
                                 parentFolder.getAbsolutePath()));
             } else {
-                Logger.info(AppsHelper.class,
+                Logger.debug(AppsHelper.class,
                         String.format(" Unable to remove tmp upload directory `%s`. ",
                                 parentFolder.getAbsolutePath()));
             }

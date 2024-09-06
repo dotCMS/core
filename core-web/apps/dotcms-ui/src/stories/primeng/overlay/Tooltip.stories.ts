@@ -1,18 +1,22 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-export default {
+const TooltipTemplate = `<button pButton label="Submit" icon="pi pi-check" pTooltip="Edit" tooltipPosition="bottom"></button>`;
+
+const meta: Meta = {
     title: 'PrimeNG/Overlay/Tooltip',
     parameters: {
         docs: {
             description: {
                 component:
                     'Tooltip directive provides advisory information for a component.: https://primefaces.org/primeng/showcase/#/tooltip'
+            },
+            source: {
+                code: TooltipTemplate
             }
         }
     },
@@ -20,26 +24,14 @@ export default {
         moduleMetadata({
             imports: [TooltipModule, ButtonModule, BrowserAnimationsModule]
         })
-    ]
-} as Meta;
-
-const TooltipTemplate = `<button pButton label="Submit" icon="pi pi-check" pTooltip="Edit" tooltipPosition="bottom"></button>`;
-
-const Template: Story<never> = (props: never) => {
-    const template = TooltipTemplate;
-
-    return {
-        props,
-        template
-    };
+    ],
+    render: (args) => ({
+        props: args,
+        template: TooltipTemplate
+    })
 };
+export default meta;
 
-export const Basic: Story = Template.bind({});
+type Story = StoryObj;
 
-Basic.parameters = {
-    docs: {
-        source: {
-            code: TooltipTemplate
-        }
-    }
-};
+export const Basic: Story = {};

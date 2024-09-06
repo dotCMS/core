@@ -11,6 +11,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import graphql.schema.DataFetcher;
@@ -29,9 +30,15 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
                 ? environment.getArgument("query")
                 : "";
 
-            final Integer limit = environment.getArgument("limit")!=null ? environment.getArgument("limit") : 100;
-            final Integer offset = environment.getArgument("offset")!=null ? environment.getArgument("offset") : 0;
+            final var isPageSet = environment.getArgument("page") != null;
+
+            final Integer limit = environment.getArgument("limit") != null ?
+                    environment.getArgument("limit") : 100;
             final String sortBy = environment.getArgument("sortBy");
+            Integer offset = environment.getArgument("offset") != null ?
+                    environment.getArgument("offset") : 0;
+            Integer page = environment.getArgument("page") != null ?
+                    environment.getArgument("page") : 1;
 
             final String queriedFieldName = environment.getField().getName();
 
@@ -42,21 +49,35 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
                     String typeName = TypeUtil.singularizeBaseTypeCollectionName(queriedFieldName);
                     query = "+baseType:" + BaseContentType.getBaseContentType(typeName.toUpperCase()).ordinal() + " " + query;
                 } else {
-                    final String typeName = TypeUtil.singularizeCollectionName(queriedFieldName);
                     query = "+contentType:" + TypeUtil.singularizeCollectionName(queriedFieldName) + " " + query;
                 }
             }
 
-            final List<Contentlet> unfilteredContentletList = APILocator.getContentletAPI().search(query, limit, offset, sortBy,
-                user, true);
+            Logger.debug(this, "Fetching contentlets for query: " + query);
+
+            final PaginatedContentList<Contentlet> searchResults;
+            if (isPageSet) {
+                searchResults = APILocator.getContentletAPI().searchPaginatedByPage(
+                        query, limit, page, sortBy, user, true
+                );
+            } else {
+                searchResults = APILocator.getContentletAPI().searchPaginated(
+                        query, limit, offset, sortBy, user, true
+                );
+            }
 
             // filter out content whose content types don't stick to GraphQL naming convention
-            final List<Contentlet> filteredContentletList = unfilteredContentletList.stream()
+            final List<Contentlet> filteredContentletList = searchResults.stream()
                 .filter(contentlet -> contentlet.getContentType().variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX))
                 .collect(Collectors.toList());
 
             ((DotGraphQLContext) environment.getContext()).addFieldCount(queriedFieldName,
                     filteredContentletList.size());
+
+            // Set pagination data
+            ((DotGraphQLContext) environment.getContext()).addFieldPagination(
+                    queriedFieldName, filteredContentletList.size(), searchResults
+            );
 
             final DotContentletTransformer transformer = new DotTransformerBuilder()
                     .graphQLDataFetchOptions().content(filteredContentletList).build();

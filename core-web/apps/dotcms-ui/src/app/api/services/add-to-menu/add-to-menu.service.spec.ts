@@ -1,3 +1,4 @@
+import { mockProvider } from '@ngneat/spectator';
 import { throwError } from 'rxjs';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
@@ -5,20 +6,23 @@ import { getTestBed, TestBed } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotAlertConfirmService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotRouterService,
+    DotAlertConfirmService,
+    DotMessageService,
+    DotFormatDateService
+} from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import {
     CoreWebServiceMock,
-    DotFormatDateServiceMock,
     LoginServiceMock,
+    DotMessageDisplayServiceMock,
     MockDotRouterService,
+    DotFormatDateServiceMock,
     mockResponseView
 } from '@dotcms/utils-testing';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotAddToMenuService, DotCreateCustomTool } from './add-to-menu.service';
 
@@ -44,13 +48,17 @@ describe('DotAddToMenuService', () => {
                     provide: LoginService,
                     useClass: LoginServiceMock
                 },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
                 ConfirmationService,
                 DotAddToMenuService,
                 DotAlertConfirmService,
-                DotHttpErrorManagerService
+                DotHttpErrorManagerService,
+                mockProvider(DotMessageService)
             ]
         });
         injector = getTestBed();

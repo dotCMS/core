@@ -53,6 +53,7 @@ import com.dotcms.publisher.pusher.wrapper.UserWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.Role;
@@ -67,12 +68,10 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * This handler class is part of the Push Publishing mechanism that deals with User-related information inside a
@@ -125,7 +124,7 @@ public class UserHandler implements IHandler {
 
             //Get the list of wrapper files
             Collection<File> usersData = FileUtil.listFilesRecursively( bundleFolder, new UserBundler().getFileFilter() );
-            XStream xstream = new XStream( new DomDriver() );
+            XStream xstream = XStreamHandler.newXStreamInstance();
             for ( File userData : usersData ) {
                 workingOn = userData;
                 if ( userData.isDirectory() ) {

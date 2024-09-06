@@ -135,7 +135,7 @@ export const generateDotExperimentLineChartJsOptions = ({
             tooltip: {
                 callbacks: {
                     title: function (context) {
-                        return Number(context[0].label) * 100 + '%';
+                        return Math.round(context[0].label * 100) + '%';
                     },
                     label: function (context) {
                         const label = context.dataset.label || '';

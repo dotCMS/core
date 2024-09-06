@@ -5,10 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { MultiSelectModule } from 'primeng/multiselect';
 
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import { DotCurrentUserService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotCurrentUserService, PushPublishService } from '@dotcms/data-access';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector.component';
 
@@ -20,7 +18,7 @@ import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector
         ButtonModule,
         FormsModule,
         MultiSelectModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe
     ],
     providers: [PushPublishService, DotCurrentUserService]

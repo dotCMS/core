@@ -54,6 +54,7 @@ import com.dotcms.publisher.pusher.wrapper.LinkWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
@@ -73,7 +74,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 
 import java.io.File;
 import java.io.InputStream;
@@ -137,7 +137,7 @@ public class LinkHandler implements IHandler {
 	    File workingOn = null;
 	    Link linkToPublish = null;
 		try{
-	        XStream xstream=new XStream(new DomDriver());
+	        XStream xstream = XStreamHandler.newXStreamInstance();
 
 	        for(File linkFile: links) {
 	            workingOn = linkFile;

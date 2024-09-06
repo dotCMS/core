@@ -1,11 +1,12 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { InputNumberModule } from 'primeng/inputnumber';
 
-export default {
+const InputNumberTemplate = `<p-inputNumber [(ngModel)]="val" mode="decimal" />`;
+
+const meta: Meta<InputNumberModule> = {
     title: 'PrimeNG/Form/InputText/InputNumber',
     component: InputNumberModule,
     parameters: {
@@ -13,6 +14,9 @@ export default {
             description: {
                 component:
                     'InputNumber is an input component to provide numerical input: https://primeng.org/inputnumber'
+            },
+            source: {
+                code: InputNumberTemplate
             }
         }
     },
@@ -23,30 +27,14 @@ export default {
     ],
     args: {
         checked: false
-    }
-} as Meta;
-
-const InputNumberTemplate = `
-  <p-inputNumber [(ngModel)]="val" mode="decimal"></p-inputNumber>
-`;
-
-const Template: Story<{
-    checked: boolean;
-}> = (props: { checked: boolean }) => {
-    const template = InputNumberTemplate;
-
-    return {
-        props,
-        template
-    };
+    },
+    render: (args) => ({
+        props: args,
+        template: InputNumberTemplate
+    })
 };
+export default meta;
 
-export const Basic: Story = Template.bind({});
+type Story = StoryObj<InputNumberModule>;
 
-Basic.parameters = {
-    docs: {
-        source: {
-            code: InputNumberTemplate
-        }
-    }
-};
+export const Basic: Story = {};

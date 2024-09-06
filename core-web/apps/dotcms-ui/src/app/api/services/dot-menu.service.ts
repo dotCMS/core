@@ -1,12 +1,12 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
 import {
     defaultIfEmpty,
     filter,
     find,
-    first,
     map,
     mergeMap,
     pluck,
@@ -14,16 +14,15 @@ import {
     refCount
 } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotMenu, DotMenuItem } from '@models/navigation';
+import { DotCMSResponse } from '@dotcms/dotcms-js';
+import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotMenuService {
     menu$: Observable<DotMenu[]>;
 
-    private urlMenus = 'v1/menu';
-
-    constructor(private coreWebService: CoreWebService) {}
+    private urlMenus = '/api/v1/menu';
+    private readonly http = inject(HttpClient);
 
     /**
      * Get the url for the iframe porlet from the menu object
@@ -35,8 +34,8 @@ export class DotMenuService {
     getUrlById(id: string): Observable<string> {
         return this.getMenuItems().pipe(
             filter((res: DotMenuItem) => !res.angular && res.id === id),
-            first(),
-            pluck('url')
+            pluck('url'),
+            defaultIfEmpty('')
         );
     }
 
@@ -47,10 +46,17 @@ export class DotMenuService {
      * @returns Observable<boolean>
      * @memberof DotMenuService
      */
-    isPortletInMenu(menuId: string): Observable<boolean> {
+    isPortletInMenu(menuId: string, checkJSPPortlet = false): Observable<boolean> {
         return this.getMenuItems().pipe(
-            pluck('id'),
-            map((id: string) => menuId === id),
+            map(({ id, angular }) => {
+                const idMatch = id === menuId;
+                // Check if the JSP Portlet is in the menu and hasn't been migrated to Angular
+                if (checkJSPPortlet) {
+                    return idMatch && !angular;
+                }
+
+                return idMatch;
+            }),
             filter((val) => !!val),
             defaultIfEmpty(false)
         );
@@ -64,10 +70,8 @@ export class DotMenuService {
      */
     loadMenu(force = false): Observable<DotMenu[]> {
         if (!this.menu$ || force) {
-            this.menu$ = this.coreWebService
-                .requestView({
-                    url: this.urlMenus
-                })
+            this.menu$ = this.http
+                .get<DotCMSResponse<DotMenu>>(this.urlMenus)
                 .pipe(publishLast(), refCount(), pluck('entity'));
         }
 

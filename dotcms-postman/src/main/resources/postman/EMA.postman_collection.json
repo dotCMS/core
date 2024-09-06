@@ -1,0 +1,231 @@
+{
+	"info": {
+		"_postman_id": "029879f9-ad5c-48a1-94b8-12f0369d3605",
+		"name": "EMA",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "781456"
+	},
+	"item": [
+		{
+			"name": "GetCurrentSite",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"pm.collectionVariables.set(\"currentSiteId\", jsonData.entity.identifier);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/currentSite",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"currentSite"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "NoConfig",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"User FE has not access to EMA\", function () {",
+							"    pm.response.to.have.status(404);",
+							"",
+							"    ",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/ema",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"ema"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "app-save1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotCMS.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \n\t  \"configuration\": {\n\t\t \"value\": \"{\\r\\n         \\\"config\\\":[\\r\\n                  {\\r\\n                  \\\"pattern\\\":\\\"\\/blogs\\/(.*)\\\",\\r\\n                  \\\"url\\\":\\\"https:\\/\\/myspa.blogs.com:3000\\\",\\r\\n                  \\\"options\\\":{\\r\\n                  \\\"authenticationToken\\\":\\\"123\\\",\\r\\n                  \\\"depth\\\":3,\\r\\n                  \\\"X-CONTENT-APP\\\":\\\"dotCMS\\\"\\r\\n                  }\\r\\n                  },\\r\\n                  {\\r\\n                  \\\"pattern\\\":\\\".*\\\",\\r\\n                  \\\"url\\\":\\\"https:\\/\\/myspa.com:3000\\\",\\r\\n                  \\\"options\\\":{\\r\\n                  \\\"authenticationToken\\\":\\\"456\\\",\\r\\n                  \\\"depth\\\":1,\\r\\n                  \\\"X-CONTENT-APP\\\":\\\"dotCMS\\\"\\r\\n                  }\\r\\n                  }\\r\\n        ]\\r\\n      }\"\n      }\n}\n"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apps/dotema-config-v2/{{currentSiteId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apps",
+						"dotema-config-v2",
+						"{{currentSiteId}}"
+					]
+				},
+				"description": "This tests the endpoint that brings back one specific App/integration given the App-key followed by the site-id"
+			},
+			"response": []
+		},
+		{
+			"name": "TestConfig",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Now available the EMA\", function () {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    ",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/ema",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"ema"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "currentSiteId",
+			"value": ""
+		}
+	]
+}

@@ -10,7 +10,7 @@ div {
     height: $size;
     display: inline-block;
     vertical-align: middle;
-    font-size: 10px;
+    font-size: $font-size-xs;
     position: relative;
     text-indent: -9999em;
     border: $border-size solid $color-palette-primary-op-20;

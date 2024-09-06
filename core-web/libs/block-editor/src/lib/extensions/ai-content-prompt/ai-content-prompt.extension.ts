@@ -1,5 +1,4 @@
 import { PluginKey } from 'prosemirror-state';
-import { Props } from 'tippy.js';
 
 import { ViewContainerRef } from '@angular/core';
 
@@ -10,7 +9,6 @@ import { aiContentPromptPlugin } from './plugins/ai-content-prompt.plugin';
 
 export interface AIContentPromptOptions {
     pluginKey: PluginKey;
-    tippyOptions?: Partial<Props>;
     element: HTMLElement | null;
 }
 
@@ -23,16 +21,19 @@ declare module '@tiptap/core' {
     }
 }
 
-export const AI_CONTENT_PROMPT_PLUGIN_KEY = new PluginKey('aiContentPrompt-form');
+export const DOT_AI_TEXT_CONTENT_KEY = 'dotAITextContent';
+
+export const AI_CONTENT_PROMPT_PLUGIN_KEY = new PluginKey(DOT_AI_TEXT_CONTENT_KEY);
+
+export const AI_CONTENT_PROMPT_EXTENSION_NAME = 'aiContentPrompt';
 
 export const AIContentPromptExtension = (viewContainerRef: ViewContainerRef) => {
     return Extension.create<AIContentPromptOptions>({
-        name: 'aiContentPrompt',
+        name: AI_CONTENT_PROMPT_EXTENSION_NAME,
 
         addOptions() {
             return {
                 element: null,
-                tippyOptions: {},
                 pluginKey: AI_CONTENT_PROMPT_PLUGIN_KEY
             };
         },
@@ -44,7 +45,9 @@ export const AIContentPromptExtension = (viewContainerRef: ViewContainerRef) => 
                     ({ chain }) => {
                         return chain()
                             .command(({ tr }) => {
-                                tr.setMeta(AI_CONTENT_PROMPT_PLUGIN_KEY, { open: true });
+                                tr.setMeta(AI_CONTENT_PROMPT_PLUGIN_KEY, {
+                                    aIContentPromptOpen: true
+                                });
 
                                 return true;
                             })
@@ -56,7 +59,9 @@ export const AIContentPromptExtension = (viewContainerRef: ViewContainerRef) => 
                     ({ chain }) => {
                         return chain()
                             .command(({ tr }) => {
-                                tr.setMeta(AI_CONTENT_PROMPT_PLUGIN_KEY, { open: false });
+                                tr.setMeta(AI_CONTENT_PROMPT_PLUGIN_KEY, {
+                                    aIContentPromptOpen: false
+                                });
 
                                 return true;
                             })
@@ -75,7 +80,6 @@ export const AIContentPromptExtension = (viewContainerRef: ViewContainerRef) => 
                     pluginKey: this.options.pluginKey,
                     editor: this.editor,
                     element: component.location.nativeElement,
-                    tippyOptions: this.options.tippyOptions,
                     component: component
                 })
             ];

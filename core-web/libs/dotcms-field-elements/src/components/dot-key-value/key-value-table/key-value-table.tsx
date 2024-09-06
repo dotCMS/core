@@ -47,8 +47,7 @@ export class KeyValueTableComponent {
                         aria-label={label}
                         disabled={this.disabled || null}
                         onClick={() => this.onDelete(index)}
-                        class="dot-key-value__delete-button"
-                    >
+                        class="dot-key-value__delete-button">
                         {this.buttonLabel}
                     </button>
                 </td>
@@ -60,7 +59,7 @@ export class KeyValueTableComponent {
 
     private renderRows(items: DotKeyValueField[]): JSX.Element {
         return this.isValidItems(items)
-            ? ((items.map(this.getRow.bind(this)) as unknown) as JSX.Element)
+            ? (items.map(this.getRow.bind(this)) as unknown as JSX.Element)
             : this.getEmptyRow();
     }
 

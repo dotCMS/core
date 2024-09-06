@@ -1,6 +1,7 @@
 package com.dotcms.csspreproc;
 
 import com.dotcms.csspreproc.CachedCSS.ImportedAsset;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.DownloadUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -55,17 +56,22 @@ public class CSSPreProcessServlet extends HttpServlet {
     public void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
         String actualUri = StringPool.BLANK;
         try {
-            final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(req);
+            Logger.debug(this, "---- CSS Pre-Process Compiler ----");
+            final Host currentSite = WebAPILocator.getHostWebAPI().getCurrentHost(req);
             final boolean live = !WebAPILocator.getUserWebAPI().isLoggedToBackend(req);
             final User user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
-            final String origURI=req.getRequestURI();
-            final String fileUri = origURI.replace("/DOTSASS","");
-            final DotLibSassCompiler compiler = new DotLibSassCompiler(host, fileUri, live, req);
+            final String originalURI = req.getRequestURI();
+            final String fileUri = originalURI.replace(SassPreProcessServlet.DOTSASS_PREFIX,"");
+            Logger.debug(this, String.format("-> Original URI = %s", originalURI));
+            Logger.debug(this, String.format("-> File URI     = %s", fileUri));
+            final DotLibSassCompiler compiler = new DotLibSassCompiler(currentSite, fileUri, live, req);
             
             // check if the asset exists
-            actualUri =  fileUri.substring(0, fileUri.lastIndexOf('.')) + "." + compiler.getDefaultExtension();
-            final Identifier ident = APILocator.getIdentifierAPI().find(host, actualUri);
-            if(ident==null || !InodeUtils.isSet(ident.getId())) {
+            actualUri = fileUri.substring(0, fileUri.lastIndexOf('.')) + "." + compiler.getDefaultExtension();
+            Logger.debug(this, String.format("-> Actual URI   = %s", actualUri));
+            final Identifier ident = APILocator.getIdentifierAPI().find(currentSite, actualUri);
+            if (null == ident || !InodeUtils.isSet(ident.getId())) {
+                Logger.error(this, String.format("Requested SASS file '%s' in Site '%s' does not exist", actualUri, currentSite));
                 sendError(resp, HttpStatus.SC_NOT_FOUND);
                 return;
             }
@@ -74,6 +80,8 @@ public class CSSPreProcessServlet extends HttpServlet {
             final long defLang=APILocator.getLanguageAPI().getDefaultLanguage().getId();
             final Optional<FileAsset> fileAssetOptional = getFileAsset(live, user, ident, defLang);
             if(fileAssetOptional.isEmpty()) {
+                Logger.error(this, String.format("Requested SASS file '%s' in Site '%s' does not exist or cannot " +
+                        "be accessed by user '%s'", actualUri, currentSite, user.getUserId()));
                 sendError(resp, HttpStatus.SC_FORBIDDEN);
                 return;
             }
@@ -83,13 +91,15 @@ public class CSSPreProcessServlet extends HttpServlet {
             boolean userHasEditPerms = false;
             if(!live) {
                 userHasEditPerms = APILocator.getPermissionAPI().doesUserHavePermission(fileAsset,PermissionAPI.PERMISSION_EDIT,user);
-                if(req.getParameter("recompile")!=null && userHasEditPerms) {
-                    CacheLocator.getCSSCache().remove(host.getIdentifier(), actualUri, false);
-                    CacheLocator.getCSSCache().remove(host.getIdentifier(), actualUri, true);
+                if (req.getParameter("recompile") != null && userHasEditPerms) {
+                    Logger.debug(this, String.format("The 'recompile' parameter is present. Force re-compiling " +
+                            "file '%s:%s'", currentSite, actualUri));
+                    CacheLocator.getCSSCache().remove(currentSite.getIdentifier(), actualUri, false);
+                    CacheLocator.getCSSCache().remove(currentSite.getIdentifier(), actualUri, true);
                 }
             }
             
-            CachedCSS cache = CacheLocator.getCSSCache().get(host.getIdentifier(), actualUri, live, user);
+            CachedCSS cache = CacheLocator.getCSSCache().get(currentSite.getIdentifier(), actualUri, live, user);
             
             byte[] responseData=null;
             Date cacheMaxDate=null;
@@ -98,16 +108,15 @@ public class CSSPreProcessServlet extends HttpServlet {
             if(cache==null || cache.data==null) {
                 // do compile!
                 synchronized(ident.getId().intern()) {
-                    cache = CacheLocator.getCSSCache().get(host.getIdentifier(), actualUri, live, user);
+                    cache = CacheLocator.getCSSCache().get(currentSite.getIdentifier(), actualUri, live, user);
                     if(cache==null || cache.data==null) {
-                        Logger.debug(this, "compiling css data for "+host.getHostname()+":"+fileUri);
-                        
+                        Logger.debug(this, String.format("Compiling file '%s:%s' ...", currentSite, fileUri));
                         try {
                             compiler.compile();
-                        } catch (Throwable ex) {
+                        } catch (final Throwable ex) {
                             Throwable throwable = ex;
-                            Logger.error(this, "Error compiling " + host.getHostname() + ":" + fileUri,
-                                    throwable);
+                            Logger.error(this, String.format("An error occurred when compiling the SCSS file " +
+                                    "'%s:%s': %s", currentSite, fileUri, ExceptionUtil.getErrorMessage(ex)), ex);
                           if (Config.getBooleanProperty("SHOW_SASS_ERRORS_ON_FRONTEND", true)) {
                             if(userHasEditPerms) {
                               throwable = (throwable.getCause()!=null) ? throwable.getCause() : throwable;
@@ -130,36 +139,42 @@ public class CSSPreProcessServlet extends HttpServlet {
 
                         final CachedCSS newCache = new CachedCSS();
                         newCache.data = compiler.getOutput();
-                        newCache.hostId = host.getIdentifier();
+                        newCache.hostId = currentSite.getIdentifier();
                         newCache.uri = actualUri;
                         newCache.live = live;
                         newCache.modDate = verInfo.get().getVersionTs();
                         newCache.imported = new ArrayList<>();
-                        for(String importUri : compiler.getAllImportedURI()) {
+                        Logger.debug(this, String.format("Processing %d SCSS files imported by the requested file '%s:%s'",
+                                null != compiler.getAllImportedURI() ?
+                                        compiler.getAllImportedURI().size() : 0, currentSite, actualUri));
+                        for (String importUri : compiler.getAllImportedURI()) {
                             // newcache entry for the imported asset
                             final ImportedAsset asset = new ImportedAsset();
                             asset.uri = importUri;
                             Identifier importUriIdentifier;
                             if(importUri.startsWith("//")) {
                                 importUri=importUri.substring(2);
-                                final String hn=importUri.substring(0, importUri.indexOf('/'));
-                                final String uu=importUri.substring(importUri.indexOf('/'));
-                                importUriIdentifier = APILocator.getIdentifierAPI().find(APILocator.getHostAPI().findByName(hn, user, live),uu);
+                                final String siteName = importUri.substring(0, importUri.indexOf('/'));
+                                final String url = importUri.substring(importUri.indexOf('/'));
+                                importUriIdentifier = APILocator.getIdentifierAPI().find(APILocator.getHostAPI().findByName(siteName, user, live), url);
                             }
                             else {
-                                importUriIdentifier = APILocator.getIdentifierAPI().find(host, importUri);
+                                importUriIdentifier = APILocator.getIdentifierAPI().find(currentSite, importUri);
                             }
                             final Optional<ContentletVersionInfo> impInfo = APILocator.getVersionableAPI()
                                     .getContentletVersionInfo(importUriIdentifier.getId(), defLang);
 
-                            if(impInfo.isEmpty()) {
+                            if (impInfo.isEmpty()) {
+                                Logger.error(this, String.format("VersionInfo for imported URI '%s' in language " +
+                                                "'%s' was not found",
+                                        importUriIdentifier.getId(), defLang));
                                 sendError(resp, HttpStatus.SC_NOT_FOUND);
                                 return;
                             }
 
                             asset.modDate = impInfo.get().getVersionTs();
                             newCache.imported.add(asset);
-                            Logger.debug(this, host.getHostname()+":"+actualUri+" imports-> "+importUri);
+                            Logger.debug(this, String.format("-> Importing file: '%s'", importUri));
                             
                             // actual cache entry for the imported asset. If needed
                             synchronized(importUriIdentifier.getId().intern()) {
@@ -189,8 +204,11 @@ public class CSSPreProcessServlet extends HttpServlet {
                     responseData = cache.data;
                     cacheMaxDate = cache.getMaxDate();
                     cacheObject = cache;
-                    Logger.debug(this, "using cached css data for "+host.getHostname()+":"+fileUri);
+                    Logger.debug(this, String.format("The SASS Compiler generated a null output for file '%s:%s', " +
+                                    "but cached data can be returned.", currentSite, fileUri));
                 } else {
+                    Logger.error(this, String.format("The SASS Compiler generated a null output for file '%s:%s'",
+                            currentSite, fileUri));
                     sendError(resp, HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     return;
                 }
@@ -202,6 +220,10 @@ public class CSSPreProcessServlet extends HttpServlet {
                 // so the browser downloads it if any of the imported files changes
                 doDownload = DownloadUtil.isModifiedEtag(req, resp, fileAsset.getInode(),
                         cacheMaxDate.getTime(), fileAsset.getFileSize());
+                if (!doDownload) {
+                    Logger.debug(this, String.format("Contents of file '%s:%s' have not been modified. Returning " +
+                                    "status %s.", currentSite, fileUri, HttpServletResponse.SC_NOT_MODIFIED));
+                }
             }
             
             if(doDownload) {
@@ -211,8 +233,9 @@ public class CSSPreProcessServlet extends HttpServlet {
                         "inline; filename=\"" + fileUri.substring(fileUri.lastIndexOf('/')) + "\"");
 
                 final boolean verbose = !live && userHasEditPerms && req.getParameter("debug") !=null;
-
-                writeResponseData(verbose, actualUri, host, cacheObject, responseData, resp);
+                Logger.debug(this, String.format("Returning contents of file '%s:%s' [ verbose = %s ]", currentSite,
+                        fileUri, verbose));
+                writeResponseData(verbose, actualUri, currentSite, cacheObject, responseData, resp);
             }
         } catch (final Exception ex) {
         	try {
@@ -237,7 +260,19 @@ public class CSSPreProcessServlet extends HttpServlet {
         }
     }
 
-    private void writeResponseData(final boolean verbose, final String actualUri, final Host host,
+    /**
+     * Writes the generated CSS file to the HTTP Response.
+     *
+     * @param verbose      If debugging information must be included in the response, set this to
+     *                     {@code true}
+     * @param actualUri    The URI of the SCSS file that is being processed.
+     * @param site         The {@link Host} where the SCSS file is located.
+     * @param cacheObject  The {@link CachedCSS} object that contains the information about the SCSS
+     *                     file.
+     * @param responseData The contents of the generated CSS file.
+     * @param resp         The current instance of the {@link HttpServletResponse}.
+     */
+    private void writeResponseData(final boolean verbose, final String actualUri, final Host site,
             final CachedCSS cacheObject, final byte[] responseData,
             final HttpServletResponse resp) {
         try {
@@ -245,30 +280,45 @@ public class CSSPreProcessServlet extends HttpServlet {
             if (verbose) {
                 // debug information requested
                 out.println("/*");
-                out.println("Cached CSS: " + host.getHostname() + ":" + actualUri);
-                out.println("Size: " + cacheObject.data.length + " bytes");
-                out.println("Imported uris:");
+                out.println("- Cached CSS   : " + site + ":" + actualUri);
+                out.println("- Size         : " + cacheObject.data.length + " bytes");
+                out.println("- Imported URIs:");
                 for (final ImportedAsset asset : cacheObject.imported) {
-                    out.println("  " + asset.uri);
+                    out.println("-> " + asset.uri);
                 }
                 out.println("*/");
                 out.println(new String(responseData));
             } else {
                 out.write(new String(responseData));
             }
-        } catch (IOException io) {
-             Logger.error(CSSPreProcessServlet.class, "Error trying to write response data ", io);
+        } catch (final IOException io) {
+             Logger.error(CSSPreProcessServlet.class, String.format("Failed to write response data for file " +
+                     "'%s:%s' [ verbose = %s ]: %s", site, actualUri, verbose, ExceptionUtil.getErrorMessage(io)), io);
         }
     }
 
-    private Optional<FileAsset> getFileAsset(boolean live, User user, Identifier ident, long defLang) {
+    /**
+     * Returns the File Asset associated to the given Identifier and language ID.
+     *
+     * @param live    If the live version of the File Asset must be returned, set this to
+     *                {@code true}.
+     * @param user    The {@link User} requesting the File Asset.
+     * @param ident   The {@link Identifier} of the File Asset.
+     * @param defLang The language ID of the File Asset.
+     *
+     * @return An {@link Optional} containing the File Asset, if it exists, and the user has
+     * permissions to access it. Otherwise, an empty Optional is returned.
+     */
+    private Optional<FileAsset> getFileAsset(final boolean live, final User user, final Identifier ident, final long defLang) {
         try {
             final ContentletAPI contentletAPI = APILocator.getContentletAPI();
             final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
             return Optional.of(fileAssetAPI.fromContentlet(
              contentletAPI.findContentletByIdentifier(ident.getId(), live, defLang, user, true)));
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(CSSPreProcessServlet.class,String.format(" file-asset [%s] is restricted to user [%s] for lang [%d]  . ", ident, user, defLang), e);
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.error(CSSPreProcessServlet.class, String.format("User '%s' failed to retrieve " +
+                    "File Asset '%s' in language '%s': %s", user.getUserId(), ident, defLang,
+                    ExceptionUtil.getErrorMessage(e)), e);
         }
         return Optional.empty();
     }
@@ -280,7 +330,5 @@ public class CSSPreProcessServlet extends HttpServlet {
             Logger.error(CSSPreProcessServlet.class, String.format("Error writing response code [%d]", code), e);
         }
     }
-
-
 
 }

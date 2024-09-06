@@ -3,12 +3,11 @@
         <ng-template pTemplate="title">
             <h2 class="flex align-items-center gap-1 uppercase" data-testId="traffic-card-title">
                 <dot-icon
-                    class="inline-flex"
                     [ngClass]="{ isDone: vm.trafficAllocation }"
                     [size]="16"
+                    class="inline-flex"
                     data-testId="traffic-step-done"
-                    name="check_circle"
-                ></dot-icon>
+                    name="check_circle"></dot-icon>
                 {{ 'experiments.configure.traffic.name' | dm }}
             </h2>
         </ng-template>
@@ -16,23 +15,21 @@
         <p-card>
             <div class="flex flex-row align-items-center align-content-between gap-2">
                 <div class="title flex flex-grow-1 flex-column">
-                    <span data-testId="card-title">{{
-                        'experiments.configure.traffic.load.name' | dm
-                    }}</span>
+                    <span data-testId="card-title">
+                        {{ 'experiments.configure.traffic.load.name' | dm }}
+                    </span>
                 </div>
                 <div
-                    [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
-                    [tooltipDisabled]="vm.isExperimentADraft"
+                    [pTooltip]="vm.disabledTooltipLabel | dm"
+                    [tooltipDisabled]="!vm.disabledTooltipLabel"
                     data-testId="tooltip-on-disabled"
-                    tooltipPosition="bottom"
-                >
+                    tooltipPosition="bottom">
                     <button
-                        class="p-button-sm p-button-text"
-                        [disabled]="!vm.isExperimentADraft"
                         (click)="changeTrafficAllocation()"
+                        [disabled]="vm.disabledTooltipLabel"
+                        class="p-button-sm p-button-link"
                         data-testId="traffic-allocation-button"
-                        pButton
-                    >
+                        pButton>
                         {{ vm.trafficAllocation }}%
                     </button>
                 </div>

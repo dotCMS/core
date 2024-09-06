@@ -1,17 +1,16 @@
 package com.dotcms.experiments.business.result;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.cube.CubeJSQuery;
-import com.dotcms.cube.filters.Filter.Order;
+import com.dotcms.cube.filters.Filter;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
-import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.DotPreconditions;
 import io.vavr.Lazy;
+
 import java.util.Map;
 
 /**
@@ -67,35 +66,32 @@ public enum ExperimentResultsQueryFactory {
 
 
     private static Map<MetricType, MetricExperimentResultsQuery> createHelpersMap() {
-        return map(
-            MetricType.EXIT_RATE, new PageViewExperimentResultQuery(),
-            MetricType.REACH_PAGE, new ReachPageExperimentResultsQuery(),
-            MetricType.BOUNCE_RATE, new PageViewExperimentResultQuery(),
-            MetricType.URL_PARAMETER, new PageViewExperimentResultQuery()
+        return Map.of(
+            MetricType.EXIT_RATE, new ExitRateResultQuery(),
+            MetricType.REACH_PAGE, new ReachTargetAfterExperimentPageResultQuery(),
+            MetricType.BOUNCE_RATE, new BounceRateResultQuery(),
+            MetricType.URL_PARAMETER, new ReachTargetAfterExperimentPageResultQuery()
         );
     }
 
-    private static CubeJSQuery createRootQuery(final Experiment experiment) {
+    private static CubeJSQuery createRootQuery(final Experiment experiment, final boolean dayGranularity) {
 
         DotPreconditions.isTrue(experiment.status() == Status.RUNNING || experiment.status() == Status.ENDED,
                 "Experiment must be running or Ended");
 
         final String runningId = experiment.runningIds().getCurrent().orElseThrow().id();
 
-        return new CubeJSQuery.Builder()
-                .dimensions("Events.experiment",
-                        "Events.variant",
-                        "Events.utcTime",
-                        "Events.url",
-                        "Events.lookBackWindow",
-                        "Events.eventType",
-                        "Events.runningId"
-                )
-                .order("Events.lookBackWindow", Order.ASC)
-                .order("Events.utcTime", Order.ASC)
+        final CubeJSQuery.Builder builder = new CubeJSQuery.Builder()
+                .dimensions("Events.variant")
+                .order("Events.day", Filter.Order.ASC)
                 .filter("Events.experiment", Operator.EQUALS, experiment.getIdentifier())
-                .filter("Events.runningId", Operator.EQUALS, runningId)
-                .build();
+                .filter("Events.runningId", Operator.EQUALS, runningId);
+
+        if (dayGranularity) {
+            builder.timeDimension("Events.day", "day");
+        }
+
+        return builder.build();
     }
 
     /**
@@ -107,9 +103,51 @@ public enum ExperimentResultsQueryFactory {
      *
      * @see {@link ExperimentResultsQueryFactory}
      */
+    public CubeJSQuery createWithDayGranularity(final Experiment experiment){
+        final CubeJSQuery cubeJSQuery = getMetricCubeJSQuery(experiment);
+        final CubeJSQuery rootCubeJSQuery = createRootQuery(experiment, true);
+        return CubeJSQuery.Builder.merge(cubeJSQuery, rootCubeJSQuery);
+    }
+
+    /**
+     * Create the CubeJS Query to get the results for an Experiment, this query has two parts:
+     *
+     * - The specific Experiment's Goal query: This Query is different for each Goal.
+     * - The Root Query: This is the same no matter the Goal of the Experiment, this is the follow:
+     *
+     * <code>
+     *     {
+     *         dimensions: ['Events.variant'],
+     *         "order": {
+     *              "Events.day": "asc",
+     *          },
+     *          "filters": [
+     *              {
+     *                  "member": "Events.experiment",
+     *                  "operator": "equals",
+     *                  "values": ["[experiment_id]"]
+     *              },
+     *              {
+     *                  "member": "Events.runningId",
+     *                  "operator": "equals",
+     *                  "values": ["[current_experiment_running_id]"]
+     *              }
+     *          ]
+     *     }
+     * </code>
+     *
+     * These two queries are merge to get the Experiment Query.
+     *
+     * @see BounceRateResultQuery
+     * @see ExitRateResultQuery
+     * @see ReachTargetAfterExperimentPageResultQuery
+     *
+     * @param experiment
+     * @return
+     */
     public CubeJSQuery create(final Experiment experiment){
         final CubeJSQuery cubeJSQuery = getMetricCubeJSQuery(experiment);
-        final CubeJSQuery rootCubeJSQuery = createRootQuery(experiment);
+        final CubeJSQuery rootCubeJSQuery = createRootQuery(experiment, false);
         return CubeJSQuery.Builder.merge(cubeJSQuery, rootCubeJSQuery);
     }
 

@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { MarkdownModule } from 'ngx-markdown';
 import { Observable, of } from 'rxjs';
 
@@ -11,14 +10,11 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotAppsSaveData, DotAppsSecrets } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessageService, DotRouterService } from '@dotcms/data-access';
+import { DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
+import { DotCopyButtonComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
 import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
@@ -50,7 +46,10 @@ const sites = [
                 label: 'Name:',
                 required: true,
                 type: 'STRING',
-                value: 'John'
+                value: 'John',
+                hasEnvVar: false,
+                envShow: true,
+                hasEnvVarValue: false
             },
             {
                 dynamic: false,
@@ -60,7 +59,10 @@ const sites = [
                 label: 'Password:',
                 required: true,
                 type: 'STRING',
-                value: '****'
+                value: '****',
+                hasEnvVar: false,
+                envShow: true,
+                hasEnvVarValue: false
             },
             {
                 dynamic: false,
@@ -70,7 +72,10 @@ const sites = [
                 label: 'Enabled:',
                 required: false,
                 type: 'BOOL',
-                value: 'true'
+                value: 'true',
+                hasEnvVar: false,
+                envShow: true,
+                hasEnvVarValue: false
             }
         ]
     }
@@ -115,8 +120,7 @@ class MockDotKeyValueComponent {
     @Input() autoFocus: boolean;
     @Input() showHiddenField: string;
     @Input() variables: DotKeyValue[];
-    @Output() delete = new EventEmitter<DotKeyValue>();
-    @Output() save = new EventEmitter<DotKeyValue>();
+    @Output() updatedList = new EventEmitter<DotKeyValue[]>();
 }
 
 @Component({
@@ -125,7 +129,7 @@ class MockDotKeyValueComponent {
 })
 class MockDotAppsConfigurationDetailFormComponent {
     @Input() appConfigured: boolean;
-    @Input() formFields: DotAppsSecrets[];
+    @Input() formFields: DotAppsSecret[];
     @Output() data = new EventEmitter<{ [key: string]: string }>();
     @Output() valid = new EventEmitter<boolean>();
 }
@@ -150,9 +154,9 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 ]),
                 ButtonModule,
                 CommonModule,
-                DotCopyButtonModule,
+                DotCopyButtonComponent,
                 DotAppsConfigurationHeaderModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 MarkdownModule.forRoot()
             ],
@@ -298,7 +302,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
 
     describe('With dynamic variables', () => {
         beforeEach(() => {
-            const sitesDynamic = _.cloneDeep(sites);
+            const sitesDynamic = structuredClone(sites);
             sitesDynamic[0].secrets = [
                 ...sites[0].secrets,
                 {
@@ -309,7 +313,10 @@ describe('DotAppsConfigurationDetailComponent', () => {
                     label: '',
                     required: false,
                     type: 'STRING',
-                    value: 'test'
+                    value: 'test',
+                    hasEnvVar: false,
+                    envShow: true,
+                    hasEnvVarValue: false
                 }
             ];
             const mockRoute = { data: {} };
@@ -336,15 +343,14 @@ describe('DotAppsConfigurationDetailComponent', () => {
         it('should update local collection with saved value', () => {
             const variableEmitted = { key: 'custom', hidden: false, value: 'changed' };
             const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
-            keyValue.componentInstance.save.emit(variableEmitted);
+            keyValue.componentInstance.updatedList.emit([variableEmitted]);
             expect(component.dynamicVariables[0]).toEqual(variableEmitted);
             expect(component.dynamicVariables.length).toEqual(1);
         });
 
         it('should delete from local collection', () => {
-            const variableEmitted = { key: 'custom', hidden: false, value: 'test' };
             const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
-            keyValue.componentInstance.delete.emit(variableEmitted);
+            keyValue.componentInstance.updatedList.emit([]);
             expect(component.dynamicVariables.length).toEqual(0);
         });
 

@@ -3,12 +3,23 @@ package com.dotcms.api;
 import com.dotcms.api.provider.DefaultResponseExceptionMapper;
 import com.dotcms.api.provider.DotCMSClientHeaders;
 import com.dotcms.model.ResponseEntityView;
-import com.dotcms.model.site.*;
-
+import com.dotcms.model.site.CopySiteRequest;
+import com.dotcms.model.site.CreateUpdateSiteRequest;
+import com.dotcms.model.site.GetSiteByNameRequest;
+import com.dotcms.model.site.Site;
+import com.dotcms.model.site.SiteView;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.tags.Tags;
@@ -47,7 +58,9 @@ public interface SiteAPI {
             @QueryParam("archive") Boolean showArchived,
             @QueryParam("live") Boolean showLive,
             @QueryParam("system") Boolean showSystem,
-            @QueryParam("page") Integer page, @QueryParam("perPage") Integer perPage);
+            @QueryParam("page") Integer page,
+            @QueryParam("per_page") Integer perPage
+    );
 
     @GET
     @Path("/{siteId}")
@@ -64,25 +77,12 @@ public interface SiteAPI {
     ResponseEntityView<SiteView> findByName(final GetSiteByNameRequest request);
 
     @GET
-    @Path("/currentSite")
-    @Operation(
-            summary = " Returns the Site that is currently selected"
-    )
-    ResponseEntityView<Site> current();
-
-    @GET
     @Path("/defaultSite")
     @Operation(
             summary = " Returns the Site marked as default"
     )
     ResponseEntityView<Site>defaultSite();
 
-    @PUT
-    @Path ("/switch/{id}")
-    @Operation(
-            summary = " Returns the Site that is currently selected"
-    )
-    ResponseEntityView<Map<String,String>>switchSite(@PathParam("id") String id);
 
     @POST
     @Operation(
@@ -97,6 +97,15 @@ public interface SiteAPI {
     ResponseEntityView<SiteView> update(
             @QueryParam("id") final String  siteIdentifier,
             final CreateUpdateSiteRequest request
+    );
+
+    @PUT
+    @Path("/{siteId}/_makedefault")
+    @Operation(
+            summary = " Marks a Site as default"
+    )
+    ResponseEntityView<Boolean> makeDefault(
+            @PathParam("siteId") final String siteId
     );
 
     @PUT

@@ -1,0 +1,24 @@
+<div class="locale-confirmation__message">
+    <i [class]="data.icon"></i>
+    <span [innerHTML]="data.message"></span>
+</div>
+<div class="locale-confirmation__confirmation">
+    <span [innerHTML]="'locale.action.confirmation.text' | dm: [data.ISOCode]"></span>
+    <input #userKey pInputText data-testid="input" />
+</div>
+<div class="locale-confirmation__buttons">
+    <button
+        (click)="ref.close(false)"
+        [label]="'Cancel' | dm"
+        class="p-button-outlined"
+        data-testid="cancel-button"
+        pButton
+        type="button"></button>
+    <button
+        (click)="ref.close(true)"
+        [label]="data.acceptLabel"
+        [disabled]="data.ISOCode !== userKey.value"
+        data-testid="confirm-button"
+        pButton
+        type="button"></button>
+</div>

@@ -170,6 +170,11 @@ public class NullLettuceClient<K, V> implements RedisClient {
         return -1;
     }
 
+    @Override
+    public void deleteFromPattern(String pattern) {
+
+    }
+
 
     @Override
     public void scanKeys(String matchesPattern, int keyBatchingSize, Consumer keyConsumer) {

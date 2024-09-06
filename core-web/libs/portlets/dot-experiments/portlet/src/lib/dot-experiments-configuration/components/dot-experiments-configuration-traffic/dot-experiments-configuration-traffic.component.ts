@@ -13,13 +13,14 @@ import {
     ComponentStatus,
     ExperimentSteps,
     StepStatus,
-    TrafficProportion,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import { DotDynamicDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 
-import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
+import {
+    ConfigurationTrafficStepViewModel,
+    DotExperimentsConfigurationStore
+} from '../../store/dot-experiments-configuration-store';
 import { DotExperimentsConfigurationTrafficAllocationAddComponent } from '../dot-experiments-configuration-traffic-allocation-add/dot-experiments-configuration-traffic-allocation-add.component';
 import { DotExperimentsConfigurationTrafficSplitAddComponent } from '../dot-experiments-configuration-traffic-split-add/dot-experiments-configuration-traffic-split-add.component';
 
@@ -41,15 +42,10 @@ import { DotExperimentsConfigurationTrafficSplitAddComponent } from '../dot-expe
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationTrafficComponent {
-    vm$: Observable<{
-        experimentId: string;
-        trafficProportion: TrafficProportion;
-        trafficAllocation: number;
-        status: StepStatus;
-        isExperimentADraft: boolean;
-    }> = this.dotExperimentsConfigurationStore.trafficStepVm$.pipe(
-        tap(({ status }) => this.handleSidebar(status))
-    );
+    vm$: Observable<ConfigurationTrafficStepViewModel> =
+        this.dotExperimentsConfigurationStore.trafficStepVm$.pipe(
+            tap(({ status }) => this.handleSidebar(status))
+        );
 
     splitEvenly = TrafficProportionTypes.SPLIT_EVENLY;
 

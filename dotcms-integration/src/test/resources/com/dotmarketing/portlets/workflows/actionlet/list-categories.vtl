@@ -1,0 +1,10 @@
+#set($contentMap = $dotcontent.find($content.identifier))
+<h4>Category List</h4>
+#set($catList =  "<ul>")
+#foreach($cat in $contentMap.testCategory)
+	#set($catList = $catList + "<li><b>Category Name:</b> $!{cat.categoryName}</li>")
+#end
+#set($catList = $catList + "</ul>")
+#set($catJson = "{ \"output\": \"$catList\" }")
+$content.setProperty("result", $json.generate($catJson))
+$catList

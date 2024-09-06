@@ -3,6 +3,7 @@
 
 .p-inputtext:not(.p-dropdown-label, .p-autocomplete-multiple-container, .p-autocomplete-input) {
     @extend #form-field-extend;
+    word-break: break-word;
 
     &.p-inputtext-sm {
         @extend #form-field-sm;

@@ -21,8 +21,12 @@ describe('DotEmptyContainerComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent();
-        spectator.setInput('configuration', BASIC_CONFIGURATION);
+        spectator = createComponent({
+            props: {
+                configuration: BASIC_CONFIGURATION
+            }
+        });
+        spectator.detectChanges();
     });
 
     describe('Only Principal message', () => {
@@ -65,6 +69,14 @@ describe('DotEmptyContainerComponent', () => {
 
             spectator.setInput('hideContactUsLink', true);
             expect(spectator.query(byTestId('message-contact-link'))).not.toExist();
+        });
+        it('should has secondary button class', () => {
+            spectator.setInput('buttonLabel', BUTTON_LABEL);
+            spectator.setInput('secondaryButton', true);
+
+            const button = spectator.query(byTestId('message-button'));
+
+            expect(button.classList.contains('p-button-outlined')).toBe(true);
         });
     });
 });

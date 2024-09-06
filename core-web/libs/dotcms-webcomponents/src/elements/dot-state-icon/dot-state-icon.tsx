@@ -27,8 +27,7 @@ export class DotStateIcon {
                 aria-label={name}
                 style={{
                     '--size': this.size
-                }}
-            >
+                }}>
                 <span>
                     <div class={state} id="icon" />
                     <dot-tooltip content={name} for="icon" />

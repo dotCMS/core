@@ -4,6 +4,7 @@ import {
     Component,
     ElementRef,
     EventEmitter,
+    inject,
     Input,
     OnDestroy,
     OnInit,
@@ -16,17 +17,16 @@ import { SelectItem } from 'primeng/api';
 
 import { catchError, filter, map, take, takeUntil } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import {
+    DotHttpErrorManagerService,
     DotMessageService,
     DotPushPublishFilter,
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
-import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
+import { DotPushPublishDialogData, DotPushPublishData } from '@dotcms/dotcms-models';
 import { DotFormModel } from '@models/dot-form/dot-form.model';
-import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 
 @Component({
     selector: 'dot-push-publish-form',
@@ -36,6 +36,8 @@ import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publi
 export class DotPushPublishFormComponent
     implements OnInit, OnDestroy, DotFormModel<DotPushPublishDialogData, DotPushPublishData>
 {
+    readonly #dotMessageService = inject(DotMessageService);
+
     dateFieldMinDate = new Date();
     form: UntypedFormGroup;
     pushActions: SelectItem[];
@@ -45,7 +47,7 @@ export class DotPushPublishFormComponent
     assetIdentifier: string;
     localTimezone: string;
     showTimezonePicker = false;
-    changeTimezoneActionLabel = this.dotMessageService.get('Change');
+    changeTimezoneActionLabel = this.#dotMessageService.get('Change');
 
     @Input() data: DotPushPublishDialogData;
 
@@ -61,7 +63,6 @@ export class DotPushPublishFormComponent
     constructor(
         private dotPushPublishFiltersService: DotPushPublishFiltersService,
         private dotParseHtmlService: DotParseHtmlService,
-        private dotMessageService: DotMessageService,
         private dotcmsConfigService: DotcmsConfigService,
         private httpErrorManagerService: DotHttpErrorManagerService,
         public fb: UntypedFormBuilder
@@ -115,8 +116,8 @@ export class DotPushPublishFormComponent
         this.showTimezonePicker = !this.showTimezonePicker;
 
         this.changeTimezoneActionLabel = this.showTimezonePicker
-            ? this.dotMessageService.get('hide')
-            : this.dotMessageService.get('Change');
+            ? this.#dotMessageService.get('hide')
+            : this.#dotMessageService.get('Change');
     }
 
     private setPreviousDayToMinDate() {
@@ -262,18 +263,18 @@ export class DotPushPublishFormComponent
     private getPushPublishActions(): SelectItem[] {
         return [
             {
-                label: this.dotMessageService.get('contenttypes.content.push_publish.action.push'),
+                label: this.#dotMessageService.get('contenttypes.content.push_publish.action.push'),
                 value: 'publish'
             },
             {
-                label: this.dotMessageService.get(
+                label: this.#dotMessageService.get(
                     'contenttypes.content.push_publish.action.remove'
                 ),
                 value: 'expire',
                 disabled: this.isRestrictedOrCategory()
             },
             {
-                label: this.dotMessageService.get(
+                label: this.#dotMessageService.get(
                     'contenttypes.content.push_publish.action.pushremove'
                 ),
                 value: 'publishexpire',

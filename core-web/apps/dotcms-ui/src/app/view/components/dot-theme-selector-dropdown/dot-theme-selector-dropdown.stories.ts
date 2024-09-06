@@ -1,12 +1,16 @@
 /* eslint-disable no-console */
-import { Meta, moduleMetadata } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj, argsToTemplate } from '@storybook/angular';
 import { of } from 'rxjs';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotMessageService, DotThemesService, PaginatorService } from '@dotcms/data-access';
+import {
+    DotMessageService,
+    DotThemesService,
+    PaginatorService,
+    DotFormatDateService
+} from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -18,7 +22,7 @@ const messageServiceMock = new MockDotMessageService({
     'Last-Updated': 'Last updated'
 });
 
-export default {
+const meta: Meta<DotThemeSelectorDropdownComponent> = {
     title: 'DotCMS/ThemeSelector',
     component: DotThemeSelectorDropdownComponent,
     decorators: [
@@ -201,33 +205,13 @@ export default {
             iframeHeight: 800
         }
     },
-    args: {
-        onThemeSelectorChange: (event) => {
-            console.log(event);
-        },
-        totalRecords: 8,
-        paginationPerPage: 5,
-        rows: 5
-    }
-} as Meta;
-
-const ThemeSelectorTemplate = `
-  <dot-theme-selector-dropdown
-          (change)="onThemeSelectorChange($event)"
-  ></dot-theme-selector-dropdown>
-`;
-
-export const Basic = (props) => {
-    return {
-        template: ThemeSelectorTemplate,
-        props
-    };
+    render: (args) => ({
+        props: args,
+        template: `<dot-theme-selector-dropdown ${argsToTemplate(args)} />`
+    })
 };
+export default meta;
 
-Basic.parameters = {
-    docs: {
-        source: {
-            code: ThemeSelectorTemplate
-        }
-    }
-};
+type Story = StoryObj<DotThemeSelectorDropdownComponent>;
+
+export const Default: Story = {};

@@ -1,0 +1,29 @@
+<dot-dialog
+    (hide)="close()"
+    [(visible)]="dialogShow"
+    [actions]="dialogActions"
+    [header]="'contenttypes.content.add_to_bundle' | dm">
+    <form
+        (ngSubmit)="submitBundle($event)"
+        (keyup.enter)="submitBundle($event)"
+        [formGroup]="form"
+        class="p-fluid"
+        #formEl="ngForm"
+        novalidate>
+        <div class="field">
+            <p-dropdown
+                [options]="bundle$ | async"
+                [placeholder]="placeholder"
+                #addBundleDropdown
+                appendTo="body"
+                editable="true"
+                formControlName="addBundle"
+                optionLabel="name"></p-dropdown>
+            <dot-field-validation-message
+                [field]="form.get('addBundle')"
+                message="{{
+                    'contenttypes.content.add_to_bundle.errormsg' | dm
+                }}"></dot-field-validation-message>
+        </div>
+    </form>
+</dot-dialog>

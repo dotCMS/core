@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -17,7 +17,7 @@ import { JsonClassesService } from './services/json-classes.service';
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
     standalone: true,
-    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipe, NgIf, AsyncPipe],
+    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipe, AsyncPipe],
     templateUrl: './add-style-classes-dialog.component.html',
     styleUrls: ['./add-style-classes-dialog.component.scss'],
     providers: [JsonClassesService],
@@ -29,7 +29,7 @@ export class AddStyleClassesDialogComponent implements OnInit {
     selectedClasses: string[] = [];
 
     isJsonClasses$: Observable<boolean>;
-    classes: string[];
+    classes: string[] = [];
 
     constructor(
         private jsonClassesService: JsonClassesService,
@@ -88,19 +88,5 @@ export class AddStyleClassesDialogComponent implements OnInit {
      */
     save() {
         this.ref.close(this.selectedClasses);
-    }
-
-    /**
-     * Remove a class from the selected classes
-     *
-     * @param {KeyboardEvent} event
-     * @memberof AddStyleClassesDialogComponent
-     */
-    onKeyUp(event: KeyboardEvent) {
-        const target: HTMLInputElement = event.target as unknown as HTMLInputElement;
-
-        if (event.key === 'Enter' && !!target.value) {
-            this.autoComplete.selectItem(target.value);
-        }
     }
 }

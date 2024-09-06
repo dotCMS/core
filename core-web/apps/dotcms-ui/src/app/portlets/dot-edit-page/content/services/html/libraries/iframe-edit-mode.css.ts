@@ -6,38 +6,51 @@ const mdShadow3 = '0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23
 const white = '#fff';
 const grayLight = '#c5c5c5';
 
-export const getEditPageCss = (timestampId: string): string => {
+// Font sizes
+// Body font sizes
+const fontSizeSm = '0.75rem'; // 12px
+const fontSizeXs = '0.625rem'; // 10px
+
+// Font weights
+const fontWeightRegular = 400;
+const fontWeightSemiBold = 500;
+const fontWeightBold = 700;
+
+export const getEditPageCss = (
+    timestampId: string,
+    origin: string = window.location.origin
+): string => {
     return `
     // GOOGLE FONTS
     /* Assistant-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
     @font-face {
         font-family: 'Assistant';
         font-style: normal;
-        font-weight: 400;
+        font-weight: ${fontWeightRegular};
         font-display: swap;
         src: local(''),
-        url('/dotAdmin/assets/Assistant-Regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-        url('/dotAdmin/assets/Assistant-Regular.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+        url('${origin}/dotAdmin/assets/Assistant-Regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+        url('${origin}/dotAdmin/assets/Assistant-Regular.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
     /* Assistant-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
     @font-face {
         font-family: 'Assistant';
         font-style: normal;
-        font-weight: 500;
+        font-weight: ${fontWeightSemiBold};
         font-display: swap;
         src: local(''),
-        url('/dotAdmin/assets/Assistant-SemiBold.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-        url('/dotAdmin/assets/Assistant-SemiBold.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+        url('${origin}/dotAdmin/assets/Assistant-SemiBold.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+        url('${origin}/dotAdmin/assets/Assistant-SemiBold.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
     /* Assistant-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
     @font-face {
         font-family: 'Assistant';
         font-style: normal;
-        font-weight: 700;
+        font-weight: ${fontWeightBold};
         font-display: swap;
         src: local(''),
-        url('/dotAdmin/assets/Assistant-Bold.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-        url('/dotAdmin/assets/Assistant-Bold.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+        url('${origin}/dotAdmin/assets/Assistant-Bold.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+        url('${origin}/dotAdmin/assets/Assistant-Bold.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
 
     ${timestampId} [data-dot-object="container"] {
@@ -87,7 +100,7 @@ export const getEditPageCss = (timestampId: string): string => {
         margin: 0 !important;
         border: solid 1px #53c2f9;
         padding: 1rem !important;
-        background: #FFF !important;
+        background: ${white} !important;
         color: #444 !important;
         height: auto !important;
         min-height: auto !important;
@@ -269,10 +282,10 @@ export const getEditPageCss = (timestampId: string): string => {
 
     ${timestampId} .dotedit-menu__list {
         color: #000 !important;
-        background-color: #ffffff !important;
+        background-color: ${white} !important;
         box-shadow: ${mdShadow1} !important;
         font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif !important;
-        font-size: 13px !important;
+        font-size: 0.8125rem !important;
         list-style: none !important;
         margin: 0 !important;
         min-width: 100px !important;
@@ -314,8 +327,8 @@ export const getEditPageCss = (timestampId: string): string => {
         position: absolute !important;
         top: 4px !important;
         background: rgba(0,0,0,.7);
-        font-size: 12px;
-        color: #fff;
+        font-size: ${fontSizeSm};
+        color: ${white};
         padding: 4px;
         border-radius: 3px;
         margin-right: 4px;
@@ -353,7 +366,7 @@ export const getEditPageCss = (timestampId: string): string => {
         border-right: solid 5px var(--color-palette-secondary-op-20) !important;
         border-top: solid 5px var(--color-palette-secondary-op-20) !important;
         display: inline-block !important;
-        font-size: 10px !important;
+        font-size: ${fontSizeXs} !important;
         overflow: hidden !important;
         position: relative !important;
         text-indent: -9999em !important;
@@ -416,11 +429,11 @@ export const getEditPageCss = (timestampId: string): string => {
         border: 1px solid #53c2f9 !important;
         display: block;
     }
-    
+
     ${timestampId} [data-inode][data-field-name][data-block-editor-content].dotcms__inline-edit-field {
         cursor: pointer;
     }
-    
+
     ${timestampId} .dotcms__navbar-form {
         display: inline-block;
     }

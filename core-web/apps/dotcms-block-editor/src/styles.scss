@@ -1,5 +1,4 @@
-html,
-body {
-    font-family: $font-default;
-    font-size: 14px;
+.p-dialog-mask.p-component-overlay.p-dialog-mask-scrollblocker {
+    background-color: transparent;
+    backdrop-filter: none;
 }

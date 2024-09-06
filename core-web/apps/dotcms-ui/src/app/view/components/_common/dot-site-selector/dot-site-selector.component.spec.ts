@@ -48,7 +48,9 @@ const sites: Site[] = [
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-site-selector [id]="id" [cssClass]="cssClass"></dot-site-selector> `
+    template: `
+        <dot-site-selector [id]="id" [cssClass]="cssClass"></dot-site-selector>
+    `
 })
 class TestHostComponent {
     @Input() id: string;

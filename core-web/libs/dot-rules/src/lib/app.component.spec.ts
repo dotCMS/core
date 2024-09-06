@@ -3,13 +3,11 @@ import { TestBed, waitForAsync, async } from '@angular/core/testing';
 import { AppRulesComponent } from './app.component';
 
 describe('AppRulesComponent', () => {
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [AppRulesComponent]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [AppRulesComponent]
+        }).compileComponents();
+    }));
 
     it('should create the app', async(() => {
         const fixture = TestBed.createComponent(AppRulesComponent);

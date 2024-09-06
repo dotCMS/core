@@ -51,6 +51,7 @@ const isIframeLoaded = ($iframe) => {
     if (contentWindow.document.readyState === 'complete') {
         const src = $iframe.attributes.src;
         const href = contentWindow.location.href;
+
         return href !== 'about:blank' || src === 'about:blank' || src === '';
     }
 
@@ -98,8 +99,10 @@ Cypress.Commands.add('form_request', (method, url, formData, done) => {
     xhr.onload = function () {
         done(xhr);
     };
+
     xhr.onerror = function () {
         done(xhr);
     };
+
     xhr.send(formData);
 });

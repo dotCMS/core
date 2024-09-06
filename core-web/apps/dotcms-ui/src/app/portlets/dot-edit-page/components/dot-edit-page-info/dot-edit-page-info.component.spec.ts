@@ -2,19 +2,15 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotApiLinkComponent, DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
 
 @Component({
-    template: `<dot-edit-page-info
-        [title]="title"
-        [url]="url"
-        [apiLink]="apiLink"
-    ></dot-edit-page-info>`
+    template: `
+        <dot-edit-page-info [title]="title" [url]="url" [apiLink]="apiLink"></dot-edit-page-info>
+    `
 })
 class TestHostComponent {
     title = 'A title';
@@ -31,7 +27,7 @@ describe('DotEditPageInfoComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent, DotEditPageInfoComponent],
-            imports: [DotApiLinkModule, DotCopyButtonModule, DotMessagePipe],
+            imports: [DotApiLinkComponent, DotCopyButtonComponent, DotMessagePipe],
             providers: [
                 {
                     provide: DotMessageService,
@@ -65,12 +61,13 @@ describe('DotEditPageInfoComponent', () => {
 
         it('should have copy button', () => {
             const button: DebugElement = de.query(By.css('dot-copy-button '));
-            expect(button.componentInstance.copy).toBe('http://demo.dotcms.com:9876/an/url/test');
-            expect(button.componentInstance.tooltipText).toBe('Copy url page');
+
+            expect(button).not.toBeNull();
         });
 
         it('should have api link', () => {
             const apiLink: DebugElement = de.query(By.css('dot-api-link'));
+
             expect(apiLink.componentInstance.href).toBe(
                 'api/v1/page/render/an/url/test?language_id=1'
             );

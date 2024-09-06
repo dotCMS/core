@@ -1,8 +1,6 @@
 package com.dotcms.rest.api.v1.portlet;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.liferay.portal.model.Portlet.DATA_VIEW_MODE_KEY;
-
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -22,17 +20,12 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
-import io.vavr.control.Try;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -47,77 +40,153 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.server.JSONP;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static com.liferay.portal.model.Portlet.DATA_VIEW_MODE_KEY;
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * This Resource is for create custom portlets. These kind of custom portlets are to show diff types
  * or content (content types or base types).
  */
 @Path("/v1/portlet")
-@SuppressWarnings("serial")
 public class PortletResource implements Serializable {
 
-  private final WebResource webResource;
-  private final PortletAPI portletApi;
+    private final WebResource webResource;
+    private final PortletAPI portletApi;
 
-  /**
-   * Default class constructor.
-   */
-  public PortletResource() {
-    this(new WebResource(new ApiProvider()), APILocator.getPortletAPI());
-  }
-
-  @VisibleForTesting
-  public PortletResource(WebResource webResource, PortletAPI portletApi) {
-    this.webResource = webResource;
-    this.portletApi = portletApi;
-  }
+    private static final String JSON_RESPONSE_PORTLET_ATTR = "portlet";
 
     /**
-     * Creates a Portlet for a given name content-types and Display view
+     * Default class constructor.
+     */
+    @SuppressWarnings("unused")
+    public PortletResource() {
+        this(new WebResource(new ApiProvider()), APILocator.getPortletAPI());
+    }
+
+    @VisibleForTesting
+    public PortletResource(WebResource webResource, PortletAPI portletApi) {
+        this.webResource = webResource;
+        this.portletApi = portletApi;
+    }
+
+    /**
+     * Creates a custom dotCMS Portlet for a given Base Type or Content Type.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param formData The {@link CustomPortletForm} containing the information for the new
+     *                 Portlet.
+     *
+     * @return A {@link Response} object with the ID of the new portlet.
+     */
+    @POST
+    @Path("/custom")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response saveNew(@Context final HttpServletRequest request,
+                                  final CustomPortletForm formData) {
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.ROLES.toString())
+                .init();
+        String portletId = BLANK;
+        try {
+            portletId = portletApi.portletIdPrefixCleaner(formData.portletId);
+            if (UtilMethods.isSet(portletApi.findPortlet(portletId))) {
+                throw new DoesNotExistException(String.format("Portlet with ID '%s' already exist",
+                        formData.portletId));
+            }
+
+            final Portlet contentPortlet = portletApi.findPortlet("content");
+
+            final DotPortlet newPortlet = DotPortlet.builder()
+                    .portletId(portletId)
+                    .portletClass(contentPortlet.getPortletClass())
+                    .putAllInitParams(contentPortlet.getInitParams()) // add view-action from base content portlet
+                    .putInitParam("name", formData.portletName)
+                    .putInitParam("baseTypes", formData.baseTypes)
+                    .putInitParam("contentTypes", formData.contentTypes)
+                    .putInitParam(DATA_VIEW_MODE_KEY, formData.dataViewMode)
+                    .build();
+
+
+            final Portlet savedPortlet = APILocator.getPortletAPI()
+                    .savePortlet(newPortlet.toPortlet(), initData.getUser());
+
+            return Response.ok(new ResponseEntityView<>(Map.of(JSON_RESPONSE_PORTLET_ATTR, savedPortlet.getPortletId()))).build();
+        } catch (final Exception e) {
+            Logger.error(this, String.format("An error occurred when saving new Portlet with ID " +
+                    "'%s': %s", portletId, ExceptionUtil.getErrorMessage(e)), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    /**
+     * Saves a new working version of an existing Portlet.
+     * The formData must contain the identifier of the Portlet.
      * @param request
      * @param formData
      * @return
      */
-  @POST
-  @Path("/custom")
-  @JSONP
-  @NoCache
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public final Response createContentPortlet(@Context final HttpServletRequest request, final CustomPortletForm formData) {
+    @PUT
+    @Path("/custom")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response updatePortlet(@Context final HttpServletRequest request, final CustomPortletForm formData) {
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .requiredPortlet("roles")
+                .init();
 
-    final InitDataObject initData = new WebResource.InitBuilder(webResource)
-            .requiredBackendUser(true)
-            .requiredFrontendUser(false)
-            .requestAndResponse(request, null)
-            .rejectWhenNoUser(true)
-            .requiredPortlet("roles")
-            .init();
+        Response response = null;
 
-    Response response = null;
+        try {
+            final String portletId = portletApi.portletIdPrefixCleaner(formData.portletId);
+            if (!UtilMethods.isSet(portletApi.findPortlet(portletId))) {
+                throw new DoesNotExistException("Portlet with Id: " + formData.portletId + " does not exist");
+            }
+            final Portlet contentPortlet = portletApi.findPortlet("content");
 
-    try {
+            final DotPortlet updatedPortlet =  DotPortlet.builder()
+                    .portletId(portletId)
+                    .portletClass(contentPortlet.getPortletClass())
+                    .putAllInitParams(contentPortlet.getInitParams()) // add view-action from base content portlet
+                    .putInitParam("name", formData.portletName)
+                    .putInitParam("baseTypes", formData.baseTypes)
+                    .putInitParam("contentTypes", formData.contentTypes)
+                    .putInitParam(DATA_VIEW_MODE_KEY, formData.dataViewMode)
+                    .build();
 
-      final Portlet contentPortlet = portletApi.findPortlet("content");
 
-      final Map<String, String> initValues = new HashMap<>(contentPortlet.getInitParams());
-      initValues.put("name", formData.portletName);
-      initValues.put("baseTypes", formData.baseTypes);
-      initValues.put("contentTypes", formData.contentTypes);
-      initValues.put(DATA_VIEW_MODE_KEY, formData.dataViewMode);
+            final Portlet newPortlet = APILocator.getPortletAPI()
+                    .savePortlet(updatedPortlet.toPortlet(), initData.getUser());
 
-      final Portlet newPortlet = APILocator.getPortletAPI()
-          .savePortlet(new DotPortlet(formData.portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
+            return Response.ok(new ResponseEntityView<>(Map.of(JSON_RESPONSE_PORTLET_ATTR, newPortlet.getPortletId()))).build();
 
-      return Response.ok(new ResponseEntityView(map("portlet", newPortlet.getPortletId()))).build();
+        } catch (Exception e) {
+            Logger.error(this, String.format("An error occurred when updating Portlet with ID " +
+                    "'%s': %s", formData.portletId, ExceptionUtil.getErrorMessage(e)), e);
+            response = ResponseUtil.mapExceptionResponse(e);
+        }
 
-    } catch (Exception e) {
-      response = ResponseUtil.mapExceptionResponse(e);
+        return response;
     }
-
-    return response;
-  }
 
     /**
      * This endpoint links a layout with a portlet Security is considered so the user must have
@@ -135,8 +204,8 @@ public class PortletResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response addContentPortletToLayout(@Context final HttpServletRequest request,
-            @PathParam("portletId") final String portletId,
-            @PathParam("layoutId") final String layoutId)
+                                                    @PathParam("portletId") final String portletId,
+                                                    @PathParam("layoutId") final String layoutId)
             throws DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -195,8 +264,8 @@ public class PortletResource implements Serializable {
 
         layoutAPI.setPortletIdsToLayout(layout, portletIds);
 
-        return Response.ok(new ResponseEntityView(
-                map("portlet", portlet.getPortletId(), "layout", layout.getId())))
+        return Response.ok(new ResponseEntityView<>(
+                        Map.of(JSON_RESPONSE_PORTLET_ATTR, portlet.getPortletId(), "layout", layout.getId())))
                 .build();
 
     }
@@ -207,34 +276,34 @@ public class PortletResource implements Serializable {
      * @param portletId
      * @return
      */
-  @DELETE
-  @Path("/custom/{portletId}")
-  @JSONP
-  @NoCache
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public final Response deleteCustomPortlet(@Context final HttpServletRequest request, @PathParam("portletId") final String portletId) {
+    @DELETE
+    @Path("/custom/{portletId}")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response deleteCustomPortlet(@Context final HttpServletRequest request, @PathParam("portletId") final String portletId) {
 
-    final InitDataObject initData = new WebResource.InitBuilder(webResource)
-            .requiredBackendUser(true)
-            .requiredFrontendUser(false)
-            .requestAndResponse(request, null)
-            .rejectWhenNoUser(true)
-            .requiredPortlet("roles")
-            .init();
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .requiredPortlet("roles")
+                .init();
 
-    try {
+        try {
 
 
-      APILocator.getPortletAPI().deletePortlet(portletId);
+            APILocator.getPortletAPI().deletePortlet(portletId);
 
-      return Response.ok(new ResponseEntityView(map("message", portletId + " deleted"))).build();
+            return Response.ok(new ResponseEntityView(Map.of("message", portletId + " deleted"))).build();
 
-    } catch (Exception e) {
-      return ResponseUtil.mapExceptionResponse(e);
+        } catch (Exception e) {
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+
     }
-
-  }
 
     /**
      * Portlet delete
@@ -249,10 +318,10 @@ public class PortletResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deletePersonalPortlet(@Context final HttpServletRequest request,
-                    @PathParam("portletId") final String portletId) {
+                                                @PathParam("portletId") final String portletId) {
         final User user = new WebResource.InitBuilder(webResource).requiredBackendUser(true)
-                        .requestAndResponse(request, null).rejectWhenNoUser(true).requiredPortlet("roles").init()
-                        .getUser();
+                .requestAndResponse(request, null).rejectWhenNoUser(true).requiredPortlet("roles").init()
+                .getUser();
 
         return deletePortletForRole(request, portletId, user.getUserId());
     }
@@ -272,11 +341,11 @@ public class PortletResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deletePortletForRole(@Context final HttpServletRequest request,
-                    @PathParam("portletId") final String portletId, @PathParam("roleId") final String roleId) {
+                                               @PathParam("portletId") final String portletId, @PathParam("roleId") final String roleId) {
 
         final User user = new WebResource.InitBuilder(webResource).requiredBackendUser(true)
-                        .requestAndResponse(request, null).rejectWhenNoUser(true).requiredPortlet("roles").init()
-                        .getUser();
+                .requestAndResponse(request, null).rejectWhenNoUser(true).requiredPortlet("roles").init()
+                .getUser();
 
         try {
 
@@ -286,23 +355,23 @@ public class PortletResource implements Serializable {
 
             if (role == null || portlet == null) {
                 return ResponseUtil.INSTANCE.getErrorResponse(request, Response.Status.UNAUTHORIZED, user.getLocale(),
-                                user.getUserId(), "unable to remove role from portlet");
+                        user.getUserId(), "unable to remove role from portlet");
             }
 
             if(!user.isAdmin() && !user.getUserId().equals(role.getRoleKey())) {
                 return ResponseUtil.INSTANCE.getErrorResponse(request, Response.Status.UNAUTHORIZED, user.getLocale(),
-                                user.getUserId(),
-                                "Unable to remove portlet for role");
+                        user.getUserId(),
+                        "Unable to remove portlet for role");
             }
-            
-            
-            
+
+
+
 
             List<Layout> layouts = APILocator.getLayoutAPI().loadLayoutsForRole(role);
             for (Layout layout : layouts) {
                 if (layout.getPortletIds().contains(portletId)) {
                     List<Portlet> portlets = layout.getPortletIds().stream().filter(p -> !p.equals(portletId))
-                                    .map(p -> APILocator.getPortletAPI().findPortlet(p)).collect(Collectors.toList());
+                            .map(p -> APILocator.getPortletAPI().findPortlet(p)).collect(Collectors.toList());
 
                     if (portlets.isEmpty()) {
                         Logger.info(this.getClass(), "removing layout " + layout.getName() + " from role " + role.getName());
@@ -315,7 +384,7 @@ public class PortletResource implements Serializable {
                 }
             }
 
-            return Response.ok(new ResponseEntityView(map("message", portletId + " deleted"))).build();
+            return Response.ok(new ResponseEntityView(Map.of("message", portletId + " deleted"))).build();
 
         } catch (Exception e) {
             return ResponseUtil.mapExceptionResponse(e);
@@ -335,7 +404,7 @@ public class PortletResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findPortlet(@Context final HttpServletRequest request,
-            @PathParam("portletId") final String portletId) {
+                                      @PathParam("portletId") final String portletId) {
 
         final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -352,7 +421,7 @@ public class PortletResource implements Serializable {
                     "Unable to find portlet");
         }
         return Response.ok(new ResponseEntityView(
-                map("response", portlet))).build();
+                Map.of("response", portlet))).build();
 
     }
 
@@ -368,7 +437,7 @@ public class PortletResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response doesUserHaveAccessToPortlet(@Context final HttpServletRequest request,
-            @PathParam("portletId") final String portletId) {
+                                                      @PathParam("portletId") final String portletId) {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -376,7 +445,7 @@ public class PortletResource implements Serializable {
                 .rejectWhenNoUser(true)
                 .init();
         try {
-            return Response.ok(new ResponseEntityView(map("response", APILocator.getLayoutAPI()
+            return Response.ok(new ResponseEntityView(Map.of("response", APILocator.getLayoutAPI()
                     .doesUserHaveAccessToPortlet(portletId, initData.getUser())))).build();
         } catch (Exception e) {
             return ResponseUtil.mapExceptionResponse(e);
@@ -400,8 +469,8 @@ public class PortletResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getCreateContentURL(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse httpResponse,
-            @PathParam("contentTypeVariable") String contentTypeVariable)
+                                              @Context final HttpServletResponse httpResponse,
+                                              @PathParam("contentTypeVariable") String contentTypeVariable)
             throws DotDataException, DotSecurityException {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -416,8 +485,8 @@ public class PortletResource implements Serializable {
                 "/ext/contentlet/edit_contentlet";
 
         return Response.ok(
-                new ResponseEntityView((
-                        ContentTypeUtil.getInstance().getActionUrl(request,contentTypeId,user,strutsAction))))
+                        new ResponseEntityView((
+                                ContentTypeUtil.getInstance().getActionUrl(request,contentTypeId,user,strutsAction))))
                 .build();
     }
 }

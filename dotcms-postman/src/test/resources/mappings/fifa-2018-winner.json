@@ -1,0 +1,41 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/c",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matches": ".*\"content\":\"Who won the FIFA World Cup in 2018.*"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "cmpl-2",
+      "object": "text_completion",
+      "created": 1699999999,
+      "model": "gpt-3.5-turbo-16k",
+      "choices": [
+        {
+          "text": "The FIFA World Cup in 2018 was won by the French national football team. They defeated Croatia 4-2 in the final match held in Moscow, Russia.",
+          "index": 0,
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 9,
+        "completion_tokens": 30,
+        "total_tokens": 39
+      }
+    }
+  }
+}

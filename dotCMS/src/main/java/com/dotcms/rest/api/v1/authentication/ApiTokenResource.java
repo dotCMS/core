@@ -16,17 +16,29 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import java.net.ConnectException;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import org.glassfish.jersey.internal.util.Base64;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -34,6 +46,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
+import java.net.ConnectException;
 import java.net.NoRouteToHostException;
 import java.net.UnknownHostException;
 import java.time.Instant;
@@ -44,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.dotcms.util.CollectionsUtils.map;
 import static java.util.Collections.EMPTY_MAP;
 
 /**
@@ -85,7 +97,7 @@ public class ApiTokenResource implements Serializable {
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, "users");
         final List<ApiToken> tokens = tokenApi.findApiTokensByUserId(userId, showRevoked, initDataObject.getUser());
 
-        return Response.ok(new ResponseEntityView(map("tokens", tokens), EMPTY_MAP)).build(); // 200
+        return Response.ok(new ResponseEntityView(Map.of("tokens", tokens), EMPTY_MAP)).build(); // 200
     }
 
     @PUT
@@ -112,7 +124,7 @@ public class ApiTokenResource implements Serializable {
             SecurityLogger.logInfo(this.getClass(), "Revoking token " + token + " from " + request.getRemoteAddr() + " ");
             this.tokenApi.revokeToken(token, user);
             token = this.tokenApi.findApiToken(tokenId).get();
-            return Response.ok(new ResponseEntityView(map("revoked", token), EMPTY_MAP)).build(); // 200
+            return Response.ok(new ResponseEntityView(Map.of("revoked", token), EMPTY_MAP)).build(); // 200
         }
 
         return ExceptionMapperUtil.createResponse(new DotStateException("No token"), Response.Status.NOT_FOUND);
@@ -137,7 +149,7 @@ public class ApiTokenResource implements Serializable {
 
             if(tokenApi.deleteToken(token, user)) {
 
-                return Response.ok(new ResponseEntityView(map("deleted", token), EMPTY_MAP)).build(); // 200
+                return Response.ok(new ResponseEntityView(Map.of("deleted", token), EMPTY_MAP)).build(); // 200
             }
 
             return ExceptionMapperUtil.createResponse(new DotStateException("No permissions to token"), Response.Status.FORBIDDEN);
@@ -205,7 +217,7 @@ public class ApiTokenResource implements Serializable {
 
         token = this.tokenApi.persistApiToken(token, requestingUser);
         final String jwt = this.tokenApi.getJWT(token, requestingUser);
-        return Response.ok(new ResponseEntityView(map("token", token,"jwt", jwt), EMPTY_MAP)).build(); // 200
+        return Response.ok(new ResponseEntityView(Map.of("token", token,"jwt", jwt), EMPTY_MAP)).build(); // 200
     }
 
     private User getUserById(ApiTokenForm formData, User requestingUser) {
@@ -348,7 +360,7 @@ public class ApiTokenResource implements Serializable {
 
         SecurityLogger.logInfo(this.getClass(), "Revealing token to user: " + user.getUserId() + " from: " + request.getRemoteAddr() + " token:"  + token );
         final String jwt = tokenApi.getJWT(token, user);
-        return Response.ok(new ResponseEntityView(map("jwt", jwt), EMPTY_MAP)).build(); // 200
+        return Response.ok(new ResponseEntityView(Map.of("jwt", jwt), EMPTY_MAP)).build(); // 200
     }
 
 
@@ -376,7 +388,7 @@ public class ApiTokenResource implements Serializable {
                 SecurityLogger.logInfo(this.getClass(), "Revoking token " + userid + " from " + request.getRemoteAddr() + " ");
                 userToken.setSkinId(UUIDGenerator.generateUuid()); // setting a new id will invalidate the token
                 APILocator.getUserAPI().save(userToken, user, PageMode.get(request).respectAnonPerms); // this will invalidate
-                return Response.ok(new ResponseEntityView(map("revoked", userid), EMPTY_MAP)).build(); // 200
+                return Response.ok(new ResponseEntityView(Map.of("revoked", userid), EMPTY_MAP)).build(); // 200
             }
         } else {
 
@@ -418,7 +430,7 @@ public class ApiTokenResource implements Serializable {
                     userTokenIds.add( userToken.getUserId());
                 }
 
-                return Response.ok(new ResponseEntityView(map("revoked", userTokenIds), EMPTY_MAP)).build(); // 200
+                return Response.ok(new ResponseEntityView(Map.of("revoked", userTokenIds), EMPTY_MAP)).build(); // 200
             }
         } else {
 

@@ -1,13 +1,49 @@
-import { ResolvedPos } from 'prosemirror-model';
+import { ResolvedPos, Node } from 'prosemirror-model';
 import { SelectionRange, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 
 import { Editor } from '@tiptap/core';
 
 import { CustomNodeTypes, NodeTypes } from '../../extensions';
+import { toJSONFn } from '../../NodeViewRenderer';
 
 const aTagRex = new RegExp(/<a(|\s+[^>]*)>(\s|\n|<img[^>]*src="[^"]*"[^>]*>)*?<\/a>/gm);
 const imgTagRex = new RegExp(/<img[^>]*src="[^"]*"[^>]*>/gm);
+
+export interface DotTiptapNodeInformation {
+    node: Node;
+    from: number;
+    to: number;
+}
+
+/**
+ * Set Custom JSON for this type of Node
+ * For this JSON we are going to only add the `contentlet` identifier to the backend
+ *
+ * @param {*} this
+ * @return {*}
+ */
+export const contentletToJSON: toJSONFn = function () {
+    const { attrs, type } = this?.node || {}; // Add null check for this.node
+    const { data } = attrs;
+
+    const formattedData = data
+        ? {
+              identifier: data?.identifier,
+              languageId: data?.languageId
+          }
+        : {};
+
+    const customAttrs = {
+        ...attrs,
+        data: formattedData
+    };
+
+    return {
+        type: type.name,
+        attrs: customAttrs
+    };
+};
 
 /**
  * Get the parent node of the ResolvedPos sent
@@ -213,6 +249,59 @@ export const getCursorPosition = (view: EditorView): { from: number; to: number 
     const to = Math.max(...ranges.map((range) => range.$to.pos));
 
     return { from, to };
+};
+
+/**
+ * Replace a node in Tiptap editor with new content.
+ *
+ * @param {Editor} editor - The Tiptap editor instance.
+ * @param {DotTiptapNodeInformation} tiptapNodeInfo - Information about the Tiptap node to be replaced,
+ * including the node itself, and its start and end positions.
+ * @param {string} content - The new content to replace the existing node.
+ * @returns {void}
+ */
+export const replaceNodeWithContent = (
+    editor: Editor,
+    tiptapNodeInfo: DotTiptapNodeInformation,
+    content: string
+): void => {
+    const { node, from, to } = tiptapNodeInfo;
+
+    // If the node is found, replace it with the new content
+    if (node) {
+        editor.chain().deleteRange({ from, to }).insertContentAt(from, content).run();
+    }
+};
+
+/**
+ * Find all occurrences of nodes of a specific type in the TipTap editor and determine their position ranges.
+ *
+ * @param {Editor} editor - The TipTap editor instance.
+ * @param {NodeTypes} nodeType - The type of the node to search for (e.g., 'paragraph').
+ * @returns {DotTiptapNodeInformation[] | null} An array containing information about the found nodes:
+ *          - `node`: The found node.
+ *          - `from`: The starting position of the found node in the document.
+ *          - `to`: The ending position (exclusive) of the found node in the document.
+ *          Returns `null` if no nodes of the specified type are found.
+ */
+export const findNodeByType = (
+    editor: Editor, // The TipTap editor instance
+    nodeType: NodeTypes // The type of the node to search for
+): DotTiptapNodeInformation[] | null => {
+    const nodes = [];
+
+    // Traverse the document's descendants
+    editor.state.doc.descendants((node, currentPosition) => {
+        if (node.type.name === nodeType) {
+            nodes.push({
+                node,
+                from: currentPosition,
+                to: currentPosition + node.nodeSize
+            });
+        }
+    });
+
+    return nodes.length ? nodes : null;
 };
 
 /**

@@ -19,7 +19,7 @@ export class DotProgressBar {
     render() {
         return (
             <Host>
-                <div  style={{'--progress-width': this.progress.toString() }} />
+                <div style={{ '--progress-width': this.progress.toString() }} />
                 <span>{this.text}</span>
             </Host>
         );

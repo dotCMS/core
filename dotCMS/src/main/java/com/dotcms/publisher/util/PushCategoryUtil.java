@@ -2,8 +2,8 @@ package com.dotcms.publisher.util;
 
 import com.dotcms.publisher.pusher.wrapper.CategoryWrapper;
 import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,7 +28,7 @@ public class PushCategoryUtil {
 	private int categoriesCount;
 	
 	public PushCategoryUtil(Collection<File> categories, String categoryExtension) throws DotPublishingException {
-		xstream=new XStream(new DomDriver());
+		xstream = XStreamHandler.newXStreamInstance();
 
 		categoriesByInode = new HashMap<>();
 		categoriesTopLevel = new HashSet<>();

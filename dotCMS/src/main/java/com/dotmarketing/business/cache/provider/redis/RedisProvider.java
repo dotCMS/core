@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.collections.map.LRUMap;
-import redis.clients.jedis.Client;
+import redis.clients.jedis.Connection;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -388,9 +388,8 @@ public class RedisProvider extends CacheProvider {
         try ( Jedis jedis = readPool.getResource() ) {
 
             //Getting some stats from redis
-            Client client = jedis.getClient();
-            client.info("memory");
-            String memoryStats = client.getBulkReply();
+            final Connection connection = jedis.getClient();
+            String memoryStats = connection.getBulkReply();
 
             //Read the total memory usage
             int memoryUsage = -1;

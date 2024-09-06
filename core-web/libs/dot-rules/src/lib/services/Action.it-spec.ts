@@ -1,17 +1,19 @@
 import {} from 'jasmine';
 
 import { Observable, Subscription } from 'rxjs';
-import { CwError } from '@dotcms/dotcms-js';
 
-import { RuleModel, RuleService, ActionModel } from './Rule';
 import { ReflectiveInjector } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+
+import { CwError } from '@dotcms/dotcms-js';
 import { ApiRoot } from '@dotcms/dotcms-js';
 import { UserModel } from '@dotcms/dotcms-js';
+
 import { ActionService } from './Action';
-import { ConditionGroupService } from './ConditionGroup';
 import { ConditionService } from './Condition';
+import { ConditionGroupService } from './ConditionGroup';
+import { RuleModel, RuleService, ActionModel } from './Rule';
 import { I18nService } from './system/locale/I18n';
-import { BrowserModule } from '@angular/platform-browser';
 
 const injector = ReflectiveInjector.resolveAndCreate([
     ApiRoot,

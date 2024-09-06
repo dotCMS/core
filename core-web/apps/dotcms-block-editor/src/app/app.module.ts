@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
-import { NgModule, Injector, DoBootstrap } from '@angular/core';
+import { DoBootstrap, Injector, NgModule } from '@angular/core';
 import { createCustomElement } from '@angular/elements';
 import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
@@ -10,8 +10,15 @@ import { ListboxModule } from 'primeng/listbox';
 import { OrderListModule } from 'primeng/orderlist';
 
 import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
+import {
+    DotPropertiesService,
+    DotContentSearchService,
+    DotLanguagesService
+} from '@dotcms/data-access';
+import { DotAssetSearchComponent } from '@dotcms/ui';
 
 import { AppComponent } from './app.component';
+
 @NgModule({
     declarations: [AppComponent],
     imports: [
@@ -22,9 +29,10 @@ import { AppComponent } from './app.component';
         BlockEditorModule,
         OrderListModule,
         ListboxModule,
-        HttpClientModule
+        HttpClientModule,
+        DotAssetSearchComponent
     ],
-    providers: []
+    providers: [DotPropertiesService, DotContentSearchService, DotLanguagesService]
 })
 export class AppModule implements DoBootstrap {
     constructor(private injector: Injector) {}

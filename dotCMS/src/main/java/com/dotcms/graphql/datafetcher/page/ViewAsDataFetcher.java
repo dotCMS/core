@@ -15,8 +15,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * This DataFetcher returns a {@link Map} representing a {@link Template} associated to the originally
- * requested {@link HTMLPageAsset}.
+ * This DataFetcher returns a {@link ViewAsPageStatus} representing the view as status of the originally
  */
 public class ViewAsDataFetcher implements DataFetcher<ViewAsPageStatus> {
     @Override
@@ -25,6 +24,7 @@ public class ViewAsDataFetcher implements DataFetcher<ViewAsPageStatus> {
             final DotGraphQLContext context = environment.getContext();
             final User user = context.getUser();
             final Contentlet contentlet = environment.getSource();
+
 
             final String pageModeAsString = (String) context.getParam("pageMode");
 

@@ -1,6 +1,7 @@
+import { DotApiContentType } from './DotApiContentType';
+
 import { DotCMSError } from '../models';
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { DotApiContentType } from './DotApiContentType';
 
 describe('DotApiContentType', () => {
     let httpClient: DotCMSHttpClient;

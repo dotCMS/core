@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import com.dotcms.ai.api.DotAIAPI;
+import com.dotcms.ai.api.DotAIAPIFacadeImpl;
 import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.AnalyticsAPIImpl;
 import com.dotcms.analytics.bayesian.BayesianAPI;
@@ -26,7 +28,18 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
-import com.dotcms.contenttype.business.*;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeDestroyAPI;
+import com.dotcms.contenttype.business.ContentTypeDestroyAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPI;
+import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPIImpl;
+import com.dotcms.contenttype.business.DotAssetAPI;
+import com.dotcms.contenttype.business.DotAssetAPIImpl;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.business.FieldAPIImpl;
+import com.dotcms.contenttype.business.StoryBlockAPI;
+import com.dotcms.contenttype.business.StoryBlockAPIImpl;
 import com.dotcms.device.DeviceAPI;
 import com.dotcms.device.DeviceAPIImpl;
 import com.dotcms.dotpubsub.DotPubSubProvider;
@@ -34,6 +47,8 @@ import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
+import com.dotcms.enterprise.achecker.ACheckerAPI;
+import com.dotcms.enterprise.achecker.impl.ACheckerAPIImpl;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
 import com.dotcms.enterprise.cluster.action.business.ServerActionAPI;
@@ -189,7 +204,7 @@ public class APILocator extends Locator<APIIndex> {
 			return;
 		}
 
-		String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null);
+		final String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null);
 		if (apiLocatorClass != null) {
 			instance = (APILocator) ReflectionUtils.newInstance(apiLocatorClass);
 		}
@@ -256,6 +271,16 @@ public class APILocator extends Locator<APIIndex> {
      */
 	public static SecurityLoggerServiceAPI getSecurityLogger() {
 		return (SecurityLoggerServiceAPI)getInstance(APIIndex.SECURITY_LOGGER_API);
+	}
+
+	/**
+	 * Creates a single instance of the {@link DotAIAPI} class.
+	 *
+	 * @return The {@link DotAIAPI} class.
+	 */
+	public static DotAIAPI getDotAIAPI() {
+
+		return  (DotAIAPI)getInstance(APIIndex.ARTIFICIAL_INTELLIGENCE_API);
 	}
 
 	/**
@@ -1138,6 +1163,10 @@ public class APILocator extends Locator<APIIndex> {
 		return (SystemAPI) getInstance(APIIndex.SYSTEM_API);
 	}
 
+	public static ACheckerAPI getACheckerAPI() {
+		return (ACheckerAPI) getInstance(APIIndex.ACHECKER_API);
+	}
+
 	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
@@ -1286,13 +1315,14 @@ enum APIIndex
 	DETERMINISTIC_IDENTIFIER_API,
 	CONTENTLET_JSON_API,
 	STORY_BLOCK_API,
+	ARTIFICIAL_INTELLIGENCE_API,
 	VARIANT_API,
 	EXPERIMENTS_API,
 	BAYESIAN_API,
 	ANALYTICS_API,
 	CONTENT_TYPE_DESTROY_API,
-
-	SYSTEM_API;
+	SYSTEM_API,
+	ACHECKER_API;
 
 	Object create() {
 		switch(this) {
@@ -1383,6 +1413,8 @@ enum APIIndex
 			case ANALYTICS_API: return new AnalyticsAPIImpl();
 			case CONTENT_TYPE_DESTROY_API: return new ContentTypeDestroyAPIImpl();
 			case SYSTEM_API: return new SystemAPIImpl();
+			case ARTIFICIAL_INTELLIGENCE_API: return new DotAIAPIFacadeImpl();
+			case ACHECKER_API: return new ACheckerAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

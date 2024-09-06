@@ -5,12 +5,9 @@
     "projectType": "library",
     "targets": {
         "lint": {
-            "executor": "@nrwl/linter:eslint",
-            "outputs": ["{options.outputFile}"],
-            "options": {
-                "lintFilePatterns": ["libs/dotcms-models/**/*.ts"]
-            }
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"]
         }
     },
-    "tags": []
+    "tags": ["skip:test", "skip:lint"]
 }

@@ -1,9 +1,15 @@
 package com.dotmarketing.portlets.categories.business;
 
+
+import java.util.Collection;
 import java.util.List;
 
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.categories.model.HierarchedCategory;
+import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
+
 
 /**
  * 
@@ -273,5 +279,49 @@ public abstract class CategoryFactory {
      * @throws DotDataException
      */
     abstract protected List<Category> getAllChildren(Categorizable parent) throws DotDataException;
-	
+
+	/**
+	 * Return a collection of {@link Category} objects, filtered based on the criteria specified in {@link CategorySearchCriteria}
+	 *
+	 * @param searchCriteria Search Criteria
+	 *
+	 * @return List of Category
+	 */
+	public abstract List<HierarchedCategory> findAll(final CategorySearchCriteria searchCriteria) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Find Categories by inodes and calculate its Hierarchy.
+	 *
+	 * For Example if you have the follows categories:
+	 *
+	 *
+	 * | Inode  | Name        |  key        |Parent          |
+	 * |--------|-------------|-------------|----------------|
+	 * | 1      | Top Category| top         | null           |
+	 * | 2      | Child       | child       | Top Category   |
+	 * | 3      | Grand Child | grand_child | Child          |
+	 *
+	 * And you search by key 'grand_child' then you got:
+	 *
+	 * Inode: 3
+	 * key: 'grand_child'
+	 * categoryName: 'Grand Child'
+	 * parentList <code>[
+	 *   {
+	 *       'categoryName':'Top Category',
+	 *       'key': 'top',
+	 *       'inode': '1'
+	 *   },
+	 *   {
+	 *       'categoryName':'Child',
+	 *       'key': 'child',
+	 *       'inode': '2'
+	 *   }
+	 * ]</code>
+	 *
+	 * @param keys List of keys to search
+	 * @return
+	 * @throws DotDataException
+	 */
+	public abstract List<HierarchyShortCategory> findHierarchy(final Collection<String> keys) throws DotDataException;
 }

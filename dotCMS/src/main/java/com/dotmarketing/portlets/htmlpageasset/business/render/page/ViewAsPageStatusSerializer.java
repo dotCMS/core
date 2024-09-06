@@ -47,6 +47,7 @@ public class ViewAsPageStatusSerializer extends JsonSerializer<ViewAsPageStatus>
         }
 
         viewAsMapBuilder.put("mode", viewAsPageStatus.getPageMode().toString());
+        viewAsMapBuilder.put("variantId", viewAsPageStatus.getVariantId());
 
         jsonGenerator.writeObject(viewAsMapBuilder.build());
     }

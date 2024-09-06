@@ -1,17 +1,17 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <p-sidebar [(visible)]="vm.status.isOpen" (onHide)="closeSidebar()" dotSidebar>
+    <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.status.isOpen" dotSidebar>
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.configure.scheduling.name' | dm }}"
-        ></dot-sidebar-header>
+            dotTitle="{{ 'experiments.configure.scheduling.name' | dm }}"></dot-sidebar-header>
         <div class="experiment-scheduling-add__form-wrapper flex flex-column">
-            <form class="p-fluid" [formGroup]="form" data-testId="add-scheduling-form" novalidate>
+            <form [formGroup]="form" class="p-fluid" data-testId="add-scheduling-form" novalidate>
                 <div class="field">
                     <label for="initialDate">
                         {{ 'experiments.configure.scheduling.start.time' | dm }}
                     </label>
                     <p-calendar
-                        id="initialDate"
+                        (onClear)="setDateBoundaries()"
+                        (onSelect)="setDateBoundaries()"
                         [defaultDate]="initialDate"
                         [minDate]="today"
                         [readonlyInput]="true"
@@ -19,18 +19,15 @@
                         [showIcon]="true"
                         [showTime]="true"
                         [stepMinute]="30"
-                        (onClear)="setDateBoundaries()"
-                        (onSelect)="setDateBoundaries()"
+                        id="initialDate"
                         data-testId="scheduling-startDate"
-                        formControlName="startDate"
-                    ></p-calendar>
+                        formControlName="startDate"></p-calendar>
                 </div>
                 <div class="field">
                     <label for="endTime">
                         {{ 'experiments.configure.scheduling.end.time' | dm }}
                     </label>
                     <p-calendar
-                        id="endTime"
                         [defaultDate]="minEndDate || initialDate"
                         [maxDate]="maxEndDate"
                         [minDate]="minEndDate || initialDate"
@@ -39,10 +36,9 @@
                         [showIcon]="true"
                         [showTime]="true"
                         [stepMinute]="30"
+                        id="endTime"
                         data-testId="scheduling-endDate"
-                        formControlName="endDate"
-                    >
-                    </p-calendar>
+                        formControlName="endDate"></p-calendar>
                 </div>
             </form>
         </div>
@@ -50,13 +46,12 @@
 
     <ng-template #actionHeaderBtnTpl>
         <button
+            (click)="save(vm.experimentId)"
             [disabled]="!form.valid"
             [loading]="vm.status.status === stepStatus.SAVING"
-            (click)="save(vm.experimentId)"
             data-testId="add-scheduling-button"
             label="{{ 'Done' | dm }}"
             pButton
-            type="submit"
-        ></button>
+            type="submit"></button>
     </ng-template>
 </ng-container>

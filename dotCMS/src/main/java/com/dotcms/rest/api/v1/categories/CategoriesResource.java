@@ -31,6 +31,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.business.PaginatedCategories;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -40,6 +41,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.File;
@@ -86,7 +92,6 @@ public class CategoriesResource {
     private final WebResource webResource;
     private final PaginationUtil paginationUtil;
     private final PaginationUtil extendedPaginationUtil;
-    private final PaginationUtil childrenCategoriesPaginationUtil;
     private final CategoryAPI categoryAPI;
     private final VersionableAPI versionableAPI;
 
@@ -97,25 +102,20 @@ public class CategoriesResource {
     public CategoriesResource() {
         this(new WebResource(), new PaginationUtil(new CategoriesPaginator()),
                 new PaginationUtil(new CategoryListDTOPaginator()),
-                new PaginationUtil(new ChildrenCategoryListDTOPaginator()),
                 APILocator.getCategoryAPI(),
                 APILocator.getVersionableAPI(),
                 WebAPILocator.getHostWebAPI(),
-                APILocator.getPermissionAPI(),
-                new CategoryHelper(APILocator.getCategoryAPI()));
+                APILocator.getPermissionAPI());
     }
 
     @VisibleForTesting
     public CategoriesResource(final WebResource webresource, final PaginationUtil paginationUtil,
             final PaginationUtil extendedPaginationUtil,
-            final PaginationUtil childrenCategoriesPaginationUtil,
             final CategoryAPI categoryAPI, final VersionableAPI versionableAPI,
-            final HostWebAPI hostWebAPI, final PermissionAPI permissionAPI,
-            final CategoryHelper categoryHelper) {
+            final HostWebAPI hostWebAPI, final PermissionAPI permissionAPI) {
         this.webResource = webresource;
         this.paginationUtil = paginationUtil;
         this.extendedPaginationUtil = extendedPaginationUtil;
-        this.childrenCategoriesPaginationUtil = childrenCategoriesPaginationUtil;
         this.categoryAPI = categoryAPI;
         this.versionableAPI = versionableAPI;
         this.hostWebAPI = hostWebAPI;
@@ -138,7 +138,6 @@ public class CategoriesResource {
      * <li>per_page: limit of items to return</li>
      * <li>ordeby: field to order by</li>
      * <li>direction: asc for upward order and desc for downward order</li>
-     * <li>showChildrenCount: true for including children categories count and false to exclude it</li>
      * </ul>
      * <p>
      * Url example: /api/v1/categories?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&showChildrenCount=true
@@ -196,22 +195,35 @@ public class CategoriesResource {
 
     /**
      * Return a list of {@link com.dotmarketing.portlets.categories.model.Category}, entity response
-     * syntax:.
+     * Syntax:.
      *
-     * <code> { contentTypes: array of Category total: total number of Categories } <code/>
+     * <code>
+     * {
+     *   contentTypes: array of Category,
+     *   total: total number of Categories
+     * }
+     * <code/>
+     *
      * <p>
      * Url syntax:
      * api/v1/categories/children?filter=filter-string&page=page-number&per_page=per-page&orderby=order-field-name&direction=order-direction&inode=parentId
      * <p>
-     * where:
      *
-     * <ul>
-     * <li>filter-string: just return Category whose content this pattern into its name</li>
-     * <li>page: page to return</li>
-     * <li>per_page: limit of items to return</li>
-     * <li>ordeby: field to order by</li>
-     * <li>direction: asc for upward order and desc for downward order</li>
-     * </ul>
+     * Parameeters:
+     *
+     * - filter-string: Return categories whose names contain this pattern.
+     * - page: The page number to return.
+     * - per_page: The limit of items to return.
+     * - orderby: The field to order by.
+     * - direction: Sorting direction, asc for ascending and desc for descending.
+     * - showChildrenCount: true to include the count of child categories, false to exclude it.
+     * - allLevels: A Boolean value. If TRUE, the search will include categories at any level.
+     * - inode: This represents a {@link Category}'s inode. The interpretation of this parameter depends on the value of
+     *  the allLevels parameter. If allLevels is true and inode is set, the search will start from this {@link Category}
+     *  and continue recursively through all its offspring. If allLevels is false, the search will be limited to
+     *  the immediate children of this {@link Category}.
+     * - parentList:"If this is true, an additional parameter called parentList is returned.
+     * This list contains {@link Category} objects, starting with the direct parent and going up to the top-level {@link Category}.
      * <p>
      * Url example: v1/categories/children?filter=test&page=0&per_page=5&orderby=category_name
      *
@@ -238,14 +250,14 @@ public class CategoriesResource {
             @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
             @QueryParam("inode") final String inode,
-            @QueryParam("showChildrenCount") final boolean showChildrenCount) throws DotDataException, DotSecurityException {
+            @QueryParam("showChildrenCount") final boolean showChildrenCount,
+            @QueryParam("allLevels") final boolean allLevels,
+            @QueryParam("parentList") final boolean parentList) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
 
-        Response response = null;
         final User user = initData.getUser();
-        final PageMode pageMode = PageMode.get(httpRequest);
 
         Logger.debug(this, () -> "Getting the List of children categories. " + String.format(
                 "Request query parameters are : {filter : %s, page : %s, perPage : %s, orderBy : %s, direction : %s, inode : %s}",
@@ -256,22 +268,100 @@ public class CategoriesResource {
 
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put("inode", inode);
-        extraParams.put("childrenCategories", true);
+        extraParams.put("searchInAllLevels", allLevels);
+        extraParams.put("parentList", parentList);
+        extraParams.put("showChildrenCount", showChildrenCount);
 
         try {
-            response = showChildrenCount == false ? this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
-                    direction.equals("ASC") == true ? OrderDirection.ASC : OrderDirection.DESC, extraParams)
-                    : this.childrenCategoriesPaginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
-                            direction.equals("ASC") == true ? OrderDirection.ASC : OrderDirection.DESC, extraParams);
+            return  this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
+                    direction.equals("ASC") ? OrderDirection.ASC : OrderDirection.DESC, extraParams);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
                 throw new ForbiddenException(e);
             }
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
+    }
 
-        return response;
+    /**
+     * Response with the list of parents for a specific set of {@link Category}.
+     *
+     * This ned point receive a list the {@link Category}'s endpoint as follow:
+     *
+     * <code>
+     *     {
+     *         "keys": ["key_1", "key_2"]
+     *     }
+     * </code>
+     *
+     * The output is going to be something like:
+     *
+     * <code>
+     *     {
+     *         entity: [
+     *              {
+     *                  "inode": "1",
+     *                  "key": "key_1",
+     *                  "name": "Name_1",
+     *                  "parentList": [
+     *                       {
+     *                          'name': 'Grand Parent Name',
+     *                          'key': 'Grand Parent  Key',
+     *                          'inode': 'Grand Parent  inode'
+     *                      },
+     *                       {
+     *                          'name': 'Parent Name',
+     *                          'key': 'Parent  Key',
+     *                          'inode': 'Parent  inode'
+     *                      }
+     *                  ]
+     *              },
+     *              {
+     *                  "inode": "2",
+     *                  "key": "key_2",
+     *                  "name": "Name_2",
+     *                  "parentList": [
+     *                       {
+     *                          'name': 'Category name value',
+     *                          'key': 'Key value',
+     *                          'inode': 'inode value'
+     *                      }
+     *                  ]
+     *              }
+     *         ]
+     *     }
+     * </code>
+     *
+     *  parentList is the list of parents where the 0 is the more top level parent and the last one is the direct
+     *  parent.
+     *
+     * @param httpRequest
+     * @param httpResponse
+     * @param form
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @POST
+    @Path(("/hierarchy"))
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "getSchemes", summary = "Get the List of Parents from  set of categories",
+            description = "Response with the list of parents for a specific set of categories. If any of the categories" +
+                    "does not exists then it is just ignored"
+    )
+    public final HierarchyShortCategoriesResponseView getHierarchy(@Context final HttpServletRequest httpRequest,
+                                       @Context final HttpServletResponse httpResponse,
+                                       final CategoryKeysForm form) throws DotDataException {
+
+        Logger.debug(this, () -> "Getting the List of Parents for the follow categories: " +
+                String.join(",", form.getKeys()));
+
+        webResource.init(null, httpRequest, httpResponse, true, null);
+
+        return new HierarchyShortCategoriesResponseView(categoryAPI.findHierarchy(form.getKeys()));
     }
 
     /**
@@ -463,7 +553,7 @@ public class CategoriesResource {
                 : this.getChildren(httpRequest, httpResponse, categoryEditForm.getFilter(),
                         categoryEditForm.getPage(),
                         categoryEditForm.getPerPage(), "", categoryEditForm.getDirection(),
-                        categoryEditForm.getParentInode(), true);
+                        categoryEditForm.getParentInode(), true, false, false);
     }
 
     /**

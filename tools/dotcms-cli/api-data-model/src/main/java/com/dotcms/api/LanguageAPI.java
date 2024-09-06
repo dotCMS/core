@@ -5,17 +5,18 @@ import com.dotcms.api.provider.DotCMSClientHeaders;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.language.Language;
 import com.dotcms.model.views.CommonViews;
+import com.dotcms.model.views.CommonViews.LanguageFileView;
 import com.fasterxml.jackson.annotation.JsonView;
 import java.util.List;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.tags.Tags;
@@ -26,7 +27,7 @@ import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tags(
-        value = { @Tag(name = "Language")}
+        value = {@Tag(name = "Language")}
 )
 @RegisterClientHeaders(DotCMSClientHeaders.class)
 @RegisterProvider(DefaultResponseExceptionMapper.class)
@@ -43,13 +44,42 @@ public interface LanguageAPI {
     )
     ResponseEntityView<Language> findById(@PathParam("languageid") String languageId);
 
+    @GET
+    @Path("/id/{languageid}")
+    @Operation(
+            summary = " Returns the Language that matches the specified id but using a different "
+                    + "view, a reduced one, for pull operations and the generation of the language "
+                    + "files."
+    )
+    @JsonView(LanguageFileView.class)
+    ResponseEntityView<Language> findByIdForPull(@PathParam("languageid") String languageId);
 
     @GET
     @Path("/{languageTag}")
     @Operation(
             summary = " Returns the Language that matches the specified ISO code"
     )
-    ResponseEntityView<Language> getFromLanguageIsoCode(@PathParam("languageTag") String languageIsoCode);
+    ResponseEntityView<Language> getFromLanguageIsoCode(
+            @PathParam("languageTag") String languageIsoCode);
+
+    @GET
+    @Path("/{languageTag}")
+    @Operation(
+            summary = " Returns the Language that matches the specified ISO code but using a "
+                    + "different view, a reduced one, for pull operations and the generation of the "
+                    + "language files."
+    )
+    @JsonView(LanguageFileView.class)
+    ResponseEntityView<Language> getFromLanguageIsoCodeForPull(
+            @PathParam("languageTag") String languageIsoCode);
+
+    @GET
+    @Operation(
+            summary = " Returns all the languages in the system but using a different view, a "
+                    + "reduced one, for pull operations and the generation of the language files."
+    )
+    @JsonView(LanguageFileView.class)
+    ResponseEntityView<List<Language>> listForPull();
 
     @GET
     @Operation(
@@ -61,23 +91,28 @@ public interface LanguageAPI {
     @Operation(
             summary = " Creates a new language in the system"
     )
+    @JsonView(CommonViews.LanguageFileView.class)
     ResponseEntityView<Language> create(
-            @JsonView(CommonViews.ExternalView.class) Language language);
+            @JsonView(CommonViews.LanguageWriteView.class) Language language);
 
     @POST
     @Path("/{languageTag}")
     @Operation(
             summary = " Creates a new language in the system given its ISO code"
     )
-    ResponseEntityView<Language> create(@PathParam("languageTag") String languageIsoCode);
+    @JsonView(CommonViews.LanguageFileView.class)
+    ResponseEntityView<Language> create(
+            @JsonView(CommonViews.LanguageWriteView.class)
+            @PathParam("languageTag") String languageIsoCode);
 
     @PUT
     @Path("/{languageId}")
     @Operation(
             summary = " Updates an existing language in the system"
     )
+    @JsonView(CommonViews.LanguageFileView.class)
     ResponseEntityView<Language> update(@PathParam("languageId") String languageId,
-            @JsonView(CommonViews.ExternalView.class) Language language);
+            @JsonView(CommonViews.LanguageWriteView.class) Language language);
 
     @DELETE
     @Path("/{languageId}")

@@ -31,6 +31,10 @@ export interface DotCMSContentlet {
     text?: string;
     url: string;
     working: boolean;
+    body?: string;
+    contentTypeIcon?: string;
+    variant?: string;
+    __icon__?: string;
     [key: string]: any;
 }
 

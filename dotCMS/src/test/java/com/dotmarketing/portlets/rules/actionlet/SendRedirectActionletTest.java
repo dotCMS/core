@@ -72,7 +72,7 @@ public class SendRedirectActionletTest extends UnitTestBase {
         HttpServletRequest request = mock(HttpServletRequest.class);
 
         when(request.getAttribute(CMS_FILTER_URI_OVERRIDE)).thenReturn("/index");
-        String url = "//foo";
+        String url = "/foo";
         ParameterModel paramURL = new ParameterModel(URL_KEY, url);
         ParameterModel paramRedirectMethod = new ParameterModel(INPUT_REDIRECT_METHOD, REDIRECT_METHOD.MOVED_PERM.name());
         Map<String, ParameterModel> params = new HashMap<>();

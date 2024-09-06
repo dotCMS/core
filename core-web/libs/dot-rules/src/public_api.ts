@@ -28,3 +28,4 @@ export * from './lib/services/bundle-service';
 export * from './lib/services/system/locale/I18n';
 export * from './lib/components/dot-autocomplete-tags/dot-autocomplete-tags.module';
 export * from './lib/directives/dot-autofocus/dot-autofocus.module';
+export * from './lib/dot-rules.module';

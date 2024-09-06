@@ -18,8 +18,7 @@ export class DotBadge {
                     '--bg-color': this.bgColor,
                     '--color': this.color,
                     '--font-size': this.size
-                }}
-            >
+                }}>
                 <div class={this.bordered ? 'bordered' : null}>
                     <slot />
                 </div>
