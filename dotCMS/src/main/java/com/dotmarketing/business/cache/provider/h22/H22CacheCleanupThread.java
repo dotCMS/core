@@ -45,7 +45,7 @@ public class H22CacheCleanupThread extends Thread {
 						new TrashUtils().moveFileToTrash(folder, "h22");
 					}
 				} catch (IOException e) {
-					//Prevent Flakey tests
+					//Prevent Flaky tests from failing
 					Logger.warn(this.getClass(), "unable to delete folder:" + folder, e);
 				}
 			}
