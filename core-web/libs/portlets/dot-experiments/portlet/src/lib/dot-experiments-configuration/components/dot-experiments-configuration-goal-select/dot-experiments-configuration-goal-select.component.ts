@@ -163,7 +163,11 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     }
 
     private resetGoalConditions(): void {
-        (this.form.get('primary.conditions') as FormArray).clear();
+        this.conditionsField.clear();
+    }
+
+    get conditionsField() {
+        return this.form.get('primary.conditions') as FormArray;
     }
 
     /**
