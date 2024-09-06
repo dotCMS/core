@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Represents the response from a GraphQL query for a page.
  *
@@ -30,7 +31,7 @@ export const graphqlToPageEntity = (graphQLPageResponse: GraphQLPageResponse) =>
     }
 
     const { layout, template, containers, urlContentMap, viewAs, site, _map, ...pageAsset } = page;
-    const data = _map || {};
+    const data = (_map || {}) as Record<string, unknown>;
 
     return {
         layout,
@@ -43,7 +44,7 @@ export const graphqlToPageEntity = (graphQLPageResponse: GraphQLPageResponse) =>
             ...pageAsset
         },
         containers: parseContainers(containers as [])
-    };
+    } as any;
 };
 
 /**
