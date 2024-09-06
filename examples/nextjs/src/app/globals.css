@@ -17,3 +17,12 @@
     overflow: hidden;
   }
 }
+
+/* Custom classes, example to BlockEditorRenderer */
+table, th, td {
+  border: 1px solid;
+}
+
+.blocks {
+  border: 5px solid red;
+}

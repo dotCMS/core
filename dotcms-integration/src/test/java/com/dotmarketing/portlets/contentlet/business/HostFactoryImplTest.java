@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -9,6 +10,8 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -188,6 +191,93 @@ public class HostFactoryImplTest extends IntegrationTestBase {
         assertNull(nonExistingHost);
         assertNotNull(cached404Host);
         assertEquals(HostCache.CACHE_404_HOST, cached404Host.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link HostAPIImpl#delete(Host, User, boolean, boolean)}
+     * When: Try to archive and delete a Host that had a Published Template in it
+     * should: Archive and Delete both SIte and Template
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void deleteHostWithTemplate() throws DotDataException, DotSecurityException, WebAssetException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        APILocator.getTemplateAPI().publishTemplate(template, APILocator.systemUser(), false);
+
+        APILocator.getHostAPI().archive(host, APILocator.systemUser(), false);
+        APILocator.getHostAPI().delete(host, APILocator.systemUser(), false);
+
+        final Host hostFromDB = APILocator.getHostAPI().find(host.getIdentifier(),
+                APILocator.systemUser(), false);
+
+        final Template templateFromDB = APILocator.getTemplateAPI().findWorkingTemplate(template.getIdentifier(),
+                APILocator.systemUser(), false);
+
+        assertNull(hostFromDB);
+        assertNull(templateFromDB);
+
+    }
+
+    /**
+     * Method to test: {@link HostAPIImpl#delete(Host, User, boolean, boolean)}
+     * When: Try to archive and delete a Host that had a Archived Template in it
+     * should: Archive and Delete both SIte and Template
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void deleteHostWithArchiveTemplate() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        APILocator.getTemplateAPI().unpublishTemplate(template, APILocator.systemUser(), false);
+        APILocator.getTemplateAPI().archive(template, APILocator.systemUser(), false);
+
+        APILocator.getHostAPI().archive(host, APILocator.systemUser(), false);
+        APILocator.getHostAPI().delete(host, APILocator.systemUser(), false);
+
+        final Host hostFromDB = APILocator.getHostAPI().find(host.getIdentifier(),
+                APILocator.systemUser(), false);
+
+        final Template templateFromDB = APILocator.getTemplateAPI().findWorkingTemplate(template.getIdentifier(),
+                APILocator.systemUser(), false);
+
+        assertNull(hostFromDB);
+        assertNull(templateFromDB);
+
+    }
+
+    /**
+     * Method to test: {@link HostAPIImpl#delete(Host, User, boolean, boolean)}
+     * When: Try to archive and delete a Host that had a Unpublished Template in it
+     * should: Archive and Delete both SIte and Template
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void deleteHostWithUnpublishedTemplate() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        APILocator.getTemplateAPI().unpublishTemplate(template, APILocator.systemUser(), false);
+
+        APILocator.getHostAPI().archive(host, APILocator.systemUser(), false);
+        APILocator.getHostAPI().delete(host, APILocator.systemUser(), false);
+
+        final Host hostFromDB = APILocator.getHostAPI().find(host.getIdentifier(),
+                APILocator.systemUser(), false);
+
+        final Template templateFromDB = APILocator.getTemplateAPI().findWorkingTemplate(template.getIdentifier(),
+                APILocator.systemUser(), false);
+
+        assertNull(hostFromDB);
+        assertNull(templateFromDB);
+
     }
 }
 

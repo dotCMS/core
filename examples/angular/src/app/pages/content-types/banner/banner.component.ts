@@ -1,5 +1,5 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DotCMSContentlet, DotEditableTextComponent } from '@dotcms/angular';
 
@@ -8,29 +8,29 @@ import { DotCMSContentlet, DotEditableTextComponent } from '@dotcms/angular';
   standalone: true,
   imports: [RouterLink, NgOptimizedImage, DotEditableTextComponent],
   template: `<div
-    class="relative w-full bg-gray-200 h-96 flex justify-center items-center overflow-hidden"
+    class="flex overflow-hidden relative justify-center items-center w-full h-96 bg-gray-200"
   >
-    @if (contentlet.image; as image) {
+    @if (contentlet().image; as image) {
     <img
       class="object-cover w-full"
       [ngSrc]="image"
-      [alt]="contentlet.title"
+      [alt]="contentlet().title"
       fill
       priority
     />
     }
     <div
-      class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white"
+      class="flex absolute inset-0 flex-col justify-center items-center p-4 text-center text-white"
     >
       <h2 class="mb-2 text-6xl font-bold text-shadow">
-        <dot-editable-text fieldName="title" [contentlet]="contentlet" />
+        <dot-editable-text fieldName="title" [contentlet]="contentlet()" />
       </h2>
-      <p class="mb-4 text-xl text-shadow">{{ contentlet['caption'] }}</p>
+      <p class="mb-4 text-xl text-shadow">{{ contentlet()['caption'] }}</p>
       <a
-        class="p-4 text-xl transition duration-300 bg-red-400 rounded hover:bg-red-500"
-        [routerLink]="contentlet['link']"
+        class="p-4 text-xl bg-red-400 rounded transition duration-300 hover:bg-red-500"
+        [routerLink]="contentlet()['link']"
       >
-        {{ contentlet['buttonText'] }}
+        {{ contentlet()['buttonText'] }}
       </a>
     </div>
   </div>`,
@@ -38,5 +38,5 @@ import { DotCMSContentlet, DotEditableTextComponent } from '@dotcms/angular';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BannerComponent {
-  @Input() contentlet!: DotCMSContentlet;
+  contentlet = input.required<DotCMSContentlet>();
 }

@@ -19,6 +19,7 @@ export * from './lib/dot-global-message/dot-global-message.service';
 export * from './lib/dot-languages/dot-languages.service';
 export * from './lib/dot-license/dot-license.service';
 export * from './lib/dot-localstorage/dot-localstorage.service';
+export * from './lib/dot-session-storages/dot-session-storage.service';
 export * from './lib/dot-messages/dot-messages.service';
 export * from './lib/dot-page-layout/dot-page-layout.service';
 export * from './lib/dot-page-render/dot-page-render.service';
