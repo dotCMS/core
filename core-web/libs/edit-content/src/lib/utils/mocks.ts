@@ -704,7 +704,8 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     WYSIWYG_MOCK,
     HOST_FOLDER_TEXT_MOCK,
     CATEGORY_MOCK,
-    CONSTANT_FIELD_MOCK
+    CONSTANT_FIELD_MOCK,
+    HIDDEN_FIELD_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
