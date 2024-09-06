@@ -2,7 +2,6 @@ import { Subject } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
     EventEmitter,
     Input,
@@ -63,8 +62,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     constructor(
         private siteService: SiteService,
         public paginationService: PaginatorService,
-        private dotEventsService: DotEventsService,
-        private cd: ChangeDetectorRef
+        private dotEventsService: DotEventsService
     ) {}
 
     ngOnInit(): void {
@@ -149,7 +147,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     /**
-     * Call when the pagination changed
+     * Call to load a new page.
      * @param {string} filter
      * @param {number} offset
      * @memberof DotSiteSelectorComponent
