@@ -294,14 +294,20 @@ public class OSGIUtil {
                 }
             }
 
-            if (versionAttr != null) {
-                // check version format
-                Version.parseVersion(versionAttr.toString());
-            }
+            try {
+                if (versionAttr != null) {
+                    // check version format
+                    Version.parseVersion(versionAttr.toString());
+                }
 
-            if (packageSpecVersion != null) {
-                // check version format
-                Version.parseVersion(packageSpecVersion.toString());
+                if (packageSpecVersion != null) {
+                    // check version format
+                    Version.parseVersion(packageSpecVersion.toString());
+                }
+            } catch (IllegalArgumentException e) {
+
+                Logger.error(this, e.getMessage() + ".\nPackages: " + osgiPackages);
+                throw new OsgiException(e.getMessage(), e);
             }
         }
     }
