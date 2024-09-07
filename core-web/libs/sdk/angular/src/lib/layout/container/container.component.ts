@@ -25,6 +25,13 @@ interface DotContainer {
     variantId?: string;
 }
 
+/**
+ * This component is responsible to display a container with contentlets.
+ *
+ * @export
+ * @class ContainerComponent
+ * @implements {OnChanges}
+ */
 @Component({
     selector: 'dotcms-container',
     standalone: true,
@@ -34,6 +41,12 @@ interface DotContainer {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ContainerComponent implements OnChanges {
+    /**
+     * The container object containing the contentlets.
+     *
+     * @type {DotCMSContainer}
+     * @memberof ContainerComponent
+     */
     @Input({ required: true }) container!: DotCMSContainer;
 
     private readonly pageContextService: PageContextService = inject(PageContextService);
@@ -45,12 +58,54 @@ export class ContainerComponent implements OnChanges {
     protected $dotContainer = signal<DotContainer | null>(null);
     protected $dotContainerAsString = computed(() => JSON.stringify(this.$dotContainer()));
 
+    /**
+     * The accept types for the container component.
+     *
+     * @type {(string | null)}
+     * @memberof ContainerComponent
+     */
     @HostBinding('attr.data-dot-accept-types') acceptTypes: string | null = null;
+
+    /**
+     * The identifier for the container component.
+     *
+     * @type {(string | null)}
+     * @memberof ContainerComponent
+     */
     @HostBinding('attr.data-dot-identifier') identifier: string | null = null;
+    /**
+     * The max contentlets for the container component.
+     *
+     * @type {(number | null)}
+     * @memberof ContainerComponent
+     */
     @HostBinding('attr.data-max-contentlets') maxContentlets: number | null = null;
+    /**
+     * The uuid for the container component.
+     *
+     * @type {(string | null)}
+     * @memberof ContainerComponent
+     */
     @HostBinding('attr.data-dot-uuid') uuid: string | null = null;
+    /**
+     * The class for the container component.
+     *
+     * @type {(string | null)}
+     * @memberof ContainerComponent
+     */
     @HostBinding('class') class: string | null = null;
+    /**
+     * The dot object for the container component.
+     *
+     * @type {(string | null)}
+     * @memberof ContainerComponent
+     */
     @HostBinding('attr.data-dot-object') dotObject: string | null = null;
+    /**
+     * The data-testid attribute used for identifying the component during testing.
+     *
+     * @memberof ContainerComponent
+     */
     @HostBinding('attr.data-testid') testId = 'dot-container';
 
     ngOnChanges() {
