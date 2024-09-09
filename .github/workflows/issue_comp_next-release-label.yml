@@ -50,17 +50,28 @@ jobs:
           retry-exempt-status-codes: 400,401
           github-token: ${{ secrets.CI_MACHINE_TOKEN }}
           script: |
-            const issue = context.payload.issue || await github.rest.issues.get({
-              issue_number: ${{ inputs.issue_number }},
-              owner: '${{ github.repository_owner }}',
-              repo: 'core'
-            });
+            async function getIssue(issueNumber) {
+                return github.rest.issues.get({
+                    issue_number: issueNumber,
+                    owner: '${{ github.repository_owner }}',
+                    repo: 'core'
+                });
+            }
+            
+            let issue = context.payload.issue;
             if (!issue) {
+              if (!!'${{ inputs.issue_number }}') {
+                issue = await getIssue(${{ inputs.issue_number }});
+              }
+            
+              if (!issue) {
                 console.log('Issue [${{ inputs.issue_number }}] not found');
                 process.exit(0);
+              }
             }
             
             console.log(`Issue: ${JSON.stringify(issue, null, 2)}`);
+            const issueNumber = issue.data.number;
             
             const dropAndLearnText = 'Drop Everything & Learn';
             if (issue.data.title.includes(dropAndLearnText)) {
@@ -76,15 +87,11 @@ jobs:
             }
 
             await github.rest.issues.addLabels({
-              issue_number: ${{ inputs.issue_number }},
+              issue_number: issueNumber,
               owner: '${{ github.repository_owner }}',
               repo: 'core',
               labels: ['Next Release']
             });
 
-            const updated = await github.rest.issues.get({
-              issue_number: ${{ inputs.issue_number }},
-              owner: '${{ github.repository_owner }}',
-              repo: 'core'
-            });
+            const updated = await getIssue(issueNumber);
             console.log(`Labels: ${JSON.stringify(updated.data.labels, null, 2)}`);
