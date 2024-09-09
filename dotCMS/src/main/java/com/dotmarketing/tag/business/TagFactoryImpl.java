@@ -325,7 +325,7 @@ public class TagFactoryImpl implements TagFactory {
         } catch ( Exception e ) {
             Logger.warn(Tag.class, "getFilteredTags failed: " + e, e);
         }
-        return new java.util.ArrayList<>();
+        return List.of();
     }
 
     @Override
@@ -493,7 +493,7 @@ public class TagFactoryImpl implements TagFactory {
             tagInodeCache.putForTagId(tagId, tagInodes);
         }
 
-        return tagInodes;
+        return List.copyOf(tagInodes);
     }
 
     @Override
@@ -636,7 +636,7 @@ public class TagFactoryImpl implements TagFactory {
             tagCache.putForInode(inode, tags);
         }
 
-        return tags;
+        return List.copyOf(tags);
     }
 
     @Override
@@ -658,7 +658,7 @@ public class TagFactoryImpl implements TagFactory {
             }
         }
 
-        return tags;
+        return List.copyOf(tags);
     }
 
     @Override
@@ -691,7 +691,7 @@ public class TagFactoryImpl implements TagFactory {
                 .addParam(siteId)
                 .loadObjectResults();
 
-        return results.stream().map(row -> row.get(TAG_COLUMN_TAGNAME).toString()).collect(Collectors.toSet());
+        return results.stream().map(row -> row.get(TAG_COLUMN_TAGNAME).toString()).collect(Collectors.toUnmodifiableSet());
     }
 
     /**
@@ -724,7 +724,7 @@ public class TagFactoryImpl implements TagFactory {
             }
         }
 
-        return new ArrayList<>(tagsMap.values());
+        return List.copyOf(tagsMap.values());
     }
 
     /**
@@ -744,7 +744,7 @@ public class TagFactoryImpl implements TagFactory {
             }
         }
 
-        return tags;
+        return List.copyOf(tags);
     }
 
     /**
@@ -764,7 +764,7 @@ public class TagFactoryImpl implements TagFactory {
             }
         }
 
-        return tagInodes;
+        return List.copyOf(tagInodes);
     }
 
 	/**
