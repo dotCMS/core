@@ -1,5 +1,5 @@
 # action.yml
-name: 'QA not needed update'
+name: 'Label to Next Release'
 on:
   workflow_call:
     secrets:
@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       QA_NOT_NEEDED_LABEL: 'QA : Not Needed'
+      REPO: core
     steps:
       - run: echo 'GitHub context'
         env:
@@ -51,11 +52,12 @@ jobs:
           github-token: ${{ secrets.CI_MACHINE_TOKEN }}
           script: |
             async function getIssue(issueNumber) {
-                return github.rest.issues.get({
+                const response = await github.rest.issues.get({
                     issue_number: issueNumber,
                     owner: '${{ github.repository_owner }}',
-                    repo: 'core'
+                    repo: '${{ env.REPO }}'
                 });
+                return response.data;
             }
             
             let issue = context.payload.issue;
@@ -71,7 +73,7 @@ jobs:
             }
             
             console.log(`Issue: ${JSON.stringify(issue, null, 2)}`);
-            const issueNumber = issue.data.number;
+            const issueNumber = issue.number;
             
             const dropAndLearnText = 'Drop Everything & Learn';
             if (issue.data.title.includes(dropAndLearnText)) {
@@ -89,9 +91,9 @@ jobs:
             await github.rest.issues.addLabels({
               issue_number: issueNumber,
               owner: '${{ github.repository_owner }}',
-              repo: 'core',
+              repo: '${{ env.REPO }}',
               labels: ['Next Release']
             });
 
             const updated = await getIssue(issueNumber);
-            console.log(`Labels: ${JSON.stringify(updated.data.labels, null, 2)}`);
+            console.log(`Labels: ${JSON.stringify(updated.labels, null, 2)}`);
