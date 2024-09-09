@@ -51,7 +51,7 @@ const initialState: EditorState = {
     contentletArea: null,
     dragItem: null,
     ogTags: null,
-    isStylesPanelOpen: false
+    componentToStyle: null
 };
 
 /**
@@ -109,7 +109,7 @@ export function withEditor() {
                     const params = store.params();
                     const isTraditionalPage = store.isTraditionalPage();
                     const isClientReady = store.isClientReady();
-                    const isStylesPanelOpen = store.isStylesPanelOpen();
+                    const componentToStyle = store.componentToStyle();
                     const contentletArea = store.contentletArea();
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
@@ -139,7 +139,7 @@ export function withEditor() {
                     const iframeURL = new URL(pageAPIQueryParams, origin);
 
                     return {
-                        isStylesPanelOpen,
+                        componentToStyle,
                         showDialogs: showDialogs,
                         showEditorContent: !socialMedia,
                         iframe: {
@@ -297,8 +297,8 @@ export function withEditor() {
                 setOgTags(ogTags: SeoMetaTags) {
                     patchState(store, { ogTags });
                 },
-                setStylesPanelOpen(isOpen: boolean) {
-                    patchState(store, { isStylesPanelOpen: isOpen });
+                setStylesPanelOpen(contentlet: ContentletPayload) {
+                    patchState(store, { componentToStyle: contentlet });
                 }
             };
         })

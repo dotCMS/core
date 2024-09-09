@@ -60,11 +60,9 @@
     </div>
 }
 
-@if ($editorProps().isStylesPanelOpen) {
+@if (!!$editorProps().componentToStyle) {
     <div class="sidepanel">
-        <h2>Hello World</h2>
-        <button (click)="closeStylesPanel()">close</button>
-        <dot-uve-edit-style-form />
+        <dot-uve-edit-style-form [contentlet]="$editorProps().componentToStyle" />
     </div>
 } @else {
     @if ($editorProps().palette; as palette) {

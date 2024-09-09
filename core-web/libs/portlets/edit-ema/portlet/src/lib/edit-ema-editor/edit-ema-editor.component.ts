@@ -634,16 +634,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     protected handleEditStyles(payload: ActionPayload): void {
-        // TODO: Implement the logic for editing styles
-        console.log('Editing styles for contentlet:', payload);
-        this.uveStore.setStylesPanelOpen(true);
-
-        // Note: You'll need to implement the `editStyles` method in your dialog service
-        // and create the necessary components for the style editing interface
+        this.uveStore.setStylesPanelOpen(payload.contentlet);
     }
 
     protected closeStylesPanel() {
-        this.uveStore.setStylesPanelOpen(!this.uveStore.isStylesPanelOpen());
+        this.uveStore.setStylesPanelOpen(null);
     }
 
     /**

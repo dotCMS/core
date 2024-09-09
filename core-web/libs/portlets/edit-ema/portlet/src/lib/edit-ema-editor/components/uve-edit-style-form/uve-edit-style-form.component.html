@@ -1,1 +1,21 @@
-<p>uve-edit-style-form works!</p>
+{{contentlet().identifier}}
+
+<form [formGroup]="form">
+    @for (field of fields(); track field.name) {
+        <div class="flex flex-column gap-2 mb-2">
+            <label [for]="field.name">{{ field.name }}</label>
+            
+            @if (field.type === 'select') {
+                <p-dropdown 
+                    [id]="field.name" 
+                    [formControlName]="field.name"
+                    [options]="field.options"
+                    optionLabel="name"
+                    optionValue="value"
+                    [attr.aria-describedby]="field.name + '-help'"
+                    [placeholder]="'Select ' + field.name">
+                </p-dropdown>
+            }
+        </div>
+    }
+</form>

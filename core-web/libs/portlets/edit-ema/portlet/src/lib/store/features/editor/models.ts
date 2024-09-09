@@ -13,7 +13,7 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE } from '../../../shared/enums';
-import { DotDeviceWithIcon } from '../../../shared/models';
+import { ContentletPayload, DotDeviceWithIcon } from '../../../shared/models';
 
 export interface EditorState {
     bounds: Container[];
@@ -21,7 +21,7 @@ export interface EditorState {
     contentletArea?: ContentletArea;
     dragItem?: EmaDragItem;
     ogTags?: SeoMetaTags;
-    isStylesPanelOpen: boolean;
+    componentToStyle: ContentletPayload | null;
 }
 
 export interface EditorToolbarState {
@@ -83,7 +83,7 @@ export interface EditorProps {
     showDialogs: boolean;
     progressBar: boolean;
     showEditorContent: boolean;
-    isStylesPanelOpen: boolean;
+    componentToStyle: ContentletPayload;
 }
 
 export interface ToolbarProps {
