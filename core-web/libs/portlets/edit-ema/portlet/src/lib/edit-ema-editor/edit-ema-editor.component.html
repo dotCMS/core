@@ -1,3 +1,5 @@
+{{ $editorProps().isStylesPanelOpen }}
+
 <dot-edit-ema-toolbar (editUrlContentMap)="editContentMap($event)" />
 @if ($editorProps().seoResults && ogTagsResults$) {
     <dot-results-seo-tool
@@ -41,6 +43,7 @@
                     (edit)="handleEditContentlet($event)"
                     (editVTL)="handleEditVTL($event)"
                     (delete)="deleteContentlet($event)"
+                    (editStyles)="handleEditStyles($event)"
                     (addWidget)="dialog.addWidget($event)"
                     (addForm)="dialog.addForm($event)"
                     (addContent)="dialog.addContentlet($event)"

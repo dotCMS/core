@@ -21,6 +21,7 @@ export interface EditorState {
     contentletArea?: ContentletArea;
     dragItem?: EmaDragItem;
     ogTags?: SeoMetaTags;
+    isStylesPanelOpen: boolean;
 }
 
 export interface EditorToolbarState {
@@ -82,6 +83,7 @@ export interface EditorProps {
     showDialogs: boolean;
     progressBar: boolean;
     showEditorContent: boolean;
+    isStylesPanelOpen: boolean;
 }
 
 export interface ToolbarProps {
