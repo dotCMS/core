@@ -33,7 +33,6 @@ import io.vavr.control.Try;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.apache.felix.framework.cache.ConnectContentContent;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.framework.util.manifestparser.ManifestParser;
 import org.apache.felix.framework.util.manifestparser.ParsedHeaderClause;
@@ -42,7 +41,6 @@ import org.apache.felix.main.Main;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.Version;
@@ -918,7 +916,7 @@ public class OSGIUtil {
 
     }
 
-    private void writeExtraPackagesFiles(final Set<String> packages, final boolean testDryRun) throws IOException {
+    private void writeExtraPackagesFiles(final Set<String> packages, final boolean testDryRun) {
 
         this.writeOsgiExtras(packagesToOrderedString(packages), testDryRun);
     }
