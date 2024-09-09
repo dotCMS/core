@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, signal, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { DropdownModule } from 'primeng/dropdown';
 import { ContentletPayload } from '../../../shared/models';
+import { debounceTime } from 'rxjs/operators';
 
 interface FieldOption {
   name: string;
@@ -14,6 +15,7 @@ interface Field {
   name: string;
   type: 'select' | 'string';
   options?: FieldOption[];
+  id: string;
 }
 
 @Component({
@@ -27,10 +29,13 @@ interface Field {
 export class UveEditStyleFormComponent {
     contentlet = input.required<ContentletPayload>();
 
+    @Output() formValueChange = new EventEmitter<any>();
+
     fields = signal<Field[]>([
         {
           name: "Font Size",
           type: "select",
+          id: "fontSize",
           options: [
             { name: "Small", value: "small" },
             { name: "Medium", value: "medium" },
@@ -40,6 +45,7 @@ export class UveEditStyleFormComponent {
         {
             name: "Color",
             type: "select",
+            id: "color",
             options: [
                 { name: "Red", value: "red" },
                 { name: "Blue", value: "blue" },
@@ -53,11 +59,23 @@ export class UveEditStyleFormComponent {
     constructor(private fb: FormBuilder) {
         this.form = this.fb.group({});
         this.initForm();
+        this.setupFormValueChanges();
     }
 
     private initForm(): void {
         this.fields().forEach(field => {
-            this.form.addControl(field.name, this.fb.control(''));
+            this.form.addControl(field.id, this.fb.control(''));
+        });
+    }
+
+    private setupFormValueChanges(): void {
+        this.form.valueChanges.pipe(
+            debounceTime(1000)
+        ).subscribe(value => {
+            this.formValueChange.emit({
+                customStyles: value,
+                inode: this.contentlet().inode
+            });
         });
     }
 }

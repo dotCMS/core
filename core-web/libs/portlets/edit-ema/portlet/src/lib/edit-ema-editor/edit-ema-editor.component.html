@@ -62,7 +62,7 @@
 
 @if (!!$editorProps().componentToStyle) {
     <div class="sidepanel">
-        <dot-uve-edit-style-form [contentlet]="$editorProps().componentToStyle" />
+        <dot-uve-edit-style-form (formValueChange)="handleFormValueChange($event)" [contentlet]="$editorProps().componentToStyle" />
     </div>
 } @else {
     @if ($editorProps().palette; as palette) {

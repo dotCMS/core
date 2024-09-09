@@ -808,6 +808,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         })[detail.name];
     }
 
+    handleFormValueChange(value: any) {
+        console.log(value);
+        
+        this.dotPageApiService.saveContentlet({ contentlet: value }).subscribe((c) => {
+            console.log('saved', c);
+        });
+    }
+
     /**
      * Handle the post message event
      *

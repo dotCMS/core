@@ -1,5 +1,3 @@
-{{contentlet().identifier}}
-
 <form [formGroup]="form">
     @for (field of fields(); track field.name) {
         <div class="flex flex-column gap-2 mb-2">
@@ -7,8 +5,8 @@
             
             @if (field.type === 'select') {
                 <p-dropdown 
-                    [id]="field.name" 
-                    [formControlName]="field.name"
+                    [id]="field.id"
+                    [formControlName]="field.id"
                     [options]="field.options"
                     optionLabel="name"
                     optionValue="value"
