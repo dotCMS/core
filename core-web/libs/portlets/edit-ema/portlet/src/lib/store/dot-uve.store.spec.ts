@@ -388,6 +388,7 @@ describe('UVEStore', () => {
                 expect(store.pageIsLocked()).toBe(false);
                 expect(store.status()).toBe(UVE_STATUS.LOADED);
                 expect(store.isTraditionalPage()).toBe(false);
+                expect(store.isClientReady()).toBe(false);
             });
 
             it('should load the store with the base data for traditional page', () => {
@@ -407,6 +408,7 @@ describe('UVEStore', () => {
                 expect(store.pageIsLocked()).toBe(false);
                 expect(store.status()).toBe(UVE_STATUS.LOADED);
                 expect(store.isTraditionalPage()).toBe(true);
+                expect(store.isClientReady()).toBe(true);
             });
 
             it('should navigate when the page is a vanityUrl permanent redirect', () => {
