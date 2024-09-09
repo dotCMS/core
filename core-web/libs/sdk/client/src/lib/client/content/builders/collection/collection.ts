@@ -117,7 +117,9 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * Retrieves content with rendered HTML.
+     * Setting this to true will server side render (using velocity) any widgets that are returned by the content query.
+     *
+     * More information here: {@link https://www.dotcms.com/docs/latest/content-api-retrieval-and-querying#ParamsOptional}
      *
      * @return {CollectionBuilder} A CollectionBuilder instance.
      * @memberof CollectionBuilder
@@ -250,7 +252,10 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * Filters the content by a variant ID for A/B testing.
+     * Filters the content by a variant ID for [Experiments](https://www.dotcms.com/docs/latest/experiments-and-a-b-testing)
+     *
+     * More information here: {@link https://www.dotcms.com/docs/latest/content-api-retrieval-and-querying#ParamsOptional}
+     *
      * @example
      * ```ts
      * const client = new DotCMSClient(config);
@@ -273,6 +278,10 @@ export class CollectionBuilder<T = unknown> {
 
     /**
      * Sets the depth of the relationships of the content.
+     * Specifies the depth of related content to return in the results.
+     *
+     * More information here: {@link https://www.dotcms.com/docs/latest/content-api-retrieval-and-querying#ParamsOptional}
+     *
      * @example
      * ```ts
      * const client = new DotCMSClient(config);
