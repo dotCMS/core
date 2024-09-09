@@ -12,12 +12,39 @@ import { DotEditableTextProps, TINYMCE_CONFIG } from './utils';
 
 const MCE_URL = '/ext/tinymcev7/tinymce.min.js';
 
+/**
+ * Allows inline edit content pulled from dotCMS API using TinyMCE editor
+ *
+ * @export
+ * @component
+ * @param {Readonly<DotEditableTextProps>} props {
+ *     mode = 'plain',
+ *     format = 'text',
+ *     contentlet,
+ *     fieldName = ''
+ * }
+ * @example
+ * ```javascript
+ * import { DotEditableText } from '@dotcms/react';
+ *
+ * const MyContentletWithTitle = ({ contentlet }) => (
+ *     <h2>
+ *         <DotEditableText
+ *             contentlet={contentlet}
+ *             fieldName="title"
+ *             mode='full'
+ *             format='text'/>
+ *     </h2>
+ * );
+ * ```
+ * @returns {JSX.Element} A component to edit content inline
+ */
 export function DotEditableText({
     mode = 'plain',
     format = 'text',
     contentlet,
     fieldName = ''
-}: Readonly<DotEditableTextProps>) {
+}: Readonly<DotEditableTextProps>): JSX.Element {
     const editorRef = useRef<Editor['editor'] | null>(null);
     const [scriptSrc, setScriptSrc] = useState('');
     const [isInsideEditor, setIsInsideEditor] = useState(false);
@@ -43,7 +70,7 @@ export function DotEditableText({
         const content = contentlet?.[fieldName] || '';
         editorRef.current?.setContent(content, { format });
         setContent(content);
-    }, [format, fieldName, contentlet?.[fieldName]]);
+    }, [format, fieldName, contentlet]);
 
     useEffect(() => {
         if (!isInsideEditorFn()) {
