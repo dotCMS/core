@@ -809,7 +809,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     handleFormValueChange(value: any) {
-        console.time('handleFormValueChange');
 
         const payload = this.uveStore.pageAPIResponse();
 
@@ -826,7 +825,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     }
                 })
             })
-            // Perform operations on each container
         });
         
 
@@ -836,7 +834,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.host
         );
 
-        console.timeEnd('handleFormValueChange');
         
         // Save the updated contentlet
         this.dotPageApiService.saveContentlet({ contentlet: value }).subscribe((c) => {
