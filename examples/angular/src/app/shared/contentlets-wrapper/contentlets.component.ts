@@ -1,11 +1,18 @@
 import { Component, input } from '@angular/core';
 import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
-import { GenericContentlet } from '..';
+import { GenericContentlet } from '../../pages/components';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
-import { ContentletComponent } from '../contentlet/contentlet.component';
+import { ContentletComponent } from './contentlet/contentlet.component';
 
+
+/**
+ * Local component for rendering a list of contentlets outside the DotCmsLayout.
+ *
+ * @export
+ * @class ContentletsComponent
+ */
 @Component({
-  selector: 'app-contentlets',
+  selector: 'app-contentlets-wrapper',
   standalone: true,
   imports: [NgOptimizedImage, DatePipe, ContentletComponent],
   template: `<ul class="flex flex-col gap-7">
@@ -40,12 +47,6 @@ import { ContentletComponent } from '../contentlet/contentlet.component';
     }
   </ul> `,
 })
-export class ContentletsComponent {
+export class ContentletsWrapperComponent {
   contentlets = input.required<Contentlet<GenericContentlet>[]>();
-
-  dateFormatOptions: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  };
 }
