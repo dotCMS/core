@@ -74,7 +74,7 @@ import static java.util.Collections.EMPTY_MAP;
  * Endpoint to handle Api Tokens
  */
 @Path("/v1/apitoken")
-@Tag(name = "Api Tokens", 
+@Tag(name = "Api Token", 
     description = "Endpoints that handle operations related to Api Tokens",
     externalDocs = @ExternalDocumentation(description = "Additional Api Token information",
                                                     url = "https://www.dotcms.com/docs/latest/rest-api-authentication#APIToken"))
@@ -108,7 +108,7 @@ public class ApiTokenResource implements Serializable {
                 summary = "Gets api tokens from a user's ID",
                 description = "Takes a user ID and returns a list of Api Tokens associated with the ID.\n\n" +
                                 "The list of tokens also includes any tokens that have been revoked.\n\n",
-                tags = {"Api Tokens"},
+                tags = {"Api Token"},
                 responses = {
                     @ApiResponse(responseCode = "200", description = "User Api tokens successfully retrieved",
                         content = @Content(mediaType = "application/json",
@@ -577,7 +577,15 @@ public class ApiTokenResource implements Serializable {
     )
     public final Response getRemoteToken(
             @Context final HttpServletRequest httpRequest,
-            @RequestBody(description = "PUT body consists of a JSON object containing the following properties:\n\n")
+            @RequestBody(description = "PUT body consists of a JSON object containing the following properties:\n\n" + 
+                                        "| **Property** | **Value** | **Description**                              |\n" +
+                                        "|--------------|-----------|----------------------------------------------|\n" +
+                                        "| `userId`     | String    | **Required** ID of user attempting receiving |\n" +
+                                        "| `tokenId`    | String    | **Required** ID of api token user is getting |",
+                        required = true,
+                        content = @Content(
+                            schema = @Schema(implementation = RemoteAPITokenForm.class)
+                        ))
             final RemoteAPITokenForm formData) {
 
         if (!Config.getBooleanProperty("ENABLE_PROXY_TOKEN_REQUESTS", true)) {
@@ -707,7 +715,11 @@ public class ApiTokenResource implements Serializable {
     )
     public final Response getJwtFromApiToken(@Context final HttpServletRequest request,
                                              @Context final HttpServletResponse response,
-                                             @PathParam("tokenId") final String tokenId) {
+                                             @PathParam("tokenId") @Parameter(
+                                                            required = true,
+                                                            description = "Identifier for the api token getting its json web token retrieved.",
+                                                            schema = @Schema(type = "string")
+                                             )final String tokenId) {
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, "users");
         final User user = initDataObject.getUser();
@@ -739,9 +751,46 @@ public class ApiTokenResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(operationId = "putRevokeUserToken",
                 summary = "Revokes specified token from user",
-                description = "")
-    public final Response revokeUserToken(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                         @PathParam("userid") final String userid) throws DotSecurityException, DotDataException {
+                description = "This operation takes in a user id and retrieves any tokens associated to the user.\n\n" +
+                                "If the user token is not null, then this token will be revoked from the user.",
+                tags = {"Api Token"},
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "Token revoked successfully",
+                        content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = RemoteAPITokenForm.class)
+                        )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "User not found"),
+                    @ApiResponse(responseCode = "500", description = "Unexpected server error")
+                })
+    public final Response revokeUserToken(@Context final HttpServletRequest request,
+                                         @Context final HttpServletResponse response,
+                                         @PathParam("userid") @Parameter(
+                                                        required = true,
+                                                        description = "Identification of the user whose user token is being revoked.",
+                                                        schema = @Schema(type = "string")
+                                         )
+                                         @RequestBody(description = "PUT body conists of a JSON object containing the `userID` of the user whose tokens are being revoked.",
+                                                    required = true,
+                                                    content = @Content(
+                                                        examples = {
+                                                            @ExampleObject(
+                                                                value = "{\n" +
+                                                                "  \"entity\": {\n" + 
+                                                                "    \"revoked\": \"userId\"\n" +
+                                                                "  },\n" +
+                                                                "  \"errors\": \"string\",\n" +
+                                                                "  \"i18nMessagesMap\": {},\n" +
+                                                                "  \"messages\": \"string\",\n" +
+                                                                "  \"pagination\": null,\n" +
+                                                                "  \"permissions\": []\n" +
+                                                                "}"
+                                                            )
+                                                        }
+                                                    ))
+                                         final String userid) throws DotSecurityException, DotDataException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource).rejectWhenNoUser(true)
                                                 .requestAndResponse(request, response).requiredPortlet("users")
@@ -776,9 +825,44 @@ public class ApiTokenResource implements Serializable {
     @Path("/users/revoke")
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "putRevokeUsersToken",
+                summary = "Revokes users' tokens from list of users' tokens",
+                description = "This operation checks if user has an api and admin role and retrieves all user tokens.\n\n" +
+                                "Once all user tokens are received, each are invalidated and returned as a list of revoked tokens.",
+                tags = {"Api Token"},
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "User tokens successfully revoked",
+                        content = @Content(mediaType = "application/json",
+                            examples = {
+                                @ExampleObject(
+                                    value = "{\n" +
+                                            "  \"entity\": {\n" +
+                                            "    \"revoked\": [\n" +
+                                            "      \"userId\" : \"string\",\n" +
+                                            "    ]\n" +
+                                            "  },\n" +
+                                            "  \"errors\": \"string\",\n" +
+                                            "  \"i18nMessagesMap\": {},\n" +
+                                            "  \"messages\": \"string\",\n" +
+                                            "  \"pagination\": null,\n" +
+                                            "  \"permissions\": []\n" +
+                                            "}"
+                                )
+                            }
+                        )
+                    ),
+                    @ApiResponse
+                })
     public final Response revokeUsersToken(@Context final HttpServletRequest request,
-                                           @Context final HttpServletResponse response) throws DotSecurityException, DotDataException {
+                                           @Context final HttpServletResponse response,
+                                           @RequestBody(description = "PUT body conists of a JSON object containing the `userID` of the users whose tokens are being revoked.",
+                                                        required = true,
+                                                        content = @Content(mediaType = "application/json",
+                                                            schema = @Schema(implementation = RemoteAPITokenForm.class))
+                                                        )
+                                            ) throws DotSecurityException, DotDataException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource).rejectWhenNoUser(true)
                 .requestAndResponse(request, response).requiredPortlet("users")
