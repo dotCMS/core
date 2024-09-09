@@ -9,7 +9,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { skip, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, skip, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -94,24 +94,16 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     #currentComponent: unknown;
 
     readonly translatePageEffect = effect(() => {
-        const { languages, languageId, page } = this.uveStore.$shellProps().translateProps;
+        const { page, currentLanguage } = this.uveStore.$translateProps();
 
-        if (languages.length) {
-            const currentLanguage = languages.find((lang) => lang.id === languageId);
-
-            if (!currentLanguage) {
-                return;
-            }
-
-            if (!currentLanguage?.translated) {
-                this.createNewTranslation(currentLanguage, page);
-            }
+        if (currentLanguage && !currentLanguage?.translated) {
+            this.createNewTranslation(currentLanguage, page);
         }
     });
 
     ngOnInit(): void {
         combineLatest([this.#activatedRoute.data, this.#activatedRoute.queryParams])
-            .pipe(takeUntil(this.#destroy$))
+            .pipe(takeUntil(this.#destroy$), debounceTime(0)) // Debounce to avoid multiple calls
             .subscribe(([{ data }, queryParams]) => {
                 // If we have a clientHost we need to check if it's in the whitelist
                 if (queryParams.clientHost) {

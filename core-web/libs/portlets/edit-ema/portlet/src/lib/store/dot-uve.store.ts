@@ -5,7 +5,7 @@ import { computed } from '@angular/core';
 import { withEditor } from './features/editor/withEditor';
 import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
-import { ShellProps, UVEState } from './models';
+import { ShellProps, TranslateProps, UVEState } from './models';
 
 import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_STATUS } from '../shared/enums';
@@ -30,6 +30,19 @@ export const UVEStore = signalStore(
     withComputed(
         ({ pageAPIResponse, isTraditionalPage, params, languages, errorCode: error, status }) => {
             return {
+                $translateProps: computed<TranslateProps>(() => {
+                    const response = pageAPIResponse();
+                    const languageId = response?.viewAs.language?.id;
+                    const translatedLanguages = languages();
+                    const currentLanguage = translatedLanguages.find(
+                        (lang) => lang.id === languageId
+                    );
+
+                    return {
+                        page: response?.page,
+                        currentLanguage
+                    };
+                }),
                 $shellProps: computed<ShellProps>(() => {
                     const response = pageAPIResponse();
 
@@ -41,9 +54,6 @@ export const UVEStore = signalStore(
                     const templateDrawed = response?.template.drawed;
 
                     const isLayoutDisabled = !page?.canEdit || !templateDrawed;
-
-                    const languageId = response?.viewAs.language?.id;
-                    const translatedLanguages = languages();
                     const errorCode = error();
 
                     const errorPayload = getErrorPayload(errorCode);
@@ -52,11 +62,6 @@ export const UVEStore = signalStore(
                     return {
                         canRead: page?.canRead,
                         error: errorPayload,
-                        translateProps: {
-                            page,
-                            languageId,
-                            languages: translatedLanguages
-                        },
                         seoParams: {
                             siteId: response?.site?.identifier,
                             languageId: response?.viewAs.language.id,
