@@ -56,7 +56,7 @@ export class DotWorkflowsActionsSelectorFieldComponent
             tap((actions: SelectItemGroup[]) => {
                 const actionsIds = this.getActionsIds(actions);
 
-                if (actionsIds.length && !actionsIds.includes(this.value)) {
+                if (this.dropdown && actionsIds.length && !actionsIds.includes(this.value)) {
                     this.dropdown.clear(null);
                 }
             })
