@@ -90,6 +90,7 @@ import {
     getDragItemData,
     insertContentletInContainer
 } from '../utils';
+import { UveEditStyleFormComponent } from './components/uve-edit-style-form/uve-edit-style-form.component';
 
 @Component({
     selector: 'dot-edit-ema-editor',
@@ -113,6 +114,7 @@ import {
         DotEmaBookmarksComponent,
         ProgressBarModule,
         DotResultsSeoToolComponent,
+        UveEditStyleFormComponent
     ],
     providers: [
         DotCopyContentModalService,
