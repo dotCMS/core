@@ -3,6 +3,9 @@ import { of } from 'rxjs';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { By, DomSanitizer } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { ButtonModule } from 'primeng/button';
 
 import { delay } from 'rxjs/operators';
 
@@ -55,6 +58,7 @@ describe('DotUploadAssetComponent', () => {
                 FileUploadMockComponent,
                 DotSpinnerMockComponent
             ],
+            imports: [BrowserAnimationsModule, ButtonModule],
             providers: [
                 {
                     provide: DotUploadFileService,
@@ -185,6 +189,8 @@ describe('DotUploadAssetComponent', () => {
                 of(data as DotCMSContentlet[]).pipe(delay(500))
             );
             const emitSpy = jest.spyOn(component.uploadedFile, 'emit');
+
+            console.log(de.nativeElement.innerHTML);
 
             // Click on Upload Button
             const btn = de.query(By.css('[data-test-id="upload-btn"]'));
