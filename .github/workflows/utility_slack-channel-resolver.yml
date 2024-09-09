@@ -72,6 +72,7 @@ jobs:
           slack_mapping_url=${githack_core_repo_url}/${{ inputs.branch }}/.github/data/${slack_mappings_file}
           json=$(curl -s ${slack_mapping_url})
           
+          echo "Looking for [${github_user}]"
           channel_ids=
           for github_user in "${github_users_array[@]}"; do
             channel_id=$( \
@@ -94,7 +95,7 @@ jobs:
               )
               echo "Resolved user email: [${user_email}]"
             
-              if [[ -n "${user_email}" ]]; then
+              if [[ -n "${user_email}" && "${user_email}" != 'null' ]]; then
                 channel_id=$( \
                   curl \
                     --request GET \
@@ -109,6 +110,8 @@ jobs:
                 )
           
                 echo "Resolved channel id [${channel_id}] from email [${user_email}]"
+              else
+                echo "Could not resolve email for [${github_user}], skipping it"
               fi
             fi
 

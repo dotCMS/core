@@ -68,7 +68,7 @@ services:
       - "8443:8443"
 
   db-sender:
-    image: postgres:15
+    image: pgvector/pgvector:pg16
     command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
     environment:
         "POSTGRES_USER": 'dotcmsdbuser'
@@ -133,7 +133,7 @@ services:
       - "8444:8443"
 
   db-receiver:
-    image: postgres:15
+    image: pgvector/pgvector:pg16
     command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
     environment:
         "POSTGRES_USER": 'dotcmsdbuser'
