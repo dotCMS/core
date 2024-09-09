@@ -13,6 +13,16 @@ import {
 import { DotcmsPageProps } from '../components/DotcmsLayout/DotcmsLayout';
 import { DotCMSPageContext } from '../models';
 
+/**
+ * Custom Hook to handle the DotCMS editor interaction with the page.
+ *
+ * @category Hooks
+ * @param {DotcmsPageProps} props {
+ *     pageContext,
+ *     config,
+ * }
+ * @returns {DotCMSPageContext} The context for a DotCMS page provided by the editor.
+ */
 export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
     const { pathname, onReload, editor } = config;
     const [state, setState] = useState<DotCMSPageContext>({
@@ -22,7 +32,6 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
 
     /**
      * Initializes the DotCMS editor.
-     *
      */
     useEffect(() => {
         if (!isInsideEditorFn()) {
@@ -38,7 +47,6 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
 
     /**
      * Reloads the page when changes are made in the editor.
-     *
      */
     useEffect(() => {
         const insideEditor = isInsideEditorFn();
@@ -62,7 +70,7 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
         }
 
         postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: editor });
-    }, [pathname]);
+    }, [pathname, editor]);
 
     /**
      * Updates the page asset when changes are made in the editor.
