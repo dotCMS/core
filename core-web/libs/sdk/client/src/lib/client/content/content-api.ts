@@ -3,10 +3,56 @@ import { CollectionBuilder } from './builders/collection/collection';
 import { ClientOptions } from '../sdk-js-client';
 
 /**
- * Class to interact with the API methods related to content.
+ * Creates a builder to filter and fetch a collection of content items.
+ * @param contentType - The content type to retrieve.
+ * @returns A CollectionBuilder instance for chaining filters and executing the query.
+ * @template T - The type of the content items (defaults to unknown).
  *
- * @export
- * @class Content
+ * @example Fetch blog posts with async/await
+ * ```typescript
+ * const response = await client.content
+ *     .getCollection<BlogPost>('Blog')
+ *     .limit(10)
+ *     .page(2)
+ *     .sortBy([{ field: 'title', order: 'asc' }])
+ *     .query(q => q.field('author').equals('John Doe'))
+ *     .depth(1)
+ *     .fetch();
+ *
+ * console.log(response.contentlets);
+ * ```
+ *
+ * @example Fetch blog posts with Promise chain
+ * ```typescript
+ * client.content
+ *     .getCollection<BlogPost>('Blog')
+ *     .limit(10)
+ *     .page(2)
+ *     .sortBy([{ field: 'title', order: 'asc' }])
+ *     .query(q => q.field('author').equals('John Doe'))
+ *     .depth(1)
+ *     .fetch()
+ *     .then(response => console.log(response.contentlets))
+ *     .catch(error => console.error(error));
+ * ```
+ *
+ * @example Using a custom type
+ * ```typescript
+ * interface BlogPost {
+ *     summary: string;
+ *     author: string;
+ *     title: string;
+ * }
+ *
+ * const posts = await client.content
+ *     .getCollection<BlogPost>('Blog')
+ *     .limit(10)
+ *     .fetch();
+ *
+ * posts.contentlets.forEach(post => {
+ *     console.log(post.title, post.author, post.summary);
+ * });
+ * ```
  */
 export class Content {
     #requestOptions: ClientOptions;
