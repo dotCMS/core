@@ -42,8 +42,8 @@ const itemsData = [
     },
     {
         label: 'Permission',
-        id: 'permission_tab',
-        clazz: 'permission_tab'
+        id: 'permissions_tab',
+        clazz: 'permissions_tab'
     },
     {
         label: 'Line Divider',
