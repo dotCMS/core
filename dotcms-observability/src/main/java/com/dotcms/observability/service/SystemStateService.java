@@ -4,14 +4,14 @@ import com.dotcms.observability.state.State;
 import com.dotcms.observability.state.StateChangeEvent;
 import com.dotcms.observability.subsystem.Subsystem;
 import java.util.List;
-
+import java.util.Optional;
 
 
 public interface SystemStateService {
 
-    State getState(String subsystemName);
+    Optional<State> getState(String subsystemName);
 
-    Subsystem getSubsystem(String subsystemName);
+    Optional<Subsystem> getSubsystem(String subsystemName);
 
     List<Subsystem> getSubsystems();
 
