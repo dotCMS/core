@@ -55,3 +55,4 @@ This maintenance release includes the following code fixes:
 49. https://github.com/dotCMS/core/issues/29162 : Slow performance with imports in some cases #29162
 50. https://github.com/dotCMS/core/issues/28857 : dotAsset is Breaking FileViewStrategy #28857
 51. https://github.com/dotCMS/core/issues/29259 : Page API: Image field content gone when request page with depth #29259
+52. https://github.com/dotCMS/core/issues/29667 : Update CLEANUP_BUNDLES_OLDER_THAN_DAYS default value to 4 #29667
