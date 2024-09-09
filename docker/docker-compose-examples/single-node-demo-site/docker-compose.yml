@@ -47,7 +47,7 @@ services:
   dotcms:
     image: dotcms/dotcms:latest
     environment:
-      CMS_JAVA_OPTS: '-Xmx1g -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=*:8000 '
+      CMS_JAVA_OPTS: '-Xmx1g '
       LANG: 'C.UTF-8'
       TZ: 'UTC'
       DB_BASE_URL: "jdbc:postgresql://db/dotcms"
