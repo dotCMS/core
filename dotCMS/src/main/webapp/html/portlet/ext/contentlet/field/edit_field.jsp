@@ -41,6 +41,8 @@
 <%@ page import="com.dotcms.contenttype.model.field.JSONField" %>
 <%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
+<%@ page import="static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY" %>
+<%@ page import="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" %>
 
 <%
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -52,7 +54,7 @@
 
     Object value = (Object) request.getAttribute("value");
     ObjectMapper mapper = new ObjectMapper(); // Create an ObjectMapper instance
-
+    mapper.registerModule(new Jdk8Module());
     String hint = UtilMethods.isSet(field.getHint()) ? field.getHint() : null;
     boolean isReadOnly = field.isReadOnly();
     String defaultValue = field.getDefaultValue() != null ? field
