@@ -2,7 +2,7 @@
     @if (selectedEditor() === editorTypes.TinyMCE) {
         <dot-wysiwyg-tinymce [field]="$field()" />
     } @else {
-        <dot-wysiwyg-monaco [field]="$field()" />
+        <dot-wysiwyg-monaco [field]="$field()" [language]="selectedLanguage()" />
     }
 </div>
 <div class="wysiwyg__controls">
