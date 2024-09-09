@@ -1937,7 +1937,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.jboss.jandex</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
@@ -1956,6 +1955,56 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${version.failsafe.plugin}</version>
+                <configuration>
+
+                    <!--
+                         NOTE: In case if you need to pass in special JVM argumengts for instance say, to enable Java language
+                     preview features, the following is how it MUST be done. The @{argLine} goes through late evaluattion that
+                     points to Jacoco agent JVM argument followed by any additional JVM arguments of your choice each separated
+                     by space. The expression @{argLine} retains Jacoco JVM agent argument. Without this any additional JVM
+                     arguments that you add will be taken but you lose Jacoco's argument causing to lose code coverage report
+                     files and hence the coverage report.
+                    -->
+                    <argLine>@{argLine} -Xmx1024m
+                        ${java.module.args}
+                    </argLine>
+
+                    <trimStackTrace>false</trimStackTrace>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <artifactId>surefire-junit47</artifactId>
+                        <version>${version.failsafe.plugin}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${version.surefire.plugin}</version>
+                <configuration>
+                    <forkCount>${surefire.fork.count}</forkCount>
+                    <reuseForks>true</reuseForks>
+                    <argLine>@{argLine} -Xmx1024m
+                        ${java.module.args}
+                    </argLine>
+
+                    <systemPropertyVariables/>
+                    <trimStackTrace>true</trimStackTrace>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <artifactId>surefire-junit47</artifactId>
+                        <version>${version.surefire.plugin}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
