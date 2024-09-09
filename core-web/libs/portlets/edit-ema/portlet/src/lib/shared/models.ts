@@ -208,7 +208,7 @@ export interface EditEmaDialogState {
     url: string;
     type: DialogType;
     payload?: ActionPayload;
-    form: DialogForm;
+    editContentForm: DialogForm;
 }
 
 // We can modify this if we add more events, for now I think is enough

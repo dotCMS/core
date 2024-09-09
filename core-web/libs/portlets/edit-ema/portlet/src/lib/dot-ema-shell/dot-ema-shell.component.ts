@@ -1,4 +1,4 @@
-import { combineLatest, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { Component, effect, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
@@ -9,7 +9,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { debounceTime, skip, take, takeUntil } from 'rxjs/operators';
+import { skip, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -102,9 +102,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     });
 
     ngOnInit(): void {
-        combineLatest([this.#activatedRoute.data, this.#activatedRoute.queryParams])
-            .pipe(takeUntil(this.#destroy$), debounceTime(0)) // Debounce to avoid multiple calls
-            .subscribe(([{ data }, queryParams]) => {
+        this.#activatedRoute.queryParams
+            .pipe(takeUntil(this.#destroy$)) // Debounce to avoid multiple calls
+            .subscribe((queryParams) => {
+                const { data } = this.#activatedRoute.snapshot.data;
+
                 // If we have a clientHost we need to check if it's in the whitelist
                 if (queryParams.clientHost) {
                     const canAccessClientHost = this.checkClientHostAccess(
@@ -162,6 +164,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 if (isSaved) {
                     this.reloadFromDialog();
                 } else if (isTranslation) {
+                    //TODO: CHECK FOR DOING A BACK
                     // At this point we are in the language of the translation, if the user didn't save we need to navigate to the default language
                     this.navigate({
                         language_id: 1

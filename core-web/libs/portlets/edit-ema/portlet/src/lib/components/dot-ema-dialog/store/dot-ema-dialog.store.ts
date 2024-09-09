@@ -27,7 +27,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             url: '',
             type: null,
             status: DialogStatus.IDLE,
-            form: {
+            editContentForm: {
                 status: FormStatus.PRISTINE,
                 isTranslation: false
             }
@@ -168,7 +168,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
                 status: DialogStatus.LOADING,
                 type: 'content',
                 url: this.createTranslatePageUrl(page, newLanguage),
-                form: {
+                editContentForm: {
                     status: FormStatus.PRISTINE,
                     isTranslation: true
                 }
@@ -210,8 +210,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     readonly setDirty = this.updater((state) => {
         return {
             ...state,
-            form: {
-                ...state.form,
+            editContentForm: {
+                ...state.editContentForm,
                 status: FormStatus.DIRTY
             }
         };
@@ -225,8 +225,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     readonly setSaved = this.updater((state) => {
         return {
             ...state,
-            form: {
-                ...state.form,
+            editContentForm: {
+                ...state.editContentForm,
                 status: FormStatus.SAVED
             }
         };
@@ -261,7 +261,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             status: DialogStatus.IDLE,
             type: null,
             payload: undefined,
-            form: {
+            editContentForm: {
                 status: FormStatus.PRISTINE,
                 isTranslation: false
             }
