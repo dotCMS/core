@@ -13,6 +13,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -111,9 +112,9 @@ public class ResourceCollectorUtil {
         return finalSet;
     }
 
-    public static boolean isValidPackage (final String packageName) {
+    private static boolean isValidPackage (final String packageName) {
 
-        return packageName.length() > 0 && !".".equals(packageName); // more?
+        return Objects.nonNull(packageName) && packageName.length() > 0 && !".".equals(packageName); // more?
     }
     
     
