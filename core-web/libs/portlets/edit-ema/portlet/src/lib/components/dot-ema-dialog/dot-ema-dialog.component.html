@@ -9,7 +9,7 @@
     appendTo="body"
     data-testId="dialog"
     styleClass="edit-ema-dialog"
-    (onHide)="onHide()">
+    (visibleChange)="onHide()">
     @switch (ds.type) {
         @case ('form') {
             <dot-ema-form-selector

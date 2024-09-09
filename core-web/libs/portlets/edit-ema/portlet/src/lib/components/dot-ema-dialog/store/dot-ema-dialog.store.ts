@@ -9,44 +9,15 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { DotActionUrlService } from '../../../services/dot-action-url/dot-action-url.service';
 import { LAYOUT_URL, CONTENTLET_SELECTOR_URL } from '../../../shared/consts';
-import { ActionPayload, DotPage } from '../../../shared/models';
-
-type DialogType = 'content' | 'form' | 'widget' | null;
-
-export enum DialogStatus {
-    IDLE = 'IDLE',
-    LOADING = 'LOADING',
-    INIT = 'INIT'
-}
-
-export interface EditEmaDialogState {
-    header: string;
-    status: DialogStatus;
-    url: string;
-    type: DialogType;
-    payload?: ActionPayload;
-    dirty: boolean;
-    saved: boolean;
-    isTranslation: boolean;
-}
-
-// We can modify this if we add more events, for now I think is enough
-export interface CreateFromPaletteAction {
-    variable: string;
-    name: string;
-    payload: ActionPayload;
-}
-
-interface EditContentletPayload {
-    inode: string;
-    title: string;
-}
-
-export interface CreateContentletAction {
-    url: string;
-    contentType: string;
-    payload: ActionPayload;
-}
+import { DialogStatus, FormStatus } from '../../../shared/enums';
+import {
+    ActionPayload,
+    CreateContentletAction,
+    CreateFromPaletteAction,
+    DotPage,
+    EditContentletPayload,
+    EditEmaDialogState
+} from '../../../shared/models';
 
 @Injectable()
 export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
@@ -56,9 +27,10 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             url: '',
             type: null,
             status: DialogStatus.IDLE,
-            dirty: false,
-            saved: false,
-            isTranslation: false
+            form: {
+                status: FormStatus.PRISTINE,
+                isTranslation: false
+            }
         });
     }
 
@@ -196,7 +168,10 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
                 status: DialogStatus.LOADING,
                 type: 'content',
                 url: this.createTranslatePageUrl(page, newLanguage),
-                isTranslation: true
+                form: {
+                    status: FormStatus.PRISTINE,
+                    isTranslation: true
+                }
             };
         }
     );
@@ -232,10 +207,13 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @memberof DotEmaDialogStore
      */
-    readonly setDirty = this.updater((state, dirty: boolean) => {
+    readonly setDirty = this.updater((state) => {
         return {
             ...state,
-            dirty
+            form: {
+                ...state.form,
+                status: FormStatus.DIRTY
+            }
         };
     });
 
@@ -244,10 +222,13 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @memberof DotEmaDialogStore
      */
-    readonly setSaved = this.updater((state, saved: boolean) => {
+    readonly setSaved = this.updater((state) => {
         return {
             ...state,
-            saved
+            form: {
+                ...state.form,
+                status: FormStatus.SAVED
+            }
         };
     });
 
@@ -280,9 +261,10 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             status: DialogStatus.IDLE,
             type: null,
             payload: undefined,
-            dirty: false,
-            saved: false,
-            isTranslation: false
+            form: {
+                status: FormStatus.PRISTINE,
+                isTranslation: false
+            }
         };
     });
 

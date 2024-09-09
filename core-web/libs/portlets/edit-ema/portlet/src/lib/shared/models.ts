@@ -1,7 +1,7 @@
 import { DotDevice } from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
 
-import { CommonErrors } from './enums';
+import { CommonErrors, DialogStatus, FormStatus } from './enums';
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
 
@@ -189,10 +189,42 @@ export interface DotDeviceWithIcon extends DotDevice {
 
 export type CommonErrorsInfo = Record<CommonErrors, InfoPage>;
 
+export interface DialogForm {
+    status: FormStatus;
+    isTranslation: boolean;
+}
+
 export interface DialogAction {
     event: CustomEvent;
     payload: ActionPayload;
-    dirty: boolean;
-    saved: boolean;
-    isTranslation: boolean;
+    form: DialogForm;
+}
+
+export type DialogType = 'content' | 'form' | 'widget' | null;
+
+export interface EditEmaDialogState {
+    header: string;
+    status: DialogStatus;
+    url: string;
+    type: DialogType;
+    payload?: ActionPayload;
+    form: DialogForm;
+}
+
+// We can modify this if we add more events, for now I think is enough
+export interface CreateFromPaletteAction {
+    variable: string;
+    name: string;
+    payload: ActionPayload;
+}
+
+export interface EditContentletPayload {
+    inode: string;
+    title: string;
+}
+
+export interface CreateContentletAction {
+    url: string;
+    contentType: string;
+    payload: ActionPayload;
 }

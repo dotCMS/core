@@ -34,7 +34,7 @@ import { EditEmaEditorComponent } from '../edit-ema-editor/edit-ema-editor.compo
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
-import { NG_CUSTOM_EVENTS } from '../shared/enums';
+import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction, DotPage } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 
@@ -159,16 +159,20 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.#currentComponent = event;
     }
 
-    handleNgEvent({ event, dirty, saved, isTranslation }: DialogAction) {
+    handleNgEvent({ event, form }: DialogAction) {
+        const { isTranslation, status } = form;
+
+        const isSaved = status === FormStatus.SAVED;
+
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
-                // We dont want to reload if it was saved without changes and is not a translation
-
-                if ((dirty && saved) || (isTranslation && saved)) {
+                // We dont want to reload if it was not saved
+                if (isSaved) {
                     this.reloadFromDialog();
-                } else if (isTranslation && !saved) {
+                } else if (isTranslation) {
+                    // At this point we are in the language of the translation, if the user didn't save we need to navigate to the default language
                     this.navigate({
-                        language_id: 1 // We navigate to the default language if the user didn't translate
+                        language_id: 1
                     });
                 }
 
@@ -179,7 +183,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 // This can be undefined
                 const url = event.detail.payload?.htmlPageReferer?.split('?')[0].replace('/', '');
 
-                if (dirty && url && this.uveStore.params().url !== url) {
+                if (isSaved && url && this.uveStore.params().url !== url) {
                     this.navigate({
                         url
                     });

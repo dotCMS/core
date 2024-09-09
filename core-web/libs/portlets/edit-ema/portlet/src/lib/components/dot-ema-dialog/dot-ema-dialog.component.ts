@@ -29,16 +29,18 @@ import {
 import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
-import {
-    CreateContentletAction,
-    CreateFromPaletteAction,
-    DialogStatus,
-    DotEmaDialogStore
-} from './store/dot-ema-dialog.store';
+import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
 
 import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
-import { NG_CUSTOM_EVENTS } from '../../shared/enums';
-import { ActionPayload, DialogAction, DotPage, VTLFile } from '../../shared/models';
+import { DialogStatus, NG_CUSTOM_EVENTS } from '../../shared/enums';
+import {
+    ActionPayload,
+    CreateContentletAction,
+    CreateFromPaletteAction,
+    DialogAction,
+    DotPage,
+    VTLFile
+} from '../../shared/models';
 import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
 
 @Component({
@@ -283,19 +285,14 @@ export class DotEmaDialogComponent {
     }
 
     protected onHide() {
-        const { dirty, saved, payload, isTranslation } = this.dialogState();
-
-        this.action.emit({
-            event: new CustomEvent('ng-event', {
-                detail: {
-                    name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
-                }
-            }),
-            payload,
-            dirty,
-            saved,
-            isTranslation
+        const event = new CustomEvent('ng-event', {
+            detail: {
+                name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+            }
         });
+
+        this.emitAction(event);
+        this.resetDialog();
     }
 
     /**
@@ -315,9 +312,7 @@ export class DotEmaDialogComponent {
         )
             .pipe(takeUntilDestroyed(this.destroyRef$))
             .subscribe((event: CustomEvent) => {
-                const { payload, dirty, saved, isTranslation } = this.dialogState();
-
-                this.action.emit({ event, payload, dirty, saved, isTranslation });
+                this.emitAction(event);
 
                 switch (event.detail.name) {
                     case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
@@ -334,7 +329,7 @@ export class DotEmaDialogComponent {
                     }
 
                     case NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED: {
-                        this.store.setDirty(true);
+                        this.store.setDirty();
                         break;
                     }
 
@@ -344,7 +339,7 @@ export class DotEmaDialogComponent {
                     }
 
                     case NG_CUSTOM_EVENTS.SAVE_PAGE: {
-                        this.store.setSaved(true);
+                        this.store.setSaved();
 
                         if (event.detail.payload.isMoveAction) {
                             this.reloadIframe();
@@ -373,15 +368,7 @@ export class DotEmaDialogComponent {
             }
         });
 
-        const { payload, dirty, saved, isTranslation } = this.dialogState();
-
-        this.action.emit({
-            event: customEvent,
-            payload,
-            dirty,
-            saved,
-            isTranslation
-        });
+        this.emitAction(customEvent);
     }
 
     /**
@@ -402,5 +389,11 @@ export class DotEmaDialogComponent {
      */
     closeCompareDialog() {
         this.$compareData.set(null);
+    }
+
+    private emitAction(event: CustomEvent) {
+        const { payload, form } = this.dialogState();
+
+        this.action.emit({ event, payload, form });
     }
 }
