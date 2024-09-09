@@ -809,8 +809,36 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     handleFormValueChange(value: any) {
-        console.log(value);
+        console.time('handleFormValueChange');
+
+        const payload = this.uveStore.pageAPIResponse();
+
+        Object.keys(payload.containers).forEach((key) => {
+            const container = payload.containers[key];
+            const contentletsObj = container.contentlets;
+
+            Object.keys(contentletsObj).forEach((contentletKey) => {
+                const contentlets = contentletsObj[contentletKey];
+
+                contentlets.forEach((contentlet) => {
+                    if (contentlet.inode === value.inode) {
+                        contentlet['customStyles'] = value.customStyles;
+                    }
+                })
+            })
+            // Perform operations on each container
+        });
         
+
+        // Send the updated payload to the iframe
+        this.iframe?.nativeElement?.contentWindow?.postMessage(
+            { name: NOTIFY_CUSTOMER.SET_PAGE_DATA, payload },
+            this.host
+        );
+
+        console.timeEnd('handleFormValueChange');
+        
+        // Save the updated contentlet
         this.dotPageApiService.saveContentlet({ contentlet: value }).subscribe((c) => {
             console.log('saved', c);
         });

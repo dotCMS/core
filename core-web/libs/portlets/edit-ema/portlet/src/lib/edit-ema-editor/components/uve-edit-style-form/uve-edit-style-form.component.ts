@@ -70,7 +70,7 @@ export class UveEditStyleFormComponent {
 
     private setupFormValueChanges(): void {
         this.form.valueChanges.pipe(
-            debounceTime(1000)
+            debounceTime(0)
         ).subscribe(value => {
             this.formValueChange.emit({
                 customStyles: value,
