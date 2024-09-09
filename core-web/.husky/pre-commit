@@ -89,7 +89,7 @@ check_sdkman() {
         if command -v sdk >/dev/null 2>&1; then
             echo "${GREEN}SDKMAN! is installed and functional.${NC}"
         else
-            echo "${RED}SDKMAN! command is not available. Please check the installation.${NC}"
+            echo "${RED}SDKMAN! command is not available.${NC}"
             exit 1
         fi
     else
