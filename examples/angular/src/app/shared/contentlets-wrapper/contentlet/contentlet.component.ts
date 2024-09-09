@@ -1,10 +1,16 @@
-import { Component, input, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 
-import { GenericContentlet } from '..';
 import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
 import { isInsideEditor } from '@dotcms/client';
 import { NgTemplateOutlet } from '@angular/common';
+import { GenericContentlet } from '../../../pages/components';
 
+/**
+ * Local component for rendering a single contentlet outside the DotCmsLayout.
+ * This is useful when you want to render a contentlet in a different context than the DotCmsLayout, like in a modal, sidebar, footer, etc.
+ * @export
+ * @class ContentletComponent
+ */
 @Component({
   selector: 'app-contentlet',
   standalone: true,
