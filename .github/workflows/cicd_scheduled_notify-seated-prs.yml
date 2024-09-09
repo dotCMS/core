@@ -4,8 +4,8 @@ on:
     - cron: '0 10 * * *'
   workflow_dispatch:
 env:
-  PR_DAY_THRESHOLD: 5
-  DRAFT_PR_DAY_THRESHOLD: 10
+  PR_DAY_THRESHOLD: 3
+  DRAFT_PR_DAY_THRESHOLD: 5
   REPO: core
 
 jobs:
@@ -39,9 +39,8 @@ jobs:
           retries: 3
           retry-exempt-status-codes: 400,401
           script: |
-            const millisPerDay = 24 * 60 * 60 * 1000;
-            const prDayThreshold = ${{ env.PR_DAY_THRESHOLD }} * millisPerDay;
-            const draftPrDayThreshold = ${{ env.DRAFT_PR_DAY_THRESHOLD }} * millisPerDay;
+            const prDayThreshold = ${{ env.PR_DAY_THRESHOLD }};
+            const draftPrDayThreshold = ${{ env.DRAFT_PR_DAY_THRESHOLD }};
             const now = new Date();
             const seatedPrs = [];
             const excludedUsers = ['dependabot[bot]']
@@ -61,9 +60,17 @@ jobs:
             const isPrSeated = (pr) => {
               const createdAt = new Date(Date.parse(pr.created_at));
               console.log(`Now: ${now} / CreatedAt: ${createdAt}`);
-              const delta = now.getTime() - createdAt.getTime();
+            
+              let weekdaysCount = 0;
+              for (let date = new Date(createdAt); date <= now; date.setDate(date.getDate() + 1)) {
+                const dayOfWeek = date.getDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                  weekdaysCount++;
+                }
+              }
+
               const threshold = pr.draft ? draftPrDayThreshold : prDayThreshold;
-              return delta >= threshold;
+              return weekdaysCount >= threshold;
             };
             
             const addPr = (pr, login) => {
