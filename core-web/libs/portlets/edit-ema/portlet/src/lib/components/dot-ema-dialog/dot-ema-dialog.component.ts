@@ -9,6 +9,7 @@ import {
     NgZone,
     Output,
     ViewChild,
+    computed,
     inject,
     signal
 } from '@angular/core';
@@ -64,6 +65,8 @@ export class DotEmaDialogComponent {
     @Output() reloadFromDialog = new EventEmitter<void>();
 
     $compareData = signal<DotContentCompareEvent | null>(null);
+
+    $compareDataExists = computed(() => !!this.$compareData());
 
     private readonly destroyRef$ = inject(DestroyRef);
     private readonly store = inject(DotEmaDialogStore);

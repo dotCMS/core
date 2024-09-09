@@ -39,7 +39,7 @@
 
     <p-dialog
         (visibleChange)="closeCompareDialog()"
-        [visible]="!!$compareData()"
+        [visible]="$compareDataExists()"
         [style]="{ height: '90vh', width: '90vw' }"
         [header]="'Compare'"
         [draggable]="false"
