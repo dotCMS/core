@@ -57,7 +57,7 @@ export class DotWorkflowsActionsSelectorFieldComponent
                 const actionsIds = this.getActionsIds(actions);
 
                 if (this.dropdown && actionsIds.length && !actionsIds.includes(this.value)) {
-                    this.dropdown.clear(null);
+                    this.dropdown.clear();
                 }
             })
         );
