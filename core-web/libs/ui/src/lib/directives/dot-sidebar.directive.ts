@@ -35,10 +35,10 @@ export class DotSidebarDirective {
 
     /**
      * Change the default width of the sidebar
-     * @param {SIDEBAR_SIZES} size
+     * @param {string} size
      */
     @Input()
-    set dotSize(size: SIDEBAR_SIZES) {
+    set dotSize(size: string) {
         if (size === SIDEBAR_SIZES.LG) {
             this.primeSidebar.style = { width: '60%' };
         } else {
