@@ -3,24 +3,24 @@
     @let subActions = action.subActions;
     @if (subActions.length) {
         <p-splitButton
-            (onClick)="mainAction.command({ originalEvent: $event })"
-            [disabled]="loading"
+            (onClick)="mainAction?.command({ originalEvent: $event })"
+            [disabled]="loading()"
             [styleClass]="sizeClass"
             [model]="subActions"
             [outlined]="!$first"
             [label]="mainAction.label" />
     } @else {
         <p-button
-            (onClick)="mainAction.command({ originalEvent: $event })"
-            [loading]="loading"
+            (onClick)="mainAction?.command({ originalEvent: $event })"
+            [loading]="loading()"
             [styleClass]="sizeClass + (!$first ? ' p-button-outlined' : '')"
             [label]="mainAction.label" />
     }
 } @empty {
     <p-button
-        [loading]="loading"
-        [disabled]="!loading"
+        [loading]="loading()"
+        [disabled]="!loading()"
         [styleClass]="sizeClass"
-        [label]="(loading ? 'Loading' : 'edit.ema.page.no.workflow.action') | dm"
+        [label]="(loading() ? 'Loading' : 'edit.ema.page.no.workflow.action') | dm"
         data-testId="empty-button" />
 }

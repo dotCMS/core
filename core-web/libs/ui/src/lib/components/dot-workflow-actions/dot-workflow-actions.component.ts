@@ -3,7 +3,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
-    Input,
+    input,
     OnChanges,
     Output,
     signal
@@ -45,26 +45,26 @@ export class DotWorkflowActionsComponent implements OnChanges {
      * @type {DotCMSWorkflowAction[]}
      * @memberof DotWorkflowActionsComponent
      */
-    @Input({ required: true }) actions: DotCMSWorkflowAction[];
+    actions = input.required<DotCMSWorkflowAction[]>();
     /**
      * Show a loading button spinner
      *
      * @memberof DotWorkflowActionsComponent
      */
-    @Input() loading = false;
+    loading = input<boolean>(false);
     /**
      * Group the actions by separator
      *
      * @memberof DotWorkflowActionsComponent
      */
-    @Input() groupActions = false;
+    groupActions = input<boolean>(false);
     /**
      * Button size
      *
      * @type {ButtonSize}
      * @memberof DotWorkflowActionsComponent
      */
-    @Input() size: ButtonSize = 'normal';
+    size = input<ButtonSize>('normal');
     /**
      * Emits when an action is selected
      *
@@ -73,12 +73,12 @@ export class DotWorkflowActionsComponent implements OnChanges {
     @Output() actionFired = new EventEmitter<DotCMSWorkflowAction>();
 
     protected $groupedActions = signal<WorkflowActionsGroup[]>([]);
-    protected sizeClass: string;
+    protected sizeClass!: string;
 
     ngOnChanges(): void {
-        this.sizeClass = InplaceButtonSizePrimeNg[this.size];
+        this.sizeClass = InplaceButtonSizePrimeNg[this.size()];
 
-        if (!this.actions.length) {
+        if (!this.actions().length) {
             this.$groupedActions.set([]);
 
             return;
@@ -94,7 +94,7 @@ export class DotWorkflowActionsComponent implements OnChanges {
      * @memberof DotWorkflowActionsComponent
      */
     private setActions(): void {
-        const groups = this.createGroups(this.actions);
+        const groups = this.createGroups(this.actions());
         const actions = groups.map((group) => {
             const [first, ...rest] = group;
             const mainAction = this.createActions(first);
@@ -116,7 +116,7 @@ export class DotWorkflowActionsComponent implements OnChanges {
      * @memberof DotWorkflowActionsComponent
      */
     private createGroups(actions: DotCMSWorkflowAction[]): DotCMSWorkflowAction[][] {
-        if (!this.groupActions) {
+        if (!this.groupActions()) {
             // Remove the separator from the actions and return the actions grouped
             const formatActions = actions.filter(
                 (action) => action?.metadata?.subtype !== DotCMSActionSubtype.SEPARATOR
@@ -127,7 +127,7 @@ export class DotWorkflowActionsComponent implements OnChanges {
 
         // Create a new group every time we find a separator
         return actions
-            .reduce(
+            .reduce<DotCMSWorkflowAction[][]>(
                 (acc, action) => {
                     if (action?.metadata?.subtype === DotCMSActionSubtype.SEPARATOR) {
                         acc.push([]);
