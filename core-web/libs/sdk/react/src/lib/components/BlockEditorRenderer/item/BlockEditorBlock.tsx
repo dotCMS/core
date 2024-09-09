@@ -28,7 +28,7 @@ export const BlockEditorBlock = ({
             return (
                 <CustomRendererComponent
                     key={`${node.type}-${index}`}
-                    {...node.attrs}
+                    {...node}
                     content={node.content}>
                     <BlockEditorBlock content={node.content} customRenderers={customRenderers} />
                 </CustomRendererComponent>

@@ -37,7 +37,7 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 export class DotEditContentFieldComponent {
     @HostBinding('class') class = 'field';
     @Input() field!: DotCMSContentTypeField;
-    @Input() contentlet!: DotCMSContentlet;
+    @Input() contentlet: DotCMSContentlet | undefined;
     @Input() contentType!: string;
 
     readonly fieldTypes = FIELD_TYPES;

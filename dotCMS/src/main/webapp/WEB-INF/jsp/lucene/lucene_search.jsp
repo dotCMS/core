@@ -58,7 +58,7 @@ query = Xss.strip(query);
 		luceneLoadingMode();
 		var form = document.forms.luceneQueryForm;
 		var formData = new FormData(form);
-		fetch('/api/content/_search', {
+		fetch('/api/content/_search?rememberQuery=true', {
 			method: 'post',
 			headers: {
 				'Content-Type': 'application/json'

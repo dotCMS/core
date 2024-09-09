@@ -41,8 +41,9 @@
 <%@ page import="com.dotcms.contenttype.model.field.JSONField" %>
 <%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
-<%@ page import="static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY" %>
 <%@ page import="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" %>
+<%@ page import="com.dotmarketing.util.ConfigUtils" %>
+
 
 <%
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -693,8 +694,7 @@
 
 
         <%
-            String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
-            if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
+            if (ConfigUtils.isFeatureFlagOn("FEATURE_FLAG_NEW_BINARY_FIELD")) {
         %>
 
             <%
