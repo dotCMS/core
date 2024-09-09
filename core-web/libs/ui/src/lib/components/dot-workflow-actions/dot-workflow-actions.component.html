@@ -1,4 +1,4 @@
-@for (action of groupedActions(); track $index) {
+@for (action of $groupedActions(); track $index) {
     @let mainAction = action.mainAction;
     @let subActions = action.subActions;
     @if (subActions.length) {

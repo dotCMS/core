@@ -72,14 +72,14 @@ export class DotWorkflowActionsComponent implements OnChanges {
      */
     @Output() actionFired = new EventEmitter<DotCMSWorkflowAction>();
 
-    protected groupedActions = signal<WorkflowActionsGroup[]>([]);
+    protected $groupedActions = signal<WorkflowActionsGroup[]>([]);
     protected sizeClass: string;
 
     ngOnChanges(): void {
         this.sizeClass = InplaceButtonSizePrimeNg[this.size];
 
         if (!this.actions.length) {
-            this.groupedActions.set([]);
+            this.$groupedActions.set([]);
 
             return;
         }
@@ -103,7 +103,7 @@ export class DotWorkflowActionsComponent implements OnChanges {
             return { mainAction, subActions };
         });
 
-        this.groupedActions.set(actions);
+        this.$groupedActions.set(actions);
     }
 
     /**
