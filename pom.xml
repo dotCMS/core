@@ -28,6 +28,7 @@
         <module>dotcms-integration</module>
         <module>dotcms-postman</module>
         <module>reports</module>
+        <module>dotcms-observability</module>
     </modules>
     <repositories>
         <repository>
