@@ -112,7 +112,7 @@ import {
         EmaContentletToolsComponent,
         DotEmaBookmarksComponent,
         ProgressBarModule,
-        DotResultsSeoToolComponent
+        DotResultsSeoToolComponent,
     ],
     providers: [
         DotCopyContentModalService,
@@ -638,6 +638,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
         // Note: You'll need to implement the `editStyles` method in your dialog service
         // and create the necessary components for the style editing interface
+    }
+
+    protected closeStylesPanel() {
+        this.uveStore.setStylesPanelOpen(!this.uveStore.isStylesPanelOpen());
     }
 
     /**

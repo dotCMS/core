@@ -1,5 +1,3 @@
-{{ $editorProps().isStylesPanelOpen }}
-
 <dot-edit-ema-toolbar (editUrlContentMap)="editContentMap($event)" />
 @if ($editorProps().seoResults && ogTagsResults$) {
     <dot-results-seo-tool
@@ -61,13 +59,25 @@
         </div>
     </div>
 }
-@if ($editorProps().palette; as palette) {
-    <dot-edit-ema-palette
-        [languageId]="palette.languageId"
-        [containers]="palette.containers"
-        [variantId]="palette.variantId"
-        data-testId="palette" />
+
+@if ($editorProps().isStylesPanelOpen) {
+    <div class="sidepanel">
+        <h2>Hello World</h2>
+        <button (click)="closeStylesPanel()">close</button>
+    </div>
+} @else {
+    @if ($editorProps().palette; as palette) {
+        <dot-edit-ema-palette
+            class="sidepanel"
+            [languageId]="palette.languageId"
+            [containers]="palette.containers"
+            [variantId]="palette.variantId"
+            data-testId="palette" />
+    }
 }
+
+
+
 @if ($editorProps().showDialogs) {
     <dot-edit-ema-dialog
         (action)="onCustomEvent($event)"
