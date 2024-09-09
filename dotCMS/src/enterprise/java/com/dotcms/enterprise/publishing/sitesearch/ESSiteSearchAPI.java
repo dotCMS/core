@@ -162,7 +162,9 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
                 if (defaultIndice != null && !defaultIndice.isEmpty() && !list.isEmpty() ){
                     final int index = list.indexOf(defaultIndice);
                     //change the element defaultIndex to the first position of the arraylist if it is not yet
-                    if (index != 0) {
+                    if(index < 0){
+                        Logger.warn(this.getClass(), String.format("The default site search '%s' index was not found in the list of indices.", defaultIndice));
+                    } else {
                         list.remove(index);
                         list.add(indexPosition, defaultIndice);
                     }
