@@ -298,7 +298,7 @@
                         blockEditor.contentletIdentifier = '<%=contentletIdentifier%>';
                         blockEditor.showVideoThumbnail = <%=showVideoThumbnail%>;
                         blockEditor.isFullscreen = <%=fullScreenField%>;
-                        blockEditor.lang = '<%=contentLanguage%>';
+                        blockEditor.languageId = '<%=contentLanguage%>';
                         blockEditorContainer.appendChild(blockEditor);
                     }
                 )();

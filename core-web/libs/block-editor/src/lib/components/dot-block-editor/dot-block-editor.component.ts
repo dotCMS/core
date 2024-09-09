@@ -422,7 +422,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private getEditorExtensions(isAIPluginInstalled: boolean) {
         const extensions = [
             DotConfigExtension({
-                lang: this.contentlet?.languageId || this.languageId,
+                lang: this.languageId || this.contentlet?.languageId,
                 allowedContentTypes: this.allowedContentTypes,
                 allowedBlocks: this.allowedBlocks,
                 contentletIdentifier: this.contentletIdentifier
