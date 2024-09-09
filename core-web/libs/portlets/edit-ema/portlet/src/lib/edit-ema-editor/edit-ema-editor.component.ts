@@ -623,6 +623,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.uveStore.savePage(pageContainers);
         }
     }
+
+    /**
+     * Handle edit styles for a contentlet
+     *
+     * @protected
+     * @param {ActionPayload} payload
+     * @memberof EditEmaEditorComponent
+     */
+    protected handleEditStyles(payload: ActionPayload): void {
+        // TODO: Implement the logic for editing styles
+        console.log('Editing styles for contentlet:', payload);
+
+        // Note: You'll need to implement the `editStyles` method in your dialog service
+        // and create the necessary components for the style editing interface
+    }
+
     /**
      * Delete contentlet
      *

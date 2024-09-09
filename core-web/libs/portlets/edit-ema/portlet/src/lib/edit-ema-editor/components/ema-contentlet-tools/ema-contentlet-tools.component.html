@@ -49,6 +49,11 @@
                 data-testId="delete-button"
                 styleClass="p-button-rounded p-button-raised delete"
                 icon="pi pi-times" />
+            <p-button
+                (click)="editStyles.emit(contentletArea.payload)"
+                data-testId="edit-styles-button"
+                styleClass="p-button-rounded p-button-raised"
+                icon="pi pi-palette" />
         }
 
         <p-button
