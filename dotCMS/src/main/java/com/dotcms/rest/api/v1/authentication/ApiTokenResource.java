@@ -146,12 +146,15 @@ public class ApiTokenResource implements Serializable {
                                             "  \"permissions\": []\n" +
                                             "}"
                                     )
-                            })),
+                            }
+                        )
+                    ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "403", description = "Unauthorized user"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
                     @ApiResponse(responseCode = "500", description = "Unexpected server error")
 
-                })
+                }
+    )
     public final Response getApiTokens(
             @Context final HttpServletRequest request, 
             @Context final HttpServletResponse response,
@@ -219,11 +222,14 @@ public class ApiTokenResource implements Serializable {
                                             "  \"permissions\": []\n" +
                                             "}"
                                 )
-                            })),
+                            }
+                        )
+                    ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "403", description = "Unauthorized user"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
                     @ApiResponse(responseCode = "500", description = "Unexpected server error")
-                })
+                }
+    )
     public final Response revokeApiToken(
             @Context final HttpServletRequest request, 
             @Context final HttpServletResponse response,
@@ -306,23 +312,21 @@ public class ApiTokenResource implements Serializable {
                                                     "  \"pagination\": null,\n" +
                                                     "  \"permissions\": []\n" +
                                                     "}"
-                                            )
-                                    })),
+                                        )
+                                    }
+                                )
+                    ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
                     @ApiResponse(responseCode = "500", description = "Unexpected server error")
-                })
+                }
+    )
     public final Response deleteApiToken(
             @Context final HttpServletRequest request, 
             @Context final HttpServletResponse response,
-            @PathParam("tokenId") Parameter(
+            @PathParam("tokenId") @Parameter(
                                     required = true,
                                     description = "ID of Api token being revoked",
                                     schema = @Schema(type = "string")) 
-            @RequestBody(description = "This method deletes the provided api token from the device IP address where the request originated from.",
-                        required = true,
-                        content = @Content(
-                            schema = @Schema(type = "String")
-                        ))
             final String tokenId) {
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, "users");
@@ -399,17 +403,46 @@ public class ApiTokenResource implements Serializable {
                                             "  \"messages\": [],\n" +
                                             "  \"pagination\": null,\n" +
                                             "  \"permissions\": []\n" +
-                                    "}"
+                                            "}"
                                 )
-                            })),
+                            }
+                        )
+                    ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "403", description = "User is not admin"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
                     @ApiResponse(responseCode = "500", description = "Unexpected server error")
-                })
+                }
+    )
     public final Response issueApiToken(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @RequestBody(description = "")
+            @RequestBody(description = "This method requires a POST body of a JSON object containing the following properties.\n\n" +
+                                        "| **Property**    | **Value** | **Description**                               |\n" +
+                                        "|-----------------|-----------|-----------------------------------------------|\n" +
+                                        "| `userId`        | String    | **Required.** ID of user attempting receiving |\n" +
+                                        "| `tokenId`       | String    | ID of api token being issued                  |\n" +
+                                        "| `network`       | String    | User IP address                               |\n" +
+                                        "| `shouldBeAdmin` | Boolean   | Must be `true` to receive token               |",
+                        required = true,
+                        content = @Content(
+                            schema = @Schema(implementation = ApiTokenForm.class),
+                                examples = {
+                                    @ExampleObject(
+                                        "value = {\n" +
+                                        "  \"userId\": \"string\",\n" +
+                                        "  \"tokenId\": \"string\",\n" +
+                                        "  \"showRevoked\": true,\n" +
+                                        "  \"expirationSeconds\": 0,\n" +
+                                        "  \"network\": \"string\",\n" +
+                                        "  \"claims\": {\n" +
+                                        "    \"label\": {},\n" +
+                                        "  },\r\n" +
+                                        "  \"shouldBeAdmin\": true\n" +
+                                        "}"
+                                    )
+                                }
+                        )
+            )
             final ApiTokenForm formData) throws DotDataException, DotSecurityException {
         
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
@@ -493,11 +526,62 @@ public class ApiTokenResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getRemoteToken(@Context final HttpServletRequest httpRequest,
-                                        final RemoteAPITokenForm formData) {
+    @Operation(operationId = "putGetRemoteToken",
+                summary = "Gets a remote api token",
+                description = "Returns a remote token to the user who requested the token.\n\n" +
+                                "Users must be an admin to request a token.",
+                tags = {"Api Token"},
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "Remote token retrieved successfully",
+                                content = @Content(mediaType = "application/json",
+                                    examples = {
+                                        @ExampleObject(
+                                            value = "{\n" +
+                                                    "  \"entity\": {\n" +
+                                                    "    \"revoked\": {\n" +
+                                                    "      \"allowNetwork\": null,\n" +
+                                                    "      \"claims\": {\n" +
+                                                    "        \"label\": \"string\",\n" +
+                                                    "      },\n" +
+                                                    "      \"expired\": false,\n" +
+                                                    "      \"expiresDate\": 0,\n" +
+                                                    "      \"id\": \"string\",\n" +
+                                                    "      \"issueDate\": 0,\n" +
+                                                    "      \"issuer\": \"string\",\n" +
+                                                    "      \"modificationDate\": 0,\n" +
+                                                    "      \"notBeforeDate\": false,\n" +
+                                                    "      \"requestingIp\": \"string\",\n" +
+                                                    "      \"requestingUserId\": \"string\",\n" +
+                                                    "      \"revoked\": true,\n" +
+                                                    "      \"revokedDate\": null,\n" +
+                                                    "      \"subject\": \"string\",\n" +
+                                                    "      \"tokenType\": \"string\",\n" +
+                                                    "      \"userId\": \"string\",\n" +
+                                                    "      \"valid\": false\n" +
+                                                    "    }\n" +
+                                                    "  },\n" +
+                                                    "  \"errors\": [],\n" +
+                                                    "  \"i18nMessagesMap\": {},\n" +
+                                                    "  \"messages\": [],\n" +
+                                                    "  \"pagination\": null,\n" +
+                                                    "  \"permissions\": []\n" +
+                                                    "}"
+                                        )
+                                    }
+                                )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Unexpected server error")
+                }
+    )
+    public final Response getRemoteToken(
+            @Context final HttpServletRequest httpRequest,
+            @RequestBody(description = "PUT body consists of a JSON object containing the following properties:\n\n")
+            final RemoteAPITokenForm formData) {
 
         if (!Config.getBooleanProperty("ENABLE_PROXY_TOKEN_REQUESTS", true)) {
-            final String message = "ENABLE_PROXY_TOKEN_REQUESTS is disabled, remote token is not allow";
+            final String message = "ENABLE_PROXY_TOKEN_REQUESTS is disabled, remote token is not allowed";
             SecurityLogger.logInfo(ApiTokenResource.class, message);
             throw new ForbiddenException("ENABLE_PROXY_TOKEN_REQUESTS should be true");
         }
@@ -571,7 +655,56 @@ public class ApiTokenResource implements Serializable {
     @Path("/{tokenId}/jwt")
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "getGetJwtFromApiToken",
+                summary = "Retrieves JSON web token from api token",
+                description = "Returns a JSON web token associated with an api token ID requested by a user, this token will then be revealed to the user.",
+                tags = {"Api Token"},
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "JSON web token successfully retrieved",
+                                content = @Content(mediaType = "application/json",
+                                    examples = {
+                                        @ExampleObject(
+                                            value = "{\n" +
+                                                    "  \"entity\": {\n" +
+                                                    "    \"revoked\": {\n" +
+                                                    "      \"allowNetwork\": null,\n" +
+                                                    "      \"claims\": {\n" +
+                                                    "        \"label\": \"string\",\n" +
+                                                    "      },\n" +
+                                                    "      \"expired\": false,\n" +
+                                                    "      \"expiresDate\": 0,\n" +
+                                                    "      \"id\": \"string\",\n" +
+                                                    "      \"issueDate\": 0,\n" +
+                                                    "      \"issuer\": \"string\",\n" +
+                                                    "      \"modificationDate\": 0,\n" +
+                                                    "      \"notBeforeDate\": false,\n" +
+                                                    "      \"requestingIp\": \"string\",\n" +
+                                                    "      \"requestingUserId\": \"string\",\n" +
+                                                    "      \"revoked\": true,\n" +
+                                                    "      \"revokedDate\": null,\n" +
+                                                    "      \"subject\": \"string\",\n" +
+                                                    "      \"tokenType\": \"string\",\n" +
+                                                    "      \"userId\": \"string\",\n" +
+                                                    "      \"valid\": false\n" +
+                                                    "    }\n" +
+                                                    "  },\n" +
+                                                    "  \"errors\": [],\n" +
+                                                    "  \"i18nMessagesMap\": {},\n" +
+                                                    "  \"messages\": [],\n" +
+                                                    "  \"pagination\": null,\n" +
+                                                    "  \"permissions\": []\n" +
+                                                    "}"
+                                        )
+                                    }
+                                )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Unexpected server error")
+                }
+    )
     public final Response getJwtFromApiToken(@Context final HttpServletRequest request,
                                              @Context final HttpServletResponse response,
                                              @PathParam("tokenId") final String tokenId) {
@@ -602,7 +735,11 @@ public class ApiTokenResource implements Serializable {
     @Path("/users/{userid}/revoke")
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "putRevokeUserToken",
+                summary = "Revokes specified token from user",
+                description = "")
     public final Response revokeUserToken(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                          @PathParam("userid") final String userid) throws DotSecurityException, DotDataException {
 
