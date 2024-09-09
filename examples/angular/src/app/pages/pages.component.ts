@@ -23,6 +23,7 @@ import { HeaderComponent } from './components/header/header.component';
 import { NavigationComponent } from './components/navigation/navigation.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { PageService } from './services/page.service';
+import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
 import { DYNAMIC_COMPONENTS } from './components';
 
 export type PageError = {
@@ -121,5 +122,12 @@ export class DotCMSPagesComponent implements OnInit {
       error: error,
       status: 'error',
     }));
+
+    /**
+     * Send a message to the editor to let it know that the client is ready.
+     * This is a temporary workaround to avoid the editor to be stuck in the loading state.
+     * This will be removed once the editor is able to detect when the client is ready without use DotcmsLayoutComponent.
+     */
+    postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: {} });
   }
 }
