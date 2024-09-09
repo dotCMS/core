@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * 
+ *
  * Through this API you will be able to access, delete, create and modify the {@link ContentType}, there are some
  * Content Types that are already set by dotcms:
  * <p><ul>
@@ -34,8 +34,8 @@ import java.util.Set;
  * <li> User
  * <li> Calendar Event
  * </ul><p>
- * 
- * 
+ *
+ *
  * @author Will Ezell
  *
  */
@@ -46,13 +46,13 @@ public interface ContentTypeAPI {
    * Name of Structures already set by dotcms
    */
   final Set<String> reservedStructureNames = ImmutableSet.of("host", "folder", "file", "forms", "html page",
-      "menu link", "container", "template", "user");
+          "menu link", "container", "template", "user");
 
   /**
    * Variable Name of the Structures already set by dotcms
    */
   final Set<String> reservedStructureVars = ImmutableSet.of("host", "folder", "file", "forms", "htmlpage", "menulink",
-		  "container", "template", "user", "calendarEvent");
+          "container", "template", "user", "calendarEvent");
 
   /**
    * Deletes the specified Content Type. By default, the process that actually deletes it is
@@ -120,7 +120,7 @@ public interface ContentTypeAPI {
 
   /**
    * Finds All the Content Types that exists in the system
-   * 
+   *
    * @return List of Content Types Objects
    * @throws DotDataException Error occurred when performing the action.
    */
@@ -137,7 +137,7 @@ public interface ContentTypeAPI {
 
   /**
    * Returns the default structure (Content Generic is the one shipped by dotcms)
-   * 
+   *
    * @return Content Type Object
    * @throws DotDataException Error occurred when performing the action.
    * @throws DotSecurityException The user does not have permissions to perform this action.
@@ -146,7 +146,7 @@ public interface ContentTypeAPI {
 
   /**
    * Finds all the Content Types in the system filtered by the {@link BaseContentType}, orders it according the given column.
-   * 
+   *
    * @param type Base Content Type that will be searched
    * @param orderBy Specifies an order criteria for the results
    * @param limit Amount of results
@@ -158,7 +158,7 @@ public interface ContentTypeAPI {
 
   /**
    * Finds all the Content Types in the system filtered by the {@link BaseContentType}.
-   * 
+   *
    * @param type Base Content Type that will be searched
    * @return List of Content Types Objects that belong to the Base Content Type specified.
    * @throws DotDataException Error occurred when performing the action.
@@ -177,7 +177,7 @@ public interface ContentTypeAPI {
 
   /**
    * Retrieves All the Content Types that have set an URL Map.
-   * 
+   *
    * @return List of Content Types Objects
    * @throws DotDataException Error occurred when performing the action.
    */
@@ -199,7 +199,7 @@ public interface ContentTypeAPI {
 
   /**
    * Counts the amount of Content Types in the DB filtered by the given condition.
-   * 
+   *
    * @return Amount of Content Types
    * @throws DotDataException Error occurred when performing the action.
    */
@@ -207,7 +207,7 @@ public interface ContentTypeAPI {
 
   /**
    * Counts the amount of Content Types in the DB filtered by the given condition and the BaseContentType.
-   * 
+   *
    * @param condition Condition that the Content Type needs to met
    * @param base Base Content Type that wants to be search
    * @param hostId hostId where the content type lives, pass null to bring from all sites.
@@ -245,7 +245,7 @@ public interface ContentTypeAPI {
 
   /**
    * Return the total count of content types stored in the system.
-   * 
+   *
    * @return Total Count of Content Types
    * @throws DotDataException Error occurred when performing the action.
    */
@@ -253,7 +253,7 @@ public interface ContentTypeAPI {
 
   /**
    * Returns a suggestion for the Velocity Variable Name.
-   * 
+   *
    * @param tryVar Velocity Variable Name
    * @return Suggestion for the Velocity Variable Name
    * @throws DotDataException Error occurred when performing the action.
@@ -262,7 +262,7 @@ public interface ContentTypeAPI {
 
   /**
    * Set as Default Content Type the given Content Type
-   * 
+   *
    * @param type Content Type that is going the be the default one.
    * @return The same Content Type Object given in the parameter
    * @throws DotDataException Error occurred when performing the action.
@@ -273,7 +273,7 @@ public interface ContentTypeAPI {
   /**
    * Retrieves a list of Structures with their respective URL Map. If the Structure does not have a URL Map is not added.
    * Check the existence of the URL Map by the method {@link #findUrlMapped()}
-   * 
+   *
    * @return List of {@link SimpleStructureURLMap} Objects
    * @throws DotDataException Error occurred when performing the action.
    */
@@ -281,7 +281,7 @@ public interface ContentTypeAPI {
 
   /**
    * Moves all the Content Types that lives in a specific folder to the System Folder.
-   * 
+   *
    * @param folder Folder where the Content Types currently lives.
    * @throws DotDataException Error occurred when performing the action.
    */
@@ -311,6 +311,24 @@ public interface ContentTypeAPI {
    *                              permissions to perform this action.
    */
   ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException;
+
+  /**
+   * Creates a copy of an existing Content Type and saves it to the specified Site.
+   *
+   * @param copyContentTypeBean    The {@link CopyContentTypeBean} object containing the data of
+   *                               the Content Type being copied.
+   * @param destinationSite        The {@link Host} object representing the Site where the Content
+   *                               Type will be saved.
+   * @param copyRelationshipFields If Relationship Fields must be copied as well, set this to
+   *                               {@code true}.
+   *
+   * @return The {@link ContentType} object representing the new Content Type.
+   *
+   * @throws DotDataException     An error occurred when interacting with the database.
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   */
+  ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite, final boolean copyRelationshipFields) throws DotDataException, DotSecurityException;
 
   /**
    * Creates a copy of an existing Content Type and saves it.
@@ -345,8 +363,28 @@ public interface ContentTypeAPI {
   ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException;
 
   /**
+   * Creates a copy of an existing Content Type and saves it to the specified Site. Additionally,
+   * the Workflow Schemes being used by the original Content Type will be assigned to the copied
+   * Content Type.
+   *
+   * @param copyContentTypeBean    The {@link CopyContentTypeBean} object containing the data of
+   *                               the Content Type being copied.
+   * @param destinationSite        The {@link Host} object representing the Site where the Content
+   *                               Type will be saved.
+   * @param copyRelationshipFields If Relationship Fields must be copied as well, set this to
+   *                               {@code true}.
+   *
+   * @return The {@link ContentType} object representing the new Content Type.
+   *
+   * @throws DotDataException     An error occurred when interacting with the database.
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   */
+  ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite, final boolean copyRelationshipFields) throws DotDataException, DotSecurityException;
+
+  /**
    * Saves a new Content Type.
-   * 
+   *
    * @param type Content Type that is going to be modified
    * @return Content Type Object saved.
    * @throws DotDataException Error occurred when performing the action.
@@ -356,17 +394,17 @@ public interface ContentTypeAPI {
 
   /**
    * Returns a List of Content Types recently used based on the Base Content Type.
-   * 
+   *
    * @param type Base Content Type which is going to be the filter.
    * @param numberToShow Amount of results
    * @return List of Content Type Objects
    * @throws DotDataException
    */
   List<ContentType> recentlyUsed(BaseContentType type, int numberToShow) throws DotDataException;
-  
+
   /**
    * Returns a List of content types based on the given condition
-   * 
+   *
    * @param condition Condition that the Content Type needs to met
    * @return List of Content Types Objects
    * @throws DotDataException Error occurred when performing the action.
@@ -375,7 +413,7 @@ public interface ContentTypeAPI {
 
   /**
    * Returns a List of content types based on the given condition, organized by the given column.
-   * 
+   *
    * @param condition Condition that the Content Type needs to met
    * @param orderBy Specifies an order criteria for the results
    * @param limit Amount of results
@@ -400,7 +438,7 @@ public interface ContentTypeAPI {
 
   /**
    * Returns a List of content type based on the given condition and the Base Content Type, organized by the given column.
-   * 
+   *
    * @param condition Condition that the Content Type needs to met
    * @param base Base Content Type that wants to be search
    * @param orderBy Specifies an order criteria for the results
@@ -410,7 +448,7 @@ public interface ContentTypeAPI {
    * @throws DotDataException Error occurred when performing the action.
    */
   List<ContentType> search(String condition, BaseContentType base, String orderBy, int limit, int offset)
-      throws DotDataException;
+          throws DotDataException;
 
   /**
    * Returns a List of content type based on the given condition and the Base Content Type, organized by the given column.
@@ -456,12 +494,12 @@ public interface ContentTypeAPI {
    * @throws DotDataException
    */
   Map<String, Long> getEntriesByContentTypes() throws DotDataException;
-  
+
   /**
    * Save or update a Content Type. If the Content Type already exist
    * then it's going to update the fields with the values set on the fields
    * parameter
-   * 
+   *
    * @param contentType Content Type that is going to be modified
    * @param newFields Content Type list of fields
    * @return Content Type Object saved.
@@ -469,12 +507,12 @@ public interface ContentTypeAPI {
    * @throws DotSecurityException The user does not have permissions to perform this action.
    */
   ContentType save(ContentType contentType, List<Field> newFields) throws DotDataException, DotSecurityException;
-  
+
   /**
    * Save or update a Content Type. If the Content Type already exist
-   * then it's going to update the fields and fields variables with the values set 
-   * on the fields and fieldVariables parameters 
-   * 
+   * then it's going to update the fields and fields variables with the values set
+   * on the fields and fieldVariables parameters
+   *
    * @param contentType Content Type that is going to be modified
    * @param newFields Content Type list of fields
    * @param newFieldVariables ContentType list of field variables
@@ -483,14 +521,14 @@ public interface ContentTypeAPI {
    * @throws DotSecurityException The user does not have permissions to perform this action.
    */
   ContentType save(ContentType contentType, List<Field> newFields, List<FieldVariable> newFieldVariables) throws DotDataException, DotSecurityException;
-  
+
   /**
    * Update the Content Type mod_date and clean the cache
    * @param type Content Type that is going to be modified
    * @return true if the mod_date was updated, false if not
-   * @throws DotDataException 
+   * @throws DotDataException
    */
-   boolean updateModDate(ContentType type) throws DotDataException;
+  boolean updateModDate(ContentType type) throws DotDataException;
 
   boolean updateModDate(Field field) throws DotDataException;
 
@@ -503,13 +541,13 @@ public interface ContentTypeAPI {
   void unlinkPageFromContentType(ContentType contentType)
           throws DotSecurityException, DotDataException;
 
-    /**
-     * Given a content type, verifies if the content type can be used considering the {@link LicenseLevel}.
-     * If the {@link LicenseLevel} is Community, only the content types that are not an {@link com.dotcms.contenttype.model.type.EnterpriseType} will be allowed
-     * @param contentType
-     * @return
-     */
-    boolean isContentTypeAllowed(ContentType contentType);
+  /**
+   * Given a content type, verifies if the content type can be used considering the {@link LicenseLevel}.
+   * If the {@link LicenseLevel} is Community, only the content types that are not an {@link com.dotcms.contenttype.model.type.EnterpriseType} will be allowed
+   * @param contentType
+   * @return
+   */
+  boolean isContentTypeAllowed(ContentType contentType);
 
   /**
    * Return the count of {@link ContentType} assigned to not SYSTEM_WORFLOW

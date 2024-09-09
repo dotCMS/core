@@ -14,6 +14,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -109,7 +110,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public static final String TYPES_AND_FIELDS_VALID_VARIABLE_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles, ContentTypeFactory fac, FieldFactory ffac,
-      PermissionAPI perms, FieldAPI fAPI, final LocalSystemEventsAPI localSystemEventsAPI) {
+                            PermissionAPI perms, FieldAPI fAPI, final LocalSystemEventsAPI localSystemEventsAPI) {
     super();
     this.contentTypeFactory = fac;
     this.fieldFactory = ffac;
@@ -122,7 +123,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
     this(user, respectFrontendRoles, FactoryLocator.getContentTypeFactory(), FactoryLocator.getFieldFactory(),
-        APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI());
+            APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI());
   }
 
   @Override
@@ -175,22 +176,22 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
    */
   @WrapInTransaction
   private void transactionalDelete(ContentType type) throws DotDataException {
-      try {
-        contentTypeFactory.delete(type);
-      } catch (DotStateException | DotDataException e) {
-        Logger.error(ContentType.class, e.getMessage(), e);
-        throw new BaseRuntimeInternationalizationException(e);
-      }
-      try {
-        String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
-        ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
-        APILocator.getSystemEventsAPI().pushAsync(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
-                contentTypePayloadDataWrapper, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ)));
-      } catch (DotStateException | DotDataException e) {
-        Logger.error(ContentType.class, e.getMessage(), e);
-        throw new BaseRuntimeInternationalizationException(e);
-      }
-      HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable())));
+    try {
+      contentTypeFactory.delete(type);
+    } catch (DotStateException | DotDataException e) {
+      Logger.error(ContentType.class, e.getMessage(), e);
+      throw new BaseRuntimeInternationalizationException(e);
+    }
+    try {
+      String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
+      ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
+      APILocator.getSystemEventsAPI().pushAsync(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
+              contentTypePayloadDataWrapper, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ)));
+    } catch (DotStateException | DotDataException e) {
+      Logger.error(ContentType.class, e.getMessage(), e);
+      throw new BaseRuntimeInternationalizationException(e);
+    }
+    HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable())));
   }
 
   /**
@@ -207,21 +208,21 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
    *                              perform this action.
    */
   protected boolean contentTypeCanBeDeleted(ContentType type) throws DotDataException, DotSecurityException {
-      if (null == type.id()) {
-          throw new DotDataException("ContentType must have an id set");
-      }
+    if (null == type.id()) {
+      throw new DotDataException("ContentType must have an id set");
+    }
 
-      //sometimes we might get an instance that has been called without having set the id therefore it will be missing certain fields
-      //This prevents that scenarios from happening
-      final String id = type.id();
-      type = Try.of(() -> contentTypeFactory.find(id)).getOrNull();
-      if (null == type) {
-        Logger.warn(this, "ContentType with id: " + id + " does not exist");
-        return false;
-      }
+    //sometimes we might get an instance that has been called without having set the id therefore it will be missing certain fields
+    //This prevents that scenarios from happening
+    final String id = type.id();
+    type = Try.of(() -> contentTypeFactory.find(id)).getOrNull();
+    if (null == type) {
+      Logger.warn(this, "ContentType with id: " + id + " does not exist");
+      return false;
+    }
 
-      perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
-      return true;
+    perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+    return true;
   }
 
   /**
@@ -258,16 +259,16 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
    * @param asyncDeleteWithJob this flag allows me to skip the Quartz Job and call the method directly
    * @throws DotDataException
    */
-   @WrapInTransaction
-   void triggerAsyncDelete(final ContentType type, final boolean asyncDeleteWithJob) throws DotDataException {
-      //If we're ok permissions wise, we need to remove the content from the index
-      //Then this quickly hides the content from the front end and APIS
-     contentTypeFactory.markForDeletion(type);
-     final ContentType copy = makeDisposableCopy(type);
-     //Once a copy has been made, we need to relocate all the content to the dummy CT and then delete the original
-     HibernateUtil.addCommitListener(() -> relocateThenDispose(type, copy, asyncDeleteWithJob));
+  @WrapInTransaction
+  void triggerAsyncDelete(final ContentType type, final boolean asyncDeleteWithJob) throws DotDataException {
+    //If we're ok permissions wise, we need to remove the content from the index
+    //Then this quickly hides the content from the front end and APIS
+    contentTypeFactory.markForDeletion(type);
+    final ContentType copy = makeDisposableCopy(type);
+    //Once a copy has been made, we need to relocate all the content to the dummy CT and then delete the original
+    HibernateUtil.addCommitListener(() -> relocateThenDispose(type, copy, asyncDeleteWithJob));
 
-   }
+  }
 
   /**
    * This method will relocate all the content associated to the content type to the dummy CT and then delete the original
@@ -286,7 +287,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         try {
           disposeSourceThenFireContentDelete(source, target, asyncDeleteWithJob);
         } catch (DotDataException e) {
-            Logger.error(ContentTypeFactoryImpl.class, String.format("Error removing content from index for ContentType [%s]", source.variable()), e);
+          Logger.error(ContentTypeFactoryImpl.class, String.format("Error removing content from index for ContentType [%s]", source.variable()), e);
         }
       });
     } catch (DotDataException e) {
@@ -301,58 +302,58 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
    * @param asynchronously if true, the content will be relocated in a separate thread
    */
   void relocateThenDispose(final ContentType source, final ContentType target,
-          final boolean asynchronously) {
+                           final boolean asynchronously) {
     if (asynchronously) {
-       DotConcurrentFactory.getInstance().getSingleSubmitter("ContentRelocationForDeletion")
+      DotConcurrentFactory.getInstance().getSingleSubmitter("ContentRelocationForDeletion")
               .execute(() -> internalRelocateThenDispose(source, target, true));
     } else {
-       //Generally speaking we want to go down this path when we're running integration tests
-       internalRelocateThenDispose(source, target, false);
+      //Generally speaking we want to go down this path when we're running integration tests
+      internalRelocateThenDispose(source, target, false);
     }
   }
 
   @WrapInTransaction
   private void disposeSourceThenFireContentDelete( final ContentType source, final ContentType target, final boolean asyncDeleteWithJob) throws DotDataException {
 
-      //Now that all the content is relocated, we're ready to destroy the original structure that held all content
-      //But first a few checks to make sure nothing remains outside the relocation process
-      final int sourceCount = new DotConnect().setSQL("select count (*) as x from contentlet where structure_inode = ?")
-              .addParam(source.inode())
-              .getInt("x");
+    //Now that all the content is relocated, we're ready to destroy the original structure that held all content
+    //But first a few checks to make sure nothing remains outside the relocation process
+    final int sourceCount = new DotConnect().setSQL("select count (*) as x from contentlet where structure_inode = ?")
+            .addParam(source.inode())
+            .getInt("x");
 
-      Logger.debug(getClass(),String.format(" ::: Content still remaining on source sourceCount-type: (%s) is (%d) ::: ", source.name(), sourceCount));
+    Logger.debug(getClass(),String.format(" ::: Content still remaining on source sourceCount-type: (%s) is (%d) ::: ", source.name(), sourceCount));
 
-      int targetCount = new DotConnect().setSQL("select count (*) as x from contentlet where structure_inode = ?")
-              .addParam(target.inode())
-              .getInt("x");
+    int targetCount = new DotConnect().setSQL("select count (*) as x from contentlet where structure_inode = ?")
+            .addParam(target.inode())
+            .getInt("x");
 
-      Logger.debug(getClass(),String.format(" ::: Content moved to target type: (%s) is (%d) ::: ", target.name(), targetCount));
+    Logger.debug(getClass(),String.format(" ::: Content moved to target type: (%s) is (%d) ::: ", target.name(), targetCount));
 
-      if(sourceCount > 0){
-         Logger.error(getClass(),String.format(" ::: Content still remaining on source sourceCount-type: (%s) is (%d) ::: ", source.name(), sourceCount));
-         return;
+    if(sourceCount > 0){
+      Logger.error(getClass(),String.format(" ::: Content still remaining on source sourceCount-type: (%s) is (%d) ::: ", source.name(), sourceCount));
+      return;
+    }
+
+    //Now that all the content is relocated, we're ready to destroy the original structure that held all content
+    //System fields like Categories, Relationships and Containers will be deleted using the original structure
+    contentTypeFactory.delete(source);
+    //and destroy all associated content under the copy
+
+    HibernateUtil.addCommitListener(() -> {
+      //Notify the system events API that the content type has been deleted, so it can take care of the WF clean up
+      localSystemEventsAPI.notify(new ContentTypeDeletedEvent(source.variable()));
+      //By default, the deletion process takes placed within job
+      Logger.info(this, String.format(" Content type (%s) will be deleted asynchronously using Quartz Job.", source.name()));
+      if(asyncDeleteWithJob) {
+        ContentTypeDeleteJob.triggerContentTypeDeletion(target);
+      } else {
+        try {
+          APILocator.getContentTypeDestroyAPI().destroy(target, APILocator.systemUser());
+        } catch (DotDataException | DotSecurityException e) {
+          Logger.error(ContentTypeFactoryImpl.class, String.format("Error deleting content type [%s]", target.variable()), e);
+        }
       }
-
-      //Now that all the content is relocated, we're ready to destroy the original structure that held all content
-      //System fields like Categories, Relationships and Containers will be deleted using the original structure
-      contentTypeFactory.delete(source);
-      //and destroy all associated content under the copy
-
-      HibernateUtil.addCommitListener(() -> {
-        //Notify the system events API that the content type has been deleted, so it can take care of the WF clean up
-        localSystemEventsAPI.notify(new ContentTypeDeletedEvent(source.variable()));
-          //By default, the deletion process takes placed within job
-          Logger.info(this, String.format(" Content type (%s) will be deleted asynchronously using Quartz Job.", source.name()));
-          if(asyncDeleteWithJob) {
-            ContentTypeDeleteJob.triggerContentTypeDeletion(target);
-          } else {
-            try {
-              APILocator.getContentTypeDestroyAPI().destroy(target, APILocator.systemUser());
-            } catch (DotDataException | DotSecurityException e) {
-               Logger.error(ContentTypeFactoryImpl.class, String.format("Error deleting content type [%s]", target.variable()), e);
-            }
-          }
-      });
+    });
 
   }
 
@@ -360,7 +361,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @CloseDBIfOpened
   public ContentType find(final String inodeOrVar) throws DotSecurityException, DotDataException {
     if(!UtilMethods.isSet(inodeOrVar)) {
-        return null;
+      return null;
     }
     final ContentType type = this.contentTypeFactory.find(inodeOrVar);
 
@@ -429,7 +430,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     try {
       return perms.filterCollection(this.contentTypeFactory.findAll(orderBy), PermissionAPI.PERMISSION_READ, respectFrontendRoles,
-          user);
+              user);
     } catch (DotSecurityException e) {
       Logger.warn(this.getClass(), e.getMessage(), e);
       return ImmutableList.of();
@@ -442,7 +443,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public List<ContentType> search(String condition) throws DotDataException {
     try {
       return perms.filterCollection(this.contentTypeFactory.search(condition, "mod_date", -1, 0), PermissionAPI.PERMISSION_READ,
-          respectFrontendRoles, user);
+              respectFrontendRoles, user);
     } catch (DotSecurityException e) {
       throw new DotStateException(e);
     }
@@ -476,7 +477,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     try {
       final List<String> resolvedSiteIds = HostUtil.resolveSiteIds(siteIds, this.user, this.respectFrontendRoles);
       return this.perms.filterCollection(this.contentTypeFactory.search(resolvedSiteIds,
-              condition, base.getType(), ContentTypeFactory.MOD_DATE_COLUMN, -1, 0),
+                      condition, base.getType(), ContentTypeFactory.MOD_DATE_COLUMN, -1, 0),
               PermissionAPI.PERMISSION_READ, this.respectFrontendRoles, this.user).size();
     } catch (final DotSecurityException e) {
       Logger.error(this, String.format("An error occurred when getting the Content Type count for Sites " +
@@ -488,14 +489,20 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @WrapInTransaction
   @Override
   public ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
-    return copyFromAndDependencies(copyContentTypeBean, null);
+    return copyFromAndDependencies(copyContentTypeBean, null, true);
   }
 
   @WrapInTransaction
   @Override
   public ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException {
+    return copyFromAndDependencies(copyContentTypeBean, destinationSite, true);
+  }
+
+  @WrapInTransaction
+  @Override
+  public ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite, final boolean copyRelationshipFields) throws DotDataException, DotSecurityException {
     final ContentType sourceContentType = copyContentTypeBean.getSourceContentType();
-    final ContentType copiedContentType = copyFrom(copyContentTypeBean, destinationSite);
+    final ContentType copiedContentType = copyFrom(copyContentTypeBean, destinationSite, copyRelationshipFields);
     // saving workflow information
     final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
     final List<WorkflowScheme> workflowSchemes = workflowAPI.findSchemesForContentType(find(sourceContentType.id()));
@@ -515,13 +522,20 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   @EnterpriseFeature(licenseLevel = LicenseLevel.PROFESSIONAL, errorMsg = "An enterprise license is required in order to use this feature.")
   public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
-    return copyFrom(copyContentTypeBean, null);
+    return copyFrom(copyContentTypeBean, null, true);
   }
 
   @WrapInTransaction
   @Override
   @EnterpriseFeature(licenseLevel = LicenseLevel.PROFESSIONAL, errorMsg = "An enterprise license is required in order to use this feature.")
   public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException {
+    return copyFrom(copyContentTypeBean, destinationSite, true);
+  }
+
+  @WrapInTransaction
+  @Override
+  @EnterpriseFeature(licenseLevel = LicenseLevel.PROFESSIONAL, errorMsg = "An enterprise license is required in order to use this feature.")
+  public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite, final boolean copyRelationshipFields) throws DotDataException, DotSecurityException {
     final ContentType sourceContentType = copyContentTypeBean.getSourceContentType();
     final ContentTypeBuilder builder = ContentTypeBuilder.builder(sourceContentType)
             .name(copyContentTypeBean.getName())
@@ -570,28 +584,31 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
             + ", from: " + copyContentTypeBean.getSourceContentType().variable());
 
     for (final Field sourceField : sourceFields) {
-        DotPreconditions.checkNotEmpty(sourceField.variable(), DotCorruptedDataException.class,
+      DotPreconditions.checkNotEmpty(sourceField.variable(), DotCorruptedDataException.class,
               "Velocity Variable Name in Field ID '%s' cannot be empty", sourceField.id());
-        Field newField = lowerNewFieldMap.get(sourceField.variable().toLowerCase());
-        if (null == newField) {
+      if (sourceField instanceof RelationshipField && !copyRelationshipFields) {
+        continue;
+      }
+      Field newField = lowerNewFieldMap.get(sourceField.variable().toLowerCase());
+      if (null == newField) {
 
-            newField = APILocator.getContentTypeFieldAPI()
-                    .save(FieldBuilder.builder(sourceField).sortOrder(sourceField.sortOrder()).contentTypeId(newContentType.id()).id(null).build(), user);
-        } else {
+        newField = APILocator.getContentTypeFieldAPI()
+                .save(FieldBuilder.builder(sourceField).sortOrder(sourceField.sortOrder()).contentTypeId(newContentType.id()).id(null).build(), user);
+      } else {
 
-            // if contains we just need to sort based on the source order
-          APILocator.getContentTypeFieldAPI()
-                  .save(FieldBuilder.builder(newField).sortOrder(sourceField.sortOrder()).build(), user);
+        // if contains we just need to sort based on the source order
+        APILocator.getContentTypeFieldAPI()
+                .save(FieldBuilder.builder(newField).sortOrder(sourceField.sortOrder()).build(), user);
+      }
+
+      final List<FieldVariable> currentFieldVariables = sourceField.fieldVariables();
+      if (UtilMethods.isSet(currentFieldVariables)) {
+        for (final FieldVariable fieldVariable : currentFieldVariables) {
+
+          APILocator.getContentTypeFieldAPI().save(ImmutableFieldVariable.builder().from(fieldVariable).
+                  fieldId(newField.id()).id(null).userId(user.getUserId()).build(), user);
         }
-
-        final List<FieldVariable> currentFieldVariables = sourceField.fieldVariables();
-        if (UtilMethods.isSet(currentFieldVariables)) {
-          for (final FieldVariable fieldVariable : currentFieldVariables) {
-
-            APILocator.getContentTypeFieldAPI().save(ImmutableFieldVariable.builder().from(fieldVariable).
-                    fieldId(newField.id()).id(null).userId(user.getUserId()).build(), user);
-          }
-        }
+      }
     }
 
     return find(newContentType.id());
@@ -633,10 +650,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @CloseDBIfOpened
   @Override
   public List<ContentType> findByBaseType(BaseContentType type, String orderBy, int limit, int offset)
-      throws DotDataException {
+          throws DotDataException {
     try {
       return perms.filterCollection(this.contentTypeFactory.search("1=1", type, orderBy, limit, offset), PermissionAPI.PERMISSION_READ,
-          respectFrontendRoles, user);
+              respectFrontendRoles, user);
     } catch (DotSecurityException e) {
       return ImmutableList.of();
     }
@@ -649,7 +666,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     try {
       return perms.filterCollection(this.contentTypeFactory.findByBaseType(type), PermissionAPI.PERMISSION_READ, respectFrontendRoles,
-          user);
+              user);
     } catch (DotSecurityException e) {
       return ImmutableList.of();
     }
@@ -708,7 +725,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public List<ContentType> recentlyUsed(BaseContentType type, int numberToShow) throws DotDataException {
 
     String query =
-        " { \"query\": { \"query_string\": { \"query\": \"+moduser:{0} +working:true +deleted:false +basetype:{1}\" } },  \"aggs\": { \"recent-contents\": { \"terms\": { \"field\": \"contentType_dotraw\", \"size\": {2} }, \"aggs\": { \"top_tag_hits\": { \"top_hits\": { \"sort\": [ { \"moddate\": { \"order\": \"desc\" } } ], \"_source\": { \"include\": [ \"title\" ] }, \"size\" : 1 } } }  }  }, \"size\":0 } ";
+            " { \"query\": { \"query_string\": { \"query\": \"+moduser:{0} +working:true +deleted:false +basetype:{1}\" } },  \"aggs\": { \"recent-contents\": { \"terms\": { \"field\": \"contentType_dotraw\", \"size\": {2} }, \"aggs\": { \"top_tag_hits\": { \"top_hits\": { \"sort\": [ { \"moddate\": { \"order\": \"desc\" } } ], \"_source\": { \"include\": [ \"title\" ] }, \"size\" : 1 } } }  }  }, \"size\":0 } ";
 
     int limit = (numberToShow < 1 || numberToShow > 20) ? 20 : numberToShow;
 
@@ -740,7 +757,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   public Map<String, Long> getEntriesByContentTypes() throws DotDataException {
     String query = "{" + "  \"aggs\" : {" + "    \"entries\" : {" + "       \"terms\" : { \"field\" : \"contenttype_dotraw\",  \"size\" : " + Integer.MAX_VALUE + "}"
-        + "     }" + "   }," + "   \"size\":0}";
+            + "     }" + "   }," + "   \"size\":0}";
 
     try {
       SearchResponse raw = APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
@@ -768,7 +785,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @CloseDBIfOpened
   @Override
   public List<ContentType> search(String condition, String orderBy, int limit, int offset) throws DotDataException {
-      return this.search( condition, BaseContentType.ANY, orderBy,  limit,  offset);
+    return this.search( condition, BaseContentType.ANY, orderBy,  limit,  offset);
   }
 
   @CloseDBIfOpened
@@ -815,11 +832,11 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   }
 
   @CloseDBIfOpened
-    @Override
-    public List<ContentType> search(final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset, final String siteId)
-            throws DotDataException {
-        return search(UtilMethods.isSet(siteId) ? List.of(siteId) : List.of(), condition, base, orderBy, limit, offset);
-    }
+  @Override
+  public List<ContentType> search(final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset, final String siteId)
+          throws DotDataException {
+    return search(UtilMethods.isSet(siteId) ? List.of(siteId) : List.of(), condition, base, orderBy, limit, offset);
+  }
 
   @CloseDBIfOpened
   @Override
@@ -839,18 +856,18 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @WrapInTransaction
   @Override
   public ContentType save(ContentType contentType, List<Field> newFields)
-      throws DotDataException, DotSecurityException {
+          throws DotDataException, DotSecurityException {
     return save(contentType, newFields, null);
   }
 
   @WrapInTransaction
   @Override
   public ContentType save(ContentType contentType, List<Field> newFields, List<FieldVariable> newFieldVariables)
-      throws DotDataException, DotSecurityException {
+          throws DotDataException, DotSecurityException {
 
     if(UtilMethods.isSet(contentType.variable())) {
       DotPreconditions.checkArgument(contentType.variable().matches(
-              TYPES_AND_FIELDS_VALID_VARIABLE_REGEX),
+                      TYPES_AND_FIELDS_VALID_VARIABLE_REGEX),
               "Invalid content type variable: " + contentType.variable(),
               IllegalArgumentException.class);
     }
@@ -860,10 +877,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     // check perms
     Permissionable parent = contentType.getParentPermissionable();
     if (!perms.doesUserHavePermissions(parent,
-        "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
-        user)) {
+            "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
+            user)) {
       throw new DotSecurityException(
-          "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
+              "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
     }
 
     try {
@@ -883,7 +900,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @WrapInTransaction
   private ContentType transactionalSave(final List<Field> newFields,
                                         final List<FieldVariable> newFieldVariables,
-                                         ContentType contentTypeToSave) throws DotDataException, DotSecurityException {
+                                        ContentType contentTypeToSave) throws DotDataException, DotSecurityException {
 
 
     // set to system folder if on system host or the host id of the folder it is on
@@ -911,8 +928,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       perms.resetPermissionReferences(contentTypeToSave);
     }
     ActivityLogger.logInfo(getClass(), "Save ContentType Action",
-        "User " + user.getUserId() + "/" + user.getFullName() + " added ContentType " + contentTypeToSave.name()
-            + " to host id:" +  contentTypeToSave.host());
+            "User " + user.getUserId() + "/" + user.getFullName() + " added ContentType " + contentTypeToSave.name()
+                    + " to host id:" +  contentTypeToSave.host());
     AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + contentTypeToSave.name(), user);
 
     // update the existing content type fields
@@ -924,12 +941,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         if (!newFields.stream().anyMatch(f -> oldField.id().equals(f.id()))) {
           if (!oldField.fixed() && !oldField.readOnly()) {
             Logger.info(this, "Deleting no longer needed Field: " + oldField.name() + " with ID: " + oldField.id()
-                + ", from Content Type: " + contentTypeToSave.name());
+                    + ", from Content Type: " + contentTypeToSave.name());
 
             fieldAPI.delete(oldField);
           } else {
             Logger.info(this, "Can't delete Field because is fixed: " + oldField.name() + " with ID: " + oldField.id()
-                + ", from Content Type: " + contentTypeToSave.name());
+                    + ", from Content Type: " + contentTypeToSave.name());
             varNamesCantDelete.put(oldField.variable(), oldField);
           }
         }
@@ -956,7 +973,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
           } else {
             // If the field don't match on VariableName and DBColumn we log an error.
             Logger.error(this, "Can't save Field with already existing VariableName: " + field.variable() + ", id: "
-                + field.id() + ", DBColumn: " + field.dbColumn());
+                    + field.id() + ", DBColumn: " + field.dbColumn());
           }
         }
 
@@ -982,14 +999,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   private Field checkContentTypeFields(final ContentType contentType, final Field field) {
 
-      if (UtilMethods.isSet(field) && UtilMethods.isSet(contentType.id())) {
+    if (UtilMethods.isSet(field) && UtilMethods.isSet(contentType.id())) {
 
-          return  !UtilMethods.isSet(field.contentTypeId()) || !field.contentTypeId().equals(contentType.id()) ?
-                FieldBuilder.builder(field).contentTypeId(contentType.id()).build() : field;
+      return  !UtilMethods.isSet(field.contentTypeId()) || !field.contentTypeId().equals(contentType.id()) ?
+              FieldBuilder.builder(field).contentTypeId(contentType.id()).build() : field;
 
-      }
+    }
 
-      return field;
+    return field;
   }
 
   @WrapInTransaction
@@ -1022,8 +1039,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @Override
   public boolean isContentTypeAllowed(ContentType contentType) {
-      return LicenseManager.getInstance().isEnterprise() || !BaseContentType
-              .getEnterpriseBaseTypes().contains(contentType.baseType());
+    return LicenseManager.getInstance().isEnterprise() || !BaseContentType
+            .getEnterpriseBaseTypes().contains(contentType.baseType());
   }
 
   public long countContentTypeAssignedToNotSystemWorkflow() throws DotDataException {

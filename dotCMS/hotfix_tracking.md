@@ -57,3 +57,4 @@ This maintenance release includes the following code fixes:
 51. https://github.com/dotCMS/core/issues/29259 : Page API: Image field content gone when request page with depth #29259
 52. https://github.com/dotCMS/core/issues/29667 : Update CLEANUP_BUNDLES_OLDER_THAN_DAYS default value to 4 #29667
 53. https://github.com/dotCMS/core/issues/28779 : IndexOutOfBoundsException in sitesearch portlet #28779
+54. https://github.com/dotCMS/core/issues/29256 : Many to One Relationships Not Copied in Copy Site #29256
