@@ -50,6 +50,16 @@ export class UveEditStyleFormComponent {
                 { name: "Red", value: "red" },
                 { name: "Blue", value: "blue" },
                 { name: "Green", value: "green" },
+                { name: "White", value: "white" },
+            ]
+        },
+        {
+            name: "Mode",
+            type: "select",
+            id: "mode",
+            options: [
+                { name: "Horizontal", value: "horizontal" },
+                { name: "Vertical", value: "vertical" }
             ]
         }
     ]);
