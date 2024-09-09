@@ -33,7 +33,9 @@ describe('DotEditContentSelectFieldComponent', () => {
     it('should set the first value to the control if no value or defaultValue', () => {
         spectator.setInput('field', SELECT_FIELD_TEXT_MOCK);
         spectator.component.formControl.setValue(null);
-        spectator.detectChanges();
+
+        spectator.component.ngOnInit();
+
         expect(spectator.component.formControl.value).toEqual('Test,1');
 
         const spanElement = spectator.query('span.p-dropdown-label');

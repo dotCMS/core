@@ -4,6 +4,13 @@ import { DotPageAssetLayoutColumn } from '../../models';
 import { getPositionStyleClasses } from '../../utils';
 import { ContainerComponent } from '../container/container.component';
 
+/**
+ * This component is responsible to display a column with containers.
+ *
+ * @export
+ * @class ColumnComponent
+ * @implements {OnInit}
+ */
 @Component({
     selector: 'dotcms-column',
     standalone: true,
@@ -17,7 +24,19 @@ import { ContainerComponent } from '../container/container.component';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ColumnComponent implements OnInit {
+    /**
+     * The column object containing the containers.
+     *
+     * @type {DotPageAssetLayoutColumn}
+     * @memberof ColumnComponent
+     */
     @Input() column!: DotPageAssetLayoutColumn;
+
+    /**
+     * The data-testid attribute used for identifying the component during testing.
+     *
+     * @memberof ColumnComponent
+     */
     @HostBinding('class') containerClasses = '';
 
     ngOnInit() {

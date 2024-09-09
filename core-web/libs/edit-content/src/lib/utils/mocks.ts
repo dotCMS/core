@@ -630,6 +630,55 @@ export const CATEGORY_MOCK: DotCMSContentTypeField = {
     variable: 'Category'
 };
 
+export const CONSTANT_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableConstantField',
+    contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
+    dataType: 'SYSTEM',
+    fieldType: 'Constant-Field',
+    fieldTypeLabel: 'Constant Field',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    hint: 'this is a hint',
+    iDate: 1725491385000,
+    id: '666817fcecef5c10cb520c1866baa411',
+    indexed: false,
+    listed: false,
+    modDate: 1725491385000,
+    name: 'constant',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 3,
+    unique: false,
+    values: 'constant-value',
+    variable: 'constant'
+};
+
+export const HIDDEN_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableHiddenField',
+    contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
+    dataType: 'SYSTEM',
+    fieldType: 'Hidden-Field',
+    fieldTypeLabel: 'Hidden Field',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1725498554000,
+    id: '22b95419744e89549bb7f2b662f5d312',
+    indexed: false,
+    listed: false,
+    modDate: 1725499601000,
+    name: 'hidden',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 5,
+    unique: false,
+    values: 'hidden-value',
+    variable: 'hidden'
+};
+
 export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     TEXT_FIELD_MOCK,
     TEXT_AREA_FIELD_MOCK,
@@ -654,7 +703,9 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     KEY_VALUE_MOCK,
     WYSIWYG_MOCK,
     HOST_FOLDER_TEXT_MOCK,
-    CATEGORY_MOCK
+    CATEGORY_MOCK,
+    CONSTANT_FIELD_MOCK,
+    HIDDEN_FIELD_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;

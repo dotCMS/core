@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { Observable, Subject } from 'rxjs';
 
 import {
@@ -34,6 +33,7 @@ import {
     DotCMSWorkflow,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { isEqual } from '@dotcms/utils';
 import { FieldUtil } from '@dotcms/utils-testing';
 
 /**
@@ -269,7 +269,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     }
 
     private isFormValueUpdated(): boolean {
-        return !_.isEqual(this.form.value, this.originalValue);
+        return !isEqual(this.form.value, this.originalValue);
     }
 
     private isNewDateVarFields(newOptions: SelectItem[]): boolean {

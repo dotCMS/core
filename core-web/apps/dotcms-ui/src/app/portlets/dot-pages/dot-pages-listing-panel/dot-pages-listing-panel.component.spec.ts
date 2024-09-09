@@ -10,7 +10,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TableModule } from 'primeng/table';
+import { Table, TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { of } from 'rxjs/internal/observable/of';
@@ -189,8 +189,8 @@ describe('DotPagesListingPanelComponent', () => {
         });
 
         it('should set table with params', () => {
-            const elem = de.query(By.css('p-table')).componentInstance;
-            expect(elem.loading).toBe(undefined);
+            const elem: Table = de.query(By.css('p-table')).componentInstance;
+            expect(elem.loading).toBe(false);
             expect(elem.lazy).toBe(true);
             expect(elem.selectionMode).toBe('single');
             expect(elem.sortField).toEqual('modDate');

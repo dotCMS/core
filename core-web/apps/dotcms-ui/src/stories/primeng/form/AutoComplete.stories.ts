@@ -1,3 +1,4 @@
+import { action } from '@storybook/addon-actions';
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { UPDATE_STORY_ARGS } from '@storybook/core-events';
 
@@ -99,7 +100,6 @@ export default meta;
 
 type Story = StoryObj<AutoComplete>;
 
-// First arguments is the Args from Meta, the second one is the whole storybook context
 export const Main: Story = {
     render: (args, { id }) => {
         return {
@@ -122,10 +122,12 @@ export const Main: Story = {
                             suggestions: filtered // This way the reference of suggestions change in runtime and primeng finish its change detection lifecycle
                         }
                     });
-                }
+                },
+                onSelect: action('onSelect')
             },
             template: `<p-autoComplete
             (completeMethod)="filterCountries($event)"
+            (onSelect)="onSelect($event)"
             [dropdown]="dropdown"
             [suggestions]="suggestions"
             [field]="field"

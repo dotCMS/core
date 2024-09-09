@@ -59,16 +59,17 @@ const meta: Meta = {
     render: (args) => ({
         props: args,
         template: `
-        <p-checkbox
-            *ngFor="let city of cities" name="city"
-            [value]="city"
-            [(ngModel)]="selectedCity"
-            [inputId]="city.code"
-            [label]="city.name"
-            [disabled]="disabled"
-            [class]="invalid ? 'ng-dirty ng-invalid' : ''"
-            />
-        `
+        @for(city of cities; track $index){
+            <p-checkbox
+                name="city"
+                [value]="city"
+                [(ngModel)]="selectedCity"
+                [inputId]="city.code"
+                [label]="city.name"
+                [disabled]="disabled"
+                [class]="invalid ? 'ng-dirty ng-invalid' : ''"
+                />
+        }`
     })
 };
 export default meta;

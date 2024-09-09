@@ -144,18 +144,6 @@ public class SecureLinkTool extends LinkTool
                     !desiredPort.equals(usingPort))
                 {
                     url.insert(0, startNewUrlString(request, desiredScheme, desiredPort));
-
-                    // This is a hack to help us overcome the problem that some
-                    // older browsers do not share sessions between http & https
-                    // If this feature is diabled, session ID could still be added
-                    // the previous call to the RequestUtils.computeURL() method,
-                    // but only if needed due to cookies disabled, etc.
-                    if (securePlugin.getSslExtAddSession() && url.toString().indexOf(";jsessionid=") < 0)
-                    {
-                        // Add the session identifier
-                        url = new StringBuilder(toEncoded(url.toString(),
-                                               request.getSession().getId()));
-                    }
                 }
             }
         }

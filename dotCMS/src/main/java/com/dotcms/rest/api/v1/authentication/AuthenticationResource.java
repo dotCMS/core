@@ -26,6 +26,16 @@ import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -34,6 +44,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -52,8 +63,15 @@ import org.glassfish.jersey.server.JSONP;
  * @version 3.7
  * @since Jul 7, 2016
  */
+
+
 @SuppressWarnings("serial")
 @Path("/v1/authentication")
+@Tag(name = "Authentication",
+        description = "Endpoints that perform operations related to user authentication",
+        externalDocs = @ExternalDocumentation(description = "Additional Authentication API information",
+                                                url = "https://www.dotcms.com/docs/latest/rest-api-authentication"))
+
 public class AuthenticationResource implements Serializable {
 
     static final String USER = "user";
@@ -90,8 +108,37 @@ public class AuthenticationResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response authentication(@Context final HttpServletRequest request,
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "postAuthentication",
+                summary = "Verifies user or application authentication",
+                description = "Takes a user's login ID and password and checks them against the user rolls.\n\n" +
+                                "If the user is found and authenticated, a session is created.\n\n" +
+                                "Otherwise the system will return an 'authentication failed' message.\n\n",
+                tags = {"Authentication"},
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "User authentication successful",
+                        content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityUserMapView.class))),
+                    @ApiResponse(responseCode = "401", description = "User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden request"),
+                    @ApiResponse(responseCode = "500", description = "Unexpected error")
+                }
+            )
+    public final Response authentication(
+                                   @Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
+                                   @RequestBody(description = "This method takes a user's credentials and language preferences to authenticate them.\n\n" +
+                                                                "Requires a POST body consisting of a JSON object containing the following properties:\n\n" + 
+                                                                "| **Property** | **Value** | **Description**                               |\n" +
+                                                                "|--------------|-----------|-----------------------------------------------|\n" +
+                                                                "| `userId`     | String    | **Required.** ID of user attempting to log in |\n" +
+                                                                "| `password`   | String    | User password                                 |\n" +
+                                                                "| `language`   | String    | Preferred language for user                   |\n" +
+                                                                "| `country`    | String    | Country where user is located                 |\n",
+                                                required = true,
+                                                content = @Content(
+                                                    schema = @Schema(implementation = AuthenticationForm.class)
+                                                ))
                                    final AuthenticationForm authenticationForm) {
 
         Response res = null;
@@ -168,6 +215,20 @@ public class AuthenticationResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "getLogInUser",
+                summary = "Retrieves user data",
+                description = "Provides information about any users that are currently in a session.\n\n" +
+                                "This retrieved data will be formatted into a JSON response body.\n\n",
+                tags = {"Authentication"},
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "User data successfully collected",
+                                content = @Content(
+                                    schema = @Schema(implementation = ResponseEntityUserView.class)
+                                )),
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized request"),
+                    @ApiResponse(responseCode = "404", description = "User not found")
+                })
     @Path("logInUser")
     public final Response getLoginUser(@Context final HttpServletRequest request){
         Response res = null;

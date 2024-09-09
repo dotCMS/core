@@ -1,7 +1,6 @@
 #!/bin/sh
 
 export CATALINA_OPTS="$CATALINA_OPTS -Dfile.encoding=UTF8"
-export CATALINA_OPTS="$CATALINA_OPTS --illegal-access=deny"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/java.lang=ALL-UNNAMED"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/java.io=ALL-UNNAMED"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.rmi/sun.rmi.transport=ALL-UNNAMED"
@@ -34,8 +33,8 @@ export CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.tomcat.util.digester.PROPERTY_
 if echo "$CATALINA_OPTS" | grep -q '\-Dlog4j2\.configurationFile'; then
   echo "Log4j configuration already set"
 else
-  echo "Setting log4j2.configurationFile=$TOMCAT_HOME/webapps/ROOT/WEB-INF/log4j/log4j2.xml"
-  export CATALINA_OPTS="$CATALINA_OPTS -Dlog4j2.configurationFile=$TOMCAT_HOME/webapps/ROOT/WEB-INF/log4j/log4j2.xml"
+  echo "Setting log4j2.configurationFile=$CATALINA_HOME/webapps/ROOT/WEB-INF/log4j/log4j2.xml"
+  export CATALINA_OPTS="$CATALINA_OPTS -Dlog4j2.configurationFile=$CATALINA_HOME/webapps/ROOT/WEB-INF/log4j/log4j2.xml"
 fi
 
 if echo "$CATALINA_OPTS" | grep -q '\-DLog4jContextSelector'; then
@@ -45,7 +44,7 @@ else
   export CATALINA_OPTS="$CATALINA_OPTS -DLog4jContextSelector=org.apache.logging.log4j.core.async.BasicAsyncLoggerContextSelector"
 fi
 
-ADDITIONAL_CLASSPATH="$CATALINA_HOME/log4j2/lib/*:$CATALINA_HOME/session-manager/lib/*"
+ADDITIONAL_CLASSPATH="$CATALINA_HOME/log4j2/lib/*"
 
 if [ -n "$CLASSPATH" ]; then
   CLASSPATH="$CLASSPATH:$ADDITIONAL_CLASSPATH"

@@ -150,7 +150,7 @@ jobs:
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
   frontend-notify:
-    name: Notify team member ${{ matrix.members }}
+    name: Notify team member ${{ matrix.member }}
     needs: [resolve-data, slack-channel-resolver]
     runs-on: ubuntu-20.04
     if: success() && needs.resolve-data.outputs.issue_number && needs.slack-channel-resolver.outputs.channel_ids

@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { MarkdownModule } from 'ngx-markdown';
 import { Observable, of } from 'rxjs';
 
@@ -303,7 +302,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
 
     describe('With dynamic variables', () => {
         beforeEach(() => {
-            const sitesDynamic = _.cloneDeep(sites);
+            const sitesDynamic = structuredClone(sites);
             sitesDynamic[0].secrets = [
                 ...sites[0].secrets,
                 {

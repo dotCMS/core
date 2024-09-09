@@ -24,11 +24,12 @@ export interface RowProps {
 }
 
 /**
- * Renders a row
+ * This component renders a row with all it's content using the layout provided by dotCMS Page API.
  *
+ * @see {@link https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas}
  * @category Components
  * @param {React.ForwardedRef<HTMLDivElement, RowProps>} ref
- * @return {*}
+ * @return {JSX.Element} Rendered rows with columns
  */
 export const Row = forwardRef<HTMLDivElement, RowProps>((props: RowProps, ref) => {
     const { isInsideEditor } = useContext<DotCMSPageContext | null>(

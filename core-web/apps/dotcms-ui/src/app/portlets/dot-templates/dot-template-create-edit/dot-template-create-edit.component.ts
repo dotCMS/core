@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
@@ -6,14 +6,14 @@ import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms
 import { DialogService } from 'primeng/dynamicdialog';
 import { DynamicDialogRef } from 'primeng/dynamicdialog/dynamicdialog-ref';
 
-import { filter, takeUntil } from 'rxjs/operators';
+import { filter, takeUntil, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
 import { DotLayout, DotTemplate } from '@dotcms/dotcms-models';
 
 import { DotTemplatePropsComponent } from './dot-template-props/dot-template-props.component';
-import { DotTemplateItem, DotTemplateState, DotTemplateStore } from './store/dot-template.store';
+import { DotTemplateItem, DotTemplateStore, VM } from './store/dot-template.store';
 
 @Component({
     selector: 'dot-template-create-edit',
@@ -24,8 +24,7 @@ import { DotTemplateItem, DotTemplateState, DotTemplateStore } from './store/dot
 export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     readonly #store = inject(DotTemplateStore);
 
-    vm$ = this.#store.vm$;
-    didTemplateChanged$ = this.#store.didTemplateChanged$;
+    vm$: Observable<VM>;
 
     form: UntypedFormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -38,9 +37,9 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
-        this.vm$
-            .pipe(takeUntil(this.destroy$))
-            .subscribe(({ original, working }: DotTemplateState) => {
+        this.vm$ = this.#store.vm$.pipe(
+            takeUntil(this.destroy$),
+            tap(({ original, working }: VM) => {
                 const template = original.type === 'design' ? working : original;
                 if (this.form) {
                     const value = this.getFormValue(template);
@@ -53,7 +52,9 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 if (!template.identifier) {
                     this.createTemplate();
                 }
-            });
+            })
+        );
+
         this.setSwitchSiteListener();
     }
 

@@ -49,11 +49,18 @@ describe('DotEditContentMultiselectFieldComponent', () => {
             spectator = createComponent();
         });
 
-        it('should render a options selected if the form have value', () => {
+        it('should render the options selected if the form have value', () => {
             spectator.setInput('field', MULTI_SELECT_FIELD_MOCK);
             spectator.detectComponentChanges();
 
-            expect(spectator.query(MultiSelect).valuesAsString).toEqual('one, two');
+            spectator.query(MultiSelect).show();
+            spectator.detectChanges();
+
+            const options = spectator.component.$options();
+
+            spectator.queryAll('.p-multiselect-item').forEach((item, index) => {
+                expect(item.textContent).toBe(options[index].label);
+            });
         });
     });
 
