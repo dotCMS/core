@@ -144,7 +144,7 @@ export function withLoad() {
                                                     canEditPage,
                                                     pageIsLocked,
                                                     isTraditionalPage,
-                                                    isClientReady: isTraditionalPage ? true : false,
+                                                    isClientReady: isTraditionalPage, // If is a traditional page we are ready
                                                     status: UVE_STATUS.LOADED
                                                 });
                                             },
