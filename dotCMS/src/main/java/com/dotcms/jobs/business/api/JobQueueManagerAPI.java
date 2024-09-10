@@ -115,4 +115,11 @@ public interface JobQueueManagerAPI extends AutoCloseable {
      */
     CircuitBreaker getCircuitBreaker();
 
+    /**
+     * Retrieves the size of the thread pool used for job processing.
+     *
+     * @return The size of the thread pool
+     */
+    int getThreadPoolSize();
+
 }
