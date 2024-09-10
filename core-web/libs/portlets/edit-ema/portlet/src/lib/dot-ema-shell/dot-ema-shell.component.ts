@@ -26,6 +26,7 @@ import { SiteService } from '@dotcms/dotcms-js';
 import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotInfoPageComponent, DotNotLicenseComponent, SafeUrlPipe } from '@dotcms/ui';
+import { isEqual } from '@dotcms/utils/lib/shared/lodash/functions';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
@@ -103,7 +104,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.#activatedRoute.queryParams
-            .pipe(takeUntil(this.#destroy$)) // Debounce to avoid multiple calls
+            .pipe(takeUntil(this.#destroy$))
             .subscribe((queryParams) => {
                 const { data } = this.#activatedRoute.snapshot.data;
 
@@ -125,10 +126,17 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     }
                 }
 
-                this.uveStore.load({
+                const currentParams = {
                     ...(queryParams as DotPageApiParams),
                     clientHost: queryParams.clientHost ?? data?.url
-                });
+                };
+
+                // We don't need to load if the params are the same
+                if (isEqual(this.uveStore.params(), currentParams)) {
+                    return;
+                }
+
+                this.uveStore.load(currentParams);
             });
 
         // We need to skip one because it's the initial value
@@ -161,10 +169,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
                 // We dont want to reload if it was not saved
+
                 if (isSaved) {
                     this.reloadFromDialog();
                 } else if (isTranslation) {
-                    //TODO: CHECK FOR DOING A BACK
                     // At this point we are in the language of the translation, if the user didn't save we need to navigate to the default language
                     this.navigate({
                         language_id: 1
@@ -178,7 +186,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 // This can be undefined
                 const url = event.detail.payload?.htmlPageReferer?.split('?')[0].replace('/', '');
 
-                if (isSaved && url && this.uveStore.params().url !== url) {
+                if (url && this.uveStore.params().url !== url) {
                     this.navigate({
                         url
                     });
