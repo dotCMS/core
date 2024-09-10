@@ -23,7 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * JobQueueManagerAPI implementation.
  */
 @ExtendWith(WeldJunit5Extension.class)
-class JobQueueManagerAPICDITest {
+public class JobQueueManagerAPICDITest {
 
     @WeldSetup
     public WeldInitiator weld = WeldInitiator.of(
