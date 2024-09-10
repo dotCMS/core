@@ -81,13 +81,12 @@ class MonitorHelper {
 
             final String clientIP = HttpRequestDataUtil.getIpAddress(request).toString().split(StringPool.SLASH)[1];
 
-            for (String aclIP : ACLS_IPS) {
+            for (final String aclIP : ACLS_IPS) {
                 if (IPUtils.isIpInCIDR(clientIP, aclIP)) {
                     return true;
                 }
             }
-
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Logger.warnEveryAndDebug(this.getClass(), e, 60000);
         }
         return false;
@@ -166,8 +165,7 @@ class MonitorHelper {
      */
     boolean canConnectToES() {
         try {
-            RestHighLevelClientProvider.getInstance().getClient().ping(RequestOptions.DEFAULT);
-            return true;
+            return RestHighLevelClientProvider.getInstance().getClient().ping(RequestOptions.DEFAULT);
         } catch (final Exception e) {
             Logger.warnAndDebug(this.getClass(),
                     "Unable to connect to ES: " + ExceptionUtil.getErrorMessage(e), e);
