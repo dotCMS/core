@@ -16,9 +16,6 @@ on:
         description: 'Label'
         type: string
         required: false
-  pull_request:
-    branches:
-      - origin 29618-another-fix
 
 jobs:
   qa-not-needed-update:
