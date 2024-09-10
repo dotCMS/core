@@ -268,6 +268,12 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         return this.threadPoolSize;
     }
 
+    @Override
+    @VisibleForTesting
+    public RetryStrategy getDefaultRetryStrategy() {
+        return this.defaultRetryStrategy;
+    }
+
     /**
      * Notifies all registered watchers for a job of its current state.
      *
