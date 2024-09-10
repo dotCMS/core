@@ -26,6 +26,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.liferay.util.StringPool;
 import org.apache.http.HttpStatus;
 
@@ -58,7 +59,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
         addRequestMatcher(
                 new PagesAndUrlMapsRequestMatcher(),
                 new FilesRequestMatcher(),
-                new RulesRedirectsRequestMatcher(),
+         //       new RulesRedirectsRequestMatcher(),
                 new VanitiesRequestMatcher());
     }
 
@@ -89,12 +90,19 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
             final Optional<RequestMatcher> matcherOpt = this.anyMatcher(request, response, RequestMatcher::runBeforeRequest);
             if (matcherOpt.isPresent()) {
 
+                addRequestId (request);
                 Logger.debug(this, () -> "intercept, Matched: " + matcherOpt.get().getId() + " request: " + request.getRequestURI());
                 fireNext(request, response, matcherOpt.get());
             }
         }
 
         return Result.NEXT;
+    }
+
+    private void addRequestId(final HttpServletRequest request) {
+        if (null == request.getAttribute("requestId")) {
+            request.setAttribute("requestId", UUIDUtil.uuid());
+        }
     }
 
     @Override
@@ -104,6 +112,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
             final Optional<RequestMatcher> matcherOpt = this.anyMatcher(request, response, RequestMatcher::runAfterRequest);
             if (matcherOpt.isPresent()) {
 
+                addRequestId (request);
                 Logger.debug(this, () -> "afterIntercept, Matched: " + matcherOpt.get().getId() + " request: " + request.getRequestURI());
                 fireNext(request, response, matcherOpt.get());
             }

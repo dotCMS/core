@@ -14,6 +14,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * This collector collects the page information
+ * @author jsanca
+ */
 public class PagesCollector implements Collector {
 
     private final HTMLPageAssetAPI pageAPI;
@@ -38,14 +42,16 @@ public class PagesCollector implements Collector {
     }
 
     @Override
-    public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
-                                        final CollectorPayloadBean collectorPayloadBean) {
+    public CollectionCollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
+                                        final CollectionCollectorPayloadBean collectionCollectorPayloadBean) {
 
+        // we use the same event just collect more information async
+        final CollectorPayloadBean collectorPayloadBean = collectionCollectorPayloadBean.first();
         final String uri = (String)collectorContextMap.get("uri");
         final String siteId = (String)collectorContextMap.get("host");
         final Long languageId = (Long)collectorContextMap.get("langId");
         final String language = (String)collectorContextMap.get("lang");
-        final Map<String, String> pageObject = new HashMap<>();
+        final HashMap<String, String> pageObject = new HashMap<>();
 
         if (Objects.nonNull(uri) && Objects.nonNull(siteId) && Objects.nonNull(languageId)) {
 
@@ -56,15 +62,13 @@ public class PagesCollector implements Collector {
             pageObject.put("path", uri);
         }
 
-        final StringWriter writer = new StringWriter();
-        Try.run(()->DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValue(writer, pageObject));
-        collectorPayloadBean.put("objects",  writer.toString());
+        collectorPayloadBean.put("object",  pageObject);
         collectorPayloadBean.put("path", uri);
-        collectorPayloadBean.put("event_type", "PAGE_REQUEST");
+        collectorPayloadBean.put("event_type", "PAGE_REQUEST"); // todo: move to enum
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("site", siteId);
 
-        return collectorPayloadBean;
+        return collectionCollectorPayloadBean;
     }
 
     @Override

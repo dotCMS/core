@@ -15,14 +15,15 @@ public class BasicProfileCollector implements Collector {
     }
 
     @Override
-    public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
-                                        final CollectorPayloadBean collectorPayloadBean) {
+    public CollectionCollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
+                                        final CollectionCollectorPayloadBean collectionCollectorPayloadBean) {
 
+        final CollectorPayloadBean collectorPayloadBean = collectionCollectorPayloadBean.first();
         final String requestId = (String)collectorContextMap.get("requestId");
         final Long time = (Long)collectorContextMap.get("time");
         final String clusterId   = (String)collectorContextMap.get("cluster");
         final String serverId   = (String)collectorContextMap.get("server");
-        final Boolean sessionId   = (Boolean)collectorContextMap.get("session");
+        final String sessionId   = (String)collectorContextMap.get("session");
         final Boolean sessionNew   = (Boolean)collectorContextMap.get("sessionNew");
 
         collectorPayloadBean.put("request_id", requestId);
@@ -34,7 +35,7 @@ public class BasicProfileCollector implements Collector {
                 FunctionUtils.getOrDefault(Objects.nonNull(serverId), ()->serverId,()->APILocator.getServerAPI().readServerId()));
         collectorPayloadBean.put("sessionId", sessionId);
         collectorPayloadBean.put("sessionNew", sessionNew);
-        return collectorPayloadBean;
+        return collectionCollectorPayloadBean;
     }
 
     @Override

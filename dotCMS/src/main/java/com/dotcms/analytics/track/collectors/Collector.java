@@ -15,10 +15,10 @@ public interface Collector {
     /**
      * This method is called in order to fire the collector
      * @param collectorContextMap
-     * @param collectorPayloadBean
-     * @return CollectorPayloadBean
+     * @param CollectionCollectorPayloadBean
+     * @return CollectionCollectorPayloadBean
      */
-    CollectorPayloadBean collect(final CollectorContextMap collectorContextMap, CollectorPayloadBean collectorPayloadBean);
+    CollectionCollectorPayloadBean collect(final CollectorContextMap collectorContextMap, CollectionCollectorPayloadBean collectorPayloadBean);
 
     /**
      * True if the collector should run async

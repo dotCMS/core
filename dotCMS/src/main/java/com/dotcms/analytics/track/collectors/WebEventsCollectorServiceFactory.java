@@ -7,11 +7,13 @@ import com.dotcms.visitor.filter.characteristics.Character;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
+import org.apache.commons.lang3.mutable.MutableObject;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * This class provides the default implementation for the WebEventsCollectorService
@@ -65,8 +67,7 @@ public class WebEventsCollectorServiceFactory {
 
             if (!asyncCollectors.isEmpty() || !syncCollectors.isEmpty()) {
 
-                final CollectorPayloadBean collectorPayloadBean = new ConcurrentCollectorPayloadBean();
-                this.fireCollectorsAndEmitEvent(request, response, requestMatcher, collectorPayloadBean);
+                this.fireCollectorsAndEmitEvent(request, response, requestMatcher);
             } else {
 
                 Logger.debug(this, ()-> "No collectors to ran");
@@ -75,29 +76,32 @@ public class WebEventsCollectorServiceFactory {
 
         private void fireCollectorsAndEmitEvent(final HttpServletRequest request,
                                                 final HttpServletResponse response,
-                                                final RequestMatcher requestMatcher,
-                                                final CollectorPayloadBean collectorPayloadBean) {
+                                                final RequestMatcher requestMatcher) {
 
             final Character character = WebAPILocator.getCharacterWebAPI().getOrCreateCharacter(request, response);
             final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+            final MutableObject<CollectionCollectorPayloadBean> collectorPayloadBeanMutableObject = new MutableObject<>(new ConcurrentCollectionCollectorPayloadBean());
             if (!syncCollectors.isEmpty()) {
 
                 Logger.debug(this, ()-> "Running sync collectors");
                 final CollectorContextMap syncCollectorContextMap = new RequestCharacterCollectorContextMap(request, character, requestMatcher);
                 // we collect info which is sync and includes the request.
                 syncCollectors.values().stream().filter(collector -> collector.test(syncCollectorContextMap))
-                        .forEach(collector -> collector.collect(syncCollectorContextMap, collectorPayloadBean));
+                        .forEach(collector -> collectorPayloadBeanMutableObject
+                                .setValue(collector.collect(syncCollectorContextMap, collectorPayloadBeanMutableObject.getValue())));
             }
 
             // if there is anything to run async
-            final CollectorContextMap collectorContextMap = new CharacterCollectorContextMap(character, requestMatcher);
+            final CollectorContextMap collectorContextMap = new CharacterCollectorContextMap(character, requestMatcher,
+                    Map.of("uri", request.getRequestURI()));
             this.submitter.logEvent(
                     new EventLogRunnable(site, ()-> {
                         Logger.debug(this, ()-> "Running async collectors");
                         asyncCollectors.values().stream()
                                 .filter(collector -> collector.test(collectorContextMap))
-                                .forEach(collector -> { collector.collect(collectorContextMap, collectorPayloadBean); });
-                        return collectorPayloadBean.toMap();
+                                .forEach(collector -> { collectorPayloadBeanMutableObject.setValue(
+                                        collector.collect(collectorContextMap, collectorPayloadBeanMutableObject.getValue())); });
+                        return collectorPayloadBeanMutableObject.getValue().getCollection().stream().map(CollectorPayloadBean::toMap).collect(Collectors.toList());
                     }));
 
         }

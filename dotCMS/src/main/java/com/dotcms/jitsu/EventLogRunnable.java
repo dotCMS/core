@@ -21,6 +21,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -58,7 +59,7 @@ public class EventLogRunnable implements Runnable {
         this.eventPayload = ()->eventPayload;
     }
 
-    public EventLogRunnable(final Host site, final Supplier<Map<String, Serializable>> payloadSupplier) {
+    public EventLogRunnable(final Host site, final Supplier<List<Map<String, Serializable>>> payloadSupplier) {
         analyticsApp = AnalyticsHelper.get().appFromHost(site);
 
         if (StringUtils.isBlank(analyticsApp.getAnalyticsProperties().analyticsWriteUrl())) {
@@ -73,9 +74,9 @@ public class EventLogRunnable implements Runnable {
         this.eventPayload = ()-> convertToEventPayload(payloadSupplier.get());
     }
 
-    private EventsPayload convertToEventPayload(final Map<String, Serializable> stringSerializableMap) {
+    private EventsPayload convertToEventPayload(final List<Map<String, Serializable>> listStringSerializableMap) {
 
-        return new AnalyticsEventsPayload(new HashMap<>(stringSerializableMap));
+        return new AnalyticsEventsPayload(listStringSerializableMap);
     }
 
     @Override

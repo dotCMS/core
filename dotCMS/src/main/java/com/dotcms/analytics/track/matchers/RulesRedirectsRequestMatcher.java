@@ -10,6 +10,8 @@ import java.util.Objects;
  */
 public class RulesRedirectsRequestMatcher implements RequestMatcher {
 
+    public static final String RULES_MATCHER_ID = "rules";
+
     @Override
     public boolean runAfterRequest() {
         return true;
@@ -20,5 +22,10 @@ public class RulesRedirectsRequestMatcher implements RequestMatcher {
 
         final String ruleRedirect = response.getHeader("X-DOT-SendRedirectRuleAction");
         return Objects.nonNull(ruleRedirect) && "true".equals(ruleRedirect);
+    }
+
+    @Override
+    public String getId() {
+        return RULES_MATCHER_ID;
     }
 }
