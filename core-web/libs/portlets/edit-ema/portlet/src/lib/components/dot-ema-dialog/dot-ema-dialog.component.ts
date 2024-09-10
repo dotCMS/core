@@ -332,7 +332,17 @@ export class DotEmaDialogComponent {
                     }
 
                     case NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED: {
-                        this.store.setDirty();
+                        // The edit content emits this for savings when translating a page and does not emit anything when changing the content
+                        if (this.dialogState().editContentForm.isTranslation) {
+                            this.store.setSaved();
+
+                            if (event.detail.payload.isMoveAction) {
+                                this.reloadIframe();
+                            }
+                        } else {
+                            this.store.setDirty();
+                        }
+
                         break;
                     }
 
@@ -347,6 +357,8 @@ export class DotEmaDialogComponent {
                         if (event.detail.payload.isMoveAction) {
                             this.reloadIframe();
                         }
+
+                        break;
 
                         break;
                     }
