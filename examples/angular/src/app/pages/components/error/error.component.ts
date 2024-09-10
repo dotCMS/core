@@ -15,14 +15,14 @@ import { PageError } from '../../pages.component';
           <h1
             class="mb-4 text-7xl font-extrabold tracking-tight lg:text-9xl text-primary-600"
           >
-            {{error().status}}
+            {{$error().status}}
           </h1>
           <p
             class="mb-4 text-3xl font-bold tracking-tight text-gray-900 md:text-4xl"
           >
-            {{error().message}}
+            {{$error().message}}
           </p>
-          @if (error().status !== 401) {
+          @if ($error().status !== 401) {
           <p class="mb-4 text-lg font-light text-gray-500">
             You&apos;ll find lots to explore on the home page.
           </p>
@@ -41,5 +41,5 @@ import { PageError } from '../../pages.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ErrorComponent {
-  error = input.required<PageError>();
+  $error = input.required<PageError>();
 }
