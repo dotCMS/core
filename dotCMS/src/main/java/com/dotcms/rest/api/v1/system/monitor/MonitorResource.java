@@ -44,24 +44,22 @@ public class MonitorResource {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @CloseDBIfOpened
-    public Response statusCheck(final @Context HttpServletRequest request)  {
-        final MonitorHelper helper = new MonitorHelper(request);
+    public Response heavyCheck(final @Context HttpServletRequest request)  {
+
+        final MonitorHelper helper = new MonitorHelper(request , true);
         if(!helper.accessGranted) {
             return Response.status(FORBIDDEN).entity(Map.of()).build();
         }
 
-        if(!helper.startedUp()) {
+        if(!helper.isStartedUp()) {
             return Response.status(SERVICE_UNAVAILABLE).build();
         }
 
         if(!helper.getMonitorStats().isDotCMSHealthy()) {
             return Response.status(SERVICE_UNAVAILABLE).build();
         }
-        if(helper.useExtendedFormat) {
-            return Response.ok(helper.getMonitorStats().toMap()).build();
-        }
-        return Response.ok().build();
 
+        return Response.ok(helper.getMonitorStats().toMap()).build();
 
     }
 
@@ -71,13 +69,11 @@ public class MonitorResource {
     @NoCache
     @GET
     @JSONP
-    @Path("/{a:startup|ready}")
+    @Path("/{a:|startup|ready|heavy}")
     @Produces(MediaType.APPLICATION_JSON)
     @CloseDBIfOpened
     public Response ready(final @Context HttpServletRequest request)  {
-
-        return statusCheck(request);
-
+        return heavyCheck(request);
     }
 
 
@@ -95,26 +91,25 @@ public class MonitorResource {
      */
 
     @GET
-    @Path("/alive")
+    @Path("/{a:alive|light}")
     @CloseDBIfOpened
     @Produces(MediaType.APPLICATION_JSON)
-    public Response aliveCheck(final @Context HttpServletRequest request)  {
+    public Response lightCheck(final @Context HttpServletRequest request)  {
 
 
-        final MonitorHelper helper = new MonitorHelper(request);
+        final MonitorHelper helper = new MonitorHelper(request, false);
         if(!helper.accessGranted) {
             return Response.status(FORBIDDEN).build();
         }
-        if(!helper.startedUp()) {
+        if(!helper.isStartedUp()) {
             return Response.status(SERVICE_UNAVAILABLE).build();
         }
 
         //try this twice as it is an imperfect test
-        if(helper.isCacheHealthy() && helper.isCacheHealthy()) {
+        if(helper.isCacheHealthy() ) {
             return Response.ok().build();
         }
 
-        
         return Response.status(SERVICE_UNAVAILABLE).build();
         
     }

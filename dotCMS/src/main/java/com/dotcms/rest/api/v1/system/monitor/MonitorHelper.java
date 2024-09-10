@@ -1,16 +1,12 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.elasticsearch.business.ClusterStats;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -27,20 +23,17 @@ import java.nio.file.Files;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.servlet.http.HttpServletRequest;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 
 class MonitorHelper {
 
-
+    final boolean accessGranted ;
+    final boolean useExtendedFormat;
     private static final String[] DEFAULT_IP_ACL_VALUE = new String[]{"127.0.0.1/32", "10.0.0.0/8", "172.16.0.0/12",
             "192.168.0.0/16"};
 
 
+    private final static String IPV6_LOCALHOST = "0:0:0:0:0:0:0:1";
     private static final String SYSTEM_STATUS_API_IP_ACL = "SYSTEM_STATUS_API_IP_ACL";
 
 
@@ -50,38 +43,40 @@ class MonitorHelper {
     private static final String[] ACLS_IPS = Config.getStringArrayProperty(SYSTEM_STATUS_API_IP_ACL,
             DEFAULT_IP_ACL_VALUE);
 
-    
+
     static final AtomicReference<Tuple2<Long, MonitorStats>> cachedStats = new AtomicReference<>();
-    boolean accessGranted = false;
-    boolean useExtendedFormat = false;
 
 
-    MonitorHelper(final HttpServletRequest request)  {
+    MonitorHelper(final HttpServletRequest request, boolean heavyCheck) {
+        this.useExtendedFormat = heavyCheck;
+        this.accessGranted = isAccessGranted(request);
+    }
+
+
+    boolean isAccessGranted(HttpServletRequest request){
+
         try {
-            this.useExtendedFormat = request.getParameter("extended") != null;
-
-            // set this.accessGranted
+            if(IPV6_LOCALHOST.equals(request.getRemoteAddr()) || ACLS_IPS == null || ACLS_IPS.length == 0){
+                return true;
+            }
 
             final String clientIP = HttpRequestDataUtil.getIpAddress(request).toString().split(StringPool.SLASH)[1];
-            if (ACLS_IPS == null || ACLS_IPS.length == 0) {
-                this.accessGranted = true;
-            } else {
-                for (String aclIP : ACLS_IPS) {
-                    if (IPUtils.isIpInCIDR(clientIP, aclIP)) {
-                        this.accessGranted = true;
-                        break;
-                    }
+
+            for (String aclIP : ACLS_IPS) {
+                if (IPUtils.isIpInCIDR(clientIP, aclIP)) {
+                    return true;
                 }
             }
 
-
         } catch (Exception e) {
-            Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
-            throw new DotRuntimeException(e);
+            Logger.warnEveryAndDebug(this.getClass(), e, 60000);
         }
+        return false;
     }
 
-    boolean startedUp() {
+
+
+    boolean isStartedUp() {
         return System.getProperty(WebKeys.DOTCMS_STARTED_UP)!=null;
     }
 
@@ -103,20 +98,15 @@ class MonitorHelper {
 
 
 
-        final MonitorStats monitorStats = new MonitorStats();
+        final MonitorStats monitorStats = new MonitorStats
+                .Builder()
+                .cacheHealthy(isCacheHealthy())
+                .assetFSHealthy(isAssetFileSystemHealthy())
+                .localFSHealthy(isLocalFileSystemHealthy())
+                .dBHealthy(isDBHealthy())
+                .esHealthy(canConnectToES())
+                .build();
 
-        final IndiciesInfo indiciesInfo = Try.of(()->APILocator.getIndiciesAPI().loadIndicies()).getOrElseThrow(DotRuntimeException::new);
-
-        monitorStats.subSystemStats.isDBHealthy = isDBHealthy();
-        monitorStats.subSystemStats.isLiveIndexHealthy = isIndexHealthy(indiciesInfo.getLive());
-        monitorStats.subSystemStats.isWorkingIndexHealthy = isIndexHealthy(indiciesInfo.getWorking());
-        monitorStats.subSystemStats.isCacheHealthy = isCacheHealthy();
-        monitorStats.subSystemStats.isLocalFileSystemHealthy = isLocalFileSystemHealthy();
-        monitorStats.subSystemStats.isAssetFileSystemHealthy = isAssetFileSystemHealthy();
-
-
-        monitorStats.serverId = getServerID();
-        monitorStats.clusterId = getClusterID();
 
 
         // cache a healthy response
@@ -128,11 +118,12 @@ class MonitorHelper {
     }
 
 
+
     boolean isDBHealthy()  {
 
 
             return Try.of(()->
-                            new DotConnect().setSQL("SELECT count(*) as count FROM (SELECT 1 FROM dot_cluster LIMIT 1) AS t")
+                            new DotConnect().setSQL("SELECT 1 as count")
                     .loadInt("count"))
                     .onFailure(e->Logger.warnAndDebug(MonitorHelper.class, "unable to connect to db:" + e.getMessage(),e))
                     .getOrElse(0) > 0;
@@ -141,31 +132,18 @@ class MonitorHelper {
     }
 
 
-    boolean isIndexHealthy(final String index) {
-
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(QueryBuilders.matchAllQuery());
-        searchSourceBuilder.size(0);
-        searchSourceBuilder.timeout(TimeValue
-                .timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-        searchSourceBuilder.fetchSource(new String[]{"inode"}, null);
-        SearchRequest searchRequest = new SearchRequest();
-        searchRequest.source(searchSourceBuilder);
-        searchRequest.indices(index);
-
-        long totalHits = Try.of(()->
-                RestHighLevelClientProvider
-                        .getInstance()
-                        .getClient()
-                        .search(searchRequest,RequestOptions.DEFAULT)
-                        .getHits()
-                        .getTotalHits()
-                        .value)
-                .onFailure(e->Logger.warnAndDebug(MonitorHelper.class, "unable to connect to index:" + e.getMessage(),e))
-                .getOrElse(0L);
-
-        return totalHits > 0;
-
+    boolean canConnectToES() {
+        try{
+            ClusterStats stats = APILocator.getESIndexAPI().getClusterStats();
+            if(stats == null || stats.getClusterName()==null){
+                return false;
+            }
+            return true;
+        }
+        catch (Exception e){
+            Logger.warnAndDebug(this.getClass(), "unable to connect to ES: " + e.getMessage(), e);
+            return false;
+        }
     }
 
 
@@ -229,7 +207,7 @@ class MonitorHelper {
                     return file.delete();
                 }
             } catch (Exception e) {
-                Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
+                Logger.warnAndDebug(this.getClass(), "Unable to write a file to: " + initialPath + " : " +e.getMessage(), e);
                 return false;
             }
             return false;
