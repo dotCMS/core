@@ -2,7 +2,8 @@ package com.dotcms.rest.api.v1.system.monitor;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rest.annotation.NoCache;
-import java.util.Map;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -11,16 +12,20 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
+import java.util.Map;
 
-
+/**
+ * This REST Endpoint provides a set of probes to check the status of the different subsystems used
+ * by dotCMS. This tool is crucial for Engineering Teams to check that dotCMS is running properly.
+ *
+ * @author Brent Griffin
+ * @since Jul 18th, 2018
+ */
 @Path("/v1/{a:system-status|probes}")
 public class MonitorResource {
 
-
-    private static final int    SERVICE_UNAVAILABLE         = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-    private static final int    FORBIDDEN                   = HttpServletResponse.SC_FORBIDDEN;
-
+    private static final int SERVICE_UNAVAILABLE = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+    private static final int FORBIDDEN           = HttpServletResponse.SC_FORBIDDEN;
 
     /**
      * This /startup and /ready probe is heavy - it is intended to report on when dotCMS first comes up
@@ -45,7 +50,6 @@ public class MonitorResource {
     @Produces(MediaType.APPLICATION_JSON)
     @CloseDBIfOpened
     public Response heavyCheck(final @Context HttpServletRequest request)  {
-
         final MonitorHelper helper = new MonitorHelper(request , true);
         if(!helper.accessGranted) {
             return Response.status(FORBIDDEN).entity(Map.of()).build();
@@ -60,11 +64,7 @@ public class MonitorResource {
         }
 
         return Response.ok(helper.getMonitorStats().toMap()).build();
-
     }
-
-
-
 
     @NoCache
     @GET
@@ -76,10 +76,6 @@ public class MonitorResource {
         return heavyCheck(request);
     }
 
-
-
-    
-    
     /**
      * This /alive probe is lightweight - it checks if the server is up by requesting a common object from
      * the dotCMS cache layer twice in a row.  By the time a request gets here it has
@@ -89,14 +85,11 @@ public class MonitorResource {
      * @param request
      * @return
      */
-
     @GET
     @Path("/{a:alive|light}")
     @CloseDBIfOpened
     @Produces(MediaType.APPLICATION_JSON)
     public Response lightCheck(final @Context HttpServletRequest request)  {
-
-
         final MonitorHelper helper = new MonitorHelper(request, false);
         if(!helper.accessGranted) {
             return Response.status(FORBIDDEN).build();
@@ -111,12 +104,6 @@ public class MonitorResource {
         }
 
         return Response.status(SERVICE_UNAVAILABLE).build();
-        
     }
 
-
-
-    
-    
-    
 }

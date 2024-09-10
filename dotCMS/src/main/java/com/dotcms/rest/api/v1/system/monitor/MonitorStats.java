@@ -2,12 +2,15 @@ package com.dotcms.rest.api.v1.system.monitor;
 
 import java.util.Map;
 
-
+/**
+ * This class is used to report on the status of the various subsystems used by dotCMS.
+ *
+ * @author Brent Griffin
+ * @since Jul 18th, 2018
+ */
 class MonitorStats {
 
-
     final boolean assetFSHealthy, cacheHealthy, dBHealthy,  esHealthy, localFSHealthy;
-
 
     public MonitorStats(boolean assetFSHealthy,
             boolean cacheHealthy,
@@ -19,9 +22,7 @@ class MonitorStats {
         this.dBHealthy = dBHealthy;
         this.esHealthy = esHealthy;
         this.localFSHealthy = localFSHealthy;
-
     }
-
 
     boolean isDotCMSHealthy() {
         return isBackendHealthy() && isFrontendHealthy();
@@ -37,9 +38,7 @@ class MonitorStats {
                 this.localFSHealthy && this.assetFSHealthy;
     }
 
-
     Map<String, Object> toMap() {
-
         final Map<String, Object> subsystems = Map.of(
                 "dbSelectHealthy", this.dBHealthy,
                 "esHealthy", this.esHealthy,
@@ -52,9 +51,7 @@ class MonitorStats {
                 "frontendHealthy", this.isFrontendHealthy(),
                 "backendHealthy", this.isBackendHealthy(),
                 "subsystems", subsystems);
-
     }
-
 
     public static final class Builder {
 
@@ -63,7 +60,6 @@ class MonitorStats {
         private boolean dBHealthy;
         private boolean esHealthy;
         private boolean localFSHealthy;
-
 
         public Builder() {
         }
@@ -102,7 +98,7 @@ class MonitorStats {
                     esHealthy,
                     localFSHealthy);
         }
-    }
 
+    }
 
 }
