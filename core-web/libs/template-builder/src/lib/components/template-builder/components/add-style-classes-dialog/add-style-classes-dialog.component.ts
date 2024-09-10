@@ -37,10 +37,34 @@ import { JsonClassesService } from './services/json-classes.service';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddStyleClassesDialogComponent implements OnInit {
+    /**
+     * Service to get the classes
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
+    readonly #jsonClassesService = inject(JsonClassesService);
+    /**
+     * Selected classes to be added
+     * @memberof AddStyleClassesDialogComponent
+     */
     $selectedClasses = signal<string[]>([]);
+    /**
+     * Classes to be displayed
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
     $classes = signal<string[]>([]);
+    /**
+     * Query to filter the classes
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
     $query = signal<string | null>(null);
-
+    /**
+     * Filtered suggestions based on the query
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
     $filteredSuggestions = computed(() => {
         const classes = this.$classes();
         const query = this.$query();
@@ -51,8 +75,11 @@ export class AddStyleClassesDialogComponent implements OnInit {
 
         return classes.filter((item) => item.includes(query));
     });
-
-    readonly #jsonClassesService = inject(JsonClassesService);
+    /**
+     * Check if there are classes in the JSON file
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
     isJsonClasses$ = this.#jsonClassesService.getClasses().pipe(
         tap(({ classes }) => {
             if (classes?.length) {
@@ -69,6 +96,11 @@ export class AddStyleClassesDialogComponent implements OnInit {
         }),
         shareReplay(1)
     );
+    /**
+     * Check if the JSON file has classes
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
     $isJsonClasses = toSignal(this.isJsonClasses$, {
         initialValue: false
     });
@@ -80,6 +112,11 @@ export class AddStyleClassesDialogComponent implements OnInit {
         private ref: DynamicDialogRef
     ) {}
 
+    /**
+     * Set the selected classes
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
     ngOnInit() {
         const { selectedClasses } = this.dynamicDialogConfig.data;
         this.$selectedClasses.set(selectedClasses);
