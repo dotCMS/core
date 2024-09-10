@@ -23,7 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * JobQueueManagerAPI implementation.
  */
 @ExtendWith(WeldJunit5Extension.class)
-public class JobQueueManagerAPICDITest {
+class JobQueueManagerAPICDITest {
 
     @WeldSetup
     public WeldInitiator weld = WeldInitiator.of(
@@ -42,12 +42,12 @@ public class JobQueueManagerAPICDITest {
     private JobQueueManagerAPI jobQueueManagerAPI2;
 
     /**
-     * Method to test: Multiple injections of JobQueueManagerAPI
-     * Given Scenario: Two separate injections of JobQueueManagerAPI are requested
-     * ExpectedResult: Both injections refer to the same instance, confirming singleton behavior
+     * Method to test: Multiple injections of JobQueueManagerAPI Given Scenario: Two separate
+     * injections of JobQueueManagerAPI are requested ExpectedResult: Both injections refer to the
+     * same instance, confirming singleton behavior
      */
     @Test
-    public void test_SingletonBehavior() {
+    void test_SingletonBehavior() {
         assertNotNull(jobQueueManagerAPI,
                 "First JobQueueManagerAPI instance should not be null");
         assertNotNull(jobQueueManagerAPI2,
@@ -63,7 +63,7 @@ public class JobQueueManagerAPICDITest {
      * JobQueueManagerAPIImpl
      */
     @Test
-    public void test_CDIInjection() {
+    void test_CDIInjection() {
         assertNotNull(jobQueueManagerAPI, "JobQueueManagerAPI should be injected");
         Assertions.assertInstanceOf(JobQueueManagerAPIImpl.class, jobQueueManagerAPI,
                 "JobQueueManagerAPI should be an instance of JobQueueManagerAPIImpl");
@@ -75,7 +75,7 @@ public class JobQueueManagerAPICDITest {
      * ExpectedResult: All required dependencies are correctly injected into JobQueueManagerAPIImpl
      */
     @Test
-    public void test_JobQueueManagerAPIFields() {
+    void test_JobQueueManagerAPIFields() {
 
         // There are not JobQueue implementations yet
         //Assertions.assertNotNull(impl.getJobQueue(), "JobQueue should be injected");
