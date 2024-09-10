@@ -20,7 +20,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { SelectItem } from 'primeng/api';
 
-import { filter, take, takeUntil } from 'rxjs/operators';
+import { filter, startWith, take, takeUntil } from 'rxjs/operators';
 
 import { DotLicenseService, DotMessageService, DotWorkflowService } from '@dotcms/data-access';
 import {
@@ -64,7 +64,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     dateVarOptions: SelectItem[] = [];
     form: UntypedFormGroup;
     nameFieldLabel: string;
-    workflowsSelected$: Observable<string[]>;
+    workflowsSelected$: Observable<DotCMSWorkflow[]>;
     newContentEditorEnabled: boolean;
 
     private originalValue: DotCMSContentType;
@@ -207,7 +207,9 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         this.setOriginalValue();
         this.setDateVarFieldsState();
         this.setSystemWorkflow();
-        this.workflowsSelected$ = this.form.get('workflows').valueChanges;
+        this.workflowsSelected$ = this.form
+            .get('workflows')
+            .valueChanges.pipe(startWith(this.form.get('workflows').value));
     }
 
     private getActionIdentifier(actionMap: DotCMSSystemActionMappings): string {
