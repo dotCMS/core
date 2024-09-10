@@ -44,6 +44,12 @@ export class AddStyleClassesDialogComponent implements OnInit {
      */
     readonly #jsonClassesService = inject(JsonClassesService);
     /**
+     * Dialog reference
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
+    readonly #dialogRef = inject(DynamicDialogRef);
+    /**
      * Selected classes to be added
      * @memberof AddStyleClassesDialogComponent
      */
@@ -108,8 +114,7 @@ export class AddStyleClassesDialogComponent implements OnInit {
     constructor(
         public dynamicDialogConfig: DynamicDialogConfig<{
             selectedClasses: string[];
-        }>,
-        private ref: DynamicDialogRef
+        }>
     ) {}
 
     /**
@@ -146,6 +151,6 @@ export class AddStyleClassesDialogComponent implements OnInit {
      * @memberof AddStyleClassesDialogComponent
      */
     save() {
-        this.ref.close(this.$selectedClasses());
+        this.#dialogRef.close(this.$selectedClasses());
     }
 }
