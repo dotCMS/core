@@ -18,6 +18,11 @@ export enum OPERAND {
 /**
  * This function removes extra spaces from a string.
  *
+ * @example
+ * ```ts
+ * sanitizeQuery("  my query  "); // Output: "my query"
+ * ```
+ *
  * @export
  * @param {string} str
  * @return {*}  {string}
@@ -30,6 +35,12 @@ export function sanitizeQuery(str: string): string {
  * This function sanitizes a term by adding quotes if it contains spaces.
  * In lucene, a term with spaces should be enclosed in quotes.
  *
+ * @example
+ * ```ts
+ * sanitizePhrases(`my term`); // Output: `"my term"`
+ * sanitizePhrases(`myterm`); // Output: `myterm`
+ * ```
+ *
  * @export
  * @param {string} term
  * @return {*}  {string}
@@ -41,6 +52,11 @@ export function sanitizePhrases(term: string): string {
 /**
  * This function builds a term to be used in a lucene query.
  * We need to sanitize the term before adding it to the query.
+ *
+ * @example
+ * ```ts
+ * const equals = buildEquals("+myField: ", "myValue"); // Current query: "+myField: myValue"
+ * ```
  *
  * @export
  * @param {string} query
@@ -57,6 +73,12 @@ export function buildEquals(query: string, term: string): Equals {
  * This function builds a term to be used in a lucene query.
  * We need to sanitize the raw query before adding it to the query.
  *
+ * @example
+ * ```ts
+ * const query = "+myField: myValue";
+ * const field = buildRawEquals(query, "-myField2: myValue2"); // Current query: "+myField: myValue -myField2: myValue"
+ * ```
+ *
  * @export
  * @param {string} query
  * @param {string} raw
@@ -71,6 +93,11 @@ export function buildRawEquals(query: string, raw: string): Equals {
 /**
  * This function builds a field to be used in a lucene query.
  * We need to format the field before adding it to the query.
+ *
+ * @example
+ * ```ts
+ * const field = buildField("+myField: ", "myValue"); // Current query: "+myField: myValue"
+ * ```
  *
  * @export
  * @param {string} query
@@ -87,6 +114,12 @@ export function buildField(query: string, field: string): Field {
  * This function builds an exclude field to be used in a lucene query.
  * We need to format the field before adding it to the query.
  *
+ * @example
+ * ```ts
+ * const query = "+myField: myValue";
+ * const field = buildExcludeField(query, "myField2"); // Current query: "+myField: myValue -myField2:"
+ * ```
+ *
  * @export
  * @param {string} query
  * @param {string} field
@@ -102,6 +135,18 @@ export function buildExcludeField(query: string, field: string): Field {
  * This function builds an operand to be used in a lucene query.
  * We need to format the operand before adding it to the query.
  *
+ * @example
+ * <caption>E.g. Using the AND operand</caption>
+ * ```ts
+ * const query = "+myField: myValue";
+ * const field = buildOperand(query, OPERAND.AND); // Current query: "+myField: myValue AND"
+ * ```
+ * @example
+ * <caption>E.g. Using the OR operand</caption>
+ * ```ts
+ * const query = "+myField: myValue";
+ * const field = buildOperand(query, OPERAND.OR); // Current query: "+myField: myValue OR"
+ * ```
  * @export
  * @param {string} query
  * @param {OPERAND} operand
@@ -116,6 +161,12 @@ export function buildOperand(query: string, operand: OPERAND): Operand {
 /**
  * This function builds a NOT operand to be used in a lucene query.
  * We need to format the operand before adding it to the query.
+ *
+ * @example
+ * ```ts
+ * const query = "+myField: myValue";
+ * const field = buildNotOperand(query); // Current query: "+myField: myValue NOT"
+ * ```
  *
  * @export
  * @param {string} query
