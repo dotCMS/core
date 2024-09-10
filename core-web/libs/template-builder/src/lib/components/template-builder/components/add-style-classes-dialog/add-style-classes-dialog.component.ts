@@ -125,7 +125,7 @@ export class AddStyleClassesDialogComponent implements OnInit {
     ngOnInit() {
         const data = this.dynamicDialogConfig.data;
         if (data) {
-            this.$selectedClasses.set(data?.selectedClasses);
+            this.$selectedClasses.set(data.selectedClasses);
         }
     }
 
