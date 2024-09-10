@@ -1,14 +1,14 @@
 @if (items.length) {
     <div>
         <dot-suggestion-list #list>
-            @for (item of items; track item; let i = $index) {
+            @for (item of items; track $index) {
                 <dot-suggestions-list-item
                     [command]="item.command"
-                    [index]="i"
+                    [index]="$index.toString()"
                     [label]="item.label"
                     [url]="item.icon"
                     [data]="item.data"
-                    [page]="true"></dot-suggestions-list-item>
+                    [page]="true" />
             }
         </dot-suggestion-list>
     </div>
