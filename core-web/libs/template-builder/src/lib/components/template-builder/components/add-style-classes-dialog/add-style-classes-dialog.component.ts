@@ -10,14 +10,21 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { catchError, map, shareReplay, tap } from 'rxjs/operators';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSelectItemDirective } from '@dotcms/ui';
 
 import { JsonClassesService } from './services/json-classes.service';
 
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
     standalone: true,
-    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipe, AsyncPipe],
+    imports: [
+        AutoCompleteModule,
+        FormsModule,
+        ButtonModule,
+        DotMessagePipe,
+        AsyncPipe,
+        DotSelectItemDirective
+    ],
     templateUrl: './add-style-classes-dialog.component.html',
     styleUrls: ['./add-style-classes-dialog.component.scss'],
     providers: [JsonClassesService],
@@ -25,7 +32,7 @@ import { JsonClassesService } from './services/json-classes.service';
 })
 export class AddStyleClassesDialogComponent implements OnInit {
     @ViewChild(AutoComplete) autoComplete: AutoComplete;
-    filteredSuggestions = null;
+    filteredSuggestions: string[] = [];
     selectedClasses: string[] = [];
 
     isJsonClasses$: Observable<boolean>;

@@ -4,7 +4,7 @@ import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/j
 import { of, throwError } from 'rxjs';
 
 import { NgIf, AsyncPipe } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
@@ -47,7 +47,6 @@ describe('AddStyleClassesDialogComponent', () => {
     const createComponent = createComponentFactory({
         imports: [
             AutoCompleteModule,
-            HttpClientTestingModule,
             DynamicDialogModule,
             FormsModule,
             ButtonModule,
@@ -56,7 +55,13 @@ describe('AddStyleClassesDialogComponent', () => {
             AsyncPipe
         ],
         component: AddStyleClassesDialogComponent,
-        providers: [JsonClassesService, DynamicDialogRef, DynamicDialogConfig, DotMessageService],
+        providers: [
+            JsonClassesService,
+            DynamicDialogRef,
+            DynamicDialogConfig,
+            DotMessageService,
+            provideHttpClient()
+        ],
         detectChanges: false
     });
 
@@ -100,7 +105,7 @@ describe('AddStyleClassesDialogComponent', () => {
             expect(autocomplete.appendTo).toBe('body');
             expect(autocomplete.dropdown).toBe(true);
             expect(autocomplete.el.nativeElement.className).toContain('p-fluid');
-            expect(autocomplete.suggestions).toBe(null);
+            expect(autocomplete.suggestions.length).toEqual(0);
         });
 
         it('should call jsonClassesService.getClasses on init', () => {
@@ -286,6 +291,4 @@ describe('AddStyleClassesDialogComponent', () => {
             expect(spectator.component.classes).toEqual([]);
         });
     });
-
-    // More tests can be added as needed...
 });
