@@ -25,7 +25,7 @@ import { JsonClassesService } from './services/json-classes.service';
 })
 export class AddStyleClassesDialogComponent implements OnInit {
     @ViewChild(AutoComplete) autoComplete: AutoComplete;
-    filteredSuggestions = null;
+    filteredSuggestions: string[] = [];
     selectedClasses: string[] = [];
 
     isJsonClasses$: Observable<boolean>;

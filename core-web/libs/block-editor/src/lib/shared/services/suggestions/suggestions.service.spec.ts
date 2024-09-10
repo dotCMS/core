@@ -1,16 +1,14 @@
-import { TestBed } from '@angular/core/testing';
+import { createHttpFactory, SpectatorHttp } from '@ngneat/spectator/jest';
 
 import { SuggestionsService } from './suggestions.service';
 
 describe('SuggestionsService', () => {
-    let service: SuggestionsService;
+    let spectator: SpectatorHttp<SuggestionsService>;
+    const createHttp = createHttpFactory(SuggestionsService);
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({ teardown: { destroyAfterEach: false } });
-        service = TestBed.inject(SuggestionsService);
-    });
+    beforeEach(() => (spectator = createHttp()));
 
     it('should be created', () => {
-        expect(service).toBeTruthy();
+        expect(spectator.service).toBeTruthy();
     });
 });
