@@ -359,8 +359,6 @@ export class DotEmaDialogComponent {
                         }
 
                         break;
-
-                        break;
                     }
                 }
             });

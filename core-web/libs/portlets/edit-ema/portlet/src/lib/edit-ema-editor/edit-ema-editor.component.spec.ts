@@ -2411,7 +2411,9 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('DOM', () => {
-                it("should not show a loader when the editor state is not 'loading'", () => {
+                it('should not show a loader when client is ready and UVE is not loading', () => {
+                    store.setIsClientReady(true);
+                    store.setUveStatus(UVE_STATUS.LOADED);
                     spectator.detectChanges();
 
                     const progressbar = spectator.query(byTestId('progress-bar'));
@@ -2419,15 +2421,25 @@ describe('EditEmaEditorComponent', () => {
                     expect(progressbar).toBeNull();
                 });
 
-                it('should show a loader when the UVE is loading', () => {
-                    store.setUveStatus(UVE_STATUS.LOADING);
-
+                it('should show a loader when the client is not ready', () => {
+                    store.setIsClientReady(false);
                     spectator.detectChanges();
 
                     const progressbar = spectator.query(byTestId('progress-bar'));
 
                     expect(progressbar).not.toBeNull();
                 });
+
+                it('should show a loader when the client is ready but UVE is Loading', () => {
+                    store.setIsClientReady(true);
+                    store.setUveStatus(UVE_STATUS.LOADING); // Almost impossible case but we have it as a fallback
+                    spectator.detectChanges();
+
+                    const progressbar = spectator.query(byTestId('progress-bar'));
+
+                    expect(progressbar).not.toBeNull();
+                });
+
                 it('iframe should have the correct src when is HEADLESS', () => {
                     spectator.detectChanges();
 
