@@ -118,13 +118,13 @@ describe('AddStyleClassesDialogComponent', () => {
         it('should set classes property on init', () => {
             spectator.detectChanges();
 
-            expect(spectator.component.classes).toEqual(['class1', 'class2']);
+            expect(spectator.component.$classes()).toEqual(['class1', 'class2']);
         });
 
         it('should initialize selectedClasses from DynamicDialogConfig data', () => {
             spectator.detectChanges();
 
-            expect(spectator.component.selectedClasses).toEqual(['backend-class']);
+            expect(spectator.component.$selectedClasses()).toEqual(['backend-class']);
         });
 
         it('should filter suggestions and pass to autocomplete on completeMethod', () => {
@@ -138,7 +138,7 @@ describe('AddStyleClassesDialogComponent', () => {
         });
 
         it('should save selected classes and close the dialog', () => {
-            spectator.component.selectedClasses = ['class1'];
+            spectator.component.$selectedClasses.set(['class1']);
             spectator.component.save();
             spectator.detectChanges();
 
@@ -190,7 +190,7 @@ describe('AddStyleClassesDialogComponent', () => {
         it('should set component.classes empty', () => {
             spectator.detectChanges();
 
-            expect(spectator.component.classes).toEqual([]);
+            expect(spectator.component.$classes()).toEqual([]);
         });
 
         it('should have multiples help message', () => {
@@ -238,7 +238,7 @@ describe('AddStyleClassesDialogComponent', () => {
         it('should set component.classes empty', () => {
             spectator.detectChanges();
 
-            expect(spectator.component.classes).toEqual([]);
+            expect(spectator.component.$classes()).toEqual([]);
         });
 
         it('should have multiples help message', () => {
@@ -288,7 +288,7 @@ describe('AddStyleClassesDialogComponent', () => {
         it('should set component.classes empty', () => {
             spectator.detectChanges();
 
-            expect(spectator.component.classes).toEqual([]);
+            expect(spectator.component.$classes()).toEqual([]);
         });
     });
 });

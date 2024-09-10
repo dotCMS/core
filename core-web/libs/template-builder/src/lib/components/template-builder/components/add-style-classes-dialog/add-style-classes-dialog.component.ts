@@ -1,10 +1,17 @@
-import { Observable, of } from 'rxjs';
+import { of } from 'rxjs';
 
-import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    inject,
+    OnInit,
+    signal
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
-import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
+import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -22,7 +29,6 @@ import { JsonClassesService } from './services/json-classes.service';
         FormsModule,
         ButtonModule,
         DotMessagePipe,
-        AsyncPipe,
         DotSelectItemDirective
     ],
     templateUrl: './add-style-classes-dialog.component.html',
@@ -31,15 +37,39 @@ import { JsonClassesService } from './services/json-classes.service';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddStyleClassesDialogComponent implements OnInit {
-    @ViewChild(AutoComplete) autoComplete: AutoComplete;
-    filteredSuggestions: string[] = [];
-    selectedClasses: string[] = [];
+    $selectedClasses = signal<string[]>([]);
+    $classes = signal<string[]>([]);
+    $query = signal<string>('');
 
-    isJsonClasses$: Observable<boolean>;
-    classes: string[] = [];
+    $filteredSuggestions = computed(() => {
+        const classes = this.$classes();
+        const query = this.$query();
+
+        return classes.filter((item) => item.includes(query));
+    });
+
+    readonly #jsonClassesService = inject(JsonClassesService);
+    isJsonClasses$ = this.#jsonClassesService.getClasses().pipe(
+        tap(({ classes }) => {
+            if (classes?.length) {
+                this.$classes.set(classes);
+            } else {
+                this.$classes.set([]);
+            }
+        }),
+        map(({ classes }) => !!classes?.length),
+        catchError(() => {
+            this.$classes.set([]);
+
+            return of(false);
+        }),
+        shareReplay(1)
+    );
+    $isJsonClasses = toSignal(this.isJsonClasses$, {
+        initialValue: false
+    });
 
     constructor(
-        private jsonClassesService: JsonClassesService,
         public dynamicDialogConfig: DynamicDialogConfig<{
             selectedClasses: string[];
         }>,
@@ -48,26 +78,7 @@ export class AddStyleClassesDialogComponent implements OnInit {
 
     ngOnInit() {
         const { selectedClasses } = this.dynamicDialogConfig.data;
-        this.selectedClasses = selectedClasses;
-
-        this.isJsonClasses$ = this.jsonClassesService.getClasses().pipe(
-            tap(({ classes }) => {
-                if (classes?.length) {
-                    this.classes = classes;
-                } else {
-                    this.classes = [];
-                }
-            }),
-            map(({ classes }) => {
-                return !!classes?.length;
-            }),
-            catchError(() => {
-                this.classes = [];
-
-                return of(false);
-            }),
-            shareReplay(1)
-        );
+        this.$selectedClasses.set(selectedClasses);
     }
 
     /**
@@ -85,7 +96,7 @@ export class AddStyleClassesDialogComponent implements OnInit {
         */
 
         // PrimeNG autocomplete doesn't support async pipe in the suggestions
-        this.filteredSuggestions = this.classes.filter((item) => item.includes(query));
+        this.$query.set(query);
     }
 
     /**
@@ -94,6 +105,6 @@ export class AddStyleClassesDialogComponent implements OnInit {
      * @memberof AddStyleClassesDialogComponent
      */
     save() {
-        this.ref.close(this.selectedClasses);
+        this.ref.close(this.$selectedClasses());
     }
 }
