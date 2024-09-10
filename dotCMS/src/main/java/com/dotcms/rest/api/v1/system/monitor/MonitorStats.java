@@ -8,9 +8,13 @@ import java.util.Map;
  * @author Brent Griffin
  * @since Jul 18th, 2018
  */
-class MonitorStats {
+public class MonitorStats {
 
-    final boolean assetFSHealthy, cacheHealthy, dBHealthy,  esHealthy, localFSHealthy;
+    final boolean assetFSHealthy;
+    final boolean cacheHealthy;
+    final boolean dBHealthy;
+    final boolean esHealthy;
+    final boolean localFSHealthy;
 
     public MonitorStats(boolean assetFSHealthy,
             boolean cacheHealthy,
@@ -24,20 +28,43 @@ class MonitorStats {
         this.localFSHealthy = localFSHealthy;
     }
 
+    /**
+     * This method checks if the dotCMS instance is healthy. It does this by checking if the backend
+     * and frontend are healthy.
+     *
+     * @return If the dotCMS instance is healthy, returns {@code true}.
+     */
     boolean isDotCMSHealthy() {
         return isBackendHealthy() && isFrontendHealthy();
     }
 
+    /**
+     * This method checks if the backend is healthy. It does this by checking if the database,
+     * elasticsearch, cache, local file system, and asset file system are healthy.
+     *
+     * @return If the backend is healthy, returns {@code true}.
+     */
     boolean isBackendHealthy() {
         return this.dBHealthy && this.esHealthy && this.cacheHealthy && this.localFSHealthy
                 && this.assetFSHealthy;
     }
 
+    /**
+     * This method checks if the frontend is healthy. It does this by checking if the database,
+     * elasticsearch, cache, local file system, and asset file system are healthy.
+     *
+     * @return If the frontend is healthy, returns {@code true}.
+     */
     boolean isFrontendHealthy() {
         return this.dBHealthy && this.esHealthy && this.cacheHealthy &&
                 this.localFSHealthy && this.assetFSHealthy;
     }
 
+    /**
+     * This method converts the monitor stats to a map.
+     *
+     * @return A map containing the monitor stats.
+     */
     Map<String, Object> toMap() {
         final Map<String, Object> subsystems = Map.of(
                 "dbSelectHealthy", this.dBHealthy,
@@ -53,6 +80,9 @@ class MonitorStats {
                 "subsystems", subsystems);
     }
 
+    /**
+     * This class is used to build an instance of {@link MonitorStats}.
+     */
     public static final class Builder {
 
         private boolean assetFSHealthy;
@@ -60,9 +90,6 @@ class MonitorStats {
         private boolean dBHealthy;
         private boolean esHealthy;
         private boolean localFSHealthy;
-
-        public Builder() {
-        }
 
         public Builder assetFSHealthy(boolean assetFSHealthy) {
             this.assetFSHealthy = assetFSHealthy;
@@ -78,7 +105,6 @@ class MonitorStats {
             this.dBHealthy = dBHealthy;
             return this;
         }
-
 
         public Builder localFSHealthy(boolean localFSHealthy) {
             this.localFSHealthy = localFSHealthy;
