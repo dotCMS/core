@@ -26,7 +26,7 @@ export const subscriptions: DotCMSPageEditorSubscription[] = [];
  * @private
  * @memberof DotCMSPageEditor
  */
-function setBounds() {
+function setBounds(): void {
     const containers = Array.from(
         document.querySelectorAll('[data-dot-object="container"]')
     ) as HTMLDivElement[];
@@ -39,12 +39,12 @@ function setBounds() {
 }
 
 /**
- * Listens for editor messages and performs corresding actions based on the received message.
+ * Listens for editor messages and performs corresponding actions based on the received message.
  *
  * @private
  * @memberof DotCMSPageEditor
  */
-export function listenEditorMessages() {
+export function listenEditorMessages(): void {
     const messageCallback = (event: MessageEvent) => {
         switch (event.data) {
             case NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS: {
@@ -60,10 +60,8 @@ export function listenEditorMessages() {
                 (window.scrollY === 0 && direction === 'up') ||
                 (scrollIsInBottom() && direction === 'down')
             ) {
-                /**
-                 * If the iframe scroll is in the top of bottom, we dont send anything.
-                 * This to avoid the lost of scrollend event
-                 **/
+                // If the iframe scroll is at the top or bottom, do not send anything.
+                // This avoids losing the scrollend event.
                 return;
             }
 
@@ -87,7 +85,7 @@ export function listenEditorMessages() {
  * @private
  * @memberof DotCMSPageEditor
  */
-export function listenHoveredContentlet() {
+export function listenHoveredContentlet(): void {
     const pointerMoveCallback = (event: PointerEvent) => {
         const foundElement = findDotElement(event.target as HTMLElement);
 
@@ -120,8 +118,8 @@ export function listenHoveredContentlet() {
         const vtlFiles = findVTLData(foundElement);
         const contentletPayload = {
             container:
-                // Here extract dot-container from contentlet if is Headless
-                // or search in parent container if is VTL
+                // Here extract dot-container from contentlet if it is Headless
+                // or search in parent container if it is VTL
                 foundElement.dataset?.['dotContainer']
                     ? JSON.parse(foundElement.dataset?.['dotContainer'])
                     : getClosestContainerData(foundElement),
@@ -157,7 +155,7 @@ export function listenHoveredContentlet() {
  * @private
  * @memberof DotCMSPageEditor
  */
-export function scrollHandler() {
+export function scrollHandler(): void {
     const scrollCallback = () => {
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.IFRAME_SCROLL
@@ -191,8 +189,12 @@ export function scrollHandler() {
  * Restores the scroll position of the window when an iframe is loaded.
  * Only used in VTL Pages.
  * @export
+ * @example
+ * ```ts
+ * preserveScrollOnIframe();
+ * ```
  */
-export function preserveScrollOnIframe() {
+export function preserveScrollOnIframe(): void {
     const preserveScrollCallback = () => {
         window.scrollTo(0, window.lastScrollYPosition);
     };
