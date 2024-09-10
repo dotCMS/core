@@ -81,7 +81,7 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
     /**
      * Represents the current state of the component.
      */
-    $status = input.required<ComponentStatus>({ alias: 'status' });
+    $state = input.required<ComponentStatus>({ alias: 'state' });
 
     /**
      * Output for emit the selected category(ies).
@@ -109,9 +109,9 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
     $tableIsEmpty = computed(() => !this.$isLoading() && this.$categories().length === 0);
 
     /**
-     * A computed variable that represents the loading status of a component.
+     * A computed variable that represents the loading state of a component.
      */
-    $isLoading = computed(() => this.$status() === ComponentStatus.LOADING);
+    $isLoading = computed(() => this.$state() === ComponentStatus.LOADING);
 
     /**
      * Gets the computed value of $emptyOrErrorMessage.
@@ -193,14 +193,14 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
     }
 
     /**
-     * Retrieves the message configuration based on the current component status.
+     * Retrieves the message configuration based on the current component state.
      *
      * @private
      * @returns {PrincipalConfiguration | null} Returns the message configuration, or null if no configuration is found.
      */
     private getMessageConfig(): PrincipalConfiguration | null {
         const configKey =
-            this.$status() === ComponentStatus.ERROR ? ComponentStatus.ERROR : 'noResults';
+            this.$state() === ComponentStatus.ERROR ? ComponentStatus.ERROR : 'noResults';
         const { title, icon, subtitle } = CATEGORY_FIELD_EMPTY_MESSAGES[configKey];
 
         return {

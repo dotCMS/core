@@ -76,13 +76,13 @@ jobs:
             const issueNumber = issue.number;
             
             const dropAndLearnText = 'Drop Everything & Learn';
-            if (issue.data.title.includes(dropAndLearnText)) {
+            if (issue.title.includes(dropAndLearnText)) {
               console.log(`Issue does have "${dropAndLearnText}" text in title, exiting`);
               process.exit(0);
             }
 
             const typeCicdLabel = 'Type : CI/CD';
-            const foundLabel = issue.data.labels.find(label => label.name === typeCicdLabel);
+            const foundLabel = issue.labels.find(label => label.name === typeCicdLabel);
             if (foundLabel) {
               console.log(`Issue does have "${typeCicdLabel}" label , exiting`);
               process.exit(0);
