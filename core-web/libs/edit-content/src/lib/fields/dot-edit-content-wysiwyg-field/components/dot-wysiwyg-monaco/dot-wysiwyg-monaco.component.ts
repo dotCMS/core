@@ -59,8 +59,9 @@ export class DotWysiwygMonacoComponent implements OnDestroy {
      *
      */
     $customPropsContentField = computed(() => {
+        const { fieldVariables } = this.$field();
         const { monacoOptions } = getFieldVariablesParsed<{ monacoOptions: string }>(
-            this.$field().fieldVariables
+            fieldVariables
         );
 
         return stringToJson(monacoOptions);

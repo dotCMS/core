@@ -1,3 +1,5 @@
+import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+
 import { ChangeDetectionStrategy, Component, model, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -18,7 +20,13 @@ import {
 @Component({
     selector: 'dot-edit-content-wysiwyg-field',
     standalone: true,
-    imports: [FormsModule, DropdownModule, DotWysiwygTinymceComponent, DotWysiwygMonacoComponent],
+    imports: [
+        FormsModule,
+        DropdownModule,
+        DotWysiwygTinymceComponent,
+        DotWysiwygMonacoComponent,
+        MonacoEditorModule
+    ],
     templateUrl: './dot-edit-content-wysiwyg-field.component.html',
     styleUrl: './dot-edit-content-wysiwyg-field.component.scss',
     host: {
@@ -27,6 +35,9 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentWYSIWYGFieldComponent {
+    /**
+     * This variable represents a required content type field in DotCMS.
+     */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
     /**
@@ -39,7 +50,7 @@ export class DotEditContentWYSIWYGFieldComponent {
      */
     selectedLanguage = model<string>(DEFAULT_MONACO_LANGUAGE);
 
-    protected editorTypes = AvailableEditor;
-    protected editorOptions = EditorOptions;
-    protected monacoLanguagesOptions = MonacoLanguageOptions;
+    readonly editorTypes = AvailableEditor;
+    readonly editorOptions = EditorOptions;
+    readonly monacoLanguagesOptions = MonacoLanguageOptions;
 }

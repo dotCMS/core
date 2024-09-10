@@ -6,8 +6,14 @@
     }
 </div>
 <div class="wysiwyg__controls">
-    <p-dropdown [options]="editorOptions" [(ngModel)]="selectedEditor"></p-dropdown>
+    <p-dropdown
+        [options]="editorOptions"
+        [(ngModel)]="selectedEditor"
+        data-testId="editor-selector" />
     @if (selectedEditor() === editorTypes.Monaco) {
-        <p-dropdown [options]="monacoLanguagesOptions" [(ngModel)]="selectedLanguage"></p-dropdown>
+        <p-dropdown
+            [options]="monacoLanguagesOptions"
+            [(ngModel)]="selectedLanguage"
+            data-testId="language-selector" />
     }
 </div>
