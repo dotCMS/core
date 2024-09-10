@@ -67,13 +67,12 @@
                 <div class="template-builder-box__item">
                     <p data-testId="container-title">
                         {{
-                            (containerMap && containerMap[item.identifier]?.title) ||
-                                item.identifier
+                            (containerMap && containerMap[item.identifier].title) || item.identifier
                         }}
                     </p>
                     <dotcms-remove-confirm-dialog
                         (deleteConfirmed)="deleteContainer.emit($index)"
-                        data-testId="btn-trash-container"></dotcms-remove-confirm-dialog>
+                        data-testId="btn-trash-container" />
                 </div>
             }
         </p-scrollPanel>

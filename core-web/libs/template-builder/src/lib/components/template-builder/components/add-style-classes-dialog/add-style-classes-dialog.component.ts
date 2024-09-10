@@ -123,8 +123,10 @@ export class AddStyleClassesDialogComponent implements OnInit {
      * @memberof AddStyleClassesDialogComponent
      */
     ngOnInit() {
-        const { selectedClasses } = this.dynamicDialogConfig.data;
-        this.$selectedClasses.set(selectedClasses);
+        const data = this.dynamicDialogConfig.data;
+        if (data) {
+            this.$selectedClasses.set(data?.selectedClasses);
+        }
     }
 
     /**

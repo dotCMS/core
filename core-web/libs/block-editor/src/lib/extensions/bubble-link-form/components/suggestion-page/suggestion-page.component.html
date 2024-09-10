@@ -4,7 +4,7 @@
             @for (item of items; track $index) {
                 <dot-suggestions-list-item
                     [command]="item.command"
-                    [index]="$index"
+                    [index]="$index.toString()"
                     [label]="item.label"
                     [url]="item.icon"
                     [data]="item.data"
