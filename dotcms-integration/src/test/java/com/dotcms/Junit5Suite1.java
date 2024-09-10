@@ -1,4 +1,4 @@
-package com.dotcms.workflow.helper;
+package com.dotcms;
 
 import com.dotcms.jobs.business.api.JobQueueManagerAPICDITest;
 import org.junit.platform.suite.api.SelectClasses;
