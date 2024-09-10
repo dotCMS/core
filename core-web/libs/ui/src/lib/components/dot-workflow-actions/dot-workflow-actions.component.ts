@@ -2,10 +2,9 @@ import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    EventEmitter,
     input,
     OnChanges,
-    Output,
+    output,
     signal
 } from '@angular/core';
 
@@ -70,7 +69,7 @@ export class DotWorkflowActionsComponent implements OnChanges {
      *
      * @memberof DotWorkflowActionsComponent
      */
-    @Output() actionFired = new EventEmitter<DotCMSWorkflowAction>();
+    actionFired = output<DotCMSWorkflowAction>();
 
     protected $groupedActions = signal<WorkflowActionsGroup[]>([]);
     protected sizeClass!: string;
