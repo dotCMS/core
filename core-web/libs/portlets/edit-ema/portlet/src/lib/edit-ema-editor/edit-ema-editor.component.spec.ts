@@ -369,7 +369,7 @@ describe('EditEmaEditorComponent', () => {
 
             addMessageSpy = jest.spyOn(messageService, 'add');
 
-            store.load({
+            store.init({
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
@@ -422,7 +422,7 @@ describe('EditEmaEditorComponent', () => {
                 spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
 
                 spectator.detectChanges();
-                store.load({
+                store.init({
                     url: 'index',
                     language_id: '5',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
@@ -444,7 +444,7 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectChanges();
 
-                store.load({
+                store.init({
                     url: 'index',
                     language_id: '5',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -2455,7 +2455,7 @@ describe('EditEmaEditorComponent', () => {
                         jest.useFakeTimers(); // Mock the timers
                         spectator.detectChanges();
 
-                        store.load({
+                        store.init({
                             url: 'index',
                             language_id: '3',
                             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -2495,7 +2495,7 @@ describe('EditEmaEditorComponent', () => {
 
                         iframe.nativeElement.contentWindow.scrollTo(0, 100); //Scroll down
 
-                        store.load({
+                        store.init({
                             url: 'index',
                             language_id: '4',
                             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -2595,7 +2595,7 @@ describe('EditEmaEditorComponent', () => {
 
                     const url = "/ultra-cool-url-that-doesn't-exist";
 
-                    store.load({
+                    store.init({
                         url,
                         language_id: '5',
                         'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -2634,7 +2634,7 @@ describe('EditEmaEditorComponent', () => {
                     spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
 
                     spectator.detectChanges();
-                    store.load({
+                    store.init({
                         url: 'index',
                         language_id: '5',
                         'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,

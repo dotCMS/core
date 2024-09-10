@@ -40,7 +40,7 @@ export function withLoad() {
             const activatedRoute = inject(ActivatedRoute);
 
             return {
-                load: rxMethod<DotPageApiParams>(
+                init: rxMethod<DotPageApiParams>(
                     pipe(
                         tap(() => store.resetClientConfiguration()),
                         tap(() => {

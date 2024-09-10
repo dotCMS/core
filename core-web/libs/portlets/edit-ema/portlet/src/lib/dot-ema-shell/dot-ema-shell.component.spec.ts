@@ -179,7 +179,7 @@ describe('DotEmaShellComponent', () => {
             store = spectator.inject(UVEStore, true);
             router = spectator.inject(Router, true);
             confirmationService = spectator.inject(ConfirmationService, true);
-            jest.spyOn(store, 'load');
+            jest.spyOn(store, 'init');
             confirmationServiceSpy = jest.spyOn(confirmationService, 'confirm');
 
             spectator.triggerNavigation({
@@ -279,7 +279,7 @@ describe('DotEmaShellComponent', () => {
             it('should trigger an store load with default values', () => {
                 spectator.detectChanges();
 
-                expect(store.load).toHaveBeenCalledWith({
+                expect(store.init).toHaveBeenCalledWith({
                     clientHost: 'http://localhost:3000',
                     language_id: 1,
                     url: 'index',
@@ -298,7 +298,7 @@ describe('DotEmaShellComponent', () => {
                 });
 
                 spectator.detectChanges();
-                expect(store.load).toHaveBeenCalledWith({
+                expect(store.init).toHaveBeenCalledWith({
                     clientHost: 'http://localhost:3000',
                     language_id: 2,
                     url: 'my-awesome-page',
@@ -317,7 +317,7 @@ describe('DotEmaShellComponent', () => {
                 });
 
                 spectator.detectChanges();
-                expect(store.load).not.toHaveBeenCalledTimes(2); // The first call is on the beforeEach
+                expect(store.init).not.toHaveBeenCalledTimes(2); // The first call is on the beforeEach
             });
 
             it('should trigger a load when changing the clientHost and it is on the allowedDevURLs', () => {
@@ -339,7 +339,7 @@ describe('DotEmaShellComponent', () => {
                 });
 
                 spectator.detectChanges();
-                expect(store.load).toHaveBeenLastCalledWith({
+                expect(store.init).toHaveBeenLastCalledWith({
                     clientHost: 'http://localhost:1111',
                     language_id: 1,
                     url: 'index',
@@ -366,7 +366,7 @@ describe('DotEmaShellComponent', () => {
                 });
 
                 spectator.detectChanges();
-                expect(store.load).toHaveBeenLastCalledWith({
+                expect(store.init).toHaveBeenLastCalledWith({
                     clientHost: 'http://localhost:1111',
                     language_id: 1,
                     url: 'index',
@@ -393,7 +393,7 @@ describe('DotEmaShellComponent', () => {
                 });
 
                 spectator.detectChanges();
-                expect(store.load).toHaveBeenLastCalledWith({
+                expect(store.init).toHaveBeenLastCalledWith({
                     clientHost: 'http://localhost:1111/',
                     language_id: 1,
                     url: 'index',
@@ -420,7 +420,7 @@ describe('DotEmaShellComponent', () => {
                 });
 
                 spectator.detectChanges();
-                expect(store.load).toHaveBeenLastCalledWith({
+                expect(store.init).toHaveBeenLastCalledWith({
                     clientHost: 'http://localhost:1111/',
                     language_id: 1,
                     url: 'index',
@@ -458,7 +458,7 @@ describe('DotEmaShellComponent', () => {
                     queryParamsHandling: 'merge'
                 });
 
-                expect(store.load).toHaveBeenLastCalledWith({
+                expect(store.init).toHaveBeenLastCalledWith({
                     clientHost: 'http://localhost:3000',
                     language_id: 1,
                     url: 'index',
@@ -496,7 +496,7 @@ describe('DotEmaShellComponent', () => {
                     queryParamsHandling: 'merge'
                 });
 
-                expect(store.load).toHaveBeenLastCalledWith({
+                expect(store.init).toHaveBeenLastCalledWith({
                     clientHost: 'http://localhost:3000',
                     language_id: 1,
                     url: 'index',
@@ -533,7 +533,7 @@ describe('DotEmaShellComponent', () => {
                     queryParamsHandling: 'merge'
                 });
 
-                expect(store.load).toHaveBeenLastCalledWith({
+                expect(store.init).toHaveBeenLastCalledWith({
                     clientHost: 'http://localhost:3000',
                     language_id: 1,
                     url: 'index',
@@ -571,7 +571,7 @@ describe('DotEmaShellComponent', () => {
                     queryParamsHandling: 'merge'
                 });
 
-                expect(store.load).toHaveBeenLastCalledWith({
+                expect(store.init).toHaveBeenLastCalledWith({
                     clientHost: 'http://localhost:3000',
                     language_id: 1,
                     url: 'index',
@@ -608,7 +608,7 @@ describe('DotEmaShellComponent', () => {
                     queryParamsHandling: 'merge'
                 });
 
-                expect(store.load).toHaveBeenLastCalledWith({
+                expect(store.init).toHaveBeenLastCalledWith({
                     clientHost: 'http://localhost:3000',
                     language_id: 1,
                     url: 'index',
@@ -639,7 +639,7 @@ describe('DotEmaShellComponent', () => {
                     queryParamsHandling: 'merge'
                 });
 
-                expect(store.load).toHaveBeenLastCalledWith({
+                expect(store.init).toHaveBeenLastCalledWith({
                     clientHost: 'http://localhost:3000',
                     language_id: 1,
                     url: 'index',
@@ -670,7 +670,7 @@ describe('DotEmaShellComponent', () => {
                     queryParamsHandling: 'merge'
                 });
 
-                expect(store.load).toHaveBeenLastCalledWith({
+                expect(store.init).toHaveBeenLastCalledWith({
                     clientHost: 'http://localhost:3000',
                     language_id: 1,
                     url: 'index',
@@ -880,9 +880,7 @@ describe('DotEmaShellComponent', () => {
                 });
             }));
 
-            it('should open a dialog to create the page and do nothing when the user creates the page correctly with SAVE_PAGE', fakeAsync(() => {
-                const reloadSpy = jest.spyOn(store, 'reload');
-
+            it('should open a dialog to create the page and do nothing when the user creates the page correctly with SAVE_PAGE and closes the dialog', fakeAsync(() => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -922,8 +920,6 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
 
                 expect(router.navigate).not.toHaveBeenCalled();
-
-                expect(reloadSpy).toHaveBeenCalled();
             }));
         });
 
@@ -971,8 +967,8 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('should trigger a store load if the url is the same', () => {
-                const loadMock = jest.spyOn(store, 'load');
+            it('should trigger a store reload if the url is the same', () => {
+                const reloadMock = jest.spyOn(store, 'reload');
 
                 spectator.detectChanges();
 
@@ -981,7 +977,7 @@ describe('DotEmaShellComponent', () => {
                         detail: {
                             name: NG_CUSTOM_EVENTS.SAVE_PAGE,
                             payload: {
-                                htmlPageReferer: '/my-awesome-page'
+                                htmlPageReferer: 'index'
                             }
                         }
                     }),
@@ -994,12 +990,7 @@ describe('DotEmaShellComponent', () => {
 
                 spectator.detectChanges();
 
-                expect(loadMock).toHaveBeenCalledWith({
-                    clientHost: 'http://localhost:3000',
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
+                expect(reloadMock).toHaveBeenCalled();
             });
 
             it('should reload content from dialog', () => {

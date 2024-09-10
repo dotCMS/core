@@ -9,7 +9,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { skip, take, takeUntil } from 'rxjs/operators';
+import { skip, takeUntil } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -31,7 +31,6 @@ import { isEqual } from '@dotcms/utils/lib/shared/lodash/functions';
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { EditEmaEditorComponent } from '../edit-ema-editor/edit-ema-editor.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
@@ -136,7 +135,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                this.uveStore.load(currentParams);
+                this.uveStore.init(currentParams);
             });
 
         // We need to skip one because it's the initial value
@@ -168,11 +167,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
-                // We dont want to reload if it was not saved
-
-                if (isSaved) {
-                    this.reloadFromDialog();
-                } else if (isTranslation) {
+                if (!isSaved && isTranslation) {
                     // At this point we are in the language of the translation, if the user didn't save we need to navigate to the default language
                     this.navigate({
                         language_id: 1
@@ -183,6 +178,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             }
 
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
+                // Maybe this can be out of the switch but we should evaluate it if it's needed
                 // This can be undefined
                 const url = event.detail.payload?.htmlPageReferer?.split('?')[0].replace('/', '');
 
@@ -194,18 +190,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                if (this.#currentComponent instanceof EditEmaEditorComponent) {
-                    this.#currentComponent.reloadIframeContent();
-                }
+                this.uveStore.reload();
 
-                this.#activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {
-                    const params = this.uveStore.params();
-
-                    this.uveStore.load({
-                        ...params,
-                        clientHost: params.clientHost ?? data?.url
-                    });
-                });
                 break;
             }
         }

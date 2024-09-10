@@ -166,6 +166,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
             if (!isTraditionalPage) {
                 if (isClientReady) {
+                    // This should have another name.
                     return this.reloadIframeContent();
                 }
 
