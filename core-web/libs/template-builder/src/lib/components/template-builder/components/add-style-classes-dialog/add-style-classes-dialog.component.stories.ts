@@ -1,4 +1,4 @@
-import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj, applicationConfig } from '@storybook/angular';
 import { of } from 'rxjs';
 
 import { HttpClient, provideHttpClient } from '@angular/common/http';
@@ -25,13 +25,15 @@ const meta: Meta<AddStyleClassesDialogComponent> = {
     title: 'Library/Template Builder/Components/Add Style Classes',
     component: AddStyleClassesDialogComponent,
     decorators: [
+        applicationConfig({
+            providers: [provideHttpClient()]
+        }),
         moduleMetadata({
             imports: [
                 AutoCompleteModule,
                 FormsModule,
                 ButtonModule,
                 DotMessagePipe,
-                provideHttpClient(),
                 BrowserAnimationsModule,
                 DotSelectItemDirective
             ],

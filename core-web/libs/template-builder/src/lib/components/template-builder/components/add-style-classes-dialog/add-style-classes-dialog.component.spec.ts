@@ -1,9 +1,8 @@
 import { expect, it } from '@jest/globals';
 import { createFakeEvent } from '@ngneat/spectator';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { NgIf, AsyncPipe } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 
@@ -12,7 +11,7 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef, DynamicDialogModule } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSelectItemDirective } from '@dotcms/ui';
 import { MockDotMessageService, mockMatchMedia } from '@dotcms/utils-testing';
 
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
@@ -40,7 +39,7 @@ const providers = [
 
 describe('AddStyleClassesDialogComponent', () => {
     let spectator: Spectator<AddStyleClassesDialogComponent>;
-    let service: JsonClassesService;
+    let jsonClassesService: JsonClassesService;
     let dialogRef: DynamicDialogRef;
     let autocomplete: AutoComplete;
 
@@ -51,17 +50,10 @@ describe('AddStyleClassesDialogComponent', () => {
             FormsModule,
             ButtonModule,
             DotMessagePipe,
-            NgIf,
-            AsyncPipe
+            DotSelectItemDirective
         ],
         component: AddStyleClassesDialogComponent,
-        providers: [
-            JsonClassesService,
-            DynamicDialogRef,
-            DynamicDialogConfig,
-            DotMessageService,
-            provideHttpClient()
-        ],
+        providers: [DynamicDialogRef, DynamicDialogConfig, DotMessageService, provideHttpClient()],
         detectChanges: false
     });
 
@@ -70,26 +62,18 @@ describe('AddStyleClassesDialogComponent', () => {
             spectator = createComponent({
                 providers: [
                     ...providers,
-                    {
-                        provide: DynamicDialogConfig,
-                        useValue: {
-                            data: {
-                                selectedClasses: ['backend-class']
-                            }
+                    mockProvider(DynamicDialogConfig, {
+                        data: {
+                            selectedClasses: ['backend-class']
                         }
-                    },
-                    {
-                        provide: JsonClassesService,
-                        useValue: {
-                            getClasses() {
-                                return of({ classes: ['class1', 'class2'] });
-                            }
-                        }
-                    }
+                    }),
+                    mockProvider(JsonClassesService, {
+                        getClasses: jest.fn().mockReturnValue(of({ classes: ['class1', 'class2'] }))
+                    })
                 ]
             });
 
-            service = spectator.inject(JsonClassesService);
+            jsonClassesService = spectator.inject(JsonClassesService, true);
             dialogRef = spectator.inject(DynamicDialogRef);
             autocomplete = spectator.query(AutoComplete);
             mockMatchMedia();
@@ -105,14 +89,12 @@ describe('AddStyleClassesDialogComponent', () => {
             expect(autocomplete.appendTo).toBe('body');
             expect(autocomplete.dropdown).toBe(true);
             expect(autocomplete.el.nativeElement.className).toContain('p-fluid');
-            expect(autocomplete.suggestions.length).toEqual(0);
+            expect(autocomplete.suggestions).toEqual(['class1', 'class2']);
         });
 
-        it('should call jsonClassesService.getClasses on init', () => {
-            const getClassesMock = jest.spyOn(service, 'getClasses');
+        it('should call jsonClassesService.getClasses on init', async () => {
             spectator.detectChanges();
-
-            expect(getClassesMock).toHaveBeenCalledTimes(1);
+            expect(jsonClassesService.getClasses).toHaveBeenCalledTimes(1);
         });
 
         it('should set classes property on init', () => {
@@ -135,6 +117,24 @@ describe('AddStyleClassesDialogComponent', () => {
             });
 
             expect(autocomplete.suggestions).toEqual(['class1']);
+        });
+
+        it('should there is a dotSelectItem directive', () => {
+            spectator.detectChanges();
+
+            const element = spectator.query(DotSelectItemDirective);
+            expect(element).toBeTruthy();
+        });
+
+        it('should add class on keyup.enter', () => {
+            spectator.detectChanges();
+
+            const input = spectator.query('input#auto-complete-input');
+
+            spectator.typeInElement('new value', input);
+            spectator.dispatchKeyboardEvent(input, 'keyup', 'Enter', input);
+
+            expect(spectator.component.$selectedClasses()).toContain('new value');
         });
 
         it('should save selected classes and close the dialog', () => {
@@ -177,7 +177,7 @@ describe('AddStyleClassesDialogComponent', () => {
                 ]
             });
 
-            service = spectator.inject(JsonClassesService);
+            jsonClassesService = spectator.inject(JsonClassesService, true);
             dialogRef = spectator.inject(DynamicDialogRef);
             autocomplete = spectator.query(AutoComplete);
         });
@@ -225,7 +225,7 @@ describe('AddStyleClassesDialogComponent', () => {
                 ]
             });
 
-            service = spectator.inject(JsonClassesService);
+            jsonClassesService = spectator.inject(JsonClassesService, true);
             dialogRef = spectator.inject(DynamicDialogRef);
             autocomplete = spectator.query(AutoComplete);
         });
@@ -275,7 +275,7 @@ describe('AddStyleClassesDialogComponent', () => {
                 ]
             });
 
-            service = spectator.inject(JsonClassesService);
+            jsonClassesService = spectator.inject(JsonClassesService, true);
             dialogRef = spectator.inject(DynamicDialogRef);
             autocomplete = spectator.query(AutoComplete);
         });

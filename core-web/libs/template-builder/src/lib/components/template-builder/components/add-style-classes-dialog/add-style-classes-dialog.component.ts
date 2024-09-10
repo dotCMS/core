@@ -39,11 +39,15 @@ import { JsonClassesService } from './services/json-classes.service';
 export class AddStyleClassesDialogComponent implements OnInit {
     $selectedClasses = signal<string[]>([]);
     $classes = signal<string[]>([]);
-    $query = signal<string>('');
+    $query = signal<string | null>(null);
 
     $filteredSuggestions = computed(() => {
         const classes = this.$classes();
         const query = this.$query();
+
+        if (!query) {
+            return classes;
+        }
 
         return classes.filter((item) => item.includes(query));
     });
