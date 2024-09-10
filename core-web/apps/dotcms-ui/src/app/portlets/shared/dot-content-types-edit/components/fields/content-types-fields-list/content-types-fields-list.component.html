@@ -5,7 +5,7 @@
     data-drag-type="source">
     @for (fieldType of $fieldTypes(); track fieldType.clazz) {
         <li [attr.data-clazz]="fieldType.clazz" class="content-types-fields-list__item">
-            <dot-icon name="{{ getIcon(fieldType.clazz) }}"></dot-icon>
+            <dot-icon name="{{ fieldIcons[fieldType.clazz] }}"></dot-icon>
             <span role="listitem">{{ fieldType.name }}</span>
         </li>
     }

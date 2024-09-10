@@ -3,6 +3,7 @@ import { Component, inject, Input, OnInit, signal } from '@angular/core';
 import { filter, mergeMap, take, toArray } from 'rxjs/operators';
 
 import { FieldUtil } from '@dotcms/utils-testing';
+import { FIELD_ICONS } from '@portlets/shared/dot-content-types-edit/components/fields/content-types-fields-list/content-types-fields-icon-map';
 
 import { FieldType } from '..';
 import { FieldService } from '../service';
@@ -21,6 +22,7 @@ export class ContentTypesFieldsListComponent implements OnInit {
     @Input() baseType: string;
 
     $fieldTypes = signal<{ clazz: string; name: string }[]>([]);
+    fieldIcons = FIELD_ICONS;
 
     #dotFormFields = [
         'com.dotcms.contenttype.model.field.ImmutableBinaryField',
@@ -74,15 +76,6 @@ export class ContentTypesFieldsListComponent implements OnInit {
                 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
                 this.$fieldTypes.set([COLUMN_BREAK_FIELD, LINE_DIVIDER, ...fieldsFiltered]);
             });
-    }
-
-    /**
-     * Get the icon based on the Field Type
-     *
-     * @param {string} clazz
-     */
-    getIcon(clazz: string): string {
-        return this.#fieldService.getIcon(clazz);
     }
 
     private isFormField(field: { clazz: string; name: string }): boolean {
