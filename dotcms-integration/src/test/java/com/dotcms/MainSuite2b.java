@@ -51,7 +51,6 @@ import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
 import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
-import com.dotcms.jobs.business.api.JobQueueManagerAPICDITest;
 import com.dotcms.jobs.business.api.JobQueueManagerAPITest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mail.MailAPIImplTest;
@@ -324,7 +323,6 @@ import org.junit.runners.Suite.SuiteClasses;
         OpenAIContentPromptActionletTest.class,
         JobQueueManagerAPITest.class,
         ConfigUtilsTest.class,
-        JobQueueManagerAPICDITest.class,
         SimpleInjectionIT.class
 })
 
