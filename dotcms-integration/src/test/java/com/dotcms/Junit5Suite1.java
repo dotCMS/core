@@ -5,7 +5,7 @@ import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
 @Suite
-@SelectClasses({JobQueueManagerAPICDITest.class)
+@SelectClasses({JobQueueManagerAPICDITest.class})
 public class Junit5Suite1 {
 
 }
