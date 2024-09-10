@@ -18,6 +18,7 @@ import com.dotcms.business.SystemTableFactoryTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
 import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
+import com.dotcms.cdi.SimpleInjectionIT;
 import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.business.json.ContentletJsonAPITest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
@@ -50,6 +51,7 @@ import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
 import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
+import com.dotcms.jobs.business.api.JobQueueManagerAPICDITest;
 import com.dotcms.jobs.business.api.JobQueueManagerAPITest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mail.MailAPIImplTest;
@@ -321,7 +323,9 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240606AddVariableColumnToWorkflowTest.class,
         OpenAIContentPromptActionletTest.class,
         JobQueueManagerAPITest.class,
-        ConfigUtilsTest.class
+        ConfigUtilsTest.class,
+        JobQueueManagerAPICDITest.class,
+        SimpleInjectionIT.class
 })
 
 public class MainSuite2b {
