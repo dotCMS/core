@@ -51,7 +51,8 @@ public class WebEventsCollectorServiceFactory {
 
         WebEventsCollectorServiceImpl () {
 
-            addCollector(new BasicProfileCollector(), new FilesCollector(), new PagesCollector());
+            addCollector(new BasicProfileCollector(), new FilesCollector(), new PagesCollector(),
+                    new SyncVanitiesCollector(), new AsyncVanitiesCollector());
         }
 
         @Override
@@ -88,7 +89,8 @@ public class WebEventsCollectorServiceFactory {
             // if there is anything to run async
             final CollectorContextMap collectorContextMap = new CharacterCollectorContextMap(character, requestMatcher,
                     Map.of("uri", request.getRequestURI(),
-                            "siteId", site.getIdentifier()));
+                            "siteId", site.getIdentifier(),
+                            "requestId", request.getAttribute("requestId")));
             this.submitter.logEvent(
                     new EventLogRunnable(site, ()-> {
                         Logger.debug(this, ()-> "Running async collectors");

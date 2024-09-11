@@ -99,9 +99,14 @@ public class BaseCharacter extends AbstractCharacter {
 
     }
 
-
-
-    private IAm resolveResourceType(final String uri, final Host site, final long languageId) {
+    /**
+     * This method will resolve the resource type of the request
+     * @param uri
+     * @param site
+     * @param languageId
+     * @return IAm
+     */
+    public static IAm resolveResourceType(final String uri, final Host site, final long languageId) {
 
 
         if(uri!=null) {
@@ -110,9 +115,8 @@ public class BaseCharacter extends AbstractCharacter {
             }
         }
 
-
         return CMSUrlUtil.getInstance().resolveResourceType(IAm.NOTHING_IN_THE_CMS, uri,
-                getHostNoThrow(request), languageId)._1;
+                site, languageId)._1;
 
     }
 
