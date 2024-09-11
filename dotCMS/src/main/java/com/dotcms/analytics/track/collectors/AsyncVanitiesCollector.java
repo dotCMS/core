@@ -70,6 +70,7 @@ public class AsyncVanitiesCollector implements Collector {
         final Host site = Try.of(()->this.hostAPI.find(siteId, APILocator.systemUser(), false)).get();
         final CMSFilter.IAm whoIAM =BaseCharacter.resolveResourceType(vanityUrl, site, languageId);
         final HashMap<String, String> vanityReferrerObject = new HashMap<>();
+        collectorPayloadBean.put("event_type", EventType.VANITY_REQUEST.getType());
 
         switch (whoIAM) {
 
@@ -78,12 +79,14 @@ public class AsyncVanitiesCollector implements Collector {
                 vanityReferrerObject.put("id", page.getIdentifier());
                 vanityReferrerObject.put("title", page.getTitle());
                 vanityReferrerObject.put("path", uri);
+                collectorPayloadBean.put("event_type", EventType.VANITY_PAGE_REQUEST.getType());
                 break;
             case FILE:
                 final FileAsset fileAsset = Try.of(()->this.fileAssetAPI.getFileByPath(vanityUrl, site, languageId, true)).get();
             /*vanityReferrerObject.put("id", fileAsset.getIdentifier());
             vanityReferrerObject.put("title", fileAsset.getTitle());
             vanityReferrerObject.put("url", uri);*/
+                collectorPayloadBean.put("event_type", EventType.VANITY_FILE_REQUEST.getType());
                 break;
         }
 
@@ -92,7 +95,7 @@ public class AsyncVanitiesCollector implements Collector {
         collectorPayloadBean.put("objects",  vanityReferrerObject);
         collectorPayloadBean.put("path", uri);
         collectorPayloadBean.put("site", host);
-        collectorPayloadBean.put("event_type", EventType.VANITY_REQUEST.getType());
+
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("siteId", siteId);
 
