@@ -60,6 +60,8 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.DISABLED_WYSIWYG_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
@@ -81,6 +83,7 @@ import static com.dotmarketing.util.UtilMethods.isSet;
  * which reads the contentlet from the columns located in the contentlet table.
  * This is meant to deal with a json representation of contentlet stored in only one column.
  */
+@ApplicationScoped
 public class ContentletJsonAPIImpl implements ContentletJsonAPI {
 
     private static final BinaryFileFilter binaryFileFilter = new BinaryFileFilter();
@@ -91,6 +94,9 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
     final ContentletAPI contentletAPI;
     final FolderAPI folderAPI;
     final HostAPI hostAPI;
+
+    @Inject
+    ContentletJsonHelper helper;
 
     /**
      * API-Parametrized constructor
@@ -136,7 +142,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             throws JsonProcessingException, DotDataException {
 
         final com.dotmarketing.portlets.contentlet.model.Contentlet copy = new com.dotmarketing.portlets.contentlet.model.Contentlet(contentlet);
-        return ContentletJsonHelper.INSTANCE.get().writeAsString(toImmutable(copy));
+        return helper.writeAsString(toImmutable(copy));
     }
 
     /**
@@ -541,7 +547,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @throws JsonProcessingException
      */
     public Contentlet immutableFromJson(final String json) throws JsonProcessingException {
-        return ContentletJsonHelper.INSTANCE.get().immutableFromJson(json);
+        return helper.immutableFromJson(json);
     }
 
 }

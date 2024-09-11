@@ -14,6 +14,7 @@ import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserAPIImpl;
 import com.dotcms.business.SystemAPI;
 import com.dotcms.business.SystemAPIImpl;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -171,6 +172,7 @@ import io.vavr.Lazy;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -1116,7 +1118,8 @@ public class APILocator extends Locator<APIIndex> {
 	 * @return the instance
 	 */
 	public static ContentletJsonAPI getContentletJsonAPI(){
-		return (ContentletJsonAPI) getInstance(APIIndex.CONTENTLET_JSON_API);
+		final Optional<ContentletJsonAPI> bean = CDIUtils.getBean(ContentletJsonAPI.class);
+		return bean.orElseGet(() -> (ContentletJsonAPI) getInstance(APIIndex.CONTENTLET_JSON_API));
 	}
 
 	/**

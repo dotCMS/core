@@ -19,12 +19,14 @@ import java.nio.file.Files;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Contentlet Json related logic falls here
  * In case we need to parse stuff outside an API
  * For example: We do not use APIs in our UpgradeTasks etc..
  */
+@ApplicationScoped
 public class ContentletJsonHelper {
 
     /**
@@ -108,6 +110,7 @@ public class ContentletJsonHelper {
     public ObjectMapper objectMapper() {
         return this.objectMapper.get();
     }
+
 
     public enum INSTANCE {
         INSTANCE;
