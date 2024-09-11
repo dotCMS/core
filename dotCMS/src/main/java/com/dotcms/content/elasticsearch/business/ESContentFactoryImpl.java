@@ -269,7 +269,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         try {
             APILocator.getContentletAPI().copyProperties(contentlet, contentletMap);
         } catch (Exception e) {
-            Logger.error(this,"Unable to copy contentlet properties",e);
+            Logger.error(this,"Unable to copy contentlet properties!!",e);
             throw new DotDataException("Unable to copy contentlet properties",e);
         }
         contentlet.setInode(fatty.getInode());
