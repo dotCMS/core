@@ -32,6 +32,7 @@ jobs:
         with:
           result-encoding: string
           script: |
+            let issueNumber;
             const issue = context.payload.issue;
             if (!issue && '${{ inputs.issue_number }}'.trim() === '') {
               console.log('Issue number is not provided');
@@ -113,6 +114,6 @@ jobs:
       - name: Finalize
         if: always()
         run: |
-          echo 'Finalizing NExt release labeling'
+          echo 'Finalizing Next release labeling'
           exit 0
           
