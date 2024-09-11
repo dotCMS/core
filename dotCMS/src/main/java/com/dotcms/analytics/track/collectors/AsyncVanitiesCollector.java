@@ -74,13 +74,13 @@ public class AsyncVanitiesCollector implements Collector {
         switch (whoIAM) {
 
             case PAGE:
-                final IHTMLPage page = Try.of(()->this.pageAPI.getPageByPath(uri, site, languageId, true)).get();
+                final IHTMLPage page = Try.of(()->this.pageAPI.getPageByPath(vanityUrl, site, languageId, true)).get();
                 vanityReferrerObject.put("id", page.getIdentifier());
                 vanityReferrerObject.put("title", page.getTitle());
                 vanityReferrerObject.put("path", uri);
                 break;
             case FILE:
-                final FileAsset fileAsset = Try.of(()->this.fileAssetAPI.getFileByPath(uri, site, languageId, true)).get();
+                final FileAsset fileAsset = Try.of(()->this.fileAssetAPI.getFileByPath(vanityUrl, site, languageId, true)).get();
             /*vanityReferrerObject.put("id", fileAsset.getIdentifier());
             vanityReferrerObject.put("title", fileAsset.getTitle());
             vanityReferrerObject.put("url", uri);*/
@@ -101,6 +101,6 @@ public class AsyncVanitiesCollector implements Collector {
 
     @Override
     public boolean isAsync() {
-        return false;
+        return true;
     }
 }
