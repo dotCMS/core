@@ -25,6 +25,8 @@ public class WrapInTransactionAdvice {
     @Advice.OnMethodEnter(inline = false)
     public static TransactionInfo enter(@Advice.Origin("#m") String methodName) throws DotDataException {
 
+        System.out.println("Method name: " + methodName);
+
         TransactionInfo info = null;
         boolean isLocalTransaction = false;
         boolean isNewConnection = false;

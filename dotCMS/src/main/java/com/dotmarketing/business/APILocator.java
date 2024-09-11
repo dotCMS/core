@@ -341,7 +341,8 @@ public class APILocator extends Locator<APIIndex> {
 	 * @return The {@link UserAPI} class.
 	 */
 	public static UserAPI getUserAPI() {
-		return (UserAPI)getInstance(APIIndex.USER_API);
+		final Optional<UserAPI> bean = CDIUtils.getBean(UserAPI.class);
+		return bean.orElseGet(() -> (UserAPI) getInstance(APIIndex.USER_API));
 	}
 
 	private static final Lazy<MailAPI> lazyMail = Lazy.of(MailAPIImpl::new);

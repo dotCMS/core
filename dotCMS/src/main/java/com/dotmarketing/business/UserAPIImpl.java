@@ -34,6 +34,7 @@ import com.liferay.portal.pwd.PwdToolkitUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
 import io.vavr.control.Try;
+import javax.enterprise.context.ApplicationScoped;
 import org.apache.commons.lang.StringUtils;
 
 import java.text.MessageFormat;
@@ -57,10 +58,10 @@ import static com.dotmarketing.business.UserHelper.validateMaximumLength;
  * @version 1.9
  * @since 1.6
  */
+@ApplicationScoped
 public class UserAPIImpl implements UserAPI {
 
     private final UserFactory userFactory;
-    private final UserFactoryLiferay userFactoryLiferay;
     private final PermissionAPI permissionAPI;
     private final UserProxyAPI userProxyAPI;
     private final BundleAPI bundleAPI;
@@ -70,7 +71,6 @@ public class UserAPIImpl implements UserAPI {
      */
     public UserAPIImpl() {
         userFactory = FactoryLocator.getUserFactory();
-        userFactoryLiferay = FactoryLocator.getUserFactoryLiferay();
         permissionAPI = APILocator.getPermissionAPI();
         userProxyAPI = APILocator.getUserProxyAPI();
         bundleAPI = APILocator.getBundleAPI();
