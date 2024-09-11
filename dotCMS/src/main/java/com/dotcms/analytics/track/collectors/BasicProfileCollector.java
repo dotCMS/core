@@ -4,10 +4,14 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.FunctionUtils;
 import com.dotmarketing.business.APILocator;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 public class BasicProfileCollector implements Collector {
-
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'");
     @Override
     public boolean test(CollectorContextMap collectorContextMap) {
 
@@ -26,9 +30,12 @@ public class BasicProfileCollector implements Collector {
         final String sessionId   = (String)collectorContextMap.get("session");
         final Boolean sessionNew   = (Boolean)collectorContextMap.get("sessionNew");
 
+        final Long timestamp = FunctionUtils.getOrDefault(Objects.nonNull(time), () -> time, System::currentTimeMillis);
+        final Instant instant = Instant.ofEpochMilli(timestamp);
+        final ZonedDateTime zonedDateTimeUTC = instant.atZone(ZoneId.of("UTC"));
+
         collectorPayloadBean.put("request_id", requestId);
-        collectorPayloadBean.put("timestamp",
-                FunctionUtils.getOrDefault(Objects.nonNull(time), ()->time,System::currentTimeMillis));
+        collectorPayloadBean.put("utc_time", FORMATTER.format(zonedDateTimeUTC));
         collectorPayloadBean.put("cluster",
                 FunctionUtils.getOrDefault(Objects.nonNull(clusterId), ()->clusterId,()->ClusterFactory.getClusterId()));
         collectorPayloadBean.put("server",

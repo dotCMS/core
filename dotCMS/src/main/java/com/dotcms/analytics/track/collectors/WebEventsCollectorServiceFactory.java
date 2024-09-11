@@ -52,12 +52,12 @@ public class WebEventsCollectorServiceFactory {
         WebEventsCollectorServiceImpl () {
 
             final Collector basicProfileCollector = new BasicProfileCollector();
-            this.syncCollectors.put(basicProfileCollector.getId(), basicProfileCollector);
+            this.asyncCollectors.put(basicProfileCollector.getId(), basicProfileCollector);
 
             final Collector fileCollector  = new FilesCollector();
             final Collector pagesCollector = new PagesCollector();
-            this.asyncCollectors.put(fileCollector.getId(), fileCollector);
-            this.asyncCollectors.put(pagesCollector.getId(), pagesCollector);
+            this.syncCollectors.put(fileCollector.getId(), fileCollector);
+            this.syncCollectors.put(pagesCollector.getId(), pagesCollector);
         }
 
         @Override

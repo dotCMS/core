@@ -7,6 +7,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
 
 import java.io.StringWriter;
@@ -58,18 +59,24 @@ public class FilesCollector implements Collector {
 
             final Host site = Try.of(()->this.hostAPI.find(siteId, APILocator.systemUser(), false)).get();
             final FileAsset fileAsset = Try.of(()->this.fileAssetAPI.getFileByPath(uri, site, languageId, true)).get();
-            pageObject.put("object_id", fileAsset.getIdentifier());
+            pageObject.put("id", fileAsset.getIdentifier());
             pageObject.put("title", fileAsset.getTitle());
-            pageObject.put("path", uri);
+            pageObject.put("url", uri);
         }
 
         final StringWriter writer = new StringWriter();
         Try.run(()-> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValue(writer, pageObject));
         collectorPayloadBean.put("object",  writer.toString());
-        collectorPayloadBean.put("path", uri);
+        collectorPayloadBean.put("url", uri);
         collectorPayloadBean.put("event_type", "FILE_REQUEST");
-        collectorPayloadBean.put("language", language);
-        collectorPayloadBean.put("site", siteId);
+
+        if (UtilMethods.isSet(language)) {
+            collectorPayloadBean.put("language", language);
+        }
+
+        if (UtilMethods.isSet(siteId)) {
+            collectorPayloadBean.put("site", siteId);
+        }
 
         return collectionCollectorPayloadBean;
     }
