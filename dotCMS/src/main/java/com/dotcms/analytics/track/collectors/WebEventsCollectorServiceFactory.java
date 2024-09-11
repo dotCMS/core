@@ -7,6 +7,7 @@ import com.dotcms.visitor.filter.characteristics.Character;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import org.apache.commons.lang3.mutable.MutableObject;
 
 import javax.servlet.http.HttpServletRequest;
@@ -87,8 +88,10 @@ public class WebEventsCollectorServiceFactory {
             }
 
             // if there is anything to run async
+            final PageMode pageMode = PageMode.get(request);
             final CollectorContextMap collectorContextMap = new CharacterCollectorContextMap(character, requestMatcher,
                     Map.of("uri", request.getRequestURI(),
+                            "pageMode", pageMode,
                             "siteId", site.getIdentifier(),
                             "requestId", request.getAttribute("requestId")));
             this.submitter.logEvent(
