@@ -58,7 +58,7 @@ public class PagesCollector implements Collector {
 
             final Host site = Try.of(()->this.hostAPI.find(siteId, APILocator.systemUser(), false)).get();
             final IHTMLPage page = Try.of(()->this.pageAPI.getPageByPath(uri, site, languageId, true)).get();
-            pageObject.put("object_id", page.getIdentifier());
+            pageObject.put("id", page.getIdentifier());
             pageObject.put("title", page.getTitle());
             pageObject.put("path", uri);
         }

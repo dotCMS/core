@@ -60,9 +60,9 @@ public class FilesCollector implements Collector {
 
             final Host site = Try.of(()->this.hostAPI.find(siteId, APILocator.systemUser(), false)).get();
             final FileAsset fileAsset = Try.of(()->this.fileAssetAPI.getFileByPath(uri, site, languageId, true)).get();
-            pageObject.put("id", fileAsset.getIdentifier());
+            /*pageObject.put("id", fileAsset.getIdentifier());
             pageObject.put("title", fileAsset.getTitle());
-            pageObject.put("url", uri);
+            pageObject.put("url", uri);*/
         }
 
         final StringWriter writer = new StringWriter();
