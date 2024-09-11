@@ -50,7 +50,8 @@ public class FilesCollector implements Collector {
         // we use the same event just collect more information async
         final CollectorPayloadBean collectorPayloadBean = collectionCollectorPayloadBean.first();
         final String uri = (String)collectorContextMap.get("uri");
-        final String siteId = (String)collectorContextMap.get("host");
+        final String host = (String)collectorContextMap.get("host");
+        final String siteId = (String)collectorContextMap.get("siteId");
         final Long languageId = (Long)collectorContextMap.get("langId");
         final String language = (String)collectorContextMap.get("lang");
         final Map<String, String> pageObject = new HashMap<>();
@@ -68,6 +69,7 @@ public class FilesCollector implements Collector {
         Try.run(()-> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValue(writer, pageObject));
         collectorPayloadBean.put("object",  writer.toString());
         collectorPayloadBean.put("url", uri);
+        collectorPayloadBean.put("host", host);
         collectorPayloadBean.put("event_type", "FILE_REQUEST");
 
         if (UtilMethods.isSet(language)) {

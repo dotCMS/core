@@ -48,7 +48,8 @@ public class PagesCollector implements Collector {
         // we use the same event just collect more information async
         final CollectorPayloadBean collectorPayloadBean = collectionCollectorPayloadBean.first();
         final String uri = (String)collectorContextMap.get("uri");
-        final String siteId = (String)collectorContextMap.get("host");
+        final String host = (String)collectorContextMap.get("host");
+        final String siteId = (String)collectorContextMap.get("siteId");
         final Long languageId = (Long)collectorContextMap.get("langId");
         final String language = (String)collectorContextMap.get("lang");
         final HashMap<String, String> pageObject = new HashMap<>();
@@ -66,6 +67,7 @@ public class PagesCollector implements Collector {
         collectorPayloadBean.put("url", uri);
         collectorPayloadBean.put("event_type", "PAGE_REQUEST"); // todo: move to enum
         collectorPayloadBean.put("language", language);
+        collectorPayloadBean.put("host", host);
         collectorPayloadBean.put("site", siteId);
 
         return collectionCollectorPayloadBean;

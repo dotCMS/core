@@ -3,7 +3,7 @@ package com.dotcms.analytics.track.collectors;
 import com.dotcms.analytics.track.matchers.RequestMatcher;
 import com.dotcms.visitor.filter.characteristics.Character;
 
-import javax.servlet.http.HttpServletRequest;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,12 +15,13 @@ public class CharacterCollectorContextMap implements CollectorContextMap {
 
     private final Map<String, Object> contextMap = new HashMap<>();
     private final RequestMatcher requestMatcher;
-    private final Character character;
+    private final Map<String, Serializable> characterMap;
 
     public CharacterCollectorContextMap(final Character character,
                                         final RequestMatcher requestMatcher,
                                         final Map<String, Object> contextMap) {
-        this.character = character;
+
+        this.characterMap = character.getMap();
         this.requestMatcher = requestMatcher;
         this.contextMap.putAll(contextMap);
     }
@@ -30,8 +31,8 @@ public class CharacterCollectorContextMap implements CollectorContextMap {
     @Override
     public Object get(final String key) {
 
-        if (this.character.getMap().containsKey(key)) {
-            return this.character.getMap().get(key);
+        if (this.characterMap.containsKey(key)) {
+            return this.characterMap.get(key);
         }
 
         if (this.contextMap.containsKey(key)) {
