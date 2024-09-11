@@ -49,3 +49,15 @@ export enum CommonErrors {
     'NOT_FOUND' = '404',
     'ACCESS_DENIED' = '403'
 }
+
+export enum DialogStatus {
+    IDLE = 'IDLE',
+    LOADING = 'LOADING',
+    INIT = 'INIT'
+}
+
+export enum FormStatus {
+    DIRTY = 'DIRTY',
+    SAVED = 'SAVED',
+    PRISTINE = 'PRISTINE'
+}
