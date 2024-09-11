@@ -76,7 +76,7 @@ public class AsyncVanitiesCollector implements Collector {
         Try.run(()-> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValue(writer, pageObject));
         collectorPayloadBean.put("objects",  writer.toString());
         collectorPayloadBean.put("path", uri);
-        collectorPayloadBean.put("event_type", "VANITY_PAGE_REQUEST");
+        collectorPayloadBean.put("event_type", EventType.VANITY_REQUEST.getType());
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("site", siteId);
 

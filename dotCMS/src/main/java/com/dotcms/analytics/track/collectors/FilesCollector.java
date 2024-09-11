@@ -70,7 +70,7 @@ public class FilesCollector implements Collector {
         collectorPayloadBean.put("object",  writer.toString());
         collectorPayloadBean.put("url", uri);
         collectorPayloadBean.put("host", host);
-        collectorPayloadBean.put("event_type", "FILE_REQUEST");
+        collectorPayloadBean.put("event_type", EventType.FILE_REQUEST.getType());
 
         if (UtilMethods.isSet(language)) {
             collectorPayloadBean.put("language", language);

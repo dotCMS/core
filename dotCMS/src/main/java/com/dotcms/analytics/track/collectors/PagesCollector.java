@@ -65,7 +65,7 @@ public class PagesCollector implements Collector {
 
         collectorPayloadBean.put("object",  pageObject);
         collectorPayloadBean.put("url", uri);
-        collectorPayloadBean.put("event_type", "PAGE_REQUEST"); // todo: move to enum
+        collectorPayloadBean.put("event_type", EventType.PAGE_REQUEST.getType());
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("host", host);
         collectorPayloadBean.put("site", siteId);
