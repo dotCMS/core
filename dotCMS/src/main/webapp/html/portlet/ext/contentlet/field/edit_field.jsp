@@ -1052,7 +1052,7 @@
 
     </script>
 
-    <%} %>
+
     <%
 
         String bnFlag = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
@@ -1078,8 +1078,8 @@
             <% } %>
 
         <% } %>
-    <% } %>
-
+      <% } %>
+    <%} %>
     <!--  END display -->
     <!-- javascript -->
     <script type="text/javascript">
