@@ -105,7 +105,7 @@ public class BaseCharacter extends AbstractCharacter {
 
 
         if(uri!=null) {
-            if(uri.startsWith("/dotAsset/") || uri.startsWith("/contentAsset") || uri.startsWith("/dA") || uri.startsWith("/DOTLESS")|| uri.startsWith("/DOTSASS")) {
+            if(isFilePreffixOrSuffix(uri)) {
                 return IAm.FILE;
             }
         }
@@ -114,6 +114,15 @@ public class BaseCharacter extends AbstractCharacter {
         return CMSUrlUtil.getInstance().resolveResourceType(IAm.NOTHING_IN_THE_CMS, uri,
                 getHostNoThrow(request), languageId)._1;
 
+    }
+
+    private static boolean isFilePreffixOrSuffix(String uri) {
+        return uri.startsWith("/dotAsset/") ||
+                uri.startsWith("/contentAsset") ||
+                uri.startsWith("/dA") ||
+                uri.startsWith("/DOTLESS") ||
+                uri.startsWith("/DOTSASS") ||
+                uri.endsWith(".dotsass");
     }
 
 
