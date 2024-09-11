@@ -73,7 +73,7 @@ public class PagesCollector implements Collector {
                     pageObject.put("title", urlMapInfo.getContentlet().getTitle());
                     pageObject.put("content_type_id", urlMapInfo.getContentlet().getContentTypeId());
                     pageObject.put("content_type_var_name", urlMapInfo.getContentlet().getContentType().variable());
-                    collectorPayloadBean.put("event_type", "URL_MAP"); // todo: move to enum
+                    collectorPayloadBean.put("event_type", EventType.URL_MAP.getType());
                 }
             } else {
                 final IHTMLPage page = Try.of(() ->

@@ -5,7 +5,8 @@ public enum EventType {
     FILE_REQUEST("FILE_REQUEST"),
     PAGE_REQUEST("PAGE_REQUEST"),
     VANITY_FILE_REQUEST("VANITY_FILE_REQUEST"),
-    VANITY_PAGE_REQUEST("VANITY_PAGE_REQUEST");
+    VANITY_PAGE_REQUEST("VANITY_PAGE_REQUEST"),
+    URL_MAP("URL_MAP");
 
     private final String type;
     private EventType(String type) {
