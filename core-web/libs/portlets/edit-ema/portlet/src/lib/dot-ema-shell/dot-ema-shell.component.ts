@@ -91,7 +91,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     protected readonly $shellProps = this.uveStore.$shellProps;
 
     readonly #destroy$ = new Subject<boolean>();
-    #currentComponent: unknown;
 
     readonly translatePageEffect = effect(() => {
         const { page, currentLanguage } = this.uveStore.$translateProps();
@@ -147,17 +146,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.#destroy$.next(true);
         this.#destroy$.complete();
-    }
-
-    /**
-     * Handle the activate route event
-     *
-     * @param {*} event
-     * @memberof DotEmaShellComponent
-     */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onActivateRoute(event: any): void {
-        this.#currentComponent = event;
     }
 
     handleNgEvent({ event, form }: DialogAction) {
