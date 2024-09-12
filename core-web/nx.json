@@ -76,7 +76,7 @@
             "inputs": ["default", "^production", "{workspaceRoot}/karma.conf.js"]
         },
         "e2e": {
-            "inputs": ["default", "^production", "{workspaceRoot}/playwright.config.ts"]
+            "inputs": ["default", "^production"]
         },
         "lint": {
             "inputs": ["default", "{workspaceRoot}/.eslintrc.json"]

@@ -1,10 +1,9 @@
 import { workspaceRoot } from '@nx/devkit';
 import { nxE2EPreset } from '@nx/playwright/preset';
 import { defineConfig, devices } from '@playwright/test';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 // For CI, you may want to set BASE_URL to the deployed application.
-const baseURL = process.env['BASE_URL'] || 'http://localhost:4200/dotAdmin';
+const baseURL = process.env['BASE_URL'] || 'http://localhost:4200';
 
 /**
  * Read environment variables from file.
@@ -15,21 +14,23 @@ const baseURL = process.env['BASE_URL'] || 'http://localhost:4200/dotAdmin';
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
+
 export default defineConfig({
-    ...nxE2EPreset(__filename, { testDir: './e2e' }),
+    ...nxE2EPreset('.', { testDir: './e2e' }),
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
         baseURL,
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
         trace: 'on-first-retry'
     },
-    /* Run your local dev server before starting the tests */
+    /* Run your local dev server before starting the tests
     webServer: {
         command: 'npx nx serve dotcms-ui',
         url: baseURL,
-        //reuseExistingServer: !process.env.CI,
+        //reuseExistingServer: true,
         cwd: workspaceRoot
     },
+    */
     projects: [
         {
             name: 'chromium',

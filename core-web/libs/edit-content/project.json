@@ -19,7 +19,12 @@
         },
         "e2e": {
             "executor": "@nx/playwright:playwright",
-            "outputs": ["{options.outputFile}"]
+            "outputs": ["{workspaceRoot}/playwright/{projectRoot}"],
+            "options": {
+                "config": "libs/edit-content/playwright.config.ts",
+                "ui": false,
+                "skipInstall": true
+            }
         }
     },
     "tags": ["type:feature", "scope:dotcms-ui", "portlet:edit-content"]
