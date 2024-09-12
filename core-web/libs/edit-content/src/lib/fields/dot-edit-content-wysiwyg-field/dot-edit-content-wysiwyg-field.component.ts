@@ -1,6 +1,6 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
-import { ChangeDetectionStrategy, Component, model, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
@@ -38,17 +38,17 @@ export class DotEditContentWYSIWYGFieldComponent {
     /**
      * This variable represents a required content type field in DotCMS.
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input<DotCMSContentTypeField>({} as DotCMSContentTypeField, { alias: 'field' });
 
     /**
      * A variable representing the editor selected by the user.
      */
-    selectedEditor = model<AvailableEditor>(DEFAULT_EDITOR);
+    selectedEditor = signal<AvailableEditor>(DEFAULT_EDITOR);
 
     /**
      * A variable representing the currently selected language.
      */
-    selectedLanguage = model<string>(DEFAULT_MONACO_LANGUAGE);
+    selectedLanguage = signal<string>(DEFAULT_MONACO_LANGUAGE);
 
     readonly editorTypes = AvailableEditor;
     readonly editorOptions = EditorOptions;

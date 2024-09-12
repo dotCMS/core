@@ -20,19 +20,8 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotWysiwygTinymceService } from './service/dot-wysiwyg-tinymce.service';
 
 import { getFieldVariablesParsed, stringToJson } from '../../../../utils/functions.util';
+import { DEFAULT_TINYMCE_CONFIG } from '../../dot-edit-content-wysiwyg-field.constant';
 import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
-
-const DEFAULT_CONFIG = {
-    menubar: false,
-    image_caption: true,
-    image_advtab: true,
-    contextmenu: 'align link image',
-    toolbar1:
-        'undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent dotAddImage hr',
-    plugins:
-        'advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking save table directionality emoticons template',
-    theme: 'silver'
-};
 
 @Component({
     selector: 'dot-wysiwyg-tinymce',
@@ -63,7 +52,7 @@ export class DotWysiwygTinymceComponent implements OnInit, OnDestroy {
      *
      * Type: signal<RawEditorOptions>
      */
-    $init = signal<RawEditorOptions>({});
+    $editorOptions = signal<RawEditorOptions>({});
 
     /**
      * Represents a required DotCMS content type field.
@@ -76,7 +65,8 @@ export class DotWysiwygTinymceComponent implements OnInit, OnDestroy {
      *
      */
     $customPropsContentField = computed(() => {
-        const { tinymceprops } = getFieldVariablesParsed(this.$field().fieldVariables);
+        const { fieldVariables } = this.$field();
+        const { tinymceprops } = getFieldVariablesParsed(fieldVariables);
 
         return stringToJson(tinymceprops as string);
     });
@@ -102,8 +92,8 @@ export class DotWysiwygTinymceComponent implements OnInit, OnDestroy {
 
     private initializeEditor(): void {
         this.#dotWysiwygTinymceService.getProps().subscribe((SYSTEM_WIDE_CONFIG) => {
-            this.$init.set({
-                ...DEFAULT_CONFIG,
+            this.$editorOptions.set({
+                ...DEFAULT_TINYMCE_CONFIG,
                 ...(SYSTEM_WIDE_CONFIG || {}),
                 ...this.$customPropsContentField(),
                 setup: (editor) => this.#dotWysiwygPluginService.initializePlugins(editor)

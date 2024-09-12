@@ -34,3 +34,15 @@ export const DEFAULT_WYSIWYG_FIELD_MONACO_CONFIG: MonacoEditorConstructionOption
     automaticLayout: true,
     theme: 'vs'
 };
+
+export const DEFAULT_TINYMCE_CONFIG = {
+    menubar: false,
+    image_caption: true,
+    image_advtab: true,
+    contextmenu: 'align link image',
+    toolbar1:
+        'undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent dotAddImage hr',
+    plugins:
+        'advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking save table directionality emoticons template',
+    theme: 'silver'
+};

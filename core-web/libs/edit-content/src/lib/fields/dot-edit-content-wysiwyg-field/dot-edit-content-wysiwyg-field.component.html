@@ -9,11 +9,14 @@
     <p-dropdown
         [options]="editorOptions"
         [(ngModel)]="selectedEditor"
+        [ngModelOptions]="{ standalone: true }"
         data-testId="editor-selector" />
+
     @if (selectedEditor() === editorTypes.Monaco) {
         <p-dropdown
             [options]="monacoLanguagesOptions"
             [(ngModel)]="selectedLanguage"
+            [ngModelOptions]="{ standalone: true }"
             data-testId="language-selector" />
     }
 </div>
