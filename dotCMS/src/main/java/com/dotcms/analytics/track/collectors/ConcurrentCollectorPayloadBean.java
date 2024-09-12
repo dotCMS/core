@@ -14,7 +14,9 @@ public class ConcurrentCollectorPayloadBean implements CollectorPayloadBean {
 
     @Override
     public CollectorPayloadBean put(final String key, final Serializable value) {
-        map.put(key, value);
+        if (null != value) {
+            map.put(key, value);
+        }
         return this;
     }
 

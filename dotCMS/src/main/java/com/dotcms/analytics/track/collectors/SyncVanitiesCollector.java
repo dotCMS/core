@@ -61,20 +61,19 @@ public class SyncVanitiesCollector implements Collector {
         final Long languageId = (Long)collectorContextMap.get("langId");
         final String language = (String)collectorContextMap.get("lang");
         final CachedVanityUrl cachedVanityUrl = (CachedVanityUrl)collectorContextMap.get(Constants.VANITY_URL_OBJECT);
-        final Map<String, String> vanityObject = new HashMap<>();
+        final HashMap<String, String> vanityObject = new HashMap<>();
 
         if (Objects.nonNull(cachedVanityUrl)) {
 
             vanityObject.put("id", cachedVanityUrl.vanityUrlId);
-            vanityObject.put("vanity_url", cachedVanityUrl.url);
+            vanityObject.put("vanity_url",
+                    collectorPayloadBean.get("vanity_url")!=null?(String)collectorPayloadBean.get("vanity_url"):cachedVanityUrl.forwardTo);
             vanityObject.put("path", uri);
         }
 
-        final StringWriter writer = new StringWriter();
-        Try.run(()-> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValue(writer, vanityObject));
-        collectorPayloadBean.put("object",  writer.toString());
+        collectorPayloadBean.put("object",  vanityObject);
         collectorPayloadBean.put("path", uri);
-        collectorPayloadBean.put("event_type", "VANITY_REQUEST");
+        collectorPayloadBean.put("event_type", EventType.VANITY_REQUEST.getType());
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("site", siteId);
 

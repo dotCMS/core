@@ -7,6 +7,7 @@ import com.dotcms.visitor.filter.characteristics.Character;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import org.apache.commons.lang3.mutable.MutableObject;
 
 import javax.servlet.http.HttpServletRequest;
@@ -51,13 +52,8 @@ public class WebEventsCollectorServiceFactory {
 
         WebEventsCollectorServiceImpl () {
 
-            final Collector basicProfileCollector = new BasicProfileCollector();
-            this.syncCollectors.put(basicProfileCollector.getId(), basicProfileCollector);
-
-            final Collector fileCollector  = new FilesCollector();
-            final Collector pagesCollector = new PagesCollector();
-            this.asyncCollectors.put(fileCollector.getId(), fileCollector);
-            this.asyncCollectors.put(pagesCollector.getId(), pagesCollector);
+            addCollector(new BasicProfileCollector(), new FilesCollector(), new PagesCollector(),
+                    new SyncVanitiesCollector(), new AsyncVanitiesCollector());
         }
 
         @Override
@@ -92,9 +88,12 @@ public class WebEventsCollectorServiceFactory {
             }
 
             // if there is anything to run async
+            final PageMode pageMode = PageMode.get(request);
             final CollectorContextMap collectorContextMap = new CharacterCollectorContextMap(character, requestMatcher,
                     Map.of("uri", request.getRequestURI(),
-                            "siteId", site.getIdentifier()));
+                            "pageMode", pageMode,
+                            "siteId", site.getIdentifier(),
+                            "requestId", request.getAttribute("requestId")));
             this.submitter.logEvent(
                     new EventLogRunnable(site, ()-> {
                         Logger.debug(this, ()-> "Running async collectors");

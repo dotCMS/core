@@ -3,11 +3,15 @@ package com.dotcms.analytics.track.collectors;
 import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotcms.visitor.filter.characteristics.BaseCharacter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import io.vavr.control.Try;
 
@@ -24,19 +28,23 @@ import java.util.Objects;
 public class AsyncVanitiesCollector implements Collector {
 
     private final FileAssetAPI fileAssetAPI;
+    private final HTMLPageAssetAPI pageAPI;
     private final HostAPI hostAPI;
 
 
     public AsyncVanitiesCollector() {
         this(APILocator.getFileAssetAPI(),
+                APILocator.getHTMLPageAssetAPI(),
                 APILocator.getHostAPI());
     }
 
     public AsyncVanitiesCollector(final FileAssetAPI fileAssetAPI,
+                                  final HTMLPageAssetAPI pageAPI,
                                   final HostAPI hostAPI) {
 
         this.fileAssetAPI = fileAssetAPI;
         this.hostAPI = hostAPI;
+        this.pageAPI = pageAPI;
     }
 
     @Override
@@ -51,40 +59,51 @@ public class AsyncVanitiesCollector implements Collector {
 
         // this will be a new event
         final CollectorPayloadBean collectorPayloadBean = new ConcurrentCollectorPayloadBean();
-        final String vanityUrl = collectorPayloadBean.get("vanity_url") != null?
-                (String)collectorPayloadBean.get("vanity_url"):null;
-        final String vanityQueryString = collectorPayloadBean.get("vanity_query_string") != null?   // get the query string
-                (String)collectorPayloadBean.get("vanity_query_string"):null;
-
+        final CollectorPayloadBean firstCollectorPayloadBean = collectionCollectorPayloadBean.first();
+        final String vanityUrl = (String)firstCollectorPayloadBean.get("vanity_url");
+        final String siteId = (String)collectorContextMap.get("siteId");
         final String uri = (String)collectorContextMap.get("uri");
-        final String siteId = (String)collectorContextMap.get("host");
+        final String host = (String)collectorContextMap.get("host");
         final Long languageId = (Long)collectorContextMap.get("langId");
         final String language = (String)collectorContextMap.get("lang");
-        final CachedVanityUrl cachedVanityUrl = (CachedVanityUrl)collectorContextMap.get(Constants.VANITY_URL_OBJECT);
-        final Map<String, String> pageObject = new HashMap<>();
+        final String requestId = (String)collectorContextMap.get("requestId");
+        final Host site = Try.of(()->this.hostAPI.find(siteId, APILocator.systemUser(), false)).get();
+        final CMSFilter.IAm whoIAM =BaseCharacter.resolveResourceType(vanityUrl, site, languageId);
+        final HashMap<String, String> vanityReferrerObject = new HashMap<>();
+        collectorPayloadBean.put("event_type", EventType.VANITY_REQUEST.getType());
 
-        if (Objects.nonNull(uri) && Objects.nonNull(siteId) && Objects.nonNull(languageId)) {
+        switch (whoIAM) {
 
-            final Host site = Try.of(()->this.hostAPI.find(siteId, APILocator.systemUser(), false)).get();
-            /*final IHTMLPage page = Try.of(()->this.pageAPI.getPageByPath(cachedVanityUrl, site, languageId, true)).get();
-            pageObject.put("object_id", page.getIdentifier());
-            pageObject.put("title", page.getTitle());*/
-            pageObject.put("path", uri);
+            case PAGE:
+                final IHTMLPage page = Try.of(()->this.pageAPI.getPageByPath(vanityUrl, site, languageId, true)).get();
+                vanityReferrerObject.put("id", page.getIdentifier());
+                vanityReferrerObject.put("title", page.getTitle());
+                vanityReferrerObject.put("path", uri);
+                collectorPayloadBean.put("event_type", EventType.VANITY_PAGE_REQUEST.getType());
+                break;
+            case FILE:
+                final FileAsset fileAsset = Try.of(()->this.fileAssetAPI.getFileByPath(vanityUrl, site, languageId, true)).get();
+            /*vanityReferrerObject.put("id", fileAsset.getIdentifier());
+            vanityReferrerObject.put("title", fileAsset.getTitle());
+            vanityReferrerObject.put("url", uri);*/
+                collectorPayloadBean.put("event_type", EventType.VANITY_FILE_REQUEST.getType());
+                break;
         }
 
-        final StringWriter writer = new StringWriter();
-        Try.run(()-> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValue(writer, pageObject));
-        collectorPayloadBean.put("objects",  writer.toString());
+
+        collectorPayloadBean.put("request_id", requestId);
+        collectorPayloadBean.put("objects",  vanityReferrerObject);
         collectorPayloadBean.put("path", uri);
-        collectorPayloadBean.put("event_type", "VANITY_PAGE_REQUEST");
+        collectorPayloadBean.put("site", host);
+
         collectorPayloadBean.put("language", language);
-        collectorPayloadBean.put("site", siteId);
+        collectorPayloadBean.put("siteId", siteId);
 
         return collectionCollectorPayloadBean.add(collectorPayloadBean);
     }
 
     @Override
     public boolean isAsync() {
-        return false;
+        return true;
     }
 }

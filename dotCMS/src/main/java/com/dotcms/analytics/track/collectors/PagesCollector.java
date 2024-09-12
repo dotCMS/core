@@ -1,18 +1,21 @@
 package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.urlmap.URLMapInfo;
+import com.dotmarketing.cms.urlmap.UrlMapContext;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import io.vavr.control.Try;
 
-import java.io.StringWriter;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * This collector collects the page information
@@ -52,20 +55,39 @@ public class PagesCollector implements Collector {
         final String siteId = (String)collectorContextMap.get("siteId");
         final Long languageId = (Long)collectorContextMap.get("langId");
         final String language = (String)collectorContextMap.get("lang");
+        final PageMode pageMode = (PageMode)collectorContextMap.get("pageMode");
         final HashMap<String, String> pageObject = new HashMap<>();
 
         if (Objects.nonNull(uri) && Objects.nonNull(siteId) && Objects.nonNull(languageId)) {
 
             final Host site = Try.of(()->this.hostAPI.find(siteId, APILocator.systemUser(), false)).get();
-            final IHTMLPage page = Try.of(()->this.pageAPI.getPageByPath(uri, site, languageId, true)).get();
-            pageObject.put("id", page.getIdentifier());
-            pageObject.put("title", page.getTitle());
+
+            final UrlMapContext urlMapContext = new UrlMapContext(
+                    pageMode, languageId, uri, site, Try.of(() -> APILocator.getUserAPI().getSystemUser()).get());
+            final boolean isUrlMap = this.isUrlMap(urlMapContext);
+            if (isUrlMap) {
+                final Optional<URLMapInfo> urlMappedContent =
+                        Try.of(() -> APILocator.getURLMapAPI().processURLMap(urlMapContext)).get();
+                if (urlMappedContent.isPresent()) {
+                    final URLMapInfo urlMapInfo = urlMappedContent.get();
+                    pageObject.put("id", urlMapInfo.getContentlet().getIdentifier());
+                    pageObject.put("title", urlMapInfo.getContentlet().getTitle());
+                    pageObject.put("content_type_id", urlMapInfo.getContentlet().getContentTypeId());
+                    pageObject.put("content_type_var_name", urlMapInfo.getContentlet().getContentType().variable());
+                    collectorPayloadBean.put("event_type", EventType.URL_MAP.getType());
+                }
+            } else {
+                final IHTMLPage page = Try.of(() ->
+                        this.pageAPI.getPageByPath(uri, site, languageId, true)).get();
+                pageObject.put("id", page.getIdentifier());
+                pageObject.put("title", page.getTitle());
+                collectorPayloadBean.put("event_type", EventType.PAGE_REQUEST.getType());
+            }
             pageObject.put("url", uri);
         }
 
         collectorPayloadBean.put("object",  pageObject);
         collectorPayloadBean.put("url", uri);
-        collectorPayloadBean.put("event_type", "PAGE_REQUEST"); // todo: move to enum
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("host", host);
         collectorPayloadBean.put("site", siteId);
@@ -73,8 +95,24 @@ public class PagesCollector implements Collector {
         return collectionCollectorPayloadBean;
     }
 
+    /**
+     *
+     * @param pageMode
+     * @param languageId
+     * @param uri
+     * @param site
+     * @return
+     */
+    private boolean isUrlMap(final UrlMapContext urlMapContext) {
+        return Try.of(() -> APILocator.getURLMapAPI().isUrlPattern(urlMapContext))
+                .onFailure(e -> Logger.error(this, String.format("Failed to check for URL Mapped content for page '%s': %s",
+                        urlMapContext.getUri(), ExceptionUtil.getErrorMessage(e)), e))
+                .getOrElse(false);
+    }
+
     @Override
     public boolean isAsync() {
         return true;
     }
+
 }
