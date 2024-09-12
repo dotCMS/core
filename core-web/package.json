@@ -72,6 +72,7 @@
         "@ngrx/operators": "^17.2.0",
         "@ngrx/signals": "^17.2.0",
         "@nx/angular": "19.6.5",
+        "@storybook/addon-interactions": "^8.2.8",
         "@tarekraafat/autocomplete.js": "^10.2.6",
         "@tinymce/tinymce-angular": "^7.0.0",
         "@tinymce/tinymce-react": "^5.1.1",
@@ -129,8 +130,7 @@
         "tslib": "^2.3.0",
         "uuid": "^9.0.0",
         "webpack-dev-middleware": "^6.1.2",
-        "zone.js": "0.14.2",
-        "@storybook/addon-interactions": "^8.2.8"
+        "zone.js": "0.14.2"
     },
     "devDependencies": {
         "@angular-devkit/build-angular": "18.2.3",
@@ -156,6 +156,7 @@
         "@nx/jest": "19.6.5",
         "@nx/js": "19.6.5",
         "@nx/node": "19.6.5",
+        "@nx/playwright": "19.6.5",
         "@nx/react": "19.6.5",
         "@nx/rollup": "19.6.5",
         "@nx/storybook": "19.6.5",
@@ -163,6 +164,7 @@
         "@nx/web": "19.6.5",
         "@nx/workspace": "19.6.5",
         "@nxext/stencil": "19.0.0",
+        "@playwright/test": "^1.36.0",
         "@rollup/plugin-url": "^7.0.0",
         "@schematics/angular": "17.3.8",
         "@stencil/core": "^2.22.2",
@@ -207,6 +209,7 @@
         "eslint-plugin-cypress": "3.3.0",
         "eslint-plugin-import": "^2.29.1",
         "eslint-plugin-jsx-a11y": "6.8.0",
+        "eslint-plugin-playwright": "^0.15.3",
         "eslint-plugin-react": "7.34.2",
         "eslint-plugin-react-hooks": "4.6.2",
         "eslint-plugin-storybook": "0.8.0",
