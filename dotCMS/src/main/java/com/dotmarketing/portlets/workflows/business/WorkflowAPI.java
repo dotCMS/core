@@ -223,7 +223,7 @@ public interface WorkflowAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<IFileAsset> findWorkflowTaskFilesAsContent(WorkflowTask task, User user) throws DotDataException;
+	public List<IFileAsset> findWorkflowTaskFilesAsContent(WorkflowTask task, User user) throws DotDataException, DotSecurityException;
 
 	/**
 	 *
