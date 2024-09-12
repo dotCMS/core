@@ -118,12 +118,12 @@ public class ApiTokenResource implements Serializable {
                                             "  \"entity\": {\n" +
                                             "    \"jwt\": \"string\",\n" +
                                             "    \"token\": {\n" +
-                                            "      \"allowNetwork\": null,\n" +
+                                            "      \"allowNetwork\": \"0.0.0.0/0\",\n" +
                                             "      \"claims\": {\n" +
-                                            "        \"label\": \"string\",\n" +
+                                            "        \"label\": \"string\"\n" +
                                             "      },\n" +
                                             "      \"expired\": false,\n" +
-                                            "      \"expiresDate\": 0,\n" +
+                                            "      \"expiresDate\": 0 \n," +
                                             "      \"id\": \"string\",\n" +
                                             "      \"issueDate\": 0,\n" +
                                             "      \"issuer\": \"string\",\n" +
@@ -132,7 +132,7 @@ public class ApiTokenResource implements Serializable {
                                             "      \"requestingIp\": \"string\",\n" +
                                             "      \"requestingUserId\": \"string\",\n" +
                                             "      \"revoked\": false,\n" +
-                                            "      \"revokedDate\": null,\n" +
+                                            "      \"revokedDate\": 0,\n" +
                                             "      \"subject\": \"string\",\n" +
                                             "      \"tokenType\": \"string\",\n" +
                                             "      \"userId\": \"string\",\n" +
@@ -142,7 +142,6 @@ public class ApiTokenResource implements Serializable {
                                             "  \"errors\": [],\n" +
                                             "  \"i18nMessagesMap\": {},\n" +
                                             "  \"messages\": [],\n" +
-                                            "  \"pagination\": null,\n" +
                                             "  \"permissions\": []\n" +
                                             "}"
                                     )
@@ -193,13 +192,14 @@ public class ApiTokenResource implements Serializable {
                                 @ExampleObject(
                                     value = "{\n" +
                                             "  \"entity\": {\n" +
-                                            "    \"revoked\": {\n" +
-                                            "      \"allowNetwork\": null,\n" +
+                                            "    \"jwt\": \"string\",\n" +
+                                            "    \"token\": {\n" +
+                                            "      \"allowNetwork\": \"0.0.0.0/0\",\n" +
                                             "      \"claims\": {\n" +
-                                            "        \"label\": \"string\",\n" +
+                                            "        \"label\": \"string\"\n" +
                                             "      },\n" +
                                             "      \"expired\": false,\n" +
-                                            "      \"expiresDate\": 0,\n" +
+                                            "      \"expiresDate\": 0 \n," +
                                             "      \"id\": \"string\",\n" +
                                             "      \"issueDate\": 0,\n" +
                                             "      \"issuer\": \"string\",\n" +
@@ -207,18 +207,17 @@ public class ApiTokenResource implements Serializable {
                                             "      \"notBeforeDate\": false,\n" +
                                             "      \"requestingIp\": \"string\",\n" +
                                             "      \"requestingUserId\": \"string\",\n" +
-                                            "      \"revoked\": true,\n" +
-                                            "      \"revokedDate\": null,\n" +
+                                            "      \"revoked\": false,\n" +
+                                            "      \"revokedDate\": 0,\n" +
                                             "      \"subject\": \"string\",\n" +
                                             "      \"tokenType\": \"string\",\n" +
                                             "      \"userId\": \"string\",\n" +
-                                            "      \"valid\": false\n" +
+                                            "      \"valid\": true\n" +
                                             "    }\n" +
                                             "  },\n" +
                                             "  \"errors\": [],\n" +
                                             "  \"i18nMessagesMap\": {},\n" +
                                             "  \"messages\": [],\n" +
-                                            "  \"pagination\": null,\n" +
                                             "  \"permissions\": []\n" +
                                             "}"
                                 )
@@ -283,35 +282,35 @@ public class ApiTokenResource implements Serializable {
                                     examples = {
                                         @ExampleObject(
                                             value = "{\n" +
-                                                    "  \"entity\": {\n" +
-                                                    "    \"revoked\": {\n" +
-                                                    "      \"allowNetwork\": null,\n" +
-                                                    "      \"claims\": {\n" +
-                                                    "        \"label\": \"string\",\n" +
-                                                    "      },\n" +
-                                                    "      \"expired\": false,\n" +
-                                                    "      \"expiresDate\": 0,\n" +
-                                                    "      \"id\": \"string\",\n" +
-                                                    "      \"issueDate\": 0,\n" +
-                                                    "      \"issuer\": \"string\",\n" +
-                                                    "      \"modificationDate\": 0,\n" +
-                                                    "      \"notBeforeDate\": false,\n" +
-                                                    "      \"requestingIp\": \"string\",\n" +
-                                                    "      \"requestingUserId\": \"string\",\n" +
-                                                    "      \"revoked\": true,\n" +
-                                                    "      \"revokedDate\": null,\n" +
-                                                    "      \"subject\": \"string\",\n" +
-                                                    "      \"tokenType\": \"string\",\n" +
-                                                    "      \"userId\": \"string\",\n" +
-                                                    "      \"valid\": false\n" +
-                                                    "    }\n" +
-                                                    "  },\n" +
-                                                    "  \"errors\": [],\n" +
-                                                    "  \"i18nMessagesMap\": {},\n" +
-                                                    "  \"messages\": [],\n" +
-                                                    "  \"pagination\": null,\n" +
-                                                    "  \"permissions\": []\n" +
-                                                    "}"
+                                            "  \"entity\": {\n" +
+                                            "    \"jwt\": \"string\",\n" +
+                                            "    \"token\": {\n" +
+                                            "      \"allowNetwork\": \"0.0.0.0/0\",\n" +
+                                            "      \"claims\": {\n" +
+                                            "        \"label\": \"string\"\n" +
+                                            "      },\n" +
+                                            "      \"expired\": false,\n" +
+                                            "      \"expiresDate\": 0 \n," +
+                                            "      \"id\": \"string\",\n" +
+                                            "      \"issueDate\": 0,\n" +
+                                            "      \"issuer\": \"string\",\n" +
+                                            "      \"modificationDate\": 0,\n" +
+                                            "      \"notBeforeDate\": false,\n" +
+                                            "      \"requestingIp\": \"string\",\n" +
+                                            "      \"requestingUserId\": \"string\",\n" +
+                                            "      \"revoked\": false,\n" +
+                                            "      \"revokedDate\": 0,\n" +
+                                            "      \"subject\": \"string\",\n" +
+                                            "      \"tokenType\": \"string\",\n" +
+                                            "      \"userId\": \"string\",\n" +
+                                            "      \"valid\": true\n" +
+                                            "    }\n" +
+                                            "  },\n" +
+                                            "  \"errors\": [],\n" +
+                                            "  \"i18nMessagesMap\": {},\n" +
+                                            "  \"messages\": [],\n" +
+                                            "  \"permissions\": []\n" +
+                                            "}"
                                         )
                                     }
                                 )
@@ -376,13 +375,14 @@ public class ApiTokenResource implements Serializable {
                                 @ExampleObject(
                                     value = "{\n" +
                                             "  \"entity\": {\n" +
-                                            "    \"revoked\": {\n" +
-                                            "      \"allowNetwork\": null,\n" +
+                                            "    \"jwt\": \"string\",\n" +
+                                            "    \"token\": {\n" +
+                                            "      \"allowNetwork\": \"0.0.0.0/0\",\n" +
                                             "      \"claims\": {\n" +
-                                            "        \"label\": \"string\",\n" +
+                                            "        \"label\": \"string\"\n" +
                                             "      },\n" +
                                             "      \"expired\": false,\n" +
-                                            "      \"expiresDate\": 0,\n" +
+                                            "      \"expiresDate\": 0 \n," +
                                             "      \"id\": \"string\",\n" +
                                             "      \"issueDate\": 0,\n" +
                                             "      \"issuer\": \"string\",\n" +
@@ -390,18 +390,17 @@ public class ApiTokenResource implements Serializable {
                                             "      \"notBeforeDate\": false,\n" +
                                             "      \"requestingIp\": \"string\",\n" +
                                             "      \"requestingUserId\": \"string\",\n" +
-                                            "      \"revoked\": true,\n" +
-                                            "      \"revokedDate\": null,\n" +
+                                            "      \"revoked\": false,\n" +
+                                            "      \"revokedDate\": 0,\n" +
                                             "      \"subject\": \"string\",\n" +
                                             "      \"tokenType\": \"string\",\n" +
                                             "      \"userId\": \"string\",\n" +
-                                            "      \"valid\": false\n" +
+                                            "      \"valid\": true\n" +
                                             "    }\n" +
                                             "  },\n" +
                                             "  \"errors\": [],\n" +
                                             "  \"i18nMessagesMap\": {},\n" +
                                             "  \"messages\": [],\n" +
-                                            "  \"pagination\": null,\n" +
                                             "  \"permissions\": []\n" +
                                             "}"
                                 )
@@ -425,23 +424,7 @@ public class ApiTokenResource implements Serializable {
                                         "| `shouldBeAdmin` | Boolean   | Must be `true` to receive token               |",
                         required = true,
                         content = @Content(
-                            schema = @Schema(implementation = ApiTokenForm.class),
-                                examples = {
-                                    @ExampleObject(
-                                        "value = {\n" +
-                                        "  \"userId\": \"string\",\n" +
-                                        "  \"tokenId\": \"string\",\n" +
-                                        "  \"showRevoked\": true,\n" +
-                                        "  \"expirationSeconds\": 0,\n" +
-                                        "  \"network\": \"string\",\n" +
-                                        "  \"claims\": {\n" +
-                                        "    \"label\": {},\n" +
-                                        "  },\r\n" +
-                                        "  \"shouldBeAdmin\": true\n" +
-                                        "}"
-                                    )
-                                }
-                        )
+                            schema = @Schema(implementation = ApiTokenForm.class))
             )
             final ApiTokenForm formData) throws DotDataException, DotSecurityException {
         
@@ -537,35 +520,35 @@ public class ApiTokenResource implements Serializable {
                                     examples = {
                                         @ExampleObject(
                                             value = "{\n" +
-                                                    "  \"entity\": {\n" +
-                                                    "    \"revoked\": {\n" +
-                                                    "      \"allowNetwork\": null,\n" +
-                                                    "      \"claims\": {\n" +
-                                                    "        \"label\": \"string\",\n" +
-                                                    "      },\n" +
-                                                    "      \"expired\": false,\n" +
-                                                    "      \"expiresDate\": 0,\n" +
-                                                    "      \"id\": \"string\",\n" +
-                                                    "      \"issueDate\": 0,\n" +
-                                                    "      \"issuer\": \"string\",\n" +
-                                                    "      \"modificationDate\": 0,\n" +
-                                                    "      \"notBeforeDate\": false,\n" +
-                                                    "      \"requestingIp\": \"string\",\n" +
-                                                    "      \"requestingUserId\": \"string\",\n" +
-                                                    "      \"revoked\": true,\n" +
-                                                    "      \"revokedDate\": null,\n" +
-                                                    "      \"subject\": \"string\",\n" +
-                                                    "      \"tokenType\": \"string\",\n" +
-                                                    "      \"userId\": \"string\",\n" +
-                                                    "      \"valid\": false\n" +
-                                                    "    }\n" +
-                                                    "  },\n" +
-                                                    "  \"errors\": [],\n" +
-                                                    "  \"i18nMessagesMap\": {},\n" +
-                                                    "  \"messages\": [],\n" +
-                                                    "  \"pagination\": null,\n" +
-                                                    "  \"permissions\": []\n" +
-                                                    "}"
+                                            "  \"entity\": {\n" +
+                                            "    \"jwt\": \"string\",\n" +
+                                            "    \"token\": {\n" +
+                                            "      \"allowNetwork\": \"0.0.0.0/0\",\n" +
+                                            "      \"claims\": {\n" +
+                                            "        \"label\": \"string\"\n" +
+                                            "      },\n" +
+                                            "      \"expired\": false,\n" +
+                                            "      \"expiresDate\": 0 \n," +
+                                            "      \"id\": \"string\",\n" +
+                                            "      \"issueDate\": 0,\n" +
+                                            "      \"issuer\": \"string\",\n" +
+                                            "      \"modificationDate\": 0,\n" +
+                                            "      \"notBeforeDate\": false,\n" +
+                                            "      \"requestingIp\": \"string\",\n" +
+                                            "      \"requestingUserId\": \"string\",\n" +
+                                            "      \"revoked\": false,\n" +
+                                            "      \"revokedDate\": 0,\n" +
+                                            "      \"subject\": \"string\",\n" +
+                                            "      \"tokenType\": \"string\",\n" +
+                                            "      \"userId\": \"string\",\n" +
+                                            "      \"valid\": true\n" +
+                                            "    }\n" +
+                                            "  },\n" +
+                                            "  \"errors\": [],\n" +
+                                            "  \"i18nMessagesMap\": {},\n" +
+                                            "  \"messages\": [],\n" +
+                                            "  \"permissions\": []\n" +
+                                            "}"
                                         )
                                     }
                                 )
@@ -578,13 +561,38 @@ public class ApiTokenResource implements Serializable {
     public final Response getRemoteToken(
             @Context final HttpServletRequest httpRequest,
             @RequestBody(description = "PUT body consists of a JSON object containing the following properties:\n\n" + 
-                                        "| **Property** | **Value** | **Description**                              |\n" +
-                                        "|--------------|-----------|----------------------------------------------|\n" +
-                                        "| `userId`     | String    | **Required** ID of user attempting receiving |\n" +
-                                        "| `tokenId`    | String    | **Required** ID of api token user is getting |",
+                                        "| **Property** | **Value** | **Description**                      |\n" +
+                                        "|--------------|-----------|--------------------------------------|\n" +
+                                        "| `userId`     | String    | ID of user attempting receiving      |\n" +
+                                        "| `tokenId`    | String    | ID of api token user is getting      |\n" +
+                                        "| `label`      | String    | Name of requested token              |\n" +
+                                        "| `revoked`    | Boolean   | Value for if token is revoked or not |",
                         required = true,
                         content = @Content(
-                            schema = @Schema(implementation = RemoteAPITokenForm.class)
+                            schema = @Schema(implementation = RemoteAPITokenForm.class),
+                            examples = {
+                                @ExampleObject(
+                                    value = "{\n" +
+                                            "  \"token\": {\n" +
+                                            "    \"network\": \"0.0.0.0/0\",\n" +
+                                            "    \"expirationSeconds\": \"string\",\n" +
+                                            "    \"userId\": \"string\",\n" +
+                                            "    \"claims\": {\n" +
+                                            "      \"label\": \"string\"\n" +
+                                            "    }\n" +
+                                            "  },\n" +
+                                            "  \"remote\": {\n" +
+                                            "    \"host\": \"string\",\n" +
+                                            "    \"port\": \"string\",\n" +
+                                            "    \"protocol\": \"string\"\n" +
+                                            "  },\n" +
+                                            "  \"auth\": {\n" +
+                                            "    \"login\": \"string\",\n" +
+                                            "    \"password\": \"string\"\n" +
+                                            "  }\n" +
+                                            "}"
+                                )
+                            }
                         ))
             final RemoteAPITokenForm formData) {
 
@@ -667,7 +675,7 @@ public class ApiTokenResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(operationId = "getGetJwtFromApiToken",
                 summary = "Retrieves JSON web token from api token",
-                description = "Returns a JSON web token associated with an api token ID requested by a user, this token will then be revealed to the user.",
+                description = "Returns a JSON web token associated with an api token ID requested by a user, this token will then be included in a message to the user.",
                 tags = {"Api Token"},
                 responses = {
                     @ApiResponse(responseCode = "200", description = "JSON web token successfully retrieved",
@@ -675,35 +683,35 @@ public class ApiTokenResource implements Serializable {
                                     examples = {
                                         @ExampleObject(
                                             value = "{\n" +
-                                                    "  \"entity\": {\n" +
-                                                    "    \"revoked\": {\n" +
-                                                    "      \"allowNetwork\": null,\n" +
-                                                    "      \"claims\": {\n" +
-                                                    "        \"label\": \"string\",\n" +
-                                                    "      },\n" +
-                                                    "      \"expired\": false,\n" +
-                                                    "      \"expiresDate\": 0,\n" +
-                                                    "      \"id\": \"string\",\n" +
-                                                    "      \"issueDate\": 0,\n" +
-                                                    "      \"issuer\": \"string\",\n" +
-                                                    "      \"modificationDate\": 0,\n" +
-                                                    "      \"notBeforeDate\": false,\n" +
-                                                    "      \"requestingIp\": \"string\",\n" +
-                                                    "      \"requestingUserId\": \"string\",\n" +
-                                                    "      \"revoked\": true,\n" +
-                                                    "      \"revokedDate\": null,\n" +
-                                                    "      \"subject\": \"string\",\n" +
-                                                    "      \"tokenType\": \"string\",\n" +
-                                                    "      \"userId\": \"string\",\n" +
-                                                    "      \"valid\": false\n" +
-                                                    "    }\n" +
-                                                    "  },\n" +
-                                                    "  \"errors\": [],\n" +
-                                                    "  \"i18nMessagesMap\": {},\n" +
-                                                    "  \"messages\": [],\n" +
-                                                    "  \"pagination\": null,\n" +
-                                                    "  \"permissions\": []\n" +
-                                                    "}"
+                                            "  \"entity\": {\n" +
+                                            "    \"jwt\": \"string\",\n" +
+                                            "    \"token\": {\n" +
+                                            "      \"allowNetwork\": \"0.0.0.0/0\",\n" +
+                                            "      \"claims\": {\n" +
+                                            "        \"label\": \"string\"\n" +
+                                            "      },\n" +
+                                            "      \"expired\": false,\n" +
+                                            "      \"expiresDate\": 0 \n," +
+                                            "      \"id\": \"string\",\n" +
+                                            "      \"issueDate\": 0,\n" +
+                                            "      \"issuer\": \"string\",\n" +
+                                            "      \"modificationDate\": 0,\n" +
+                                            "      \"notBeforeDate\": false,\n" +
+                                            "      \"requestingIp\": \"string\",\n" +
+                                            "      \"requestingUserId\": \"string\",\n" +
+                                            "      \"revoked\": false,\n" +
+                                            "      \"revokedDate\": 0,\n" +
+                                            "      \"subject\": \"string\",\n" +
+                                            "      \"tokenType\": \"string\",\n" +
+                                            "      \"userId\": \"string\",\n" +
+                                            "      \"valid\": true\n" +
+                                            "    }\n" +
+                                            "  },\n" +
+                                            "  \"errors\": [],\n" +
+                                            "  \"i18nMessagesMap\": {},\n" +
+                                            "  \"messages\": [],\n" +
+                                            "  \"permissions\": []\n" +
+                                            "}"
                                         )
                                     }
                                 )
@@ -752,7 +760,7 @@ public class ApiTokenResource implements Serializable {
     @Operation(operationId = "putRevokeUserToken",
                 summary = "Revokes specified token from user",
                 description = "This operation takes in a user id and retrieves any tokens associated to the user.\n\n" +
-                                "If the user token is not null, then this token will be revoked from the user.",
+                                "If the user token is not null, then this token will be invalidated and revoked.",
                 tags = {"Api Token"},
                 responses = {
                     @ApiResponse(responseCode = "200", description = "Token revoked successfully",
@@ -779,12 +787,11 @@ public class ApiTokenResource implements Serializable {
                                                             @ExampleObject(
                                                                 value = "{\n" +
                                                                 "  \"entity\": {\n" + 
-                                                                "    \"revoked\": \"userId\"\n" +
+                                                                "    \"revoked\": \"string\"\n" +
                                                                 "  },\n" +
-                                                                "  \"errors\": \"string\",\n" +
+                                                                "  \"errors\": [],\n" +
                                                                 "  \"i18nMessagesMap\": {},\n" +
-                                                                "  \"messages\": \"string\",\n" +
-                                                                "  \"pagination\": null,\n" +
+                                                                "  \"messages\": [],\n" +
                                                                 "  \"permissions\": []\n" +
                                                                 "}"
                                                             )
@@ -828,8 +835,8 @@ public class ApiTokenResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(operationId = "putRevokeUsersToken",
-                summary = "Revokes users' tokens from list of users' tokens",
-                description = "This operation checks if user has an api and admin role and retrieves all user tokens.\n\n" +
+                summary = "Revokes users' tokens from list of tokens",
+                description = "This operation checks if user has an admin role and retrieves all user tokens.\n\n" +
                                 "Once all user tokens are received, each are invalidated and returned as a list of revoked tokens.",
                 tags = {"Api Token"},
                 responses = {
@@ -838,15 +845,12 @@ public class ApiTokenResource implements Serializable {
                             examples = {
                                 @ExampleObject(
                                     value = "{\n" +
-                                            "  \"entity\": {\n" +
-                                            "    \"revoked\": [\n" +
-                                            "      \"userId\" : \"string\",\n" +
-                                            "    ]\n" +
+                                            "  \"entity\": {\n" + 
+                                            "    \"revoked\": \"string\"\n" +
                                             "  },\n" +
-                                            "  \"errors\": \"string\",\n" +
+                                            "  \"errors\": [],\n" +
                                             "  \"i18nMessagesMap\": {},\n" +
-                                            "  \"messages\": \"string\",\n" +
-                                            "  \"pagination\": null,\n" +
+                                            "  \"messages\": [],\n" +
                                             "  \"permissions\": []\n" +
                                             "}"
                                 )
@@ -858,12 +862,7 @@ public class ApiTokenResource implements Serializable {
                     @ApiResponse(responseCode = "500", description = "Unexpected server error")
                 })
     public final Response revokeUsersToken(@Context final HttpServletRequest request,
-                                           @Context final HttpServletResponse response,
-                                           @RequestBody(description = "PUT body conists of a JSON object containing the `userID` of the users whose tokens are being revoked.",
-                                                        required = true,
-                                                        content = @Content(mediaType = "application/json",
-                                                            schema = @Schema(implementation = RemoteAPITokenForm.class))
-                                                        )
+                                           @Context final HttpServletResponse response
                                             ) throws DotSecurityException, DotDataException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource).rejectWhenNoUser(true)
