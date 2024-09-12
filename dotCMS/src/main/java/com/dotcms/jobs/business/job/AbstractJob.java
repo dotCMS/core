@@ -108,4 +108,18 @@ public interface AbstractJob {
                 .build();
     }
 
+    /**
+     * Creates a new Job marked as canceled.
+     *
+     * @return A new Job instance marked as canceled.
+     */
+    default Job markAsCancelled() {
+        return Job.builder().from(this)
+                .state(JobState.CANCELLED)
+                .result(JobResult.SUCCESS)
+                .completedAt(Optional.of(LocalDateTime.now()))
+                .updatedAt(LocalDateTime.now())
+                .build();
+    }
+
 }

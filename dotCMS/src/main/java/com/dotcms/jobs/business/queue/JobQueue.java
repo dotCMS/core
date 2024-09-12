@@ -4,6 +4,7 @@ import com.dotcms.jobs.business.job.Job;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Defines the contract for a job queue system. This interface provides methods for adding,
@@ -75,6 +76,15 @@ public interface JobQueue {
      * @param job The job with an updated status.
      */
     void updateJobStatus(Job job);
+
+    /**
+     * Retrieves updates for specific jobs since a given time.
+     *
+     * @param jobIds The IDs of the jobs to check for updates
+     * @param since  The time from which to fetch updates
+     * @return A list of updated Job objects
+     */
+    List<Job> getUpdatedJobsSince(Set<String> jobIds, LocalDateTime since);
 
     /**
      * Puts a job back in the queue for retry.

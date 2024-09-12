@@ -85,6 +85,10 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private final Map<String, RetryStrategy> retryStrategies;
     private final RetryStrategy defaultRetryStrategy;
 
+    private final ScheduledExecutorService pollJobUpdatesScheduler =
+            Executors.newSingleThreadScheduledExecutor();
+    private LocalDateTime lastPollJobUpdateTime = LocalDateTime.now();
+
     /**
      * Constructs a new JobQueueManagerAPIImpl.
      *
@@ -104,6 +108,10 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         this.retryStrategies = new ConcurrentHashMap<>();
         this.defaultRetryStrategy = defaultRetryStrategy;
         this.circuitBreaker = circuitBreaker;
+        pollJobUpdatesScheduler.scheduleAtFixedRate(
+                this::pollJobUpdates, 0,
+                jobQueueConfig.getPollJobUpdatesIntervalMilliseconds(), TimeUnit.MILLISECONDS
+        );
     }
 
     @Override
@@ -160,19 +168,11 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
             isShuttingDown = true;
             Logger.info(this, "Closing JobQueue and stopping all job processing.");
-            executorService.shutdownNow();
 
-            try {
-                if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
-                    Logger.error(this, "ExecutorService did not terminate");
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                Logger.error(this, "Interrupted while waiting for jobs to complete", e);
-            } finally {
-                isShuttingDown = false;
-            }
+            closeExecutorService(executorService);
+            closeExecutorService(pollJobUpdatesScheduler);
 
+            isShuttingDown = false;
             isClosed = true;
             Logger.info(this, "JobQueue has been successfully closed.");
         } else {
@@ -224,9 +224,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
                     processor.cancel(job);
 
-                    Job cancelledJob = job.withState(JobState.CANCELLED);
+                    Job cancelledJob = job.markAsCancelled();
                     jobQueue.updateJobStatus(cancelledJob);
-                    notifyJobWatchers(cancelledJob);
                 } catch (Exception e) {
                     final var error = new JobCancellationException(jobId, e.getMessage());
                     Logger.error(JobQueueManagerAPIImpl.class, error);
@@ -247,8 +246,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     @Override
     public void watchJob(final String jobId, final Consumer<Job> watcher) {
         jobWatchers.computeIfAbsent(jobId, k -> new CopyOnWriteArrayList<>()).add(watcher);
-        Job currentJob = jobQueue.getJob(jobId);
-        watcher.accept(currentJob);
     }
 
     @Override
@@ -275,11 +272,30 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     }
 
     /**
+     * Polls the job queue for updates to watched jobs and notifies their watchers.
+     */
+    private void pollJobUpdates() {
+
+        final var watchedJobIds = jobWatchers.keySet();
+        if (watchedJobIds.isEmpty()) {
+            return; // No jobs are being watched, skip polling
+        }
+
+        final var currentPollTime = LocalDateTime.now();
+        List<Job> updatedJobs = jobQueue.getUpdatedJobsSince(watchedJobIds, lastPollJobUpdateTime);
+        for (Job job : updatedJobs) {
+            notifyJobWatchers(job);
+        }
+        lastPollJobUpdateTime = currentPollTime;
+    }
+
+    /**
      * Notifies all registered watchers for a job of its current state.
      *
      * @param job The job whose watchers to notify.
      */
     private void notifyJobWatchers(final Job job) {
+
         List<Consumer<Job>> watchers = jobWatchers.get(job.id());
         if (watchers != null) {
             watchers.forEach(watcher -> watcher.accept(job));
@@ -304,7 +320,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             Job updatedJob = job.withProgress(progress);
 
             jobQueue.updateJobProgress(job.id(), updatedJob.progress());
-            notifyJobWatchers(updatedJob);
         }
     }
 
@@ -341,6 +356,26 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 Logger.error(this, "Unexpected error in job processing loop: " + e.getMessage(), e);
                 getCircuitBreaker().recordFailure();
             }
+        }
+    }
+
+    /**
+     * Closes an ExecutorService, shutting it down and waiting for any running jobs to complete.
+     *
+     * @param executor The ExecutorService to close.
+     */
+    private void closeExecutorService(final ExecutorService executor) {
+
+        executor.shutdown();
+
+        try {
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+            Logger.error(this, "Interrupted while waiting for jobs to complete", e);
         }
     }
 
@@ -432,7 +467,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
             Job runningJob = job.withState(JobState.RUNNING);
             jobQueue.updateJobStatus(runningJob);
-            notifyJobWatchers(runningJob);
 
             try (final CloseableScheduledExecutor closeableExecutor = new CloseableScheduledExecutor()) {
 
@@ -453,8 +487,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
                 Job completedJob = runningJob.markAsCompleted();
                 jobQueue.updateJobStatus(completedJob);
-
-                notifyJobWatchers(completedJob);
             } catch (Exception e) {
 
                 Logger.error(this,
@@ -490,7 +522,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         final Job failedJob = job.markAsFailed(errorDetail);
         jobQueue.updateJobStatus(failedJob);
-        notifyJobWatchers(failedJob);
 
         // Record the failure in the circuit breaker
         getCircuitBreaker().recordFailure();
