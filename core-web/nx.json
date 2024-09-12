@@ -76,7 +76,7 @@
             "inputs": ["default", "^production", "{workspaceRoot}/karma.conf.js"]
         },
         "e2e": {
-            "inputs": ["default", "^production"]
+            "inputs": ["default", "^production", "{workspaceRoot}/playwright.config.ts"]
         },
         "lint": {
             "inputs": ["default", "{workspaceRoot}/.eslintrc.json"]
@@ -161,13 +161,6 @@
                 "testTargetName": "test",
                 "serveTargetName": "serve",
                 "serveStaticTargetName": "serve-static"
-            }
-        },
-        {
-            "plugin": "@nx/playwright/plugin",
-            "options": {
-                "targetName": "e2e",
-                "ciTargetName": "e2e-ci"
             }
         }
     ],

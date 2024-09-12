@@ -16,6 +16,10 @@
         "lint": {
             "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
+        },
+        "e2e": {
+            "executor": "@nx/playwright:playwright",
+            "outputs": ["{options.outputFile}"]
         }
     },
     "tags": ["type:feature", "scope:dotcms-ui", "portlet:edit-content"]
