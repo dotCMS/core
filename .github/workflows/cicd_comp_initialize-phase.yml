@@ -136,6 +136,7 @@ jobs:
       
       # 1. Attempt to download the existing artifact using the BASE_SHA
       - name: Download Existing SDK Status Artifact
+        if: ${{ github.event_name != 'pull_request' }}
         id: download-artifact
         uses: dawidd6/action-download-artifact@v3.1.4
         with:
