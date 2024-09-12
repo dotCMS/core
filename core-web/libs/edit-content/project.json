@@ -23,7 +23,8 @@
             "options": {
                 "config": "libs/edit-content/playwright.config.ts",
                 "ui": false,
-                "skipInstall": true
+                "skipInstall": true,
+                "output": "dist/libs/edit-content"
             }
         }
     },
