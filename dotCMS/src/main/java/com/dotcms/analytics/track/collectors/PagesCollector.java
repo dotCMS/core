@@ -60,7 +60,7 @@ public class PagesCollector implements Collector {
             final IHTMLPage page = Try.of(()->this.pageAPI.getPageByPath(uri, site, languageId, true)).get();
             pageObject.put("id", page.getIdentifier());
             pageObject.put("title", page.getTitle());
-            pageObject.put("path", uri);
+            pageObject.put("url", uri);
         }
 
         collectorPayloadBean.put("object",  pageObject);

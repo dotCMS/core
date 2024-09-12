@@ -1,19 +1,27 @@
 package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.csspreproc.DotLibSassCompiler;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * This collector collects the file information
@@ -23,18 +31,19 @@ public class FilesCollector implements Collector {
 
     private final FileAssetAPI fileAssetAPI;
     private final HostAPI hostAPI;
-
+    private final ContentletAPI contentletAPI;
 
     public FilesCollector() {
         this(APILocator.getFileAssetAPI(),
-                APILocator.getHostAPI());
+                APILocator.getHostAPI(), APILocator.getContentletAPI());
     }
 
     public FilesCollector(final FileAssetAPI fileAssetAPI,
-                          final HostAPI hostAPI) {
+                          final HostAPI hostAPI, final ContentletAPI contentletAPI) {
 
         this.fileAssetAPI = fileAssetAPI;
         this.hostAPI = hostAPI;
+        this.contentletAPI = contentletAPI;
     }
 
     @Override
@@ -59,10 +68,11 @@ public class FilesCollector implements Collector {
         if (Objects.nonNull(uri) && Objects.nonNull(siteId) && Objects.nonNull(languageId)) {
 
             final Host site = Try.of(()->this.hostAPI.find(siteId, APILocator.systemUser(), false)).get();
-            final FileAsset fileAsset = Try.of(()->this.fileAssetAPI.getFileByPath(uri, site, languageId, true)).get();
-            /*pageObject.put("id", fileAsset.getIdentifier());
-            pageObject.put("title", fileAsset.getTitle());
-            pageObject.put("url", uri);*/
+            getFileAsset(uri, site, languageId).ifPresent(fileAsset -> {
+                pageObject.put("id", fileAsset.getIdentifier());
+                pageObject.put("title", fileAsset.getTitle());
+                pageObject.put("url", uri);
+            });
         }
 
         final StringWriter writer = new StringWriter();
@@ -71,16 +81,33 @@ public class FilesCollector implements Collector {
         collectorPayloadBean.put("url", uri);
         collectorPayloadBean.put("host", host);
         collectorPayloadBean.put("event_type", "FILE_REQUEST");
-
-        if (UtilMethods.isSet(language)) {
-            collectorPayloadBean.put("language", language);
-        }
-
-        if (UtilMethods.isSet(siteId)) {
-            collectorPayloadBean.put("site", siteId);
-        }
+        collectorPayloadBean.put("language", language);
+        collectorPayloadBean.put("site", siteId);
 
         return collectionCollectorPayloadBean;
+    }
+
+    private Optional<FileAsset> getFileAsset(String uri, Host host, Long languageId) {
+        try {
+            if (uri.endsWith(".dotsass")) {
+                final String actualUri = uri.substring(0, uri.lastIndexOf('.')) + ".scss";
+                return Optional.ofNullable(this.fileAssetAPI.getFileByPath(actualUri, host, languageId, true));
+            } else if (uri.startsWith("/dA") || uri.startsWith("/contentAsset") || uri.startsWith("/dotAsset")) {
+                final String[] split = uri.split(StringPool.FORWARD_SLASH);
+                final String id = uri.startsWith("/contentAsset") ? split[3] : split[2];
+                return Optional.ofNullable(getFileAsset(languageId, id));
+            } else {
+                return Optional.ofNullable(this.fileAssetAPI.getFileByPath(uri, host, languageId, true));
+            }
+        } catch (DotDataException | DotSecurityException e) {
+            return Optional.empty();
+        }
+    }
+
+    private FileAsset getFileAsset(final Long languageId, final String id) throws DotDataException, DotSecurityException {
+        return this.fileAssetAPI.fromContentlet(
+                contentletAPI.findContentletByIdentifier(id, true, languageId,
+                        APILocator.systemUser(), false));
     }
 
     @Override
