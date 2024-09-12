@@ -76,12 +76,14 @@ public class BaseCharacter extends AbstractCharacter {
         myMap.get().put("mime", response.getContentType());
         myMap.get().put("vanityUrl", (String) request.getAttribute(VisitorFilter.VANITY_URL_ATTRIBUTE));
         myMap.get().put("referer", request.getHeader("referer"));
+        myMap.get().put("user-agent", request.getHeader("user-agent"));
         myMap.get().put("host", request.getHeader("host"));
         myMap.get().put("assetId", assetId);
         myMap.get().put("contentId", content.orElse(null));
 
         myMap.get().put("lang", lang.toString());
         myMap.get().put("langId", lang.getId());
+        myMap.get().put("src", "dotCMS");
     }
 
     public BaseCharacter(final HttpServletRequest request, final HttpServletResponse response) {
