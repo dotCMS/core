@@ -270,7 +270,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 this.dotExperimentsService.getById(experimentId).pipe(
                     tapResponse(
                         (experiment) => {
-                            console.warn(experiment);
                             this.patchState({
                                 experiment: experiment
                             });

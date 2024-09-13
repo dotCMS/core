@@ -22,15 +22,14 @@
                         (itemChecked)="store.updateSelected($event.selected, $event.item)"
                         (rowClicked)="store.getCategories($event)"
                         [categories]="store.categoryList()"
-                        [isLoading]="store.isListLoading()"
-                        [isInitialState]="store.isInitSate()"
+                        [state]="store.listState()"
                         [selected]="store.confirmedCategoriesValues()"
                         [breadcrumbs]="store.breadcrumbMenu()" />
                 } @else {
                     <dot-category-field-search-list
                         (itemChecked)="store.addSelected($event)"
                         (removeItem)="store.removeSelected($event)"
-                        [status]="store.searchStatus()"
+                        [state]="store.searchState()"
                         [categories]="store.searchCategoryList()"
                         [selected]="store.selected()" />
                 }
