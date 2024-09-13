@@ -317,12 +317,12 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 	}
 
-	public List<IFileAsset> fromContentletsI(final List<Contentlet> contentlets, User user) throws DotDataException, DotSecurityException {
+	public List<IFileAsset> fromContentletsI(final List<Contentlet> contentlets) throws DotDataException, DotSecurityException {
 		final List<IFileAsset> fileAssets = new ArrayList<>();
 		for (Contentlet con : contentlets) {
 			if (con.isDotAsset()) {
 
-				fileAssets.add(transformDotAsset(con, user));
+				fileAssets.add(transformDotAsset(con));
 			} else {
 				fileAssets.add(fromContentlet(con));
 			}
@@ -331,13 +331,13 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 	}
 
-	private FileAsset transformDotAsset(Contentlet con, User user) throws DotDataException, DotSecurityException {
+	private FileAsset transformDotAsset(Contentlet con) throws DotDataException, DotSecurityException {
 		con.setProperty(FileAssetAPI.BINARY_FIELD, Try.of(()->con.getBinary("asset")).getOrNull());
 
 		FileAsset fileAsset = FileViewStrategy.convertToFileAsset(con, this);
 
 		final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-		final String fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, user, fileAsset, "fileAsset");
+		final String fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, APILocator.systemUser(), fileAsset, "fileAsset");
 
 		fileAsset.getMap().put("fileLink", fileLink);
 

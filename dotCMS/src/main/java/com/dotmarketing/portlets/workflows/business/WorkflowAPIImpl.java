@@ -1406,7 +1406,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public List<IFileAsset> findWorkflowTaskFilesAsContent(final WorkflowTask task, final User user) throws DotDataException, DotSecurityException {
 
 		final List<Contentlet> contents =  workFlowFactory.findWorkflowTaskFilesAsContent(task, user);
-		return APILocator.getFileAssetAPI().fromContentletsI(contents, user);
+		return APILocator.getFileAssetAPI().fromContentletsI(contents);
 	}
 
 	@Override
