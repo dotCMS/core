@@ -346,6 +346,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
 		ContentletVersionInfo contentVersionInfo = this.icache.getContentVersionInfo(identifier, lang, variantName);
 		if(contentVersionInfo!=null && fourOhFour.equals(contentVersionInfo.getWorkingInode())) {
+			Logger.debug(this, "404 ContentletVersionInfo found for id: " + identifier + " lang: " + lang + " variant: " + variantName);
 			return Optional.empty();
 		}else if(contentVersionInfo!=null ){
 			return Optional.of(contentVersionInfo);

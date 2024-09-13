@@ -94,4 +94,17 @@ public class PageContext {
     public boolean isParseJSON() {
         return parseJSON;
     }
+
+    //Create a toString method
+    @Override
+    public String toString() {
+        return "PageContext{" +
+                "user=" + user +
+                ", pageUri='" + pageUri + '\'' +
+                ", pageMode=" + pageMode +
+                ", page=" + page +
+                ", graphQL=" + graphQL +
+                ", parseJSON=" + parseJSON +
+                '}';
+    }
 }
