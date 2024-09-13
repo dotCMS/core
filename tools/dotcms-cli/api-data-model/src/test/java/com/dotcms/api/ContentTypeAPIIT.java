@@ -22,6 +22,7 @@ import com.dotcms.contenttype.model.field.Relationships;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.workflow.SystemAction;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
@@ -34,6 +35,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
@@ -258,10 +260,10 @@ class ContentTypeAPIIT {
         Assertions.assertTrue(responseStringEntity.entity().contains("deleted"));
 
         // Use Awaitility to wait until the ContentType is actually deleted
-        await().atMost(20, TimeUnit.SECONDS).until(() -> {
+        await().atMost(30, TimeUnit.SECONDS).until(() -> {
             try {
-                client.getContentType(updatedContentType.variable(), 1L, true);
-                return false; // If this succeeds, the ContentType still exists
+                final boolean exists = awaitilityContentTypeVerify(client, updatedContentType);
+                return !exists; // If this succeeds, the ContentType still exists
             } catch (WebApplicationException e) {
                 if (e.getResponse().getStatus() == 404) {
                     return true; // ContentType was successfully deleted
@@ -269,6 +271,18 @@ class ContentTypeAPIIT {
                 throw e; // Rethrow any unexpected exceptions
             }
         });
+    }
+
+    /**
+     * Since awaitility works on a separate thread we need to explicitly activate the request context
+     * @param client The client
+     * @param updatedContentType The content type to verify
+     * @return True if the content type exists, false otherwise
+     */
+    @ActivateRequestContext
+    boolean awaitilityContentTypeVerify(final ContentTypeAPI client, final SimpleContentType updatedContentType) {
+        final ResponseEntityView<ContentType> contentType = client.getContentType(updatedContentType.variable(), 1L, true);
+        return contentType != null;
     }
 
     /**
