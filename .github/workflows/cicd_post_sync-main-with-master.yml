@@ -35,6 +35,10 @@ jobs:
             git checkout -b main origin/master
           fi
 
-          # Push the updated main branch
-          git remote set-url origin https://x-access-token:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${{ github.repository }}
-          git push origin main --force
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.CI_MACHINE_TOKEN }}
+          branch: main
+          force: true
+          tags: true
