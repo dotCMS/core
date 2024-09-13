@@ -21,6 +21,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.error.JobProcessingException;
@@ -80,19 +81,6 @@ public class JobQueueManagerAPITest {
 
         jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
         jobQueueManagerAPI.setRetryStrategy("testQueue", mockRetryStrategy);
-    }
-
-    private JobQueueManagerAPI newJobQueueManagerAPI(JobQueue jobQueue,
-            CircuitBreaker circuitBreaker,
-            RetryStrategy retryStrategy,
-            int threadPoolSize, int pollJobUpdatesIntervalMilliseconds) {
-
-        var event = mock(Event.class);
-
-        return new JobQueueManagerAPIImpl(
-                jobQueue, new JobQueueConfig(threadPoolSize, pollJobUpdatesIntervalMilliseconds),
-                circuitBreaker, retryStrategy, event, event, event, event, event, event
-        );
     }
 
     /**
@@ -1170,6 +1158,33 @@ public class JobQueueManagerAPITest {
 
         // Clean up
         jobQueueManagerAPI.close();
+    }
+
+    /**
+     * Creates a new instance of the JobQueueManagerAPI with the provided configurations.
+     *
+     * @param jobQueue                           The job queue to be managed.
+     * @param circuitBreaker                     The circuit breaker to handle job processing
+     *                                           failures.
+     * @param retryStrategy                      The strategy to use for retrying failed jobs.
+     * @param threadPoolSize                     The size of the thread pool for job processing.
+     * @param pollJobUpdatesIntervalMilliseconds The interval in milliseconds for polling job
+     *                                           updates.
+     * @return A newly created instance of JobQueueManagerAPI.
+     */
+    private JobQueueManagerAPI newJobQueueManagerAPI(JobQueue jobQueue,
+            CircuitBreaker circuitBreaker,
+            RetryStrategy retryStrategy,
+            int threadPoolSize, int pollJobUpdatesIntervalMilliseconds) {
+
+        var event = mock(Event.class);
+        final var realTimeJobMonitor = new RealTimeJobMonitor();
+
+        return new JobQueueManagerAPIImpl(
+                jobQueue, new JobQueueConfig(threadPoolSize, pollJobUpdatesIntervalMilliseconds),
+                circuitBreaker, retryStrategy, realTimeJobMonitor, event, event, event, event,
+                event, event
+        );
     }
 
 }

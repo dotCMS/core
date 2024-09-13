@@ -1,5 +1,6 @@
 package com.dotcms.jobs.business.api.events;
 
+import com.dotcms.jobs.business.job.Job;
 import java.time.LocalDateTime;
 
 /**
@@ -7,25 +8,25 @@ import java.time.LocalDateTime;
  */
 public class JobCancelledEvent {
 
-    private final String jobId;
+    private final Job job;
     private final LocalDateTime cancelledAt;
 
     /**
      * Constructs a new JobCancelledEvent.
      *
-     * @param jobId       The unique identifier of the cancelled job.
+     * @param job         The cancelled job.
      * @param cancelledAt The timestamp when the job was cancelled.
      */
-    public JobCancelledEvent(String jobId, LocalDateTime cancelledAt) {
-        this.jobId = jobId;
+    public JobCancelledEvent(Job job, LocalDateTime cancelledAt) {
+        this.job = job;
         this.cancelledAt = cancelledAt;
     }
 
     /**
-     * @return The unique identifier of the cancelled job.
+     * @return The cancelled job.
      */
-    public String getJobId() {
-        return jobId;
+    public Job getJob() {
+        return job;
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.dotcms.jobs.business.api.events;
 
+import com.dotcms.jobs.business.job.Job;
 import java.time.LocalDateTime;
 
 /**
@@ -7,35 +8,25 @@ import java.time.LocalDateTime;
  */
 public class JobProgressUpdatedEvent {
 
-    private final String jobId;
-    private final float progress;
+    private final Job job;
     private final LocalDateTime updatedAt;
 
     /**
      * Constructs a new JobProgressUpdatedEvent.
      *
-     * @param jobId     The unique identifier of the job.
-     * @param progress  The current progress of the job (0.0 to 1.0).
+     * @param job       The job.
      * @param updatedAt The timestamp when the progress was updated.
      */
-    public JobProgressUpdatedEvent(String jobId, float progress, LocalDateTime updatedAt) {
-        this.jobId = jobId;
-        this.progress = progress;
+    public JobProgressUpdatedEvent(Job job, LocalDateTime updatedAt) {
+        this.job = job;
         this.updatedAt = updatedAt;
     }
 
     /**
-     * @return The unique identifier of the job.
+     * @return The job.
      */
-    public String getJobId() {
-        return jobId;
-    }
-
-    /**
-     * @return The current progress of the job (0.0 to 1.0).
-     */
-    public float getProgress() {
-        return progress;
+    public Job getJob() {
+        return job;
     }
 
     /**

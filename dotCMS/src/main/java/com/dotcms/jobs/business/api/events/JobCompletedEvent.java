@@ -1,5 +1,6 @@
 package com.dotcms.jobs.business.api.events;
 
+import com.dotcms.jobs.business.job.Job;
 import java.time.LocalDateTime;
 
 /**
@@ -7,25 +8,25 @@ import java.time.LocalDateTime;
  */
 public class JobCompletedEvent {
 
-    private final String jobId;
+    private final Job job;
     private final LocalDateTime completedAt;
 
     /**
      * Constructs a new JobCompletedEvent.
      *
-     * @param jobId       The unique identifier of the completed job.
+     * @param job       The completed job.
      * @param completedAt The timestamp when the job completed.
      */
-    public JobCompletedEvent(String jobId, LocalDateTime completedAt) {
-        this.jobId = jobId;
+    public JobCompletedEvent(Job job, LocalDateTime completedAt) {
+        this.job = job;
         this.completedAt = completedAt;
     }
 
     /**
-     * @return The unique identifier of the completed job.
+     * @return The completed job.
      */
-    public String getJobId() {
-        return jobId;
+    public Job getJob() {
+        return job;
     }
 
     /**

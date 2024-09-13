@@ -1,5 +1,6 @@
 package com.dotcms.jobs.business.api.events;
 
+import com.dotcms.jobs.business.job.Job;
 import java.time.LocalDateTime;
 
 /**
@@ -7,25 +8,25 @@ import java.time.LocalDateTime;
  */
 public class JobStartedEvent {
 
-    private final String jobId;
+    private final Job job;
     private final LocalDateTime startedAt;
 
     /**
      * Constructs a new JobStartedEvent.
      *
-     * @param jobId     The unique identifier of the started job.
+     * @param job       The started job.
      * @param startedAt The timestamp when the job started processing.
      */
-    public JobStartedEvent(String jobId, LocalDateTime startedAt) {
-        this.jobId = jobId;
+    public JobStartedEvent(Job job, LocalDateTime startedAt) {
+        this.job = job;
         this.startedAt = startedAt;
     }
 
     /**
-     * @return The unique identifier of the started job.
+     * @return The started job.
      */
-    public String getJobId() {
-        return jobId;
+    public Job getJob() {
+        return job;
     }
 
     /**

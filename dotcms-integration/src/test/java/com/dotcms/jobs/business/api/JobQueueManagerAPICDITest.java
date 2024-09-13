@@ -3,6 +3,7 @@ package com.dotcms.jobs.business.api;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
+import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ExponentialBackoffRetryStrategy;
 import com.dotcms.jobs.business.error.RetryStrategy;
@@ -32,7 +33,7 @@ public class JobQueueManagerAPICDITest {
                     .beanClasses(JobQueueManagerAPIImpl.class, JobQueueConfig.class,
                             JobQueue.class, RetryStrategy.class, CircuitBreaker.class,
                             JobQueueProducer.class, JobQueueConfigProducer.class,
-                            RetryStrategyProducer.class)
+                            RetryStrategyProducer.class, RealTimeJobMonitor.class)
     );
 
     @Inject

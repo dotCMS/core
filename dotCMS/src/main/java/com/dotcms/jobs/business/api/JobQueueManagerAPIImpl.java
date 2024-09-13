@@ -6,6 +6,7 @@ import com.dotcms.jobs.business.api.events.JobCreatedEvent;
 import com.dotcms.jobs.business.api.events.JobFailedEvent;
 import com.dotcms.jobs.business.api.events.JobProgressUpdatedEvent;
 import com.dotcms.jobs.business.api.events.JobStartedEvent;
+import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.error.JobCancellationException;
@@ -22,7 +23,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -88,13 +88,13 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private final Map<String, JobProcessor> processors;
     private final int threadPoolSize;
     private ExecutorService executorService;
-    private final Map<String, List<Consumer<Job>>> jobWatchers;
     private final Map<String, RetryStrategy> retryStrategies;
     private final RetryStrategy defaultRetryStrategy;
 
     private final ScheduledExecutorService pollJobUpdatesScheduler;
     private LocalDateTime lastPollJobUpdateTime = LocalDateTime.now();
 
+    private final RealTimeJobMonitor realTimeJobMonitor;
     private final Event<JobCreatedEvent> jobCreatedEvent;
     private final Event<JobStartedEvent> jobStartedEvent;
     private final Event<JobProgressUpdatedEvent> jobProgressUpdatedEvent;
@@ -104,17 +104,33 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     /**
      * Constructs a new JobQueueManagerAPIImpl.
+     * This constructor initializes the job queue manager with all necessary dependencies and configurations.
      *
-     * @param jobQueue             The JobQueue implementation to use.
-     * @param jobQueueConfig       The JobQueueConfig implementation to use.
-     * @param circuitBreaker       The CircuitBreaker implementation to use.
-     * @param defaultRetryStrategy The default retry strategy to use.
+     * @param jobQueue             The JobQueue implementation to use for managing jobs.
+     * @param jobQueueConfig       The JobQueueConfig implementation providing configuration settings.
+     * @param circuitBreaker       The CircuitBreaker implementation for fault tolerance.
+     * @param defaultRetryStrategy The default retry strategy to use for failed jobs.
+     * @param realTimeJobMonitor   The RealTimeJobMonitor for handling real-time job updates.
+     * @param jobCreatedEvent      Event for job creation notifications.
+     * @param jobStartedEvent      Event for job start notifications.
+     * @param jobProgressUpdatedEvent Event for job progress update notifications.
+     * @param jobCompletedEvent    Event for job completion notifications.
+     * @param jobFailedEvent       Event for job failure notifications.
+     * @param jobCancelledEvent    Event for job cancellation notifications.
+     * <p>
+     * This constructor performs the following initializations:
+     * - Sets up the job queue and related configurations.
+     * - Initializes thread pool and job processors.
+     * - Sets up the circuit breaker and retry strategies.
+     * - Configures the job update polling mechanism.
+     * - Initializes event handlers for various job state changes.
      */
     @Inject
     public JobQueueManagerAPIImpl(JobQueue jobQueue,
             JobQueueConfig jobQueueConfig,
             CircuitBreaker circuitBreaker,
             RetryStrategy defaultRetryStrategy,
+            RealTimeJobMonitor realTimeJobMonitor,
             Event<JobCreatedEvent> jobCreatedEvent,
             Event<JobStartedEvent> jobStartedEvent,
             Event<JobProgressUpdatedEvent> jobProgressUpdatedEvent,
@@ -125,7 +141,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         this.jobQueue = jobQueue;
         this.threadPoolSize = jobQueueConfig.getThreadPoolSize();
         this.processors = new ConcurrentHashMap<>();
-        this.jobWatchers = new ConcurrentHashMap<>();
         this.retryStrategies = new ConcurrentHashMap<>();
         this.defaultRetryStrategy = defaultRetryStrategy;
         this.circuitBreaker = circuitBreaker;
@@ -137,6 +152,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         );
 
         // Events
+        this.realTimeJobMonitor = realTimeJobMonitor;
         this.jobCreatedEvent = jobCreatedEvent;
         this.jobStartedEvent = jobStartedEvent;
         this.jobProgressUpdatedEvent = jobProgressUpdatedEvent;
@@ -261,7 +277,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
                     Job cancelledJob = job.markAsCancelled();
                     jobQueue.updateJobStatus(cancelledJob);
-                    jobCancelledEvent.fire(new JobCancelledEvent(jobId, LocalDateTime.now()));
+                    jobCancelledEvent.fire(
+                            new JobCancelledEvent(cancelledJob, LocalDateTime.now())
+                    );
                 } catch (Exception e) {
                     final var error = new JobCancellationException(jobId, e.getMessage());
                     Logger.error(JobQueueManagerAPIImpl.class, error);
@@ -281,7 +299,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @Override
     public void watchJob(final String jobId, final Consumer<Job> watcher) {
-        jobWatchers.computeIfAbsent(jobId, k -> new CopyOnWriteArrayList<>()).add(watcher);
+        realTimeJobMonitor.registerWatcher(jobId, watcher);
     }
 
     @Override
@@ -312,35 +330,15 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      */
     private void pollJobUpdates() {
 
-        final var watchedJobIds = jobWatchers.keySet();
+        final var watchedJobIds = realTimeJobMonitor.getWatchedJobIds();
         if (watchedJobIds.isEmpty()) {
             return; // No jobs are being watched, skip polling
         }
 
         final var currentPollTime = LocalDateTime.now();
         List<Job> updatedJobs = jobQueue.getUpdatedJobsSince(watchedJobIds, lastPollJobUpdateTime);
-        for (Job job : updatedJobs) {
-            notifyJobWatchers(job);
-        }
+        realTimeJobMonitor.updateWatchers(updatedJobs);
         lastPollJobUpdateTime = currentPollTime;
-    }
-
-    /**
-     * Notifies all registered watchers for a job of its current state.
-     *
-     * @param job The job whose watchers to notify.
-     */
-    private void notifyJobWatchers(final Job job) {
-
-        List<Consumer<Job>> watchers = jobWatchers.get(job.id());
-        if (watchers != null) {
-            watchers.forEach(watcher -> watcher.accept(job));
-            if (job.state() == JobState.COMPLETED
-                    || job.state() == JobState.FAILED
-                    || job.state() == JobState.CANCELLED) {
-                jobWatchers.remove(job.id());
-            }
-        }
     }
 
     /**
@@ -357,7 +355,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
             jobQueue.updateJobProgress(job.id(), updatedJob.progress());
             jobProgressUpdatedEvent.fire(
-                    new JobProgressUpdatedEvent(job.id(), progress, LocalDateTime.now())
+                    new JobProgressUpdatedEvent(updatedJob, LocalDateTime.now())
             );
         }
     }
@@ -506,7 +504,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
             Job runningJob = job.withState(JobState.RUNNING);
             jobQueue.updateJobStatus(runningJob);
-            jobStartedEvent.fire(new JobStartedEvent(job.id(), LocalDateTime.now()));
+            jobStartedEvent.fire(new JobStartedEvent(runningJob, LocalDateTime.now()));
 
             try (final CloseableScheduledExecutor closeableExecutor = new CloseableScheduledExecutor()) {
 
@@ -527,7 +525,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
                 Job completedJob = runningJob.markAsCompleted();
                 jobQueue.updateJobStatus(completedJob);
-                jobCompletedEvent.fire(new JobCompletedEvent(job.id(), LocalDateTime.now()));
+                jobCompletedEvent.fire(new JobCompletedEvent(completedJob, LocalDateTime.now()));
             } catch (Exception e) {
 
                 Logger.error(this,
@@ -563,7 +561,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         final Job failedJob = job.markAsFailed(errorDetail);
         jobQueue.updateJobStatus(failedJob);
-        jobFailedEvent.fire(new JobFailedEvent(job.id(), errorDetail, LocalDateTime.now()));
+        jobFailedEvent.fire(new JobFailedEvent(failedJob, LocalDateTime.now()));
 
         // Record the failure in the circuit breaker
         getCircuitBreaker().recordFailure();
