@@ -84,9 +84,6 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
-        this.route.data.subscribe((params) => {
-            console.info(params);
-        });
         forkJoin(
             this.dotContentTypeService.getAllContentTypes(),
             this.dotLicenseService.isEnterprise(),
