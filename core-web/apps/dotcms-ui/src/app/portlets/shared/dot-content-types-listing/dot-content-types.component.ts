@@ -84,6 +84,9 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
+        this.route.data.subscribe((params) => {
+            console.info(params);
+        });
         forkJoin(
             this.dotContentTypeService.getAllContentTypes(),
             this.dotLicenseService.isEnterprise(),
@@ -91,7 +94,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
                 map((environments: DotEnvironment[]) => !!environments.length),
                 take(1)
             ),
-            this.route.queryParams.pipe(pluck('filterBy'), take(1))
+            this.route.data.pipe(pluck('filterBy'), take(1))
         ).subscribe(([contentTypes, isEnterprise, environments, filterBy]) => {
             const baseTypes: StructureTypeView[] = contentTypes;
 
