@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  */
 public class WebEventsCollectorServiceFactory {
 
-    private WebEventsCollectorService webEventsCollectorService = new WebEventsCollectorServiceImpl();
+    private final WebEventsCollectorService webEventsCollectorService = new WebEventsCollectorServiceImpl();
 
     private static class SingletonHolder {
         private static final WebEventsCollectorServiceFactory INSTANCE = new WebEventsCollectorServiceFactory();
@@ -44,7 +44,7 @@ public class WebEventsCollectorServiceFactory {
         return webEventsCollectorService;
     }
 
-    private class WebEventsCollectorServiceImpl implements WebEventsCollectorService {
+    private static class WebEventsCollectorServiceImpl implements WebEventsCollectorService {
 
         private final Map<String, Collector> syncCollectors  = new ConcurrentHashMap<>();
         private final Map<String, Collector> asyncCollectors = new ConcurrentHashMap<>();
@@ -53,7 +53,7 @@ public class WebEventsCollectorServiceFactory {
         WebEventsCollectorServiceImpl () {
 
             addCollector(new BasicProfileCollector(), new FilesCollector(), new PagesCollector(),
-                    new SyncVanitiesCollector(), new AsyncVanitiesCollector());
+                    new PageDetailCollector(), new SyncVanitiesCollector(), new AsyncVanitiesCollector());
         }
 
         @Override
@@ -66,7 +66,7 @@ public class WebEventsCollectorServiceFactory {
                 this.fireCollectorsAndEmitEvent(request, response, requestMatcher);
             } else {
 
-                Logger.debug(this, ()-> "No collectors to ran");
+                Logger.debug(this, ()-> "No collectors to run");
             }
         }
 
@@ -120,13 +120,10 @@ public class WebEventsCollectorServiceFactory {
 
         @Override
         public void removeCollector(final String collectorId) {
-            if (syncCollectors.containsKey(collectorId)) {
-                syncCollectors.remove(collectorId);
-            }
-
-            if (asyncCollectors.containsKey(collectorId)) {
-                asyncCollectors.remove(collectorId);
-            }
+            syncCollectors.remove(collectorId);
+            asyncCollectors.remove(collectorId);
         }
+
     }
+
 }
