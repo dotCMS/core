@@ -1,5 +1,11 @@
 package com.dotcms.jobs.business.api;
 
+import com.dotcms.jobs.business.api.events.JobCancelledEvent;
+import com.dotcms.jobs.business.api.events.JobCompletedEvent;
+import com.dotcms.jobs.business.api.events.JobCreatedEvent;
+import com.dotcms.jobs.business.api.events.JobFailedEvent;
+import com.dotcms.jobs.business.api.events.JobProgressUpdatedEvent;
+import com.dotcms.jobs.business.api.events.JobStartedEvent;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.error.JobCancellationException;
@@ -25,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
 import javax.inject.Inject;
 
 /**
@@ -85,9 +92,15 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private final Map<String, RetryStrategy> retryStrategies;
     private final RetryStrategy defaultRetryStrategy;
 
-    private final ScheduledExecutorService pollJobUpdatesScheduler =
-            Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService pollJobUpdatesScheduler;
     private LocalDateTime lastPollJobUpdateTime = LocalDateTime.now();
+
+    private final Event<JobCreatedEvent> jobCreatedEvent;
+    private final Event<JobStartedEvent> jobStartedEvent;
+    private final Event<JobProgressUpdatedEvent> jobProgressUpdatedEvent;
+    private final Event<JobCompletedEvent> jobCompletedEvent;
+    private final Event<JobFailedEvent> jobFailedEvent;
+    private final Event<JobCancelledEvent> jobCancelledEvent;
 
     /**
      * Constructs a new JobQueueManagerAPIImpl.
@@ -98,8 +111,16 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param defaultRetryStrategy The default retry strategy to use.
      */
     @Inject
-    public JobQueueManagerAPIImpl(JobQueue jobQueue, JobQueueConfig jobQueueConfig,
-            CircuitBreaker circuitBreaker, RetryStrategy defaultRetryStrategy) {
+    public JobQueueManagerAPIImpl(JobQueue jobQueue,
+            JobQueueConfig jobQueueConfig,
+            CircuitBreaker circuitBreaker,
+            RetryStrategy defaultRetryStrategy,
+            Event<JobCreatedEvent> jobCreatedEvent,
+            Event<JobStartedEvent> jobStartedEvent,
+            Event<JobProgressUpdatedEvent> jobProgressUpdatedEvent,
+            Event<JobCompletedEvent> jobCompletedEvent,
+            Event<JobFailedEvent> jobFailedEvent,
+            Event<JobCancelledEvent> jobCancelledEvent) {
 
         this.jobQueue = jobQueue;
         this.threadPoolSize = jobQueueConfig.getThreadPoolSize();
@@ -108,10 +129,20 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         this.retryStrategies = new ConcurrentHashMap<>();
         this.defaultRetryStrategy = defaultRetryStrategy;
         this.circuitBreaker = circuitBreaker;
+
+        this.pollJobUpdatesScheduler = Executors.newSingleThreadScheduledExecutor();
         pollJobUpdatesScheduler.scheduleAtFixedRate(
                 this::pollJobUpdates, 0,
                 jobQueueConfig.getPollJobUpdatesIntervalMilliseconds(), TimeUnit.MILLISECONDS
         );
+
+        // Events
+        this.jobCreatedEvent = jobCreatedEvent;
+        this.jobStartedEvent = jobStartedEvent;
+        this.jobProgressUpdatedEvent = jobProgressUpdatedEvent;
+        this.jobCompletedEvent = jobCompletedEvent;
+        this.jobFailedEvent = jobFailedEvent;
+        this.jobCancelledEvent = jobCancelledEvent;
     }
 
     @Override
@@ -196,7 +227,11 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             throw error;
         }
 
-        return jobQueue.addJob(queueName, parameters);
+        String jobId = jobQueue.addJob(queueName, parameters);
+        jobCreatedEvent.fire(
+                new JobCreatedEvent(jobId, queueName, LocalDateTime.now(), parameters)
+        );
+        return jobId;
     }
 
     @Override
@@ -226,6 +261,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
                     Job cancelledJob = job.markAsCancelled();
                     jobQueue.updateJobStatus(cancelledJob);
+                    jobCancelledEvent.fire(new JobCancelledEvent(jobId, LocalDateTime.now()));
                 } catch (Exception e) {
                     final var error = new JobCancellationException(jobId, e.getMessage());
                     Logger.error(JobQueueManagerAPIImpl.class, error);
@@ -320,6 +356,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             Job updatedJob = job.withProgress(progress);
 
             jobQueue.updateJobProgress(job.id(), updatedJob.progress());
+            jobProgressUpdatedEvent.fire(
+                    new JobProgressUpdatedEvent(job.id(), progress, LocalDateTime.now())
+            );
         }
     }
 
@@ -467,6 +506,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
             Job runningJob = job.withState(JobState.RUNNING);
             jobQueue.updateJobStatus(runningJob);
+            jobStartedEvent.fire(new JobStartedEvent(job.id(), LocalDateTime.now()));
 
             try (final CloseableScheduledExecutor closeableExecutor = new CloseableScheduledExecutor()) {
 
@@ -487,6 +527,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
                 Job completedJob = runningJob.markAsCompleted();
                 jobQueue.updateJobStatus(completedJob);
+                jobCompletedEvent.fire(new JobCompletedEvent(job.id(), LocalDateTime.now()));
             } catch (Exception e) {
 
                 Logger.error(this,
@@ -522,6 +563,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         final Job failedJob = job.markAsFailed(errorDetail);
         jobQueue.updateJobStatus(failedJob);
+        jobFailedEvent.fire(new JobFailedEvent(job.id(), errorDetail, LocalDateTime.now()));
 
         // Record the failure in the circuit breaker
         getCircuitBreaker().recordFailure();

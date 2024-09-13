@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import javax.enterprise.event.Event;
 import org.awaitility.Awaitility;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,12 +73,26 @@ public class JobQueueManagerAPITest {
         mockRetryStrategy = mock(RetryStrategy.class);
         mockCircuitBreaker = mock(CircuitBreaker.class);
 
-        jobQueueManagerAPI = new JobQueueManagerAPIImpl(
-                mockJobQueue, new JobQueueConfig(1, 10),
-                mockCircuitBreaker, mockRetryStrategy
+        jobQueueManagerAPI = newJobQueueManagerAPI(
+                mockJobQueue, mockCircuitBreaker, mockRetryStrategy,
+                1, 10
         );
+
         jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
         jobQueueManagerAPI.setRetryStrategy("testQueue", mockRetryStrategy);
+    }
+
+    private JobQueueManagerAPI newJobQueueManagerAPI(JobQueue jobQueue,
+            CircuitBreaker circuitBreaker,
+            RetryStrategy retryStrategy,
+            int threadPoolSize, int pollJobUpdatesIntervalMilliseconds) {
+
+        var event = mock(Event.class);
+
+        return new JobQueueManagerAPIImpl(
+                jobQueue, new JobQueueConfig(threadPoolSize, pollJobUpdatesIntervalMilliseconds),
+                circuitBreaker, retryStrategy, event, event, event, event, event, event
+        );
     }
 
     /**
@@ -844,10 +859,11 @@ public class JobQueueManagerAPITest {
         CircuitBreaker circuitBreaker = new CircuitBreaker(5, 60000);
 
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
-        JobQueueManagerAPI jobQueueManagerAPI = new JobQueueManagerAPIImpl(
-                mockJobQueue, new JobQueueConfig(1, 1000),
-                circuitBreaker, mockRetryStrategy
+        JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
+                mockJobQueue, circuitBreaker, mockRetryStrategy,
+                1, 1000
         );
+
         jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
 
         // Start the job queue
@@ -926,9 +942,9 @@ public class JobQueueManagerAPITest {
                 1000); // Short reset timeout for testing
 
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
-        JobQueueManagerAPI jobQueueManagerAPI = new JobQueueManagerAPIImpl(
-                mockJobQueue, new JobQueueConfig(1, 1000),
-                circuitBreaker, mockRetryStrategy
+        JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
+                mockJobQueue, circuitBreaker, mockRetryStrategy,
+                1, 1000
         );
         jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
 
@@ -986,9 +1002,9 @@ public class JobQueueManagerAPITest {
         CircuitBreaker circuitBreaker = new CircuitBreaker(5, 60000);
 
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
-        JobQueueManagerAPI jobQueueManagerAPI = new JobQueueManagerAPIImpl(
-                mockJobQueue, new JobQueueConfig(1, 1000),
-                circuitBreaker, mockRetryStrategy
+        JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
+                mockJobQueue, circuitBreaker, mockRetryStrategy,
+                1, 1000
         );
         jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
 
