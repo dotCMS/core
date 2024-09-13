@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { Component, effect, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
@@ -9,13 +9,14 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { skip, takeUntil } from 'rxjs/operators';
+import { skip, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotESContentService,
     DotExperimentsService,
     DotFavoritePageService,
     DotLanguagesService,
+    DotLicenseService,
     DotMessageService,
     DotPageLayoutService,
     DotPageRenderService,
@@ -89,7 +90,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly #confirmationService = inject(ConfirmationService);
 
     protected readonly $shellProps = this.uveStore.$shellProps;
-
+    readonly #dotLicenseService = inject(DotLicenseService);
     readonly #destroy$ = new Subject<boolean>();
 
     readonly translatePageEffect = effect(() => {
@@ -99,8 +100,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             this.createNewTranslation(currentLanguage, page);
         }
     });
+    isEnterpriseLicense$: Observable<boolean> = of(false);
 
     ngOnInit(): void {
+        this.isEnterpriseLicense$ = this.#dotLicenseService.isEnterprise().pipe(take(1));
         this.#activatedRoute.queryParams
             .pipe(takeUntil(this.#destroy$))
             .subscribe((queryParams) => {

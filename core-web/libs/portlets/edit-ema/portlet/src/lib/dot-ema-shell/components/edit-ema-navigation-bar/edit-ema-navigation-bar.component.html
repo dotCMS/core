@@ -8,8 +8,8 @@
 
 <ng-template #anchor let-item="item">
     <a
-        [routerLink]="item.isDisabled ? null : item.href"
-        [ngClass]="{ 'edit-ema-nav-bar__item--disabled': item.isDisabled }"
+        [routerLink]="isItemDisabled(item) ? null : item.href"
+        [ngClass]="{ 'edit-ema-nav-bar__item--disabled': isItemDisabled(item) }"
         [pTooltip]="item.tooltip | dm"
         class="edit-ema-nav-bar__item"
         data-testId="nav-bar-item"
@@ -28,9 +28,9 @@
 
 <ng-template #button let-item="item">
     <button
-        (click)="item.isDisabled ? null : itemAction(item)"
-        [ngClass]="{ 'edit-ema-nav-bar__item--disabled': item.isDisabled }"
-        [disabled]="item.isDisabled"
+        (click)="isItemDisabled(item) ? null : itemAction(item)"
+        [ngClass]="{ 'edit-ema-nav-bar__item--disabled': isItemDisabled(item) }"
+        [disabled]="isItemDisabled(item)"
         class="edit-ema-nav-bar__item edit-ema-nav-bar__item--button"
         data-testId="nav-bar-item">
         <ng-container
@@ -45,6 +45,7 @@
 <ng-template #icon let-item="item">
     <i [class]="'pi ' + item.icon" data-testId="nav-bar-item-icon"></i>
 </ng-template>
+
 <ng-template #iconURL let-item="item">
     <svg class="item__image" fill="currentColor" viewBox="0 0 24 24" width="24px" height="24px">
         <use
