@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.UtilMethods;
@@ -87,7 +88,7 @@ public class FilesCollector implements Collector {
         return collectionCollectorPayloadBean;
     }
 
-    private Optional<FileAsset> getFileAsset(String uri, Host host, Long languageId) {
+    private Optional<Contentlet> getFileAsset(String uri, Host host, Long languageId) {
         try {
             if (uri.endsWith(".dotsass")) {
                 final String actualUri = uri.substring(0, uri.lastIndexOf('.')) + ".scss";
@@ -95,7 +96,7 @@ public class FilesCollector implements Collector {
             } else if (uri.startsWith("/dA") || uri.startsWith("/contentAsset") || uri.startsWith("/dotAsset")) {
                 final String[] split = uri.split(StringPool.FORWARD_SLASH);
                 final String id = uri.startsWith("/contentAsset") ? split[3] : split[2];
-                return Optional.ofNullable(getFileAsset(languageId, id));
+                return getFileAsset(languageId, id);
             } else {
                 return Optional.ofNullable(this.fileAssetAPI.getFileByPath(uri, host, languageId, true));
             }
@@ -104,10 +105,10 @@ public class FilesCollector implements Collector {
         }
     }
 
-    private FileAsset getFileAsset(final Long languageId, final String id) throws DotDataException, DotSecurityException {
-        return this.fileAssetAPI.fromContentlet(
-                contentletAPI.findContentletByIdentifier(id, true, languageId,
-                        APILocator.systemUser(), false));
+    private Optional<Contentlet> getFileAsset(final Long languageId, final String id) throws DotDataException, DotSecurityException {
+
+        return Optional.ofNullable(contentletAPI.findContentletByIdentifier(id, true, languageId,
+                APILocator.systemUser(), false));
     }
 
     @Override
