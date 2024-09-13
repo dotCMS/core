@@ -36,4 +36,5 @@ jobs:
           fi
 
           # Push the updated main branch
+          git remote set-url origin https://x-access-token:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${{ github.repository }}
           git push origin main --force
