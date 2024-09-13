@@ -88,7 +88,7 @@ public class FilesCollector implements Collector {
         return collectionCollectorPayloadBean;
     }
 
-    private Optional<FileAsset> getFileAsset(String uri, Host host, Long languageId) {
+    private Optional<Contentlet> getFileAsset(String uri, Host host, Long languageId) {
         try {
             if (uri.endsWith(".dotsass")) {
                 final String actualUri = uri.substring(0, uri.lastIndexOf('.')) + ".scss";
@@ -105,11 +105,10 @@ public class FilesCollector implements Collector {
         }
     }
 
-    private Optional<FileAsset> getFileAsset(final Long languageId, final String id) throws DotDataException, DotSecurityException {
-        final Contentlet contentlet = contentletAPI.findContentletByIdentifier(id, true, languageId,
-                APILocator.systemUser(), false);
+    private Optional<Contentlet> getFileAsset(final Long languageId, final String id) throws DotDataException, DotSecurityException {
 
-        return UtilMethods.isSet(contentlet) ? Optional.of(this.fileAssetAPI.fromContentlet(contentlet)) : Optional.empty();
+        return Optional.ofNullable(contentletAPI.findContentletByIdentifier(id, true, languageId,
+                APILocator.systemUser(), false));
     }
 
     @Override
