@@ -243,7 +243,7 @@ public class SiteResource implements Serializable {
             final Map<String, Object>  extraParams = new HashMap<>();
             extraParams.put(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived);
             extraParams.put(SitePaginator.LIVE_PARAMETER_NAME, showLive);
-            extraParams.put(SitePaginator.SYSTEM_PARAMETER_NAME, showSystem);
+            extraParams.put(SitePaginator.SYSTEM_PARAMETER_NAME, showSystem==null?true:showSystem);
 
             response = paginationUtil.getPage(httpServletRequest, user, sanitizedFilter, page, perPage, extraParams);
         } catch (Exception e) { // this is an unknown error, so we report as a 500.

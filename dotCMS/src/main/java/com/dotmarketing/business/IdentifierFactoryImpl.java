@@ -281,8 +281,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		if (Host.SYSTEM_HOST.equals(parent.getHostId())) {
 			Logger.error(this, "A folder cannot be saved on the system host.");
-			throw new DotStateException("A folder cannot be saved on the system host.");
-
+			//throw new DotStateException("A folder cannot be saved on the system host.");
 		}
 
 		identifier.setHostId(parent.getHostId());

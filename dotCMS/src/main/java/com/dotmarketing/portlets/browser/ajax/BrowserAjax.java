@@ -171,7 +171,7 @@ public class BrowserAjax {
         final List<Map> folderTree = new ArrayList<>();
         for (final Host site : siteList) {
         	// Exclude System Host ad archived Sites from the final result
-			if (site.isSystemHost() || site.isArchived()) {
+			if (site.isArchived()) {
 				continue;
 			}
             final Map<String,Object> siteDataMap = site.getMap();
