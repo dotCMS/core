@@ -73,7 +73,8 @@ export const UVEStore = signalStore(
                                 icon: 'pi-file',
                                 label: 'editema.editor.navbar.content',
                                 href: 'content',
-                                id: 'content'
+                                id: 'content',
+                                needsEnterpriseLicense: false
                             },
                             {
                                 icon: 'pi-table',
@@ -81,6 +82,7 @@ export const UVEStore = signalStore(
                                 href: 'layout',
                                 id: 'layout',
                                 isDisabled: isLayoutDisabled,
+                                needsEnterpriseLicense: true,
                                 tooltip: templateDrawed
                                     ? null
                                     : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
@@ -90,25 +92,29 @@ export const UVEStore = signalStore(
                                 label: 'editema.editor.navbar.rules',
                                 id: 'rules',
                                 href: `rules/${page?.identifier}`,
-                                isDisabled: !page?.canEdit
+                                isDisabled: !page?.canEdit,
+                                needsEnterpriseLicense: true
                             },
                             {
                                 iconURL: 'experiments',
                                 label: 'editema.editor.navbar.experiments',
                                 href: `experiments/${page?.identifier}`,
                                 id: 'experiments',
-                                isDisabled: !page?.canEdit
+                                isDisabled: !page?.canEdit,
+                                needsEnterpriseLicense: true
                             },
                             {
                                 icon: 'pi-th-large',
                                 label: 'editema.editor.navbar.page-tools',
-                                id: 'page-tools'
+                                id: 'page-tools',
+                                needsEnterpriseLicense: false
                             },
                             {
                                 icon: 'pi-ellipsis-v',
                                 label: 'editema.editor.navbar.properties',
                                 id: 'properties',
-                                isDisabled: isLoading
+                                isDisabled: isLoading,
+                                needsEnterpriseLicense: false
                             }
                         ]
                     };

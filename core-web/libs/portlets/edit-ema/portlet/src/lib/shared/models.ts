@@ -87,6 +87,7 @@ export interface NavigationBarItem {
     id: string;
     isDisabled?: boolean;
     tooltip?: string;
+    needsEnterpriseLicense?: boolean;
 }
 
 export interface MessageInfo {
