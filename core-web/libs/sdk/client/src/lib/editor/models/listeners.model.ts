@@ -20,7 +20,6 @@ export enum NOTIFY_CUSTOMER {
     /**
      * Received scroll event trigger from the editor
      */
-
     EMA_SCROLL_INSIDE_IFRAME = 'scroll-inside-iframe'
 }
 

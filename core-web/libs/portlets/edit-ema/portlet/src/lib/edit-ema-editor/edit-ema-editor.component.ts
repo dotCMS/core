@@ -168,6 +168,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
             if (!isTraditionalPage) {
                 if (isClientReady) {
+                    // This should have another name.
                     return this.reloadIframeContent();
                 }
 
@@ -1002,7 +1003,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const { query, params } = clientConfig || {};
                 const isClientReady = this.uveStore.isClientReady();
 
-                // Frameworks  Navigation triggers the client ready event, so we need to prevent it
+                // Frameworks Navigation triggers the client ready event, so we need to prevent it
                 // Until we manually trigger the reload
                 if (isClientReady) {
                     return;

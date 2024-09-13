@@ -4,15 +4,15 @@
             <h3>{{ title }}</h3>
         }
         <dot-suggestion-list #list>
-            @for (item of items; track item; let i = $index) {
+            @for (item of items; track $index) {
                 @if (item.id !== 'divider') {
                     <dot-suggestions-list-item
                         [command]="item.command"
-                        [index]="item.tabindex || i"
+                        [index]="item.tabindex || $index"
                         [label]="item.label"
                         [url]="item.icon"
                         [data]="item.data"
-                        [disabled]="item.disabled"></dot-suggestions-list-item>
+                        [disabled]="item.disabled" />
                 } @else {
                     <div class="divider"></div>
                 }

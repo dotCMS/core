@@ -70,7 +70,9 @@ public class JobQueueManagerAPITest {
         mockRetryStrategy = mock(RetryStrategy.class);
         mockCircuitBreaker = mock(CircuitBreaker.class);
 
-        jobQueueManagerAPI = new JobQueueManagerAPIImpl(mockJobQueue, 1, mockCircuitBreaker);
+        jobQueueManagerAPI = new JobQueueManagerAPIImpl(
+                mockJobQueue, new JobQueueConfig(1), mockCircuitBreaker, mockRetryStrategy
+        );
         jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
         jobQueueManagerAPI.setRetryStrategy("testQueue", mockRetryStrategy);
     }
@@ -842,7 +844,9 @@ public class JobQueueManagerAPITest {
         CircuitBreaker circuitBreaker = new CircuitBreaker(5, 60000);
 
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
-        jobQueueManagerAPI = new JobQueueManagerAPIImpl(mockJobQueue, 1, circuitBreaker);
+        JobQueueManagerAPI jobQueueManagerAPI = new JobQueueManagerAPIImpl(
+                mockJobQueue, new JobQueueConfig(1), circuitBreaker, mockRetryStrategy
+        );
         jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
 
         // Start the job queue
@@ -921,7 +925,9 @@ public class JobQueueManagerAPITest {
                 1000); // Short reset timeout for testing
 
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
-        jobQueueManagerAPI = new JobQueueManagerAPIImpl(mockJobQueue, 1, circuitBreaker);
+        JobQueueManagerAPI jobQueueManagerAPI = new JobQueueManagerAPIImpl(
+                mockJobQueue, new JobQueueConfig(1), circuitBreaker, mockRetryStrategy
+        );
         jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
 
         // Start the job queue
@@ -978,7 +984,9 @@ public class JobQueueManagerAPITest {
         CircuitBreaker circuitBreaker = new CircuitBreaker(5, 60000);
 
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
-        jobQueueManagerAPI = new JobQueueManagerAPIImpl(mockJobQueue, 1, circuitBreaker);
+        JobQueueManagerAPI jobQueueManagerAPI = new JobQueueManagerAPIImpl(
+                mockJobQueue, new JobQueueConfig(1), circuitBreaker, mockRetryStrategy
+        );
         jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
 
         // Start the job queue

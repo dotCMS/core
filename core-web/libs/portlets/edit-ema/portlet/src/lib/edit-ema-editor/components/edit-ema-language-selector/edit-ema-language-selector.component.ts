@@ -12,17 +12,13 @@ import {
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { Listbox, ListboxModule } from 'primeng/listbox';
+import { Listbox, ListboxChangeEvent, ListboxModule } from 'primeng/listbox';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { map } from 'rxjs/operators';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
-
-interface DotLanguageWithLabel extends DotLanguage {
-    label: string;
-}
 
 @Component({
     selector: 'dot-edit-ema-language-selector',
@@ -58,23 +54,21 @@ export class EditEmaLanguageSelectorComponent implements AfterViewInit, OnChange
     ngOnChanges(): void {
         // To select the correct language when the page is reloaded with no queryParams
         if (this.listbox) {
-            this.listbox.value = this.selectedLanguage;
-            this.listbox.cd.detectChanges();
+            this.listbox.writeValue(this.selectedLanguage);
         }
     }
 
     ngAfterViewInit(): void {
-        this.listbox.value = this.selectedLanguage;
-        this.listbox.cd.detectChanges();
+        this.listbox.writeValue(this.selectedLanguage);
     }
 
     /**
      * Handle the change of the language
      *
-     * @param {{ event: Event; value:DotLanguageWithLabel }} { value }
+     * @param {ListboxChangeEvent} { value }
      * @memberof EmaLanguageSelectorComponent
      */
-    onChange({ value }: { event: Event; value: DotLanguageWithLabel }) {
+    onChange({ value }: ListboxChangeEvent) {
         this.selected.emit(value.id);
     }
 

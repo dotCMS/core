@@ -7,10 +7,24 @@ import { DotCMSPageContext } from '../../models';
 import { combineClasses, getPositionStyleClasses } from '../../utils/utils';
 import { Container } from '../Container/Container';
 
+/**
+ * Props for Column component to render a column with its containers.
+ *
+ * @export
+ * @interface ColumnProps
+ */
 export interface ColumnProps {
     readonly column: DotCMSPageContext['pageAsset']['layout']['body']['rows'][0]['columns'][0];
 }
 
+/**
+ * Renders a Column with its containers using information provided by dotCMS Page API.
+ *
+ * @see {@link https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas}
+ * @export
+ * @param {ColumnProps} { column }
+ * @return {JSX.Element} Rendered column with containers
+ */
 export function Column({ column }: ColumnProps) {
     const { isInsideEditor } = useContext(PageContext) as DotCMSPageContext;
 

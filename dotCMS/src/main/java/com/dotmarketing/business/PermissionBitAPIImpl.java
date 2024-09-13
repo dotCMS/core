@@ -655,12 +655,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 */
 	@WrapInTransaction
 	private void save(Permission permission, Permissionable permissionable, User user, boolean respectFrontendRoles, boolean createEvent) throws DotDataException, DotSecurityException {
-		if(!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
 
-			if(!checkIfContentletTypeHasEditPermissions(permissionable, user)) {
-				throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
-			}
-		}
+
+		checkCopyPermissions(permissionable, user);
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
@@ -698,6 +695,18 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			}
 		}
 
+	}
+
+	private void checkCopyPermissions(Permissionable permissionable, User user) throws DotDataException, DotSecurityException {
+
+		if (!isCopy(permissionable)){
+			if (!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
+
+				if (!checkIfContentletTypeHasEditPermissions(permissionable, user)) {
+					throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
+				}
+			}
+		}
 	}
 
 	/**
@@ -1933,6 +1942,15 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 
 		return false;
+	}
+
+	public boolean isCopy(Permissionable permissionable){
+		boolean isCopy = false;
+		if (permissionable instanceof Contentlet){
+			Contentlet contentlet = (Contentlet) permissionable;
+			isCopy = contentlet.getBoolProperty(Contentlet.IS_COPY);
+		}
+		return isCopy;
 	}
 
 }

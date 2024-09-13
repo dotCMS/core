@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "b1ca6e0e-063b-459c-b00f-45b06cad54a3",
+		"_postman_id": "384ec7bc-86c4-4916-866d-bf6a13330f5a",
 		"name": "Monitor Resource",
-		"description": "@Path(\"/v1/{a:system-status|probes}\")  \n  \nIt gives a report on dotCMS and subsystems status",
+		"description": "@Path(\"/v1/{a:system-status|probes}\")\n\nThis REST Endpoint provides a set of probes to check the status of the different subsystems used by dotCMS. This tool is crucial for Engineering Teams to check that dotCMS is running properly.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "3028555"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -22,17 +22,11 @@
 							"      backendHealthy: {",
 							"        type: \"boolean\"",
 							"      },",
-							"      clusterID: {",
-							"        type: \"string\"",
-							"      },",
 							"      dotCMSHealthy: {",
 							"        type: \"boolean\"",
 							"      },",
 							"      frontendHealthy: {",
 							"        type: \"boolean\"",
-							"      },",
-							"      serverID: {",
-							"        type: \"string\"",
 							"      },",
 							"      subsystems: {",
 							"        type: \"object\",",
@@ -46,35 +40,33 @@
 							"          dbSelectHealthy: {",
 							"            type: \"boolean\"",
 							"          },",
-							"          indexLiveHealthy: {",
-							"            type: \"boolean\"",
-							"          },",
-							"          indexWorkingHealthy: {",
+							"          esHealthy: {",
 							"            type: \"boolean\"",
 							"          },",
 							"          localFSHealthy: {",
 							"            type: \"boolean\"",
 							"          }",
 							"        },",
-							"        required: [\"assetFSHealthy\", \"cacheHealthy\", \"dbSelectHealthy\", \"indexLiveHealthy\", \"indexWorkingHealthy\", \"localFSHealthy\"]",
+							"        required: [\"assetFSHealthy\", \"cacheHealthy\", \"dbSelectHealthy\", \"esHealthy\", \"localFSHealthy\"]",
 							"      }",
 							"    },",
 							"    required: [\"backendHealthy\", \"dotCMSHealthy\", \"frontendHealthy\", \"subsystems\"]",
 							"  };",
 							"",
 							"  var response = pm.response.json();",
-							"  pm.expect(tv4.validate(response, schema)).to.be.true;",
+							"  pm.expect(tv4.validate(response, schema)).to.be.equal(true, 'At least one status check value is not the expected one, or the JSON response has changed');",
 							"});",
 							"",
 							"// Validate all the boolean fields looks ok (true)",
 							"pm.test(\"Boolean fields in the response are true\", function () {",
 							"  var responseJSON = pm.response.json();",
-							"  var booleanFields = [\"backendHealthy\", \"dotCMSHealthy\", \"frontendHealthy\", \"subsystems.assetFSHealthy\", \"subsystems.cacheHealthy\", \"subsystems.dbSelectHealthy\", \"subsystems.indexLiveHealthy\", \"subsystems.indexWorkingHealthy\", \"subsystems.localFSHealthy\"];",
+							"  var booleanFields = [\"backendHealthy\", \"dotCMSHealthy\", \"frontendHealthy\", \"subsystems.assetFSHealthy\", \"subsystems.cacheHealthy\", \"subsystems.dbSelectHealthy\", \"subsystems.esHealthy\", \"subsystems.localFSHealthy\"];",
 							"",
 							"  booleanFields.forEach(function(field) {",
 							"    pm.expect(responseJSON).to.have.nested.property(field, true);",
 							"  });",
-							"});"
+							"});",
+							""
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -85,7 +77,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/system-status?extended=true",
+					"raw": "{{serverURL}}/api/v1/system-status",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -93,15 +85,9 @@
 						"api",
 						"v1",
 						"system-status"
-					],
-					"query": [
-						{
-							"key": "extended",
-							"value": "true"
-						}
 					]
 				},
-				"description": "# System Status API\n\nThis API endpoint makes an HTTP GET request to retrieve the system status with extended details.\n\n## Request\n\n- Method: GET\n    \n- Endpoint: `{{serverURL}}/api/v1/system-status`\n    \n- Query Parameter:\n    - `extended`: Set to `true` to retrieve extended system status information\n        \n\n## Response\n\n- Status: 200 OK\n    \n- Content-Type: application/json\n    \n- Body:\n    \n    ``` json\n    {\n        \"backendHealthy\": true,\n        \"clusterID\": \"\",\n        \"dotCMSHealthy\": true,\n        \"frontendHealthy\": true,\n        \"serverID\": \"\",\n        \"subsystems\": {\n            \"assetFSHealthy\": true,\n            \"cacheHealthy\": true,\n            \"dbSelectHealthy\": true,\n            \"indexLiveHealthy\": true,\n            \"indexWorkingHealthy\": true,\n            \"localFSHealthy\": true\n        }\n    }\n    \n     ```\n    \n      \n    The response contains detailed information about the health status of different subsystems within the system."
+				"description": "# System Status API\n\nThis API endpoint makes an HTTP GET request to retrieve the system status with extended details.\n\n## Request\n\n- Method: GET\n    \n- Endpoint: `{{serverURL}}/api/v1/system-status`\n    \n\n## Response\n\n- Status: 200 OK\n    \n- Content-Type: application/json\n    \n\n``` json\n{\n    \"backendHealthy\": true,\n    \"dotCMSHealthy\": true,\n    \"frontendHealthy\": true,\n    \"subsystems\": {\n        \"assetFSHealthy\": true,\n        \"cacheHealthy\": true,\n        \"dbSelectHealthy\": true,\n        \"esHealthy\": true,\n        \"localFSHealthy\": true\n    }\n}\n\n ```\n\nThe response contains detailed information about the health status of different subsystems within the system."
 			},
 			"response": []
 		},
@@ -112,11 +98,14 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"// Validate a JSONError",
-							"pm.test(\"Response is null or empty\", function () {",
-							"    pm.expect(pm.response.text()).to.be.oneOf([null, \"\", \"{}\"]);",
-							"});",
+							"pm.test(\"Response must include the expected JSON\", function () {",
+							"    var responseJSON = pm.response.json();",
+							"  var booleanFields = [\"backendHealthy\", \"dotCMSHealthy\", \"frontendHealthy\", \"subsystems.assetFSHealthy\", \"subsystems.cacheHealthy\", \"subsystems.dbSelectHealthy\", \"subsystems.esHealthy\", \"subsystems.localFSHealthy\"];",
 							"",
+							"  booleanFields.forEach(function(field) {",
+							"    pm.expect(responseJSON).to.have.nested.property(field, true, \"The returned '\" + field + \"' status check must be 'true'\");",
+							"  });",
+							"});",
 							""
 						],
 						"type": "text/javascript",
@@ -138,7 +127,7 @@
 						"probes"
 					]
 				},
-				"description": "# Get Probes\n\nThis endpoint retrieves a list of probes from the server.\n\n## Request\n\n- Method: GET\n    \n- URL: `{{serverURL}}/api/v1/probes`\n    \n\n## Response\n\nIt will be empty is you dont send the <strong >extended</b> as<code >parameter</code>"
+				"description": "# Get Probes\n\nThis endpoint retrieves a list of probes from the server.\n\n## Request\n\n- Method: GET\n    \n- URL: `{{serverURL}}/api/v1/probes`\n    \n\n## Response\n\n- Status: 200 OK\n    \n- Content-Type: application/json\n    \n\n``` json\n{\n    \"backendHealthy\": true,\n    \"dotCMSHealthy\": true,\n    \"frontendHealthy\": true,\n    \"subsystems\": {\n        \"assetFSHealthy\": true,\n        \"cacheHealthy\": true,\n        \"dbSelectHealthy\": true,\n        \"esHealthy\": true,\n        \"localFSHealthy\": true\n    }\n}\n\n ```\n\nThe response contains detailed information about the health status of different subsystems within the system."
 			},
 			"response": []
 		},
@@ -149,9 +138,13 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"// Validate a JSONError",
-							"pm.test(\"Response is null or empty\", function () {",
-							"    pm.expect(pm.response.text()).to.be.oneOf([null, \"\", \"{}\"]);",
+							"pm.test(\"Response must include the expected JSON\", function () {",
+							"    var responseJSON = pm.response.json();",
+							"  var booleanFields = [\"backendHealthy\", \"dotCMSHealthy\", \"frontendHealthy\", \"subsystems.assetFSHealthy\", \"subsystems.cacheHealthy\", \"subsystems.dbSelectHealthy\", \"subsystems.esHealthy\", \"subsystems.localFSHealthy\"];",
+							"",
+							"  booleanFields.forEach(function(field) {",
+							"    pm.expect(responseJSON).to.have.nested.property(field, true, \"The returned '\" + field + \"' status check must be 'true'\");",
+							"  });",
 							"});",
 							""
 						],
@@ -175,7 +168,7 @@
 						"ready"
 					]
 				},
-				"description": "This endpoint makes an HTTP GET request to retrieve the readiness status of a probe. The response is in the form of a JSON schema.\n\n## Response\n\nIt will be empty is you dont send the **extended** as`parameter`"
+				"description": "This endpoint makes an HTTP GET request to retrieve the readiness status of a probe. The response is in the form of a JSON schema.\n\n## Response\n\n- Status: 200 OK\n    \n- Content-Type: application/json\n    \n\n``` json\n{\n    \"backendHealthy\": true,\n    \"dotCMSHealthy\": true,\n    \"frontendHealthy\": true,\n    \"subsystems\": {\n        \"assetFSHealthy\": true,\n        \"cacheHealthy\": true,\n        \"dbSelectHealthy\": true,\n        \"esHealthy\": true,\n        \"localFSHealthy\": true\n    }\n}\n\n ```\n\nThe response contains detailed information about the health status of different subsystems within the system."
 			},
 			"response": []
 		},
@@ -187,8 +180,8 @@
 					"script": {
 						"exec": [
 							"// Validate a JSONError",
-							"pm.test(\"Response is null or empty\", function () {",
-							"    pm.expect(pm.response.text()).to.be.oneOf([null, \"\", \"{}\"]);",
+							"pm.test(\"Response must be null or empty\", function () {",
+							"    pm.expect(pm.response.text()).to.be.oneOf([null, \"\", \"{}\"], \"The Response form this request must be an empty String or JSON object.\");",
 							"});",
 							""
 						],
@@ -212,7 +205,7 @@
 						"alive"
 					]
 				},
-				"description": "This /alive probe is lightweight - it checks if the server is up by requesting a common object from the dotCMS cache layer twice in a row. By the time a request gets here it has already run through the CMSFilter) ."
+				"description": "This /alive probe is lightweight - it checks if the server is up by requesting a common object from the dotCMS cache layer twice in a row. By the time a request gets here it has already run through the CMSFilter) .\n\n## Response\n\n- Status: 200 OK\n    \n- An empty String or JSON Object."
 			},
 			"response": []
 		}
@@ -234,9 +227,10 @@
 				"type": "text/javascript",
 				"packages": {},
 				"exec": [
-					"pm.test(\"Response code is 200\", function () {",
+					"pm.test(\"HTTP Status code must be 200\", function () {",
 					"    pm.response.to.have.status(200);",
-					"});"
+					"});",
+					""
 				]
 			}
 		}

@@ -1,26 +1,23 @@
 import {
   Component,
-  InjectionToken,
   OnInit,
   inject,
   signal,
 } from '@angular/core';
-
-import { GenericContentlet } from '..';
-import { ContentletsComponent } from '../contentlets/contentlets.component';
 import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
 import { DotCmsClient } from '@dotcms/client';
-import { DOTCMS_CLIENT_TOKEN } from '../../app.config';
-
+import { ContentletsWrapperComponent } from '../../../../shared/contentlets-wrapper/contentlets.component';
+import { DOTCMS_CLIENT_TOKEN } from '../../../../app.config';
+import { GenericContentlet } from '../..';
 
 @Component({
   selector: 'app-blogs',
   standalone: true,
-  imports: [ContentletsComponent],
+  imports: [ContentletsWrapperComponent],
   template: ` <div class="flex flex-col">
     <h2 class="mb-7 text-2xl font-bold text-black">Latest Blog Posts</h2>
     @if (!!blogs().length) {
-    <app-contentlets [contentlets]="blogs()" />
+    <app-contentlets-wrapper [contentlets]="blogs()" />
     }
   </div>`,
 })
