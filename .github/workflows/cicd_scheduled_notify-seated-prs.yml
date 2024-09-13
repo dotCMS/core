@@ -3,6 +3,12 @@ on:
   schedule:
     - cron: '0 10 * * *'
   workflow_dispatch:
+    inputs:
+      current_user:
+        description: 'Limit execution of this workflow to the current user'
+        type: string
+        required: false
+        default: U0125JCDSSE
 env:
   PR_DAY_THRESHOLD: 3
   DRAFT_PR_DAY_THRESHOLD: 5
@@ -20,6 +26,7 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
       - name: Filter execution
+        id: filter-execution
         uses: actions/github-script@v7
         with:
           result-encoding: string
@@ -28,11 +35,13 @@ jobs:
             console.log(new Date());
             if (day === 0 || day === 6) {
               console.log('It\'s (happy) weekend, not sending any notifications');
-              process.exit(1);
+              process.exit(0);
             }
+            
+            core.setOutput('continue', 'true');
       - id: fetch-seated-prs
         name: Fetch Seated PRs
-        if: success()
+        if: success() && steps.filter-execution.outputs.continue == 'true'
         uses: actions/github-script@v7
         with:
           result-encoding: string
@@ -146,23 +155,25 @@ jobs:
         with:
           result-encoding: string
           script: |
+            const member = '${{ matrix.member }}';
             const urlMapper = (pr) => `- ${pr.url}`;
-            
             const prDayThreshold = ${{ env.PR_DAY_THRESHOLD }};
             const draftPrDayThreshold = ${{ env.DRAFT_PR_DAY_THRESHOLD }};
             const seatedPrs = ${{ needs.resolve-seated-prs.outputs.seated_prs }}
+            const mappings = ${{ needs.slack-channel-resolver.outputs.mappings_json }};
+      
+            const foundMapping = mappings.find(mapping => mapping.slack_id === member)
+            if (!foundMapping) {
+              core.warning(`Slack user Id [${member}] cannot be found, exiting`);
+              process.exit(0);
+            }
+      
             const members = ${{ needs.resolve-seated-prs.outputs.members_json }}
             const channels = ${{ needs.slack-channel-resolver.outputs.channel_ids }} 
             console.log(JSON.stringify(members, null, 2));
             console.log(JSON.stringify(channels, null, 2));
             
-            const idx = channels.findIndex(channel => channel === '${{ matrix.member }}');
-            if (idx === -1) {
-              console.log('Could not find channel [${{ matrix.member }}], skipping this');
-              process.exit(2);
-            }
-            
-            const login = members[idx];
+            const login = foundMapping.github_user;
             const userPrs = seatedPrs.find(pr => pr.login === login);
             const prs = userPrs.prs.filter(pr => !pr.draft).map(urlMapper);
             const draftPrs = userPrs.prs.filter(pr => pr.draft).map(urlMapper);
@@ -183,14 +194,17 @@ jobs:
             
             core.setOutput('message', message);
       - name: Notify member
-        if: success()
+        if: success() && steps.build-message.outputs.message != ''
         shell: bash
         run: |
           channel=${{ matrix.member }}
-
-          curl -X POST \
-            -H "Content-type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
-            -d "{ \"channel\":\"${channel}\",\"text\":\"${{ steps.build-message.outputs.message }}\"}" \
-            -s \
-            https://slack.com/api/chat.postMessage
+          
+          echo "Sending notification to ${channel}"
+          if [[ -x '${{ inputs.current_user }}' || "${channel}" == '${{ inputs.current_user }}' ]]; then
+            curl -X POST \
+              -H "Content-type: application/json" \
+              -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
+              -d "{ \"channel\":\"${channel}\",\"text\":\"${{ steps.build-message.outputs.message }}\" }" \
+              -s \
+              https://slack.com/api/chat.postMessage
+          fi
