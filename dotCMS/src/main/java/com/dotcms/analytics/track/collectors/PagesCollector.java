@@ -1,10 +1,10 @@
 package com.dotcms.analytics.track.collectors;
 
+import com.dotcms.analytics.Util;
 import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
 import com.dotmarketing.cms.urlmap.URLMapInfo;
 import com.dotmarketing.cms.urlmap.UrlMapContext;
@@ -12,7 +12,6 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import io.vavr.control.Try;
 
@@ -20,7 +19,6 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.dotcms.exception.ExceptionUtil.getErrorMessage;
 import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 
 /**
@@ -32,18 +30,16 @@ public class PagesCollector implements Collector {
     private final HTMLPageAssetAPI pageAPI;
     private final HostAPI hostAPI;
     private final URLMapAPIImpl urlMapAPI;
-    private final IdentifierAPI identifierAPI;
 
     public PagesCollector() {
-        this(APILocator.getHTMLPageAssetAPI(), APILocator.getHostAPI(), APILocator.getURLMapAPI(), APILocator.getIdentifierAPI());
+        this(APILocator.getHTMLPageAssetAPI(), APILocator.getHostAPI(), APILocator.getURLMapAPI());
     }
 
     public PagesCollector(final HTMLPageAssetAPI pageAPI,
-                          final HostAPI hostAPI, URLMapAPIImpl urlMapAPI, IdentifierAPI identifierAPI) {
+                          final HostAPI hostAPI, final URLMapAPIImpl urlMapAPI) {
         this.pageAPI = pageAPI;
         this.hostAPI = hostAPI;
         this.urlMapAPI = urlMapAPI;
-        this.identifierAPI = identifierAPI;
     }
 
     @Override
@@ -70,7 +66,7 @@ public class PagesCollector implements Collector {
             final Host site = Try.of(()->this.hostAPI.find(siteId, APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES)).get();
             final UrlMapContext urlMapContext = new UrlMapContext(
                     pageMode, languageId, uri, site, APILocator.systemUser());
-            final boolean isUrlMap = this.isUrlMap(urlMapContext);
+            final boolean isUrlMap = Util.isUrlMap(urlMapContext);
             if (isUrlMap) {
                 final Optional<URLMapInfo> urlMappedContent =
                         Try.of(() -> this.urlMapAPI.processURLMap(urlMapContext)).get();
@@ -101,24 +97,6 @@ public class PagesCollector implements Collector {
         collectorPayloadBean.put("site", siteId);
 
         return collectionCollectorPayloadBean;
-    }
-
-    /**
-     * Based on the specified URL Map Context, determines whether a given incoming URL maps to a URL
-     * Mapped content or not.
-     *
-     * @param pageMode   The {@link PageMode} used to display/render an HTML Page.
-     * @param languageId The language ID used to display an HTML Page.
-     * @param uri        The URI of the incoming request.
-     * @param site       The {@link Host} where the HTML Page lives.
-     *
-     * @return If the URL maps to URL Mapped content, returns {@code true}.
-     */
-    private boolean isUrlMap(final UrlMapContext urlMapContext) {
-        return Try.of(() -> this.urlMapAPI.isUrlPattern(urlMapContext))
-                .onFailure(e -> Logger.error(this, String.format("Failed to check for URL Mapped content for page '%s': %s",
-                        urlMapContext.getUri(), getErrorMessage(e)), e))
-                .getOrElse(false);
     }
 
     @Override
