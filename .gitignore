@@ -179,3 +179,10 @@ dotCMS/dependencies.gradle
 !/examples/nextjs/.npmrc
 
 .nx/
+
+# Playwright
+**/test-results/
+**/test-output/
+**/playwright-report/
+**/playwright/.cache
+**/.playwright/

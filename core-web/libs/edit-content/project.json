@@ -22,9 +22,8 @@
             "outputs": ["{workspaceRoot}/playwright/{projectRoot}"],
             "options": {
                 "config": "libs/edit-content/playwright.config.ts",
-                "ui": false,
-                "skipInstall": true,
-                "output": "dist/libs/edit-content"
+                "ui": true,
+                "skipInstall": true
             }
         }
     },
