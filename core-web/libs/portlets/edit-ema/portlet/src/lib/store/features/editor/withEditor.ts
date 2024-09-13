@@ -188,6 +188,11 @@ export function withEditor() {
         }),
         withMethods((store) => {
             return {
+                setCustomComponents(customComponents: any) {
+                    patchState(store, {
+                        customComponents
+                    });
+                },
                 setIsClientReady(value: boolean) {
                     patchState(store, {
                         isClientReady: value

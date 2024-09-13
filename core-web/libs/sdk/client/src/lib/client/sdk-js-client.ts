@@ -3,6 +3,7 @@ import { ErrorMessages } from './models';
 import { DotcmsClientListener } from './models/types';
 
 import { isInsideEditor } from '../editor/sdk-editor';
+import { CUSTOMER_ACTIONS, postMessageToEditor } from '../editor/models/client.model';
 
 export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
 
@@ -194,6 +195,13 @@ export class DotCmsClient {
 
     dotcmsUrl?: string;
     content: Content;
+
+    static registerComponents(config: any): void {
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.REGISTER_COMPONENTS,
+            payload: config
+        });
+    }
 
     constructor(
         config: ClientConfig = { dotcmsUrl: '', authToken: '', requestOptions: {}, siteId: '' }

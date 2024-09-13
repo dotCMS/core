@@ -6,6 +6,11 @@
  */
 export enum CUSTOMER_ACTIONS {
     /**
+     * Tell the dotcms editor to register components
+     */
+    REGISTER_COMPONENTS = 'register-components',
+
+    /**
      * Tell the dotcms editor that page change
      */
     NAVIGATION_UPDATE = 'set-url',

@@ -44,6 +44,55 @@ const componentsMap = {
 };
 
 export function MyPage({ pageAsset, nav }) {
+    DotCmsClient.registerComponents({
+        Activity: [
+            {
+                name: "Show Image",
+                type: "select",
+                id: "showImage",
+                options: [
+                    { name: "Yes", value: true },
+                    { name: "No", value: false }
+                ]
+            }
+        ],
+        Banner: [
+            {
+              name: "Font Size",
+              type: "select",
+              id: "fontSize",
+              options: [
+                { name: "Default", value: "text-base" },
+                { name: "Small", value: "text-2xl" },
+                { name: "Medium", value: "text-4xl" },
+                { name: "Large", value: "text-6xl" },
+              ],
+            },
+            {
+                name: "Color",
+                type: "select",
+                id: "color",
+                options: [
+                    { name: "Red", value: "text-red-500" },
+                    { name: "Blue", value: "text-blue-500" },
+                    { name: "Green", value: "text-green-500" },
+                    { name: "White", value: "text-white" },
+                    { name: "Black", value: "text-black" },
+                ]
+            },
+            {
+                name: "Mode",
+                type: "select",
+                id: "mode",
+                options: [
+                    { name: "Horizontal", value: "horizontal" },
+                    { name: "Vertical", value: "vertical" }
+                ]
+            }
+        ]
+    })
+    
+
     const { replace } = useRouter();
     const pathname = usePathname();
 
@@ -63,7 +112,7 @@ export function MyPage({ pageAsset, nav }) {
     pageAsset = usePageAsset(pageAsset);
 
     return (
-        <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
+        <div className="flex flex-col gap-6 min-h-screen bg-lime-50">
             {pageAsset.layout.header && (
                 <Header>
                     <Navigation items={nav} />

@@ -1019,6 +1019,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.uveStore.setClientConfiguration({ query, params });
                 this.uveStore.reload();
             },
+            [CUSTOMER_ACTIONS.REGISTER_COMPONENTS]: (payload: any) => {
+                console.log('registerComponents:', payload);
+                this.uveStore.setCustomComponents(payload);
+            },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }

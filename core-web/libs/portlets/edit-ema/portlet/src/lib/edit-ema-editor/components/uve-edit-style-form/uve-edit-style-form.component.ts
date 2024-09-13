@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, input, signal, Output, EventEmitter } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, signal, Output, EventEmitter, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { DropdownModule } from 'primeng/dropdown';
 import { ContentletPayload } from '../../../shared/models';
 import { debounceTime } from 'rxjs/operators';
+import { UVEStore } from '../../../store/dot-uve.store';
 
 interface FieldOption {
   name: string;
@@ -27,49 +28,29 @@ interface Field {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UveEditStyleFormComponent {
+    store = inject(UVEStore);
+    customComponents = this.store.customComponents();
+
     contentlet = input.required<ContentletPayload>();
 
     @Output() formValueChange = new EventEmitter<any>();
 
-    fields = signal<Field[]>([
-        {
-          name: "Font Size",
-          type: "select",
-          id: "fontSize",
-          options: [
-            { name: "Small", value: "small" },
-            { name: "Medium", value: "medium" },
-            { name: "Large", value: "large" },
-          ],
-        },
-        {
-            name: "Color",
-            type: "select",
-            id: "color",
-            options: [
-                { name: "Red", value: "red" },
-                { name: "Blue", value: "blue" },
-                { name: "Green", value: "green" },
-                { name: "White", value: "white" },
-            ]
-        },
-        {
-            name: "Mode",
-            type: "select",
-            id: "mode",
-            options: [
-                { name: "Horizontal", value: "horizontal" },
-                { name: "Vertical", value: "vertical" }
-            ]
-        }
-    ]);
+    fields = signal<Field[]>([]);
+
 
     form: FormGroup;
 
     constructor(private fb: FormBuilder) {
         this.form = this.fb.group({});
-        this.initForm();
         this.setupFormValueChanges();
+
+        effect(() => {
+            const contentType = this.contentlet().contentType;
+            this.fields.set(this.customComponents[contentType] || []);
+            this.initForm();
+        }, {
+            allowSignalWrites: true
+        });
     }
 
     private initForm(): void {

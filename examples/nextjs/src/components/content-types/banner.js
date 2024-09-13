@@ -1,30 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { DotEditableText } from "@dotcms/react";
 
 export function Banner(contentlet) {
     const { title, caption, image, link, buttonText, customStyles } = contentlet;
-    console.log(customStyles);
 
-    const color = customStyles?.color === 'white' ? 'text-white' : `text-${customStyles?.color}-500`;
-    const fontSize = customStyles?.fontSize || 'medium';
+    const colorClass = customStyles?.color;
+    const fontSizeClass = customStyles?.fontSize;
     const mode = customStyles?.mode || 'vertical';
 
-    let fontSizeClass;
-
-    switch (fontSize) {
-        case 'small':
-            fontSizeClass = 'text-2xl';
-            break;
-        case 'medium':
-            fontSizeClass = 'text-4xl';
-            break;
-        case 'large':
-            fontSizeClass = 'text-6xl';
-            break;
-        default:
-            fontSizeClass = 'text-base';
-    }
 
     const isHorizontal = mode === 'horizontal';
 
@@ -40,7 +23,7 @@ export function Banner(contentlet) {
                     />
                 )}
             </div>
-            <div className={`${isHorizontal ? 'w-1/2' : 'absolute inset-0'} flex flex-col justify-center items-center p-4 text-center ${color}`}>
+            <div className={`${isHorizontal ? 'w-1/2' : 'absolute inset-0'} flex flex-col justify-center items-center p-4 text-center ${colorClass}`}>
                 <h2 className={`mb-2 font-bold ${fontSizeClass} ${isHorizontal ? '':'text-shadow'}`}>
                     {title}
                 </h2>

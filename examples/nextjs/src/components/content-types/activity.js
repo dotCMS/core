@@ -1,10 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 
-function Activity({ title, description, image, urlTitle }) {
+function Activity({ title, description, image, urlTitle, customStyles }) {
+    const showImage = customStyles?.showImage;
+    console.log(showImage);
+
     return (
-        <article className="p-4 overflow-hidden bg-white rounded shadow-lg">
-            {image && (
+        <article className="overflow-hidden p-4 bg-white rounded shadow-lg">
+            {(image && showImage) && (
                 <Image
                     className="w-full"
                     src={image?.idPath ?? image}
