@@ -3,6 +3,7 @@ package com.dotcms.jobs.business.processor;
 import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.JobProcessingException;
 import com.dotcms.jobs.business.job.Job;
+import java.util.Map;
 
 /**
  * Interface for processing jobs. Implementations of this interface should define how to process,
@@ -35,13 +36,22 @@ public interface JobProcessor {
     void cancel(Job job) throws JobCancellationException;
 
     /**
-     * Provides a progress tracker for the given job. The default implementation returns a new
-     * instance of DefaultProgressTracker.
+     * Returns metadata about the job execution. This metadata can be used to provide additional
+     * information about the job's execution, such as statistics or other details useful for the
+     * caller.
      *
-     * @param job The job for which to provide a progress tracker.
-     * @return A ProgressTracker instance for the given job.
+     * @param job The job for which to provide metadata.
+     * @return A map containing metadata about the job execution.
      */
-    default ProgressTracker progressTracker(Job job) {
+    Map<String, Object> getResultMetadata(Job job);
+
+    /**
+     * Provides a progress tracker. The default implementation returns a new instance of
+     * DefaultProgressTracker.
+     *
+     * @return A ProgressTracker instance
+     */
+    default ProgressTracker progressTracker() {
         return new DefaultProgressTracker();
     }
 

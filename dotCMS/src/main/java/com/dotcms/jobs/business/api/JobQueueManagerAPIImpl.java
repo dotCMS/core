@@ -13,6 +13,7 @@ import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.ProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
@@ -274,12 +275,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                     Logger.info(this, "Cancelling job " + jobId);
 
                     processor.cancel(job);
-
-                    Job cancelledJob = job.markAsCancelled();
-                    jobQueue.updateJobStatus(cancelledJob);
-                    jobCancelledEvent.fire(
-                            new JobCancelledEvent(cancelledJob, LocalDateTime.now())
-                    );
+                    handleJobCancellation(job, processor);
                 } catch (Exception e) {
                     final var error = new JobCancellationException(jobId, e.getMessage());
                     Logger.error(JobQueueManagerAPIImpl.class, error);
@@ -508,7 +504,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
             try (final CloseableScheduledExecutor closeableExecutor = new CloseableScheduledExecutor()) {
 
-                final ProgressTracker progressTracker = processor.progressTracker(runningJob);
+                final ProgressTracker progressTracker = processor.progressTracker();
 
                 // Start a separate thread to periodically update and persist progress
                 ScheduledExecutorService progressUpdater = closeableExecutor.getExecutorService();
@@ -523,43 +519,98 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                     updateJobProgress(runningJob, progressTracker);
                 }
 
-                Job completedJob = runningJob.markAsCompleted();
-                jobQueue.updateJobStatus(completedJob);
-                jobCompletedEvent.fire(new JobCompletedEvent(completedJob, LocalDateTime.now()));
+                handleJobCompletion(runningJob, processor);
             } catch (Exception e) {
 
                 Logger.error(this,
-                        "Error processing job " + runningJob.id() + ": " + e.getMessage(), e);
-                final var errorDetail = ErrorDetail.builder()
-                        .message("Job processing failed")
-                        .exception(e)
-                        .exceptionClass(e.getClass().getName())
-                        .processingStage("Job execution")
-                        .timestamp(LocalDateTime.now())
-                        .build();
-                handleJobFailure(runningJob, errorDetail);
+                        "Error processing job " + runningJob.id() + ": " + e.getMessage(), e
+                );
+                handleJobFailure(
+                        runningJob, processor, e,
+                        "Job processing failed", "Job execution"
+                );
             }
         } else {
 
             Logger.error(this, "No processor found for queue: " + job.queueName());
-            final var errorDetail = ErrorDetail.builder()
-                    .message("No processor found for queue")
-                    .processingStage("Processor selection")
-                    .timestamp(LocalDateTime.now())
-                    .build();
-            handleJobFailure(job, errorDetail);
+            handleJobFailure(job, null, new ProcessorNotFoundException(job.queueName()),
+                    "No processor found for queue", "Processor selection"
+            );
         }
+    }
+
+    /**
+     * Handles the completion of a job.
+     *
+     * @param job       The job that completed.
+     * @param processor The processor that handled the job.
+     */
+    private void handleJobCompletion(final Job job, final JobProcessor processor) {
+
+        final var resultMetadata = processor.getResultMetadata(job);
+
+        JobResult jobResult = null;
+        if (resultMetadata != null && !resultMetadata.isEmpty()) {
+            jobResult = JobResult.builder().metadata(resultMetadata).build();
+        }
+        final Job completedJob = job.markAsCompleted(jobResult);
+
+        jobQueue.updateJobStatus(completedJob);
+        jobCompletedEvent.fire(new JobCompletedEvent(completedJob, LocalDateTime.now()));
+    }
+
+    /**
+     * Handles the cancellation of a job.
+     *
+     * @param job       The job that was cancelled.
+     * @param processor The processor that handled the job.
+     */
+    private void handleJobCancellation(final Job job, final JobProcessor processor) {
+
+        final var resultMetadata = processor.getResultMetadata(job);
+
+        JobResult jobResult = null;
+        if (resultMetadata != null && !resultMetadata.isEmpty()) {
+            jobResult = JobResult.builder().metadata(resultMetadata).build();
+        }
+        Job cancelledJob = job.markAsCancelled(jobResult);
+
+        jobQueue.updateJobStatus(cancelledJob);
+        jobCancelledEvent.fire(
+                new JobCancelledEvent(cancelledJob, LocalDateTime.now())
+        );
     }
 
     /**
      * Handles the failure of a job
      *
-     * @param job         The job that failed.
-     * @param errorDetail The details of the error that caused the failure.
+     * @param job             The job that failed.
+     * @param processor       The processor that handled the job.
+     * @param exception       The exception that caused the failure.
+     * @param errorMessage    The error message to include in the job result.
+     * @param processingStage The stage of processing where the failure occurred.
      */
-    private void handleJobFailure(final Job job, final ErrorDetail errorDetail) {
+    private void handleJobFailure(final Job job, final JobProcessor processor,
+            final Exception exception, final String errorMessage, final String processingStage) {
 
-        final Job failedJob = job.markAsFailed(errorDetail);
+        final var errorDetail = ErrorDetail.builder()
+                .message(errorMessage)
+                .exception(exception)
+                .exceptionClass(exception.getClass().getName())
+                .processingStage(processingStage)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        JobResult jobResult = JobResult.builder().errorDetail(errorDetail).build();
+
+        if (processor != null) {
+            final var resultMetadata = processor.getResultMetadata(job);
+            if (resultMetadata != null && !resultMetadata.isEmpty()) {
+                jobResult = jobResult.withMetadata(resultMetadata);
+            }
+        }
+
+        final Job failedJob = job.markAsFailed(jobResult);
         jobQueue.updateJobStatus(failedJob);
         jobFailedEvent.fire(new JobFailedEvent(failedJob, LocalDateTime.now()));
 
