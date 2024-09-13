@@ -280,12 +280,12 @@ public class CubeJSQuery {
             return UtilMethods.isSet(array) ? Arrays.asList(array) : Collections.emptyList();
         }
 
-        private Builder dimensions(final Collection<String> dimensions) {
+        public Builder dimensions(final Collection<String> dimensions) {
             this.dimensions = dimensions.toArray(new String[dimensions.size()]);
             return this;
         }
 
-        private Builder measures(final Collection<String> measures) {
+        public Builder measures(final Collection<String> measures) {
             this.measures = measures.toArray(new String[measures.size()]);
             return this;
         }
