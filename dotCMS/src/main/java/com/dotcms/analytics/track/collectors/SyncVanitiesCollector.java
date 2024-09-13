@@ -69,6 +69,7 @@ public class SyncVanitiesCollector implements Collector {
             vanityObject.put("forward_to",
                     collectorPayloadBean.get("vanity_url")!=null?(String)collectorPayloadBean.get("vanity_url"):cachedVanityUrl.forwardTo);
             vanityObject.put("url", uri);
+            vanityObject.put("response", String.valueOf(cachedVanityUrl.response));
         }
 
         collectorPayloadBean.put("object",  vanityObject);
