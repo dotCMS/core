@@ -1,6 +1,6 @@
-@if ($editorOptions()) {
-    <editor
-        [formControlName]="$field().variable"
-        [init]="$editorOptions()"
-        (onInit)="handleEditorInit($event)" />
-}
+<!--@if ($editorOptions()) {-->
+<editor
+    [formControlName]="$field().variable"
+    [init]="$editorConfig()"
+    (onInit)="handleEditorInit($event)" />
+<!--}-->

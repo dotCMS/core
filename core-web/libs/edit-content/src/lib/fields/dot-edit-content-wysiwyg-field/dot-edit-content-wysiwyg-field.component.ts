@@ -43,12 +43,12 @@ export class DotEditContentWYSIWYGFieldComponent {
     /**
      * A variable representing the editor selected by the user.
      */
-    selectedEditor = signal<AvailableEditor>(DEFAULT_EDITOR);
+    $selectedEditor = signal<AvailableEditor>(DEFAULT_EDITOR);
 
     /**
      * A variable representing the currently selected language.
      */
-    selectedLanguage = signal<string>(DEFAULT_MONACO_LANGUAGE);
+    $selectedLanguage = signal<string>(DEFAULT_MONACO_LANGUAGE);
 
     readonly editorTypes = AvailableEditor;
     readonly editorOptions = EditorOptions;

@@ -70,7 +70,7 @@ export class DotWysiwygMonacoComponent implements OnDestroy {
     /**
      * Represents an instance of the Monaco Code Editor.
      */
-    #editor: monaco.editor.IStandaloneCodeEditor;
+    #editor: monaco.editor.IStandaloneCodeEditor = null;
 
     /**
      * A computed property that generates the configuration options for the Monaco editor.

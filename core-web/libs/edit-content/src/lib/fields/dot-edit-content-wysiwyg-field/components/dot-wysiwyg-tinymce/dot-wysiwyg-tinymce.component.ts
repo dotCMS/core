@@ -7,10 +7,9 @@ import {
     computed,
     inject,
     input,
-    OnDestroy,
-    OnInit,
-    signal
+    OnDestroy
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
@@ -43,16 +42,9 @@ import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-pl
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotWysiwygTinymceComponent implements OnInit, OnDestroy {
+export class DotWysiwygTinymceComponent implements OnDestroy {
     #dotWysiwygPluginService = inject(DotWysiwygPluginService);
     #dotWysiwygTinymceService = inject(DotWysiwygTinymceService);
-
-    /**
-     * A reactive signal holding the initial configuration options for the editor.
-     *
-     * Type: signal<RawEditorOptions>
-     */
-    $editorOptions = signal<RawEditorOptions>({});
 
     /**
      * Represents a required DotCMS content type field.
@@ -72,14 +64,34 @@ export class DotWysiwygTinymceComponent implements OnInit, OnDestroy {
     });
 
     /**
+     * Represents a signal that contains the wide configuration properties for the TinyMCE WYSIWYG editor.
+     */
+    $wideConfig = toSignal(this.#dotWysiwygTinymceService.getProps());
+
+    /**
+     * A computed property that generates the configuration object for the TinyMCE editor.
+     * This configuration merges default settings, wide configuration settings,
+     * and custom properties specific to the content field. Additionally, it sets
+     * up the editor with initial plugins using the `dotWysiwygPluginService`.
+     */
+
+    $editorConfig = computed<RawEditorOptions>(() => {
+        return {
+            ...DEFAULT_TINYMCE_CONFIG,
+            ...(this.$wideConfig() || {}),
+            ...this.$customPropsContentField(),
+            setup: (editor) => this.#dotWysiwygPluginService.initializePlugins(editor)
+        };
+    });
+
+    /**
      * The #editor variable represents an instance of the Editor class, which provides functionality for text editing.
      */
-    #editor: Editor;
+    #editor: Editor = null;
 
-    ngOnInit(): void {
-        this.initializeEditor();
-    }
-
+    /**
+     * Handles the initialization of the editor instance.
+     */
     handleEditorInit(event: { editor: Editor }): void {
         this.#editor = event.editor;
     }
@@ -88,17 +100,6 @@ export class DotWysiwygTinymceComponent implements OnInit, OnDestroy {
         if (this.#editor) {
             this.removeEditor();
         }
-    }
-
-    private initializeEditor(): void {
-        this.#dotWysiwygTinymceService.getProps().subscribe((SYSTEM_WIDE_CONFIG) => {
-            this.$editorOptions.set({
-                ...DEFAULT_TINYMCE_CONFIG,
-                ...(SYSTEM_WIDE_CONFIG || {}),
-                ...this.$customPropsContentField(),
-                setup: (editor) => this.#dotWysiwygPluginService.initializePlugins(editor)
-            });
-        });
     }
 
     private removeEditor(): void {

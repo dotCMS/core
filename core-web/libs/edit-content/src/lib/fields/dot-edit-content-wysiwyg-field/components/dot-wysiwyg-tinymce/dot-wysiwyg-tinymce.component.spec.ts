@@ -1,10 +1,13 @@
 import { jest } from '@jest/globals';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
+
+import { DotUploadFileService } from '@dotcms/data-access';
 
 import { DotWysiwygTinymceComponent } from './dot-wysiwyg-tinymce.component';
 import { DotWysiwygTinymceService } from './service/dot-wysiwyg-tinymce.service';
@@ -27,17 +30,18 @@ describe('DotWysiwygTinymceComponent', () => {
                 provide: ControlContainer,
                 useValue: createFormGroupDirectiveMock()
             },
-            {
-                provide: DotWysiwygPluginService,
-                useValue: {
-                    initializePlugins: jest.fn()
-                }
-            },
+            mockProvider(DotWysiwygTinymceService),
+
             mockProvider(DotWysiwygTinymceService, {
                 getProps: jest.fn().mockReturnValue(of(mockSystemWideConfig))
             })
         ],
-        providers: [FormGroupDirective, provideHttpClient(), provideHttpClientTesting()]
+        providers: [
+            FormGroupDirective,
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            mockProvider(DotUploadFileService)
+        ]
     });
 
     beforeEach(() => {
@@ -52,7 +56,7 @@ describe('DotWysiwygTinymceComponent', () => {
         dotWysiwygTinymceService = spectator.inject(DotWysiwygTinymceService, true);
     });
 
-    it('should initialize editor with correct configuration', () => {
+    it('should initialize editor with correct configuration', fakeAsync(() => {
         const expectedConfiguration = {
             ...DEFAULT_TINYMCE_CONFIG,
             ...mockSystemWideConfig,
@@ -60,10 +64,11 @@ describe('DotWysiwygTinymceComponent', () => {
         };
 
         spectator.detectChanges();
-        expect(JSON.stringify(spectator.component.$editorOptions())).toEqual(
+
+        expect(JSON.stringify(spectator.component.$editorConfig())).toEqual(
             JSON.stringify(expectedConfiguration)
         );
-    });
+    }));
 
     it('should parse custom props from field variables', () => {
         const fieldVariables = [
@@ -88,7 +93,7 @@ describe('DotWysiwygTinymceComponent', () => {
 
         spectator.detectChanges();
 
-        expect(JSON.stringify(spectator.component.$editorOptions())).toEqual(
+        expect(JSON.stringify(spectator.component.$editorConfig())).toEqual(
             JSON.stringify({
                 ...DEFAULT_TINYMCE_CONFIG,
                 ...mockSystemWideConfig,
@@ -98,19 +103,42 @@ describe('DotWysiwygTinymceComponent', () => {
         );
     });
 
-    it('should set the system wide props', () => {
+    it('should set the system wide props', fakeAsync(() => {
         const newSystemWideConfig = { systemWideOption: 'new_value' };
 
-        jest.spyOn(dotWysiwygTinymceService, 'getProps').mockReturnValue(of(newSystemWideConfig));
+        const propsSubject = new BehaviorSubject(mockSystemWideConfig);
+
+        dotWysiwygTinymceService.getProps.mockReturnValue(propsSubject);
+
+        spectator = createComponent({
+            props: {
+                field: WYSIWYG_MOCK
+            } as unknown,
+            detectChanges: false
+        });
 
         spectator.detectChanges();
 
-        expect(JSON.stringify(spectator.component.$editorOptions())).toEqual(
+        tick(100);
+
+        expect(JSON.stringify(spectator.component.$editorConfig())).toEqual(
+            JSON.stringify({
+                ...DEFAULT_TINYMCE_CONFIG,
+                ...mockSystemWideConfig,
+                setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
+            })
+        );
+
+        propsSubject.next(newSystemWideConfig);
+        tick(0);
+        spectator.detectChanges();
+
+        expect(JSON.stringify(spectator.component.$editorConfig())).toEqual(
             JSON.stringify({
                 ...DEFAULT_TINYMCE_CONFIG,
                 ...newSystemWideConfig,
                 setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
-    });
+    }));
 });

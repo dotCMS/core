@@ -1,19 +1,27 @@
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator';
+import { HttpMethod } from '@ngneat/spectator';
+import { createHttpFactory, SpectatorHttp } from '@ngneat/spectator/jest';
 
-import { provideHttpClient } from '@angular/common/http';
-
-import { DotWysiwygTinymceService } from './dot-wysiwyg-tinymce.service';
+import { CONFIG_PATH, DotWysiwygTinymceService } from './dot-wysiwyg-tinymce.service';
 
 describe('DotWysiwygTinyceService', () => {
-    let spectator: SpectatorService<DotWysiwygTinymceService>;
-    const createService = createServiceFactory({
-        service: DotWysiwygTinymceService,
-        providers: [provideHttpClient()]
+    let spectator: SpectatorHttp<DotWysiwygTinymceService>;
+    const createHttp = createHttpFactory(DotWysiwygTinymceService);
+
+    beforeEach(() => (spectator = createHttp()));
+
+    it('should do the configuration healthcheck', () => {
+        spectator.service.getProps().subscribe();
+        spectator.expectOne(`${CONFIG_PATH}/tinymceprops`, HttpMethod.GET);
     });
 
-    beforeEach(() => (spectator = createService()));
+    it('should return null if HTTP request fails with status 400', () => {
+        spectator.service.getProps().subscribe((response) => {
+            expect(response).toBeNull();
+        });
 
-    it('should...', () => {
-        expect(spectator.service).toBeTruthy();
+        spectator.expectOne(`${CONFIG_PATH}/tinymceprops`, HttpMethod.GET).flush(null, {
+            status: 400,
+            statusText: 'Bad Request'
+        });
     });
 });

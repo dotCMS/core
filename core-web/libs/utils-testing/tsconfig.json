@@ -14,8 +14,7 @@
         "noImplicitOverride": true,
         "noPropertyAccessFromIndexSignature": true,
         "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true,
-        "types": ["jest"]
+        "noFallthroughCasesInSwitch": true
     },
     "angularCompilerOptions": {
         "enableI18nLegacyMessageIdFormat": false,
