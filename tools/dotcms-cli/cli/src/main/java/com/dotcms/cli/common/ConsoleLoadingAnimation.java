@@ -1,5 +1,7 @@
 package com.dotcms.cli.common;
 
+import jakarta.enterprise.context.control.ActivateRequestContext;
+
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Queue;
@@ -103,6 +105,7 @@ public class ConsoleLoadingAnimation implements Runnable {
      * is interrupted, the thread is stopped and the animation is cleared from the console.
      */
     @Override
+    @ActivateRequestContext
     public void run() {
 
         try {

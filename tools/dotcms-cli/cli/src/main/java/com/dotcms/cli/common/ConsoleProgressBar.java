@@ -1,5 +1,7 @@
 package com.dotcms.cli.common;
 
+import jakarta.enterprise.context.control.ActivateRequestContext;
+
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
@@ -90,6 +92,7 @@ public class ConsoleProgressBar implements Runnable {
      * Runs the progress bar animation until the associated future result is done.
      */
     @Override
+    @ActivateRequestContext
     public void run() {
 
         StringBuilder builder = null;
