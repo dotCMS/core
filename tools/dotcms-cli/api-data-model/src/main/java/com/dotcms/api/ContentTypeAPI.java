@@ -10,6 +10,8 @@ import com.dotcms.model.views.CommonViews.ContentTypeExternalView;
 import com.dotcms.model.views.CommonViews.ContentTypeInternalView;
 import com.fasterxml.jackson.annotation.JsonView;
 import java.util.List;
+
+import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -61,6 +63,7 @@ public interface ContentTypeAPI {
             summary = "Get a specific Content-type for the given id or varName"
     )
     @JsonView(ContentTypeInternalView.class)
+    @ActivateRequestContext
     ResponseEntityView<ContentType> getContentType(@PathParam("idOrVar") final String idOrVar,
             @QueryParam("languageId") final Long languageId,
             @QueryParam("live") final Boolean paramLive);
