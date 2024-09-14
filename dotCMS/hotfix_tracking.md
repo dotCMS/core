@@ -151,3 +151,4 @@ This maintenance release includes the following code fixes:
 144. https://github.com/dotCMS/core/issues/28779 : IndexOutOfBoundsException in sitesearch portlet #28779
 145. https://github.com/dotCMS/core/issues/29256 : Many to One Relationships Not Copied in Copy Site #29256
 146. https://github.com/dotCMS/core/issues/29392 : Saving folder names with special characters leads to incorrect encoding #29392
+147. https://github.com/dotCMS/core/issues/29213 : Copying a contentlet without having Edit Permissions causes copy to have incorrect permissions. #29213

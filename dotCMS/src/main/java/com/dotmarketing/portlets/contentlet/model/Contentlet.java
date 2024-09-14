@@ -121,7 +121,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public static final String SORT_ORDER_KEY = "sortOrder";
 	public static final String DISABLED_WYSIWYG_KEY = "disabledWYSIWYG";
 	public static final String LANGUAGEID_KEY = "languageId";
-	//	End of reserved fields names
+	public static final String IS_COPY = "_is_being_copied";
+    //	End of reserved fields names
 
   private static final long serialVersionUID = 1L;
   public static final String HAS_TITLE_IMAGE_KEY = "hasTitleImage";
