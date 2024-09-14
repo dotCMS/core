@@ -419,7 +419,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final HTMLPageAsset htmlPageAsset = (HTMLPageAsset) (UUIDUtil.isUUID(pageUri) ?
                 this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :
                 getPageByUri(mode, host, pageUri));
-        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_findPageByContext htmlPageAsset: " + htmlPageAsset == null ? "Not Found" : htmlPageAsset.toString());
+        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_findPageByContext htmlPageAsset: " + (htmlPageAsset == null ? "Not Found" : htmlPageAsset.toString()));
 
         return Optional.ofNullable(htmlPageAsset == null ? null : new HTMLPageUrl(htmlPageAsset));
     }

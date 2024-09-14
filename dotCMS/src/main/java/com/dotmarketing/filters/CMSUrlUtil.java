@@ -232,7 +232,7 @@ public class CMSUrlUtil {
 				}
 				Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype Trying to get Contentlet");
 				Contentlet c = APILocator.getContentletAPI().find(cinfo.get().getWorkingInode(), APILocator.systemUser(),false);
-				Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype Contentlet found " + c == null ? "Not Found" : c.toString());
+				Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype Contentlet found " + (c == null ? "Not Found" : c.toString()));
 				return Tuple.of(c.isHTMLPage(), IAmSubType.NONE);
 
 			} catch (Exception e) {
