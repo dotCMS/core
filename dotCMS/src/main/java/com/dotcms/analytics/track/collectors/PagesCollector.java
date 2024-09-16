@@ -48,11 +48,9 @@ public class PagesCollector implements Collector {
     }
 
     @Override
-    public CollectionCollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
-                                        final CollectionCollectorPayloadBean collectionCollectorPayloadBean) {
+    public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
+                                        final CollectorPayloadBean collectorPayloadBean) {
 
-        // we use the same event just collect more information async
-        final CollectorPayloadBean collectorPayloadBean = collectionCollectorPayloadBean.first();
         final String uri = (String)collectorContextMap.get("uri");
         final String host = (String)collectorContextMap.get("host");
         final String siteId = (String)collectorContextMap.get("siteId");
@@ -96,7 +94,7 @@ public class PagesCollector implements Collector {
         collectorPayloadBean.put("host", host);
         collectorPayloadBean.put("site", siteId);
 
-        return collectionCollectorPayloadBean;
+        return collectorPayloadBean;
     }
 
     @Override

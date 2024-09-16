@@ -57,7 +57,7 @@ public class PageDetailCollector implements Collector {
 
     @Override
     public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
-                                                  final CollectorPayloadBean collectorPayloadBean) {
+                                        final CollectorPayloadBean collectorPayloadBean) {
 
 
         final String uri = (String) collectorContextMap.get("uri");
