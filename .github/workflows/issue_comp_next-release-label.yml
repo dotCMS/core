@@ -28,6 +28,7 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
       - name: Validate inputs
+        id: validate-inputs
         uses: actions/github-script@v7
         with:
           result-encoding: string
@@ -35,15 +36,15 @@ jobs:
             let issueNumber;
             const issue = context.payload.issue;
             if (!issue && '${{ inputs.issue_number }}'.trim() === '') {
-              console.log('Issue number is not provided');
-              process.exit(1);
+              core.warn('Issue number is not provided');
+              process.exit(0);
             }
             
             let label = context.payload.label;
             if (!label) {
               if (!'${{ inputs.label }}') {
-                console.log('Label is missing, exiting');
-                process.exit(2);
+                core.warn('Label is missing, exiting');
+                process.exit(0);
               }
               label = '${{ inputs.label }}';
             } else {
@@ -51,14 +52,14 @@ jobs:
             }
             
             if (label !== '${{ env.QA_NOT_NEEDED_LABEL }}') {
-              console.log('Label is not [${{ env.QA_NOT_NEEDED_LABEL }}], exiting');
-              process.exit(3);
+              core.warn('Label is not [${{ env.QA_NOT_NEEDED_LABEL }}], exiting');
+              process.exit(0);
             }
             
             core.setOutput('label', label);
       - name: Add Next Release label
         uses: actions/github-script@v7
-        if: success()
+        if: success() && steps.validate-inputs.outputs.label != ''
         with:
           result-encoding: string
           retries: 3
@@ -81,25 +82,25 @@ jobs:
               }
             
               if (!issue) {
-                console.log('Issue [${{ inputs.issue_number }}] not found');
-                process.exit(4);
+                core.warn('Issue [${{ inputs.issue_number }}] not found');
+                process.exit(0);
               }
             }
             
             console.log(`Issue: ${JSON.stringify(issue, null, 2)}`);
             const issueNumber = issue.number;
             
-            const dropAndLearnText = 'Drop Everything & Learn';
-            if (issue.title.includes(dropAndLearnText)) {
-              console.log(`Issue does have "${dropAndLearnText}" text in title, exiting`);
-              process.exit(5);
+            const dropAndLearnText = 'Drop Everything & Learn'.toLowerCase();
+            if (issue.title.toLowerCase().includes(dropAndLearnText)) {
+              core.warn(`Issue does have "${dropAndLearnText}" text in title, exiting`);
+              process.exit(0);
             }
 
             const typeCicdLabel = 'Type : CI/CD';
             const foundLabel = issue.labels.find(label => label.name === typeCicdLabel);
             if (foundLabel) {
-              console.log(`Issue does have "${typeCicdLabel}" label , exiting`);
-              process.exit(6);
+              core.warn(`Issue does have "${typeCicdLabel}" label , exiting`);
+              process.exit(0);
             }
 
             await github.rest.issues.addLabels({
@@ -111,9 +112,4 @@ jobs:
 
             const updated = await getIssue(issueNumber);
             console.log(`Labels: ${JSON.stringify(updated.labels, null, 2)}`);
-      - name: Finalize
-        if: always()
-        run: |
-          echo 'Finalizing Next release labeling'
-          exit 0
           
