@@ -19,10 +19,9 @@ public class BasicProfileCollector implements Collector {
     }
 
     @Override
-    public CollectionCollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
-                                        final CollectionCollectorPayloadBean collectionCollectorPayloadBean) {
+    public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
+                                        final CollectorPayloadBean collectorPayloadBean) {
 
-        final CollectorPayloadBean collectorPayloadBean = collectionCollectorPayloadBean.first();
         final String requestId = (String)collectorContextMap.get("requestId");
         final Long time = (Long)collectorContextMap.get("time");
         final String clusterId   = (String)collectorContextMap.get("cluster");
@@ -42,11 +41,16 @@ public class BasicProfileCollector implements Collector {
                 FunctionUtils.getOrDefault(Objects.nonNull(serverId), ()->serverId,()->APILocator.getServerAPI().readServerId()));
         collectorPayloadBean.put("sessionId", sessionId);
         collectorPayloadBean.put("sessionNew", sessionNew);
-        return collectionCollectorPayloadBean;
+        return collectorPayloadBean;
     }
 
     @Override
     public boolean isAsync() {
+        return false;
+    }
+
+    @Override
+    public boolean isEventCreator(){
         return false;
     }
 }

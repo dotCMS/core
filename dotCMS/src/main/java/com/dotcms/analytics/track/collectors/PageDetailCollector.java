@@ -56,11 +56,10 @@ public class PageDetailCollector implements Collector {
     }
 
     @Override
-    public CollectionCollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
-                                                  final CollectionCollectorPayloadBean collectionCollectorPayloadBean) {
+    public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
+                                                  final CollectorPayloadBean collectorPayloadBean) {
 
-        // we use the same event just collect more information async
-        final CollectorPayloadBean collectorPayloadBean = collectionCollectorPayloadBean.first();
+
         final String uri = (String) collectorContextMap.get("uri");
         final String host = (String) collectorContextMap.get("host");
         final String siteId = (String) collectorContextMap.get("siteId");
@@ -87,26 +86,27 @@ public class PageDetailCollector implements Collector {
                                     .onFailure(e -> Logger.error(this, String.format("Error finding detail page " +
                                                             "'%s': %s", urlMapContentType.detailPage(), getErrorMessage(e)), e))
                             .getOrNull();
-                    pageObject.put("detail_page_id", detailPageContent.getIdentifier());
+                    pageObject.put("id", detailPageContent.getIdentifier());
                     final Identifier detailPageId = Try.of(() ->
                                     this.identifierAPI.find(detailPageContent.getIdentifier()))
                                     .onFailure(e -> Logger.error(this, String.format("Error finding detail page ID " +
                                                     "'%s': %s", detailPageContent.getIdentifier(), getErrorMessage(e)), e))
                             .getOrElse(new Identifier());
-                    pageObject.put("detail_page_url", detailPageId.getPath());
-                    pageObject.put("detail_page_title", detailPageContent.getTitle());
+                    pageObject.put("url", detailPageId.getPath());
+                    pageObject.put("title", detailPageContent.getTitle());
                 }
             }
             pageObject.put("url", uri);
         }
-        collectorPayloadBean.put("event_type", EventType.PAGE_REQUEST.getType());
+
         collectorPayloadBean.put("object", pageObject);
         collectorPayloadBean.put("url", uri);
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("host", host);
         collectorPayloadBean.put("site", siteId);
+        collectorPayloadBean.put("event_type", EventType.PAGE_REQUEST.getType());
 
-        return collectionCollectorPayloadBean;
+        return collectorPayloadBean;
     }
 
     @Override

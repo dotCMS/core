@@ -12,4 +12,6 @@ public interface CollectorPayloadBean {
     CollectorPayloadBean put(String key, Serializable value);
     Serializable get(String key);
     Map<String, Serializable> toMap();
+
+    CollectorPayloadBean add(CollectorPayloadBean other);
 }

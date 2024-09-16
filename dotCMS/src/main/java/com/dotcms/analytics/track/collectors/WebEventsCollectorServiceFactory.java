@@ -9,12 +9,16 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class provides the default implementation for the WebEventsCollectorService
@@ -28,6 +32,7 @@ public class WebEventsCollectorServiceFactory {
     private static class SingletonHolder {
         private static final WebEventsCollectorServiceFactory INSTANCE = new WebEventsCollectorServiceFactory();
     }
+
 
     /**
      * Get the instance.
@@ -46,8 +51,9 @@ public class WebEventsCollectorServiceFactory {
 
     private static class WebEventsCollectorServiceImpl implements WebEventsCollectorService {
 
-        private final Map<String, Collector> syncCollectors  = new ConcurrentHashMap<>();
-        private final Map<String, Collector> asyncCollectors = new ConcurrentHashMap<>();
+        private final Collectors baseCollectors = new Collectors();
+        private final Collectors eventCreatorCollectors = new Collectors();
+
         private final EventLogSubmitter submitter = new EventLogSubmitter();
 
         WebEventsCollectorServiceImpl () {
@@ -61,7 +67,7 @@ public class WebEventsCollectorServiceFactory {
                                    final HttpServletResponse response,
                                    final RequestMatcher requestMatcher) {
 
-            if (!asyncCollectors.isEmpty() || !syncCollectors.isEmpty()) {
+            if (!baseCollectors.isEmpty() || !eventCreatorCollectors.isEmpty()) {
 
                 this.fireCollectorsAndEmitEvent(request, response, requestMatcher);
             } else {
@@ -76,16 +82,17 @@ public class WebEventsCollectorServiceFactory {
 
             final Character character = WebAPILocator.getCharacterWebAPI().getOrCreateCharacter(request, response);
             final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-            final MutableObject<CollectionCollectorPayloadBean> collectorPayloadBeanMutableObject = new MutableObject<>(new ConcurrentCollectionCollectorPayloadBean());
-            if (!syncCollectors.isEmpty()) {
 
-                Logger.debug(this, ()-> "Running sync collectors");
-                final CollectorContextMap syncCollectorContextMap = new RequestCharacterCollectorContextMap(request, character, requestMatcher);
-                // we collect info which is sync and includes the request.
-                syncCollectors.values().stream().filter(collector -> collector.test(syncCollectorContextMap))
-                        .forEach(collector -> collectorPayloadBeanMutableObject
-                                .setValue(collector.collect(syncCollectorContextMap, collectorPayloadBeanMutableObject.getValue())));
-            }
+            final CollectorPayloadBean base = new ConcurrentCollectorPayloadBean();
+            final CollectorContextMap syncCollectorContextMap =
+                    new RequestCharacterCollectorContextMap(request, character, requestMatcher);
+
+            Logger.debug(this, ()-> "Running sync collectors");
+
+            collect(baseCollectors.syncCollectors.values(), base, syncCollectorContextMap);
+            final List<CollectorPayloadBean> futureEvents = getFutureEvents(eventCreatorCollectors.syncCollectors.values(),
+                    syncCollectorContextMap);
+
 
             // if there is anything to run async
             final PageMode pageMode = PageMode.get(request);
@@ -94,36 +101,83 @@ public class WebEventsCollectorServiceFactory {
                             "pageMode", pageMode,
                             "siteId", site.getIdentifier(),
                             "requestId", request.getAttribute("requestId")));
+
             this.submitter.logEvent(
                     new EventLogRunnable(site, ()-> {
                         Logger.debug(this, ()-> "Running async collectors");
-                        asyncCollectors.values().stream()
-                                .filter(collector -> collector.test(collectorContextMap))
-                                .forEach(collector -> { collectorPayloadBeanMutableObject.setValue(
-                                        collector.collect(collectorContextMap, collectorPayloadBeanMutableObject.getValue())); });
-                        return collectorPayloadBeanMutableObject.getValue().getCollection().stream().map(CollectorPayloadBean::toMap).collect(Collectors.toList());
+
+                        collect(baseCollectors.asyncCollectors.values(), base, collectorContextMap);
+                        final List<CollectorPayloadBean> asyncFutureEvents = getFutureEvents(
+                                eventCreatorCollectors.asyncCollectors.values(), collectorContextMap);
+
+                        return Stream.concat(futureEvents.stream(), asyncFutureEvents.stream())
+                                .map(payload -> payload.add(base))
+                                .map(CollectorPayloadBean::toMap)
+                                .collect(java.util.stream.Collectors.toList());
                     }));
 
+        }
+
+        @NotNull
+        private List<CollectorPayloadBean> getFutureEvents(final Collection<Collector> eventCreators,
+                                                           final CollectorContextMap collectorContextMap) {
+           return eventCreators.stream()
+                    .filter(collector -> collector.test(collectorContextMap))
+                    .map(collector -> {
+                        final CollectorPayloadBean futureEvent = new ConcurrentCollectorPayloadBean();
+                        collector.collect(collectorContextMap, futureEvent);
+                        return futureEvent;
+                    }).collect(java.util.stream.Collectors.toList());
+        }
+
+        private void collect(final Collection<Collector> collectors,
+                                           final CollectorPayloadBean payload,
+                                           final CollectorContextMap syncCollectorContextMap) {
+            collectors.stream()
+                    .filter(collector -> collector.test(syncCollectorContextMap))
+                    .forEach(collector -> collector.collect(syncCollectorContextMap, payload));
         }
 
         @Override
         public void addCollector(final Collector... collectors) {
             for (final Collector collector : collectors) {
-                if (collector.isAsync()) {
-
-                    asyncCollectors.put(collector.getId(), collector);
+                if (collector.isEventCreator()) {
+                    eventCreatorCollectors.add(collector);
                 } else {
-                    syncCollectors.put(collector.getId(), collector);
+                    baseCollectors.add(collector);
                 }
             }
         }
 
         @Override
         public void removeCollector(final String collectorId) {
-            syncCollectors.remove(collectorId);
-            asyncCollectors.remove(collectorId);
+            eventCreatorCollectors.remove(collectorId);
+            baseCollectors.remove(collectorId);
         }
 
+        private static class Collectors {
+            private final Map<String, Collector> syncCollectors  = new ConcurrentHashMap<>();
+            private final Map<String, Collector> asyncCollectors = new ConcurrentHashMap<>();
+
+            public void add(final Collector... collectors){
+                for (final Collector collector : collectors) {
+                    if (collector.isAsync()) {
+                        asyncCollectors.put(collector.getId(), collector);
+                    } else {
+                        syncCollectors.put(collector.getId(), collector);
+                    }
+                }
+            }
+
+            public void remove(String collectorId) {
+                asyncCollectors.remove(collectorId);
+                syncCollectors.remove(collectorId);
+            }
+
+            public boolean isEmpty() {
+                return asyncCollectors.isEmpty() && !syncCollectors.isEmpty();
+            }
+        }
     }
 
 }
