@@ -5,7 +5,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotEditContentFileFieldComponent } from './dot-edit-content-file-field.component';
-import { FileFileStore } from './store/file-field.store';
+import { FileFieldStore } from './store/file-field.store';
 
 describe('DotEditContentFileFieldComponent', () => {
   let spectator: Spectator<DotEditContentFileFieldComponent>;
@@ -13,7 +13,7 @@ describe('DotEditContentFileFieldComponent', () => {
     component: DotEditContentFileFieldComponent,
     detectChanges: false,
     componentProviders: [
-        FileFileStore
+        FileFieldStore
     ],
     providers: [
         provideHttpClient(),

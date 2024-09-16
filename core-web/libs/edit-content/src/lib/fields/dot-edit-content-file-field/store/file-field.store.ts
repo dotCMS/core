@@ -38,7 +38,7 @@ const initialState: FileFieldState = {
     uiMessage: null
 };
 
-export const FileFileStore = signalStore(
+export const FileFieldStore = signalStore(
     withState(initialState),
     withComputed(({ fileStatus }) => ({
         isEmpty: computed(() => {

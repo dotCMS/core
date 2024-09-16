@@ -23,7 +23,7 @@ import {
 import { DotFileFieldPreviewComponent } from './components/dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from './components/dot-file-field-ui-message/dot-file-field-ui-message.component';
 import { INPUT_TYPES } from './models';
-import { FileFileStore } from './store/file-field.store';
+import { FileFieldStore } from './store/file-field.store';
 
 @Component({
     selector: 'dot-edit-content-file-field',
@@ -38,7 +38,7 @@ import { FileFileStore } from './store/file-field.store';
         DotFileFieldPreviewComponent
     ],
     providers: [
-        FileFileStore,
+        FileFieldStore,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -50,7 +50,7 @@ import { FileFileStore } from './store/file-field.store';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentFileFieldComponent implements ControlValueAccessor, OnInit {
-    readonly store = inject(FileFileStore);
+    readonly store = inject(FileFieldStore);
     readonly #messageService = inject(DotMessageService);
 
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
