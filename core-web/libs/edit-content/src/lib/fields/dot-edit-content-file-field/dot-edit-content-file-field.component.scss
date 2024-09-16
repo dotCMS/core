@@ -6,7 +6,7 @@
     container-name: binaryField;
 }
 
-.binary-field__container {
+.file-field__container {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -17,16 +17,16 @@
     height: 14.4rem;
     min-width: 12.5rem;
 
-    &:has(.binary-field__actions:empty) {
-        gap: 0; // Remove gap when there are no actions, is cleaner than removing the div by logic
+    &:has(.file-field__actions:empty) {
+        gap: 0;
     }
 }
 
-.binary-field__container--uploading {
+.file-field__container--uploading {
     border: $field-border-size dashed $color-palette-gray-400;
 }
 
-.binary-field__actions {
+.file-field__actions {
     display: flex;
     flex-direction: column;
     gap: $spacing-3;
@@ -51,7 +51,7 @@
     }
 }
 
-.binary-field__drop-zone {
+.file-field__drop-zone {
     border: $field-border-size dashed $input-border-color;
     border-radius: $border-radius-md;
     height: 100%;
@@ -60,7 +60,7 @@
     margin-right: $spacing-1;
 }
 
-.binary-field__drop-zone-btn {
+.file-field__drop-zone-btn {
     border: none;
     background: none;
     color: $color-palette-primary-500;
@@ -71,7 +71,7 @@
     cursor: pointer;
 }
 
-.binary-field__drop-zone--active {
+.file-field__drop-zone--active {
     border-radius: $border-radius-md;
     border-color: $color-palette-secondary-500;
     background: $white;
@@ -82,17 +82,18 @@ input[type="file"] {
     display: none;
 }
 
-@container binaryField (max-width: 306px) {
-    .binary-field__container--empty {
+@container fileField (max-width: 306px) {
+    .file-field__container--empty {
         height: auto;
         flex-direction: column;
         justify-content: center;
         align-items: flex-start;
     }
 
-    .binary-field__drop-zone {
+    .file-field__drop-zone {
         width: 100%;
         margin: 0;
         margin-bottom: $spacing-1;
     }
 }
+

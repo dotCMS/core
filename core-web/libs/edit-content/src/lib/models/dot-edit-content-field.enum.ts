@@ -11,6 +11,7 @@ export enum DotEditContentFieldSingleSelectableDataType {
 export enum FIELD_TYPES {
     BINARY = 'Binary',
     FILE = 'File',
+    IMAGE = 'Image',
     BLOCK_EDITOR = 'Story-Block',
     CATEGORY = 'Category',
     CHECKBOX = 'Checkbox',

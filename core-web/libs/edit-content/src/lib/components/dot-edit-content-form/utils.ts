@@ -26,6 +26,7 @@ const defaultResolutionFn: FnResolutionValue = (contentlet, field) =>
 export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue> = {
     [FIELD_TYPES.BINARY]: defaultResolutionFn,
     [FIELD_TYPES.FILE]: defaultResolutionFn,
+    [FIELD_TYPES.IMAGE]: defaultResolutionFn,
     [FIELD_TYPES.BLOCK_EDITOR]: defaultResolutionFn,
     [FIELD_TYPES.CHECKBOX]: defaultResolutionFn,
     [FIELD_TYPES.CONSTANT]: defaultResolutionFn,
