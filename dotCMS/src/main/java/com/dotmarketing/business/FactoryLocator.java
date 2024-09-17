@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import com.dotcms.analytics.content.ContentAnalyticsFactory;
+import com.dotcms.analytics.content.ContentAnalyticsFactoryImpl;
 import com.dotcms.business.SystemTableFactory;
 import com.dotcms.business.SystemTableFactoryImpl;
 import com.dotcms.cluster.business.ServerFactory;
@@ -278,6 +280,16 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (LanguageVariableFactory) getInstance(FactoryIndex.LANGUAGE_VARIABLE_FACTORY);
     }
 
+    /**
+     * Returns the Factory object that handles operations related to {@link ContentAnalyticsFactory}
+     * in dotCMS.
+     *
+     * @return An instance of the {@link ContentAnalyticsFactory} object.
+     */
+    public static ContentAnalyticsFactory getContentAnalyticsFactory() {
+        return (ContentAnalyticsFactory) getInstance(FactoryIndex.CONTENT_ANALYTICS_FACTORY);
+    }
+
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -356,8 +368,8 @@ enum FactoryIndex
     EXPERIMENTS_FACTORY,
     SYSTEM_TABLE_FACTORY,
     CUBEJS_CLIENT_FACTORY,
-    LANGUAGE_VARIABLE_FACTORY
-    ;
+    LANGUAGE_VARIABLE_FACTORY,
+    CONTENT_ANALYTICS_FACTORY;
 
 	Object create() {
 		switch(this) {
@@ -401,6 +413,7 @@ enum FactoryIndex
             case SYSTEM_TABLE_FACTORY: return new SystemTableFactoryImpl();
             case CUBEJS_CLIENT_FACTORY: return new CubeJSClientFactoryImpl();
             case LANGUAGE_VARIABLE_FACTORY: return new LanguageVariableFactoryImpl();
+            case CONTENT_ANALYTICS_FACTORY: return new ContentAnalyticsFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}
