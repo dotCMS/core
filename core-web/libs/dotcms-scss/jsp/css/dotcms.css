@@ -8244,7 +8244,6 @@ div#_dotHelpMenu {
 .subNavCrumbTrail li:after {
     display: inline-block;
     font: normal normal normal 14px/1 FontAwesome;
-    font-size: inherit;
     text-rendering: auto;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
