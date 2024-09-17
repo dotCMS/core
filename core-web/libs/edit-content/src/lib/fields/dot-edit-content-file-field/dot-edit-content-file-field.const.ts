@@ -1,15 +1,15 @@
-import { INPUT_TYPES } from "./models";
+import { INPUT_TYPES } from './models';
 
 type Actions = {
-    allowExistingFile: boolean,
-    allowURLImport: boolean,
-    allowCreateFile: boolean,
-    allowGenerateImg: boolean
-}
+    allowExistingFile: boolean;
+    allowURLImport: boolean;
+    allowCreateFile: boolean;
+    allowGenerateImg: boolean;
+};
 
 type ConfigActions = Record<INPUT_TYPES, Actions>;
 
-export const INPUT_CONFIG_ACTIONS: ConfigActions = { 
+export const INPUT_CONFIG_ACTIONS: ConfigActions = {
     File: {
         allowExistingFile: true,
         allowURLImport: true,
