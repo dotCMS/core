@@ -1,5 +1,6 @@
 package com.dotcms.analytics.query;
 
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +37,10 @@ public class OrderParser {
     }
 
     public static ParsedOrder parseOrder(final String expression) throws IllegalArgumentException {
+
+        if (Objects.isNull(expression)) {
+            throw new IllegalArgumentException("The expression can not be null.");
+        }
 
         // this should be cached and checked
         final Pattern pattern = Pattern.compile(ORDER_REGEX, Pattern.CASE_INSENSITIVE);

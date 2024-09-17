@@ -2,6 +2,7 @@ package com.dotcms.analytics.query;
 
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.filters.Filter;
+import com.dotmarketing.exception.DotRuntimeException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -31,7 +32,7 @@ public class AnalyticsQueryParserTest {
      * 2) parseJsonToCubeQuery returns a valid cube query based on the analytics query
      */
     @Test
-    public void test_simple_query() throws Exception {
+    public void test_parsing_a_good_query() throws Exception {
 
         final AnalyticsQueryParser analyticsQueryParser = new AnalyticsQueryParser();
 
@@ -111,7 +112,100 @@ public class AnalyticsQueryParserTest {
 
         Assert.assertTrue("Measures should have Events.count:", Arrays.asList(measures).contains("Events.count"));
         Assert.assertTrue("Measures should have Events.uniqueCount:", Arrays.asList(measures).contains("Events.uniqueCount"));
+    }
 
+    /**
+     * Parse a query with sintax errors
+     * {
+     * 	"dimensions": ["Events.referer", "Events.experiment", "Events.variant", "Events.utcTime", "Events.url", "Events.lookBackWindow", "Events.eventType"],
+     * 	"measures": ["Events.count", "Events.uniqueCount",
+     * 	"filters": "Events.variant = ['B'] or Events.experiments = ['B']",
+     * 	"limit":100,
+     * 	"offset":1,
+     * 	"timeDimensions":Events.day day",
+     * 	"orders":"Events.day ASC"
+     * }
+     *
+     * should throw an DotRuntimeException
+     */
+    @Test(expected = DotRuntimeException.class)
+    public void test_parsing_a_bad_sintax_query() throws Exception {
+
+        final AnalyticsQueryParser analyticsQueryParser = new AnalyticsQueryParser();
+
+        final AnalyticsQuery query = analyticsQueryParser.parseJsonToQuery(
+                "{\n" +
+                        "\t\"dimensions\": [\"Events.referer\", \"Events.experiment\", \"Events.variant\", \"Events.utcTime\", \"Events.url\", \"Events.lookBackWindow\", \"Events.eventType\"],\n" +
+                        "\t\"measures\": [\"Events.count\", \"Events.uniqueCount\",\n" +
+                        "\t\"filters\": \"Events.variant = ['B'] or Events.experiments = ['B']\",\n" +
+                        "\t\"limit\":100,\n" +
+                        "\t\"offset\":1,\n" +
+                        "\t\"timeDimensions\":Events.day day\",\n" +
+                        "\t\"orders\":\"Events.day ASC\"\n" +
+                        "}");
+
+    }
+
+    /**
+     * Parse a valid json query with sintax inside the order errors
+     * {
+     * 	"dimensions": ["Events.referer", "Events.experiment", "Events.variant", "Events.utcTime", "Events.url", "Events.lookBackWindow", "Events.eventType"],
+     * 	"measures": ["Events.count", "Events.uniqueCount"],
+     * 	"filters": "Events.variant = ['B'] or Events.experiments = ['B']",
+     * 	"limit":100,
+     * 	"offset":1,
+     * 	"timeDimensions":"Events.day day",
+     * 	"orders":"Events.day XXX"
+     * }
+     *
+     * should throw an DotRuntimeException
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_parsing_a_bad_sintax_on_query() throws Exception {
+
+        final AnalyticsQueryParser analyticsQueryParser = new AnalyticsQueryParser();
+
+        final CubeJSQuery cubeJSQuery = analyticsQueryParser.parseJsonToCubeQuery(
+                "{\n" +
+                        "\t\"dimensions\": [\"Events.referer\", \"Events.experiment\", \"Events.variant\", \"Events.utcTime\", \"Events.url\", \"Events.lookBackWindow\", \"Events.eventType\"],\n" +
+                        "\t\"measures\": [\"Events.count\", \"Events.uniqueCount\"],\n" +
+                        "\t\"filters\": \"Events.variant = ['B'] or Events.experiments = ['B']\",\n" +
+                        "\t\"limit\":100,\n" +
+                        "\t\"offset\":1,\n" +
+                        "\t\"timeDimensions\":\"Events.day day\",\n" +
+                        "\t\"orders\":\"Events.day XXX\"\n" +
+                        "}");
+
+    }
+
+    /**
+     * Parsing null should be {@link IllegalArgumentException}
+     */
+    @Test (expected = IllegalArgumentException.class)
+    public void test_parseJsonToQuery_null_query() throws Exception {
+
+        final AnalyticsQueryParser analyticsQueryParser = new AnalyticsQueryParser();
+        analyticsQueryParser.parseJsonToQuery(null);
+    }
+
+    /**
+     * Parsing null should be {@link IllegalArgumentException}
+     */
+    @Test (expected = IllegalArgumentException.class)
+    public void test_parseQueryToCubeQuery_null_query() throws Exception {
+
+        final AnalyticsQueryParser analyticsQueryParser = new AnalyticsQueryParser();
+        analyticsQueryParser.parseQueryToCubeQuery(null);
+    }
+
+    /**
+     * Parsing null should be {@link IllegalArgumentException}
+     */
+    @Test (expected = IllegalArgumentException.class)
+    public void test_parseJsonToCubeQuery_null_query() throws Exception {
+
+        final AnalyticsQueryParser analyticsQueryParser = new AnalyticsQueryParser();
+        analyticsQueryParser.parseJsonToCubeQuery(null);
     }
 
 }
