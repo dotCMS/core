@@ -1,16 +1,5 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
 <style>
-    :root {
-        --font-size-xxxl: 2rem; /* 32px */
-        --font-size-xxl: 1.75rem; /* 28px */
-        --font-size-xl: 1.5rem; /* 24px */
-        --font-size-lg: 1.25rem; /* 20px */
-        --font-size-default: 14px;
-        --font-size-lmd: 1rem; /* 16px */
-        --font-size-md: var(--font-size-default); /* 14px */
-        --font-size-sm: 0.75rem; /* 12px */
-        --font-size-xs: 0.625rem; /* 10px */
-    }
     #systemInfoDiv{
        margin: 20px 20px;
     }
@@ -18,7 +7,7 @@
     #anchorTOCDiv {
         max-width:600px;
         margin: 20px;
-        font-size: var(--font-size-xl);
+        font-size: 1.5rem;
         display:grid;
         text-align: center;
         grid-gap: 10px;
@@ -27,7 +16,7 @@
     }
 
     #anchorTOCDiv div{
-        font-size: var(--font-size-lmd);;
+        font-size: 1rem;
         text-transform: capitalize;
     }
 
@@ -46,7 +35,7 @@
     }
     .propLabel{
         font-weight: normal;
-        font-size:var(--font-size-lg);;
+        font-size:1.25rem;
         text-transform: capitalize;
         padding:10px;
 
