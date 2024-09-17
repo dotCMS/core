@@ -4,6 +4,7 @@ import { computed } from '@angular/core';
 
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 
+import { INPUT_CONFIG_ACTIONS } from '../dot-edit-content-file-field.const';
 import { INPUT_TYPES, FILE_STATUS, UIMessage } from '../models';
 
 export interface FileFieldState {
@@ -59,26 +60,13 @@ export const FileFieldStore = signalStore(
         }) => {
             const { inputType, uiMessage } = initState;
 
-            const state: Partial<FileFieldState> = {
+            const actions = INPUT_CONFIG_ACTIONS[inputType] || {};
+
+            patchState(store, {
                 inputType,
-                uiMessage
-            };
-
-            if (inputType === 'File') {
-                state.allowExistingFile = true;
-                state.allowURLImport = true;
-                state.allowCreateFile = true;
-            } else if (inputType === 'Image') {
-                state.allowExistingFile = true;
-                state.allowURLImport = true;
-                state.allowGenerateImg = true;
-            } else if (inputType === 'Binary') {
-                state.allowCreateFile = true;
-                state.allowURLImport = true;
-                state.allowGenerateImg = true;
-            }
-
-            patchState(store, state);
+                uiMessage,
+                ...actions
+            });
         }
     }))
 );
