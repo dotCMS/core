@@ -81,6 +81,9 @@ public class EntryCommand implements DotCommand {
 @ApplicationScoped
 class CustomConfiguration {
 
+    @Inject
+    CustomConfigurationUtil customConfigurationUtil;
+
     /**
      * This method configures and produces a customized Picocli {@code CommandLine} instance.
      *
@@ -91,7 +94,7 @@ class CustomConfiguration {
     CommandLine customCommandLine(final PicocliCommandLineFactory factory) {
 
         final CommandLine cmdLine = factory.create();
-        CustomConfigurationUtil.newInstance()
+        customConfigurationUtil
                 // Injecting custom push mixins to the global push command
                 .injectPushMixins(cmdLine)
                 // Injecting custom pull mixins to the global pull command
