@@ -28,7 +28,15 @@ const initialState: UVEState = {
 export const UVEStore = signalStore(
     withState<UVEState>(initialState),
     withComputed(
-        ({ pageAPIResponse, isTraditionalPage, params, languages, errorCode: error, status }) => {
+        ({
+            pageAPIResponse,
+            isTraditionalPage,
+            params,
+            languages,
+            errorCode: error,
+            status,
+            isEnterprise
+        }) => {
             return {
                 $translateProps: computed<TranslateProps>(() => {
                     const response = pageAPIResponse();
@@ -58,6 +66,7 @@ export const UVEStore = signalStore(
 
                     const errorPayload = getErrorPayload(errorCode);
                     const isLoading = status() === UVE_STATUS.LOADING;
+                    const isEnterpriseLicense = isEnterprise();
 
                     return {
                         canRead: page?.canRead,
@@ -80,7 +89,7 @@ export const UVEStore = signalStore(
                                 label: 'editema.editor.navbar.layout',
                                 href: 'layout',
                                 id: 'layout',
-                                isDisabled: isLayoutDisabled,
+                                isDisabled: isLayoutDisabled || !isEnterpriseLicense,
                                 tooltip: templateDrawed
                                     ? null
                                     : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
@@ -90,14 +99,14 @@ export const UVEStore = signalStore(
                                 label: 'editema.editor.navbar.rules',
                                 id: 'rules',
                                 href: `rules/${page?.identifier}`,
-                                isDisabled: !page?.canEdit
+                                isDisabled: !page?.canEdit || !isEnterpriseLicense
                             },
                             {
                                 iconURL: 'experiments',
                                 label: 'editema.editor.navbar.experiments',
                                 href: `experiments/${page?.identifier}`,
                                 id: 'experiments',
-                                isDisabled: !page?.canEdit
+                                isDisabled: !page?.canEdit || !isEnterpriseLicense
                             },
                             {
                                 icon: 'pi-th-large',
