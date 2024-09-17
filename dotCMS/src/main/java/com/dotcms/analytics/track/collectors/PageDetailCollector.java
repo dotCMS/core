@@ -33,15 +33,16 @@ import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
  */
 public class PageDetailCollector implements Collector {
 
+    private final HTMLPageAssetAPI pageAPI;
     private final URLMapAPIImpl urlMapAPI;
-    private final PagesCollector pagesCollector = new PagesCollector();
 
     public PageDetailCollector() {
-        this(APILocator.getURLMapAPI());
+        this(APILocator.getHTMLPageAssetAPI(), APILocator.getURLMapAPI());
     }
 
-    public PageDetailCollector(URLMapAPIImpl urlMapAPI) {
+    public PageDetailCollector(final HTMLPageAssetAPI pageAPI, URLMapAPIImpl urlMapAPI) {
         this.urlMapAPI = urlMapAPI;
+        this.pageAPI = pageAPI;
     }
 
     @Override
@@ -57,6 +58,7 @@ public class PageDetailCollector implements Collector {
         final Host site = (Host) collectorContextMap.get("currentHost");
         final Long languageId = (Long) collectorContextMap.get("langId");
         final PageMode pageMode = (PageMode) collectorContextMap.get("pageMode");
+        final String language = (String)collectorContextMap.get("lang");
 
         final UrlMapContext urlMapContext = new UrlMapContext(
                 pageMode, languageId, uri, site, APILocator.systemUser());
@@ -68,14 +70,26 @@ public class PageDetailCollector implements Collector {
         final Contentlet urlMapContentlet = urlMapInfo.getContentlet();
         final ContentType urlMapContentType = urlMapContentlet.getContentType();
 
-        final CollectorContextMap innerCollectorContextMap = new WrapperCollectorContextMap(collectorContextMap,
-                Map.of("uri", urlMapContentType.detailPage()));
+        final IHTMLPage detailPageContent = Try.of(() ->
+                        this.pageAPI.findByIdLanguageFallback(urlMapContentType.detailPage(), languageId, true, APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES))
+                .onFailure(e -> Logger.error(this, String.format("Error finding detail page " +
+                        "'%s': %s", urlMapContentType.detailPage(), getErrorMessage(e)), e))
+                .getOrNull();
 
-        pagesCollector.collect(innerCollectorContextMap, collectorPayloadBean);
+        final HashMap<String, String> pageObject = new HashMap<>();
+        pageObject.put("id", detailPageContent.getIdentifier());
+        pageObject.put("title", detailPageContent.getTitle());
+        pageObject.put("url", uri);
+        pageObject.put("detail_page_url", urlMapContentType.detailPage());
 
-        ((Map<String, Object>) innerCollectorContextMap.get("object")).put("detail_page_url", urlMapContentType.detailPage());
+        collectorPayloadBean.put("event_type", EventType.PAGE_REQUEST.getType());
+        collectorPayloadBean.put("object",  pageObject);
+        collectorPayloadBean.put("url", uri);
+        collectorPayloadBean.put("language", language);
 
-
+        if (Objects.nonNull(site)) {
+            collectorPayloadBean.put("host", site.getIdentifier());
+        }
         return collectorPayloadBean;
     }
 
