@@ -44,7 +44,7 @@ public class PagesCollector implements Collector {
 
     @Override
     public boolean test(CollectorContextMap collectorContextMap) {
-        return isUrlMap(collectorContextMap);
+        return PagesAndUrlMapsRequestMatcher.PAGES_AND_URL_MAPS_MATCHER_ID.equals(collectorContextMap.getRequestMatcher().getId());
     }
 
     @Override
@@ -106,12 +106,10 @@ public class PagesCollector implements Collector {
         final String uri = (String)collectorContextMap.get("uri");
         final Long languageId = (Long)collectorContextMap.get("langId");
         final PageMode pageMode = (PageMode)collectorContextMap.get("pageMode");
-        final String siteId = (String)collectorContextMap.get("siteId");
-
-        final Host site = Try.of(()->this.hostAPI.find(siteId, APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES)).get();
+        final Host currentHost = (Host) collectorContextMap.get("currentHost");
 
         final UrlMapContext urlMapContext = new UrlMapContext(
-                pageMode, languageId, uri, site, APILocator.systemUser());
+                pageMode, languageId, uri, currentHost, APILocator.systemUser());
 
         return Util.isUrlMap(urlMapContext);
     }

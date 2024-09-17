@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.dotcms.analytics.Util.isUrlMap;
 import static com.dotcms.exception.ExceptionUtil.getErrorMessage;
 import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 
@@ -52,7 +53,7 @@ public class PageDetailCollector implements Collector {
 
     @Override
     public boolean test(CollectorContextMap collectorContextMap) {
-        return PagesAndUrlMapsRequestMatcher.PAGES_AND_URL_MAPS_MATCHER_ID.equals(collectorContextMap.getRequestMatcher().getId()); // should compare with the id
+        return isUrlMap(collectorContextMap); // should compare with the id
     }
 
     @Override
@@ -69,10 +70,12 @@ public class PageDetailCollector implements Collector {
         final HashMap<String, String> pageObject = new HashMap<>();
 
         if (Objects.nonNull(uri) && Objects.nonNull(site) && Objects.nonNull(languageId)) {
-            final UrlMapContext urlMapContext = new UrlMapContext(
-                    pageMode, languageId, uri, site, APILocator.systemUser());
-            final boolean isUrlMap = Util.isUrlMap(urlMapContext);
+
+            final boolean isUrlMap = isUrlMap(collectorContextMap);
             if (isUrlMap) {
+                final UrlMapContext urlMapContext = new UrlMapContext(
+                        pageMode, languageId, uri, site, APILocator.systemUser());
+
                 final Optional<URLMapInfo> urlMappedContent =
                         Try.of(() -> this.urlMapAPI.processURLMap(urlMapContext)).get();
                 if (urlMappedContent.isPresent()) {
@@ -106,6 +109,19 @@ public class PageDetailCollector implements Collector {
         collectorPayloadBean.put("event_type", EventType.PAGE_REQUEST.getType());
 
         return collectorPayloadBean;
+    }
+
+    private boolean isUrlMap(final CollectorContextMap collectorContextMap){
+
+        final String uri = (String)collectorContextMap.get("uri");
+        final Long languageId = (Long)collectorContextMap.get("langId");
+        final PageMode pageMode = (PageMode)collectorContextMap.get("pageMode");
+        final Host site = (Host) collectorContextMap.get("currentHost");
+
+        final UrlMapContext urlMapContext = new UrlMapContext(
+                pageMode, languageId, uri, site, APILocator.systemUser());
+
+        return Util.isUrlMap(urlMapContext);
     }
 
     @Override
