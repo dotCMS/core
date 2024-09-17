@@ -112,10 +112,11 @@ export function withEditor() {
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
-                    const isLoading = store.status() === UVE_STATUS.LOADING;
+                    const isLoading = !isClientReady || store.status() === UVE_STATUS.LOADING;
+
                     const isPageReady = isTraditionalPage || isClientReady;
 
-                    const { dragIsActive, isScrolling, isDragging } = getEditorStates(state);
+                    const { dragIsActive, isScrolling } = getEditorStates(state);
 
                     const url = sanitizeURL(params?.url);
 
@@ -123,10 +124,10 @@ export function withEditor() {
 
                     const showDialogs = canEditPage && isEditState;
 
-                    const showContentletTools =
+                    const canUserHaveContentletTools =
                         !!contentletArea && canEditPage && isEditState && !isScrolling;
 
-                    const showDropzone = canEditPage && isDragging;
+                    const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
 
                     const showPalette = isEnterprise && canEditPage && isEditState;
 
@@ -151,7 +152,7 @@ export function withEditor() {
                                 : null
                         },
                         progressBar: isLoading,
-                        contentletTools: showContentletTools
+                        contentletTools: canUserHaveContentletTools
                             ? {
                                   isEnterprise,
                                   contentletArea,
@@ -190,30 +191,13 @@ export function withEditor() {
                     });
                 },
                 updateEditorScrollState() {
-                    // We dont want to change the state if the editor is out of bounds
-                    // The scroll event is triggered after the user leaves the window
-                    // And that is changing the state in an unnatural way
-
-                    // The only way to get out of OUT_OF_BOUNDS is through the mouse over in the editor
-                    if (store.state() === EDITOR_STATE.OUT_OF_BOUNDS) {
-                        return;
-                    }
-
                     patchState(store, {
-                        state: store.dragItem() ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING,
-                        contentletArea: null
+                        bounds: [],
+                        contentletArea: null,
+                        state: store.dragItem() ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
                     });
                 },
                 updateEditorOnScrollEnd() {
-                    // We dont want to change the state if the editor is out of bounds
-                    // The scroll end event is triggered after the user leaves the window
-                    // And that is changing the state in an unnatural way
-
-                    // The only way to get out of OUT_OF_BOUNDS is through the mouse over in the editor
-                    if (store.state() === EDITOR_STATE.OUT_OF_BOUNDS) {
-                        return;
-                    }
-
                     patchState(store, {
                         state: store.dragItem() ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
                     });

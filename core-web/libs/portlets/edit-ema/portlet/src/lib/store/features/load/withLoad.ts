@@ -40,7 +40,7 @@ export function withLoad() {
             const activatedRoute = inject(ActivatedRoute);
 
             return {
-                load: rxMethod<DotPageApiParams>(
+                init: rxMethod<DotPageApiParams>(
                     pipe(
                         tap(() => store.resetClientConfiguration()),
                         tap(() => {
@@ -144,7 +144,7 @@ export function withLoad() {
                                                     canEditPage,
                                                     pageIsLocked,
                                                     isTraditionalPage,
-                                                    isClientReady: false,
+                                                    isClientReady: isTraditionalPage, // If is a traditional page we are ready
                                                     status: UVE_STATUS.LOADED
                                                 });
                                             },

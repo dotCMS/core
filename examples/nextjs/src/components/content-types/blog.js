@@ -1,6 +1,6 @@
 import { BlockEditorRenderer } from "@dotcms/react";
 
-const CustomParagraph = ({content}) => {
+const CustomParagraph = ({ content }) => {
     if (!content) {
         return null;
     }
@@ -8,8 +8,8 @@ const CustomParagraph = ({content}) => {
     return <h1 style={{color: 'red'}}>{text}</h1>
 }
 
-const ActivityBlock = (data) => {
-    const { title, description } = data;
+const ActivityBlock = (props) => {
+    const { title, description } = props.attrs.data;
 
     return (<div>
         <h1>{title}</h1>

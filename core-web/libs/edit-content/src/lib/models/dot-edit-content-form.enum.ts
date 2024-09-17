@@ -2,5 +2,7 @@
 export enum FILTERED_TYPES {
     ROW = 'Row',
     COLUMN = 'Column',
-    TAP = 'Tab_divider'
+    TAP = 'Tab_divider',
+    CONSTANT = 'Constant-Field',
+    HIDDEN = 'Hidden-Field'
 }

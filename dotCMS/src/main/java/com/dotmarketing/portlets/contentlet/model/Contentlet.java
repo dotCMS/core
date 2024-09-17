@@ -171,6 +171,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String CONTENTLET_ASSET_NAME_COPY = "_contentlet_asset_name_copy";
   public static final String AUTO_ASSIGN_WORKFLOW = "AUTO_ASSIGN_WORKFLOW";
   public static final String TEMPLATE_MAPPINGS = "TEMPLATE_MAPPINGS";
+  public static final String IS_COPY = "_is_being_copied";
 
   public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
   public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
