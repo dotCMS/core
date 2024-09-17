@@ -56,6 +56,8 @@ public class PushCommand implements Callable<Integer>, DotPush {
     @Inject
     Instance<DotPush> pushCommands;
 
+    @Inject
+    CustomConfigurationUtil customConfigurationUtil;
 
     @Override
     public Integer call() throws Exception {
@@ -102,7 +104,7 @@ public class PushCommand implements Callable<Integer>, DotPush {
     CommandLine createCommandLine(DotPush command) {
 
         var cmdLine = new CommandLine(command);
-        CustomConfigurationUtil.newInstance().customize(cmdLine);
+        customConfigurationUtil.customize(cmdLine);
         cmdLine.setOut(getOutput().out());
 
         // Make sure unmatched arguments pass silently

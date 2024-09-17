@@ -622,8 +622,8 @@ it('should render a table', () => {
 
 it('should render a dotContent from customRenderers', () => {
     const customRenderers = {
-        dotContent: ({ title }: { title: string }) => {
-            return <div data-testid="custom-dot-content">{title}</div>;
+        dotContent: (props: ContentNode) => {
+            return <div data-testid="custom-dot-content">{props.attrs?.title}</div>;
         }
     };
 

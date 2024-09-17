@@ -31,7 +31,11 @@ export class Equals {
     /**
      * This method appends to the query a term that should be excluded in the search.
      *
-     * Ex: "-myValue"
+     * @example
+     * ```ts
+     * const equals = new Equals("+myField: myValue");
+     * equals.excludeField("myField2").equals("myValue2"); // Current query: "+myField: myValue -myField2: myValue2"
+     * ```
      *
      * @param {string} field - The field that should be excluded in the search.
      * @return {*}  {Field} - An instance of a Lucene Field. A field is a key used to search for a specific value in a document.
@@ -44,8 +48,11 @@ export class Equals {
     /**
      * This method appends to the query a field that should be included in the search.
      *
-     * Ex: "+myField:"
-     *
+     * @example
+     * ```ts
+     * const equals = new Equals("+myField: myValue");
+     * equals.field("myField2").equals("myValue2");  // Current query: "+myField: myValue +myField2: myValue2"
+     *```
      * @param {string} field - The field that should be included in the search.
      * @return {*}  {Field} - An instance of a Lucene Field. A field is a key used to search for a specific value in a document.
      * @memberof Equal
@@ -57,7 +64,12 @@ export class Equals {
     /**
      * This method appends to the query an operand to use logic operators in the query.
      *
-     * Ex: "OR"
+     * @example
+     * @example
+     * ```ts
+     * const equals = new Equals("+myField: myValue");
+     * equals.or().field("myField2").equals("myValue2"); // Current query: "+myField: myValue OR +myField2: myValue2"
+     * ```
      *
      * @return {*}  {Operand} - An instance of a Lucene Operand. An operand is a logical operator used to combine terms or phrases in a query.
      * @memberof Equal
@@ -69,7 +81,11 @@ export class Equals {
     /**
      * This method appends to the query an operand to use logic operators in the query.
      *
-     * Ex: "AND"
+     * @example
+     * ```ts
+     * const equals = new Equals("+myField: myValue");
+     * equals.and().field("myField2").equals("myValue2"); // Current query: "+myField: myValue AND +myField2: myValue2"
+     * ```
      *
      * @return {*}  {Operand} - An instance of a Lucene Operand. An operand is a logical operator used to combine terms or phrases in a query.
      * @memberof Equal
@@ -81,7 +97,11 @@ export class Equals {
     /**
      * This method appends to the query an operand to use logic operators in the query.
      *
-     * Ex: "NOT"
+     * @example
+     * ```ts
+     * const equals = new Equals("+myField: myValue");
+     * equals.not().field("myField").equals("myValue2"); // Current query: "+myField: myValue NOT +myField: myValue2"
+     * ```
      *
      * @return {*}  {NotOperand} - An instance of a Lucene Not Operand. A not operand is a logical operator used to exclude terms or phrases in a query.
      * @memberof Equal
@@ -95,7 +115,12 @@ export class Equals {
      * This raw query should end in a Lucene Equal.
      * This method is useful when you want to append a complex query or an already written query to the query builder.
      *
-     * Ex: "+myField: value AND (someOtherValue OR anotherValue)"
+     * @example
+     * ```ts
+     * // This builds the follow raw query "+myField: value AND (someOtherValue OR anotherValue)"
+     * const equals = new Equals("+myField: value");
+     * equals.raw("+myField2: value2"); // Current query: "+myField: value +myField2: anotherValue"
+     * ```
      *
      * @param {string} query - A raw query string.
      * @return {*}  {Equal} - An instance of a Lucene Equal. A term is a value used to search for a specific value in a document.
@@ -107,6 +132,12 @@ export class Equals {
 
     /**
      * This method returns the final query string.
+     *
+     * @example
+     * ```ts
+     * const equals = new Equals("+myField: myValue");
+     * equals.field("myField2").equals("myValue2").build(); // Returns "+myField: myValue +myField2: myValue2"
+     * ```
      *
      * @return {*}  {string} - The final query string.
      * @memberof Equal

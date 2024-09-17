@@ -82,7 +82,7 @@ describe('DotWorkflowActionsComponent', () => {
         spectator = createComponent({
             props: {
                 actions: WORKFLOW_ACTIONS_MOCK,
-                groupAction: true,
+                groupActions: true,
                 loading: false,
                 size: 'normal'
             }
@@ -146,7 +146,7 @@ describe('DotWorkflowActionsComponent', () => {
 
     describe('not group action', () => {
         beforeEach(() => {
-            spectator.setInput('groupAction', false);
+            spectator.setInput('groupActions', false);
             spectator.detectComponentChanges();
         });
 

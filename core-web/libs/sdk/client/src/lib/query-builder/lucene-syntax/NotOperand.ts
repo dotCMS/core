@@ -18,7 +18,11 @@ export class NotOperand {
     /**
      * This method appends to the query a term that should be included in the search.
      *
-     * Ex: myValue or "My value"
+     * @example
+     * ```typescript
+     * const notOperand = new NotOperand("+myField");
+     * notOperand.equals("myValue");
+     * ```
      *
      * @param {string} term - The term that should be included in the search.
      * @return {*}  {Equals} - An instance of Equals.

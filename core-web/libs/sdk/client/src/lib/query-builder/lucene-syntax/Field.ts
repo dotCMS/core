@@ -3,7 +3,7 @@ import { Equals } from './Equals';
 import { buildEquals } from '../utils';
 
 /**
- * 'Field' class is used to build a query with a field.
+ * The `Field` class is used to build a query with a specific field.
  * A Lucene Field is a key used to search for a specific value in a document.
  *
  * @export
@@ -11,17 +11,27 @@ import { buildEquals } from '../utils';
  */
 export class Field {
     #query = '';
+
+    /**
+     * Creates an instance of the `Field` class.
+     *
+     * @param {string} query - The initial query string.
+     */
     constructor(private query: string) {
         this.#query = this.query;
     }
 
     /**
-     * This method appends to the query a term that should be included in the search..
+     * Appends a term to the query that should be included in the search.
      *
-     * Ex: myValue or "My value"
+     * @example
+     * ```typescript
+     * const field = new Field("+myField");
+     * field.equals("myValue");
+     * ```
      *
      * @param {string} term - The term that should be included in the search.
-     * @return {*}  {Equals} - An instance of Equals.
+     * @return {Equals} - An instance of `Equals`.
      * @memberof Field
      */
     equals(term: string): Equals {

@@ -9,6 +9,7 @@ import {
     NgZone,
     Output,
     ViewChild,
+    computed,
     inject,
     signal
 } from '@angular/core';
@@ -29,16 +30,18 @@ import {
 import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
-import {
-    CreateContentletAction,
-    CreateFromPaletteAction,
-    DialogStatus,
-    DotEmaDialogStore
-} from './store/dot-ema-dialog.store';
+import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
 
 import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
-import { NG_CUSTOM_EVENTS } from '../../shared/enums';
-import { ActionPayload, DotPage, VTLFile } from '../../shared/models';
+import { DialogStatus, NG_CUSTOM_EVENTS } from '../../shared/enums';
+import {
+    ActionPayload,
+    CreateContentletAction,
+    CreateFromPaletteAction,
+    DialogAction,
+    DotPage,
+    VTLFile
+} from '../../shared/models';
 import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
 
 @Component({
@@ -58,10 +61,12 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
 export class DotEmaDialogComponent {
     @ViewChild('iframe') iframe: ElementRef<HTMLIFrameElement>;
 
-    @Output() action = new EventEmitter<{ event: CustomEvent; payload: ActionPayload }>();
+    @Output() action = new EventEmitter<DialogAction>();
     @Output() reloadFromDialog = new EventEmitter<void>();
 
     $compareData = signal<DotContentCompareEvent | null>(null);
+
+    $compareDataExists = computed(() => !!this.$compareData());
 
     private readonly destroyRef$ = inject(DestroyRef);
     private readonly store = inject(DotEmaDialogStore);
@@ -283,14 +288,14 @@ export class DotEmaDialogComponent {
     }
 
     protected onHide() {
-        this.action.emit({
-            event: new CustomEvent('ng-event', {
-                detail: {
-                    name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
-                }
-            }),
-            payload: this.dialogState().payload
+        const event = new CustomEvent('ng-event', {
+            detail: {
+                name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+            }
         });
+
+        this.emitAction(event);
+        this.resetDialog();
     }
 
     /**
@@ -310,21 +315,51 @@ export class DotEmaDialogComponent {
         )
             .pipe(takeUntilDestroyed(this.destroyRef$))
             .subscribe((event: CustomEvent) => {
-                this.action.emit({ event, payload: this.dialogState().payload });
+                this.emitAction(event);
 
-                if (event.detail.name === NG_CUSTOM_EVENTS.COMPARE_CONTENTLET) {
-                    this.ngZone.run(() => {
-                        this.$compareData.set(<DotContentCompareEvent>event.detail.data);
-                    });
-                }
+                switch (event.detail.name) {
+                    case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
+                        this.store.resetDialog();
 
-                if (event.detail.name === NG_CUSTOM_EVENTS.OPEN_WIZARD) {
-                    this.handleWorkflowEvent(event.detail.data);
-                } else if (
-                    event.detail.name === NG_CUSTOM_EVENTS.SAVE_PAGE &&
-                    event.detail.payload.isMoveAction
-                ) {
-                    this.reloadIframe();
+                        break;
+                    }
+
+                    case NG_CUSTOM_EVENTS.COMPARE_CONTENTLET: {
+                        this.ngZone.run(() => {
+                            this.$compareData.set(<DotContentCompareEvent>event.detail.data);
+                        });
+                        break;
+                    }
+
+                    case NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED: {
+                        // The edit content emits this for savings when translating a page and does not emit anything when changing the content
+                        if (this.dialogState().editContentForm.isTranslation) {
+                            this.store.setSaved();
+
+                            if (event.detail.payload.isMoveAction) {
+                                this.reloadIframe();
+                            }
+                        } else {
+                            this.store.setDirty();
+                        }
+
+                        break;
+                    }
+
+                    case NG_CUSTOM_EVENTS.OPEN_WIZARD: {
+                        this.handleWorkflowEvent(event.detail.data);
+                        break;
+                    }
+
+                    case NG_CUSTOM_EVENTS.SAVE_PAGE: {
+                        this.store.setSaved();
+
+                        if (event.detail.payload.isMoveAction) {
+                            this.reloadIframe();
+                        }
+
+                        break;
+                    }
                 }
             });
     }
@@ -346,7 +381,7 @@ export class DotEmaDialogComponent {
             }
         });
 
-        this.action.emit({ event: customEvent, payload: this.dialogState().payload });
+        this.emitAction(customEvent);
     }
 
     /**
@@ -367,5 +402,11 @@ export class DotEmaDialogComponent {
      */
     closeCompareDialog() {
         this.$compareData.set(null);
+    }
+
+    private emitAction(event: CustomEvent) {
+        const { payload, editContentForm } = this.dialogState();
+
+        this.action.emit({ event, payload, form: editContentForm });
     }
 }

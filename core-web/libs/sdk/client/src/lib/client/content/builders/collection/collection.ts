@@ -14,11 +14,11 @@ import {
 import { sanitizeQueryForContentType } from '../../shared/utils';
 
 /**
- * Creates a Builder to filter and fetch content from the content API for an specific content type
+ * Creates a Builder to filter and fetch content from the content API for a specific content type.
  *
  * @export
  * @class CollectionBuilder
- * @template T Represents the type of the content type to fetch. Defaults to unknown
+ * @template T Represents the type of the content type to fetch. Defaults to unknown.
  */
 export class CollectionBuilder<T = unknown> {
     #page = 1;
@@ -36,18 +36,24 @@ export class CollectionBuilder<T = unknown> {
     #serverUrl: string;
     #requestOptions: ClientOptions;
 
+    /**
+     * Creates an instance of CollectionBuilder.
+     * @param {ClientOptions} requestOptions Options for the client request.
+     * @param {string} serverUrl The server URL.
+     * @param {string} contentType The content type to fetch.
+     * @memberof CollectionBuilder
+     */
     constructor(requestOptions: ClientOptions, serverUrl: string, contentType: string) {
         this.#requestOptions = requestOptions;
         this.#serverUrl = serverUrl;
-
         this.#contentType = contentType;
 
-        // We need to build the default query with the contentType field
+        // Build the default query with the contentType field
         this.#defaultQuery = new QueryBuilder().field('contentType').equals(this.#contentType);
     }
 
     /**
-     * This method returns the sort query in this format: field order, field order, ...
+     * Returns the sort query in the format: field order, field order, ...
      *
      * @readonly
      * @private
@@ -57,17 +63,30 @@ export class CollectionBuilder<T = unknown> {
         return this.#sortBy?.map((sort) => `${sort.field} ${sort.order}`).join(',');
     }
 
+    /**
+     * Returns the offset for pagination.
+     *
+     * @readonly
+     * @private
+     * @memberof CollectionBuilder
+     */
     private get offset() {
-        // This could end in an empty response
         return this.#limit * (this.#page - 1);
     }
 
+    /**
+     * Returns the full URL for the content API.
+     *
+     * @readonly
+     * @private
+     * @memberof CollectionBuilder
+     */
     private get url() {
         return `${this.#serverUrl}${CONTENT_API_URL}`;
     }
 
     /**
-     * This method returns the current query built
+     * Returns the current query built.
      *
      * @readonly
      * @private
@@ -78,13 +97,17 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * Takes a language id and filters the content by that language.
+     * Filters the content by the specified language ID.
      *
-     * The language id defaults to 1
+     * @example
+     * ```typescript
+     * const client = new DotCMSClient(config);
+     * const collectionBuilder = client.content.getCollection("Blog");
+     * collectionBuilder.language(1);
+     * ```
      *
-     *
-     * @param {number | string} languageId The language id to filter the content by
-     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @param {number | string} languageId The language ID to filter the content by.
+     * @return {CollectionBuilder} A CollectionBuilder instance.
      * @memberof CollectionBuilder
      */
     language(languageId: number | string): this {
@@ -94,9 +117,11 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * The retrieved content will have the rendered HTML
+     * Setting this to true will server side render (using velocity) any widgets that are returned by the content query.
      *
-     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * More information here: {@link https://www.dotcms.com/docs/latest/content-api-retrieval-and-querying#ParamsOptional}
+     *
+     * @return {CollectionBuilder} A CollectionBuilder instance.
      * @memberof CollectionBuilder
      */
     render(): this {
@@ -106,19 +131,18 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * Takes an array of constrains to sort the content by field an specific order
+     * Sorts the content by the specified fields and orders.
      *
      * @example
-     * ```javascript
-     * // This will sort the content by title in ascending order
-     * // and by modDate in descending order
-     *  const sortBy = [{ field: 'title', order: 'asc' }, { field: 'modDate', order: 'desc' }]
+     * ```typescript
+     * const client = new DotCMSClient(config);
+     * const collectionBuilder = client.content.getCollection("Blog");
+     * const sortBy = [{ field: 'title', order: 'asc' }, { field: 'modDate', order: 'desc' }];
+     * collectionBuilder("Blog").sortBy(sortBy);
+     * ```
      *
-     *  client.content.getCollection("Blog").sortBy(sortBy)
-     *```
-     *
-     * @param {SortBy[]} sortBy Array of constrains to sort the content by
-     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @param {SortBy[]} sortBy Array of constraints to sort the content by.
+     * @return {CollectionBuilder} A CollectionBuilder instance.
      * @memberof CollectionBuilder
      */
     sortBy(sortBy: SortBy[]): this {
@@ -128,12 +152,10 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * Takes a number that represents the max amount of content to fetch
+     * Sets the maximum amount of content to fetch.
      *
-     * `limit` is set to 10 by default
-     *
-     * @param {number} limit The max amount of content to fetch
-     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @param {number} limit The maximum amount of content to fetch.
+     * @return {CollectionBuilder} A CollectionBuilder instance.
      * @memberof CollectionBuilder
      */
     limit(limit: number): this {
@@ -143,10 +165,10 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * Takes a number that represents the page to fetch
+     * Sets the page number to fetch.
      *
-     * @param {number} page The page to fetch
-     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @param {number} page The page number to fetch.
+     * @return {CollectionBuilder} A CollectionBuilder instance.
      * @memberof CollectionBuilder
      */
     page(page: number): this {
@@ -156,27 +178,28 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * Takes a string that represents a {@link https://www.dotcms.com/docs/latest/content-search-syntax#Lucene Lucene Query} that is used to filter the content to fetch.
+     * Filters the content by a Lucene query string.
      *
-     * The string is not validated, so be cautious when using it.
-     *
-     * @param {string} query A {@link https://www.dotcms.com/docs/latest/content-search-syntax#Lucene Lucene Query} String
-     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @param {string} query A Lucene query string.
+     * @return {CollectionBuilder} A CollectionBuilder instance.
      * @memberof CollectionBuilder
      */
     query(query: string): this;
 
     /**
-     * Takes a function that recieves a QueryBuilder to buid a query for content filtering.
+     * Filters the content by building a query using a QueryBuilder function.
+     *
      * @example
-     *```javascript
-     * // This will filter the content by title equals 'Hello World' or 'Hello World 2'
-     * client.content.getCollection("Activity").query((queryBuilder) =>
+     * ```typescript
+     * const client = new DotCMSClient(config);
+     * const collectionBuilder = client.content.getCollection("Blog");
+     * collectionBuilder.query((queryBuilder) =>
      *     queryBuilder.field('title').equals('Hello World').or().equals('Hello World 2')
      * );
-     *```
-     * @param {BuildQuery} buildQuery A function that receives a QueryBuilder instance and returns a valid query
-     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * ```
+     *
+     * @param {BuildQuery} buildQuery A function that receives a QueryBuilder instance and returns a valid query.
+     * @return {CollectionBuilder} A CollectionBuilder instance.
      * @memberof CollectionBuilder
      */
     query(buildQuery: BuildQuery): this;
@@ -208,11 +231,18 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * The retrieved content will be draft content
+     * Retrieves draft content.
+     * @example
+     * ```ts
+     * const client = new DotCMSClient(config);
+     * const collectionBuilder = client.content.getCollection("Blog");
+     * collectionBuilder
+     *      .draft() // This will retrieve draft/working content
+     *      .then((response) => // Your code here })
+     *      .catch((error) => // Your code here })
+     * ```
      *
-     * The default value is false to fetch content that is not on draft
-     *
-     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @return {CollectionBuilder} A CollectionBuilder instance.
      * @memberof CollectionBuilder
      */
     draft(): this {
@@ -222,12 +252,22 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * Takes a string that represents a variant ID of content created with the {@link https://www.dotcms.com/docs/latest/experiments-and-a-b-testing A/B Testing} feature
+     * Filters the content by a variant ID for [Experiments](https://www.dotcms.com/docs/latest/experiments-and-a-b-testing)
      *
-     * `variantId` defaults to "DEFAULT" to fetch content that is not part of an A/B test
+     * More information here: {@link https://www.dotcms.com/docs/latest/content-api-retrieval-and-querying#ParamsOptional}
      *
-     * @param {string} variantId A string that represents a variant ID
-     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @example
+     * ```ts
+     * const client = new DotCMSClient(config);
+     * const collectionBuilder = client.content.getCollection("Blog");
+     * collectionBuilder
+     *      .variant("YOUR_VARIANT_ID")
+     *      .then((response) => // Your code here })
+     *      .catch((error) => // Your code here })
+     * ```
+     *
+     * @param {string} variantId A string that represents a variant ID.
+     * @return {CollectionBuilder} A CollectionBuilder instance.
      * @memberof CollectionBuilder
      */
     variant(variantId: string): this {
@@ -237,12 +277,23 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * Takes a number that represents the depth of the relationships of a content
+     * Sets the depth of the relationships of the content.
+     * Specifies the depth of related content to return in the results.
      *
-     * The `depth` is set to 0 by default and the max supported value is 3.
+     * More information here: {@link https://www.dotcms.com/docs/latest/content-api-retrieval-and-querying#ParamsOptional}
      *
-     * @param {number} depth The depth of the relationships of a content
-     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @example
+     * ```ts
+     * const client = new DotCMSClient(config);
+     * const collectionBuilder = client.content.getCollection("Blog");
+     * collectionBuilder
+     *      .depth(1)
+     *      .then((response) => // Your code here })
+     *      .catch((error) => // Your code here })
+     * ```
+     *
+     * @param {number} depth The depth of the relationships of the content.
+     * @return {CollectionBuilder} A CollectionBuilder instance.
      * @memberof CollectionBuilder
      */
     depth(depth: number): this {
@@ -256,11 +307,21 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * Executes the fetch and returns a promise that resolves to the content or rejects to an error
+     * Executes the fetch and returns a promise that resolves to the content or rejects with an error.
      *
-     * @param {OnFullfilled} [onfulfilled] A callback that is called when the fetch is successful
-     * @param {OnRejected} [onrejected] A callback that is called when the fetch fails
-     * @return {Promise<GetCollectionResponse<T> | GetCollectionError>} A promise that resolves to the content or rejects to an error
+     * @example
+     * ```ts
+     * const client = new DotCMSClient(config);
+     * const collectionBuilder = client.content.getCollection("Blog");
+     * collectionBuilder
+     *      .limit(10)
+     *      .then((response) => // Your code here })
+     *      .catch((error) => // Your code here })
+     * ```
+     *
+     * @param {OnFullfilled} [onfulfilled] A callback that is called when the fetch is successful.
+     * @param {OnRejected} [onrejected] A callback that is called when the fetch fails.
+     * @return {Promise<GetCollectionResponse<T> | GetCollectionError>} A promise that resolves to the content or rejects with an error.
      * @memberof CollectionBuilder
      */
     then(
@@ -279,7 +340,6 @@ export class CollectionBuilder<T = unknown> {
 
                 return finalResponse;
             } else {
-                // Fetch does not reject on server errors, so we only have to bubble up the error as a normal fetch
                 return {
                     status: response.status,
                     ...data
@@ -288,10 +348,16 @@ export class CollectionBuilder<T = unknown> {
         }, onrejected);
     }
 
-    // Formats the response to the desired format
+    /**
+     * Formats the response to the desired format.
+     *
+     * @private
+     * @param {GetCollectionRawResponse<T>} data The raw response data.
+     * @return {GetCollectionResponse<T>} The formatted response.
+     * @memberof CollectionBuilder
+     */
     private formatResponse<T>(data: GetCollectionRawResponse<T>): GetCollectionResponse<T> {
         const contentlets = data.entity.jsonObjectView.contentlets;
-
         const total = data.entity.resultsSize;
 
         const mappedResponse: GetCollectionResponse<T> = {
@@ -309,7 +375,13 @@ export class CollectionBuilder<T = unknown> {
             : mappedResponse;
     }
 
-    // Calls the content API to fetch the content
+    /**
+     * Calls the content API to fetch the content.
+     *
+     * @private
+     * @return {Promise<Response>} The fetch response.
+     * @memberof CollectionBuilder
+     */
     private fetch(): Promise<Response> {
         const finalQuery = this.currentQuery
             .field('languageId')
