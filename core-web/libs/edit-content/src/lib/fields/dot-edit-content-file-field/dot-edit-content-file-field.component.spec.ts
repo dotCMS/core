@@ -8,22 +8,17 @@ import { DotEditContentFileFieldComponent } from './dot-edit-content-file-field.
 import { FileFieldStore } from './store/file-field.store';
 
 describe('DotEditContentFileFieldComponent', () => {
-  let spectator: Spectator<DotEditContentFileFieldComponent>;
-  const createComponent = createComponentFactory({
-    component: DotEditContentFileFieldComponent,
-    detectChanges: false,
-    componentProviders: [
-        FileFieldStore
-    ],
-    providers: [
-        provideHttpClient(),
-        mockProvider(DotMessageService)
-    ]
-  });
+    let spectator: Spectator<DotEditContentFileFieldComponent>;
+    const createComponent = createComponentFactory({
+        component: DotEditContentFileFieldComponent,
+        detectChanges: false,
+        componentProviders: [FileFieldStore],
+        providers: [provideHttpClient(), mockProvider(DotMessageService)]
+    });
 
-  beforeEach(() => spectator = createComponent());
+    beforeEach(() => (spectator = createComponent()));
 
-  it('should be created', () => {
-    expect(spectator.component).toBeTruthy();
-  });
+    it('should be created', () => {
+        expect(spectator.component).toBeTruthy();
+    });
 });

@@ -54,8 +54,8 @@ export const FileFieldStore = signalStore(
     })),
     withMethods((store) => ({
         initLoad: (initState: {
-            inputType: FileFieldState['inputType'],
-            uiMessage: FileFieldState['uiMessage']
+            inputType: FileFieldState['inputType'];
+            uiMessage: FileFieldState['uiMessage'];
         }) => {
             const { inputType, uiMessage } = initState;
 
