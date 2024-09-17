@@ -1,7 +1,6 @@
 package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.analytics.Util;
-import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -22,7 +21,6 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.dotcms.analytics.Util.isUrlMap;
 import static com.dotcms.exception.ExceptionUtil.getErrorMessage;
 import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 
@@ -35,18 +33,16 @@ import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 public class PageDetailCollector implements Collector {
 
     private final HTMLPageAssetAPI pageAPI;
-    private final HostAPI hostAPI;
     private final URLMapAPIImpl urlMapAPI;
     private final IdentifierAPI identifierAPI;
 
     public PageDetailCollector() {
-        this(APILocator.getHTMLPageAssetAPI(), APILocator.getHostAPI(), APILocator.getURLMapAPI(), APILocator.getIdentifierAPI());
+        this(APILocator.getHTMLPageAssetAPI(), APILocator.getURLMapAPI(), APILocator.getIdentifierAPI());
     }
 
     public PageDetailCollector(final HTMLPageAssetAPI pageAPI,
-                               final HostAPI hostAPI, URLMapAPIImpl urlMapAPI, IdentifierAPI identifierAPI) {
+                                URLMapAPIImpl urlMapAPI, IdentifierAPI identifierAPI) {
         this.pageAPI = pageAPI;
-        this.hostAPI = hostAPI;
         this.urlMapAPI = urlMapAPI;
         this.identifierAPI = identifierAPI;
     }
@@ -105,8 +101,11 @@ public class PageDetailCollector implements Collector {
         collectorPayloadBean.put("url", uri);
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("host", host);
-        collectorPayloadBean.put("site", site.getIdentifier());
         collectorPayloadBean.put("event_type", EventType.PAGE_REQUEST.getType());
+
+        if (Objects.nonNull(site)) {
+            collectorPayloadBean.put("site", site.getIdentifier());
+        }
 
         return collectorPayloadBean;
     }

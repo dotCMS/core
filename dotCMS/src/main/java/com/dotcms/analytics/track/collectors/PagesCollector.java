@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 
 /**
  * This collector collects the page information
@@ -28,17 +27,15 @@ import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 public class PagesCollector implements Collector {
 
     private final HTMLPageAssetAPI pageAPI;
-    private final HostAPI hostAPI;
     private final URLMapAPIImpl urlMapAPI;
 
     public PagesCollector() {
-        this(APILocator.getHTMLPageAssetAPI(), APILocator.getHostAPI(), APILocator.getURLMapAPI());
+        this(APILocator.getHTMLPageAssetAPI(), APILocator.getURLMapAPI());
     }
 
     public PagesCollector(final HTMLPageAssetAPI pageAPI,
-                          final HostAPI hostAPI, final URLMapAPIImpl urlMapAPI) {
+                           final URLMapAPIImpl urlMapAPI) {
         this.pageAPI = pageAPI;
-        this.hostAPI = hostAPI;
         this.urlMapAPI = urlMapAPI;
     }
 
@@ -96,7 +93,10 @@ public class PagesCollector implements Collector {
         collectorPayloadBean.put("url", uri);
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("host", host);
-        collectorPayloadBean.put("site", site.getIdentifier());
+
+        if (Objects.nonNull(site)) {
+            collectorPayloadBean.put("site", site.getIdentifier());
+        }
 
         return collectorPayloadBean;
     }

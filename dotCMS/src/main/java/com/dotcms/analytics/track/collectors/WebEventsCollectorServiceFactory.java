@@ -96,20 +96,23 @@ public class WebEventsCollectorServiceFactory {
             final CollectorContextMap collectorContextMap = new CharacterCollectorContextMap(character, requestMatcher,
                     getCollectorContextMap(request, pageMode, site));
 
-            this.submitter.logEvent(
-                    new EventLogRunnable(site, ()-> {
-                        Logger.debug(this, ()-> "Running async collectors");
+            try {
+                this.submitter.logEvent(
+                        new EventLogRunnable(site, () -> {
+                            Logger.debug(this, () -> "Running async collectors");
 
-                        collect(baseCollectors.asyncCollectors.values(), base, collectorContextMap);
-                        final List<CollectorPayloadBean> asyncFutureEvents = getFutureEvents(
-                                eventCreatorCollectors.asyncCollectors.values(), collectorContextMap);
+                            collect(baseCollectors.asyncCollectors.values(), base, collectorContextMap);
+                            final List<CollectorPayloadBean> asyncFutureEvents = getFutureEvents(
+                                    eventCreatorCollectors.asyncCollectors.values(), collectorContextMap);
 
-                        return Stream.concat(futureEvents.stream(), asyncFutureEvents.stream())
-                                .map(payload -> payload.add(base))
-                                .map(CollectorPayloadBean::toMap)
-                                .collect(java.util.stream.Collectors.toList());
-                    }));
-
+                            return Stream.concat(futureEvents.stream(), asyncFutureEvents.stream())
+                                    .map(payload -> payload.add(base))
+                                    .map(CollectorPayloadBean::toMap)
+                                    .collect(java.util.stream.Collectors.toList());
+                        }));
+            } catch (Exception e) {
+                Logger.debug(WebEventsCollectorServiceFactory.class, () -> "Error saving Analitycs Events:" + e.getMessage());
+            }
         }
 
         private static Map<String, Object> getCollectorContextMap(final HttpServletRequest request,
