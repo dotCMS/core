@@ -14,6 +14,8 @@ import io.vavr.Tuple2;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class AnalyticsQueryParser {
 
@@ -58,8 +60,35 @@ public class AnalyticsQueryParser {
             builder.filters(parseFilters(query.getFilters()));
         }
 
+        builder.limit(query.getLimit()).offset(query.getOffset());
+
+        if (UtilMethods.isSet(query.getOrders())) {
+            builder.orders(parseOrders(query.getOrders()));
+        }
+
+        if (UtilMethods.isSet(query.getTimeDimensions())) {
+            builder.timeDimensions(parseTimeDimensions(query.getTimeDimensions()));
+        }
 
         return builder.build();
+    }
+
+    private Collection<CubeJSQuery.TimeDimension> parseTimeDimensions(final String timeDimensions) {
+        final TimeDimensionParser.TimeDimension parsedTimeDimension = TimeDimensionParser.parseTimeDimension(timeDimensions);
+        return Stream.of(
+                new CubeJSQuery.TimeDimension(parsedTimeDimension.getTerm(),
+                        parsedTimeDimension.getField())
+        ).collect(Collectors.toList());
+    }
+
+    private Collection<CubeJSQuery.OrderItem> parseOrders(final String orders) {
+
+        final OrderParser.ParsedOrder parsedOrder = OrderParser.parseOrder(orders);
+        return Stream.of(
+                new CubeJSQuery.OrderItem(parsedOrder.getTerm(),
+                    "ASC".equalsIgnoreCase(parsedOrder.getOrder())?
+                    Filter.Order.ASC:Filter.Order.DESC)
+                ).collect(Collectors.toList());
     }
 
     private Collection<Filter> parseFilters(final String filters) {

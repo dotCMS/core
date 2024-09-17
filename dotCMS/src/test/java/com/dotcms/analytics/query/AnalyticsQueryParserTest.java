@@ -5,6 +5,10 @@ import com.dotcms.cube.filters.Filter;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Unit test for {@link AnalyticsQueryParser}
  * @author jsanca
@@ -62,6 +66,51 @@ public class AnalyticsQueryParserTest {
 
         final Filter[] filters = cubeJSQuery.filters();
         Assert.assertNotNull("filters can not be null", filters);
+
+        Assert.assertEquals("The filters should have 1 element", 1, filters.length);
+        Assert.assertTrue("First filter element type should be an OR", filters[0].asMap().containsKey("or"));
+        final List<Map<String, Object>> filterValues = (List<Map<String, Object>>) filters[0].asMap().get("or");
+        Assert.assertNotNull("Filter values can not be null", filterValues);
+        Assert.assertEquals("Filter values should have 2 elements", 2, filterValues.size());
+
+        Assert.assertEquals("On the first filter element, member should be Events.variant", "Events.variant", filterValues.get(0).get("member"));
+        Assert.assertEquals("On the first filter element, operator should be equals", "equals", filterValues.get(0).get("operator"));
+        Assert.assertEquals("On the first filter element, values should be B", "B", ((Object[])filterValues.get(0).get("values"))[0]);
+
+        Assert.assertEquals("On the second filter element, member should be Events.experiments", "Events.experiments", filterValues.get(1).get("member"));
+        Assert.assertEquals("On the second filter element, operator should be equals", "equals", filterValues.get(1).get("operator"));
+        Assert.assertEquals("On the second filter element, values should be B", "B", ((Object[])filterValues.get(1).get("values"))[0]);
+
+        final CubeJSQuery.OrderItem [] orderItems = cubeJSQuery.orders();
+        Assert.assertNotNull("orders can not be null", orderItems);
+        Assert.assertEquals("The orders should have 1 element", 1, orderItems.length);
+        Assert.assertEquals("The order member should be Events.day", "Events.day", orderItems[0].getOrderBy());
+        Assert.assertEquals("The order direction should be ASC", "ASC", orderItems[0].getOrder().name());
+
+        Assert.assertEquals("Limit should be 100", 100, cubeJSQuery.limit());
+        Assert.assertEquals("Offset should be 1", 1, cubeJSQuery.offset());
+
+        final CubeJSQuery.TimeDimension[] timeDimensions = cubeJSQuery.timeDimensions();
+        Assert.assertNotNull("timeDimensions can not be null", timeDimensions);
+        Assert.assertEquals("The timeDimensions should have 1 element", 1, timeDimensions.length);
+        Assert.assertEquals("The timeDimensions first element, dimension should be Events.day", "Events.day", timeDimensions[0].getDimension());
+        Assert.assertEquals("The timeDimensions first element, granularity should be Events.day", "day", timeDimensions[0].getGranularity());
+
+        final String [] dimensions = cubeJSQuery.dimensions();
+        Assert.assertNotNull("dimensions can not be null", dimensions);
+        Assert.assertEquals("The dimensions should have 7 elements", 7, dimensions.length);
+
+        Assert.assertTrue("Dimensions should have Events.experiment:", Arrays.asList(dimensions).contains("Events.experiment"));
+        Assert.assertTrue("Dimensions should have Events.referer:", Arrays.asList(dimensions).contains("Events.referer"));
+        Assert.assertTrue("Dimensions should have Events.variant:", Arrays.asList(dimensions).contains("Events.variant"));
+
+        final String [] measures = cubeJSQuery.measures();
+
+        Assert.assertNotNull("dimensions can not be null", measures);
+        Assert.assertEquals("The measures should have 2 elements", 2, measures.length);
+
+        Assert.assertTrue("Measures should have Events.count:", Arrays.asList(measures).contains("Events.count"));
+        Assert.assertTrue("Measures should have Events.uniqueCount:", Arrays.asList(measures).contains("Events.uniqueCount"));
 
     }
 

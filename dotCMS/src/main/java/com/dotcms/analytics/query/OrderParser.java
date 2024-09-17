@@ -1,0 +1,53 @@
+package com.dotcms.analytics.query;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * Order parser
+ * @author jsanca
+ */
+public class OrderParser {
+
+    // Expression for order
+    private static final String ORDER_REGEX = "(\\w+\\.\\w+)\\s+(ASC|DESC)";
+
+    public static class ParsedOrder {
+        private String term;
+        private String order;
+
+        public ParsedOrder(final String term, final String order) {
+            this.term = term;
+            this.order = order;
+        }
+
+        public String getTerm() {
+            return term;
+        }
+
+        public String getOrder() {
+            return order;
+        }
+
+        @Override
+        public String toString() {
+            return "Term: " + term + ", Order: " + order;
+        }
+    }
+
+    public static ParsedOrder parseOrder(final String expression) throws IllegalArgumentException {
+
+        // this should be cached and checked
+        final Pattern pattern = Pattern.compile(ORDER_REGEX, Pattern.CASE_INSENSITIVE);
+        final Matcher matcher = pattern.matcher(expression.trim());
+
+        if (matcher.matches()) {
+            String term = matcher.group(1);   // Ex: Events.day
+            String order = matcher.group(2).toUpperCase();  // Ex: ASC o DESC
+
+            return new ParsedOrder(term, order);
+        } else {
+            throw new IllegalArgumentException("The expression is not valid. The format should be 'Term ASC' or 'Term DESC'.");
+        }
+    }
+}
