@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
-import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.elasticsearch.business.ClusterStats;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.network.IPUtils;
@@ -17,7 +17,6 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.elasticsearch.client.RequestOptions;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
@@ -159,13 +158,15 @@ class MonitorHelper {
     }
 
     /**
-     * Determines if dotCMS can connect to Elasticsearch by pinging the server.
+     * Determines if dotCMS can connect to Elasticsearch by checking the ES Server cluster
+     * statistics. If they're available, it means dotCMS can connect to ES.
      *
      * @return If dotCMS can connect to Elasticsearch, returns {@code true}.
      */
     boolean canConnectToES() {
         try {
-            return RestHighLevelClientProvider.getInstance().getClient().ping(RequestOptions.DEFAULT);
+            final ClusterStats stats = APILocator.getESIndexAPI().getClusterStats();
+            return stats != null && stats.getClusterName() != null;
         } catch (final Exception e) {
             Logger.warnAndDebug(this.getClass(),
                     "Unable to connect to ES: " + ExceptionUtil.getErrorMessage(e), e);
