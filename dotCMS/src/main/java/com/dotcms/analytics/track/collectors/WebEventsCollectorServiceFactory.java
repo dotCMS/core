@@ -6,18 +6,15 @@ import com.dotcms.jitsu.EventLogSubmitter;
 import com.dotcms.visitor.filter.characteristics.Character;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.filters.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import org.apache.commons.lang3.mutable.MutableObject;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -97,10 +94,7 @@ public class WebEventsCollectorServiceFactory {
             // if there is anything to run async
             final PageMode pageMode = PageMode.get(request);
             final CollectorContextMap collectorContextMap = new CharacterCollectorContextMap(character, requestMatcher,
-                    Map.of("uri", request.getRequestURI(),
-                            "pageMode", pageMode,
-                            "siteId", site.getIdentifier(),
-                            "requestId", request.getAttribute("requestId")));
+                    getCollectorContextMap(request, pageMode, site));
 
             this.submitter.logEvent(
                     new EventLogRunnable(site, ()-> {
@@ -118,7 +112,20 @@ public class WebEventsCollectorServiceFactory {
 
         }
 
-        @NotNull
+        private static Map<String, Object> getCollectorContextMap(final HttpServletRequest request,
+                                                                  final PageMode pageMode, final Host site) {
+            final Map<String, Object> contextMap = new HashMap<>(Map.of("uri", request.getRequestURI(),
+                    "pageMode", pageMode,
+                    "currentHost", site,
+                    "requestId", request.getAttribute("requestId")));
+
+            if (Objects.nonNull(request.getAttribute(Constants.VANITY_URL_OBJECT))) {
+                contextMap.put(Constants.VANITY_URL_OBJECT, request.getAttribute(Constants.VANITY_URL_OBJECT));
+            }
+
+            return contextMap;
+        }
+
         private List<CollectorPayloadBean> getFutureEvents(final Collection<Collector> eventCreators,
                                                            final CollectorContextMap collectorContextMap) {
            return eventCreators.stream()

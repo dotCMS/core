@@ -44,7 +44,7 @@ public class PagesCollector implements Collector {
 
     @Override
     public boolean test(CollectorContextMap collectorContextMap) {
-        return PagesAndUrlMapsRequestMatcher.PAGES_AND_URL_MAPS_MATCHER_ID.equals(collectorContextMap.getRequestMatcher().getId()); // should compare with the id
+        return isUrlMap(collectorContextMap);
     }
 
     @Override
@@ -53,21 +53,24 @@ public class PagesCollector implements Collector {
 
         final String uri = (String)collectorContextMap.get("uri");
         final String host = (String)collectorContextMap.get("host");
-        final String siteId = (String)collectorContextMap.get("siteId");
+        final Host site = (Host) collectorContextMap.get("currentHost");
         final Long languageId = (Long)collectorContextMap.get("langId");
         final String language = (String)collectorContextMap.get("lang");
         final PageMode pageMode = (PageMode)collectorContextMap.get("pageMode");
         final HashMap<String, String> pageObject = new HashMap<>();
 
-        if (Objects.nonNull(uri) && Objects.nonNull(siteId) && Objects.nonNull(languageId)) {
+        if (Objects.nonNull(uri) && Objects.nonNull(site) && Objects.nonNull(languageId)) {
 
-            final Host site = Try.of(()->this.hostAPI.find(siteId, APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES)).get();
-            final UrlMapContext urlMapContext = new UrlMapContext(
-                    pageMode, languageId, uri, site, APILocator.systemUser());
-            final boolean isUrlMap = Util.isUrlMap(urlMapContext);
+            final boolean isUrlMap = isUrlMap(collectorContextMap);
+
             if (isUrlMap) {
+
+                final UrlMapContext urlMapContext = new UrlMapContext(
+                        pageMode, languageId, uri, site, APILocator.systemUser());
+
                 final Optional<URLMapInfo> urlMappedContent =
                         Try.of(() -> this.urlMapAPI.processURLMap(urlMapContext)).get();
+
                 if (urlMappedContent.isPresent()) {
                     final URLMapInfo urlMapInfo = urlMappedContent.get();
                     final Contentlet urlMapContentlet = urlMapInfo.getContentlet();
@@ -75,6 +78,7 @@ public class PagesCollector implements Collector {
                     pageObject.put("id", urlMapContentlet.getIdentifier());
                     pageObject.put("title", urlMapContentlet.getTitle());
                     pageObject.put("content_type_id", urlMapContentType.id());
+                    pageObject.put("content_type_name", urlMapContentType.name());
                     pageObject.put("content_type_var_name", urlMapContentType.variable());
                     collectorPayloadBean.put("event_type", EventType.URL_MAP.getType());
                 }
@@ -92,9 +96,24 @@ public class PagesCollector implements Collector {
         collectorPayloadBean.put("url", uri);
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("host", host);
-        collectorPayloadBean.put("site", siteId);
+        collectorPayloadBean.put("site", site.getIdentifier());
 
         return collectorPayloadBean;
+    }
+
+    private boolean isUrlMap(final CollectorContextMap collectorContextMap){
+
+        final String uri = (String)collectorContextMap.get("uri");
+        final Long languageId = (Long)collectorContextMap.get("langId");
+        final PageMode pageMode = (PageMode)collectorContextMap.get("pageMode");
+        final String siteId = (String)collectorContextMap.get("siteId");
+
+        final Host site = Try.of(()->this.hostAPI.find(siteId, APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES)).get();
+
+        final UrlMapContext urlMapContext = new UrlMapContext(
+                pageMode, languageId, uri, site, APILocator.systemUser());
+
+        return Util.isUrlMap(urlMapContext);
     }
 
     @Override

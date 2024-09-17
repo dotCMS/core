@@ -62,14 +62,13 @@ public class PageDetailCollector implements Collector {
 
         final String uri = (String) collectorContextMap.get("uri");
         final String host = (String) collectorContextMap.get("host");
-        final String siteId = (String) collectorContextMap.get("siteId");
+        final Host site = (Host) collectorContextMap.get("currentHost");
         final Long languageId = (Long) collectorContextMap.get("langId");
         final String language = (String) collectorContextMap.get("lang");
         final PageMode pageMode = (PageMode) collectorContextMap.get("pageMode");
         final HashMap<String, String> pageObject = new HashMap<>();
 
-        if (Objects.nonNull(uri) && Objects.nonNull(siteId) && Objects.nonNull(languageId)) {
-            final Host site = Try.of(() -> this.hostAPI.find(siteId, APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES)).get();
+        if (Objects.nonNull(uri) && Objects.nonNull(site) && Objects.nonNull(languageId)) {
             final UrlMapContext urlMapContext = new UrlMapContext(
                     pageMode, languageId, uri, site, APILocator.systemUser());
             final boolean isUrlMap = Util.isUrlMap(urlMapContext);
@@ -103,7 +102,7 @@ public class PageDetailCollector implements Collector {
         collectorPayloadBean.put("url", uri);
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("host", host);
-        collectorPayloadBean.put("site", siteId);
+        collectorPayloadBean.put("site", site.getIdentifier());
         collectorPayloadBean.put("event_type", EventType.PAGE_REQUEST.getType());
 
         return collectorPayloadBean;

@@ -3,6 +3,7 @@ package com.dotcms.analytics.track.collectors;
 import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
 import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.filters.Constants;
 
 import javax.servlet.http.HttpServletRequest;
@@ -44,7 +45,7 @@ public class SyncVanitiesCollector implements Collector {
         }
 
         final String uri = (String)collectorContextMap.get("uri");
-        final String siteId = (String)collectorContextMap.get("host");
+        final Host site = (Host) collectorContextMap.get("currentHost");
         final Long languageId = (Long)collectorContextMap.get("langId");
         final String language = (String)collectorContextMap.get("lang");
         final CachedVanityUrl cachedVanityUrl = (CachedVanityUrl)collectorContextMap.get(Constants.VANITY_URL_OBJECT);
@@ -62,7 +63,7 @@ public class SyncVanitiesCollector implements Collector {
         collectorPayloadBean.put("object",  vanityObject);
         collectorPayloadBean.put("url", uri);
         collectorPayloadBean.put("language", language);
-        collectorPayloadBean.put("site", siteId);
+        collectorPayloadBean.put("site", site.getIdentifier());
         collectorPayloadBean.put("event_type", EventType.VANITY_REQUEST.getType());
 
         return collectorPayloadBean;

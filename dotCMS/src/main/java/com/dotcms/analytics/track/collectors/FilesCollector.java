@@ -51,14 +51,13 @@ public class FilesCollector implements Collector {
 
         final String uri = (String)collectorContextMap.get("uri");
         final String host = (String)collectorContextMap.get("host");
-        final String siteId = (String)collectorContextMap.get("siteId");
+        final Host site = (Host) collectorContextMap.get("currentHost");
         final Long languageId = (Long)collectorContextMap.get("langId");
         final String language = (String)collectorContextMap.get("lang");
         final HashMap<String, String> fileObject = new HashMap<>();
 
-        if (Objects.nonNull(uri) && Objects.nonNull(siteId) && Objects.nonNull(languageId)) {
+        if (Objects.nonNull(uri) && Objects.nonNull(site) && Objects.nonNull(languageId)) {
 
-            final Host site = Try.of(()->this.hostAPI.find(siteId, APILocator.systemUser(), false)).get();
             getFileAsset(uri, site, languageId).ifPresent(fileAsset -> {
                 fileObject.put("id", fileAsset.getIdentifier());
                 fileObject.put("title", fileAsset.getTitle());
@@ -70,7 +69,7 @@ public class FilesCollector implements Collector {
         collectorPayloadBean.put("url", uri);
         collectorPayloadBean.put("host", host);
         collectorPayloadBean.put("language", language);
-        collectorPayloadBean.put("site", siteId);
+        collectorPayloadBean.put("site", site.getIdentifier());
         collectorPayloadBean.put("event_type", EventType.FILE_REQUEST.getType());
 
         return collectorPayloadBean;
