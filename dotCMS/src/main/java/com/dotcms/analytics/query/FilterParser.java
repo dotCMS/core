@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
  */
 public class FilterParser {
 
-    private static final String EXPRESSION_REGEX = "(\\w+\\.\\w+)\\s*(=|!=|in|!in)\\s*\\[\"(.*?)\"";
+    private static final String EXPRESSION_REGEX = "(\\w+\\.\\w+)\\s*(=|!=|in|!in)\\s*\\['(.*?)'";
     private static final String LOGICAL_OPERATOR_REGEX = "\\s*(and|or)\\s*";
 
     static class Token {
