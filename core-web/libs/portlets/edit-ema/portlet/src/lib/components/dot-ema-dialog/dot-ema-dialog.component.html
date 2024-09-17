@@ -1,5 +1,4 @@
 <p-dialog
-    (visibleChange)="resetDialog()"
     [visible]="ds.status !== dialogStatus.IDLE"
     [style]="{ height: '90vh', width: '90vw' }"
     [header]="ds.header"
@@ -10,7 +9,7 @@
     appendTo="body"
     data-testId="dialog"
     styleClass="edit-ema-dialog"
-    (onHide)="onHide()">
+    (visibleChange)="onHide()">
     @switch (ds.type) {
         @case ('form') {
             <dot-ema-form-selector
@@ -40,7 +39,7 @@
 
     <p-dialog
         (visibleChange)="closeCompareDialog()"
-        [visible]="this.$compareData()"
+        [visible]="$compareDataExists()"
         [style]="{ height: '90vh', width: '90vw' }"
         [header]="'Compare'"
         [draggable]="false"

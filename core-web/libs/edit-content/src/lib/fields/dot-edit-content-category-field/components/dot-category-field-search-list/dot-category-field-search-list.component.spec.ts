@@ -32,7 +32,7 @@ describe('DotCategoryFieldSearchListComponent', () => {
             props: {
                 selected: CATEGORY_MOCK_TRANSFORMED,
                 categories: CATEGORY_MOCK_TRANSFORMED,
-                status: ComponentStatus.LOADED
+                state: ComponentStatus.LOADED
             } as unknown
         });
     });
@@ -42,14 +42,14 @@ describe('DotCategoryFieldSearchListComponent', () => {
     });
 
     it('should show the skeleton if the component is loading', () => {
-        spectator.setInput('status', ComponentStatus.LOADING);
+        spectator.setInput('state', ComponentStatus.LOADING);
         spectator.detectChanges();
         expect(spectator.query(byTestId('categories-skeleton'))).not.toBeNull();
         expect(spectator.query(byTestId('categories-table'))).toBeNull();
     });
 
     it('should show the table if the component is not loading', () => {
-        spectator.setInput('status', ComponentStatus.LOADED);
+        spectator.setInput('state', ComponentStatus.LOADED);
         spectator.detectChanges();
         expect(spectator.query(byTestId('categories-table'))).not.toBeNull();
         expect(spectator.query(byTestId('categories-skeleton'))).toBeNull();
@@ -76,7 +76,7 @@ describe('DotCategoryFieldSearchListComponent', () => {
 
     it('should render `dot-empty-container` with `no results` configuration ', () => {
         const expectedConfig = CATEGORY_FIELD_EMPTY_MESSAGES.noResults;
-        spectator.setInput('status', ComponentStatus.LOADED);
+        spectator.setInput('state', ComponentStatus.LOADED);
         spectator.setInput('categories', []);
         spectator.detectChanges();
 
@@ -86,7 +86,7 @@ describe('DotCategoryFieldSearchListComponent', () => {
 
     it('should render `dot-empty-container` with `error` configuration ', () => {
         const expectedConfig = CATEGORY_FIELD_EMPTY_MESSAGES[ComponentStatus.ERROR];
-        spectator.setInput('status', ComponentStatus.ERROR);
+        spectator.setInput('state', ComponentStatus.ERROR);
         spectator.setInput('categories', []);
 
         spectator.detectChanges();

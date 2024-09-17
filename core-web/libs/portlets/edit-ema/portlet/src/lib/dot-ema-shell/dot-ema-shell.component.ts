@@ -1,7 +1,7 @@
-import { combineLatest, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, effect, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -9,7 +9,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { skip, take, takeUntil } from 'rxjs/operators';
+import { skip, takeUntil } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -26,16 +26,16 @@ import { SiteService } from '@dotcms/dotcms-js';
 import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotInfoPageComponent, DotNotLicenseComponent, SafeUrlPipe } from '@dotcms/ui';
+import { isEqual } from '@dotcms/utils/lib/shared/lodash/functions';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { EditEmaEditorComponent } from '../edit-ema-editor/edit-ema-editor.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
-import { NG_CUSTOM_EVENTS } from '../shared/enums';
-import { DotPage } from '../shared/models';
+import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
+import { DialogAction, DotPage } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 
 @Component({
@@ -80,8 +80,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
 
-    readonly $didTranslate = signal(false);
-
     readonly uveStore = inject(UVEStore);
 
     readonly #activatedRoute = inject(ActivatedRoute);
@@ -93,28 +91,21 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     protected readonly $shellProps = this.uveStore.$shellProps;
 
     readonly #destroy$ = new Subject<boolean>();
-    #currentComponent: unknown;
 
     readonly translatePageEffect = effect(() => {
-        const { languages, languageId, page } = this.uveStore.$shellProps().translateProps;
+        const { page, currentLanguage } = this.uveStore.$translateProps();
 
-        if (languages.length) {
-            const currentLanguage = languages.find((lang) => lang.id === languageId);
-
-            if (!currentLanguage) {
-                return;
-            }
-
-            if (!currentLanguage?.translated) {
-                this.createNewTranslation(currentLanguage, page);
-            }
+        if (currentLanguage && !currentLanguage?.translated) {
+            this.createNewTranslation(currentLanguage, page);
         }
     });
 
     ngOnInit(): void {
-        combineLatest([this.#activatedRoute.data, this.#activatedRoute.queryParams])
+        this.#activatedRoute.queryParams
             .pipe(takeUntil(this.#destroy$))
-            .subscribe(([{ data }, queryParams]) => {
+            .subscribe((queryParams) => {
+                const { data } = this.#activatedRoute.snapshot.data;
+
                 // If we have a clientHost we need to check if it's in the whitelist
                 if (queryParams.clientHost) {
                     const canAccessClientHost = this.checkClientHostAccess(
@@ -133,10 +124,17 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     }
                 }
 
-                this.uveStore.load({
+                const currentParams = {
                     ...(queryParams as DotPageApiParams),
                     clientHost: queryParams.clientHost ?? data?.url
-                });
+                };
+
+                // We don't need to load if the params are the same
+                if (isEqual(this.uveStore.params(), currentParams)) {
+                    return;
+                }
+
+                this.uveStore.init(currentParams);
             });
 
         // We need to skip one because it's the initial value
@@ -150,40 +148,25 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.#destroy$.complete();
     }
 
-    /**
-     * Handle the activate route event
-     *
-     * @param {*} event
-     * @memberof DotEmaShellComponent
-     */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onActivateRoute(event: any): void {
-        this.#currentComponent = event;
-    }
+    handleNgEvent({ event, form }: DialogAction) {
+        const { isTranslation, status } = form;
 
-    handleNgEvent({ event }: { event: CustomEvent }) {
+        const isSaved = status === FormStatus.SAVED;
+
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
-                if (!this.$didTranslate()) {
+                if (!isSaved && isTranslation) {
+                    // At this point we are in the language of the translation, if the user didn't save we need to navigate to the default language
                     this.navigate({
-                        language_id: 1 // We navigate to the default language if the user didn't translate
+                        language_id: 1
                     });
-                } else {
-                    this.$didTranslate.set(false);
-                    this.reloadFromDialog();
                 }
 
                 break;
             }
 
-            case NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED: {
-                // We need to check when the contentlet is updated, to know if we need to reload the page
-                this.$didTranslate.set(true);
-                break;
-            }
-
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
-                this.$didTranslate.set(true);
+                // Maybe this can be out of the switch but we should evaluate it if it's needed
                 // This can be undefined
                 const url = event.detail.payload?.htmlPageReferer?.split('?')[0].replace('/', '');
 
@@ -195,18 +178,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                if (this.#currentComponent instanceof EditEmaEditorComponent) {
-                    this.#currentComponent.reloadIframeContent();
-                }
+                this.uveStore.reload();
 
-                this.#activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {
-                    const params = this.uveStore.params();
-
-                    this.uveStore.load({
-                        ...params,
-                        clientHost: params.clientHost ?? data?.url
-                    });
-                });
                 break;
             }
         }

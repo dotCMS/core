@@ -10,8 +10,7 @@ import {
     mockDotLayout,
     mockDotTemplate,
     mockDotContainers,
-    dotcmsContentletMock,
-    mockLanguageArray
+    dotcmsContentletMock
 } from '@dotcms/utils-testing';
 
 import { DEFAULT_PERSONA } from './consts';
@@ -714,11 +713,6 @@ export const BASE_SHELL_ITEMS = [
 export const BASE_SHELL_PROPS_RESPONSE = {
     canRead: true,
     error: null,
-    translateProps: {
-        page: MOCK_RESPONSE_HEADLESS.page,
-        languageId: 1,
-        languages: mockLanguageArray
-    },
     seoParams: {
         siteId: MOCK_RESPONSE_HEADLESS.site.identifier,
         languageId: 1,

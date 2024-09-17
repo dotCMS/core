@@ -1,5 +1,5 @@
 @if ($shellProps()?.canRead) {
-    <router-outlet (activate)="onActivateRoute($event)"></router-outlet>
+    <router-outlet></router-outlet>
     <dot-edit-ema-navigation-bar
         [items]="$shellProps().items"
         (action)="handleItemAction($event)"

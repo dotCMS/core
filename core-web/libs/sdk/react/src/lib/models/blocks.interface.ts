@@ -1,9 +1,21 @@
 import { ContentNode } from './content-node.interface';
 
+/**
+ * Represents a Block of content provided by the Block Editor
+ *
+ * @export
+ * @interface Block
+ */
 export interface Block {
     content: ContentNode[];
 }
 
+/**
+ * Props for a contentlet inside the Block Editor
+ *
+ * @export
+ * @interface DotContentletProps
+ */
 export interface DotContentletProps {
     title: string;
     baseType: string;
@@ -35,10 +47,22 @@ export interface DotContentletProps {
     thumbnail?: string;
 }
 
+/**
+ * Props for a block inside the Block Editor Component
+ *
+ * @export
+ * @interface BlockProps
+ */
 export interface BlockProps {
     children: React.ReactNode;
 }
 
+/**
+ * Represents the different types of Blocks that can be used in the Block Editor
+ *
+ * @export
+ * @enum {number}
+ */
 export enum Blocks {
     PARAGRAPH = 'paragraph',
     HEADING = 'heading',
