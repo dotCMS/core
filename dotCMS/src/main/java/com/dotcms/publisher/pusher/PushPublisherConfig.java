@@ -302,7 +302,7 @@ public class PushPublisherConfig extends PublisherConfig {
 		return bundleAssets.isAdded(key, pusheableAsset);
 	}
 
-	public <T> boolean exclude(final T asset, final PusheableAsset pusheableAsset, String evaluateReason, final String excludeReason) {
+	public <T> boolean exclude(final T asset, final PusheableAsset pusheableAsset, final String evaluateReason, final String excludeReason) {
 		final String key = DependencyManager.getBundleKey(asset);
 
 		if(!excludes.contains(key)) {
@@ -325,7 +325,7 @@ public class PushPublisherConfig extends PublisherConfig {
 		}
 	}
 
-	private <T> void writeExcludeManifestItem(final T asset, String evaluateReason, final String excludeReason) {
+	private <T> void writeExcludeManifestItem(final T asset, final String evaluateReason, final String excludeReason) {
 		if (ManifestItem.class.isAssignableFrom(asset.getClass())) {
 			if (UtilMethods.isSet(manifestBuilder)) {
 				manifestBuilder.exclude((ManifestItem) asset, evaluateReason, excludeReason);

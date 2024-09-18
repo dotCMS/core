@@ -89,7 +89,7 @@ public class CSVManifestBuilder implements ManifestBuilder {
     }
 
     private String getManifestFileExcludeLine(final ManifestInfo manifestInfo,
-                                              String evaluateReason, final String excludeReason) {
+                                              final String evaluateReason, final String excludeReason) {
         return getManifestFileLine("EXCLUDED", manifestInfo, evaluateReason, excludeReason);
     }
 
@@ -109,7 +109,7 @@ public class CSVManifestBuilder implements ManifestBuilder {
                 evaluateReason).stream().collect(Collectors.joining(","));
     }
 
-    public <T> void exclude(final ManifestItem manifestItem, String evaluateReason, final String excludeReason){
+    public <T> void exclude(final ManifestItem manifestItem, final String evaluateReason, final String excludeReason){
         final ManifestInfo manifestInfo = manifestItem.getManifestInfo();
         final String line = getManifestFileExcludeLine(manifestInfo, evaluateReason, excludeReason);
 
