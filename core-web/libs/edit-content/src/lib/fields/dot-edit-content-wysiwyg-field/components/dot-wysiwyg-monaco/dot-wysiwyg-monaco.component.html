@@ -1,0 +1,6 @@
+<ngx-monaco-editor
+    (init)="onEditorInit()"
+    [options]="$monacoOptions()"
+    #editorRef
+    data-testId="code-editor"
+    [formControlName]="$field().variable"></ngx-monaco-editor>
