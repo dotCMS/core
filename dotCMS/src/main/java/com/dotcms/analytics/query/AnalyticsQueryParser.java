@@ -14,24 +14,58 @@ import io.vavr.Tuple2;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class AnalyticsQueryParser {
 
+    /**
+     * Parse a json string to a {@link AnalyticsQuery}
+     * Example:
+     * {
+     * 	"dimensions": ["Events.referer", "Events.experiment", "Events.variant", "Events.utcTime", "Events.url", "Events.lookBackWindow", "Events.eventType"],
+     * 	"measures": ["Events.count", "Events.uniqueCount"],
+     * 	"filters": "Events.variant = ['B'] or Events.experiments = ['B']",
+     * 	"limit":100,
+     * 	"offset":1,
+     * 	"timeDimensions":"Events.day day",
+     * 	"orders":"Events.day ASC"
+     * }
+     * @param json
+     * @return AnalyticsQuery
+     */
     public AnalyticsQuery parseJsonToQuery(final String json) {
 
+        if (Objects.isNull(json)) {
+            throw new IllegalArgumentException("Json can not be null");
+        }
         try {
 
             Logger.debug(this, ()-> "Parsing json to query: " + json);
-            final AnalyticsQuery query = DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+            return DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
                     .readValue(json, AnalyticsQuery.class);
-
-            return query;
         } catch (JsonProcessingException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotRuntimeException(e);
         }
     }
 
+    /**
+     * Parse a json string to a {@link CubeJSQuery}
+     * Example:
+     * {
+     * 	"dimensions": ["Events.referer", "Events.experiment", "Events.variant", "Events.utcTime", "Events.url", "Events.lookBackWindow", "Events.eventType"],
+     * 	"measures": ["Events.count", "Events.uniqueCount"],
+     * 	"filters": "Events.variant = ['B'] or Events.experiments = ['B']",
+     * 	"limit":100,
+     * 	"offset":1,
+     * 	"timeDimensions":"Events.day day",
+     * 	"orders":"Events.day ASC"
+     * }
+     * @param json
+     * @return CubeJSQuery
+     */
     public CubeJSQuery parseJsonToCubeQuery(final String json) {
 
         Logger.debug(this, ()-> "Parsing json to cube query: " + json);
@@ -39,9 +73,16 @@ public class AnalyticsQueryParser {
         return parseQueryToCubeQuery(query);
     }
 
-
-
+    /**
+     * Parse an {@link AnalyticsQuery} to a {@link CubeJSQuery}
+     * @param query
+     * @return CubeJSQuery
+     */
     public CubeJSQuery parseQueryToCubeQuery(final AnalyticsQuery query) {
+
+        if (Objects.isNull(query)) {
+            throw new IllegalArgumentException("Query can not be null");
+        }
 
         final CubeJSQuery.Builder builder = new CubeJSQuery.Builder();
         Logger.debug(this, ()-> "Parsing query to cube query: " + query);
@@ -58,8 +99,35 @@ public class AnalyticsQueryParser {
             builder.filters(parseFilters(query.getFilters()));
         }
 
+        builder.limit(query.getLimit()).offset(query.getOffset());
+
+        if (UtilMethods.isSet(query.getOrders())) {
+            builder.orders(parseOrders(query.getOrders()));
+        }
+
+        if (UtilMethods.isSet(query.getTimeDimensions())) {
+            builder.timeDimensions(parseTimeDimensions(query.getTimeDimensions()));
+        }
 
         return builder.build();
+    }
+
+    private Collection<CubeJSQuery.TimeDimension> parseTimeDimensions(final String timeDimensions) {
+        final TimeDimensionParser.TimeDimension parsedTimeDimension = TimeDimensionParser.parseTimeDimension(timeDimensions);
+        return Stream.of(
+                new CubeJSQuery.TimeDimension(parsedTimeDimension.getTerm(),
+                        parsedTimeDimension.getField())
+        ).collect(Collectors.toList());
+    }
+
+    private Collection<CubeJSQuery.OrderItem> parseOrders(final String orders) {
+
+        final OrderParser.ParsedOrder parsedOrder = OrderParser.parseOrder(orders);
+        return Stream.of(
+                new CubeJSQuery.OrderItem(parsedOrder.getTerm(),
+                    "ASC".equalsIgnoreCase(parsedOrder.getOrder())?
+                    Filter.Order.ASC:Filter.Order.DESC)
+                ).collect(Collectors.toList());
     }
 
     private Collection<Filter> parseFilters(final String filters) {
