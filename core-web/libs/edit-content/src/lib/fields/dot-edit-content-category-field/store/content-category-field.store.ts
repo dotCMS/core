@@ -96,6 +96,11 @@ export const CategoryFieldStore = signalStore(
         fieldVariableName: computed(() => store.field().variable),
 
         /**
+         * Status of the List Component
+         */
+        listState: computed(() => (store.mode() === 'list' ? store.state() : ComponentStatus.INIT)),
+
+        /**
          * Determines if the list mode is currently loading.
          */
         isListLoading: computed(
@@ -106,6 +111,7 @@ export const CategoryFieldStore = signalStore(
          * Determines if the store state is currently loaded.
          */
         isInitSate: computed(() => store.state() === ComponentStatus.INIT),
+
         /**
          * Determines if the search mode is currently loading.
          */
@@ -116,7 +122,7 @@ export const CategoryFieldStore = signalStore(
         /**
          * Status of the Search Component
          */
-        searchStatus: computed(() =>
+        searchState: computed(() =>
             store.mode() === 'search' ? store.state() : ComponentStatus.INIT
         ),
 
@@ -187,6 +193,9 @@ export const CategoryFieldStore = signalStore(
                 )
             ),
 
+            /**
+             * Sets the mode for the CategoryFieldView and resets search categories and filter.
+             */
             setMode(mode: CategoryFieldViewMode): void {
                 patchState(store, {
                     mode,
@@ -291,7 +300,8 @@ export const CategoryFieldStore = signalStore(
                     keyParentPath: [],
                     mode: 'list',
                     filter: '',
-                    searchCategories: []
+                    searchCategories: [],
+                    state: ComponentStatus.INIT
                 });
             },
 
@@ -322,6 +332,7 @@ export const CategoryFieldStore = signalStore(
                             }
                         }
                     }),
+
                     // Only pass if you click a item with children
                     filter(
                         (event) =>
