@@ -1,4 +1,4 @@
-package com.dotcms.analytics.track;
+package com.dotcms.analytics.track.matchers;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.RegEX;
