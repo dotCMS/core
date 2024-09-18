@@ -184,3 +184,11 @@ jobs:
             echo "One or more jobs failed or cancelled!"
             exit 1
           fi
+
+      # Check can be removed if we have resolved root cause
+      # We cannot use a local github action for this as it is run before we checkout the repo
+      # secrets.GITHUB_TOKEN is not available in composite workflows so it needs to be passed in.
+      - name: Check API Rate Limit
+        shell: bash
+        run: |
+          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN}}" https://api.github.com/rate_limit || true
