@@ -18,6 +18,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Parser for the analytics query, it can parse a json string to a {@link AnalyticsQuery} or a {@link CubeJSQuery}
+ * @author jsanca
+ */
 public class AnalyticsQueryParser {
 
     /**
