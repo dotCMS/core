@@ -17,6 +17,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -51,8 +52,9 @@ public class ContentAnalyticsResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ReportResponseEntityView query(final HttpServletRequest request, final HttpServletResponse response,
-                          final QueryForm queryForm) {
+    public ReportResponseEntityView query(@Context final HttpServletRequest request,
+                                          @Context final HttpServletResponse response,
+                                          final QueryForm queryForm) {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)

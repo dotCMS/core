@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.analytics.content;
 
 import com.dotcms.analytics.query.AnalyticsQuery;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 
@@ -11,14 +12,18 @@ import java.io.Serializable;
  */
 public class QueryForm implements Serializable {
 
-    private final AnalyticsQuery query;
+    private AnalyticsQuery query;
 
-    public QueryForm(final AnalyticsQuery query) {
-        this.query = query;
+    public QueryForm() {
+        // Default constructor for Jackson deserialization
     }
 
     public AnalyticsQuery getQuery() {
         return query;
+    }
+
+    public void setQuery(final AnalyticsQuery query) {
+        this.query = query;
     }
 
     @Override
