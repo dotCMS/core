@@ -1579,6 +1579,12 @@
                 <version>3.5.3</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.microsoft.playwright</groupId>
+                <artifactId>playwright</artifactId>
+                <version>1.46.0</version>
+            </dependency>
+
             <!-- Graalvm Js Engine -->
             <dependency>
                 <groupId>org.graalvm.sdk</groupId>

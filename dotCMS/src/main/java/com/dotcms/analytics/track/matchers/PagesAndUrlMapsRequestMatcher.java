@@ -1,4 +1,4 @@
-package com.dotcms.analytics.track;
+package com.dotcms.analytics.track.matchers;
 
 import com.dotcms.visitor.filter.characteristics.Character;
 import com.dotcms.visitor.filter.characteristics.CharacterWebAPI;
@@ -13,15 +13,16 @@ import java.util.Objects;
  * Matcher for pages or files
  * @author jsanca
  */
-public class FilesRequestMatcher implements RequestMatcher {
+public class PagesAndUrlMapsRequestMatcher implements RequestMatcher {
 
+    public static final String PAGES_AND_URL_MAPS_MATCHER_ID = "pagesAndUrlMapsMatcher";
     private final CharacterWebAPI characterWebAPI;
 
-    public FilesRequestMatcher() {
+    public PagesAndUrlMapsRequestMatcher() {
         this(WebAPILocator.getCharacterWebAPI());
     }
 
-    public FilesRequestMatcher(final CharacterWebAPI characterWebAPI) {
+    public PagesAndUrlMapsRequestMatcher(final CharacterWebAPI characterWebAPI) {
         this.characterWebAPI = characterWebAPI;
     }
 
@@ -40,9 +41,14 @@ public class FilesRequestMatcher implements RequestMatcher {
                     getOrDefault("iAm", CMSFilter.IAm.NOTHING_IN_THE_CMS);
 
             // should we have a fallback when nothing is returned???
-            return iAm == CMSFilter.IAm.FILE;
+            return iAm == CMSFilter.IAm.PAGE; // this captures also url maps
         }
 
         return false;
+    }
+
+    @Override
+    public String getId() {
+        return PAGES_AND_URL_MAPS_MATCHER_ID;
     }
 }
