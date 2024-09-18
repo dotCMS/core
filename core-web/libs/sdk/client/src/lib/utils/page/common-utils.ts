@@ -1,16 +1,40 @@
-interface PageRequestParamsProps {
+import { PageApiOptions } from '../../client/sdk-js-client';
+
+/**
+ * Interface representing the properties for page request parameters.
+ *
+ * @export
+ * @interface PageRequestParamsProps
+ */
+export interface PageRequestParamsProps {
+    /**
+     * The API endpoint path.
+     * @type {string}
+     */
     path: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    params: { [key: string]: any } | undefined | URLSearchParams; // QueryParams are typed as `any` in frameworks
+
+    /**
+     * The query parameters for the API request.
+     * Can be an object with key-value pairs or a URLSearchParams instance.
+     * @type {{ [key: string]: unknown } | URLSearchParams}
+     */
+    params: { [key: string]: unknown } | URLSearchParams;
 }
 
+/**
+ * Generates the page request parameters to be used in the API call.
+ *
+ * @param {PageRequestParamsProps} PageRequestParamsProps - The properties for the page request.
+ * @returns {PageApiOptions} The options for the page API.
+ * @example
+ * ```ts
+ * const pageApiOptions = getPageRequestParams({ path: '/api/v1/page', params: queryParams });
+ * ```
+ */
 export const getPageRequestParams = ({
     path = '',
     params = {}
-}: PageRequestParamsProps): {
-    path: string;
-    [key: string]: string | number;
-} => {
+}: PageRequestParamsProps): PageApiOptions => {
     const copiedParams: PageRequestParamsProps['params'] =
         params instanceof URLSearchParams ? Object.fromEntries(params.entries()) : { ...params };
 

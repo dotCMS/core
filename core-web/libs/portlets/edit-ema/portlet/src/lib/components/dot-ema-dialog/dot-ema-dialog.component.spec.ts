@@ -38,8 +38,8 @@ import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
-import { NG_CUSTOM_EVENTS } from '../../shared/enums';
-import { PAYLOAD_MOCK } from '../../shared/mocks';
+import { FormStatus, NG_CUSTOM_EVENTS } from '../../shared/enums';
+import { MOCK_RESPONSE_HEADLESS, PAYLOAD_MOCK } from '../../shared/mocks';
 import { DotPage } from '../../shared/models';
 
 describe('DotEmaDialogComponent', () => {
@@ -178,7 +178,11 @@ describe('DotEmaDialogComponent', () => {
                 event: expect.objectContaining({
                     isTrusted: false
                 }),
-                payload: PAYLOAD_MOCK
+                payload: PAYLOAD_MOCK,
+                form: {
+                    status: FormStatus.PRISTINE,
+                    isTranslation: false
+                }
             });
         });
 
@@ -188,7 +192,7 @@ describe('DotEmaDialogComponent', () => {
             component.addContentlet(PAYLOAD_MOCK); // This is to make the dialog open
             spectator.detectChanges();
 
-            spectator.triggerEventHandler(Dialog, 'onHide', {});
+            spectator.triggerEventHandler(Dialog, 'visibleChange', false);
 
             expect(actionSpy).toHaveBeenCalledWith({
                 event: new CustomEvent('ng-event', {
@@ -196,7 +200,11 @@ describe('DotEmaDialogComponent', () => {
                         name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
                     }
                 }),
-                payload: PAYLOAD_MOCK
+                payload: PAYLOAD_MOCK,
+                form: {
+                    status: FormStatus.PRISTINE,
+                    isTranslation: false
+                }
             });
         });
     });
@@ -217,6 +225,83 @@ describe('DotEmaDialogComponent', () => {
             });
 
             expect(handleWorkflowEventSpy).toHaveBeenCalledWith({});
+        });
+
+        it("should trigger setDirty in the store when the iframe's custom event is 'edit-contentlet-data-updated' and is not a translation", () => {
+            const setDirtySpy = jest.spyOn(storeSpy, 'setDirty');
+
+            component.addContentlet(PAYLOAD_MOCK); // This is to make the dialog open
+            spectator.detectChanges();
+
+            triggerIframeCustomEvent({
+                detail: {
+                    name: NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED,
+                    data: {},
+                    payload: {}
+                }
+            });
+
+            expect(setDirtySpy).toHaveBeenCalled();
+        });
+
+        it("should trigger setSaved in the store when the iframe's custom event is 'edit-contentlet-data-updated' and is a translation", () => {
+            const setSavedSpy = jest.spyOn(storeSpy, 'setSaved');
+
+            component.translatePage({
+                page: MOCK_RESPONSE_HEADLESS.page,
+                newLanguage: '3'
+            }); // This is to make the dialog open
+            spectator.detectChanges();
+
+            triggerIframeCustomEvent({
+                detail: {
+                    name: NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED,
+                    data: {},
+                    payload: {}
+                }
+            });
+
+            expect(setSavedSpy).toHaveBeenCalled();
+        });
+
+        it("should trigger setSaved in the store when the iframe's custom event is 'edit-contentlet-data-updated', is a translation and payload is move action", () => {
+            const reloadIframeSpy = jest.spyOn(component, 'reloadIframe');
+
+            component.translatePage({
+                page: MOCK_RESPONSE_HEADLESS.page,
+                newLanguage: '3'
+            }); // This is to make the dialog open
+            spectator.detectChanges();
+
+            triggerIframeCustomEvent({
+                detail: {
+                    name: NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED,
+                    data: {},
+                    payload: {
+                        isMoveAction: true
+                    }
+                }
+            });
+
+            expect(reloadIframeSpy).toHaveBeenCalled();
+        });
+
+        it("should trigger setSaved when the iframe's custom event is 'save-page'", () => {
+            const setSavedSpy = jest.spyOn(storeSpy, 'setSaved');
+
+            component.addContentlet(PAYLOAD_MOCK); // This is to make the dialog open
+            spectator.detectChanges();
+
+            triggerIframeCustomEvent({
+                detail: {
+                    name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                    payload: {
+                        isMoveAction: false
+                    }
+                }
+            });
+
+            expect(setSavedSpy).toHaveBeenCalled();
         });
 
         it("should reload the iframe when the iframe's custom event is 'save-page' and the payload is a move action", () => {

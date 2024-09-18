@@ -3,11 +3,8 @@
         <button (click)="toggleChangeTo.emit()" class="btn-dropdown">{{ selected }}</button>
         <div class="divider"></div>
     }
-    @for (item of items; track item; let i = $index) {
-        <dot-bubble-menu-button
-            (click)="command.emit(item)"
-            [active]="item.active"
-            [item]="item"></dot-bubble-menu-button>
+    @for (item of items; track $index) {
+        <dot-bubble-menu-button (click)="command.emit(item)" [active]="item.active" [item]="item" />
         @if (item.divider) {
             <div class="divider"></div>
         }

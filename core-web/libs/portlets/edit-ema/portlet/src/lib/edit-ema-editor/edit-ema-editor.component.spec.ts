@@ -369,7 +369,7 @@ describe('EditEmaEditorComponent', () => {
 
             addMessageSpy = jest.spyOn(messageService, 'add');
 
-            store.load({
+            store.init({
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
@@ -422,7 +422,7 @@ describe('EditEmaEditorComponent', () => {
                 spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
 
                 spectator.detectChanges();
-                store.load({
+                store.init({
                     url: 'index',
                     language_id: '5',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
@@ -444,7 +444,7 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectChanges();
 
-                store.load({
+                store.init({
                     url: 'index',
                     language_id: '5',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -2411,7 +2411,9 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('DOM', () => {
-                it("should not show a loader when the editor state is not 'loading'", () => {
+                it('should not show a loader when client is ready and UVE is not loading', () => {
+                    store.setIsClientReady(true);
+                    store.setUveStatus(UVE_STATUS.LOADED);
                     spectator.detectChanges();
 
                     const progressbar = spectator.query(byTestId('progress-bar'));
@@ -2419,15 +2421,25 @@ describe('EditEmaEditorComponent', () => {
                     expect(progressbar).toBeNull();
                 });
 
-                it('should show a loader when the UVE is loading', () => {
-                    store.setUveStatus(UVE_STATUS.LOADING);
-
+                it('should show a loader when the client is not ready', () => {
+                    store.setIsClientReady(false);
                     spectator.detectChanges();
 
                     const progressbar = spectator.query(byTestId('progress-bar'));
 
                     expect(progressbar).not.toBeNull();
                 });
+
+                it('should show a loader when the client is ready but UVE is Loading', () => {
+                    store.setIsClientReady(true);
+                    store.setUveStatus(UVE_STATUS.LOADING); // Almost impossible case but we have it as a fallback
+                    spectator.detectChanges();
+
+                    const progressbar = spectator.query(byTestId('progress-bar'));
+
+                    expect(progressbar).not.toBeNull();
+                });
+
                 it('iframe should have the correct src when is HEADLESS', () => {
                     spectator.detectChanges();
 
@@ -2443,7 +2455,7 @@ describe('EditEmaEditorComponent', () => {
                         jest.useFakeTimers(); // Mock the timers
                         spectator.detectChanges();
 
-                        store.load({
+                        store.init({
                             url: 'index',
                             language_id: '3',
                             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -2483,7 +2495,7 @@ describe('EditEmaEditorComponent', () => {
 
                         iframe.nativeElement.contentWindow.scrollTo(0, 100); //Scroll down
 
-                        store.load({
+                        store.init({
                             url: 'index',
                             language_id: '4',
                             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -2583,7 +2595,7 @@ describe('EditEmaEditorComponent', () => {
 
                     const url = "/ultra-cool-url-that-doesn't-exist";
 
-                    store.load({
+                    store.init({
                         url,
                         language_id: '5',
                         'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -2622,7 +2634,7 @@ describe('EditEmaEditorComponent', () => {
                     spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
 
                     spectator.detectChanges();
-                    store.load({
+                    store.init({
                         url: 'index',
                         language_id: '5',
                         'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,

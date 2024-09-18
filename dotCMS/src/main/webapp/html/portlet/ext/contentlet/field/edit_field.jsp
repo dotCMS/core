@@ -41,7 +41,9 @@
 <%@ page import="com.dotcms.contenttype.model.field.JSONField" %>
 <%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
+<%@ page import="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" %>
 <%@ page import="com.dotmarketing.util.ConfigUtils" %>
+
 
 <%
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -53,7 +55,7 @@
 
     Object value = (Object) request.getAttribute("value");
     ObjectMapper mapper = new ObjectMapper(); // Create an ObjectMapper instance
-
+    mapper.registerModule(new Jdk8Module());
     String hint = UtilMethods.isSet(field.getHint()) ? field.getHint() : null;
     boolean isReadOnly = field.isReadOnly();
     String defaultValue = field.getDefaultValue() != null ? field
@@ -297,7 +299,7 @@
                         blockEditor.contentletIdentifier = '<%=contentletIdentifier%>';
                         blockEditor.showVideoThumbnail = <%=showVideoThumbnail%>;
                         blockEditor.isFullscreen = <%=fullScreenField%>;
-                        blockEditor.lang = '<%=contentLanguage%>';
+                        blockEditor.languageId = '<%=contentLanguage%>';
                         blockEditorContainer.appendChild(blockEditor);
                     }
                 )();
@@ -1050,7 +1052,7 @@
 
     </script>
 
-    <%} %>
+
     <%
 
         String bnFlag = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
@@ -1076,8 +1078,8 @@
             <% } %>
 
         <% } %>
-    <% } %>
-
+      <% } %>
+    <%} %>
     <!--  END display -->
     <!-- javascript -->
     <script type="text/javascript">

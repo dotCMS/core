@@ -109,10 +109,18 @@ public interface JobQueueManagerAPI extends AutoCloseable {
     void setRetryStrategy(String queueName, RetryStrategy retryStrategy);
 
     /**
-     * Retrieves the CircuitBreaker instance.
-     *
      * @return The CircuitBreaker instance
      */
     CircuitBreaker getCircuitBreaker();
+
+    /**
+     * @return The size of the thread pool
+     */
+    int getThreadPoolSize();
+
+    /**
+     * @return The default retry strategy
+     */
+    RetryStrategy getDefaultRetryStrategy();
 
 }

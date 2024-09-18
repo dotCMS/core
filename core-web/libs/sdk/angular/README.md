@@ -1,17 +1,31 @@
 # @dotcms/angular
 
-`@dotcms/angular` is the official set of Angular components, services and resolver designed to work seamlessly with dotCMS, making it easy to render dotCMS pages an use the page builder
+`@dotcms/angular` is the official Angular library designed to work seamlessly with dotCMS. This library simplifies the process of rendering dotCMS pages and integrating with the [Universal Visual Editor](dotcms.com/docs/latest/universal-visual-editor) in your Angular applications.
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Configuration](#provider-setup)
+  - [Provider Setup](#provider-setup)
+  - [Client Usage](#client-usage)
+- [Components](#components)
+  - [DotcmsLayoutComponent](#dotcmslayoutcomponent)
+- [Best Practices](#best-practices)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [Licensing](#licensing)
 
 ## Features
 
--   A collection of  Angular components, services and resolver  tailored to render  
-    dotCMS pages.
--   Streamlined integration with dotCMS page editor.
--   Improved development experience with comprehensive TypeScript typings.
+- A set of Angular components developer for dotCMS page rendering and editor integration.
+- Enhanced development workflow with full TypeScript support.
+- Optimized performance for efficient rendering of dotCMS pages in Angular applications.
+- Flexible customization options to adapt to various project requirements.
 
 ## Installation
 
-Install the package via npm:
+Install the package using npm:
 
 ```bash
 npm install @dotcms/angular
@@ -23,87 +37,142 @@ Or using Yarn:
 yarn add @dotcms/angular
 ```
 
-## Provider
-```
+## Configutarion
+### Provider Setup
+We need to provide the information of our dotCMS instance
+
+```javascript
+
+import { ClientConfig } from '@dotcms/client';
+
 const DOTCMS_CLIENT_CONFIG: ClientConfig = {
     dotcmsUrl: environment.dotcmsUrl,
     authToken: environment.authToken,
     siteId: environment.siteId
 };
 ```
-Add the dotcms config in the Angular app ApplicationConfig 
-```
+And add this config in the Angular app ApplicationConfig.
+
+`src/app/app.config.ts`
+```javascript
+import { InjectionToken } from '@angular/core';
+import { ClientConfig, DotCmsClient } from '@dotcms/client';
+
+export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCmsClient>('DOTCMS_CLIENT');
+
 export const appConfig: ApplicationConfig = {
     providers: [
-        provideDotcmsClient(DOTCMS_CLIENT_CONFIG),
         provideRouter(routes),
+        {
+            provide: DOTCMS_CLIENT_TOKEN,
+            useValue: DotCmsClient.init(DOTCMS_CLIENT_CONFIG),
+        }
     ],
 };
 ```
-## Resolver
-```javascript
-export const routes: Routes = [
-  {
-    path: '**',
-    resolve: {
-      // This should be called `context`.
-      context: DotCMSPageResolver,
-    },
-    component: DotCMSPagesComponent,
-    runGuardsAndResolvers: 'always' // Run the resolver on every navigation. Even if the URL hasn't changed.
-  },
-];
-```
+This way, we will have access to `DOTCMS_CLIENT_TOKEN` from anywhere in our application.
 
-Then, in your component, you can read the data using
+### Client Usage
+To interact with the client and obtain information from, for example, our pages
 
 ```javascript
-protected readonly context = signal(null);
+private readonly client = inject(DOTCMS_CLIENT_TOKEN);
 
-ngOnInit() {
-    // Get the context data from the route
-    this.route.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
-        this.context.set(data['context']);
-    });
-}
+this.client.page
+    .get({ ...pageParams })
+    .then((response) => {
+        // Use your response 
+    })
+    .catch((e) => {
+      const error: PageError = {
+        message: e.message,
+        status: e.status,
+      };
+      // Use the error response
+    })
 ```
+For more information to how to use DotCms Client, you can visit the [documentation](https://github.com/dotCMS/core/blob/master/core-web/libs/sdk/client/README.md)
+
+## DotCMS Page API
+
+The `DotcmsLayoutComponent` requires a `DotCMSPageAsset` object to be passed in to it. This object represents a dotCMS page and can be fetched using the `@dotcms/client` library.
+
+- [DotCMS Official Angular Example](https://github.com/dotCMS/core/tree/master/examples/angular)
+- [`@dotcms/client` documentation](https://www.npmjs.com/package/@dotcms/client)
+- [Page API documentation](https://dotcms.com/docs/latest/page-api)
+
 ## Components
 
-### `DotcmsLayoutComponent`
+### DotcmsLayoutComponent
 
-A component that renders a layout for a dotCMS page.
+The `DotcmsLayoutComponent` is a crucial component for rendering dotCMS page layouts in your Angular application.
 
 #### Inputs
 
--   **entity**: The context for a dotCMS page.
--   **components**: An object with the relation of contentlets and the component to render each.
+| Name         | Type                 | Description                                                           |
+|--------------|----------------------|-----------------------------------------------------------------------|
+| `pageAsset`  | `DotCMSPageAsset`    | The object representing a dotCMS page from PageAPI response.          |
+| `components` | `DotCMSPageComponent`| An object mapping contentlets to their respective render components.  |
+| `editor`     | `EditorConfig`       | Configuration for data fetching in Edit Mode.                         |
 
+#### Usage Example
 
-#### Usage
+In your component file (e.g., `pages.component.ts`):
 
-```javascript
-    <dotcms-layout [entity]="pageAsset" [components]="components()" />
+```typescript
+import { Component, signal } from '@angular/core';
+import { DotCMSPageComponent, EditorConfig } from '@dotcms/angular';
 
-    DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
-    Activity: import('../pages/content-types/activity/activity.component').then(
-        (c) => c.ActivityComponent,
-    ),
-    Banner: import('../pages/content-types/banner/banner.component').then(
-        (c) => c.BannerComponent,
-    ),
-    Image: import('../pages/content-types/image/image.component').then(
-        (c) => c.ImageComponent,
-    ),
-    webPageContent: import(
-        '../pages/content-types/web-page-content/web-page-content.component'
-    ).then((c) => c.WebPageContentComponent),
-    Product: import('../pages/content-types/product/product.component').then(
-        (c) => c.ProductComponent,
-    ),
+@Component({
+    selector: 'app-pages',
+    templateUrl: './pages.component.html',
+})
+export class PagesComponent {
+    DYNAMIC_COMPONENTS: DotCMSPageComponent = {
+        Activity: import('../pages/content-types/activity/activity.component').then(
+            (c) => c.ActivityComponent
+        ),
+        Banner: import('../pages/content-types/banner/banner.component').then(
+            (c) => c.BannerComponent
+        ),
+        // Add other components as needed
     };
-
-components = signal(DYNAMIC_COMPONENTS);
+    
+    components = signal(this.DYNAMIC_COMPONENTS);
+    editorConfig = signal<EditorConfig>({ params: { depth: 2 } });
+    
+    // Assume pageAsset is fetched or provided somehow
+    pageAsset: DotCMSPageAsset;
+}
 ```
+
+In your template file (e.g., `pages.component.html`):
+
+```html
+<dotcms-layout 
+    [pageAsset]="pageAsset" 
+    [components]="components()" 
+    [editor]="editorConfig()" 
+/>
+```
+
+This setup allows for dynamic rendering of different content types on your dotCMS pages.
+
+## Best Practices
+
+1. **Lazy Loading**: Use dynamic imports for components to improve initial load times.
+2. **Error Handling**: Implement robust error handling for API calls and component rendering.
+3. **Type Safety**: Leverage TypeScript's type system to ensure proper usage of dotCMS structures.
+4. **Performance Optimization**: Monitor and optimize the performance of rendered components.
+
+## Troubleshooting
+
+If you encounter issues:
+
+1. Ensure all dependencies are correctly installed and up to date.
+2. Verify that your dotCMS configuration (URL, auth token, site ID) is correct.
+3. Check the browser console for any error messages.
+4. Refer to the [dotCMS documentation](https://dotcms.com/docs/) for additional guidance.
 
 ## Contributing
 
@@ -112,22 +181,3 @@ GitHub pull requests are the preferred method to contribute code to dotCMS. Befo
 ## Licensing
 
 dotCMS comes in multiple editions and as such is dual licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://dotcms.com/cms-platform/features).
-
-## Support
-
-If you need help or have any questions, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
-
-## Documentation
-
-Always refer to the official [DotCMS documentation](https://www.dotcms.com/docs/latest/) for comprehensive guides and API references.
-
-## Getting Help
-
-| Source          | Location                                                            |
-| --------------- | ------------------------------------------------------------------- |
-| Installation    | [Installation](https://dotcms.com/docs/latest/installation)         |
-| Documentation   | [Documentation](https://dotcms.com/docs/latest/table-of-contents)   |
-| Videos          | [Helpful Videos](http://dotcms.com/videos/)                         |
-| Forums/Listserv | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
-| Twitter         | @dotCMS                                                             |
-| Main Site       | [dotCMS.com](https://dotcms.com/)                                   |

@@ -8,6 +8,7 @@ import com.dotcms.cli.common.DotExitCodeExceptionMapper;
 import com.dotcms.cli.common.SubcommandProcessor;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.quarkus.arc.Arc;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
 import picocli.CommandLine;
@@ -17,17 +18,8 @@ import picocli.CommandLine.Model.OptionSpec;
 /**
  * A utility class for customizing configurations.
  */
+@ApplicationScoped
 class CustomConfigurationUtil {
-
-
-    /**
-     * Returns the singleton instance of CustomConfigurationUtil.
-     *
-     * @return the singleton instance of CustomConfigurationUtil
-     */
-    public static CustomConfigurationUtil newInstance() {
-        return new CustomConfigurationUtil();
-    }
 
     /**
      * Customizes a CommandLine object.
