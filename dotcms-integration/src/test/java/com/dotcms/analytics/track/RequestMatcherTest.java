@@ -1,5 +1,10 @@
 package com.dotcms.analytics.track;
 
+import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
+import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
+import com.dotcms.analytics.track.matchers.RequestMatcher;
+import com.dotcms.analytics.track.matchers.RulesRedirectsRequestMatcher;
+import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
 import com.dotcms.mock.request.DotCMSMockRequest;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.DotCMSMockResponse;

@@ -48,6 +48,8 @@ public class PullCommand implements Callable<Integer>, DotCommand {
     @Inject
     Instance<DotPull> pullCommands;
 
+    @Inject
+    CustomConfigurationUtil customConfigurationUtil;
 
     @Override
     public Integer call() throws Exception {
@@ -90,7 +92,7 @@ public class PullCommand implements Callable<Integer>, DotCommand {
     CommandLine createCommandLine(DotPull command) {
 
         var cmdLine = new CommandLine(command);
-        CustomConfigurationUtil.newInstance().customize(cmdLine);
+        customConfigurationUtil.customize(cmdLine);
 
         // Make sure unmatched arguments pass silently
         cmdLine.setUnmatchedArgumentsAllowed(true);

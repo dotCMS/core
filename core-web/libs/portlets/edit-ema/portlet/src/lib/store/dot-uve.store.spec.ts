@@ -304,7 +304,22 @@ describe('UVEStore', () => {
 
                 expect(layoutItem.isDisabled).toBe(true);
             });
+            it('should return layout, rules and experiments as disabled when isEnterprise is false', () => {
+                jest.spyOn(dotPageApiService, 'get').mockImplementation(
+                    buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
+                );
 
+                patchState(store, { isEnterprise: false });
+
+                const shellProps = store.$shellProps();
+                const layoutItem = shellProps.items.find((item) => item.id === 'layout');
+                const rulesItem = shellProps.items.find((item) => item.id === 'rules');
+                const experimentsItem = shellProps.items.find((item) => item.id === 'experiments');
+
+                expect(layoutItem.isDisabled).toBe(true);
+                expect(rulesItem.isDisabled).toBe(true);
+                expect(experimentsItem.isDisabled).toBe(true);
+            });
             it('should return item for layout as disable and with a tooltip', () => {
                 jest.spyOn(dotPageApiService, 'get').mockImplementation(
                     buildPageAPIResponseFromMock({
