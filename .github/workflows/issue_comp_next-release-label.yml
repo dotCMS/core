@@ -36,14 +36,14 @@ jobs:
             let issueNumber;
             const issue = context.payload.issue;
             if (!issue && '${{ inputs.issue_number }}'.trim() === '') {
-              core.warn('Issue number is not provided');
+              core.warning('Issue number is not provided');
               process.exit(0);
             }
             
             let label = context.payload.label;
             if (!label) {
               if (!'${{ inputs.label }}') {
-                core.warn('Label is missing, exiting');
+                core.warning('Label is missing, exiting');
                 process.exit(0);
               }
               label = '${{ inputs.label }}';
@@ -52,7 +52,7 @@ jobs:
             }
             
             if (label !== '${{ env.QA_NOT_NEEDED_LABEL }}') {
-              core.warn('Label is not [${{ env.QA_NOT_NEEDED_LABEL }}], exiting');
+              core.warning('Label is not [${{ env.QA_NOT_NEEDED_LABEL }}], exiting');
               process.exit(0);
             }
             
@@ -82,7 +82,7 @@ jobs:
               }
             
               if (!issue) {
-                core.warn('Issue [${{ inputs.issue_number }}] not found');
+                core.warning('Issue [${{ inputs.issue_number }}] not found');
                 process.exit(0);
               }
             }
@@ -92,14 +92,14 @@ jobs:
             
             const dropAndLearnText = 'Drop Everything & Learn'.toLowerCase();
             if (issue.title.toLowerCase().includes(dropAndLearnText)) {
-              core.warn(`Issue does have "${dropAndLearnText}" text in title, exiting`);
+              core.warning(`Issue does have "${dropAndLearnText}" text in title, exiting`);
               process.exit(0);
             }
 
             const typeCicdLabel = 'Type : CI/CD';
             const foundLabel = issue.labels.find(label => label.name === typeCicdLabel);
             if (foundLabel) {
-              core.warn(`Issue does have "${typeCicdLabel}" label , exiting`);
+              core.warning(`Issue does have "${typeCicdLabel}" label , exiting`);
               process.exit(0);
             }
 

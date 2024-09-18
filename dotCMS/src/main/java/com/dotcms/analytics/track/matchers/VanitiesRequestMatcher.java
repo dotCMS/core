@@ -1,4 +1,4 @@
-package com.dotcms.analytics.track;
+package com.dotcms.analytics.track.matchers;
 
 import com.dotmarketing.filters.Constants;
 
@@ -12,6 +12,8 @@ import java.util.Objects;
  */
 public class VanitiesRequestMatcher implements RequestMatcher {
 
+    public static final String VANITIES_MATCHER_ID = "rules";
+
     @Override
     public boolean runAfterRequest() {
         return true;
@@ -23,5 +25,10 @@ public class VanitiesRequestMatcher implements RequestMatcher {
         final Object vanityHasRun = request.getAttribute(Constants.VANITY_URL_OBJECT);
 
         return  Objects.nonNull(vanityHasRun);
+    }
+
+    @Override
+    public String getId() {
+        return VANITIES_MATCHER_ID;
     }
 }
