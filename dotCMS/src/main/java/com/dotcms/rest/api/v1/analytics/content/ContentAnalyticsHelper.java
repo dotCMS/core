@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.analytics.content;
 
 import com.dotcms.analytics.content.ContentAnalyticsAPI;
-import com.dotcms.analytics.content.ReportRequest;
 import com.dotcms.analytics.content.ReportResponse;
 import com.dotmarketing.business.APILocator;
 import com.liferay.portal.model.User;
@@ -29,8 +28,8 @@ public class ContentAnalyticsHelper {
     }
 
     public ReportResponse query(final QueryForm queryForm, final User user) {
-        return this.contentAnalyticsAPI.runReport(queryForm.getQuery(), user);
 
+        return this.contentAnalyticsAPI.runReport(queryForm.getQuery(), user);
     }
 
 }

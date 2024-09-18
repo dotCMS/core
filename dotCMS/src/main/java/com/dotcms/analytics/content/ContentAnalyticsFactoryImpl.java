@@ -2,8 +2,20 @@ package com.dotcms.analytics.content;
 
 import com.dotcms.analytics.query.AnalyticsQuery;
 import com.dotcms.analytics.query.AnalyticsQueryParser;
+import com.dotcms.cube.CubeJSClient;
+import com.dotcms.cube.CubeJSClientFactory;
+import com.dotcms.cube.CubeJSQuery;
+import com.dotcms.cube.CubeJSResultSet;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * This class is the implementation of the {@link ContentAnalyticsFactory} interface.
@@ -14,20 +26,36 @@ import com.liferay.portal.model.User;
 public class ContentAnalyticsFactoryImpl implements ContentAnalyticsFactory {
 
     private final AnalyticsQueryParser queryParser;
+    private final CubeJSClientFactory cubeJSClientFactory;
 
     public ContentAnalyticsFactoryImpl() {
-        this(new AnalyticsQueryParser());
+        this(new AnalyticsQueryParser(), FactoryLocator.getCubeJSClientFactory());
     }
 
     @VisibleForTesting
-    public ContentAnalyticsFactoryImpl(final AnalyticsQueryParser queryParser) {
+    public ContentAnalyticsFactoryImpl(final AnalyticsQueryParser queryParser, final CubeJSClientFactory cubeJSClientFactory) {
         this.queryParser = queryParser;
+        this.cubeJSClientFactory = cubeJSClientFactory;
     }
 
     @Override
-    public ReportResponse runReport(final AnalyticsQuery query, final User user) {
+    public ReportResponse getReport(final AnalyticsQuery query, final User user) {
 
-        return null;
+        Logger.debug(this, ()-> "Getting the report for the query: " + query);
+        try {
+            final CubeJSQuery cubeJSQuery = this.queryParser.parseQueryToCubeQuery(query);
+            final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
+            return toReportResponse(cubeClient.send(cubeJSQuery));
+        } catch (DotDataException| DotSecurityException e) {
+
+            Logger.error(this, e.getMessage(), e);
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    private ReportResponse toReportResponse(final CubeJSResultSet cubeJSResultSet) {
+
+        return new ReportResponse(StreamSupport.stream(cubeJSResultSet.spliterator(), false).collect(Collectors.toList()));
     }
 
 }

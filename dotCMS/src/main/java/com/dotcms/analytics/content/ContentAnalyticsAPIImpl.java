@@ -1,6 +1,8 @@
 package com.dotcms.analytics.content;
 
 import com.dotcms.analytics.query.AnalyticsQuery;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 
@@ -15,7 +17,7 @@ public class ContentAnalyticsAPIImpl implements ContentAnalyticsAPI {
     private final ContentAnalyticsFactory contentAnalyticsFactory;
 
     public ContentAnalyticsAPIImpl() {
-        this(new ContentAnalyticsFactoryImpl());
+        this(FactoryLocator.getContentAnalyticsFactory());
     }
 
     @VisibleForTesting
@@ -25,7 +27,10 @@ public class ContentAnalyticsAPIImpl implements ContentAnalyticsAPI {
 
     @Override
     public ReportResponse runReport(final AnalyticsQuery query, final User user) {
-        return this.contentAnalyticsFactory.runReport(query, user);
+
+        Logger.debug(this, ()-> "Running the report for the query: " + query);
+        // note: should check any permissions for an user.
+        return this.contentAnalyticsFactory.getReport(query, user);
     }
 
 }
