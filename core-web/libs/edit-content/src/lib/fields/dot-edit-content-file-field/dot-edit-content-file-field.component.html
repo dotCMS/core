@@ -26,21 +26,21 @@
                 @if (store.allowURLImport()) {
                     <p-button
                         [label]="'dot.file.field.action.import.from.url' | dm"
-                        data-testId="action-url-btn"
+                        data-testId="action-import-from-url"
                         icon="pi pi-link"
                         styleClass="p-button-link p-button-sm" />
                 }
                 @if (store.allowExistingFile()) {
                     <p-button
                         [label]="'dot.file.field.action.select.existing.file' | dm"
-                        data-testId="action-editor-btn"
+                        data-testId="action-existing-file"
                         icon="pi pi-file"
                         styleClass="p-button-link p-button-sm" />
                 }
                 @if (store.allowCreateFile()) {
                     <p-button
                         [label]="'dot.file.field.action.create.new.file' | dm"
-                        data-testId="action-editor-btn"
+                        data-testId="action-new-file"
                         icon="pi pi-code"
                         styleClass="p-button-link p-button-sm" />
                 }
@@ -48,7 +48,7 @@
                     <p-button
                         [disabled]="!store.isAIPluginInstalled()"
                         tooltipPosition="bottom"
-                        data-testId="action-ai-btn"
+                        data-testId="action-generate-with-ai"
                         styleClass="p-button-link p-button-sm pointer-events-auto">
                         <svg
                             fill="none"
