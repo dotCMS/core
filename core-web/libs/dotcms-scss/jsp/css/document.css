@@ -1,3 +1,9 @@
+/*
+  ========================== WARNING ==========================
+  Don't use this in your components, use $font-size-md instead,
+  this is only for the root element
+  =============================================================
+*/
 body,
 div,
 dl,
@@ -55,7 +61,7 @@ acronym {
 }
 
 h1 {
-    font-size: 1.5em;
+    font-size: 1.25rem;
     font-weight: normal;
     line-height: 1em;
     margin-top: 1em;
@@ -63,7 +69,7 @@ h1 {
 }
 
 h2 {
-    font-size: 1.1667em;
+    font-size: 1rem;
     font-weight: bold;
     line-height: 1.286em;
     margin-top: 1.929em;
@@ -74,7 +80,7 @@ h3,
 h4,
 h5,
 h6 {
-    font-size: 1em;
+    font-size: 0.875rem;
     font-weight: bold;
     line-height: 1.5em;
     margin-top: 1.5em;
@@ -82,14 +88,14 @@ h6 {
 }
 
 p {
-    font-size: 1em;
+    font-size: 0.875rem;
     margin-top: 1.5em;
     margin-bottom: 1.5em;
     line-height: 1.5em;
 }
 
 blockquote {
-    font-size: 0.916em;
+    font-size: 0.75rem;
     margin-top: 3.272em;
     margin-bottom: 3.272em;
     line-height: 1.636em;
@@ -100,7 +106,7 @@ blockquote {
 
 ol li,
 ul li {
-    font-size: 1em;
+    font-size: 0.875rem;
     line-height: 1.5em;
     margin: 0;
 }

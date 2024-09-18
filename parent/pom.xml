@@ -1378,6 +1378,53 @@
             </build>
         </profile>
         <profile>
+            <id>debug-suspend-e2e-docker</id>
+            <!-- Adjust the debug.suspend.flag if debug.suspend is specifically set to true -->
+            <activation>
+                <property>
+                    <name>debug.suspend.e2e.docker</name>
+                </property>
+            </activation>
+            <properties>
+                <debug.suspend.flag>y</debug.suspend.flag>
+                <docker.debug.args>${docker.debug.args.default}</docker.debug.args>
+                <dotcms.startup.timeout>7200000</dotcms.startup.timeout>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <ports combine.children="append">
+                                            <port>debug.port:${debug.port}</port>
+                                        </ports>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>debug-suspend-e2e-tests</id>
+            <!-- Adjust the debug.suspend.flag if debug.suspend is specifically set to true -->
+            <activation>
+                <property>
+                    <name>debug.suspend.e2e.tests</name>
+                </property>
+            </activation>
+            <properties>
+                <debug.suspend.flag>y</debug.suspend.flag>
+                <debug.args>${debug.args.default}</debug.args>
+                <dotcms.startup.timeout>7200000</dotcms.startup.timeout>
+            </properties>
+        </profile>
+        <profile>
             <id>docker-start</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
@@ -1431,11 +1478,11 @@
                                     <target>
                                         <!-- Here is where you define your Ant tasks -->
                                         <!--suppress UnresolvedMavenProperty -->
-                                        <echo message="DotCMS starteed on    : http://localhost:${tomcat.port}/dotAdmin"/>
+                                        <echo message="DotCMS started on     : http://localhost:${tomcat.port}/dotAdmin"/>
                                         <!--suppress UnresolvedMavenProperty -->
                                         <echo message="Postgres started on   : jdbc:postgresql://localhost:${db.port}/dotcms user = postgres pass = postgres"/>
                                         <!--suppress UnresolvedMavenProperty -->
-                                        <echo message="Opensearch started on : http://localhost:${es.port}"/>
+                                        <echo message="OpenSearch started on : http://localhost:${es.port}"/>
                                     </target>
                                 </configuration>
                             </execution>
