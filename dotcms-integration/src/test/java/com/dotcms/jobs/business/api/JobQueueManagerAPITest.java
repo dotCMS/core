@@ -33,6 +33,11 @@ import com.dotcms.jobs.business.processor.DefaultProgressTracker;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.queue.JobQueue;
+import com.dotcms.jobs.business.queue.error.JobLockingException;
+import com.dotcms.jobs.business.queue.error.JobNotFoundException;
+import com.dotcms.jobs.business.queue.error.JobQueueDataException;
+import com.dotcms.jobs.business.queue.error.JobQueueException;
+import com.dotmarketing.exception.DotDataException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -90,16 +95,16 @@ public class JobQueueManagerAPITest {
      * ExpectedResult: Job is created successfully and correct job ID is returned
      */
     @Test
-    public void test_createJob() {
+    public void test_createJob() throws DotDataException, JobQueueException {
 
         Map<String, Object> parameters = new HashMap<>();
-        when(mockJobQueue.addJob(anyString(), anyMap())).thenReturn("job123");
+        when(mockJobQueue.createJob(anyString(), anyMap())).thenReturn("job123");
 
         // Creating a job
         String jobId = jobQueueManagerAPI.createJob("testQueue", parameters);
 
         assertEquals("job123", jobId);
-        verify(mockJobQueue).addJob("testQueue", parameters);
+        verify(mockJobQueue).createJob("testQueue", parameters);
     }
 
     /**
@@ -108,7 +113,7 @@ public class JobQueueManagerAPITest {
      * ExpectedResult: Correct job is retrieved from the job queue
      */
     @Test
-    public void test_getJob() {
+    public void test_getJob() throws DotDataException, JobQueueDataException, JobNotFoundException {
 
         Job mockJob = mock(Job.class);
         when(mockJobQueue.getJob("job123")).thenReturn(mockJob);
@@ -126,7 +131,7 @@ public class JobQueueManagerAPITest {
      * ExpectedResult: Correct list of jobs is retrieved from the job queue
      */
     @Test
-    public void test_getJobs() {
+    public void test_getJobs() throws DotDataException, JobQueueDataException {
 
         // Prepare test data
         Job job1 = mock(Job.class);
@@ -150,7 +155,8 @@ public class JobQueueManagerAPITest {
      * ExpectedResult: JobQueueManagerAPI starts successfully and begins processing jobs
      */
     @Test
-    public void test_start() throws InterruptedException {
+    public void test_start()
+            throws InterruptedException, JobQueueDataException, JobLockingException {
 
         // Make the circuit breaker always allow requests
         when(mockCircuitBreaker.allowRequest()).thenReturn(true);
@@ -1025,7 +1031,8 @@ public class JobQueueManagerAPITest {
      * ExpectedResult: Job is successfully cancelled and its status is updated
      */
     @Test
-    public void test_simple_cancelJob() {
+    public void test_simple_cancelJob()
+            throws DotDataException, JobQueueDataException, JobNotFoundException {
 
         Job mockJob = mock(Job.class);
         when(mockJobQueue.getJob("job123")).thenReturn(mockJob);

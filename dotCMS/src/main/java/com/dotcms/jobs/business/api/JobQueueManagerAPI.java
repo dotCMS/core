@@ -1,11 +1,11 @@
 package com.dotcms.jobs.business.api;
 
 import com.dotcms.jobs.business.error.CircuitBreaker;
-import com.dotcms.jobs.business.error.JobCancellationException;
-import com.dotcms.jobs.business.error.ProcessorNotFoundException;
+import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.processor.JobProcessor;
+import com.dotmarketing.exception.DotDataException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -62,18 +62,20 @@ public interface JobQueueManagerAPI extends AutoCloseable {
      * @param queueName  The name of the queue
      * @param parameters The parameters for the job
      * @return The ID of the created job
-     * @throws ProcessorNotFoundException if no processor is registered for the specified queue
+     * @throws JobProcessorNotFoundException if no processor is registered for the specified queue
+     * @throws DotDataException              if there's an error creating the job
      */
     String createJob(String queueName, Map<String, Object> parameters)
-            throws ProcessorNotFoundException;
+            throws JobProcessorNotFoundException, DotDataException;
 
     /**
      * Retrieves a job by its ID.
      *
      * @param jobId The ID of the job
      * @return The Job object, or null if not found
+     * @throws DotDataException if there's an error fetching the job
      */
-    Job getJob(String jobId);
+    Job getJob(String jobId) throws DotDataException;
 
     /**
      * Retrieves a list of jobs.
@@ -81,16 +83,17 @@ public interface JobQueueManagerAPI extends AutoCloseable {
      * @param page     The page number
      * @param pageSize The number of jobs per page
      * @return A list of Job objects
+     * @throws DotDataException if there's an error fetching the jobs
      */
-    List<Job> getJobs(int page, int pageSize);
+    List<Job> getJobs(int page, int pageSize) throws DotDataException;
 
     /**
      * Cancels a job.
      *
      * @param jobId The ID of the job to cancel
-     * @throws JobCancellationException if the job cannot be cancelled
+     * @throws DotDataException if there's an error cancelling the job
      */
-    void cancelJob(String jobId) throws JobCancellationException;
+    void cancelJob(String jobId) throws DotDataException;
 
     /**
      * Registers a watcher for a specific job.

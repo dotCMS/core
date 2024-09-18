@@ -1,5 +1,7 @@
 package com.dotcms.jobs.business.api;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.jobs.business.api.events.JobCancelledEvent;
 import com.dotcms.jobs.business.api.events.JobCompletedEvent;
 import com.dotcms.jobs.business.api.events.JobCreatedEvent;
@@ -9,8 +11,7 @@ import com.dotcms.jobs.business.api.events.JobStartedEvent;
 import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
-import com.dotcms.jobs.business.error.JobCancellationException;
-import com.dotcms.jobs.business.error.ProcessorNotFoundException;
+import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobResult;
@@ -18,6 +19,12 @@ import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.queue.JobQueue;
+import com.dotcms.jobs.business.queue.error.JobNotFoundException;
+import com.dotcms.jobs.business.queue.error.JobQueueDataException;
+import com.dotcms.jobs.business.queue.error.JobQueueException;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.LocalDateTime;
@@ -39,13 +46,11 @@ import javax.inject.Inject;
  * Manages the processing of jobs in a distributed job queue system. This class is responsible for
  * job creation, execution, monitoring, and error handling.
  * <pre>{@code
+ *
+ *     @Inject
+ *     private JobQueueManagerAPI jobQueueManagerAPI;
+ *
  *     public static void main(String[] args) {
- *
- *        // Create the job queue
- *        JobQueue jobQueue = new PostgresJobQueue();
- *
- *        // Create and start the job queue manager
- *        JobQueueManagerAPIImpl jobQueueManagerAPI = new JobQueueManagerAPIImpl(jobQueue, 5); // 5 threads
  *
  *        // (Optional) Set up a retry strategy for content import jobs, if not set, the default retry strategy will be used
  *        RetryStrategy contentImportRetryStrategy = new ExponentialBackoffRetryStrategy(
@@ -235,59 +240,86 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         processors.put(queueName, processor);
     }
 
+    @WrapInTransaction
     @Override
-    public String createJob(final String queueName, final Map<String, Object> parameters) {
+    public String createJob(final String queueName, final Map<String, Object> parameters)
+            throws JobProcessorNotFoundException, DotDataException {
 
         if (!processors.containsKey(queueName)) {
-            final var error = new ProcessorNotFoundException(queueName);
+            final var error = new JobProcessorNotFoundException(queueName);
             Logger.error(JobQueueManagerAPIImpl.class, error);
             throw error;
         }
 
-        String jobId = jobQueue.addJob(queueName, parameters);
-        jobCreatedEvent.fire(
-                new JobCreatedEvent(jobId, queueName, LocalDateTime.now(), parameters)
-        );
-        return jobId;
+        try {
+            String jobId = jobQueue.createJob(queueName, parameters);
+            jobCreatedEvent.fire(
+                    new JobCreatedEvent(jobId, queueName, LocalDateTime.now(), parameters)
+            );
+            return jobId;
+        } catch (JobQueueException e) {
+            throw new DotDataException("Error creating job", e);
+        }
     }
 
+    @CloseDBIfOpened
     @Override
-    public Job getJob(final String jobId) {
-        return jobQueue.getJob(jobId);
+    public Job getJob(final String jobId) throws DotDataException {
+        try {
+            return jobQueue.getJob(jobId);
+        } catch (JobNotFoundException e) {
+            throw new DoesNotExistException(e);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching job", e);
+        }
     }
 
+    @CloseDBIfOpened
     @Override
-    public List<Job> getJobs(final int page, final int pageSize) {
-        return jobQueue.getJobs(page, pageSize);
+    public List<Job> getJobs(final int page, final int pageSize) throws DotDataException {
+        try {
+            return jobQueue.getJobs(page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching jobs", e);
+        }
     }
 
+    @WrapInTransaction
     @Override
-    public void cancelJob(final String jobId) {
+    public void cancelJob(final String jobId) throws DotDataException {
 
-        Job job = jobQueue.getJob(jobId);
-        if (job != null) {
+        final Job job;
+        try {
+            job = jobQueue.getJob(jobId);
+        } catch (JobNotFoundException e) {
+            throw new DoesNotExistException(e);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching job", e);
+        }
 
-            final var processor = processors.get(job.queueName());
-            if (processor != null && processor.canCancel(job)) {
+        final var processor = processors.get(job.queueName());
+        if (processor != null && processor.canCancel(job)) {
 
-                try {
+            try {
 
-                    Logger.info(this, "Cancelling job " + jobId);
+                Logger.info(this, "Cancelling job " + jobId);
 
-                    processor.cancel(job);
-                    handleJobCancellation(job, processor);
-                } catch (Exception e) {
-                    final var error = new JobCancellationException(jobId, e.getMessage());
-                    Logger.error(JobQueueManagerAPIImpl.class, error);
-                    throw error;
-                }
-            } else {
-                final var error = new JobCancellationException(jobId, "Job cannot be cancelled");
+                processor.cancel(job);
+                handleJobCancellation(job, processor);
+            } catch (Exception e) {
+                final var error = new DotDataException("Error cancelling job " + jobId, e);
                 Logger.error(JobQueueManagerAPIImpl.class, error);
                 throw error;
             }
         } else {
-            final var error = new JobCancellationException(jobId, "Job not found");
+
+            if (processor == null) {
+                final var error = new JobProcessorNotFoundException(job.queueName());
+                Logger.error(JobQueueManagerAPIImpl.class, error);
+                throw error;
+            }
+
+            final var error = new DotDataException(jobId, "Job " + jobId + " cannot be cancelled");
             Logger.error(JobQueueManagerAPIImpl.class, error);
             throw error;
         }
@@ -324,17 +356,25 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     /**
      * Polls the job queue for updates to watched jobs and notifies their watchers.
      */
+    @CloseDBIfOpened
     private void pollJobUpdates() {
 
-        final var watchedJobIds = realTimeJobMonitor.getWatchedJobIds();
-        if (watchedJobIds.isEmpty()) {
-            return; // No jobs are being watched, skip polling
-        }
+        try {
+            final var watchedJobIds = realTimeJobMonitor.getWatchedJobIds();
+            if (watchedJobIds.isEmpty()) {
+                return; // No jobs are being watched, skip polling
+            }
 
-        final var currentPollTime = LocalDateTime.now();
-        List<Job> updatedJobs = jobQueue.getUpdatedJobsSince(watchedJobIds, lastPollJobUpdateTime);
-        realTimeJobMonitor.updateWatchers(updatedJobs);
-        lastPollJobUpdateTime = currentPollTime;
+            final var currentPollTime = LocalDateTime.now();
+            List<Job> updatedJobs = jobQueue.getUpdatedJobsSince(
+                    watchedJobIds, lastPollJobUpdateTime
+            );
+            realTimeJobMonitor.updateWatchers(updatedJobs);
+            lastPollJobUpdateTime = currentPollTime;
+        } catch (JobQueueDataException e) {
+            Logger.error(this, "Error polling job updates: " + e.getMessage(), e);
+            throw new DotRuntimeException("Error polling job updates", e);
+        }
     }
 
     /**
@@ -343,16 +383,23 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param job             The job whose progress to update.
      * @param progressTracker The processor progress tracker
      */
-    private void updateJobProgress(final Job job, final ProgressTracker progressTracker) {
-        if (job != null) {
+    @WrapInTransaction
+    private void updateJobProgress(final Job job, final ProgressTracker progressTracker)
+            throws DotDataException {
 
-            float progress = progressTracker.progress();
-            Job updatedJob = job.withProgress(progress);
+        try {
+            if (job != null) {
 
-            jobQueue.updateJobProgress(job.id(), updatedJob.progress());
-            jobProgressUpdatedEvent.fire(
-                    new JobProgressUpdatedEvent(updatedJob, LocalDateTime.now())
-            );
+                float progress = progressTracker.progress();
+                Job updatedJob = job.withProgress(progress);
+
+                jobQueue.updateJobProgress(job.id(), updatedJob.progress());
+                jobProgressUpdatedEvent.fire(
+                        new JobProgressUpdatedEvent(updatedJob, LocalDateTime.now())
+                );
+            }
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error updating job progress", e);
         }
     }
 
@@ -371,9 +418,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
             try {
 
-                Job job = jobQueue.nextJob();
-                if (job != null) {
-                    processJobWithRetry(job);
+                boolean jobProcessed = processNextJob();
+                if (jobProcessed) {
                     emptyQueueCount = 0;
                 } else {
                     // If no jobs were found, wait for a short time before checking again
@@ -389,6 +435,28 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 Logger.error(this, "Unexpected error in job processing loop: " + e.getMessage(), e);
                 getCircuitBreaker().recordFailure();
             }
+        }
+    }
+
+    /**
+     * Processes the next job in the queue.
+     *
+     * @return {@code true} if a job was processed, {@code false} if the queue is empty.
+     */
+    @WrapInTransaction
+    private boolean processNextJob() throws DotDataException {
+
+        try {
+            Job job = jobQueue.nextJob();
+            if (job != null) {
+                processJobWithRetry(job);
+                return true;
+            }
+
+            return false;
+        } catch (JobQueueException e) {
+            Logger.error(this, "Error fetching next job: " + e.getMessage(), e);
+            throw new DotDataException("Error fetching next job", e);
         }
     }
 
@@ -441,7 +509,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      *
      * @param job The job to be processed.
      */
-    private void processJobWithRetry(final Job job) {
+    private void processJobWithRetry(final Job job) throws DotDataException {
 
         if (job.state() == JobState.FAILED) {
 
@@ -455,7 +523,11 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                     Logger.debug(this, "Job " + job.id() + " is not ready for retry, "
                             + "putting back in queue.");
                     // Put the job back in the queue for later retry
-                    jobQueue.putJobBackInQueue(job);
+                    try {
+                        jobQueue.putJobBackInQueue(job);
+                    } catch (JobQueueDataException e) {
+                        throw new DotDataException("Error re-queueing job", e);
+                    }
                 }
             } else {
                 handleNonRetryableFailedJob(job);
@@ -482,10 +554,17 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      *
      * @param job The failed job that cannot be retried.
      */
-    private void handleNonRetryableFailedJob(final Job job) {
+    private void handleNonRetryableFailedJob(final Job job) throws DotDataException {
 
         Logger.warn(this, "Job " + job.id() + " has failed and cannot be retried.");
-        jobQueue.removeJob(job.id());
+
+        try {
+            jobQueue.removeJob(job.id());
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error removing failed job", e);
+        } catch (JobNotFoundException e) {
+            throw new DoesNotExistException(e);
+        }
     }
 
     /**
@@ -493,13 +572,13 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      *
      * @param job The job to process.
      */
-    private void processJob(final Job job) {
+    private void processJob(final Job job) throws DotDataException {
 
         JobProcessor processor = processors.get(job.queueName());
         if (processor != null) {
 
             Job runningJob = job.withState(JobState.RUNNING);
-            jobQueue.updateJobStatus(runningJob);
+            updateJobStatus(runningJob);
             jobStartedEvent.fire(new JobStartedEvent(runningJob, LocalDateTime.now()));
 
             try (final CloseableScheduledExecutor closeableExecutor = new CloseableScheduledExecutor()) {
@@ -509,15 +588,18 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 // Start a separate thread to periodically update and persist progress
                 ScheduledExecutorService progressUpdater = closeableExecutor.getExecutorService();
                 progressUpdater.scheduleAtFixedRate(() ->
-                        updateJobProgress(runningJob, progressTracker), 0, 1, TimeUnit.SECONDS
+                        {
+                            try {
+                                updateJobProgress(runningJob, progressTracker);
+                            } catch (DotDataException e) {
+                                Logger.error(this, "Error updating job progress: " + e.getMessage(), e);
+                                throw new DotRuntimeException("Error updating job progress", e);
+                            }
+                        }, 0, 1, TimeUnit.SECONDS
                 );
 
-                try {
-                    processor.process(runningJob);
-                } finally {
-                    // Ensure final progress is updated
-                    updateJobProgress(runningJob, progressTracker);
-                }
+                // Process the job
+                processor.process(runningJob);
 
                 handleJobCompletion(runningJob, processor);
             } catch (Exception e) {
@@ -533,7 +615,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         } else {
 
             Logger.error(this, "No processor found for queue: " + job.queueName());
-            handleJobFailure(job, null, new ProcessorNotFoundException(job.queueName()),
+            handleJobFailure(job, null, new JobProcessorNotFoundException(job.queueName()),
                     "No processor found for queue", "Processor selection"
             );
         }
@@ -545,7 +627,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param job       The job that completed.
      * @param processor The processor that handled the job.
      */
-    private void handleJobCompletion(final Job job, final JobProcessor processor) {
+    private void handleJobCompletion(final Job job, final JobProcessor processor)
+            throws DotDataException {
 
         final var resultMetadata = processor.getResultMetadata(job);
 
@@ -553,9 +636,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         if (resultMetadata != null && !resultMetadata.isEmpty()) {
             jobResult = JobResult.builder().metadata(resultMetadata).build();
         }
-        final Job completedJob = job.markAsCompleted(jobResult);
 
-        jobQueue.updateJobStatus(completedJob);
+        final Job completedJob = job.markAsCompleted(jobResult);
+        updateJobStatus(completedJob);
         jobCompletedEvent.fire(new JobCompletedEvent(completedJob, LocalDateTime.now()));
     }
 
@@ -565,7 +648,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param job       The job that was cancelled.
      * @param processor The processor that handled the job.
      */
-    private void handleJobCancellation(final Job job, final JobProcessor processor) {
+    private void handleJobCancellation(final Job job, final JobProcessor processor)
+            throws DotDataException {
 
         final var resultMetadata = processor.getResultMetadata(job);
 
@@ -573,9 +657,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         if (resultMetadata != null && !resultMetadata.isEmpty()) {
             jobResult = JobResult.builder().metadata(resultMetadata).build();
         }
-        Job cancelledJob = job.markAsCancelled(jobResult);
 
-        jobQueue.updateJobStatus(cancelledJob);
+        Job cancelledJob = job.markAsCancelled(jobResult);
+        updateJobStatus(cancelledJob);
         jobCancelledEvent.fire(
                 new JobCancelledEvent(cancelledJob, LocalDateTime.now())
         );
@@ -591,7 +675,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param processingStage The stage of processing where the failure occurred.
      */
     private void handleJobFailure(final Job job, final JobProcessor processor,
-            final Exception exception, final String errorMessage, final String processingStage) {
+            final Exception exception, final String errorMessage, final String processingStage)
+            throws DotDataException {
 
         final var errorDetail = ErrorDetail.builder()
                 .message(errorMessage)
@@ -611,11 +696,25 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         }
 
         final Job failedJob = job.markAsFailed(jobResult);
-        jobQueue.updateJobStatus(failedJob);
+        updateJobStatus(failedJob);
         jobFailedEvent.fire(new JobFailedEvent(failedJob, LocalDateTime.now()));
 
         // Record the failure in the circuit breaker
         getCircuitBreaker().recordFailure();
+    }
+
+    /**
+     * Updates the status of a job in the job queue.
+     *
+     * @param job The job to update.
+     * @throws DotDataException if there's an error updating the job status.
+     */
+    private void updateJobStatus(final Job job) throws DotDataException {
+        try {
+            jobQueue.updateJobStatus(job);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error updating job status", e);
+        }
     }
 
     /**

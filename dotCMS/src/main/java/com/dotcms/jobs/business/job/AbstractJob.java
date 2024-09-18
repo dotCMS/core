@@ -25,7 +25,11 @@ public interface AbstractJob {
 
     JobState state();
 
+    Optional<String> executionNode();
+
     Optional<LocalDateTime> createdAt();
+
+    Optional<LocalDateTime> startedAt();
 
     Optional<LocalDateTime> updatedAt();
 
