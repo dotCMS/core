@@ -5,10 +5,11 @@ import { of } from 'rxjs';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DialogStatus, DotEmaDialogStore } from './dot-ema-dialog.store';
+import { DotEmaDialogStore } from './dot-ema-dialog.store';
 
 import { DotActionUrlService } from '../../../services/dot-action-url/dot-action-url.service';
 import { LAYOUT_URL } from '../../../shared/consts';
+import { DialogStatus, FormStatus } from '../../../shared/enums';
 import { PAYLOAD_MOCK } from '../../../shared/mocks';
 import { DotPage } from '../../../shared/models';
 
@@ -42,8 +43,30 @@ describe('DotEmaDialogStoreService', () => {
                 url: '',
                 header: '',
                 type: null,
-                status: DialogStatus.LOADING
+                status: DialogStatus.LOADING,
+                editContentForm: {
+                    status: FormStatus.PRISTINE,
+                    isTranslation: false
+                }
             });
+            done();
+        });
+    });
+
+    it("should set the form state to 'DIRTY'", (done) => {
+        spectator.service.setDirty();
+
+        spectator.service.dialogState$.subscribe((state) => {
+            expect(state.editContentForm.status).toBe(FormStatus.DIRTY);
+            done();
+        });
+    });
+
+    it("should set the form state to 'SAVED'", (done) => {
+        spectator.service.setSaved();
+
+        spectator.service.dialogState$.subscribe((state) => {
+            expect(state.editContentForm.status).toBe(FormStatus.SAVED);
             done();
         });
     });
@@ -59,7 +82,11 @@ describe('DotEmaDialogStoreService', () => {
                 status: DialogStatus.IDLE,
                 header: '',
                 type: null,
-                payload: undefined
+                payload: undefined,
+                editContentForm: {
+                    status: FormStatus.PRISTINE,
+                    isTranslation: false
+                }
             });
             done();
         });
@@ -86,7 +113,11 @@ describe('DotEmaDialogStoreService', () => {
                 url: LAYOUT_URL + '?' + queryParams.toString(),
                 status: DialogStatus.LOADING,
                 header: 'test',
-                type: 'content'
+                type: 'content',
+                editContentForm: {
+                    status: FormStatus.PRISTINE,
+                    isTranslation: false
+                }
             });
             done();
         });
@@ -113,7 +144,11 @@ describe('DotEmaDialogStoreService', () => {
                 url: LAYOUT_URL + '?' + queryParams.toString() + '&isURLMap=true',
                 status: DialogStatus.LOADING,
                 header: 'test',
-                type: 'content'
+                type: 'content',
+                editContentForm: {
+                    status: FormStatus.PRISTINE,
+                    isTranslation: false
+                }
             });
             done();
         });
@@ -133,7 +168,11 @@ describe('DotEmaDialogStoreService', () => {
                 header: 'Search Content',
                 type: 'content',
                 status: DialogStatus.LOADING,
-                payload: PAYLOAD_MOCK
+                payload: PAYLOAD_MOCK,
+                editContentForm: {
+                    status: FormStatus.PRISTINE,
+                    isTranslation: false
+                }
             });
             done();
         });
@@ -148,7 +187,11 @@ describe('DotEmaDialogStoreService', () => {
                 status: DialogStatus.LOADING,
                 url: null,
                 type: 'form',
-                payload: PAYLOAD_MOCK
+                payload: PAYLOAD_MOCK,
+                editContentForm: {
+                    status: FormStatus.PRISTINE,
+                    isTranslation: false
+                }
             });
             done();
         });
@@ -167,7 +210,11 @@ describe('DotEmaDialogStoreService', () => {
                 status: DialogStatus.LOADING,
                 header: 'Create test',
                 type: 'content',
-                payload: PAYLOAD_MOCK
+                payload: PAYLOAD_MOCK,
+                editContentForm: {
+                    status: FormStatus.PRISTINE,
+                    isTranslation: false
+                }
             });
             done();
         });
@@ -222,7 +269,11 @@ describe('DotEmaDialogStoreService', () => {
                 url: '',
                 status: DialogStatus.LOADING,
                 header: 'test',
-                type: 'content'
+                type: 'content',
+                editContentForm: {
+                    status: FormStatus.PRISTINE,
+                    isTranslation: false
+                }
             });
             done();
         });
@@ -239,7 +290,11 @@ describe('DotEmaDialogStoreService', () => {
                 url: 'https://demo.dotcms.com/jsp.jsp',
                 status: DialogStatus.LOADING,
                 header: 'test',
-                type: 'content'
+                type: 'content',
+                editContentForm: {
+                    status: FormStatus.PRISTINE,
+                    isTranslation: false
+                }
             });
             done();
         });
@@ -279,7 +334,11 @@ describe('DotEmaDialogStoreService', () => {
                     url: LAYOUT_URL + '?' + queryParams.toString(),
                     status: DialogStatus.LOADING,
                     header: 'test',
-                    type: 'content'
+                    type: 'content',
+                    editContentForm: {
+                        status: FormStatus.PRISTINE,
+                        isTranslation: true
+                    }
                 });
             });
         });
@@ -319,7 +378,11 @@ describe('DotEmaDialogStoreService', () => {
                     url: LAYOUT_URL + '?' + queryParams.toString(),
                     status: DialogStatus.LOADING,
                     header: 'test',
-                    type: 'content'
+                    type: 'content',
+                    editContentForm: {
+                        status: FormStatus.PRISTINE,
+                        isTranslation: true
+                    }
                 });
             });
         });

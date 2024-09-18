@@ -35,5 +35,10 @@ jobs:
             git checkout -b main origin/master
           fi
 
-          # Push the updated main branch
-          git push origin main --force
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.CI_MACHINE_TOKEN }}
+          branch: main
+          force: true
+          tags: true
