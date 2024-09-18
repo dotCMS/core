@@ -4,6 +4,7 @@ import com.dotcms.analytics.content.ContentAnalyticsFactory;
 import com.dotcms.analytics.content.ContentAnalyticsFactoryImpl;
 import com.dotcms.business.SystemTableFactory;
 import com.dotcms.business.SystemTableFactoryImpl;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cluster.business.ServerFactory;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
@@ -413,7 +414,7 @@ enum FactoryIndex
             case SYSTEM_TABLE_FACTORY: return new SystemTableFactoryImpl();
             case CUBEJS_CLIENT_FACTORY: return new CubeJSClientFactoryImpl();
             case LANGUAGE_VARIABLE_FACTORY: return new LanguageVariableFactoryImpl();
-            case CONTENT_ANALYTICS_FACTORY: return new ContentAnalyticsFactoryImpl();
+            case CONTENT_ANALYTICS_FACTORY: CDIUtils.getBean(ContentAnalyticsFactory.class);
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

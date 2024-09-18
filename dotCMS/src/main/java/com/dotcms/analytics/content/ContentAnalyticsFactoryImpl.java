@@ -6,7 +6,6 @@ import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSClientFactory;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -14,6 +13,8 @@ import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -23,15 +24,13 @@ import java.util.stream.StreamSupport;
  * @author Jose Castro
  * @since Sep 17th, 2024
  */
+@ApplicationScoped
 public class ContentAnalyticsFactoryImpl implements ContentAnalyticsFactory {
 
     private final AnalyticsQueryParser queryParser;
     private final CubeJSClientFactory cubeJSClientFactory;
 
-    public ContentAnalyticsFactoryImpl() {
-        this(new AnalyticsQueryParser(), FactoryLocator.getCubeJSClientFactory());
-    }
-
+    @Inject
     @VisibleForTesting
     public ContentAnalyticsFactoryImpl(final AnalyticsQueryParser queryParser, final CubeJSClientFactory cubeJSClientFactory) {
         this.queryParser = queryParser;

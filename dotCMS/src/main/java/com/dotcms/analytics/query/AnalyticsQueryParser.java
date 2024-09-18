@@ -11,6 +11,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.vavr.Tuple2;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -22,6 +23,7 @@ import java.util.stream.Stream;
  * Parser for the analytics query, it can parse a json string to a {@link AnalyticsQuery} or a {@link CubeJSQuery}
  * @author jsanca
  */
+@ApplicationScoped
 public class AnalyticsQueryParser {
 
     /**

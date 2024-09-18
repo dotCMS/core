@@ -16,6 +16,7 @@ import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserAPIImpl;
 import com.dotcms.business.SystemAPI;
 import com.dotcms.business.SystemAPIImpl;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -1432,7 +1433,7 @@ enum APIIndex
 			case SYSTEM_API: return new SystemAPIImpl();
 			case ARTIFICIAL_INTELLIGENCE_API: return new DotAIAPIFacadeImpl();
 			case ACHECKER_API: return new ACheckerAPIImpl();
-			case CONTENT_ANALYTICS_API: return new ContentAnalyticsAPIImpl();
+			case CONTENT_ANALYTICS_API: CDIUtils.getBean(ContentAnalyticsAPI.class);
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
