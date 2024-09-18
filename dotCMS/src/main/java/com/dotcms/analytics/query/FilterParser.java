@@ -16,6 +16,8 @@ public class FilterParser {
 
     private static final String EXPRESSION_REGEX = "(\\w+\\.\\w+)\\s*(=|!=|in|!in)\\s*\\['(.*?)'";
     private static final String LOGICAL_OPERATOR_REGEX = "\\s*(and|or)\\s*";
+    private static final Pattern TOKEN_PATTERN = Pattern.compile(EXPRESSION_REGEX);
+    private static final Pattern LOGICAL_PATTERN = Pattern.compile(LOGICAL_OPERATOR_REGEX);
 
     static class Token {
         String member;
@@ -48,8 +50,7 @@ public class FilterParser {
         final List<Token> tokens = new ArrayList<>();
         final List<LogicalOperator> logicalOperators = new ArrayList<>();
         // note:Need to use cache here
-        final Pattern tokenPattern = Pattern.compile(EXPRESSION_REGEX);
-        final Matcher tokenMatcher = tokenPattern.matcher(expression);
+        final Matcher tokenMatcher = TOKEN_PATTERN.matcher(expression);
 
         // Extract the tokens (member, operator, values)
         while (tokenMatcher.find()) {
@@ -61,8 +62,7 @@ public class FilterParser {
 
         // Pattern for logical operators (and, or)
         // Need to use cache here
-        final Pattern logicalPattern = Pattern.compile(LOGICAL_OPERATOR_REGEX);
-        final Matcher logicalMatcher = logicalPattern.matcher(expression);
+        final Matcher logicalMatcher = LOGICAL_PATTERN.matcher(expression);
 
         // Extract logical operators
         while (logicalMatcher.find()) {
