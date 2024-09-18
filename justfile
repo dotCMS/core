@@ -132,7 +132,7 @@ docker-ext-run tag='latest':
     ./mvnw -pl :dotcms-core -Pdocker-start -Dcontext.name=ext-{{ tag }} -Ddotcms.image.name=dotcms/dotcms:{{ tag }}
 
 # Runs a Docker image from a specific build for testing
-docker-test-ext-run tag='master':
+docker-test-ext-run tag='main':
     ./mvnw -pl :dotcms-core -Pdocker-start -Dcontext.name=test-ext-{{ tag }} -Ddotcms.image.name=ghcr.io/dotcms/dotcms_test:{{ tag }}
 
 # Stops a running Docker container based on the specified tag

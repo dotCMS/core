@@ -515,7 +515,7 @@
                                 <predefinedSortOrder>custom_1</predefinedSortOrder>
                                 <!-- Sort order of elements: https://github.com/Ekryd/sortpom/wiki/PredefinedSortOrderProfiles-->
                                 <sortOrderFile/>
-                                <!-- Custom sort order of elements: https://raw.githubusercontent.com/Ekryd/sortpom/master/sorter/src/main/resources/custom_1.xml -->
+                                <!-- Custom sort order of elements: https://raw.githubusercontent.com/Ekryd/sortpom/main/sorter/src/main/resources/custom_1.xml -->
                                 <sortDependencies>scope,groupId,artifactId</sortDependencies>
                                 <!-- Sort dependencies: https://github.com/Ekryd/sortpom/wiki/SortDependencies-->
                                 <sortDependencyExclusions/>
