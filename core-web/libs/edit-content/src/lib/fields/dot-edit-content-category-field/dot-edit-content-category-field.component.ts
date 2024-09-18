@@ -7,8 +7,7 @@ import {
     inject,
     Injector,
     input,
-    OnInit,
-    signal
+    OnInit
 } from '@angular/core';
 import { ControlContainer, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
@@ -45,8 +44,8 @@ import { CategoryFieldStore } from './store/content-category-field.store';
     styleUrl: './dot-edit-content-category-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        '[class.dot-category-field__container--has-categories]': '$hasConfirmedCategories()',
-        '[class.dot-category-field__container]': '!$hasConfirmedCategories()'
+        '[class.dot-category-field__container--has-categories]': '$hasSelectedCategories()',
+        '[class.dot-category-field__container]': '!$hasSelectedCategories()'
     },
     viewProviders: [
         {
@@ -60,10 +59,7 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
     readonly store = inject(CategoryFieldStore);
     readonly #form = inject(ControlContainer).control as FormGroup;
     readonly #injector = inject(Injector);
-    /**
-     * Disable the button to open the dialog
-     */
-    $showCategoriesDialog = signal(false);
+
     /**
      * The `field` variable is of type `DotCMSContentTypeField` and is a required input.
      * @description The variable represents a field of a DotCMS content type and is a required input.
@@ -79,7 +75,7 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
      *
      * @returns {Boolean} - True if there are selected categories, false otherwise.
      */
-    $hasConfirmedCategories = computed(() => !!this.store.hasConfirmedCategories());
+    $hasSelectedCategories = computed(() => !!this.store.selected());
     /**
      * Getter to retrieve the category field control.
      *
@@ -100,7 +96,7 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
         });
         effect(
             () => {
-                const categoryValues = this.store.confirmedCategoriesValues();
+                const categoryValues = this.store.selected();
 
                 if (this.categoryFieldControl) {
                     this.categoryFieldControl.setValue(categoryValues);
@@ -117,15 +113,6 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
      * @memberof DotEditContentCategoryFieldComponent
      */
     openCategoriesDialog(): void {
-        this.store.setSelectedCategories();
-        this.$showCategoriesDialog.set(true);
-    }
-    /**
-     * Close the categories dialog.
-     *
-     * @memberof DotEditContentCategoryFieldComponent
-     */
-    closeCategoriesDialog() {
-        this.$showCategoriesDialog.set(false);
+        this.store.openDialog();
     }
 }
