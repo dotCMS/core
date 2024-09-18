@@ -184,3 +184,7 @@ jobs:
             echo "One or more jobs failed or cancelled!"
             exit 1
           fi
+      - name: Check API Rate Limit
+        uses: ./.github/actions/core-cicd/api-limits-check
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

@@ -271,4 +271,8 @@ jobs:
           channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
           payload: ${{ steps.prepare-slack-message.outputs.payload }}
           json: true
-          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }} 
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+      - name: Check API Rate Limit
+        uses: ./.github/actions/core-cicd/api-limits-check
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

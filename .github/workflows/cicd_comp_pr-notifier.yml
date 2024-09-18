@@ -89,3 +89,7 @@ jobs:
             -d "{ \"channel\":\"${channel}\",\"text\":\"${message}\"}" \
             -s \
             https://slack.com/api/chat.postMessage
+      - name: Check API Rate Limit
+        uses: ./.github/actions/core-cicd/api-limits-check
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

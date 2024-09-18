@@ -64,6 +64,10 @@ jobs:
         shell: bash
         run: |
           echo "Initializing..."
+      - name: Check API Rate Limit
+        uses: ./.github/actions/core-cicd/api-limits-check
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   # This job checks for artifacts from previous builds and determines if they can be reused
   check-previous-build:
