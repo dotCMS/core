@@ -1,76 +1,56 @@
-import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
-import { of } from 'rxjs';
-import { RawEditorOptions } from 'tinymce';
+import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
-import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject, signal } from '@angular/core';
-import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
-import { DialogService } from 'primeng/dynamicdialog';
-
-import { catchError } from 'rxjs/operators';
+import { DropdownModule } from 'primeng/dropdown';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { DotWysiwygPluginService } from './dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
-
-import { getFieldVariablesParsed, stringToJson } from '../../utils/functions.util';
-
-const DEFAULT_CONFIG = {
-    menubar: false,
-    image_caption: true,
-    image_advtab: true,
-    contextmenu: 'align link image',
-    toolbar1:
-        'undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent dotAddImage hr',
-    plugins:
-        'advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking save table directionality emoticons template'
-};
+import { DotWysiwygMonacoComponent } from './components/dot-wysiwyg-monaco/dot-wysiwyg-monaco.component';
+import { DotWysiwygTinymceComponent } from './components/dot-wysiwyg-tinymce/dot-wysiwyg-tinymce.component';
+import {
+    AvailableEditor,
+    DEFAULT_EDITOR,
+    DEFAULT_MONACO_LANGUAGE,
+    EditorOptions,
+    MonacoLanguageOptions
+} from './dot-edit-content-wysiwyg-field.constant';
 
 @Component({
     selector: 'dot-edit-content-wysiwyg-field',
     standalone: true,
-    imports: [EditorModule, FormsModule, ReactiveFormsModule, HttpClientModule],
+    imports: [
+        FormsModule,
+        DropdownModule,
+        DotWysiwygTinymceComponent,
+        DotWysiwygMonacoComponent,
+        MonacoEditorModule
+    ],
     templateUrl: './dot-edit-content-wysiwyg-field.component.html',
     styleUrl: './dot-edit-content-wysiwyg-field.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [
-        HttpClient,
-        DialogService,
-        DotWysiwygPluginService,
-        { provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js' }
-    ],
-    viewProviders: [
-        {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true })
-        }
-    ]
+    host: {
+        class: 'wysiwyg__wrapper'
+    },
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentWYSIWYGFieldComponent implements OnInit {
-    @Input() field!: DotCMSContentTypeField;
+export class DotEditContentWYSIWYGFieldComponent {
+    /**
+     * This variable represents a required content type field in DotCMS.
+     */
+    $field = input<DotCMSContentTypeField>({} as DotCMSContentTypeField, { alias: 'field' });
 
-    private readonly http = inject(HttpClient);
-    private readonly dotWysiwygPluginService = inject(DotWysiwygPluginService);
+    /**
+     * A variable representing the editor selected by the user.
+     */
+    $selectedEditor = signal<AvailableEditor>(DEFAULT_EDITOR);
 
-    private readonly configPath = '/api/vtl/tinymceprops';
-    protected readonly init = signal<RawEditorOptions>(null);
+    /**
+     * A variable representing the currently selected language.
+     */
+    $selectedLanguage = signal<string>(DEFAULT_MONACO_LANGUAGE);
 
-    ngOnInit(): void {
-        const { tinymceprops } = getFieldVariablesParsed(this.field.fieldVariables);
-        const variables = stringToJson(tinymceprops as string);
-
-        this.http
-            .get<RawEditorOptions>(this.configPath)
-            .pipe(catchError(() => of(null)))
-            .subscribe((SYTEM_WIDE_CONFIG) => {
-                const CONFIG = SYTEM_WIDE_CONFIG || DEFAULT_CONFIG;
-                this.init.set({
-                    setup: (editor) => this.dotWysiwygPluginService.initializePlugins(editor),
-                    ...CONFIG,
-                    ...variables,
-                    theme: 'silver' // In the new version, there is only one theme, which is the default one. Docs: https://www.tiny.cloud/docs/tinymce/latest/editor-theme/
-                });
-            });
-    }
+    readonly editorTypes = AvailableEditor;
+    readonly editorOptions = EditorOptions;
+    readonly monacoLanguagesOptions = MonacoLanguageOptions;
 }

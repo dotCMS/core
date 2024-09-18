@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+    <Properties>
+        <Property name="DOTCMS_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-${sys:DOTCMS_FORK_NUMBER}.log</Property>
+        <Property name="DOTCMS_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-%i-.log.gz</Property>
+        <Property name="stack.filter">java.lang.reflect.Method,
+            org.junit,
+            jdk.internal.reflect,
+            com.dotcms.junit,
+            org.apache.maven.surefire,
+            sun.reflect,
+            net.sf.cglib,
+            ByCGLIB</Property>
+        <Property name="MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n%ex{filters(${stack.filter})}</Property>
+        <Property name="CONSOLE_PATTERN">%-5level %d $${sys:DOTCMS_FORK_NUMBER} %c:%M(%L): %m%n%ex{filters(${stack.filter})}</Property>
+
+    </Properties>
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <Filters>
+                <ThresholdFilter level="WARN" onMatch="DENY" onMismatch="ACCEPT" />
+            </Filters>
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} $${sys:DOTCMS_FORK_NUMBER} %tn %-5level %logger{2} - %msg%n" />
+        </Console>
+        <Console name="Error" target="SYSTEM_ERR">
+            <Filters>
+                <ThresholdFilter level="WARN" onMatch="ACCEPT"/>
+            </Filters>
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} $${sys:DOTCMS_FORK_NUMBER} %tn %-5level %logger{2} - %msg%n" />
+        </Console>
+        <File name="File" fileName="${DOTCMS_LOG_FILE}">
+            <PatternLayout pattern="${MESSAGE_PATTERN}"/>
+        </File>
+    </Appenders>
+    <!--  Generic Logging File -->
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="Error" />
+            <AppenderRef ref="File"/>
+        </Root>
+    </Loggers>
+</Configuration>

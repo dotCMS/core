@@ -12,32 +12,33 @@ body {
 }
 
 h1 {
-    font-size: 174%;
+    font-size: $font-size-xl;
 }
 
 h2 {
-    font-size: 138.5%;
+    font-size: $font-size-lg;
     line-height: 115%;
     margin: 0 0 0.2em 0;
     font-weight: normal;
 }
 
 h3 {
-    font-size: 100%;
+    font-size: $font-size-md;
     margin: 0 0 0.2em 0;
     font-weight: bold;
 }
 
 h4 {
+    font-size: $font-size-md;
     font-weight: bold;
 }
 
 h5 {
-    font-size: 77%;
+    font-size: $font-size-sm;
 }
 
 h6 {
-    font-size: 77%;
+    font-size: $font-size-sm;
     font-style: italic;
 }
 
@@ -99,7 +100,7 @@ ul {
 }
 
 .inputCaption {
-    font-size: 85%;
+    font-size: $font-size-sm;
     color: #888;
     font-style: italic;
 }
@@ -127,12 +128,12 @@ kbd,
 samp,
 tt {
     font-family: monospace;
-    *font-size: 108%;
+    *font-size: $font-size-lmd;
     line-height: 99%;
 }
 
 sup {
-    font-size: 60%;
+    font-size: $font-size-xs;
 }
 
 abbr {
