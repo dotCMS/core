@@ -10,7 +10,6 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -23,19 +22,16 @@ import java.util.Optional;
 public class FilesCollector implements Collector {
 
     private final FileAssetAPI fileAssetAPI;
-    private final HostAPI hostAPI;
     private final ContentletAPI contentletAPI;
 
     public FilesCollector() {
-        this(APILocator.getFileAssetAPI(),
-                APILocator.getHostAPI(), APILocator.getContentletAPI());
+        this(APILocator.getFileAssetAPI(), APILocator.getContentletAPI());
     }
 
     public FilesCollector(final FileAssetAPI fileAssetAPI,
-                          final HostAPI hostAPI, final ContentletAPI contentletAPI) {
+                          final ContentletAPI contentletAPI) {
 
         this.fileAssetAPI = fileAssetAPI;
-        this.hostAPI = hostAPI;
         this.contentletAPI = contentletAPI;
     }
 
@@ -69,7 +65,7 @@ public class FilesCollector implements Collector {
         collectorPayloadBean.put("url", uri);
         collectorPayloadBean.put("host", host);
         collectorPayloadBean.put("language", language);
-        collectorPayloadBean.put("site", site.getIdentifier());
+        collectorPayloadBean.put("site", null != site?site.getIdentifier():"unknown");
         collectorPayloadBean.put("event_type", EventType.FILE_REQUEST.getType());
 
         return collectorPayloadBean;

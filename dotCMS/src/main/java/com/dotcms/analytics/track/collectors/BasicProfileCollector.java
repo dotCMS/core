@@ -36,7 +36,7 @@ public class BasicProfileCollector implements Collector {
         collectorPayloadBean.put("request_id", requestId);
         collectorPayloadBean.put("utc_time", FORMATTER.format(zonedDateTimeUTC));
         collectorPayloadBean.put("cluster",
-                FunctionUtils.getOrDefault(Objects.nonNull(clusterId), ()->clusterId,()->ClusterFactory.getClusterId()));
+                FunctionUtils.getOrDefault(Objects.nonNull(clusterId), ()->clusterId, ClusterFactory::getClusterId));
         collectorPayloadBean.put("server",
                 FunctionUtils.getOrDefault(Objects.nonNull(serverId), ()->serverId,()->APILocator.getServerAPI().readServerId()));
         collectorPayloadBean.put("sessionId", sessionId);

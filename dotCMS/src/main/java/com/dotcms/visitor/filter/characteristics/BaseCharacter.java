@@ -3,7 +3,6 @@ package com.dotcms.visitor.filter.characteristics;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.visitor.domain.Visitor;
-
 import com.dotcms.visitor.filter.servlet.VisitorFilter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -16,13 +15,12 @@ import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.WebKeys;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Optional;
 import java.util.UUID;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 public class BaseCharacter extends AbstractCharacter {
 

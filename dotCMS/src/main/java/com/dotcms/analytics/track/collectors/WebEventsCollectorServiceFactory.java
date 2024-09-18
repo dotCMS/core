@@ -9,11 +9,14 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -23,6 +26,8 @@ import java.util.stream.Stream;
  * @author jsanca
  */
 public class WebEventsCollectorServiceFactory {
+
+    private WebEventsCollectorServiceFactory () {}
 
     private final WebEventsCollectorService webEventsCollectorService = new WebEventsCollectorServiceImpl();
 

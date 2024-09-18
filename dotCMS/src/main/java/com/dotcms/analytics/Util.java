@@ -17,15 +17,14 @@ import static com.dotcms.exception.ExceptionUtil.getErrorMessage;
  */
 public class Util {
 
+    private Util() {
+        // Singleton
+    }
     /**
      * Based on the specified URL Map Context, determines whether a given incoming URL maps to a URL
      * Mapped content or not.
      *
-     * @param pageMode   The {@link PageMode} used to display/render an HTML Page.
-     * @param languageId The language ID used to display an HTML Page.
-     * @param uri        The URI of the incoming request.
-     * @param site       The {@link Host} where the HTML Page lives.
-     *
+     * @param urlMapContext   UrlMapContext object containing the following information:
      * @return If the URL maps to URL Mapped content, returns {@code true}.
      */
     public static boolean isUrlMap(final UrlMapContext urlMapContext) {

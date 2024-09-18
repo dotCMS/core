@@ -6,6 +6,7 @@ import com.dotcms.visitor.filter.characteristics.BaseCharacter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.filters.CMSFilter;
+import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
@@ -15,13 +16,12 @@ import java.util.Map;
 
 /**
  * This asynchronized collector collects the page/asset information based on the vanity URL previous loaded on the
- * {@link CollectionCollectorPayloadBean}
  * @author jsanca
  */
 public class AsyncVanitiesCollector implements Collector {
 
     private final HostAPI hostAPI;
-    private Map<CMSFilter.IAm, Collector> match = new HashMap<>();
+    private final Map<CMSFilter.IAm, Collector> match = new HashMap<>();
 
     public AsyncVanitiesCollector() {
         this(APILocator.getHostAPI());
@@ -49,7 +49,6 @@ public class AsyncVanitiesCollector implements Collector {
                                         final CollectorPayloadBean collectorPayloadBean) {
 
         // this will be a new event
-
         final CachedVanityUrl cachedVanityUrl = (CachedVanityUrl) collectorContextMap.get(Constants.VANITY_URL_OBJECT);
 
         final Host currentHost = (Host)collectorContextMap.get("currentHost");

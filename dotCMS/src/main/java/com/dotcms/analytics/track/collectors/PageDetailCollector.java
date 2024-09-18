@@ -3,13 +3,10 @@ package com.dotcms.analytics.track.collectors;
 import com.dotcms.analytics.Util;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
 import com.dotmarketing.cms.urlmap.URLMapInfo;
 import com.dotmarketing.cms.urlmap.UrlMapContext;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -18,7 +15,6 @@ import com.dotmarketing.util.PageMode;
 import io.vavr.control.Try;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -66,24 +62,26 @@ public class PageDetailCollector implements Collector {
         final Optional<URLMapInfo> urlMappedContent =
                 Try.of(() -> this.urlMapAPI.processURLMap(urlMapContext)).get();
 
-        final URLMapInfo urlMapInfo = urlMappedContent.get();
-        final Contentlet urlMapContentlet = urlMapInfo.getContentlet();
-        final ContentType urlMapContentType = urlMapContentlet.getContentType();
+        if (urlMappedContent.isPresent()) {
+            final URLMapInfo urlMapInfo = urlMappedContent.get();
+            final Contentlet urlMapContentlet = urlMapInfo.getContentlet();
+            final ContentType urlMapContentType = urlMapContentlet.getContentType();
 
-        final IHTMLPage detailPageContent = Try.of(() ->
-                        this.pageAPI.findByIdLanguageFallback(urlMapContentType.detailPage(), languageId, true, APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES))
-                .onFailure(e -> Logger.error(this, String.format("Error finding detail page " +
-                        "'%s': %s", urlMapContentType.detailPage(), getErrorMessage(e)), e))
-                .getOrNull();
+            final IHTMLPage detailPageContent = Try.of(() ->
+                            this.pageAPI.findByIdLanguageFallback(urlMapContentType.detailPage(), languageId, true, APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES))
+                    .onFailure(e -> Logger.error(this, String.format("Error finding detail page " +
+                            "'%s': %s", urlMapContentType.detailPage(), getErrorMessage(e)), e))
+                    .getOrNull();
 
-        final HashMap<String, String> pageObject = new HashMap<>();
-        pageObject.put("id", detailPageContent.getIdentifier());
-        pageObject.put("title", detailPageContent.getTitle());
-        pageObject.put("url", uri);
-        pageObject.put("detail_page_url", urlMapContentType.detailPage());
+            final HashMap<String, String> pageObject = new HashMap<>();
+            pageObject.put("id", detailPageContent.getIdentifier());
+            pageObject.put("title", detailPageContent.getTitle());
+            pageObject.put("url", uri);
+            pageObject.put("detail_page_url", urlMapContentType.detailPage());
+            collectorPayloadBean.put("object",  pageObject);
+        }
 
         collectorPayloadBean.put("event_type", EventType.PAGE_REQUEST.getType());
-        collectorPayloadBean.put("object",  pageObject);
         collectorPayloadBean.put("url", uri);
         collectorPayloadBean.put("language", language);
 

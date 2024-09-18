@@ -8,7 +8,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
 import com.dotmarketing.cms.urlmap.URLMapInfo;
 import com.dotmarketing.cms.urlmap.UrlMapContext;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;

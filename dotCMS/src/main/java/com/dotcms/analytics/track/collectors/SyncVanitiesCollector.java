@@ -17,6 +17,8 @@ import java.util.Objects;
 public class SyncVanitiesCollector implements Collector {
 
 
+    public static final String VANITY_URL_KEY = "vanity_url";
+
     public SyncVanitiesCollector() {
     }
 
@@ -40,7 +42,7 @@ public class SyncVanitiesCollector implements Collector {
                 collectorPayloadBean.put("response_code", vanityRequest.getResponseCode());
             }
 
-            collectorPayloadBean.put("vanity_url", vanityUrl);
+            collectorPayloadBean.put(VANITY_URL_KEY, vanityUrl);
             collectorPayloadBean.put("vanity_query_string", vanityQueryString);
         }
 
@@ -55,7 +57,7 @@ public class SyncVanitiesCollector implements Collector {
 
             vanityObject.put("id", cachedVanityUrl.vanityUrlId);
             vanityObject.put("forward_to",
-                    collectorPayloadBean.get("vanity_url")!=null?(String)collectorPayloadBean.get("vanity_url"):cachedVanityUrl.forwardTo);
+                    collectorPayloadBean.get(VANITY_URL_KEY)!=null?(String)collectorPayloadBean.get(VANITY_URL_KEY):cachedVanityUrl.forwardTo);
             vanityObject.put("url", uri);
             vanityObject.put("response", String.valueOf(cachedVanityUrl.response));
         }
@@ -63,6 +65,7 @@ public class SyncVanitiesCollector implements Collector {
         collectorPayloadBean.put("object",  vanityObject);
         collectorPayloadBean.put("url", uri);
         collectorPayloadBean.put("language", language);
+        collectorPayloadBean.put("language_id", languageId);
         collectorPayloadBean.put("site", site.getIdentifier());
         collectorPayloadBean.put("event_type", EventType.VANITY_REQUEST.getType());
 
