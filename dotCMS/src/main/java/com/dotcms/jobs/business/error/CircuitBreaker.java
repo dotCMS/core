@@ -1,18 +1,39 @@
 package com.dotcms.jobs.business.error;
 
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
+import javax.annotation.PostConstruct;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 /**
  * Implements the Circuit Breaker pattern to prevent repeated failures in a system. It helps to
  * avoid cascading failures by temporarily disabling operations that are likely to fail.
  */
+@ApplicationScoped
 public class CircuitBreaker {
 
-    private final int failureThreshold;
-    private final long resetTimeout;
+    // The number of failures that will cause the circuit to open
+    static final int DEFAULT_CIRCUIT_BREAKER_FAILURE_THRESHOLD = Config.getIntProperty(
+            "DEFAULT_CIRCUIT_BREAKER_FAILURE_THRESHOLD", 5
+    );
+
+    // The time in milliseconds after which to attempt to close the circuit
+    static final int DEFAULT_CIRCUIT_BREAKER_RESET_TIMEOUT = Config.getIntProperty(
+            "DEFAULT_CIRCUIT_BREAKER_RESET_TIMEOUT", 60000
+    );
+
+    private int failureThreshold;
+    private long resetTimeout;
     private volatile int failureCount;
     private volatile long lastFailureTime;
     private volatile boolean isOpen;
+
+    @Inject
+    public CircuitBreaker() {
+        // Default constructor for CDI
+    }
 
     /**
      * Constructs a new CircuitBreaker.
@@ -20,6 +41,7 @@ public class CircuitBreaker {
      * @param failureThreshold the number of failures that will cause the circuit to open
      * @param resetTimeout     the time in milliseconds after which to attempt to close the circuit
      */
+    @VisibleForTesting
     public CircuitBreaker(final int failureThreshold, final long resetTimeout) {
         if (failureThreshold <= 0) {
             throw new IllegalArgumentException("Failure threshold must be greater than zero");
@@ -29,6 +51,17 @@ public class CircuitBreaker {
         }
         this.failureThreshold = failureThreshold;
         this.resetTimeout = resetTimeout;
+    }
+
+    /**
+     * Initializes the circuit breaker with default values.
+     */
+    @PostConstruct
+    public void init() {
+        this.failureThreshold = DEFAULT_CIRCUIT_BREAKER_FAILURE_THRESHOLD;
+        this.resetTimeout = DEFAULT_CIRCUIT_BREAKER_RESET_TIMEOUT;
+        Logger.info(this, "CircuitBreaker initialized with "
+                + "threshold: " + failureThreshold + ", resetTimeout: " + resetTimeout);
     }
 
     /**
