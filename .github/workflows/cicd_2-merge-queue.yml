@@ -2,7 +2,7 @@ name: '-2 Merge Group Check'
 on:
   merge_group:
     types: [ checks_requested ]
-    branches: [ master ]
+    branches: [ main ]
 jobs:
   initialize:
     name: Initialize

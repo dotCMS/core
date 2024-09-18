@@ -1,10 +1,10 @@
 # Trunk Checks Workflow
 #
-# This workflow is triggered on pushes to the master branch or manually via workflow_dispatch.
-# It orchestrates a comprehensive set of checks, builds, tests, and deployments for the trunk (master) branch.
+# This workflow is triggered on pushes to the main branch or manually via workflow_dispatch.
+# It orchestrates a comprehensive set of checks, builds, tests, and deployments for the trunk (main) branch.
 #
 # Key features:
-# - Triggered on push to master or manual dispatch
+# - Triggered on push to main or manual dispatch
 # - Configurable options for reusing previous builds and running all tests
 # - Comprehensive checks including build, tests, SonarQube analysis, and CLI artifact building
 # - Deployment to the trunk environment
@@ -15,7 +15,7 @@ name: '-3 Trunk Workflow'
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
     inputs:
       reuse-previous-build:

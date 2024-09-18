@@ -1,6 +1,6 @@
 # PR Checks Workflow
 #
-# This workflow is triggered on pull requests to the master branch and orchestrates
+# This workflow is triggered on pull requests to the main branch and orchestrates
 # the entire PR check process. It uses reusable workflows to modularize different
 # stages of the CI process.
 #
@@ -24,7 +24,7 @@ name: '-1 PR Check'
 on:
   pull_request:
     branches:
-      - master
+      - main
     types:
       - opened
       - synchronize

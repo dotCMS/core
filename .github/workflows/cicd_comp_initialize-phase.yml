@@ -211,7 +211,7 @@ jobs:
           jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test || 'true' }}
           sdk_libs=${{ env.SDK_LIBS || steps.filter.outputs.sdk_libs }}  # Use the recovered or calculated value
 
-          # Check if the commit is to the master branch
+          # Check if the commit is to the main branch
           skip_tests=${CICD_SKIP_TESTS:-false}  # Use environment variable, default to 'false'
 
           # If skip_tests is true, set all tests to false

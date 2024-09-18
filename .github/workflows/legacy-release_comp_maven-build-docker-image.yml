@@ -147,7 +147,7 @@ jobs:
           
           build_id=${{ inputs.ref }}
           is_trunk=false
-          if [[ "${build_id}" == 'master' || ${build_id} =~ ^v[0-9]{2}.[0-9]{2}.[0-9]{2}_lts$ ]]; then
+          if [[ "${build_id}" == 'main' || ${build_id} =~ ^v[0-9]{2}.[0-9]{2}.[0-9]{2}_lts$ ]]; then
             is_trunk=true
           fi
           
