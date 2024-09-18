@@ -10,6 +10,9 @@ import java.util.regex.Pattern;
  */
 public class OrderParser {
 
+    private OrderParser () {
+        // singleton
+    }
     // Expression for order
     private static final String ORDER_REGEX = "(\\w+\\.\\w+)\\s+(ASC|DESC)";
 

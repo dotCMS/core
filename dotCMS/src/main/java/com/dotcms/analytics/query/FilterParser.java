@@ -47,7 +47,7 @@ public class FilterParser {
 
         final List<Token> tokens = new ArrayList<>();
         final List<LogicalOperator> logicalOperators = new ArrayList<>();
-        // todo: Need to use cache here
+        // note:Need to use cache here
         final Pattern tokenPattern = Pattern.compile(EXPRESSION_REGEX);
         final Matcher tokenMatcher = tokenPattern.matcher(expression);
 
@@ -60,7 +60,7 @@ public class FilterParser {
         }
 
         // Pattern for logical operators (and, or)
-        // todo: Need to use cache here
+        // Need to use cache here
         final Pattern logicalPattern = Pattern.compile(LOGICAL_OPERATOR_REGEX);
         final Matcher logicalMatcher = logicalPattern.matcher(expression);
 
@@ -71,7 +71,7 @@ public class FilterParser {
         }
 
         // if any unknown should fails
-        // todo validate logical operators should be length - 1  of the tokens???
+        // note: should validate logical operators should be length - 1  of the tokens???
 
         return Tuple.of(tokens, logicalOperators);
     }

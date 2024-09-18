@@ -43,10 +43,8 @@ public class AnalyticsQueryParser {
         try {
 
             Logger.debug(this, ()-> "Parsing json to query: " + json);
-            final AnalyticsQuery query = DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+            return DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
                     .readValue(json, AnalyticsQuery.class);
-
-            return query;
         } catch (JsonProcessingException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotRuntimeException(e);

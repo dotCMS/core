@@ -9,6 +9,10 @@ import java.util.regex.Pattern;
  */
 public class TimeDimensionParser {
 
+    private TimeDimensionParser() {
+        // singleton
+    }
+
     private static final String FIELD_REGEX = "(\\w+\\.\\w+)\\s+(\\w+)";
 
     public static class TimeDimension {
