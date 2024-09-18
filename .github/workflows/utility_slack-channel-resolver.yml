@@ -29,6 +29,8 @@ on:
     outputs:
       channel_ids:
         value: ${{ jobs.slack-channel-resolver.outputs.channel_ids }}
+      mappings_json:
+        value: ${{ jobs.slack-channel-resolver.outputs.mappings_json }}
     secrets:
       CI_MACHINE_USER:
         description: 'CI machine user'
@@ -45,6 +47,7 @@ jobs:
     runs-on: ubuntu-20.04
     outputs:
       channel_ids: ${{ steps.resolve-channels.outputs.channel_ids }}
+      mappings_json: ${{ steps.resolve-channels.outputs.mappings_json }}
     steps:
       - name: Resolve Users
         id: resolve-users
@@ -70,7 +73,8 @@ jobs:
           githack_core_repo_url=https://${githack_host}/${{ github.repository }}
           slack_mappings_file=slack-mappings.json
           slack_mapping_url=${githack_core_repo_url}/${{ inputs.branch }}/.github/data/${slack_mappings_file}
-          json=$(curl -s ${slack_mapping_url})
+          json=$(curl -s ${slack_mapping_url} | jq -c .)
+          echo "json: ${json}"
           
           echo "Looking for [${github_user}]"
           channel_ids=
@@ -115,7 +119,9 @@ jobs:
               fi
             fi
 
-            [[ -n "${channel_id}" ]] && channel_ids="${channel_ids} ${channel_id}"
+            if [[ -n "${channel_id}" && "${channel_id}" != 'null' ]]; then
+              channel_ids="${channel_ids} ${channel_id}"
+            fi
           done
           
           default_channel_id=${{ inputs.default_channel_id }}
@@ -135,5 +141,6 @@ jobs:
             channel_ids=$(printf '%s\n' "${deduped_channel_ids[@]}" | jq -R . | jq -s . | tr -d '\n' | tr -d ' ')
           fi
           
+          echo "mappings_json=${json}" >> $GITHUB_OUTPUT
           echo "channel_ids: [${channel_ids}]"
           echo "channel_ids=${channel_ids}" >> $GITHUB_OUTPUT

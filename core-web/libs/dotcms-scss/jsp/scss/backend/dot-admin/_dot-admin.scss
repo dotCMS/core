@@ -13,7 +13,7 @@
     position: absolute;
     top: 4px;
     right: 30px;
-    font-size: 85%;
+    font-size: $font-size-sm;
     color: #ddd;
 }
 #admin-site-tools-div a {
@@ -99,7 +99,7 @@
     right: 30px;
     top: 34px;
     width: 225px;
-    font-size: 85%;
+    font-size: $font-size-sm;
     border: 1px solid $color-palette-gray-400;
     border-top: 0;
     background: #fff;
@@ -195,7 +195,7 @@
 .changeHost {
     cursor: pointer;
     float: right;
-    font-size: 85%;
+    font-size: $font-size-sm;
     line-height: 15px;
     margin: 6px 10px 0 0;
     padding: 0;
@@ -414,7 +414,7 @@ tr.active {
 .excelDownload {
     text-align: right;
     padding: 5px 10px;
-    font-size: 85%;
+    font-size: $font-size-sm;
 }
 .excelDownload a {
     text-decoration: none;
@@ -577,14 +577,14 @@ tr.active {
     overflow: auto;
 }
 .tagsBox a {
-    font-size: 93%;
+    font-size: $font-size-md;
     color: #999;
 }
 .tagsCaption {
     display: block;
     color: #999;
     line-height: 140%;
-    font-size: 80%;
+    font-size: $font-size-sm;
     margin: 3px 0 0 5px;
 }
 .suggestHeading {
@@ -1211,7 +1211,7 @@ table.sTypeTable.sTypeItem {
     margin: 15px 10px 20px 10px;
 }
 .siteOverview span {
-    font-size: 300%;
+    font-size: $icon-xl;
     display: block;
     padding: 8px;
 }
@@ -1229,7 +1229,7 @@ table.dojoxLegendNode td {
 #pieChartLegend td.dojoxLegendText {
     text-align: left;
     vertical-align: top;
-    font-size: 85%;
+    font-size: $font-size-sm;
     line-height: 131%;
 }
 #lineWrapper {
@@ -1251,7 +1251,7 @@ table.dojoxLegendNode td {
     border-radius: 10px;
     color: #fff;
     text-align: center;
-    font-size: 131%;
+    font-size: $font-size-lg;
 }
 .noPie {
     background: url($pie-bg) no-repeat center top;

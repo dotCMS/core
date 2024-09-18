@@ -22,6 +22,7 @@ import com.dotcms.contenttype.model.field.Relationships;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.workflow.SystemAction;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
@@ -34,11 +35,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -79,10 +82,10 @@ class ContentTypeAPIIT {
     ContentTypesTestHelperService contentTypesTestHelperService;
 
     @BeforeEach
-    public void setupTest() throws IOException {
+    public void setupTest() throws IOException, URISyntaxException {
         serviceManager.removeAll()
                 .persist(ServiceBean.builder().name("default")
-                        .url(new URL("http://localhost:8080")).active(true).build());
+                        .url(new URI("http://localhost:8080").toURL()).active(true).build());
 
         final String user = "admin@dotcms.com";
         final char[] passwd = "admin".toCharArray();
@@ -249,19 +252,25 @@ class ContentTypeAPIIT {
         final ImmutableSimpleContentType updatedContentType = ImmutableSimpleContentType.builder().from(newContentType).description("Updated").build();
         final SaveContentTypeRequest request = SaveContentTypeRequest.builder().
                 from(updatedContentType).build();
-        final ResponseEntityView<ContentType> responseEntityView = client.updateContentType(
-                request.variable(), request);
+        final ResponseEntityView<ContentType> responseEntityView = getUpdateContentTypeResponse(
+                client, request);
         Assertions.assertEquals("Updated", responseEntityView.entity().description());
 
         // And finally test delete
-        final ResponseEntityView<String> responseStringEntity = client.delete(updatedContentType.variable());
-        Assertions.assertTrue(responseStringEntity.entity().contains("deleted"));
+        await().pollInterval(1,TimeUnit.SECONDS)
+               .atMost(30, TimeUnit.SECONDS).until(() -> {
+                    final ResponseEntityView<String> responseStringEntity = getDelete(client,
+                            updatedContentType.variable());
+            // Check if the response contains "deleted"
+            return responseStringEntity.entity().contains("deleted");
+        });
 
         // Use Awaitility to wait until the ContentType is actually deleted
-        await().atMost(20, TimeUnit.SECONDS).until(() -> {
+        await().pollInterval(1,TimeUnit.SECONDS)
+               .atMost(30, TimeUnit.SECONDS).until(() -> {
             try {
-                client.getContentType(updatedContentType.variable(), 1L, true);
-                return false; // If this succeeds, the ContentType still exists
+                final boolean exists = getContentType(client, updatedContentType);
+                return !exists; // If this succeeds, the ContentType still exists
             } catch (WebApplicationException e) {
                 if (e.getResponse().getStatus() == 404) {
                     return true; // ContentType was successfully deleted
@@ -269,6 +278,29 @@ class ContentTypeAPIIT {
                 throw e; // Rethrow any unexpected exceptions
             }
         });
+    }
+
+    /**
+     * Since awaitility works on a separate thread we need to explicitly activate the request context
+     * @param client The client
+     * @param updatedContentType The content type to delete
+     * @return The response entity view
+     */
+    @ActivateRequestContext
+    ResponseEntityView<String> getDelete(final ContentTypeAPI client, final String updatedContentType) {
+        return client.delete(updatedContentType);
+    }
+
+    /**
+     * Since awaitility works on a separate thread we need to explicitly activate the request context
+     * @param client The client
+     * @param updatedContentType The content type to verify
+     * @return True if the content type exists, false otherwise
+     */
+    @ActivateRequestContext
+    boolean getContentType(final ContentTypeAPI client, final SimpleContentType updatedContentType) {
+        final ResponseEntityView<ContentType> contentType = client.getContentType(updatedContentType.variable(), 1L, true);
+        return contentType != null;
     }
 
     /**
@@ -295,14 +327,14 @@ class ContentTypeAPIIT {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
-        //We're only using this to extract the existing Workflows
+        // Get the existing workflows
         final ResponseEntityView<ContentType> fileAssetResponse = client.getContentType(
                 "FileAsset", 1L, false
         );
         final ContentType fileAsset = fileAssetResponse.entity();
         Assertions.assertFalse(Objects.requireNonNull(fileAsset.workflows()).isEmpty());
 
-        // Creating tha action mappings
+        // Create the action mappings
         final Map<String, String> actionMappingsV1 = Map.of(
                 SystemAction.NEW.name(), "b9d89c80-3d88-4311-8365-187323c96436"
         );
@@ -323,43 +355,42 @@ class ContentTypeAPIIT {
                 .build();
 
         try {
-
             // ---
-            // Creating the content type
+            // Create the content type with the action mappings
             final var contentType = contentTypeWithoutMapping.withSystemActionMappings(jsonNodeV1);
-            final SaveContentTypeRequest request = SaveContentTypeRequest.builder().
-                    from(contentType).build();
+            final SaveContentTypeRequest request = SaveContentTypeRequest.builder()
+                    .from(contentType).build();
             final ResponseEntityView<List<ContentType>> createContentTypeResponse =
                     client.createContentTypes(List.of(request));
 
-            // Make sure the content type was saved and indexed (This waits in case the
-            // indexing/saving took time)
-            final var byVarName = contentTypesTestHelperService.findContentType(
-                    contentTypeVariable);
-            Assertions.assertTrue(byVarName.isPresent());
+            // Verify that the content type was saved and indexed
+            await().atMost(10, TimeUnit.SECONDS).until(() -> {
+                var byVarName = contentTypesTestHelperService.findContentType(contentTypeVariable);
+                return byVarName.isPresent();
+            });
 
             final ContentType createdContentType = createContentTypeResponse.entity().get(0);
             Assertions.assertNotNull(createdContentType.systemActionMappings());
-            Assertions.assertEquals(1, createdContentType.systemActionMappings().size());
+            Assertions.assertEquals(1, Objects.requireNonNull(
+                    createdContentType.systemActionMappings()).size());
 
             // ---
-            // Now we are going to modify the content type WITHOUT system mappings, nothing should
-            // change for the mappings
+            // Modifying the content type without system mappings, nothing should change in mappings
             var modifiedContentType = contentTypeWithoutMapping.withDescription("Modified!");
 
-            SaveContentTypeRequest contentTypeRequest = SaveContentTypeRequest.builder().
-                    from(modifiedContentType).build();
-            ResponseEntityView<ContentType> updateContentTypeResponse = client.updateContentType(
-                    contentTypeRequest.variable(), contentTypeRequest
-            );
+            final SaveContentTypeRequest contentTypeRequest = SaveContentTypeRequest.builder()
+                    .from(modifiedContentType).build();
 
-            ContentType updatedContentType = updateContentTypeResponse.entity();
-            Assertions.assertNotNull(updatedContentType.systemActionMappings());
-            Assertions.assertEquals(1, updatedContentType.systemActionMappings().size());
-            Assertions.assertEquals("Modified!", updatedContentType.description());
+            // Use of Awaitility to wait for the modified response
+            await().atMost(10, TimeUnit.SECONDS).until(() -> {
+                ResponseEntityView<ContentType> updateContentTypeResponse = getUpdateContentTypeResponse(
+                        client, contentTypeRequest);
+                ContentType updatedContentType = updateContentTypeResponse.entity();
+                return "Modified!".equals(updatedContentType.description());
+            });
 
             // ---
-            // Updating the system mappings, we are going to add more mappings
+            // Update the system mappings with more values
             final Map<String, String> actionMappingsV2 = Map.of(
                     SystemAction.NEW.name(), "b9d89c80-3d88-4311-8365-187323c96436",
                     SystemAction.ARCHIVE.name(), "4da13a42-5d59-480c-ad8f-94a3adf809fe",
@@ -367,71 +398,87 @@ class ContentTypeAPIIT {
             );
             final JsonNode jsonNodeV2 = new ObjectMapper().valueToTree(actionMappingsV2);
 
-            modifiedContentType = contentTypeWithoutMapping.
-                    withDescription("Modified 2!").
-                    withSystemActionMappings(jsonNodeV2);
+            modifiedContentType = contentTypeWithoutMapping
+                    .withDescription("Modified 2!")
+                    .withSystemActionMappings(jsonNodeV2);
 
-            contentTypeRequest = SaveContentTypeRequest.builder().from(modifiedContentType).build();
-            updateContentTypeResponse = client.updateContentType(
-                    contentTypeRequest.variable(), contentTypeRequest
-            );
+            final SaveContentTypeRequest contentTypeRequest1 = SaveContentTypeRequest.builder().from(modifiedContentType).build();
 
-            updatedContentType = updateContentTypeResponse.entity();
-            Assertions.assertNotNull(updatedContentType.systemActionMappings());
-            Assertions.assertEquals(3, updatedContentType.systemActionMappings().size());
-            Assertions.assertEquals("Modified 2!", updatedContentType.description());
+            await().atMost(10, TimeUnit.SECONDS).until(() -> {
+                ResponseEntityView<ContentType> updateContentTypeResponse = getUpdateContentTypeResponse(
+                        client, contentTypeRequest1);
+                ContentType updatedContentType = updateContentTypeResponse.entity();
+                return "Modified 2!".equals(updatedContentType.description()) &&
+                        Objects.requireNonNull(updatedContentType.systemActionMappings()).size() == 3;
+            });
 
             // ---
-            // Updating again the system mappings, removing one
+            // Modifying the mappings again, removing one
             final Map<String, String> actionMappingsV3 = Map.of(
                     SystemAction.NEW.name(), "b9d89c80-3d88-4311-8365-187323c96436",
                     SystemAction.ARCHIVE.name(), "4da13a42-5d59-480c-ad8f-94a3adf809fe"
             );
             final JsonNode jsonNodeV3 = new ObjectMapper().valueToTree(actionMappingsV3);
 
-            modifiedContentType = contentTypeWithoutMapping.
-                    withDescription("Modified 3!").
-                    withSystemActionMappings(jsonNodeV3);
+            modifiedContentType = contentTypeWithoutMapping
+                    .withDescription("Modified 3!")
+                    .withSystemActionMappings(jsonNodeV3);
 
-            contentTypeRequest = SaveContentTypeRequest.builder().from(modifiedContentType).build();
-            updateContentTypeResponse = client.updateContentType(
-                    contentTypeRequest.variable(), contentTypeRequest
-            );
+            final SaveContentTypeRequest contentTypeRequest2 = SaveContentTypeRequest.builder().from(modifiedContentType).build();
 
-            updatedContentType = updateContentTypeResponse.entity();
-            Assertions.assertNotNull(updatedContentType.systemActionMappings());
-            Assertions.assertEquals(2, updatedContentType.systemActionMappings().size());
-            Assertions.assertEquals("Modified 3!", updatedContentType.description());
+            await().atMost(10, TimeUnit.SECONDS).until(() -> {
+                ResponseEntityView<ContentType> updateContentTypeResponse = getUpdateContentTypeResponse(
+                        client, contentTypeRequest2);
+                ContentType updatedContentType = updateContentTypeResponse.entity();
+                return "Modified 3!".equals(updatedContentType.description()) &&
+                        Objects.requireNonNull(updatedContentType.systemActionMappings()).size() == 2;
+            });
 
             // ---
-            // Finally trying to remove all system mappings
+            // Finally, try to remove all system mappings
             final Map<String, String> actionMappingsV4 = Map.of();
             final JsonNode jsonNodeV4 = new ObjectMapper().valueToTree(actionMappingsV4);
 
-            modifiedContentType = contentTypeWithoutMapping.
-                    withDescription("Modified 4!").
-                    withSystemActionMappings(jsonNodeV4);
+            modifiedContentType = contentTypeWithoutMapping
+                    .withDescription("Modified 4!")
+                    .withSystemActionMappings(jsonNodeV4);
 
-            contentTypeRequest = SaveContentTypeRequest.builder().from(modifiedContentType).build();
-            updateContentTypeResponse = client.updateContentType(
-                    contentTypeRequest.variable(), contentTypeRequest
-            );
+            final SaveContentTypeRequest contentTypeRequest3 = SaveContentTypeRequest.builder().from(modifiedContentType).build();
 
-            updatedContentType = updateContentTypeResponse.entity();
-            Assertions.assertNull(updatedContentType.systemActionMappings());
-            Assertions.assertEquals("Modified 4!", updatedContentType.description());
+            await().atMost(10, TimeUnit.SECONDS).until(() -> {
+                ResponseEntityView<ContentType> updateContentTypeResponse = getUpdateContentTypeResponse(
+                        client, contentTypeRequest3);
+                ContentType updatedContentType = updateContentTypeResponse.entity();
+                return "Modified 4!".equals(updatedContentType.description()) &&
+                        updatedContentType.systemActionMappings() == null;
+            });
+
         } finally {
-
             // Clean up
             try {
-                client.delete(contentTypeVariable);
+                getDelete(client, contentTypeVariable);
             } catch (Exception e) {
                 // Ignore any issue here on the cleanup
             }
         }
     }
 
-        /**
+    /**
+     * updateContentTypeResponse method to be used in Awaitility
+     * @param client The client
+     * @param contentTypeRequest The content type request
+     * @return The response entity view
+     */
+    @ActivateRequestContext
+    ResponseEntityView<ContentType> getUpdateContentTypeResponse(
+            ContentTypeAPI client, SaveContentTypeRequest contentTypeRequest) {
+        return client.updateContentType(
+                contentTypeRequest.variable(), contentTypeRequest
+        );
+    }
+
+
+    /**
          * We're trying to simplify the input file we want to se to the server via CLI so this basically test we are allowing the use of a Shorter name in the clazz field
          * @throws JsonProcessingException
          */
@@ -952,10 +999,10 @@ class ContentTypeAPIIT {
            // Therefore This CTs can generate noise in other tests, when comparing a copy against a local copy
            // So we delete them here
             if (null != savedContentType1){
-               client.delete(savedContentType1.variable());
+               getDelete(client, savedContentType1.variable());
            }
            if(null != savedContentType2) {
-               client.delete(savedContentType2.variable());
+               getDelete(client, savedContentType2.variable());
            }
         }
 

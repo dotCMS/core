@@ -1,12 +1,17 @@
 package com.dotcms.analytics.track;
 
+import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceFactory;
+import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
+import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
+import com.dotcms.analytics.track.matchers.RequestMatcher;
+import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
-import com.dotcms.jitsu.EventLogSubmitter;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.WhiteBlackList;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
@@ -25,8 +30,6 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
 
     private final static Map<String, RequestMatcher> requestMatchersMap = new ConcurrentHashMap<>();
 
-    private final EventLogSubmitter submitter;
-
     /// private static final String[] DEFAULT_BLACKLISTED_PROPS = new String[]{"^/api/*"};
     private static final String[] DEFAULT_BLACKLISTED_PROPS = new String[]{StringPool.BLANK};
     private final WhiteBlackList whiteBlackList = new WhiteBlackList.Builder()
@@ -37,11 +40,10 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
 
     public AnalyticsTrackWebInterceptor() {
 
-        submitter = new EventLogSubmitter();
         addRequestMatcher(
                 new PagesAndUrlMapsRequestMatcher(),
                 new FilesRequestMatcher(),
-                new RulesRedirectsRequestMatcher(),
+         //       new RulesRedirectsRequestMatcher(),
                 new VanitiesRequestMatcher());
     }
 
@@ -64,6 +66,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
         requestMatchersMap.remove(requestMatcherId);
     }
 
+
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
 
@@ -71,12 +74,19 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
             final Optional<RequestMatcher> matcherOpt = this.anyMatcher(request, response, RequestMatcher::runBeforeRequest);
             if (matcherOpt.isPresent()) {
 
+                addRequestId (request);
                 Logger.debug(this, () -> "intercept, Matched: " + matcherOpt.get().getId() + " request: " + request.getRequestURI());
-                //fireNextStep(request, response);
+                fireNext(request, response, matcherOpt.get());
             }
         }
 
         return Result.NEXT;
+    }
+
+    private void addRequestId(final HttpServletRequest request) {
+        if (null == request.getAttribute("requestId")) {
+            request.setAttribute("requestId", UUIDUtil.uuid());
+        }
     }
 
     @Override
@@ -86,8 +96,9 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
             final Optional<RequestMatcher> matcherOpt = this.anyMatcher(request, response, RequestMatcher::runAfterRequest);
             if (matcherOpt.isPresent()) {
 
+                addRequestId (request);
                 Logger.debug(this, () -> "afterIntercept, Matched: " + matcherOpt.get().getId() + " request: " + request.getRequestURI());
-                //fireNextStep(request, response);
+                fireNext(request, response, matcherOpt.get());
             }
         }
 
@@ -101,5 +112,20 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor {
                 .filter(matcher -> matcher.match(request, response))
                 .findFirst();
     }
+
+    /**
+     * Since the Fire the next step on the Analytics pipeline
+     * @param request
+     * @param response
+     * @param requestMatcher
+     */
+    protected void fireNext(final HttpServletRequest request, final HttpServletResponse response,
+                          final RequestMatcher requestMatcher) {
+
+        Logger.debug(this, ()-> "fireNext, uri: " + request.getRequestURI() +
+                " requestMatcher: " + requestMatcher.getId());
+        WebEventsCollectorServiceFactory.getInstance().getWebEventsCollectorService().fireCollectors(request, response, requestMatcher);
+    }
+
 
 }
