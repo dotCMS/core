@@ -1,17 +1,10 @@
 import { tapResponse } from '@ngrx/component-store';
-import {
-    getState,
-    patchState,
-    signalStore,
-    withComputed,
-    withMethods,
-    withState
-} from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { computed, effect, inject } from '@angular/core';
+import { computed, inject } from '@angular/core';
 
 import { filter, switchMap, tap } from 'rxjs/operators';
 
@@ -148,8 +141,17 @@ export const CategoryFieldStore = signalStore(
         }),
 
         // Dialog
+        /**
+         * Computed property that checks if a dialog is open.
+         */
         isDialogOpen: computed(() => store.dialog.state() === 'open'),
 
+        /**
+         * A computed property that retrieves the keys of selected dialog items.
+         * This function accesses the store's dialog and maps each selected item's key.
+         *
+         * @returns {Array} An array of keys of selected dialog items.
+         */
         dialogSelectedKeys: computed(() => store.dialog.selected().map((item) => item.key))
     })),
     withMethods(
@@ -210,6 +212,9 @@ export const CategoryFieldStore = signalStore(
                 });
             },
 
+            /**
+             * Opens the dialog with the current selected items and sets the state to 'open'.
+             */
             openDialog(): void {
                 patchState(store, {
                     dialog: {
@@ -219,6 +224,9 @@ export const CategoryFieldStore = signalStore(
                 });
             },
 
+            /**
+             * Closes the dialog and resets the selected items.
+             */
             closeDialog(): void {
                 patchState(store, {
                     dialog: {
@@ -263,6 +271,9 @@ export const CategoryFieldStore = signalStore(
                 });
             },
 
+            /**
+             * Applies the selected items from the dialog to the store.
+             */
             applyDialogSelection(): void {
                 const { selected } = store.dialog();
                 patchState(store, {
@@ -280,12 +291,12 @@ export const CategoryFieldStore = signalStore(
                 const selected = removeItemByKey(store.dialog.selected(), key);
 
                 patchState(store, {
-                    dialog: { state: store.dialog.state(), selected }
+                    dialog: { ...store.dialog(), selected }
                 });
             },
 
             /**
-             * Clears all categories from the store, effectively resetting state related to categories and their parent paths.
+             * Resets the store to its initial state.
              */
             clean() {
                 patchState(store, {
