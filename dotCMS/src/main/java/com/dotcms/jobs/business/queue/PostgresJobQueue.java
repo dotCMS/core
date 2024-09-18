@@ -1,9 +1,7 @@
 package com.dotcms.jobs.business.queue;
 
-import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
-import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.queue.error.JobLockingException;
 import com.dotcms.jobs.business.queue.error.JobNotFoundException;
@@ -12,13 +10,11 @@ import com.dotcms.jobs.business.queue.error.JobQueueException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -181,7 +177,7 @@ public class PostgresJobQueue implements JobQueue {
 
             List<Map<String, Object>> results = dc.loadObjectResults();
             if (!results.isEmpty()) {
-                return mapResultSetToJob(results.get(0));
+                return DBJobTransformer.toJob(results.get(0));
             }
 
             Logger.warn(this, "Job with id: " + jobId + " not found");
@@ -214,7 +210,7 @@ public class PostgresJobQueue implements JobQueue {
             if (!results.isEmpty()) {
                 totalCount = ((Number) results.get(0).get("total_count")).longValue();
                 jobs = results.stream()
-                        .map(this::mapResultSetToJob)
+                        .map(DBJobTransformer::toJob)
                         .collect(Collectors.toList());
             }
 
@@ -254,7 +250,7 @@ public class PostgresJobQueue implements JobQueue {
             if (!results.isEmpty()) {
                 totalCount = ((Number) results.get(0).get("total_count")).longValue();
                 jobs = results.stream()
-                        .map(this::mapResultSetToJob)
+                        .map(DBJobTransformer::toJob)
                         .collect(Collectors.toList());
             }
 
@@ -288,7 +284,7 @@ public class PostgresJobQueue implements JobQueue {
             if (!results.isEmpty()) {
                 totalCount = ((Number) results.get(0).get("total_count")).longValue();
                 jobs = results.stream()
-                        .map(this::mapResultSetToJob)
+                        .map(DBJobTransformer::toJob)
                         .collect(Collectors.toList());
             }
 
@@ -323,7 +319,7 @@ public class PostgresJobQueue implements JobQueue {
             if (!results.isEmpty()) {
                 totalCount = ((Number) results.get(0).get("total_count")).longValue();
                 jobs = results.stream()
-                        .map(this::mapResultSetToJob)
+                        .map(DBJobTransformer::toJob)
                         .collect(Collectors.toList());
             }
 
@@ -412,7 +408,7 @@ public class PostgresJobQueue implements JobQueue {
             dc.addParam(Timestamp.valueOf(since));
 
             List<Map<String, Object>> results = dc.loadObjectResults();
-            return results.stream().map(this::mapResultSetToJob).collect(Collectors.toList());
+            return results.stream().map(DBJobTransformer::toJob).collect(Collectors.toList());
         } catch (DotDataException e) {
             Logger.error(this, "Database error while fetching updated jobs", e);
             throw new JobQueueDataException("Database error while fetching updated jobs", e);
@@ -510,82 +506,6 @@ public class PostgresJobQueue implements JobQueue {
             Logger.error(this, "Database error while removing job", e);
             throw new JobQueueDataException("Database error while removing job", e);
         }
-    }
-
-    /**
-     * Maps a result set to a Job object.
-     *
-     * @param result The result set to map.
-     * @return A Job object mapped from the result set.
-     */
-    private Job mapResultSetToJob(final Map<String, Object> result) {
-
-        final ObjectMapper objectMapper = new ObjectMapper();
-
-        try {
-            return Job.builder()
-                    .id((String) result.get("id"))
-                    .queueName((String) result.get("queue_name"))
-                    .state(JobState.valueOf((String) result.get("state")))
-                    .parameters(
-                            objectMapper.readValue((String) result.get("parameters"), Map.class))
-                    .result(Optional.ofNullable((Map<String, Object>) result.get("result"))
-                            .map(r -> {
-                                try {
-                                    return JobResult.builder()
-                                            .errorDetail(Optional.ofNullable(
-                                                            (Map<String, Object>) r.get("errorDetail"))
-                                                    .map(ed -> ErrorDetail.builder()
-                                                            .message((String) ed.get("message"))
-                                                            .exceptionClass((String) ed.get(
-                                                                    "exceptionClass"))
-                                                            .timestamp(toLocalDateTime(
-                                                                    ed.get("timestamp")))
-                                                            .processingStage((String) ed.get(
-                                                                    "processingStage"))
-                                                            .build())
-                                            )
-                                            .metadata(Optional.ofNullable(
-                                                    (Map<String, Object>) r.get("metadata")))
-                                            .build();
-                                } catch (Exception e) {
-                                    Logger.error(this, "Failed to map job result", e);
-                                    return null;
-                                }
-                            }))
-                    .progress(((Number) result.get("progress")).floatValue())
-                    .createdAt(toLocalDateTime(result.get("created_at")))
-                    .updatedAt(toLocalDateTime(result.get("updated_at")))
-                    .startedAt(Optional.ofNullable(result.get("started_at"))
-                            .map(this::toLocalDateTime))
-                    .completedAt(Optional.ofNullable(result.get("completed_at"))
-                            .map(this::toLocalDateTime))
-                    .executionNode(Optional.ofNullable((String) result.get("execution_node")))
-                    .retryCount(((Number) result.get("retry_count")).intValue())
-                    .build();
-        } catch (Exception e) {
-            Logger.error(this, "Failed to map result to Job", e);
-            throw new DotRuntimeException("Failed to map result to Job", e);
-        }
-    }
-
-    /**
-     * Converts a timestamp object to a LocalDateTime.
-     *
-     * @param timestamp The timestamp object to convert.
-     * @return The converted LocalDateTime.
-     */
-    private LocalDateTime toLocalDateTime(final Object timestamp) {
-
-        if (timestamp instanceof java.sql.Timestamp) {
-            return ((java.sql.Timestamp) timestamp).toLocalDateTime();
-        } else if (timestamp instanceof java.util.Date) {
-            return ((java.util.Date) timestamp).toInstant()
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDateTime();
-        }
-
-        throw new IllegalArgumentException("Unsupported timestamp type: " + timestamp.getClass());
     }
 
 }
