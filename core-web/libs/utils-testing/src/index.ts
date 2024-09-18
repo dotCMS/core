@@ -47,3 +47,4 @@ export * from './lib/seo-mock';
 export * from './lib/dot-message-mock.pipe';
 export * from './lib/push-publish.mock';
 export * from './lib/dot-license-service.mock';
+export * from './lib/monaco-editor.mock';
