@@ -73,12 +73,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -142,23 +144,27 @@ public class ContentResource {
     private final ContentHelper contentHelper = ContentHelper.getInstance();
 
     /**
+     * Performs a content search. Parameters are received via POST and returns a JSON object with
+     * the search info and contentlet results. This is an example call using CURL:
+     * <pre>
+     *     curl --location --request POST 'http://localhost:8080/api/content/_search' \
+     *      --header 'Content-Type: application/json' \
+     *      --data-raw '{
+     *           	 "query": "+structurename:webpagecontent",
+     *            	 "sort":"modDate",
+     *            	 "limit":20,
+     *            	 "offset":0,
+     *            	 "userId":"dotcms.org.1"
+     *      }'
+     * </pre>
      *
-     * Do a search, parameter are received by post and returns the json with the search info and contentlet results
+     * @param request       {@link HttpServletRequest} object
+     * @param response      {@link HttpServletResponse} object
+     * @param rememberQuery Indicates if the specified Lucene Query must be stored in the current
+     *                      session or not. This usually means that the request is coming from the
+     *                      {@code Query Tool} portlet.
+     * @param searchForm    {@link SearchForm}
      *
-     * Example call using curl:
-     * curl --location --request POST 'http://localhost:8080/api/content/_search' \
-     * --header 'Content-Type: application/json' \
-     * --data-raw '{
-     *      	 "query": "+structurename:webpagecontent",
-     *       	 "sort":"modDate",
-     *       	 "limit":20,
-     *       	 "offset":0,
-     *           "userId":"dotcms.org.1"
-     * }'
-     *
-     * @param request {@link HttpServletRequest} object
-     * @param response {@link HttpServletResponse} object
-     * @param searchForm {@link SearchForm}
      * @return json array of objects. each object with inode and identifier
      */
     @POST
@@ -166,6 +172,7 @@ public class ContentResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response search(@Context HttpServletRequest request,
                            @Context final HttpServletResponse response,
+                           @QueryParam("rememberQuery") @DefaultValue("false") final boolean rememberQuery,
                            final SearchForm searchForm) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = this.webResource.init
@@ -204,7 +211,9 @@ public class ContentResource {
         }
 
         if (UtilMethods.isSet(query)) {
-            request.getSession().setAttribute(WebKeys.EXECUTED_LUCENE_QUERY, query);
+            if (rememberQuery) {
+                request.getSession().setAttribute(WebKeys.EXECUTED_LUCENE_QUERY, query);
+            }
             final String realQuery = query.contains("variant:") ? query : query + " +variant:default";
 
             startAPISearchPull = Calendar.getInstance().getTimeInMillis();

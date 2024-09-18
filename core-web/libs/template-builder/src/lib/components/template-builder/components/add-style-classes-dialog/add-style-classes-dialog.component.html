@@ -1,19 +1,20 @@
 <div class="dialog__auto-complete-container field">
+    @let isJsonClasses = $isJsonClasses();
     <p-autoComplete
         (completeMethod)="filterClasses($event)"
-        [(ngModel)]="selectedClasses"
+        [(ngModel)]="$selectedClasses"
         [unique]="true"
-        [suggestions]="filteredSuggestions"
+        [suggestions]="$filteredSuggestions()"
         [size]="446"
         [multiple]="true"
-        [dropdown]="isJsonClasses$ | async"
+        [dropdown]="isJsonClasses"
         [autofocus]="true"
         class="p-fluid"
         dotSelectItem
         data-testId="autocomplete"
         inputId="auto-complete-input"
         appendTo="body" />
-    @if (isJsonClasses$ | async) {
+    @if (isJsonClasses) {
         <ul data-testId="list">
             <li>
                 <i class="pi pi-info-circle"></i>

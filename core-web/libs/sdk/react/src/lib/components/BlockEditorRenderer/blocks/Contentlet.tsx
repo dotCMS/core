@@ -46,8 +46,8 @@ const DefaultContent = () => <div>Unknown Content Type</div>;
  * @param {DotContentProps} props - The props for the DotContent component.
  * @returns {JSX.Element} The rendered DotContent component.
  */
-export const DotContent = (props: DotContentProps) => {
-    const { attrs, customRenderers } = props;
+export const DotContent = ({ customRenderers, ...props }: DotContentProps) => {
+    const { attrs } = props;
 
     const data = attrs?.data as unknown as Contentlet;
 
@@ -57,5 +57,5 @@ export const DotContent = (props: DotContentProps) => {
         console.error('DotContent: No data provided');
     }
 
-    return <Component {...data} />;
+    return <Component {...props} />;
 };

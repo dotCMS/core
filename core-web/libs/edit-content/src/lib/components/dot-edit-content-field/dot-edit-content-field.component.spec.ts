@@ -143,6 +143,12 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     },
     [FIELD_TYPES.CATEGORY]: {
         component: DotEditContentCategoryFieldComponent
+    },
+    [FIELD_TYPES.CONSTANT]: {
+        component: null // this field is not being rendered for now.
+    },
+    [FIELD_TYPES.HIDDEN]: {
+        component: null // this field is not being rendered for now.
     }
 };
 
@@ -156,7 +162,11 @@ describe('FIELD_TYPES and FIELDS_MOCK', () => {
     });
 });
 
-describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fieldMock) => {
+const FIELDS_TO_BE_RENDER = FIELDS_MOCK.filter(
+    (field) => field.fieldType !== FIELD_TYPES.CONSTANT && field.fieldType !== FIELD_TYPES.HIDDEN
+);
+
+describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields', (fieldMock) => {
     const fieldTestBed = FIELD_TYPES_COMPONENTS[fieldMock.fieldType];
     let spectator: Spectator<DotEditContentFieldComponent>;
 

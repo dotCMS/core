@@ -30,4 +30,9 @@ public class ConcurrentCollectorPayloadBean implements CollectorPayloadBean {
         return Map.copyOf(map);
     }
 
+    public CollectorPayloadBean add(final CollectorPayloadBean other) {
+        map.putAll(other.toMap());
+        return this;
+    }
+
 }

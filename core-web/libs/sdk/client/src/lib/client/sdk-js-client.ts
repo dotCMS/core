@@ -17,19 +17,19 @@ export interface ClientConfig {
      */
     dotcmsUrl: string;
     /**
-     * The id of the site you want to interact with.
+     * The id of the site you want to interact with. If not  provided, it will use the default site.
      *
-     * @description to get the site id, go to the site you want to interact with and copy the id from the History tab
+     * More information here: {@link https://www.dotcms.com/docs/latest/multi-site-management}
      *
+     * @description To get the site id, go to the site you want to interact with and copy the id from the History tab.
      * @type {string}
-     * @required
+     * @optional
      */
     siteId?: string;
     /**
-     * The authentication token to use for the requests. If not provided, it will fallback to default site.
+     * The authentication token to use for the requests.
      *
-     * @description you can get the auth token from our UI {@link https://www.dotcms.com/docs/latest/rest-api-authentication#creating-an-api-token-in-the-ui}
-     *
+     * @description You can get the auth token from our UI {@link https://www.dotcms.com/docs/latest/rest-api-authentication#creating-an-api-token-in-the-ui}
      * @type {string}
      * @required
      */
@@ -45,47 +45,55 @@ export interface ClientConfig {
     requestOptions?: ClientOptions;
 }
 
-type PageApiOptions = {
+export type PageApiOptions = {
     /**
      * The path of the page you want to retrieve.
-     *
      * @type {string}
      */
     path: string;
     /**
      * The id of the site you want to interact with. If not provided, the one from the config will be used.
      *
-     * @type {number}
+     * More information here: {@link https://www.dotcms.com/docs/latest/multi-site-management}
+     * @type {string}
+     * @optional
      */
     siteId?: string;
     /**
-     * The mode of the page you want to retrieve. If not provided will use the default mode of the site.
+     * The mode of the page you want to retrieve. If not provided, will use the default mode of the site.
      *
-     * @type {number}
+     * More information here: {@link https://www.dotcms.com/docs/latest/page-viewing-modes}
+     * @type {string}
+     * @optional
      */
-    mode?: string;
+    mode?: 'EDIT_MODE' | 'PREVIEW_MODE' | 'LIVE_MODE';
     /**
-     * The language id of the page you want to retrieve. If not provided will use the default language of the site.
-     *
+     * The language id of the page you want to retrieve. If not provided, will use the default language of the site.
      * @type {number}
+     * @optional
      */
     language_id?: number;
     /**
      * The id of the persona you want to retrieve the page for.
      *
+     * More information here: {@link https://www.dotcms.com/docs/latest/personas}
      * @type {string}
+     * @optional
      */
     personaId?: string;
     /**
-     * If you want to fire the rules set on the page
+     * If you want to fire the rules set on the page.
+     *
+     * More information here: {@link https://www.dotcms.com/docs/latest/adding-rules-to-pages}
      *
      * @type {boolean}
+     * @optional
      */
     fireRules?: boolean;
     /**
-     * Allows access to related content via the Relationship fields of contentlets on a Page; 0 (default)
-     *
+     * Allows access to related content via the Relationship fields of contentlets on a Page; 0 (default).
      * @type {number}
+     * @optional
      */
     depth?: number;
 };
@@ -93,12 +101,10 @@ type PageApiOptions = {
 type NavApiOptions = {
     /**
      * The root path to begin traversing the folder tree.
-     *
      * @example
      * `/api/v1/nav/` starts from the root of the site
      * @example
      * `/about-us` starts from the "About Us" folder
-     *
      * @type {string}
      */
     path: string;
@@ -110,18 +116,18 @@ type NavApiOptions = {
      * `2` returns the element specified in the path, and if that element is a folder, returns all direct children of that folder.
      * @example
      * `3` returns all children and grandchildren of the element specified in the path.
-     *
      * @type {number}
+     * @optional
      */
     depth?: number;
     /**
      * The language ID of content to return.
      * @example
      * `1` (or unspecified) returns content in the default language of the site.
-     *
      * @link https://www.dotcms.com/docs/latest/system-language-properties#DefaultLanguage
      * @link https://www.dotcms.com/docs/latest/adding-and-editing-languages#LanguageID
      * @type {number}
+     * @optional
      */
     languageId?: number;
 };
@@ -136,18 +142,49 @@ function getHostURL(url: string): URL | undefined {
 
 /**
  * `DotCmsClient` is a TypeScript class that provides methods to interact with the DotCMS REST API.
- * It requires a configuration object on instantiation, which includes the DotCMS URL, site ID, and authentication token.
+ * DotCMS is a hybrid-headless CMS and digital experience platform.
  *
  * @class DotCmsClient
- *
  * @property {ClientConfig} config - The configuration object for the DotCMS client.
+ * @property {Content} content - Provides methods to interact with content in DotCMS.
  *
  * @method constructor(config: ClientConfig) - Constructs a new instance of the DotCmsClient class.
  *
- * @method page.get(options: PageApiOptions): Promise<unknown> - Retrieves all the elements of any Page in your dotCMS system in JSON format.
+ * @method page.get(options: PageApiOptions): Promise<PageApiResponse> - Retrieves all the elements of any Page in your dotCMS system in JSON format.
+ * The Page API enables you to retrieve page information, layout, template, content blocks, and more.
+ * @see {@link https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas}
  *
- * @method nav.get(options: NavApiOptions = { depth: 0, path: '/', languageId: 1 }): Promise<unknown> - Retrieves information about the dotCMS file and folder tree.
+ * @method nav.get(options: NavApiOptions = { depth: 0, path: '/', languageId: 1 }): Promise<NavApiResponse> - Retrieves information about the dotCMS file and folder tree.
+ * The Navigation API allows you to fetch the site structure and menu items.
+ * @see {@link https://www.dotcms.com/docs/latest/navigation-rest-api}
  *
+ * @method content.get(options: ContentApiOptions): Promise<ContentApiResponse> - Retrieves content items based on specified criteria.
+ * The Content API allows you to query and retrieve content by ID, inode, or using Lucene queries.
+ * @see {@link https://www.dotcms.com/docs/latest/content-api-retrieval-and-querying}
+ *
+ * @method editor.on(action: string, callbackFn: (payload: unknown) => void) - Allows you to react to actions issued by the Universal Visual Editor (UVE).
+ * @method editor.off(action: string) - Stops listening to an action issued by UVE.
+ *
+ * @static
+ * @method init(config: ClientConfig): DotCmsClient - Initializes and returns a DotCmsClient instance.
+ * @method dotcmsUrl: string - Retrieves the DotCMS URL from the instance configuration.
+ *
+ * @example <caption>Basic usage</caption>
+ * ```javascript
+ * const client = DotCmsClient.init({ dotcmsUrl: 'https://demo.dotcms.com', authToken: 'your-auth-token' });
+ *
+ * // Get a page
+ * client.page.get({ path: '/about-us' }).then(response => console.log(response));
+ *
+ * // Get navigation
+ * client.nav.get({ path: '/about-us', depth: 2 }).then(response => console.log(response));
+ *
+ * // Get content
+ * client.content.get({ query: '+contentType:Blog +languageId:1', limit: 10 }).then(response => console.log(response));
+ *
+ * // Listen to editor changes
+ * client.editor.on('changes', (payload) => console.log('Changes detected:', payload));
+ * ```
  */
 export class DotCmsClient {
     static instance: DotCmsClient;
@@ -204,6 +241,11 @@ export class DotCmsClient {
          * @param {PageApiOptions} options - The options for the Page API call.
          * @returns {Promise<unknown>} - A Promise that resolves to the response from the DotCMS API.
          * @throws {Error} - Throws an error if the options are not valid.
+         * @example
+         * ```ts
+         * const client = new DotCmsClient({ dotcmsUrl: 'https://your.dotcms.com', authToken: 'your-auth-token', siteId: 'your-site-id' });
+         * client.page.get({ path: '/about-us' }).then(response => console.log(response));
+         * ```
          */
         get: async (options: PageApiOptions): Promise<unknown> => {
             this.validatePageOptions(options);
@@ -254,8 +296,14 @@ export class DotCmsClient {
          * `editor.on` is an asynchronous method of the `DotCmsClient` class that allows you to react to actions issued by the UVE.
          *
          *  NOTE: This is being used by the development team - This logic is probably varied or moved to another function/object.
-         * @param action - The name of the name emitted by UVE
-         * @param callbackFn - The function to execute when the UVE emits the action
+         * @param {string} action - The name of the action emitted by UVE.
+         * @param {function} callbackFn - The function to execute when the UVE emits the action.
+         * @example
+         * ```ts
+         * client.editor.on('changes', (payload) => {
+         *     console.log('Changes detected:', payload);
+         * });
+         * ```
          */
         on: (action: string, callbackFn: (payload: unknown) => void) => {
             if (!isInsideEditor()) {
@@ -274,10 +322,14 @@ export class DotCmsClient {
             }
         },
         /**
-         * `editor.off` is an synchronous method of the `DotCmsClient` class that allows you to stop listening and reacting to an action issued by UVE.
+         * `editor.off` is a synchronous method of the `DotCmsClient` class that allows you to stop listening and reacting to an action issued by UVE.
          *
-         *  NOTE: This is being used by the development team - This logic is probably varied or moved to another function/object.
-         * @param action
+         * NOTE: This is being used by the development team - This logic is probably varied or moved to another function/object.
+         * @param {string} action - The name of the action to stop listening to.
+         * @example
+         * ```ts
+         * client.editor.off('changes');
+         * ```
          */
         off: (action: string) => {
             const listenerIndex = this.#listeners.findIndex(
@@ -302,6 +354,11 @@ export class DotCmsClient {
          * @param {NavApiOptions} options - The options for the Nav API call. Defaults to `{ depth: 0, path: '/', languageId: 1 }`.
          * @returns {Promise<unknown>} - A Promise that resolves to the response from the DotCMS API.
          * @throws {Error} - Throws an error if the options are not valid.
+         * @example
+         * ```ts
+         * const client = new DotCmsClient({ dotcmsUrl: 'https://your.dotcms.com', authToken: 'your-auth-token', siteId: 'your-site-id' }});
+         * client.nav.get({ path: '/about-us', depth: 2 }).then(response => console.log(response));
+         * ```
          */
         get: async (
             options: NavApiOptions = { depth: 0, path: '/', languageId: 1 }
@@ -331,6 +388,17 @@ export class DotCmsClient {
         }
     };
 
+    /**
+     * Initializes the DotCmsClient instance with the provided configuration.
+     * If an instance already exists, it returns the existing instance.
+     *
+     * @param {ClientConfig} config - The configuration object for the DotCMS client.
+     * @returns {DotCmsClient} - The initialized DotCmsClient instance.
+     * @example
+     * ```ts
+     * const client = DotCmsClient.init({ dotcmsUrl: 'https://demo.dotcms.com', authToken: 'your-auth-token' });
+     * ```
+     */
     static init(config: ClientConfig): DotCmsClient {
         if (this.instance) {
             console.warn(
@@ -341,16 +409,31 @@ export class DotCmsClient {
         return this.instance ?? (this.instance = new DotCmsClient(config));
     }
 
+    /**
+     * Retrieves the DotCMS URL from the instance configuration.
+     *
+     * @returns {string} - The DotCMS URL.
+     */
     static get dotcmsUrl(): string {
         return (this.instance && this.instance.#config.dotcmsUrl) || '';
     }
 
+    /**
+     * Throws an error if the path is not valid.
+     *
+     * @returns {string} - The authentication token.
+     */
     private validatePageOptions(options: PageApiOptions): void {
         if (!options.path) {
             throw new Error("The 'path' parameter is required for the Page API");
         }
     }
 
+    /**
+     * Throws an error if the path is not valid.
+     *
+     *  @returns {string} - The authentication token.
+     */
     private validateNavOptions(options: NavApiOptions): void {
         if (!options.path) {
             throw new Error("The 'path' parameter is required for the Nav API");

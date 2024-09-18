@@ -31,6 +31,13 @@ const startClassMap: Record<number, string> = {
     12: 'col-start-12'
 };
 
+/**
+ * Get the container data from the containers object using the current container reference obtained from the layout.
+ *
+ * @param {ContainerData} containers
+ * @param {DotCMSPageContext['pageAsset']['layout']['body']['rows'][0]['columns'][0]['containers'][0]} containerRef
+ * @returns {Object} Container with all the data it has.
+ */
 export const getContainersData = (
     containers: ContainerData,
     containerRef: DotCMSPageContext['pageAsset']['layout']['body']['rows'][0]['columns'][0]['containers'][0]
@@ -56,8 +63,21 @@ export const getContainersData = (
     };
 };
 
+/**
+ * Combine classes into a single string.
+ *
+ * @param {string[]} classes
+ * @returns {string} Combined classes
+ */
 export const combineClasses = (classes: string[]) => classes.filter(Boolean).join(' ');
 
+/**
+ * Get the start and end classes for the column based on the left offset and width.
+ *
+ * @param {number} start
+ * @param {number} end
+ * @returns {Object} Start and end classes
+ */
 export const getPositionStyleClasses = (start: number, end: number) => {
     const startClass = startClassMap[start];
     const endClass = endClassMap[end];

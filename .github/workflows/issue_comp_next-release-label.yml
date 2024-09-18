@@ -1,5 +1,5 @@
 # action.yml
-name: 'QA not needed update'
+name: 'Label to Next Release'
 on:
   workflow_call:
     secrets:
@@ -22,69 +22,94 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       QA_NOT_NEEDED_LABEL: 'QA : Not Needed'
+      REPO: core
     steps:
       - run: echo 'GitHub context'
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
       - name: Validate inputs
+        id: validate-inputs
         uses: actions/github-script@v7
         with:
           result-encoding: string
           script: |
+            let issueNumber;
             const issue = context.payload.issue;
             if (!issue && '${{ inputs.issue_number }}'.trim() === '') {
-              console.log('Issue number is not provided');
+              core.warn('Issue number is not provided');
               process.exit(0);
             }
             
-            const label = context.payload.label;
-            if (!label && '${{ inputs.label }}' !== '${{ env.QA_NOT_NEEDED_LABEL }}') {
-              console.log('Label is not "${{ env.QA_NOT_NEEDED_LABEL }}", exiting');
+            let label = context.payload.label;
+            if (!label) {
+              if (!'${{ inputs.label }}') {
+                core.warn('Label is missing, exiting');
+                process.exit(0);
+              }
+              label = '${{ inputs.label }}';
+            } else {
+              label = label.name;
+            }
+            
+            if (label !== '${{ env.QA_NOT_NEEDED_LABEL }}') {
+              core.warn('Label is not [${{ env.QA_NOT_NEEDED_LABEL }}], exiting');
               process.exit(0);
             }
+            
+            core.setOutput('label', label);
       - name: Add Next Release label
         uses: actions/github-script@v7
+        if: success() && steps.validate-inputs.outputs.label != ''
         with:
           result-encoding: string
           retries: 3
           retry-exempt-status-codes: 400,401
           github-token: ${{ secrets.CI_MACHINE_TOKEN }}
           script: |
-            const issue = context.payload.issue || await github.rest.issues.get({
-              issue_number: ${{ inputs.issue_number }},
-              owner: '${{ github.repository_owner }}',
-              repo: 'core'
-            });
+            async function getIssue(issueNumber) {
+                const response = await github.rest.issues.get({
+                    issue_number: issueNumber,
+                    owner: '${{ github.repository_owner }}',
+                    repo: '${{ env.REPO }}'
+                });
+                return response.data;
+            }
+            
+            let issue = context.payload.issue;
             if (!issue) {
-                console.log('Issue [${{ inputs.issue_number }}] not found');
+              if (!!'${{ inputs.issue_number }}') {
+                issue = await getIssue(${{ inputs.issue_number }});
+              }
+            
+              if (!issue) {
+                core.warn('Issue [${{ inputs.issue_number }}] not found');
                 process.exit(0);
+              }
             }
             
             console.log(`Issue: ${JSON.stringify(issue, null, 2)}`);
+            const issueNumber = issue.number;
             
-            const dropAndLearnText = 'Drop Everything & Learn';
-            if (issue.data.title.includes(dropAndLearnText)) {
-              console.log(`Issue does have "${dropAndLearnText}" text in title, exiting`);
+            const dropAndLearnText = 'Drop Everything & Learn'.toLowerCase();
+            if (issue.title.toLowerCase().includes(dropAndLearnText)) {
+              core.warn(`Issue does have "${dropAndLearnText}" text in title, exiting`);
               process.exit(0);
             }
 
             const typeCicdLabel = 'Type : CI/CD';
-            const foundLabel = issue.data.labels.find(label => label.name === typeCicdLabel);
+            const foundLabel = issue.labels.find(label => label.name === typeCicdLabel);
             if (foundLabel) {
-              console.log(`Issue does have "${typeCicdLabel}" label , exiting`);
+              core.warn(`Issue does have "${typeCicdLabel}" label , exiting`);
               process.exit(0);
             }
 
             await github.rest.issues.addLabels({
-              issue_number: ${{ inputs.issue_number }},
+              issue_number: issueNumber,
               owner: '${{ github.repository_owner }}',
-              repo: 'core',
+              repo: '${{ env.REPO }}',
               labels: ['Next Release']
             });
 
-            const updated = await github.rest.issues.get({
-              issue_number: ${{ inputs.issue_number }},
-              owner: '${{ github.repository_owner }}',
-              repo: 'core'
-            });
-            console.log(`Labels: ${JSON.stringify(updated.data.labels, null, 2)}`);
+            const updated = await getIssue(issueNumber);
+            console.log(`Labels: ${JSON.stringify(updated.labels, null, 2)}`);
+          

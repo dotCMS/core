@@ -3,6 +3,8 @@ package com.dotcms.analytics.track.collectors;
 import com.dotcms.analytics.track.matchers.RequestMatcher;
 import com.dotcms.visitor.filter.characteristics.Character;
 
+import com.dotmarketing.business.web.WebAPILocator;
+
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -42,6 +44,10 @@ public class RequestCharacterCollectorContextMap implements CollectorContextMap 
 
         if("request".equals(key)) {
             return request;
+        }
+
+        if (key.equals("currentHost")) {
+            return WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         }
 
         return null;

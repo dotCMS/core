@@ -15,10 +15,11 @@ public interface Collector {
     /**
      * This method is called in order to fire the collector
      * @param collectorContextMap
-     * @param CollectionCollectorPayloadBean
+     * @param collectorPayloadBean
      * @return CollectionCollectorPayloadBean
      */
-    CollectionCollectorPayloadBean collect(final CollectorContextMap collectorContextMap, CollectionCollectorPayloadBean collectorPayloadBean);
+    CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
+                                 final CollectorPayloadBean collectorPayloadBean);
 
     /**
      * True if the collector should run async
@@ -35,5 +36,9 @@ public interface Collector {
     default String getId() {
 
         return this.getClass().getName();
+    }
+
+    default boolean isEventCreator(){
+        return true;
     }
 }

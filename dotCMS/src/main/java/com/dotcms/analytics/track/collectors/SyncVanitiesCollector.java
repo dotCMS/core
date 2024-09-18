@@ -1,16 +1,13 @@
 package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.filters.Constants;
-import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.StringWriter;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -30,10 +27,9 @@ public class SyncVanitiesCollector implements Collector {
 
 
     @Override
-    public CollectionCollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
-                                        final CollectionCollectorPayloadBean collectionCollectorPayloadBean) {
+    public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
+                                        final CollectorPayloadBean collectorPayloadBean) {
 
-        final CollectorPayloadBean collectorPayloadBean = collectionCollectorPayloadBean.first();
         if (null != collectorContextMap.get("request")) {
 
             final HttpServletRequest request = (HttpServletRequest)collectorContextMap.get("request");
@@ -44,20 +40,12 @@ public class SyncVanitiesCollector implements Collector {
                 collectorPayloadBean.put("response_code", vanityRequest.getResponseCode());
             }
 
-            if (Objects.nonNull(vanityUrl)) {
-
-                collectorPayloadBean.put("vanity_url", vanityUrl);
-            }
-
-            if (Objects.nonNull(vanityQueryString)) {
-
-                collectorPayloadBean.put("vanity_query_string", vanityQueryString);
-            }
-
+            collectorPayloadBean.put("vanity_url", vanityUrl);
+            collectorPayloadBean.put("vanity_query_string", vanityQueryString);
         }
 
         final String uri = (String)collectorContextMap.get("uri");
-        final String siteId = (String)collectorContextMap.get("host");
+        final Host site = (Host) collectorContextMap.get("currentHost");
         final Long languageId = (Long)collectorContextMap.get("langId");
         final String language = (String)collectorContextMap.get("lang");
         final CachedVanityUrl cachedVanityUrl = (CachedVanityUrl)collectorContextMap.get(Constants.VANITY_URL_OBJECT);
@@ -66,22 +54,24 @@ public class SyncVanitiesCollector implements Collector {
         if (Objects.nonNull(cachedVanityUrl)) {
 
             vanityObject.put("id", cachedVanityUrl.vanityUrlId);
-            vanityObject.put("vanity_url",
+            vanityObject.put("forward_to",
                     collectorPayloadBean.get("vanity_url")!=null?(String)collectorPayloadBean.get("vanity_url"):cachedVanityUrl.forwardTo);
-            vanityObject.put("path", uri);
+            vanityObject.put("url", uri);
+            vanityObject.put("response", String.valueOf(cachedVanityUrl.response));
         }
 
         collectorPayloadBean.put("object",  vanityObject);
-        collectorPayloadBean.put("path", uri);
-        collectorPayloadBean.put("event_type", EventType.VANITY_REQUEST.getType());
+        collectorPayloadBean.put("url", uri);
         collectorPayloadBean.put("language", language);
-        collectorPayloadBean.put("site", siteId);
+        collectorPayloadBean.put("site", site.getIdentifier());
+        collectorPayloadBean.put("event_type", EventType.VANITY_REQUEST.getType());
 
-        return collectionCollectorPayloadBean;
+        return collectorPayloadBean;
     }
 
     @Override
     public boolean isAsync() {
         return false;
     }
+
 }
