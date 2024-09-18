@@ -27,6 +27,7 @@ import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.error.JobProcessingException;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.processor.DefaultProgressTracker;
@@ -137,15 +138,21 @@ public class JobQueueManagerAPITest {
         Job job1 = mock(Job.class);
         Job job2 = mock(Job.class);
         List<Job> expectedJobs = Arrays.asList(job1, job2);
+        final var paginatedResult = JobPaginatedResult.builder()
+                .jobs(expectedJobs)
+                .total(2)
+                .page(1)
+                .pageSize(10)
+                .build();
 
         // Mock the behavior of jobQueue.getJobs
-        when(mockJobQueue.getJobs(1, 10)).thenReturn(expectedJobs);
+        when(mockJobQueue.getJobs(1, 10)).thenReturn(paginatedResult);
 
         // Call the method under test
-        List<Job> actualJobs = jobQueueManagerAPI.getJobs(1, 10);
+        final var actualResult = jobQueueManagerAPI.getJobs(1, 10);
 
         // Verify the results
-        assertEquals(expectedJobs, actualJobs);
+        assertEquals(expectedJobs, actualResult.jobs());
         verify(mockJobQueue).getJobs(1, 10);
     }
 

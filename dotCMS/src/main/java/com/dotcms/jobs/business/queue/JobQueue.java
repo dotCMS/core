@@ -1,6 +1,7 @@
 package com.dotcms.jobs.business.queue;
 
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.queue.error.JobLockingException;
 import com.dotcms.jobs.business.queue.error.JobNotFoundException;
 import com.dotcms.jobs.business.queue.error.JobQueueDataException;
@@ -44,10 +45,11 @@ public interface JobQueue {
      * @param queueName The name of the queue.
      * @param page      The page number (for pagination).
      * @param pageSize  The number of items per page.
-     * @return A list of active jobs.
+     * @return A result object containing the list of active jobs and pagination information.
      * @throws JobQueueDataException if there's a data storage error while fetching the jobs
      */
-    List<Job> getActiveJobs(String queueName, int page, int pageSize) throws JobQueueDataException;
+    JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize)
+            throws JobQueueDataException;
 
     /**
      * Retrieves a list of completed jobs for a specific queue within a date range.
@@ -57,31 +59,31 @@ public interface JobQueue {
      * @param endDate   The end date of the range.
      * @param page      The page number (for pagination).
      * @param pageSize  The number of items per page.
-     * @return A list of completed jobs.
+     * @return A result object containing the list of active jobs and pagination information.
      * @throws JobQueueDataException if there's a data storage error while fetching the jobs
      */
-    List<Job> getCompletedJobs(String queueName, LocalDateTime startDate, LocalDateTime endDate,
-            int page, int pageSize) throws JobQueueDataException;
+    JobPaginatedResult getCompletedJobs(String queueName, LocalDateTime startDate,
+            LocalDateTime endDate, int page, int pageSize) throws JobQueueDataException;
 
     /**
      * Retrieves a list of all jobs.
      *
      * @param page     The page number (for pagination).
      * @param pageSize The number of items per page.
-     * @return A list of all jobs.
+     * @return A result object containing the list of jobs and pagination information.
      * @throws JobQueueDataException if there's a data storage error while fetching the jobs
      */
-    List<Job> getJobs(int page, int pageSize) throws JobQueueDataException;
+    JobPaginatedResult getJobs(int page, int pageSize) throws JobQueueDataException;
 
     /**
      * Retrieves a list of failed jobs.
      *
      * @param page     The page number (for pagination).
      * @param pageSize The number of items per page.
-     * @return A list of failed jobs.
+     * @return A result object containing the list of failed jobs and pagination information.
      * @throws JobQueueDataException if there's a data storage error while fetching the jobs
      */
-    List<Job> getFailedJobs(int page, int pageSize) throws JobQueueDataException;
+    JobPaginatedResult getFailedJobs(int page, int pageSize) throws JobQueueDataException;
 
     /**
      * Updates the status of a job.

@@ -14,6 +14,7 @@ import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.processor.JobProcessor;
@@ -276,7 +277,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Job> getJobs(final int page, final int pageSize) throws DotDataException {
+    public JobPaginatedResult getJobs(final int page, final int pageSize) throws DotDataException {
         try {
             return jobQueue.getJobs(page, pageSize);
         } catch (JobQueueDataException e) {

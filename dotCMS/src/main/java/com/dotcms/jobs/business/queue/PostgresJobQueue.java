@@ -2,6 +2,7 @@ package com.dotcms.jobs.business.queue;
 
 import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.queue.error.JobLockingException;
@@ -18,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -61,8 +63,15 @@ public class PostgresJobQueue implements JobQueue {
 
     private static final String SELECT_JOB_BY_ID_QUERY = "SELECT * FROM job WHERE id = ?";
 
-    private static final String GET_ACTIVE_JOBS_QUERY = "SELECT * FROM job WHERE queue_name = ? "
-            + "AND state IN (?, ?) ORDER BY created_at LIMIT ? OFFSET ?";
+    private static final String GET_ACTIVE_JOBS_QUERY =
+            "WITH job_data AS ("
+                    + "    SELECT *, COUNT(*) OVER() as total_count"
+                    + "    FROM job"
+                    + "    WHERE queue_name = ? AND state IN (?, ?)"
+                    + "    ORDER BY created_at"
+                    + ") "
+                    + "SELECT * FROM job_data "
+                    + "LIMIT ? OFFSET ?";
 
     private static final String UPDATE_AND_GET_NEXT_JOB_WITH_LOCK_QUERY =
             "UPDATE job_queue SET state = ? "
@@ -70,18 +79,37 @@ public class PostgresJobQueue implements JobQueue {
                     + "ORDER BY priority DESC, created_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED) "
                     + "RETURNING *";
 
-    private static final String GET_COMPLETED_JOBS_QUERY = "SELECT * FROM job "
-            + "WHERE queue_name = ? AND state = ? AND completed_at BETWEEN ? AND ? "
-            + "ORDER BY completed_at DESC LIMIT ? OFFSET ?";
+    private static final String GET_COMPLETED_JOBS_QUERY =
+            "WITH completed_job_data AS (" +
+                    "    SELECT *, COUNT(*) OVER() as total_count " +
+                    "    FROM job " +
+                    "    WHERE queue_name = ? AND state = ? AND completed_at BETWEEN ? AND ? " +
+                    "    ORDER BY completed_at DESC" +
+                    ") " +
+                    "SELECT * FROM completed_job_data " +
+                    "LIMIT ? OFFSET ?";
 
-    private static final String GET_JOBS_QUERY = "SELECT * FROM job ORDER BY created_at "
-            + "DESC LIMIT ? OFFSET ?";
+    private static final String GET_JOBS_QUERY =
+            "WITH job_data AS (" +
+                    "    SELECT *, COUNT(*) OVER() as total_count " +
+                    "    FROM job " +
+                    "    ORDER BY created_at DESC" +
+                    ") " +
+                    "SELECT * FROM job_data " +
+                    "LIMIT ? OFFSET ?";
+
+    private static final String GET_FAILED_JOBS_QUERY =
+            "WITH failed_job_data AS (" +
+                    "    SELECT *, COUNT(*) OVER() as total_count " +
+                    "    FROM job " +
+                    "    WHERE state = ? " +
+                    "    ORDER BY updated_at DESC" +
+                    ") " +
+                    "SELECT * FROM failed_job_data " +
+                    "LIMIT ? OFFSET ?";
 
     private static final String GET_UPDATED_JOBS_SINCE_QUERY = "SELECT * FROM job "
             + "WHERE id = ANY(?) AND updated_at > ?";
-
-    private static final String GET_FAILED_JOBS_QUERY = "SELECT * FROM job WHERE state = ? "
-            + "ORDER BY updated_at DESC LIMIT ? OFFSET ?";
 
     private static final String UPDATE_JOBS_QUERY = "UPDATE job SET state = ?, progress = ?, "
             + "updated_at = ?, started_at = ?, completed_at = ?, execution_node = ?, retry_count = ?, "
@@ -165,10 +193,11 @@ public class PostgresJobQueue implements JobQueue {
     }
 
     @Override
-    public List<Job> getActiveJobs(final String queueName, final int page, final int pageSize)
-            throws JobQueueDataException {
+    public JobPaginatedResult getActiveJobs(final String queueName, final int page,
+            final int pageSize) throws JobQueueDataException {
 
         try {
+
             DotConnect dc = new DotConnect();
             dc.setSQL(GET_ACTIVE_JOBS_QUERY);
             dc.addParam(queueName);
@@ -177,8 +206,24 @@ public class PostgresJobQueue implements JobQueue {
             dc.addParam(pageSize);
             dc.addParam((page - 1) * pageSize);
 
-            List<Map<String, Object>> results = dc.loadObjectResults();
-            return results.stream().map(this::mapResultSetToJob).collect(Collectors.toList());
+            final var results = dc.loadObjectResults();
+
+            long totalCount = 0;
+            List<Job> jobs = new ArrayList<>();
+
+            if (!results.isEmpty()) {
+                totalCount = ((Number) results.get(0).get("total_count")).longValue();
+                jobs = results.stream()
+                        .map(this::mapResultSetToJob)
+                        .collect(Collectors.toList());
+            }
+
+            return JobPaginatedResult.builder()
+                    .jobs(jobs)
+                    .total(totalCount)
+                    .page(page)
+                    .pageSize(pageSize)
+                    .build();
         } catch (DotDataException e) {
             Logger.error(this, "Database error while fetching active jobs", e);
             throw new JobQueueDataException("Database error while fetching active jobs", e);
@@ -186,7 +231,8 @@ public class PostgresJobQueue implements JobQueue {
     }
 
     @Override
-    public List<Job> getCompletedJobs(final String queueName, final LocalDateTime startDate,
+    public JobPaginatedResult getCompletedJobs(final String queueName,
+            final LocalDateTime startDate,
             final LocalDateTime endDate, final int page, final int pageSize)
             throws JobQueueDataException {
 
@@ -200,8 +246,24 @@ public class PostgresJobQueue implements JobQueue {
             dc.addParam(pageSize);
             dc.addParam((page - 1) * pageSize);
 
-            List<Map<String, Object>> results = dc.loadObjectResults();
-            return results.stream().map(this::mapResultSetToJob).collect(Collectors.toList());
+            final var results = dc.loadObjectResults();
+
+            long totalCount = 0;
+            List<Job> jobs = new ArrayList<>();
+
+            if (!results.isEmpty()) {
+                totalCount = ((Number) results.get(0).get("total_count")).longValue();
+                jobs = results.stream()
+                        .map(this::mapResultSetToJob)
+                        .collect(Collectors.toList());
+            }
+
+            return JobPaginatedResult.builder()
+                    .jobs(jobs)
+                    .total(totalCount)
+                    .page(page)
+                    .pageSize(pageSize)
+                    .build();
         } catch (DotDataException e) {
             Logger.error(this, "Database error while fetching completed jobs", e);
             throw new JobQueueDataException("Database error while fetching completed jobs", e);
@@ -209,7 +271,8 @@ public class PostgresJobQueue implements JobQueue {
     }
 
     @Override
-    public List<Job> getJobs(final int page, final int pageSize) throws JobQueueDataException {
+    public JobPaginatedResult getJobs(final int page, final int pageSize)
+            throws JobQueueDataException {
 
         try {
             DotConnect dc = new DotConnect();
@@ -217,8 +280,24 @@ public class PostgresJobQueue implements JobQueue {
             dc.addParam(pageSize);
             dc.addParam((page - 1) * pageSize);
 
-            List<Map<String, Object>> results = dc.loadObjectResults();
-            return results.stream().map(this::mapResultSetToJob).collect(Collectors.toList());
+            final var results = dc.loadObjectResults();
+
+            long totalCount = 0;
+            List<Job> jobs = new ArrayList<>();
+
+            if (!results.isEmpty()) {
+                totalCount = ((Number) results.get(0).get("total_count")).longValue();
+                jobs = results.stream()
+                        .map(this::mapResultSetToJob)
+                        .collect(Collectors.toList());
+            }
+
+            return JobPaginatedResult.builder()
+                    .jobs(jobs)
+                    .total(totalCount)
+                    .page(page)
+                    .pageSize(pageSize)
+                    .build();
         } catch (DotDataException e) {
             Logger.error(this, "Database error while fetching jobs", e);
             throw new JobQueueDataException("Database error while fetching jobs", e);
@@ -226,7 +305,7 @@ public class PostgresJobQueue implements JobQueue {
     }
 
     @Override
-    public List<Job> getFailedJobs(final int page, final int pageSize)
+    public JobPaginatedResult getFailedJobs(final int page, final int pageSize)
             throws JobQueueDataException {
 
         try {
@@ -236,8 +315,24 @@ public class PostgresJobQueue implements JobQueue {
             dc.addParam(pageSize);
             dc.addParam((page - 1) * pageSize);
 
-            List<Map<String, Object>> results = dc.loadObjectResults();
-            return results.stream().map(this::mapResultSetToJob).collect(Collectors.toList());
+            final var results = dc.loadObjectResults();
+
+            long totalCount = 0;
+            List<Job> jobs = new ArrayList<>();
+
+            if (!results.isEmpty()) {
+                totalCount = ((Number) results.get(0).get("total_count")).longValue();
+                jobs = results.stream()
+                        .map(this::mapResultSetToJob)
+                        .collect(Collectors.toList());
+            }
+
+            return JobPaginatedResult.builder()
+                    .jobs(jobs)
+                    .total(totalCount)
+                    .page(page)
+                    .pageSize(pageSize)
+                    .build();
         } catch (DotDataException e) {
             Logger.error(this, "Database error while fetching failed jobs", e);
             throw new JobQueueDataException("Database error while fetching failed jobs", e);

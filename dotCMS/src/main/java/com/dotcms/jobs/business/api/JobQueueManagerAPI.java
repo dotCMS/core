@@ -4,9 +4,9 @@ import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotmarketing.exception.DotDataException;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -82,10 +82,10 @@ public interface JobQueueManagerAPI extends AutoCloseable {
      *
      * @param page     The page number
      * @param pageSize The number of jobs per page
-     * @return A list of Job objects
+     * @return A result object containing the list of active jobs and pagination information.
      * @throws DotDataException if there's an error fetching the jobs
      */
-    List<Job> getJobs(int page, int pageSize) throws DotDataException;
+    JobPaginatedResult getJobs(int page, int pageSize) throws DotDataException;
 
     /**
      * Cancels a job.
