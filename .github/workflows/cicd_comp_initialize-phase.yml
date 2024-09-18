@@ -64,6 +64,13 @@ jobs:
         shell: bash
         run: |
           echo "Initializing..."
+        # Check can be removed if we have resolved root cause
+        # We cannot use a local github action for this as it is run before we checkout the repo
+        # secrets.GITHUB_TOKEN is not available in composite workflows so it needs to be passed in.
+      - name: Check API Rate Limit
+        shell: bash
+        run: |
+          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/rate_limit || true
 
   # This job checks for artifacts from previous builds and determines if they can be reused
   check-previous-build:
