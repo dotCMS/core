@@ -3,7 +3,6 @@ package com.dotcms.visitor.filter.characteristics;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.visitor.domain.Visitor;
-
 import com.dotcms.visitor.filter.servlet.VisitorFilter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -16,13 +15,12 @@ import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.WebKeys;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Optional;
 import java.util.UUID;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 public class BaseCharacter extends AbstractCharacter {
 
@@ -76,12 +74,14 @@ public class BaseCharacter extends AbstractCharacter {
         myMap.get().put("mime", response.getContentType());
         myMap.get().put("vanityUrl", (String) request.getAttribute(VisitorFilter.VANITY_URL_ATTRIBUTE));
         myMap.get().put("referer", request.getHeader("referer"));
+        myMap.get().put("user-agent", request.getHeader("user-agent"));
         myMap.get().put("host", request.getHeader("host"));
         myMap.get().put("assetId", assetId);
         myMap.get().put("contentId", content.orElse(null));
 
         myMap.get().put("lang", lang.toString());
         myMap.get().put("langId", lang.getId());
+        myMap.get().put("src", "dotCMS");
     }
 
     public BaseCharacter(final HttpServletRequest request, final HttpServletResponse response) {

@@ -19,10 +19,9 @@ public class BasicProfileCollector implements Collector {
     }
 
     @Override
-    public CollectionCollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
-                                        final CollectionCollectorPayloadBean collectionCollectorPayloadBean) {
+    public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
+                                        final CollectorPayloadBean collectorPayloadBean) {
 
-        final CollectorPayloadBean collectorPayloadBean = collectionCollectorPayloadBean.first();
         final String requestId = (String)collectorContextMap.get("requestId");
         final Long time = (Long)collectorContextMap.get("time");
         final String clusterId   = (String)collectorContextMap.get("cluster");
@@ -37,16 +36,21 @@ public class BasicProfileCollector implements Collector {
         collectorPayloadBean.put("request_id", requestId);
         collectorPayloadBean.put("utc_time", FORMATTER.format(zonedDateTimeUTC));
         collectorPayloadBean.put("cluster",
-                FunctionUtils.getOrDefault(Objects.nonNull(clusterId), ()->clusterId,()->ClusterFactory.getClusterId()));
+                FunctionUtils.getOrDefault(Objects.nonNull(clusterId), ()->clusterId, ClusterFactory::getClusterId));
         collectorPayloadBean.put("server",
                 FunctionUtils.getOrDefault(Objects.nonNull(serverId), ()->serverId,()->APILocator.getServerAPI().readServerId()));
         collectorPayloadBean.put("sessionId", sessionId);
         collectorPayloadBean.put("sessionNew", sessionNew);
-        return collectionCollectorPayloadBean;
+        return collectorPayloadBean;
     }
 
     @Override
     public boolean isAsync() {
+        return false;
+    }
+
+    @Override
+    public boolean isEventCreator(){
         return false;
     }
 }
