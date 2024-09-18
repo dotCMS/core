@@ -36,4 +36,11 @@ public class EventLogSubmitter {
             .execute(new EventLogRunnable(host, eventPayload));
     }
 
+    public void logEvent(final EventLogRunnable runnable) {
+        DotConcurrentFactory
+            .getInstance()
+            .getSubmitter("event-log-posting", submitterConfig)
+            .execute(runnable);
+    }
+
 }
