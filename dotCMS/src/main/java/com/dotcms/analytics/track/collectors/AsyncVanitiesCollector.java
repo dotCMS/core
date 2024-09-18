@@ -1,13 +1,10 @@
 package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
-import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.visitor.filter.characteristics.BaseCharacter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.filters.CMSFilter;
-import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -15,10 +12,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import io.vavr.control.Try;
 
-import java.io.StringWriter;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 
 /**
  * This asynchronized collector collects the page/asset information based on the vanity URL previous loaded on the

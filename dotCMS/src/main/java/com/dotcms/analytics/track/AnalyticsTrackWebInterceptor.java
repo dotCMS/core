@@ -1,34 +1,18 @@
 package com.dotcms.analytics.track;
 
-import com.dotcms.analytics.track.collectors.CharacterCollectorContextMap;
-import com.dotcms.analytics.track.collectors.Collector;
-import com.dotcms.analytics.track.collectors.CollectorContextMap;
-import com.dotcms.analytics.track.collectors.CollectorPayloadBean;
-import com.dotcms.analytics.track.collectors.ConcurrentCollectorPayloadBean;
-import com.dotcms.analytics.track.collectors.RequestCharacterCollectorContextMap;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceFactory;
 import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
 import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
 import com.dotcms.analytics.track.matchers.RequestMatcher;
-import com.dotcms.analytics.track.matchers.RulesRedirectsRequestMatcher;
 import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
-import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
-import com.dotcms.http.CircuitBreakerUrlBuilder;
-import com.dotcms.jitsu.EventLogRunnable;
-import com.dotcms.jitsu.EventLogSubmitter;
-import com.dotcms.jitsu.EventsPayload;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.WhiteBlackList;
-import com.dotcms.visitor.filter.characteristics.Character;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.util.StringPool;
-import org.apache.http.HttpStatus;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
