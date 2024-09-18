@@ -5,6 +5,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import java.util.Set;
 
+/**
+ * Encapsulates a simplificated query for the analytics backend
+ * @author jsanca
+ */
 @JsonDeserialize(builder = AnalyticsQuery.Builder.class)
 public class AnalyticsQuery {
 
