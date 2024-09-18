@@ -1455,7 +1455,7 @@ public class DependencyBundlerTest {
 
     }
 
-    private static String getDependencyReason(ManifestItem asset) {
+    private static String getDependencyReason(final ManifestItem asset) {
         return String.format(
                 "Dependency from: ID: %s Title: %s", asset.getManifestInfo().id(),
                 asset.getManifestInfo().title());

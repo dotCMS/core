@@ -70,6 +70,11 @@ public class CSVManifestBuilder implements ManifestBuilder {
         csvWriter.append("\n");
     }
 
+    /**
+     * Include an asset in the manifest file
+     * @param manifestItem Asset information
+     * @param evaluateReason Reason why the asset was evaluated to be included
+     */
     public <T> void include(final ManifestItem manifestItem, final String evaluateReason){
         final ManifestInfo manifestInfo = manifestItem.getManifestInfo();
         final String line = getManifestFileIncludeLine(manifestInfo, evaluateReason);
@@ -83,16 +88,37 @@ public class CSVManifestBuilder implements ManifestBuilder {
         }
     }
 
+    /**
+     * Get the line to include an asset in the manifest file
+     * @param manifestInfo Asset information
+     * @param evaluateReason Reason why the asset was evaluated to be included
+     * @return Line to include the asset in the manifest file
+     */
     private String getManifestFileIncludeLine(final ManifestInfo manifestInfo,
             final String evaluateReason) {
         return getManifestFileLine("INCLUDED", manifestInfo, evaluateReason, StringPool.BLANK);
     }
 
+    /**
+     * Get the line to exclude an asset in the manifest file
+     * @param manifestInfo Asset information
+     * @param evaluateReason Reason why the asset was evaluated to be included
+     * @param excludeReason Reason why the asset was excluded
+     * @return Line to exclude the asset in the manifest file
+     */
     private String getManifestFileExcludeLine(final ManifestInfo manifestInfo,
                                               final String evaluateReason, final String excludeReason) {
         return getManifestFileLine("EXCLUDED", manifestInfo, evaluateReason, excludeReason);
     }
 
+    /**
+     * Get the line to include or exclude an asset in the manifest file
+     * @param includeExclude Include or Exclude
+     * @param manifestInfo Asset information
+     * @param evaluateReason Reason why the asset was evaluated to be included
+     * @param excludeReason Reason why the asset was excluded
+     * @return Line to include or exclude the asset in the manifest file
+     */
     private String getManifestFileLine(
             final String includeExclude, final ManifestInfo manifestInfo,
             final String evaluateReason, final String excludeReason) {
@@ -109,6 +135,12 @@ public class CSVManifestBuilder implements ManifestBuilder {
                 evaluateReason).stream().collect(Collectors.joining(","));
     }
 
+    /**
+     * Exclude an asset in the manifest file
+     * @param manifestItem Asset information
+     * @param evaluateReason Reason why the asset was evaluated to be included
+     * @param excludeReason Reason why the asset was excluded
+     */
     public <T> void exclude(final ManifestItem manifestItem, final String evaluateReason, final String excludeReason){
         final ManifestInfo manifestInfo = manifestItem.getManifestInfo();
         final String line = getManifestFileExcludeLine(manifestInfo, evaluateReason, excludeReason);

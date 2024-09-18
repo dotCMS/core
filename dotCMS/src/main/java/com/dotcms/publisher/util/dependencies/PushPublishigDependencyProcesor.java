@@ -906,6 +906,15 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         dependencyProcessor.waitUntilResolveAllDependencies();
     }
 
+    /**
+     * This method will add the specified dotCMS to the bundle if it has not been added already.
+     * If the asses was already added to the bundle, then {@code false} will be returned,
+     * otherwise, the asset will be added to the bundle and {@code true} will be returned.
+     * @param pusheableAsset The type of asset that is being added to the bundle.
+     * @param asset The actual dotCMS object that is being added.
+     * @param evaluateReason The reason why this asset is being added to the bundle. Refer to {@link ManifestReason} for more details.
+     * @return If the asset was added to the bundle, {@code true} will be returned. Otherwise, {@code false} will be returned.
+     */
     private <T> boolean add(final PusheableAsset pusheableAsset, final T asset, final String evaluateReason) {
         final boolean isAdded = config.add(asset, pusheableAsset, evaluateReason);
 
@@ -916,6 +925,13 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         return isAdded;
     }
 
+    /**
+     * This method tries to add the specified set of dotCMS asset to the bundle,
+     * it also processes the dependencies of the assets.
+     * @param pusheableAsset The type of asset that is being added to the bundle.
+     * @param assets The actual dotCMS objects that are being added.
+     * @param evaluateReason The reason why this set of assets is being added to the bundle. Refer to {@link ManifestReason} for more details.
+     */
     private <T> void tryToAddAllAndProcessDependencies(
             final PusheableAsset pusheableAsset, final Iterable<T> assets, final String evaluateReason)
             throws DotDataException, DotSecurityException {
@@ -927,6 +943,14 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         }
     }
 
+    /**
+     * This method tries to add the specified set of dotCMS assets to the bundle.
+     * For assets that cannot be added to the bundle, a new entry will be added to the bundle's MANIFEST file indicating the reason why.
+     * @param pusheableAsset The type of asset that is being added to the bundle.
+     * @param assets The actual dotCMS objects that are being added.
+     * @param evaluateReason The reason why this set of assets is being added to the bundle. Refer to {@link ManifestReason} for more details.
+     * @return A collection of assets that were added to the bundle.
+     */
     private <T> Collection<T> tryToAddAll(final PusheableAsset pusheableAsset,
             final Collection<T> assets, final String evaluateReason)
             throws DotDataException, DotSecurityException {
@@ -948,6 +972,14 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         }
     }
 
+    /**
+     * This method tries to add the specified dotCMS asset dependency to the bundle.
+     * If the asset cannot be added to the bundle, a new entry will be added to the bundle's MANIFEST file indicating the reason why.
+     * Additionally, the very same asset will be added to the Dependency Processor queue in order to determine what other dependent assets might need to be added to the bundle as well.
+     * @param pusheableAsset The type of asset that is being added to the bundle.
+     * @param dependency The actual dotCMS object that is being added.
+     * @param from The asset that is including the dependency.
+     */
     private void tryToAddAsDependency(final PusheableAsset pusheableAsset,
             final ManifestItem dependency, final ManifestItem from)
             throws DotDataException, DotSecurityException {
