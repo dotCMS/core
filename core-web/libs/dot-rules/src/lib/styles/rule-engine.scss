@@ -213,7 +213,7 @@ $finder-s-input: ".ui.input input";
 
     .cw-filter-links {
         padding: $spacing-1;
-        font-size: 0.8em;
+        font-size: $font-size-sm;
         color: $foreground-disabled;
 
         span:first-child {
