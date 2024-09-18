@@ -1,9 +1,14 @@
-import { moduleMetadata, StoryObj, Meta, applicationConfig, argsToTemplate } from '@storybook/angular';
+import {
+    moduleMetadata,
+    StoryObj,
+    Meta,
+    applicationConfig,
+    argsToTemplate
+} from '@storybook/angular';
 
 import { provideHttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -12,14 +17,12 @@ import { DotEditContentFileFieldComponent } from './dot-edit-content-file-field.
 import { FileFieldStore } from './store/file-field.store';
 import { MessageServiceMock } from './utils/mocks';
 
-import {
-    FILE_FIELD_MOCK, IMAGE_FIELD_MOCK, BINARY_FIELD_MOCK
-} from '../../utils/mocks';
+import { FILE_FIELD_MOCK, IMAGE_FIELD_MOCK, BINARY_FIELD_MOCK } from '../../utils/mocks';
 
 type Args = DotEditContentFileFieldComponent & {
     field: DotCMSContentTypeField;
     value: string;
-}
+};
 
 const meta: Meta<Args> = {
     title: 'Library / Edit Content / File Field',
@@ -30,18 +33,13 @@ const meta: Meta<Args> = {
                 provideHttpClient(),
                 {
                     provide: DotMessageService,
-                    useValue : MessageServiceMock
+                    useValue: MessageServiceMock
                 }
             ]
         }),
         moduleMetadata({
-            imports: [
-                BrowserAnimationsModule,
-                FormsModule,
-            ],
-            providers: [
-                FileFieldStore
-            ]
+            imports: [BrowserAnimationsModule, FormsModule],
+            providers: [FileFieldStore]
         })
     ],
     render: (args) => ({
@@ -59,20 +57,20 @@ type Story = StoryObj<Args>;
 export const FileField: Story = {
     args: {
         value: '',
-        field: {...FILE_FIELD_MOCK}
+        field: { ...FILE_FIELD_MOCK }
     }
 };
 
 export const ImageField: Story = {
     args: {
         value: '',
-        field: {...IMAGE_FIELD_MOCK}
+        field: { ...IMAGE_FIELD_MOCK }
     }
 };
 
 export const BinaryField: Story = {
     args: {
         value: '',
-        field: {...BINARY_FIELD_MOCK}
+        field: { ...BINARY_FIELD_MOCK }
     }
 };

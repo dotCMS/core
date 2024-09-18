@@ -1,4 +1,4 @@
-import { MockDotMessageService } from "@dotcms/utils-testing";
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 const MESSAGES_MOCK = {
     'dot.file.field.action.choose.file': 'Choose File',
@@ -36,7 +36,7 @@ const MESSAGES_MOCK = {
     'dot.common.import': 'Import',
     'dot.common.remove': 'Remove',
     'dot.common.save': 'Save',
-    'error.form.validator.required': 'This field is required',
+    'error.form.validator.required': 'This field is required'
 };
 
 export const MessageServiceMock = new MockDotMessageService(MESSAGES_MOCK);

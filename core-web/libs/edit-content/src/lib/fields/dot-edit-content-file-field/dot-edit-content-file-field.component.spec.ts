@@ -4,15 +4,17 @@ import { provideHttpClient } from '@angular/common/http';
 import { ControlContainer } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
-import {
-    DotDropZoneComponent,
-} from '@dotcms/ui';
+import { DotDropZoneComponent } from '@dotcms/ui';
 
 import { DotEditContentFileFieldComponent } from './dot-edit-content-file-field.component';
 import { FileFieldStore } from './store/file-field.store';
 
-import { BINARY_FIELD_MOCK, createFormGroupDirectiveMock, FILE_FIELD_MOCK, IMAGE_FIELD_MOCK } from '../../utils/mocks';
-
+import {
+    BINARY_FIELD_MOCK,
+    createFormGroupDirectiveMock,
+    FILE_FIELD_MOCK,
+    IMAGE_FIELD_MOCK
+} from '../../utils/mocks';
 
 describe('DotEditContentFileFieldComponent', () => {
     let spectator: Spectator<DotEditContentFileFieldComponent>;
@@ -23,15 +25,18 @@ describe('DotEditContentFileFieldComponent', () => {
         providers: [provideHttpClient(), mockProvider(DotMessageService)],
         componentViewProviders: [
             { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
-        ],
+        ]
     });
 
     describe('FileField', () => {
-        beforeEach(() => (spectator = createComponent({
-            props: {
-                field: FILE_FIELD_MOCK
-            } as unknown
-        })));
+        beforeEach(
+            () =>
+                (spectator = createComponent({
+                    props: {
+                        field: FILE_FIELD_MOCK
+                    } as unknown
+                }))
+        );
 
         it('should be created', () => {
             expect(spectator.component).toBeTruthy();
@@ -54,11 +59,14 @@ describe('DotEditContentFileFieldComponent', () => {
     });
 
     describe('ImageField', () => {
-        beforeEach(() => (spectator = createComponent({
-            props: {
-                field: IMAGE_FIELD_MOCK
-            } as unknown
-        })));
+        beforeEach(
+            () =>
+                (spectator = createComponent({
+                    props: {
+                        field: IMAGE_FIELD_MOCK
+                    } as unknown
+                }))
+        );
 
         it('should be created', () => {
             expect(spectator.component).toBeTruthy();
@@ -81,11 +89,14 @@ describe('DotEditContentFileFieldComponent', () => {
     });
 
     describe('BinaryField', () => {
-        beforeEach(() => (spectator = createComponent({
-            props: {
-                field: BINARY_FIELD_MOCK
-            } as unknown
-        })));
+        beforeEach(
+            () =>
+                (spectator = createComponent({
+                    props: {
+                        field: BINARY_FIELD_MOCK
+                    } as unknown
+                }))
+        );
 
         it('should be created', () => {
             expect(spectator.component).toBeTruthy();
@@ -106,6 +117,4 @@ describe('DotEditContentFileFieldComponent', () => {
             expect(spectator.query(byTestId('action-generate-with-ai'))).toBeTruthy();
         });
     });
-
-    
 });
