@@ -14,6 +14,9 @@ public final class TimeMachineUtil {
      * @return
      */
     public static Optional<String> getTimeMachineDate() {
+        if (null == HttpServletRequestThreadLocal.INSTANCE.getRequest()) {
+            return Optional.empty();
+        }
         final HttpSession session = HttpServletRequestThreadLocal.INSTANCE.getRequest().getSession(false);
         final Object timeMachineObject = session != null ? session.getAttribute("tm_date") : null;
         return Optional.ofNullable(timeMachineObject != null ? timeMachineObject.toString() : null);
