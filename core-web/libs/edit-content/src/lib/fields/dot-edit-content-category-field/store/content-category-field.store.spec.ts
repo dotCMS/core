@@ -16,27 +16,14 @@ import {
     CATEGORY_FIELD_MOCK,
     CATEGORY_HIERARCHY_MOCK,
     CATEGORY_LEVEL_1,
-    CATEGORY_LEVEL_2
+    CATEGORY_LEVEL_2,
+    MOCK_SELECTED_CATEGORIES_OBJECT
 } from '../mocks/category-field.mocks';
 import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models';
 import { CategoriesService } from '../services/categories.service';
 import { transformCategories } from '../utils/category-field.utils';
 
 const EMPTY_ARRAY = [];
-const MOCK_SELECTED_CATEGORIES: DotCategoryFieldKeyValueObj[] = [
-    {
-        key: '1f208488057007cedda0e0b5d52ee3b3',
-        value: 'Cleaning Supplies',
-        inode: '111111',
-        path: 'Cleaning Supplies'
-    },
-    {
-        key: 'cb83dc32c0a198fd0ca427b3b587f4ce',
-        value: 'Doors & Windows',
-        inode: '22222',
-        path: 'Cleaning Supplies'
-    }
-];
 
 describe('CategoryFieldStore', () => {
     let spectator: SpectatorService<InstanceType<typeof CategoryFieldStore>>;
@@ -73,11 +60,11 @@ describe('CategoryFieldStore', () => {
     describe('withMethods', () => {
         it('should set the correct rootCategoryInode and categoriesValue', () => {
             const expectedCategoryValues: DotCategoryFieldKeyValueObj[] = [
-                ...MOCK_SELECTED_CATEGORIES
+                ...MOCK_SELECTED_CATEGORIES_OBJECT
             ];
 
             store.load({ field: CATEGORY_FIELD_MOCK, contentlet: CATEGORY_FIELD_CONTENTLET_MOCK });
-
+            console.log(store.selected());
             expect(store.selected()).toEqual(expectedCategoryValues);
             expect(store.rootCategoryInode()).toEqual(CATEGORY_FIELD_MOCK.values);
         });
@@ -138,7 +125,7 @@ describe('CategoryFieldStore', () => {
         describe('openDialog', () => {
             it('should set the dialog state to open and copy selected items', () => {
                 expect(store.dialog.state()).toBe('open');
-                expect(store.dialog.selected()).toEqual(MOCK_SELECTED_CATEGORIES);
+                expect(store.dialog.selected()).toEqual(MOCK_SELECTED_CATEGORIES_OBJECT);
             });
         });
 
@@ -153,7 +140,7 @@ describe('CategoryFieldStore', () => {
 
         describe('updateSelected', () => {
             it('should add a new item to the dialog selected items', () => {
-                expect(store.dialog.selected().length).toBe(MOCK_SELECTED_CATEGORIES.length);
+                expect(store.dialog.selected().length).toBe(MOCK_SELECTED_CATEGORIES_OBJECT.length);
 
                 const newItem: DotCategoryFieldKeyValueObj = {
                     key: CATEGORY_LEVEL_2[0].key,
@@ -162,15 +149,17 @@ describe('CategoryFieldStore', () => {
                     path: CATEGORY_LEVEL_2[0].categoryName
                 };
                 const selectedKeys = [
-                    ...MOCK_SELECTED_CATEGORIES.map((item) => item.key),
+                    ...MOCK_SELECTED_CATEGORIES_OBJECT.map((item) => item.key),
                     newItem.key
                 ];
                 store.updateSelected(selectedKeys, newItem);
 
-                const expectedItems = [...MOCK_SELECTED_CATEGORIES, newItem];
+                const expectedItems = [...MOCK_SELECTED_CATEGORIES_OBJECT, newItem];
 
                 expect(store.dialog.selected()).toEqual(expectedItems);
-                expect(store.dialog.selected().length).toBe(MOCK_SELECTED_CATEGORIES.length + 1);
+                expect(store.dialog.selected().length).toBe(
+                    MOCK_SELECTED_CATEGORIES_OBJECT.length + 1
+                );
             });
         });
 
@@ -184,29 +173,31 @@ describe('CategoryFieldStore', () => {
                 };
 
                 store.updateSelected(
-                    [...MOCK_SELECTED_CATEGORIES.map((item) => item.key), newItem.key],
+                    [...MOCK_SELECTED_CATEGORIES_OBJECT.map((item) => item.key), newItem.key],
                     newItem
                 );
                 store.applyDialogSelection();
 
-                expect(store.selected()).toEqual([...MOCK_SELECTED_CATEGORIES, newItem]);
+                expect(store.selected()).toEqual([...MOCK_SELECTED_CATEGORIES_OBJECT, newItem]);
             });
         });
 
         describe('removeSelected', () => {
             it('should remove a single item by key from the dialog selected items', () => {
-                store.removeSelected(MOCK_SELECTED_CATEGORIES[0].key);
+                store.removeSelected(MOCK_SELECTED_CATEGORIES_OBJECT[0].key);
 
-                expect(store.dialog.selected().length).toBe(MOCK_SELECTED_CATEGORIES.length - 1);
+                expect(store.dialog.selected().length).toBe(
+                    MOCK_SELECTED_CATEGORIES_OBJECT.length - 1
+                );
                 expect(
                     store.dialog
                         .selected()
-                        .find((item) => item.key === MOCK_SELECTED_CATEGORIES[0].key)
+                        .find((item) => item.key === MOCK_SELECTED_CATEGORIES_OBJECT[0].key)
                 ).toBeUndefined();
             });
 
             it('should remove multiple items by keys from the dialog selected items', () => {
-                store.removeSelected(MOCK_SELECTED_CATEGORIES.map((item) => item.key));
+                store.removeSelected(MOCK_SELECTED_CATEGORIES_OBJECT.map((item) => item.key));
 
                 expect(store.dialog.selected()).toEqual(EMPTY_ARRAY);
             });

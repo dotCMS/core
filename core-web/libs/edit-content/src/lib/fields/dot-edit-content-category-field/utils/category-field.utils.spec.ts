@@ -30,7 +30,7 @@ describe('CategoryFieldUtils', () => {
 
         it('should return parsed the values', () => {
             const expected: DotCategoryFieldKeyValueObj[] = [
-                { key: '1f208488057007cedda0e0b5d52ee3b3', value: 'Electrical' },
+                { key: '1f208488057007cedda0e0b5d52ee3b3', value: 'Cleaning Supplies' },
                 { key: 'cb83dc32c0a198fd0ca427b3b587f4ce', value: 'Doors & Windows' }
             ];
             const result = getSelectedFromContentlet(
@@ -606,7 +606,7 @@ describe('CategoryFieldUtils', () => {
                 CATEGORY_FIELD_CONTENTLET_MOCK
             );
             expect(result).toEqual([
-                { key: '1f208488057007cedda0e0b5d52ee3b3', value: 'Electrical' },
+                { key: '1f208488057007cedda0e0b5d52ee3b3', value: 'Cleaning Supplies' },
                 { key: 'cb83dc32c0a198fd0ca427b3b587f4ce', value: 'Doors & Windows' }
             ]);
         });
