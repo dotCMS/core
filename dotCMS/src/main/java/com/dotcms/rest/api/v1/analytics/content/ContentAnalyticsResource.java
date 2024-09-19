@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.analytics.content;
 
 import com.dotcms.analytics.content.ContentAnalyticsAPI;
 import com.dotcms.analytics.content.ReportResponse;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -30,13 +31,16 @@ import javax.ws.rs.core.MediaType;
 @Path("/v1/analytics/content")
 @Tag(name = "Content Analytics",
         description = "Endpoints that exposes information related to how content is accessed and interacted with by users.")
-@ApplicationScoped
 public class ContentAnalyticsResource {
 
     private final WebResource webResource;
     private final ContentAnalyticsAPI contentAnalyticsAPI;
 
-    @Inject
+    public ContentAnalyticsResource() {
+        this(CDIUtils.getBean(ContentAnalyticsAPI.class).get());
+    }
+
+    //@Inject
     public ContentAnalyticsResource(final ContentAnalyticsAPI contentAnalyticsAPI) {
         this(new WebResource(), contentAnalyticsAPI);
     }
