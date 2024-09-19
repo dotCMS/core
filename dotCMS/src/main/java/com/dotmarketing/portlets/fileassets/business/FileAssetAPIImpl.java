@@ -337,10 +337,11 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		FileAsset fileAsset = FileViewStrategy.convertToFileAsset(con, this);
 
 		final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-		final String fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, APILocator.systemUser(), fileAsset, "fileAsset");
+		if	(request != null) {
+			final String fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, APILocator.systemUser(), fileAsset, "fileAsset");
 
-		fileAsset.getMap().put("fileLink", fileLink);
-
+			fileAsset.getMap().put("fileLink", fileLink);
+		}
 		return fileAsset;
 	}
 
