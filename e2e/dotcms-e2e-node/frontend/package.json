@@ -1,0 +1,15 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "@types/node": "^22.5.4",
+    "dotenv": "^16.4.5"
+  },
+  "scripts": {
+    "start-local": "CURRENT_ENV=local yarn playwright test",
+    "start-ci": "CURRENT_ENV=ci yarn playwright test"
+  }
+}
