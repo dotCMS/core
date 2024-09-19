@@ -6,6 +6,13 @@ import java.util.regex.Pattern;
 
 /**
  * Order parser
+ * Example:
+ * <pre>
+ *     OrderParser.parseOrder("Events.day     ASC");
+ * </pre>
+ *
+ * should return Events.day and ASC (term and order)
+ * if the order is not ASC or DESC or is missing will throw {@link IllegalArgumentException}
  * @author jsanca
  */
 public class OrderParser {
