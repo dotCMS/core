@@ -2,7 +2,6 @@ package com.dotcms.analytics.content;
 
 import com.dotcms.analytics.query.AnalyticsQuery;
 import com.dotmarketing.util.Logger;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -20,7 +19,6 @@ public class ContentAnalyticsAPIImpl implements ContentAnalyticsAPI {
     private final ContentAnalyticsFactory contentAnalyticsFactory;
 
     @Inject
-    @VisibleForTesting
     public ContentAnalyticsAPIImpl(final ContentAnalyticsFactory contentAnalyticsFactory) {
         this.contentAnalyticsFactory = contentAnalyticsFactory;
     }

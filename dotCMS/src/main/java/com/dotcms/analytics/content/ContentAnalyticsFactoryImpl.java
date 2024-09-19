@@ -31,7 +31,6 @@ public class ContentAnalyticsFactoryImpl implements ContentAnalyticsFactory {
     private final CubeJSClientFactory cubeJSClientFactory;
 
     @Inject
-    @VisibleForTesting
     public ContentAnalyticsFactoryImpl(final AnalyticsQueryParser queryParser, final CubeJSClientFactory cubeJSClientFactory) {
         this.queryParser = queryParser;
         this.cubeJSClientFactory = cubeJSClientFactory;
