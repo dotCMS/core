@@ -7,7 +7,7 @@
     #anchorTOCDiv {
         max-width:600px;
         margin: 20px;
-        font-size: 2em;
+        font-size: 1.5rem;
         display:grid;
         text-align: center;
         grid-gap: 10px;
@@ -16,7 +16,7 @@
     }
 
     #anchorTOCDiv div{
-        font-size: .7em;
+        font-size: 1rem;
         text-transform: capitalize;
     }
 
@@ -35,7 +35,7 @@
     }
     .propLabel{
         font-weight: normal;
-        font-size:24px;
+        font-size:1.25rem;
         text-transform: capitalize;
         padding:10px;
 
