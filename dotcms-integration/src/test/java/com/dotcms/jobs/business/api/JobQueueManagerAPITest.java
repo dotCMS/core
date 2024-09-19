@@ -458,8 +458,6 @@ public class JobQueueManagerAPITest {
             if (attempt < 2) {
                 throw new RuntimeException("Simulated failure");
             }
-            Job job = invocation.getArgument(0);
-            job.markAsCompleted(any());
             return null;
         }).when(mockJobProcessor).process(any());
 
