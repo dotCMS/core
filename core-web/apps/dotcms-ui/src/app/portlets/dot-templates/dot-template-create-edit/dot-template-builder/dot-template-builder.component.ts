@@ -14,8 +14,7 @@ import {
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
-import { DotPropertiesService, DotRouterService } from '@dotcms/data-access';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotRouterService } from '@dotcms/data-access';
 
 import { DotTemplateItem } from '../store/dot-template.store';
 
@@ -27,7 +26,6 @@ export const AUTOSAVE_DEBOUNCE_TIME = 5000;
     styleUrls: ['./dot-template-builder.component.scss']
 })
 export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
-    readonly #propertiesService = inject(DotPropertiesService);
     readonly #dotRouterService = inject(DotRouterService);
 
     @Input() item: DotTemplateItem;
@@ -40,8 +38,6 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     @ViewChild('historyIframe') historyIframe: IframeComponent;
     permissionsUrl = '';
     historyUrl = '';
-    readonly featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
-    featureFlagIsOn$ = this.#propertiesService.getFeatureFlag(this.featureFlag);
 
     templateUpdate$ = new Subject<DotTemplateItem>();
     destroy$: Subject<boolean> = new Subject<boolean>();

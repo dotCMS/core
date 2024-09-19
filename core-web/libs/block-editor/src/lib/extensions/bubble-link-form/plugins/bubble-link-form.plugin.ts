@@ -1,4 +1,3 @@
-import isEqual from 'lodash.isequal';
 import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
@@ -9,6 +8,8 @@ import { ComponentRef } from '@angular/core';
 import { takeUntil } from 'rxjs/operators';
 
 import { Editor, posToDOMRect } from '@tiptap/core';
+
+import { isEqual } from '@dotcms/utils';
 
 import { ImageNode } from '../../../nodes';
 import { BASIC_TIPPY_OPTIONS, getPosAtDocCoords } from '../../../shared';

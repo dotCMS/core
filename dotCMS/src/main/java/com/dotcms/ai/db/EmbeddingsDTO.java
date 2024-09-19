@@ -87,7 +87,8 @@ public class EmbeddingsDTO implements Serializable {
                 .withOperator(form.operator)
                 .withThreshold(form.threshold)
                 .withTemperature(form.temperature)
-                .withTokenCount(form.responseLengthTokens);
+                .withTokenCount(form.responseLengthTokens)
+                .withUser(form.user);
     }
 
     public static Builder from(final Map<String, Object> form) {

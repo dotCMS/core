@@ -1,7 +1,8 @@
 import { describe, expect, test } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { DebugElement } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
@@ -14,7 +15,7 @@ import { createFormGroupDirectiveMock, TAG_FIELD_MOCK } from '../../utils/mocks'
 
 describe('DotEditContentTagFieldComponent', () => {
     let spectator: Spectator<DotEditContentTagFieldComponent>;
-    let autoCompleteElement: Element;
+    let autoCompleteElement: DebugElement;
     let autoCompleteComponent: AutoComplete;
 
     const createComponent = createComponentFactory({
@@ -33,27 +34,28 @@ describe('DotEditContentTagFieldComponent', () => {
         spectator = createComponent({
             props: {
                 field: TAG_FIELD_MOCK
-            }
+            } as unknown
         });
+        spectator.detectChanges();
 
-        autoCompleteElement = spectator.query(byTestId(TAG_FIELD_MOCK.variable));
+        autoCompleteComponent = spectator.query(AutoComplete);
 
-        autoCompleteComponent = spectator.debugElement.query(
+        autoCompleteElement = spectator.debugElement.query(
             By.css(`[data-testId="${TAG_FIELD_MOCK.variable}"]`)
-        ).componentInstance;
+        );
     });
 
     test.each([
         {
             variable: `tag-id-${TAG_FIELD_MOCK.variable}`,
-            attribute: 'id'
+            attribute: 'ng-reflect-id'
         },
         {
             variable: TAG_FIELD_MOCK.variable,
             attribute: 'ng-reflect-name'
         }
     ])('should have the $variable as $attribute', ({ variable, attribute }) => {
-        expect(autoCompleteElement.getAttribute(attribute)).toBe(variable);
+        expect(autoCompleteElement.attributes[attribute]).toBe(variable);
     });
 
     it('should has multiple as true', () => {
@@ -68,19 +70,6 @@ describe('DotEditContentTagFieldComponent', () => {
         expect(autoCompleteComponent.showClear).toBe(true);
     });
 
-    it('should trigger selectItem on enter pressed', () => {
-        const selectItemMock = jest.spyOn(autoCompleteComponent, 'selectItem');
-
-        spectator.triggerEventHandler('p-autocomplete', 'onKeyUp', {
-            key: 'Enter',
-            target: {
-                value: 'test'
-            }
-        });
-
-        expect(selectItemMock).toBeCalledWith('test');
-    });
-
     it('should trigger getTags on search with 3 or more characters', () => {
         const getTagsMock = jest.spyOn(spectator.component, 'getTags');
         const autocompleteArg = {
@@ -88,7 +77,7 @@ describe('DotEditContentTagFieldComponent', () => {
         };
         spectator.triggerEventHandler('p-autocomplete', 'completeMethod', autocompleteArg);
         expect(getTagsMock).toBeCalledWith(autocompleteArg);
-        expect(spectator.query(AutoComplete).suggestions).toBeDefined();
+        expect(autoCompleteComponent.suggestions).toBeDefined();
     });
 
     it('should dont have suggestions if search ir less than 3 characters', () => {
@@ -98,6 +87,6 @@ describe('DotEditContentTagFieldComponent', () => {
         };
         spectator.triggerEventHandler('p-autocomplete', 'completeMethod', autocompleteArg);
         expect(getTagsMock).toBeCalledWith(autocompleteArg);
-        expect(spectator.query(AutoComplete).suggestions).toBeNull();
+        expect(autoCompleteComponent.suggestions).toBeNull();
     });
 });

@@ -6,6 +6,7 @@ import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.datagen.EmbeddingsDTODataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
@@ -13,6 +14,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.liferay.portal.model.User;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.AfterClass;
@@ -41,6 +43,7 @@ import static org.mockito.Mockito.when;
 public class CompletionsToolTest {
 
     private static AppConfig appConfig;
+    private static User user;
     private static WireMockServer wireMockServer;
     private static Host host;
 
@@ -52,9 +55,10 @@ public class CompletionsToolTest {
         IPUtils.disabledIpPrivateSubnet(true);
         host = new SiteDataGen().nextPersisted();
         wireMockServer = AiTest.prepareWireMock();
-        AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost());
-        AiTest.aiAppSecrets(wireMockServer, host);
+        AiTest.aiAppSecrets(APILocator.systemHost(), "gpt-4o-mini", "dall-e-3", "text-embedding-ada-002");
+        AiTest.aiAppSecrets(host, "gpt-4o-mini", "dall-e-3", "text-embedding-ada-002");
         appConfig = ConfigService.INSTANCE.config(host);
+        user = new UserDataGen().nextPersisted();
     }
 
     @AfterClass
@@ -86,7 +90,7 @@ public class CompletionsToolTest {
         assertNotNull(config);
         assertEquals(AppKeys.COMPLETION_ROLE_PROMPT.defaultValue, config.get(AppKeys.COMPLETION_ROLE_PROMPT.key));
         assertEquals(AppKeys.COMPLETION_TEXT_PROMPT.defaultValue, config.get(AppKeys.COMPLETION_TEXT_PROMPT.key));
-        assertEquals("gpt-3.5-turbo-16k", config.get(AppKeys.TEXT_MODEL_NAMES.key));
+        assertEquals("gpt-4o-mini", config.get(AppKeys.TEXT_MODEL_NAMES.key));
     }
 
     /**
@@ -119,7 +123,7 @@ public class CompletionsToolTest {
     @Test
     public void test_raw() {
         final String query = "What is the speed of light in the vacuum";
-        final String prompt = String.format("{\"model\":\"gpt-3.5-turbo-16k\",\"messages\":[{\"role\":\"user\",\"content\":\"%s?\"},{\"role\":\"system\",\"content\":\"You are a helpful assistant with a descriptive writing style.\"}]}", query);
+        final String prompt = String.format("{\"model\":\"gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"%s?\"},{\"role\":\"system\",\"content\":\"You are a helpful assistant with a descriptive writing style.\"}]}", query);
 
         final JSONObject result = (JSONObject) completionsTool.raw(prompt);
         assertResult(result);
@@ -142,7 +146,7 @@ public class CompletionsToolTest {
         messages.put(new JSONObject().put("role", "user").put("content", query + "?"));
         messages.put(new JSONObject().put("role", "system").put("content", "You are a helpful assistant with a descriptive writing style"));
         json.put("messages", messages);
-        json.put("model", "gpt-3.5-turbo-16k");
+        json.put("model", "gpt-4o-mini");
 
         final JSONObject result = (JSONObject) completionsTool.raw(json);
         assertResult(result);
@@ -160,7 +164,7 @@ public class CompletionsToolTest {
     @Test
     public void test_raw_map() {
         final String query = "Who was the first president of the United States";
-        final Map<String, Object> map = Map.of("model", "gpt-3.5-turbo-16k", "messages", new JSONArray()
+        final Map<String, Object> map = Map.of("model", "gpt-4o-mini", "messages", new JSONArray()
                 .put(new JSONObject().put("role", "user").put("content", query + "?"))
                 .put(new JSONObject().put("role", "system").put("content", "You are a helpful assistant with a descriptive writing style")));
 
@@ -178,6 +182,11 @@ public class CompletionsToolTest {
             @Override
             AppConfig config() {
                 return appConfig;
+            }
+
+            @Override
+            User user() {
+                return user;
             }
         };
     }

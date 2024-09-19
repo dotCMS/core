@@ -1,13 +1,21 @@
-import * as _ from 'lodash';
 import { Observable } from 'rxjs';
 
-import { Component, EventEmitter, OnChanges, Optional } from '@angular/core';
-import { AfterViewInit, Output, Input, ChangeDetectionStrategy } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    OnChanges,
+    Optional,
+    AfterViewInit,
+    Output,
+    Input,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { NgControl, ControlValueAccessor } from '@angular/forms';
 
 import { map } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { isEmpty } from '@dotcms/utils';
 
 import { Verify } from '../../services/validation/Verify';
 
@@ -67,7 +75,7 @@ export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAcces
         if (value && value.indexOf(',') > -1) {
             this._modelValue = value.split(',');
         } else {
-            this._modelValue = _.isEmpty(value) ? null : value;
+            this._modelValue = isEmpty(value) ? null : value;
         }
     }
 

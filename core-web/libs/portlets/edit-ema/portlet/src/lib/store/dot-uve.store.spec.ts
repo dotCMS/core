@@ -40,6 +40,7 @@ import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 import {
     ACTION_MOCK,
     ACTION_PAYLOAD_MOCK,
+    BASE_SHELL_ITEMS,
     BASE_SHELL_PROPS_RESPONSE,
     EMA_DRAG_ITEM_CONTENTLET_MOCK,
     getBoundsMock,
@@ -158,13 +159,39 @@ describe('UVEStore', () => {
             buildPageAPIResponseFromMock(MOCK_RESPONSE_HEADLESS)
         );
 
-        store.load(HEADLESS_BASE_QUERY_PARAMS);
+        store.init(HEADLESS_BASE_QUERY_PARAMS);
     });
 
     describe('withComputed', () => {
+        describe('$translateProps', () => {
+            it('should return the page and the currentLanguage', () => {
+                expect(store.$translateProps()).toEqual({
+                    page: MOCK_RESPONSE_HEADLESS.page,
+                    currentLanguage: mockLanguageArray[0]
+                });
+            });
+        });
+
         describe('$shellProps', () => {
             it('should return the shell props for Headless Pages', () => {
                 expect(store.$shellProps()).toEqual(BASE_SHELL_PROPS_RESPONSE);
+            });
+            it('should return the shell props with property item disable when loading', () => {
+                store.setUveStatus(UVE_STATUS.LOADING);
+                const baseItems = BASE_SHELL_ITEMS.slice(0, BASE_SHELL_ITEMS.length - 1);
+
+                expect(store.$shellProps()).toEqual({
+                    ...BASE_SHELL_PROPS_RESPONSE,
+                    items: [
+                        ...baseItems,
+                        {
+                            icon: 'pi-ellipsis-v',
+                            label: 'editema.editor.navbar.properties',
+                            id: 'properties',
+                            isDisabled: true
+                        }
+                    ]
+                });
             });
             it('should return the error for 404', () => {
                 patchState(store, { errorCode: 404 });
@@ -205,16 +232,11 @@ describe('UVEStore', () => {
                     buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
                 );
 
-                store.load(VTL_BASE_QUERY_PARAMS);
+                store.init(VTL_BASE_QUERY_PARAMS);
 
                 expect(store.$shellProps()).toEqual({
                     canRead: true,
                     error: null,
-                    translateProps: {
-                        page: MOCK_RESPONSE_VTL.page,
-                        languageId: 1,
-                        languages: mockLanguageArray
-                    },
                     seoParams: {
                         siteId: MOCK_RESPONSE_VTL.site.identifier,
                         languageId: 1,
@@ -258,7 +280,8 @@ describe('UVEStore', () => {
                         {
                             icon: 'pi-ellipsis-v',
                             label: 'editema.editor.navbar.properties',
-                            id: 'properties'
+                            id: 'properties',
+                            isDisabled: false
                         }
                     ]
                 });
@@ -275,13 +298,28 @@ describe('UVEStore', () => {
                     })
                 );
 
-                store.load(VTL_BASE_QUERY_PARAMS);
+                store.init(VTL_BASE_QUERY_PARAMS);
 
                 const layoutItem = store.$shellProps().items.find((item) => item.id === 'layout');
 
                 expect(layoutItem.isDisabled).toBe(true);
             });
+            it('should return layout, rules and experiments as disabled when isEnterprise is false', () => {
+                jest.spyOn(dotPageApiService, 'get').mockImplementation(
+                    buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
+                );
 
+                patchState(store, { isEnterprise: false });
+
+                const shellProps = store.$shellProps();
+                const layoutItem = shellProps.items.find((item) => item.id === 'layout');
+                const rulesItem = shellProps.items.find((item) => item.id === 'rules');
+                const experimentsItem = shellProps.items.find((item) => item.id === 'experiments');
+
+                expect(layoutItem.isDisabled).toBe(true);
+                expect(rulesItem.isDisabled).toBe(true);
+                expect(experimentsItem.isDisabled).toBe(true);
+            });
             it('should return item for layout as disable and with a tooltip', () => {
                 jest.spyOn(dotPageApiService, 'get').mockImplementation(
                     buildPageAPIResponseFromMock({
@@ -293,7 +331,7 @@ describe('UVEStore', () => {
                     })
                 );
 
-                store.load(VTL_BASE_QUERY_PARAMS);
+                store.init(VTL_BASE_QUERY_PARAMS);
 
                 const layoutItem = store.$shellProps().items.find((item) => item.id === 'layout');
 
@@ -314,7 +352,7 @@ describe('UVEStore', () => {
                     })
                 );
 
-                store.load(VTL_BASE_QUERY_PARAMS);
+                store.init(VTL_BASE_QUERY_PARAMS);
 
                 const rules = store.$shellProps().items.find((item) => item.id === 'rules');
                 const experiments = store
@@ -337,6 +375,23 @@ describe('UVEStore', () => {
                 expect(store.status()).toBe(UVE_STATUS.LOADING);
             });
         });
+
+        describe('updatePageResponse', () => {
+            it('should update the page response', () => {
+                const pageAPIResponse = {
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        title: 'New title'
+                    }
+                };
+
+                store.updatePageResponse(pageAPIResponse);
+
+                expect(store.pageAPIResponse()).toEqual(pageAPIResponse);
+                expect(store.status()).toBe(UVE_STATUS.LOADED);
+            });
+        });
     });
 
     describe('withLoad', () => {
@@ -352,6 +407,7 @@ describe('UVEStore', () => {
                 expect(store.pageIsLocked()).toBe(false);
                 expect(store.status()).toBe(UVE_STATUS.LOADED);
                 expect(store.isTraditionalPage()).toBe(false);
+                expect(store.isClientReady()).toBe(false);
             });
 
             it('should load the store with the base data for traditional page', () => {
@@ -359,7 +415,7 @@ describe('UVEStore', () => {
                     buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
                 );
 
-                store.load(VTL_BASE_QUERY_PARAMS);
+                store.init(VTL_BASE_QUERY_PARAMS);
 
                 expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
                 expect(store.isEnterprise()).toBe(true);
@@ -371,6 +427,7 @@ describe('UVEStore', () => {
                 expect(store.pageIsLocked()).toBe(false);
                 expect(store.status()).toBe(UVE_STATUS.LOADED);
                 expect(store.isTraditionalPage()).toBe(true);
+                expect(store.isClientReady()).toBe(true);
             });
 
             it('should navigate when the page is a vanityUrl permanent redirect', () => {
@@ -385,7 +442,7 @@ describe('UVEStore', () => {
                     of(permanentRedirect)
                 );
 
-                store.load(VTL_BASE_QUERY_PARAMS);
+                store.init(VTL_BASE_QUERY_PARAMS);
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
                     queryParams: {
@@ -408,7 +465,7 @@ describe('UVEStore', () => {
                     of(temporaryRedirect)
                 );
 
-                store.load(VTL_BASE_QUERY_PARAMS);
+                store.init(VTL_BASE_QUERY_PARAMS);
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
                     queryParams: {
@@ -442,7 +499,7 @@ describe('UVEStore', () => {
                     } as unknown as ActivatedRouteSnapshot
                 } as unknown as ActivatedRoute);
 
-                store.load(VTL_BASE_QUERY_PARAMS);
+                store.init(VTL_BASE_QUERY_PARAMS);
 
                 expect(router.navigate).toHaveBeenCalledWith(['edit-page/content'], {
                     queryParamsHandling: 'merge'
@@ -472,7 +529,7 @@ describe('UVEStore', () => {
                     } as unknown as ActivatedRouteSnapshot
                 } as unknown as ActivatedRoute);
 
-                store.load(VTL_BASE_QUERY_PARAMS);
+                store.init(VTL_BASE_QUERY_PARAMS);
 
                 expect(router.navigate).toHaveBeenCalledWith(['edit-page/content'], {
                     queryParamsHandling: 'merge'
@@ -502,7 +559,7 @@ describe('UVEStore', () => {
                     } as unknown as ActivatedRouteSnapshot
                 } as unknown as ActivatedRoute);
 
-                store.load(VTL_BASE_QUERY_PARAMS);
+                store.init(VTL_BASE_QUERY_PARAMS);
 
                 expect(router.navigate).not.toHaveBeenCalled();
             });
@@ -530,7 +587,7 @@ describe('UVEStore', () => {
                     } as unknown as ActivatedRouteSnapshot
                 } as unknown as ActivatedRoute);
 
-                store.load(VTL_BASE_QUERY_PARAMS);
+                store.init(VTL_BASE_QUERY_PARAMS);
 
                 expect(router.navigate).not.toHaveBeenCalled();
             });
@@ -556,7 +613,8 @@ describe('UVEStore', () => {
                         layout: MOCK_RESPONSE_HEADLESS.layout,
                         template: {
                             identifier: MOCK_RESPONSE_HEADLESS.template.identifier,
-                            themeId: MOCK_RESPONSE_HEADLESS.template.theme
+                            themeId: MOCK_RESPONSE_HEADLESS.template.theme,
+                            anonymous: false
                         },
                         pageId: MOCK_RESPONSE_HEADLESS.page.identifier
                     });
@@ -1057,13 +1115,13 @@ describe('UVEStore', () => {
                         buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
                     );
 
-                    store.load(VTL_BASE_QUERY_PARAMS);
+                    store.init(VTL_BASE_QUERY_PARAMS);
 
                     expect(store.$reloadEditorContent()).toEqual({
                         code: MOCK_RESPONSE_VTL.page.rendered,
                         isTraditionalPage: true,
                         enableInlineEdit: true,
-                        isClientReady: false
+                        isClientReady: true
                     });
                 });
             });
@@ -1092,7 +1150,7 @@ describe('UVEStore', () => {
                             src: 'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
                             wrapper: null
                         },
-                        progressBar: false,
+                        progressBar: true,
                         contentletTools: null,
                         dropzone: null,
                         palette: {
@@ -1154,7 +1212,7 @@ describe('UVEStore', () => {
                             buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
                         );
 
-                        store.load(VTL_BASE_QUERY_PARAMS);
+                        store.init(VTL_BASE_QUERY_PARAMS);
 
                         expect(store.$editorProps().iframe.src).toBe('');
                     });
@@ -1176,6 +1234,18 @@ describe('UVEStore', () => {
                         patchState(store, { status: UVE_STATUS.LOADING });
 
                         expect(store.$editorProps().progressBar).toBe(true);
+                    });
+
+                    it('should have progressBar as true when the status is loaded but client is not ready', () => {
+                        patchState(store, { status: UVE_STATUS.LOADED, isClientReady: false });
+
+                        expect(store.$editorProps().progressBar).toBe(true);
+                    });
+
+                    it('should have progressBar as false when the status is loaded and client is ready', () => {
+                        patchState(store, { status: UVE_STATUS.LOADED, isClientReady: true });
+
+                        expect(store.$editorProps().progressBar).toBe(false);
                     });
                 });
 
@@ -1210,15 +1280,15 @@ describe('UVEStore', () => {
                         });
                     });
 
-                    it('should be null when scroll drag', () => {
+                    it('should be null when scrolling', () => {
                         patchState(store, {
                             isEditState: true,
                             canEditPage: true,
                             contentletArea: MOCK_CONTENTLET_AREA,
-                            state: EDITOR_STATE.SCROLL_DRAG
+                            state: EDITOR_STATE.SCROLLING
                         });
 
-                        expect(store.$editorProps().contentletTools).toBe(null);
+                        expect(store.$editorProps().contentletTools).toEqual(null);
                     });
 
                     it("should not have contentletTools when the page can't be edited", () => {
@@ -1248,17 +1318,6 @@ describe('UVEStore', () => {
                             canEditPage: true,
                             contentletArea: MOCK_CONTENTLET_AREA,
                             state: EDITOR_STATE.IDLE
-                        });
-
-                        expect(store.$editorProps().contentletTools).toBe(null);
-                    });
-
-                    it('should not have contentletTools when the we are scrolling', () => {
-                        patchState(store, {
-                            isEditState: true,
-                            canEditPage: true,
-                            contentletArea: MOCK_CONTENTLET_AREA,
-                            state: EDITOR_STATE.SCROLLING
                         });
 
                         expect(store.$editorProps().contentletTools).toBe(null);
@@ -1347,27 +1406,23 @@ describe('UVEStore', () => {
 
         describe('withMethods', () => {
             describe('updateEditorScrollState', () => {
-                it("should update the editor's scroll state when there is no drag item", () => {
+                it("should update the editor's scroll state and remove bounds when there is no drag item", () => {
                     store.updateEditorScrollState();
 
                     expect(store.state()).toEqual(EDITOR_STATE.SCROLLING);
+                    expect(store.bounds()).toEqual([]);
                 });
 
-                it("should update the editor's scroll state when there is drag item", () => {
+                it("should update the editor's scroll drag state and remove bounds when there is drag item", () => {
                     store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+                    store.setEditorBounds(getBoundsMock(ACTION_MOCK));
 
                     store.updateEditorScrollState();
 
                     expect(store.state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
+                    expect(store.bounds()).toEqual([]);
                 });
 
-                it("should not update the editor's scroll state when the state is OUT_OF_BOUNDS", () => {
-                    store.setEditorState(EDITOR_STATE.OUT_OF_BOUNDS);
-
-                    store.updateEditorScrollState();
-
-                    expect(store.state()).toEqual(EDITOR_STATE.OUT_OF_BOUNDS);
-                });
                 it('should set the contentletArea to null when we are scrolling', () => {
                     store.setEditorState(EDITOR_STATE.SCROLLING);
 
@@ -1390,14 +1445,6 @@ describe('UVEStore', () => {
                     store.updateEditorOnScrollEnd();
 
                     expect(store.state()).toEqual(EDITOR_STATE.DRAGGING);
-                });
-
-                it("should not update the editor's drag state when the state is OUT_OF_BOUNDS", () => {
-                    store.setEditorState(EDITOR_STATE.OUT_OF_BOUNDS);
-
-                    store.updateEditorOnScrollEnd();
-
-                    expect(store.state()).toEqual(EDITOR_STATE.OUT_OF_BOUNDS);
                 });
             });
 

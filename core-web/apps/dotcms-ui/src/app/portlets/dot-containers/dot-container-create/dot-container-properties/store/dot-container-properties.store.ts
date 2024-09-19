@@ -1,5 +1,4 @@
 import { ComponentStore } from '@ngrx/component-store';
-import * as _ from 'lodash';
 import { Observable, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -22,6 +21,7 @@ import {
     DotContainerPayload,
     DotContainerStructure
 } from '@dotcms/dotcms-models';
+import { isEqual } from '@dotcms/utils';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 
 export interface DotContainerPropertiesState {
@@ -148,7 +148,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         return {
             ...state,
             isContentTypeButtonEnabled: container.maxContentlets > 0,
-            invalidForm: _.isEqual(state.originalForm, container) || invalidForm
+            invalidForm: isEqual(state.originalForm, container) || invalidForm
         };
     });
 

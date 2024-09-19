@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as _ from 'lodash';
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { Observable, of, Subject } from 'rxjs';
 
@@ -818,9 +817,9 @@ describe('Load fields and drag and drop', () => {
         fixture.detectChanges();
 
         const fieldMoved = [
-            _.cloneDeep(comp.fieldRows[1]),
-            _.cloneDeep(comp.fieldRows[0]),
-            _.cloneDeep(comp.fieldRows[2])
+            structuredClone(comp.fieldRows[1]),
+            structuredClone(comp.fieldRows[0]),
+            structuredClone(comp.fieldRows[2])
         ];
 
         comp.saveFields.subscribe((data) => {
@@ -852,9 +851,9 @@ describe('Load fields and drag and drop', () => {
         fixture.detectChanges();
 
         const fieldMoved = [
-            _.cloneDeep(comp.fieldRows[1]),
-            _.cloneDeep(comp.fieldRows[0]),
-            _.cloneDeep(comp.fieldRows[2])
+            structuredClone(comp.fieldRows[1]),
+            structuredClone(comp.fieldRows[0]),
+            structuredClone(comp.fieldRows[2])
         ];
 
         comp.saveFields.subscribe(() => {

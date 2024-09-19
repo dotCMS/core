@@ -36,6 +36,7 @@ import {
 export type CategoryFieldState = {
     field: DotCMSContentTypeField;
     selected: DotCategoryFieldKeyValueObj[]; // <- source of selected
+    confirmedCategories: DotCategoryFieldKeyValueObj[]; // <- source of confirmed categories in the modal.
     categories: DotCategory[][];
     keyParentPath: string[]; // Delete when we have the endpoint for this
     state: ComponentStatus;
@@ -48,6 +49,7 @@ export type CategoryFieldState = {
 export const initialState: CategoryFieldState = {
     field: {} as DotCMSContentTypeField,
     selected: [],
+    confirmedCategories: [],
     categories: [],
     keyParentPath: [],
     state: ComponentStatus.INIT,
@@ -65,9 +67,11 @@ export const CategoryFieldStore = signalStore(
     withState(initialState),
     withComputed((store) => ({
         /**
-         * Current selected items (key) from the contentlet
+         * Current confirmed Categories items (key) from the contentlet
          */
-        selectedCategoriesValues: computed(() => store.selected().map((item) => item.key)),
+        confirmedCategoriesValues: computed(() =>
+            store.confirmedCategories().map((item) => item.key)
+        ),
 
         /**
          * Categories for render with added properties
@@ -77,9 +81,9 @@ export const CategoryFieldStore = signalStore(
         ),
 
         /**
-         * Indicates whether any categories are selected.
+         * Indicates whether any categories are confirmed.
          */
-        hasSelectedCategories: computed(() => !!store.selected().length),
+        hasConfirmedCategories: computed(() => !!store.confirmedCategories().length),
 
         /**
          * Get the root category inode.
@@ -92,6 +96,11 @@ export const CategoryFieldStore = signalStore(
         fieldVariableName: computed(() => store.field().variable),
 
         /**
+         * Status of the List Component
+         */
+        listState: computed(() => (store.mode() === 'list' ? store.state() : ComponentStatus.INIT)),
+
+        /**
          * Determines if the list mode is currently loading.
          */
         isListLoading: computed(
@@ -102,6 +111,7 @@ export const CategoryFieldStore = signalStore(
          * Determines if the store state is currently loaded.
          */
         isInitSate: computed(() => store.state() === ComponentStatus.INIT),
+
         /**
          * Determines if the search mode is currently loading.
          */
@@ -112,7 +122,7 @@ export const CategoryFieldStore = signalStore(
         /**
          * Status of the Search Component
          */
-        searchStatus: computed(() =>
+        searchState: computed(() =>
             store.mode() === 'search' ? store.state() : ComponentStatus.INIT
         ),
 
@@ -159,12 +169,13 @@ export const CategoryFieldStore = signalStore(
                         return categoryService.getSelectedHierarchy(selectedKeys).pipe(
                             tapResponse({
                                 next: (categoryWithParentPath) => {
-                                    const selected =
+                                    const confirmedCategories =
                                         transformToSelectedObject(categoryWithParentPath);
 
                                     patchState(store, {
                                         field,
-                                        selected,
+                                        selected: confirmedCategories,
+                                        confirmedCategories,
                                         state: ComponentStatus.LOADED
                                     });
                                 },
@@ -182,6 +193,9 @@ export const CategoryFieldStore = signalStore(
                 )
             ),
 
+            /**
+             * Sets the mode for the CategoryFieldView and resets search categories and filter.
+             */
             setMode(mode: CategoryFieldViewMode): void {
                 patchState(store, {
                     mode,
@@ -240,6 +254,44 @@ export const CategoryFieldStore = signalStore(
             },
 
             /**
+             * Removes the confirmed categories with the given key(s).
+             *
+             * @param {string | string[]} key - The key(s) of the item(s) to be removed.
+             * @return {void}
+             */
+            removeConfirmedCategories(key: string | string[]): void {
+                const newConfirmed = removeItemByKey(store.confirmedCategories(), key);
+
+                patchState(store, {
+                    confirmedCategories: newConfirmed
+                });
+            },
+
+            /**
+             * Adds the selected categories to the confirmed categories in the store.
+             * This method is used when the user confirms the selection of categories in the Dialog.
+             *
+             * @return {void}
+             */
+            addConfirmedCategories(): void {
+                patchState(store, {
+                    confirmedCategories: store.selected()
+                });
+            },
+
+            /**
+             * Sets the selected categories in the store to the confirmed categories.
+             * This method is used when the user open the Dialog  of categories.
+             *
+             * @return {void}
+             */
+            setSelectedCategories(): void {
+                patchState(store, {
+                    selected: store.confirmedCategories()
+                });
+            },
+
+            /**
              * Clears all categories from the store, effectively resetting state related to categories and their parent paths.
              */
             clean() {
@@ -248,7 +300,8 @@ export const CategoryFieldStore = signalStore(
                     keyParentPath: [],
                     mode: 'list',
                     filter: '',
-                    searchCategories: []
+                    searchCategories: [],
+                    state: ComponentStatus.INIT
                 });
             },
 
@@ -279,6 +332,7 @@ export const CategoryFieldStore = signalStore(
                             }
                         }
                     }),
+
                     // Only pass if you click a item with children
                     filter(
                         (event) =>

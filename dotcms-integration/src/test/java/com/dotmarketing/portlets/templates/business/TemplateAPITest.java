@@ -6,8 +6,8 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.mockito.Mockito.*;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
@@ -81,30 +81,30 @@ public class TemplateAPITest extends IntegrationTestBase {
     private static Host host;
 
     @BeforeClass
-    public static void prepare () throws Exception {
-    	
+    public static void prepare() throws Exception {
+
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        containerAPI   = APILocator.getContainerAPI();
-        hostAPI        = APILocator.getHostAPI();
-        templateAPI    = APILocator.getTemplateAPI();
-        userAPI        = APILocator.getUserAPI();
-        user           = userAPI.getSystemUser();
+        containerAPI = APILocator.getContainerAPI();
+        hostAPI = APILocator.getHostAPI();
+        templateAPI = APILocator.getTemplateAPI();
+        userAPI = APILocator.getUserAPI();
+        user = userAPI.getSystemUser();
         versionableAPI = APILocator.getVersionableAPI();
-        host           = hostAPI.findDefaultHost(user, false);
+        host = hostAPI.findDefaultHost(user, false);
     }
 
     @Test
     public void getContainersUUIDFromDrawTemplateBodyTest() throws Exception {
 
         final String templateBody = "  This is just test<br/>  \n" +
-                                    "  #parseContainer   ('f4a02846-7ca4-4e08-bf07-a61366bbacbb','1552493847863')  \n" +
-                                    "  <p>This is just test</p>  \n" +
-                                    "  #parseContainer   ('/application/containers/test1/','1552493847864')  \n" +
-                                    "#parseContainer('/application/containers/test2/','1552493847868')\n" +
-                                    "#parseContainer('/application/containers/test3/'     ,'1552493847869'       )\n" +
-                                    "#parseContainer(    '/application/containers/test4/',    '1552493847870')\n";
+                "  #parseContainer   ('f4a02846-7ca4-4e08-bf07-a61366bbacbb','1552493847863')  \n" +
+                "  <p>This is just test</p>  \n" +
+                "  #parseContainer   ('/application/containers/test1/','1552493847864')  \n" +
+                "#parseContainer('/application/containers/test2/','1552493847868')\n" +
+                "#parseContainer('/application/containers/test3/'     ,'1552493847869'       )\n" +
+                "#parseContainer(    '/application/containers/test4/',    '1552493847870')\n";
 
         final TemplateAPI templateAPI = APILocator.getTemplateAPI();
         final List<ContainerUUID> containerUUIDS = templateAPI.getContainersUUIDFromDrawTemplateBody(templateBody);
@@ -226,15 +226,14 @@ public class TemplateAPITest extends IntegrationTestBase {
      * Method to test: saveTemplate
      * Given Scenario: Create a template and save it
      * ExpectedResult: Template should be save successfully
-     *
      */
     @Test
     public void test_saveTemplate_newTemplate() throws Exception {
         final String title = "Template" + System.currentTimeMillis();
         final Host newHostA = new SiteDataGen().nextPersisted();
-        final String body="<html><body> I'm mostly empty </body></html>";
+        final String body = "<html><body> I'm mostly empty </body></html>";
 
-        Template template=new Template();
+        Template template = new Template();
         template.setTitle(title);
         template.setBody(body);
         template = templateAPI.saveTemplate(template, newHostA, user, false);
@@ -248,7 +247,6 @@ public class TemplateAPITest extends IntegrationTestBase {
      * Method to test: saveTemplate
      * Given Scenario: Create a template and save it, update the body and save it again.
      * ExpectedResult: Template should be save successfully
-     *
      */
     @Test
     public void test_saveTemplate_editExistingTemplate() throws Exception {
@@ -261,7 +259,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         template.setBody(body);
         try {
             template = templateAPI.saveTemplate(template, newHostA, user, false);
-            templateSaved=true;
+            templateSaved = true;
             assertTrue(UtilMethods.isSet(template.getInode()));
             assertTrue(UtilMethods.isSet(template.getIdentifier()));
             final String templateInode = template.getInode();
@@ -298,14 +296,13 @@ public class TemplateAPITest extends IntegrationTestBase {
      * Method to test: publishTemplate
      * Given Scenario: Create a template, publish it
      * ExpectedResult: Template should be live true
-     *
      */
     @Test
     public void publishTemplate_expects_live_true() throws Exception {
 
-        final Host host    = hostAPI.findDefaultHost(user, false);
-        final String body  = "<html><body> I'm mostly empty </body></html>";
-        final String title = "empty test template "+UUIDGenerator.generateUuid();
+        final Host host = hostAPI.findDefaultHost(user, false);
+        final String body = "<html><body> I'm mostly empty </body></html>";
+        final String title = "empty test template " + UUIDGenerator.generateUuid();
         final Template template = new Template();
         template.setTitle(title);
         template.setBody(body);
@@ -324,14 +321,13 @@ public class TemplateAPITest extends IntegrationTestBase {
      * Method to test: unpublishTemplate
      * Given Scenario: Create a template, publish and unpublish it
      * ExpectedResult: Template should be live false at the end
-     *
      */
     @Test
     public void unpublishTemplate_expects_live_false() throws Exception {
 
-        final Host host    = hostAPI.findDefaultHost(user, false);
-        final String body  = "<html><body> I'm mostly empty </body></html>";
-        final String title = "empty test template "+UUIDGenerator.generateUuid();
+        final Host host = hostAPI.findDefaultHost(user, false);
+        final String body = "<html><body> I'm mostly empty </body></html>";
+        final String title = "empty test template " + UUIDGenerator.generateUuid();
         final Template template = new Template();
         template.setTitle(title);
         template.setBody(body);
@@ -353,14 +349,13 @@ public class TemplateAPITest extends IntegrationTestBase {
      * Method to test: archive
      * Given Scenario: Create a template, archive
      * ExpectedResult: Template should be archive true
-     *
      */
     @Test
     public void archiveTemplate_expects_archive_true() throws Exception {
 
-        final Host host    = hostAPI.findDefaultHost(user, false);
-        final String body  = "<html><body> I'm mostly empty </body></html>";
-        final String title = "empty test template "+UUIDGenerator.generateUuid();
+        final Host host = hostAPI.findDefaultHost(user, false);
+        final String body = "<html><body> I'm mostly empty </body></html>";
+        final String title = "empty test template " + UUIDGenerator.generateUuid();
         final Template template = new Template();
         template.setTitle(title);
         template.setBody(body);
@@ -379,14 +374,13 @@ public class TemplateAPITest extends IntegrationTestBase {
      * Method to test:  unarchive
      * Given Scenario: Create a template, archive and unarchive
      * ExpectedResult: Template should be archive false
-     *
      */
     @Test
     public void archiveTemplate_expects_unarchive_true() throws Exception {
 
-        final Host host    = hostAPI.findDefaultHost(user, false);
-        final String body  = "<html><body> I'm mostly empty </body></html>";
-        final String title = "empty test template "+UUIDGenerator.generateUuid();
+        final Host host = hostAPI.findDefaultHost(user, false);
+        final String body = "<html><body> I'm mostly empty </body></html>";
+        final String title = "empty test template " + UUIDGenerator.generateUuid();
         final Template template = new Template();
         template.setTitle(title);
         template.setBody(body);
@@ -400,13 +394,13 @@ public class TemplateAPITest extends IntegrationTestBase {
         templateAPI.archive(templateSaved, user, false);
         assertTrue(templateSaved.isArchived());
 
-        templateAPI.unarchive(templateSaved,user);
+        templateAPI.unarchive(templateSaved, user);
         assertFalse(templateSaved.isArchived());
     }
 
     @Test
     public void delete() throws Exception {
-        Host host= hostAPI.findDefaultHost(user, false);
+        Host host = hostAPI.findDefaultHost(user, false);
 
         // a container to use inside the template
         Container container = new Container();
@@ -415,7 +409,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         container.setMaxContentlets(5);
         container.setPreLoop("preloop code");
         container.setPostLoop("postloop code");
-        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("host");
+        Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("host");
 
         List<ContainerStructure> csList = new ArrayList<>();
         ContainerStructure cs = new ContainerStructure();
@@ -425,16 +419,16 @@ public class TemplateAPITest extends IntegrationTestBase {
         container = containerAPI.save(container, csList, host, user, false);
 
 
-        String body="<html><body> #parseContainer('"+container.getIdentifier()+"') </body></html>";
-        String title="empty test template "+UUIDGenerator.generateUuid();
+        String body = "<html><body> #parseContainer('" + container.getIdentifier() + "') </body></html>";
+        String title = "empty test template " + UUIDGenerator.generateUuid();
 
-        Template template=new Template();
+        Template template = new Template();
         template.setTitle(title);
         template.setBody(body);
 
-        final Template saved= templateAPI.saveTemplate(template, host, user, false);
+        final Template saved = templateAPI.saveTemplate(template, host, user, false);
 
-        final String tInode=template.getInode(),tIdent=template.getIdentifier();
+        final String tInode = template.getInode(), tIdent = template.getIdentifier();
 
         templateAPI.delete(saved, user, false);
 
@@ -442,13 +436,13 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         containerAPI.delete(container, user, false);
 
-        AssetUtil.assertDeleted(container.getInode(),container.getIdentifier(), Inode.Type.CONTAINERS.getValue());
+        AssetUtil.assertDeleted(container.getInode(), container.getIdentifier(), Inode.Type.CONTAINERS.getValue());
     }
 
     @Test
     public void findPagesByTemplate() throws Exception {
-        User user=APILocator.getUserAPI().getSystemUser();
-        Host host=APILocator.getHostAPI().findDefaultHost(user, false);
+        User user = APILocator.getUserAPI().getSystemUser();
+        Host host = APILocator.getHostAPI().findDefaultHost(user, false);
 
         Template template = null;
         Folder folder = null;
@@ -511,10 +505,10 @@ public class TemplateAPITest extends IntegrationTestBase {
     @Test
     public void findLiveTemplate() throws Exception {
 
-        Template template=new Template();
-        template.setTitle("empty test template "+UUIDGenerator.generateUuid());
+        Template template = new Template();
+        template.setTitle("empty test template " + UUIDGenerator.generateUuid());
         template.setBody("<html><body> I'm mostly empty </body></html>");
-        template= templateAPI.saveTemplate(template, host, user, false);
+        template = templateAPI.saveTemplate(template, host, user, false);
 
         Template live = templateAPI
                 .findLiveTemplate(template.getIdentifier(), user, false);
@@ -525,7 +519,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         live = templateAPI.findLiveTemplate(template.getIdentifier(), user, false);
         assertNotNull(live);//template has been published
-        assertEquals(template.getInode(),live.getInode());//inode live is the template inode
+        assertEquals(template.getInode(), live.getInode());//inode live is the template inode
         assertFalse(live.getOwner().isEmpty());//check owner was pulled
         assertFalse(live.getIDate().toString().isEmpty());//check idate was pulled
 
@@ -591,8 +585,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
             assertNull(template);
 
-        }
-        catch(NullPointerException e) {
+        } catch (NullPointerException e) {
             Logger.error(this, "getting non-existent template should not throw an NPE", e);
             assertTrue("getting non-existent template should not throw an NPE", false);
         }
@@ -612,16 +605,15 @@ public class TemplateAPITest extends IntegrationTestBase {
                     APILocator.getUserAPI().getSystemUser(), false);
 
             assertNull(template);
-            
-        }
-        catch(NullPointerException e) {
+
+        } catch (NullPointerException e) {
             Logger.error(this, "getting non-existent template should not throw an NPE", e);
             assertTrue("getting non-existent template should not throw an NPE", false);
         }
     }
 
     /**
-     * Method to test: {@link TemplateAPI#findTemplatesAssignedTo(Host,boolean)}
+     * Method to test: {@link TemplateAPI#findTemplatesAssignedTo(Host, boolean)}
      * Given Scenario: Finds all templates under a host
      * ExpectedResult: list of templates that live under a host
      */
@@ -717,7 +709,7 @@ public class TemplateAPITest extends IntegrationTestBase {
     }
 
     @Test
-    public void testFindTemplatesNoLayout () throws Exception {
+    public void testFindTemplatesNoLayout() throws Exception {
         Template template = null;
         Template layout = null;
         try {
@@ -734,7 +726,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
             //This method should only return Templates, no Layouts
             List<Template> templates = APILocator.getTemplateAPI().findTemplates(user, false, null, null, null,
-                                                        null, null, 0, 1000, null);
+                    null, null, 0, 1000, null);
 
             assertFalse(templates.isEmpty());
             for (final Template temp : this.removeSystemTemplate(templates)) {
@@ -743,7 +735,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
             //This method should only return Templates, no Layouts
             templates = templateAPI.findTemplatesUserCanUse(user, null, null, false,
-                                                        0, 1000);
+                    0, 1000);
 
             assertFalse(templates.isEmpty());
             for (final Template temp : this.removeSystemTemplate(templates)) {
@@ -764,7 +756,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         final List<Template> paginatedArrayListWithoutSystemTemplate = new ArrayList<>();
 
-        for(Template templateObject : paginatedArrayList) {
+        for (Template templateObject : paginatedArrayList) {
 
             if (!Template.SYSTEM_TEMPLATE.equals(templateObject.getIdentifier())) {
 
@@ -788,7 +780,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
             template = new Template();
             final String uniqueString = UUIDGenerator.generateUuid();
-            final String uniqueTitle =  uniqueString + " This one will show up";
+            final String uniqueTitle = uniqueString + " This one will show up";
             template.setTitle(uniqueTitle);
             template.setBody("<html><body> Empty Template </body></html>");
             template = templateAPI.saveTemplate(template, host, user, false);
@@ -798,7 +790,7 @@ public class TemplateAPITest extends IntegrationTestBase {
             anotherTemplate.setBody("<html><body> Empty Template </body></html>");
             anotherTemplate = templateAPI.saveTemplate(anotherTemplate, host, user, false);
 
-            final List<Template> filteredTemplates = APILocator.getTemplateAPI().findTemplatesUserCanUse(user, host.getIdentifier(), uniqueString, true,0, 1000);
+            final List<Template> filteredTemplates = APILocator.getTemplateAPI().findTemplatesUserCanUse(user, host.getIdentifier(), uniqueString, true, 0, 1000);
             final List<Template> filteredTemplatesWithoutSystemTemplate = this.removeSystemTemplate(filteredTemplates);
             assertEquals(1, filteredTemplatesWithoutSystemTemplate.size());
             assertEquals(uniqueTitle, filteredTemplatesWithoutSystemTemplate.get(0).getTitle());
@@ -821,16 +813,16 @@ public class TemplateAPITest extends IntegrationTestBase {
      * ExpectedResult: the template of the specific inode
      */
     @Test
-    public void test_find_success() throws Exception{
+    public void test_find_success() throws Exception {
         final String title = "testFindTemplate_" + System.currentTimeMillis();
         final Template template = new TemplateDataGen().title(title).nextPersisted();
 
         //Remove template cache so it's has to search in the DB
         CacheLocator.getTemplateCache().clearCache();
 
-        final Template templateFound = templateAPI.find(template.getInode(),user,false);
+        final Template templateFound = templateAPI.find(template.getInode(), user, false);
 
-        assertEquals(title,templateFound.getTitle());
+        assertEquals(title, templateFound.getTitle());
         assertFalse(templateFound.getOwner().isEmpty());//check owner was pulled
         assertFalse(templateFound.getIDate().toString().isEmpty());//check idate was pulled
     }
@@ -841,9 +833,9 @@ public class TemplateAPITest extends IntegrationTestBase {
      * ExpectedResult: null
      */
     @Test
-    public void test_find_inode_not_exist_return_Null() throws Exception{
-       final Template templateFound = templateAPI.find(UUIDGenerator.generateUuid(),user,false);
-       assertNull(templateFound);
+    public void test_find_inode_not_exist_return_Null() throws Exception {
+        final Template templateFound = templateAPI.find(UUIDGenerator.generateUuid(), user, false);
+        assertNull(templateFound);
     }
 
     /**
@@ -863,9 +855,9 @@ public class TemplateAPITest extends IntegrationTestBase {
         template = TemplateDataGen.save(template);
 
         final Identifier identifier = APILocator.getIdentifierAPI().find(template.getIdentifier());
-        final List<Template> templateAllVersions = templateAPI.findAllVersions(identifier,user,false);
+        final List<Template> templateAllVersions = templateAPI.findAllVersions(identifier, user, false);
         assertNotNull(templateAllVersions);
-        assertEquals(3,templateAllVersions.size());
+        assertEquals(3, templateAllVersions.size());
         assertFalse(templateAllVersions.get(0).getOwner().isEmpty());//check owner was pulled
         assertFalse(templateAllVersions.get(0).getIDate().toString().isEmpty());//check idate was pulled
     }
@@ -880,7 +872,7 @@ public class TemplateAPITest extends IntegrationTestBase {
     public void test_findAllVersions_IdentifierNotBelongToTemplate_returnEmptyList() throws Exception {
         final Identifier identifier = new Identifier();
         identifier.setId(UUIDGenerator.generateUuid());
-        final List<Template> templateAllVersions = templateAPI.findAllVersions(identifier,user,false);
+        final List<Template> templateAllVersions = templateAPI.findAllVersions(identifier, user, false);
         assertTrue(templateAllVersions.isEmpty());
     }
 
@@ -908,16 +900,16 @@ public class TemplateAPITest extends IntegrationTestBase {
      * ExpectedResult: template is not saved and a DotSecurityException is thrown.
      */
     @Test(expected = DotSecurityException.class)
-    public void test_saveTemplate_limitedUser_noEnoughPermissions_fail() throws Exception{
+    public void test_saveTemplate_limitedUser_noEnoughPermissions_fail() throws Exception {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
-        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        APILocator.getUserAPI().save(limitedUser, APILocator.systemUser(), false);
 
         final String title = "Template" + System.currentTimeMillis();
         final Host newHostA = new SiteDataGen().nextPersisted();
         //Create template
         Template templateA = new TemplateDataGen().title(title).next();
-        templateA = APILocator.getTemplateAPI().saveTemplate(templateA,newHostA,limitedUser,false);
+        templateA = APILocator.getTemplateAPI().saveTemplate(templateA, newHostA, limitedUser, false);
     }
 
     /**
@@ -926,13 +918,13 @@ public class TemplateAPITest extends IntegrationTestBase {
      * ExpectedResult: template is saved.
      */
     @Test
-    public void test_saveTemplate_limitedUser_success() throws Exception{
+    public void test_saveTemplate_limitedUser_success() throws Exception {
         final String title = "Template" + System.currentTimeMillis();
         final Host newHostA = new SiteDataGen().nextPersisted();
 
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
-        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        APILocator.getUserAPI().save(limitedUser, APILocator.systemUser(), false);
 
         //Give Permissions Over the Host Can Add children
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -949,10 +941,10 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         //Create template
         Template templateA = new TemplateDataGen().title(title).next();
-        templateA = APILocator.getTemplateAPI().saveTemplate(templateA,newHostA,limitedUser,false);
+        templateA = APILocator.getTemplateAPI().saveTemplate(templateA, newHostA, limitedUser, false);
 
-        assertEquals(1,templateAPI.findTemplatesAssignedTo(newHostA).size());
-        assertEquals(title,templateAPI.findTemplatesAssignedTo(newHostA).get(0).getTitle());
+        assertEquals(1, templateAPI.findTemplatesAssignedTo(newHostA).size());
+        assertEquals(title, templateAPI.findTemplatesAssignedTo(newHostA).get(0).getTitle());
     }
 
     /**
@@ -970,15 +962,15 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .nextPersisted();
 
         final FileAssetTemplate template = FileAssetTemplate.class.cast(APILocator.getTemplateAPI()
-                .findWorkingTemplate(fileAssetTemplate.getIdentifier(),user,false));
+                .findWorkingTemplate(fileAssetTemplate.getIdentifier(), user, false));
 
         assertTrue(template.getIdentifier().contains(Constants.TEMPLATE_FOLDER_PATH));
 
         final Host templateHost = templateAPI.getTemplateHost(template);
 
         assertNotNull(templateHost);
-        assertEquals(host.getIdentifier(),templateHost.getIdentifier());
-        assertEquals(fileAssetTemplate.getIdentifier(),template.getIdentifier());
+        assertEquals(host.getIdentifier(), templateHost.getIdentifier());
+        assertEquals(fileAssetTemplate.getIdentifier(), template.getIdentifier());
     }
 
     /**
@@ -996,11 +988,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .nextPersisted();
 
         final Template template = templateAPI
-                .findWorkingTemplate(fileAssetTemplate.getIdentifier(),user,false);
+                .findWorkingTemplate(fileAssetTemplate.getIdentifier(), user, false);
 
         assertNotNull(template);
         assertTrue(template.getIdentifier().contains(Constants.TEMPLATE_FOLDER_PATH));
-        assertEquals(fileAssetTemplate.getIdentifier(),template.getIdentifier());
+        assertEquals(fileAssetTemplate.getIdentifier(), template.getIdentifier());
     }
 
     /**
@@ -1019,11 +1011,11 @@ public class TemplateAPITest extends IntegrationTestBase {
         templateAPI.setLive(fileAssetTemplate);
 
         final Template template = templateAPI
-                .findLiveTemplate(fileAssetTemplate.getIdentifier(),user,false);
+                .findLiveTemplate(fileAssetTemplate.getIdentifier(), user, false);
 
         assertNotNull(template);
         assertTrue(template.getIdentifier().contains(Constants.TEMPLATE_FOLDER_PATH));
-        assertEquals(fileAssetTemplate.getIdentifier(),template.getIdentifier());
+        assertEquals(fileAssetTemplate.getIdentifier(), template.getIdentifier());
     }
 
     /**
@@ -1045,11 +1037,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .findFolderByPath(fileAssetTemplate.getPath(), host, user, false);
 
         final Template template = templateAPI
-                .getTemplateByFolder(templateFolder,host,user,false);
+                .getTemplateByFolder(templateFolder, host, user, false);
 
         assertNotNull(template);
         assertTrue(template.getIdentifier().contains(Constants.TEMPLATE_FOLDER_PATH));
-        assertEquals(fileAssetTemplate.getIdentifier(),template.getIdentifier());
+        assertEquals(fileAssetTemplate.getIdentifier(), template.getIdentifier());
     }
 
     /**
@@ -1062,9 +1054,9 @@ public class TemplateAPITest extends IntegrationTestBase {
             throws DotSecurityException, DotDataException {
         final Host newHost = new SiteDataGen().nextPersisted();
         final String title = "Template" + System.currentTimeMillis();
-        final String body="<html><body> I'm mostly empty </body></html>";
+        final String body = "<html><body> I'm mostly empty </body></html>";
 
-        Template template=new Template();
+        Template template = new Template();
         template.setTitle(title);
         template.setBody(body);
         template = templateAPI.saveDraftTemplate(template, newHost, user, false);
@@ -1085,9 +1077,9 @@ public class TemplateAPITest extends IntegrationTestBase {
             throws DotSecurityException, DotDataException {
         final Host newHost = new SiteDataGen().nextPersisted();
         final String title = "Template" + System.currentTimeMillis();
-        final String body="<html><body> I'm mostly empty </body></html>";
+        final String body = "<html><body> I'm mostly empty </body></html>";
 
-        Template template=new Template();
+        Template template = new Template();
         template.setTitle(title);
         template.setBody(body);
         template = templateAPI.saveDraftTemplate(template, newHost, user, false);
@@ -1106,13 +1098,13 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertTrue(UtilMethods.isSet(template.getInode()));
         assertTrue(UtilMethods.isSet(template.getIdentifier()));
         assertEquals(template.getTitle(), title + "_UPDATED");
-        assertNotEquals(templateOriginalInode,template.getInode());
+        assertNotEquals(templateOriginalInode, template.getInode());
     }
 
     /**
      * Method to test: {@link TemplateAPI#saveDraftTemplate(Template, Host, User, boolean)}
      * Given Scenario: If the user calling the saveDraftTemplate method is not the same that last
-     *                  updated the template a new version will be created.
+     * updated the template a new version will be created.
      * ExpectedResult: Template version successfully saved.
      */
     @Test
@@ -1123,7 +1115,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
-        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        APILocator.getUserAPI().save(limitedUser, APILocator.systemUser(), false);
 
         //Give Permissions Over the Host Can Add children
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -1140,7 +1132,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         //Create template
         Template templateA = new TemplateDataGen().title(title).next();
-        templateA = APILocator.getTemplateAPI().saveTemplate(templateA,newHostA,limitedUser,false);
+        templateA = APILocator.getTemplateAPI().saveTemplate(templateA, newHostA, limitedUser, false);
         final String templateOriginalInode = templateA.getInode();
 
         //new version using system user
@@ -1151,13 +1143,13 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertTrue(UtilMethods.isSet(templateA.getInode()));
         assertTrue(UtilMethods.isSet(templateA.getIdentifier()));
         assertEquals(templateA.getTitle(), title + "_UPDATED");
-        assertNotEquals(templateOriginalInode,templateA.getInode());
+        assertNotEquals(templateOriginalInode, templateA.getInode());
     }
 
     /**
      * Method to test: {@link TemplateAPI#saveDraftTemplate(Template, Host, User, boolean)}
      * Given Scenario: Calling the saveDraftTemplate using the same user, id and inode, shouldn't
-     *                  create a new version.
+     * create a new version.
      * ExpectedResult: Template saved successfully but keep the inode
      */
     @Test
@@ -1167,7 +1159,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         //Create template
         Template templateA = new TemplateDataGen().title(title).next();
-        templateA = APILocator.getTemplateAPI().saveDraftTemplate(templateA,newHostA,user,false);
+        templateA = APILocator.getTemplateAPI().saveDraftTemplate(templateA, newHostA, user, false);
         final String templateOriginalInode = templateA.getInode();
 
         //new Draft should keep the same inode
@@ -1177,7 +1169,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertTrue(UtilMethods.isSet(templateA.getInode()));
         assertTrue(UtilMethods.isSet(templateA.getIdentifier()));
         assertEquals(templateA.getTitle(), title + "_UPDATED");
-        assertEquals(templateOriginalInode,templateA.getInode());
+        assertEquals(templateOriginalInode, templateA.getInode());
     }
 
     /**
@@ -1186,7 +1178,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * ExpectedResult: list of containers.
      */
     @Test
-    public void test_getContainersInTemplate_success() throws Exception{
+    public void test_getContainersInTemplate_success() throws Exception {
 
         final Host newHost = new SiteDataGen().nextPersisted();
 
@@ -1205,7 +1197,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         //Create content
         final Contentlet contentlet = TestDataUtils
-                .getGenericContentContent(true,APILocator.getLanguageAPI().getDefaultLanguage().getId(),newHost);
+                .getGenericContentContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), newHost);
 
         //Add content to page
         new MultiTreeDataGen()
@@ -1217,7 +1209,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .setTreeOrder(1)
                 .nextPersisted();
 
-        assertEquals(1,APILocator.getTemplateAPI().getContainersInTemplate(template,user,false).size());
+        assertEquals(1, APILocator.getTemplateAPI().getContainersInTemplate(template, user, false).size());
     }
 
     /**
@@ -1422,7 +1414,7 @@ public class TemplateAPITest extends IntegrationTestBase {
     }
 
     private HTMLPageAsset createNewVersion(final Language language, final HTMLPageAsset htmlPageAsset,
-            final Template template) {
+                                           final Template template) {
 
         final Contentlet checkout = HTMLPageDataGen.checkout(htmlPageAsset);
 
@@ -1435,7 +1427,7 @@ public class TemplateAPITest extends IntegrationTestBase {
     }
 
     private HTMLPageAsset createNewVersion(final Variant variant, final HTMLPageAsset htmlPageAsset,
-            final Template template) {
+                                           final Template template) {
 
         final Contentlet checkout = HTMLPageDataGen.checkout(htmlPageAsset);
 
@@ -1492,19 +1484,19 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 2, column 2:  instance 3 of the Container
      * - Row 3, column 1:  instance 4 of the Container
-     *
+     * <p>
      * Also you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
      * - Contentlet_4 : Add to the instance 3
      * - Contentlet_5 : Add to the instance 4
-     *
+     * <p>
      * And you move the last row to be the first
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the instance 2
      * - Contentlet_2 : Add to the instance 3
      * - Contentlet_3 : Add to the instance 4
@@ -1538,7 +1530,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container, "4")
                 .next();
 
-       final Template template = new TemplateDataGen()
+        final Template template = new TemplateDataGen()
                 .drawed(true)
                 .drawedBody(templateLayout)
                 .nextPersisted();
@@ -1610,15 +1602,16 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout expectedTemplateLayout = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "1")
+                .withContainer(container, "1", list("4", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "2")
+                .withContainer(container, "2", list("1", "2"))
                 .addRow()
                 .addColumn(50)
-                .withContainer(container, "3")
+                .withContainer(container, "3", list("2", "3"))
                 .addColumn(50)
-                .withContainer(container, "4")
+                .withContainer(container, "4", list("3", "4"))
+                .version(2)
                 .next();
 
         assertEquals(expectedTemplateLayout, templateLayoutFromDB);
@@ -1631,7 +1624,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         for (final String intanceId : groupedByInstanceId.keySet()) {
             final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
 
-            switch (intanceId){
+            switch (intanceId) {
                 case "1":
                     assertEquals(1, multiTrees.size());
                     assertEquals(contentlet_5.getIdentifier(), multiTrees.get(0).getContentlet());
@@ -1663,16 +1656,16 @@ public class TemplateAPITest extends IntegrationTestBase {
      * When: You have a Page with 2 instance of the same container and the follow layout:
      * - Row 1, column 1:  instance 1 of the Container
      * - Row 2, column 1:  instance 2 of the Container
-     *
+     * <p>
      * Also you have 2 Contentlets add as follows:
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
-     *
+     * <p>
      * And you move the last row to be the first one
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the instance 2
      * - Contentlet_2 : Add to the instance 1
      *
@@ -1768,10 +1761,11 @@ public class TemplateAPITest extends IntegrationTestBase {
             final TemplateLayout expectedTemplateLayout = new TemplateLayoutDataGen()
                     .addRow()
                     .addColumn(100)
-                    .withContainer(container, "1")
+                    .withContainer(container, "1", list("2", "1"))
                     .addRow()
                     .addColumn(100)
-                    .withContainer(container, "2")
+                    .withContainer(container, "2", list("1", "2"))
+                    .version(2)
                     .next();
 
             assertEquals(expectedTemplateLayout, templateLayoutFromDB);
@@ -1815,19 +1809,19 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 2, column 2:  instance 3 of the Container
      * - Row 3, column 1:  instance 4 of the Container
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
      * - Contentlet_4 : Add to the instance 3
      * - Contentlet_5 : Add to the instance 4
-     *
+     * <p>
      * And you swap the two instance of the second row
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 3
      * - Contentlet_3 : Add to the instance 2
@@ -1932,15 +1926,16 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "1")
+                .withContainer(container, "1", list("1", "1"))
                 .addRow()
                 .addColumn(50)
-                .withContainer(container, "2")
+                .withContainer(container, "2", list("3", "2"))
                 .addColumn(50)
-                .withContainer(container, "3")
+                .withContainer(container, "3", list("2", "3"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "4")
+                .withContainer(container, "4", list("4", "4"))
+                .version(2)
                 .next();
 
         assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -1953,7 +1948,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         for (final String intanceId : groupedByInstanceId.keySet()) {
             final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
 
-            switch (intanceId){
+            switch (intanceId) {
                 case "1":
                     assertEquals(1, multiTrees.size());
                     assertEquals(contentlet_1.getIdentifier(), multiTrees.get(0).getContentlet());
@@ -1987,19 +1982,19 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 2, column 2:  instance 3 of the Container
      * - Row 3, column 1:  instance 4 of the Container
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
      * - Contentlet_4 : Add to the instance 3
      * - Contentlet_5 : Add to the instance 4
-     *
+     * <p>
      * And you remove the second row also you have  DELETE_ORPHANED_CONTENTS_FROM_CONTAINER flag disabled
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Removed
      * - Contentlet_3 : Removed
@@ -2099,10 +2094,11 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "1")
+                .withContainer(container, "1", list("1", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "2")
+                .withContainer(container, "2", list("4", "2"))
+                .version(2)
                 .next();
         assertEquals(templateLayoutExpected, templateLayoutFromDB);
 
@@ -2115,7 +2111,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         for (final String intanceId : groupedByInstanceId.keySet()) {
             final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
 
-            switch (intanceId){
+            switch (intanceId) {
                 case "1":
                     assertEquals(1, multiTrees.size());
                     assertEquals(contentlet_1.getIdentifier(), multiTrees.get(0).getContentlet());
@@ -2138,19 +2134,19 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 2, column 2:  instance 3 of the Container
      * - Row 3, column 1:  instance 4 of the Container
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
      * - Contentlet_4 : Add to the instance 3
      * - Contentlet_5 : Add to the instance 4
-     *
+     * <p>
      * And you remove the second row also you have  DELETE_ORPHANED_CONTENTS_FROM_CONTAINER flag disabled
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : ORPHANED
      * - Contentlet_3 : ORPHANED
@@ -2254,10 +2250,11 @@ public class TemplateAPITest extends IntegrationTestBase {
             final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                     .addRow()
                     .addColumn(100)
-                    .withContainer(container, "1")
+                    .withContainer(container, "1", list("1", "1"))
                     .addRow()
                     .addColumn(100)
-                    .withContainer(container, "2")
+                    .withContainer(container, "2",list("4", "2"))
+                    .version(2)
                     .next();
 
             assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -2270,7 +2267,7 @@ public class TemplateAPITest extends IntegrationTestBase {
             for (final String intanceId : groupedByInstanceId.keySet()) {
                 final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
 
-                switch (intanceId){
+                switch (intanceId) {
                     case "1":
                         assertEquals(1, multiTrees.size());
                         assertEquals(contentlet_1.getIdentifier(), multiTrees.get(0).getContentlet());
@@ -2304,26 +2301,26 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 2, column 2:  instance 3 of the Container
      * - Row 3, column 1:  instance 4 of the Container
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
      * - Contentlet_4 : Add to the instance 3
      * - Contentlet_5 : Add to the instance 4
-     *
+     * <p>
      * And you added a new row on the top
-     *
+     * <p>
      * Should: The Layout should be
-     *
+     * <p>
      * - Row 1, column 1:  instance 1 of the Container
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 3, column 1:  instance 3 of the Container
      * - Row 3, column 2:  instance 4 of the Container
      * - Row 4, column 1:  instance 5 of the Container
-     *
+     * <p>
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the instance 2
      * - Contentlet_2 : Add to the instance 3
      * - Contentlet_3 : Add to the instance 4
@@ -2431,18 +2428,19 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout newTemplateExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "1")
+                .withContainer(container, "1", list("1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "2")
+                .withContainer(container, "2", list("1", "2"))
                 .addRow()
                 .addColumn(50)
-                .withContainer(container, "3")
+                .withContainer(container, "3", list("2", "3"))
                 .addColumn(50)
-                .withContainer(container, "4")
+                .withContainer(container, "4", list("3", "4"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "5")
+                .withContainer(container, "5",list("4", "5"))
+                .version(2)
                 .next();
 
         assertEquals(newTemplateExpected, templateLayoutFromDB);
@@ -2455,7 +2453,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         for (final String intanceId : groupedByInstanceId.keySet()) {
             final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
 
-            switch (intanceId){
+            switch (intanceId) {
                 case "1":
                     throw new AssertionError("UUID not expected: " + intanceId);
                 case "2":
@@ -2491,26 +2489,26 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 2, column 2:  instance 3 of the Container
      * - Row 3, column 1:  instance 4 of the Container
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
      * - Contentlet_4 : Add to the instance 3
      * - Contentlet_5 : Add to the instance 4
-     *
+     * <p>
      * And you added a new container in the middle of the second row
-     *
+     * <p>
      * Should: The Layout should be
-     *
+     * <p>
      * - Row 1, column 1:  instance 1 of the Container
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 2, column 2:  instance 3 of the Container
      * - Row 2, column 3:  instance 4 of the Container
      * - Row 3, column 1:  instance 5 of the Container
-     *
+     * <p>
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 4
@@ -2617,17 +2615,18 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "1")
+                .withContainer(container, "1", list("1", "1"))
                 .addRow()
                 .addColumn(33)
-                .withContainer(container, "2")
+                .withContainer(container, "2", list("2", "2"))
                 .addColumn(33)
-                .withContainer(container, "3")
+                .withContainer(container, "3", list("3"))
                 .addColumn(33)
-                .withContainer(container, "4")
+                .withContainer(container, "4", list("3", "4"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "5")
+                .withContainer(container, "5", list("4", "5"))
+                .version(2)
                 .next();
 
         assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -2640,7 +2639,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         for (final String intanceId : groupedByInstanceId.keySet()) {
             final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
 
-            switch (intanceId){
+            switch (intanceId) {
                 case "1":
                     assertEquals(1, multiTrees.size());
                     assertEquals(contentlet_1.getIdentifier(), multiTrees.get(0).getContentlet());
@@ -2676,26 +2675,26 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 2, column 2:  instance 3 of the Container
      * - Row 3, column 1:  instance 4 of the Container
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
      * - Contentlet_4 : Add to the instance 3
      * - Contentlet_5 : Add to the instance 4
-     *
+     * <p>
      * And you added a new row just after the first one
-     *
+     * <p>
      * Should: The Layout should be
-     *
+     * <p>
      * - Row 1, column 1:  instance 1 of the Container
      * - Row 2, column 1:  instance 2 of the Container (New Row)
      * - Row 3, column 1:  instance 3 of the Container
      * - Row 3, column 2:  instance 4 of the Container
      * - Row 4, column 1:  instance 5 of the Container
-     *
+     * <p>
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 3
      * - Contentlet_3 : Add to the instance 4
@@ -2803,18 +2802,19 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "1")
+                .withContainer(container, "1", list("1", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "2")
+                .withContainer(container, "2", list("2"))
                 .addRow()
                 .addColumn(50)
-                .withContainer(container, "3")
+                .withContainer(container, "3", list("2", "3"))
                 .addColumn(50)
-                .withContainer(container, "4")
+                .withContainer(container, "4", list("3", "4"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "5")
+                .withContainer(container, "5", list("4", "5"))
+                .version(2)
                 .next();
 
         assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -2827,7 +2827,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         for (final String intanceId : groupedByInstanceId.keySet()) {
             final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
 
-            switch (intanceId){
+            switch (intanceId) {
                 case "1":
                     assertEquals(1, multiTrees.size());
                     assertEquals(contentlet_1.getIdentifier(), multiTrees.get(0).getContentlet());
@@ -2863,18 +2863,18 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 2, column 2:  instance 3 of the Container
      * - Row 3, column 1:  instance 4 of the Container
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
      * - Contentlet_4 : Add to the instance 3
      * - Contentlet_5 : Add to the instance 4
-     *
+     * <p>
      * And you added Multiples rows
-     *
+     * <p>
      * Should: The Layout should be
-     *
+     * <p>
      * - Row 1, column 1:  instance 1 of the Container (New Row)
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 3, column 1:  instance 3 of the Container (New Row)
@@ -2883,14 +2883,14 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 5, column 1:  instance 6 of the Container (New Row)
      * - Row 6, column 1:  instance 7 of the Container
      * - Row 7, column 1:  instance 8 of the Container (New Row)
-     *
+     * <p>
      * - Contentlet_1 : Add to the instance 2
      * - Contentlet_2 : Add to the instance 4
      * - Contentlet_3 : Add to the instance 5
      * - Contentlet_4 : Add to the instance 5
      * - Contentlet_5 : Add to the instance 7
-     *
-     Change access modifier
+     * <p>
+     * Change access modifier
      *
      * @throws DotDataException
      */
@@ -3002,27 +3002,28 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "1")
+                .withContainer(container, "1", list("1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "2")
+                .withContainer(container, "2", list("1", "2"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "3")
+                .withContainer(container, "3", list("3"))
                 .addRow()
                 .addColumn(50)
-                .withContainer(container, "4")
+                .withContainer(container, "4", list("2", "4"))
                 .addColumn(50)
-                .withContainer(container, "5")
+                .withContainer(container, "5", list("3", "5"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "6")
+                .withContainer(container, "6", list("6"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "7")
+                .withContainer(container, "7", list("4", "7"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "8")
+                .withContainer(container, "8", list("8"))
+                .version(2)
                 .next();
 
         assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -3035,7 +3036,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         for (final String intanceId : groupedByInstanceId.keySet()) {
             final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
 
-            switch (intanceId){
+            switch (intanceId) {
                 case "2":
                     assertEquals(1, multiTrees.size());
                     assertEquals(contentlet_1.getIdentifier(), multiTrees.get(0).getContentlet());
@@ -3066,35 +3067,35 @@ public class TemplateAPITest extends IntegrationTestBase {
      * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(String, LayoutChanges)}
      * When: You have a Page with 4 containers all of them are different instances from the same Container
      * and the follow layout:
-     *
+     * <p>
      * - Row 1, column 1:  instance 1 of the Container
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 2, column 2:  instance 3 of the Container
      * - Row 3, column 1:  instance 4 of the Container
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
      * - Contentlet_4 : Add to the instance 3
      * - Contentlet_5 : Add to the instance 4
-     *
+     * <p>
      * And you move the last row to the top and also switch intances 2 and 3
-     *
+     * <p>
      * Should: The Layout should be
-     *
+     * <p>
      * - Row 1, column 1:  instance 4 of the Container
      * - Row 2, column 1:  instance 1 of the Container
      * - Row 3, column 1:  instance 3 of the Container
      * - Row 3, column 2:  instance 2 of the Container
-     *
+     * <p>
      * - Contentlet_5 : Add to the instance 1
      * - Contentlet_1 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
      * - Contentlet_4 : Add to the instance 3
      * - Contentlet_2 : Add to the instance 4
-
-     *
+     * <p>
+     * <p>
      * Change access modifier
      *
      * @throws DotDataException
@@ -3195,15 +3196,16 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "1")
+                .withContainer(container, "1", list("4", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "2")
+                .withContainer(container, "2", list("1", "2"))
                 .addRow()
                 .addColumn(50)
-                .withContainer(container, "3")
+                .withContainer(container, "3", list("3", "3"))
                 .addColumn(50)
-                .withContainer(container, "4")
+                .withContainer(container, "4", list("2", "4"))
+                .version(2)
                 .next();
 
         assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -3216,7 +3218,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         for (final String intanceId : groupedByInstanceId.keySet()) {
             final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
 
-            switch (intanceId){
+            switch (intanceId) {
                 case "1":
                     assertEquals(1, multiTrees.size());
                     assertEquals(contentlet_5.getIdentifier(), multiTrees.get(0).getContentlet());
@@ -3252,7 +3254,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 2:  instance 2 of the Container 1
      * - Row 3, column 1:  instance 2 of the Container 2
      * - Row 4, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
@@ -3260,12 +3262,12 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_4 : Add to the Container 1 instance 2
      * - Contentlet_5 : Add to the Container 2 instance 2
      * - Contentlet_6 : Add to the Container 3 instance 1
-     *
+     * <p>
      * And you move the Row 3 row to be the first
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_5 : Add to the Container 2 instance 1
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 2
@@ -3388,18 +3390,19 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_2, "1")
+                .withContainer(container_2, "1", list("2", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_1, "1")
+                .withContainer(container_1, "1", list("1", "1"))
                 .addRow()
                 .addColumn(50)
-                .withContainer(container_2, "2")
+                .withContainer(container_2, "2", list("1", "2"))
                 .addColumn(50)
-                .withContainer(container_1, "2")
+                .withContainer(container_1, "2", list("2", "2"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_3, "1")
+                .withContainer(container_3, "1", list("1", "1"))
+                .version(2)
                 .next();
 
         assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -3439,7 +3442,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 2:  instance 2 of the Container 1
      * - Row 3, column 1:  instance 2 of the Container 2
      * - Row 4, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
@@ -3447,12 +3450,12 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_4 : Add to the Container 1 instance 2
      * - Contentlet_5 : Add to the Container 2 instance 2
      * - Contentlet_6 : Add to the Container 3 instance 1
-     *
+     * <p>
      * And you move the last row to be the first
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_6 : Add to the Container 3 instance 1
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
@@ -3575,18 +3578,19 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_3, "1")
+                .withContainer(container_3, "1", list("1", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_1, "1")
+                .withContainer(container_1, "1", list("1", "1"))
                 .addRow()
                 .addColumn(50)
-                .withContainer(container_2, "1")
+                .withContainer(container_2, "1", list("1", "1"))
                 .addColumn(50)
-                .withContainer(container_1, "2")
+                .withContainer(container_1, "2", list("2", "2"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_2, "2")
+                .withContainer(container_2, "2", list("2", "2"))
+                .version(2)
                 .next();
 
         assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -3626,7 +3630,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 2:  instance 2 of the Container 1
      * - Row 3, column 1:  instance 2 of the Container 2
      * - Row 4, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
@@ -3634,12 +3638,12 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_4 : Add to the Container 1 instance 2
      * - Contentlet_5 : Add to the Container 2 instance 2
      * - Contentlet_6 : Add to the Container 3 instance 1
-     *
+     * <p>
      * And you remove first row
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : removed
      * - Contentlet_2 : Add to the Container 2 instance 1
      * - Contentlet_3 : Add to the Container 1 instance 1
@@ -3731,7 +3735,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .nextPersisted();
 
 
-        final TemplateLayout newTemplateLayout =new TemplateLayoutDataGen()
+        final TemplateLayout newTemplateLayout = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(50)
                 .withContainer(container_2, "1")
@@ -3756,18 +3760,19 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
 
-        final TemplateLayout templateLayoutExpected =new TemplateLayoutDataGen()
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(50)
-                .withContainer(container_2, "1")
+                .withContainer(container_2.getIdentifier(), "1", list("1", "1"))
                 .addColumn(50)
-                .withContainer(container_1, "1")
+                .withContainer(container_1.getIdentifier(), "1", list("2", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_2, "2")
+                .withContainer(container_2.getIdentifier(), "2", list("2", "2"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_3, "1")
+                .withContainer(container_3.getIdentifier(), "1", list("1", "1"))
+                .version(2)
                 .next();
 
         assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -3804,7 +3809,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 2:  instance 2 of the Container 1
      * - Row 3, column 1:  instance 2 of the Container 2
      * - Row 4, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
@@ -3812,12 +3817,12 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_4 : Add to the Container 1 instance 2
      * - Contentlet_5 : Add to the Container 2 instance 2
      * - Contentlet_6 : Add to the Container 3 instance 1
-     *
+     * <p>
      * And you remove last row
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
      * - Contentlet_3 : Add to the Container 1 instance 2
@@ -3937,15 +3942,16 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_1, "1")
+                .withContainer(container_1, "1", list("1", "1"))
                 .addRow()
                 .addColumn(50)
-                .withContainer(container_2, "1")
+                .withContainer(container_2, "1", list("1", "1"))
                 .addColumn(50)
-                .withContainer(container_1, "2")
+                .withContainer(container_1, "2", list("2", "2"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_2, "2")
+                .withContainer(container_2, "2", list("2", "2"))
+                .version(2)
                 .next();
 
         assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -3982,7 +3988,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 2:  instance 2 of the Container 1
      * - Row 3, column 1:  instance 2 of the Container 2
      * - Row 4, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
@@ -3990,12 +3996,12 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_4 : Add to the Container 1 instance 2
      * - Contentlet_5 : Add to the Container 2 instance 2
      * - Contentlet_6 : Add to the Container 3 instance 1
-     *
+     * <p>
      * And you remove first row also you have  DELETE_ORPHANED_CONTENTS_FROM_CONTAINER flag disabled
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : ORPHANED
      * - Contentlet_2 : Add to the Container 2 instance 1
      * - Contentlet_3 : Add to the Container 1 instance 1
@@ -4119,15 +4125,16 @@ public class TemplateAPITest extends IntegrationTestBase {
             final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                     .addRow()
                     .addColumn(50)
-                    .withContainer(container_2, "1")
+                    .withContainer(container_2, "1", list("1", "1"))
                     .addColumn(50)
-                    .withContainer(container_1, "1")
+                    .withContainer(container_1, "1", list("2", "1"))
                     .addRow()
                     .addColumn(100)
-                    .withContainer(container_2, "2")
+                    .withContainer(container_2, "2", list("2", "2"))
                     .addRow()
                     .addColumn(100)
-                    .withContainer(container_3, "1")
+                    .withContainer(container_3, "1", list("1", "1"))
+                    .version(2)
                     .next();
 
             assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -4170,7 +4177,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 2:  instance 2 of the Container 1
      * - Row 3, column 1:  instance 2 of the Container 2
      * - Row 4, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
@@ -4178,12 +4185,12 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_4 : Add to the Container 1 instance 2
      * - Contentlet_5 : Add to the Container 2 instance 2
      * - Contentlet_6 : Add to the Container 3 instance 1
-     *
+     * <p>
      * And you remove last row also you have  DELETE_ORPHANED_CONTENTS_FROM_CONTAINER flag disabled
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
      * - Contentlet_3 : Add to the Container 1 instance 2
@@ -4307,15 +4314,16 @@ public class TemplateAPITest extends IntegrationTestBase {
             final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                     .addRow()
                     .addColumn(100)
-                    .withContainer(container_1, "1")
+                    .withContainer(container_1, "1", list("1", "1"))
                     .addRow()
                     .addColumn(50)
-                    .withContainer(container_2, "1")
+                    .withContainer(container_2, "1", list("1", "1"))
                     .addColumn(50)
-                    .withContainer(container_1, "2")
+                    .withContainer(container_1, "2", list("2", "2"))
                     .addRow()
                     .addColumn(100)
-                    .withContainer(container_2, "2")
+                    .withContainer(container_2, "2", list("2", "2"))
+                    .version(2)
                     .next();
 
             assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -4358,7 +4366,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 2:  instance 2 of the Container 1
      * - Row 3, column 1:  instance 2 of the Container 2
      * - Row 4, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
@@ -4366,12 +4374,12 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_4 : Add to the Container 1 instance 2
      * - Contentlet_5 : Add to the Container 2 instance 2
      * - Contentlet_6 : Add to the Container 3 instance 1
-     *
+     * <p>
      * And you Add a row after the first row with container_1
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
      * - Contentlet_3 : Add to the Container 1 instance 3
@@ -4497,21 +4505,22 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_1, "1")
+                .withContainer(container_1, "1", list("1", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_1, "2")
+                .withContainer(container_1, "2", list("2"))
                 .addRow()
                 .addColumn(50)
-                .withContainer(container_2, "1")
+                .withContainer(container_2, "1", list("1", "1"))
                 .addColumn(50)
-                .withContainer(container_1, "3")
+                .withContainer(container_1, "3", list("2", "3"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_2, "2")
+                .withContainer(container_2, "2", list("2", "2"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_3, "1")
+                .withContainer(container_3, "1", list("1", "1"))
+                .version(2)
                 .next();
 
         assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -4551,7 +4560,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 2:  instance 2 of the Container 1
      * - Row 3, column 1:  instance 2 of the Container 2
      * - Row 4, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
@@ -4559,9 +4568,9 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_4 : Add to the Container 1 instance 2
      * - Contentlet_5 : Add to the Container 2 instance 2
      * - Contentlet_6 : Add to the Container 3 instance 1
-     *
+     * <p>
      * And you Add a row after the last one
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish the same as the were before the change
      *
@@ -4737,7 +4746,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 2:  instance 2 of the Container 1
      * - Row 3, column 1:  instance 2 of the Container 2
      * - Row 4, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
@@ -4745,20 +4754,20 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_4 : Add to the Container 1 instance 2
      * - Contentlet_5 : Add to the Container 2 instance 2
      * - Contentlet_6 : Add to the Container 3 instance 1
-     *
+     * <p>
      * And you move the third row to be the first and add a new third row with a instance of the Container 1
-     *
+     * <p>
      * Should: The Layout should finish as:
-     *
+     * <p>
      * - Row 1, column 1:  instance 1 of the Container 2
      * - Row 2, column 1:  instance 1 of the Container 1
      * - Row 3, column 1:  instance 2 of the Container 1
      * - Row 4, column 1:  instance 2 of the Container 2
      * - Row 4, column 2:  instance 3 of the Container 1
      * - Row 5, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_5 : Add to the Container 2 instance 1
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 2
@@ -4938,7 +4947,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 2:  instance 2 of the Container 1
      * - Row 3, column 1:  instance 2 of the Container 2
      * - Row 4, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
@@ -4946,18 +4955,18 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_4 : Add to the Container 1 instance 2
      * - Contentlet_5 : Add to the Container 2 instance 2
      * - Contentlet_6 : Add to the Container 3 instance 1
-     *
+     * <p>
      * And you remove the second row add a new first row with a instance of the Container 1
-     *
+     * <p>
      * Should: The Layout should finish as:
-     *
+     * <p>
      * - Row 1, column 1:  instance 1 of the Container 1
      * - Row 2, column 1:  instance 2 of the Container 1
      * - Row 3, column 1:  instance 1 of the Container 2
      * - Row 4, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the Container 1 instance 2
      * - Contentlet_2 : Removed
      * - Contentlet_3 : Removed
@@ -5078,16 +5087,17 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_1, "1")
+                .withContainer(container_1, "1", list("1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_1, "2")
+                .withContainer(container_1, "2", list("1", "2"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_2, "1")
+                .withContainer(container_2, "1", list("2", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_3, "1")
+                .withContainer(container_3, "1", list("1", "1"))
+                .version(2)
                 .next();
 
         assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -5118,7 +5128,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 2:  instance 2 of the Container 1
      * - Row 3, column 1:  instance 2 of the Container 2
      * - Row 4, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
@@ -5126,18 +5136,18 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_4 : Add to the Container 1 instance 2
      * - Contentlet_5 : Add to the Container 2 instance 2
      * - Contentlet_6 : Add to the Container 3 instance 1
-     *
+     * <p>
      * And you remove the second column in the second row and move the third row to the top
-     *
+     * <p>
      * Should: The Layout should finish as:
-     *
+     * <p>
      * - Row 1, column 1:  instance 1 of the Container 2
      * - Row 1, column 1:  instance 1 of the Container 1
      * - Row 2, column 1:  instance 2 of the Container 2
      * - Row 4, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_5 : Add to the Container 2 instance 1
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 2
@@ -5258,16 +5268,17 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_2, "1")
+                .withContainer(container_2, "1", list("2", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_1, "1")
+                .withContainer(container_1, "1", list("1", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_2, "2")
+                .withContainer(container_2, "2", list("1", "2"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_3, "1")
+                .withContainer(container_3, "1", list("1", "1"))
+                .version(2)
                 .next();
 
         assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -5301,7 +5312,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 2:  instance 2 of the Container 1
      * - Row 3, column 1:  instance 2 of the Container 2
      * - Row 4, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the Container 1 instance 1
      * - Contentlet_2 : Add to the Container 2 instance 1
@@ -5309,9 +5320,9 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_4 : Add to the Container 1 instance 2
      * - Contentlet_5 : Add to the Container 2 instance 2
      * - Contentlet_6 : Add to the Container 3 instance 1
-     *
+     * <p>
      * And you remove the second column in the second row and move the third row to the top, and add a new row on the top
-     *
+     * <p>
      * Should: The Layout should finish as
      * :
      * - Row 1, column 1:  instance 1 of the Container 1 (New one)
@@ -5319,9 +5330,9 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 3, column 1:  instance 2 of the Container 1
      * - Row 4, column 1:  instance 2 of the Container 2
      * - Row 5, column 1:  instance 1 of the Container 3
-     *
+     * <p>
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the Container 1 instance 2
      * - Contentlet_2 : Add to the Container 2 instance 1
      * - Contentlet_3 : Removed
@@ -5445,19 +5456,20 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_1, "1")
+                .withContainer(container_1, "1", list("1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_2, "1")
+                .withContainer(container_2, "1", list("2", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_1, "2")
+                .withContainer(container_1, "2", list("1", "2"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_2, "2")
+                .withContainer(container_2, "2", list("1", "2"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container_3, "1")
+                .withContainer(container_3, "1", list("1", "1"))
+                .version(2)
                 .next();
 
         assertEquals(templateLayoutExpected, templateLayoutFromDB);
@@ -5490,19 +5502,19 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 2, column 2:  instance 3 of the Container
      * - Row 3, column 1:  instance 4 of the Container
-     *
+     * <p>
      * Also you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
      * - Contentlet_4 : Add to the instance 3
      * - Contentlet_5 : Add to the instance 4
-     *
+     * <p>
      * And you move the last row to be the first
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the instance 2
      * - Contentlet_2 : Add to the instance 3
      * - Contentlet_3 : Add to the instance 4
@@ -5525,7 +5537,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .nextPersisted();
 
         container = APILocator.getContainerAPI().findContainer(container.getIdentifier(), APILocator.systemUser(),
-                        false, false).orElseThrow();
+                false, false).orElseThrow();
 
         final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
         final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
@@ -5619,15 +5631,16 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout expectedTemplateLayout = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "1")
+                .withContainer(container, "1", list("4", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "2")
+                .withContainer(container, "2", list("1", "2"))
                 .addRow()
                 .addColumn(50)
-                .withContainer(container, "3")
+                .withContainer(container, "3", list("2", "3"))
                 .addColumn(50)
-                .withContainer(container, "4")
+                .withContainer(container, "4", list("3", "4"))
+                .version(2)
                 .next();
 
         assertEquals(expectedTemplateLayout, templateLayoutFromDB);
@@ -5640,7 +5653,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         for (final String intanceId : groupedByInstanceId.keySet()) {
             final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
 
-            switch (intanceId){
+            switch (intanceId) {
                 case "1":
                     assertEquals(1, multiTrees.size());
                     assertEquals(contentlet_5.getIdentifier(), multiTrees.get(0).getContentlet());
@@ -5674,19 +5687,19 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 2, column 2:  instance 3 of the Container
      * - Row 3, column 1:  instance 4 of the Container
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
      * - Contentlet_4 : Add to the instance 3
      * - Contentlet_5 : Add to the instance 4
-     *
+     * <p>
      * And you remove the second row also you have  DELETE_ORPHANED_CONTENTS_FROM_CONTAINER flag disabled
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Removed
      * - Contentlet_3 : Removed
@@ -5797,10 +5810,11 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "1")
+                .withContainer(container, "1", list("1", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "2")
+                .withContainer(container, "2", list("4", "2"))
+                .version(2)
                 .next();
         assertEquals(templateLayoutExpected, templateLayoutFromDB);
 
@@ -5813,7 +5827,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         for (final String intanceId : groupedByInstanceId.keySet()) {
             final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
 
-            switch (intanceId){
+            switch (intanceId) {
                 case "1":
                     assertEquals(1, multiTrees.size());
                     assertEquals(contentlet_1.getIdentifier(), multiTrees.get(0).getContentlet());
@@ -5835,26 +5849,26 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 2, column 2:  instance 3 of the Container
      * - Row 3, column 1:  instance 4 of the Container
-     *
+     * <p>
      * Also, you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
      * - Contentlet_4 : Add to the instance 3
      * - Contentlet_5 : Add to the instance 4
-     *
+     * <p>
      * And you added a new row on the top
-     *
+     * <p>
      * Should: The Layout should be
-     *
+     * <p>
      * - Row 1, column 1:  instance 1 of the Container
      * - Row 2, column 1:  instance 2 of the Container
      * - Row 3, column 1:  instance 3 of the Container
      * - Row 3, column 2:  instance 4 of the Container
      * - Row 4, column 1:  instance 5 of the Container
-     *
+     * <p>
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the instance 2
      * - Contentlet_2 : Add to the instance 3
      * - Contentlet_3 : Add to the instance 4
@@ -5972,18 +5986,19 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout newTemplateExpected = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "1")
+                .withContainer(container, "1", list("1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "2")
+                .withContainer(container, "2", list("1", "2"))
                 .addRow()
                 .addColumn(50)
-                .withContainer(container, "3")
+                .withContainer(container, "3", list("2", "3"))
                 .addColumn(50)
-                .withContainer(container, "4")
+                .withContainer(container, "4", list("3", "4"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "5")
+                .withContainer(container, "5", list("4", "5"))
+                .version(2)
                 .next();
 
         assertEquals(newTemplateExpected, templateLayoutFromDB);
@@ -5996,7 +6011,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         for (final String intanceId : groupedByInstanceId.keySet()) {
             final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
 
-            switch (intanceId){
+            switch (intanceId) {
                 case "1":
                     throw new AssertionError("UUID not expected: " + intanceId);
                 case "2":
@@ -6035,7 +6050,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 3, column 2:  instance 2 of the Container
      * - Row 4, column 1:  instance 3 of the FileContainer
      * - Row 4, column 2:  instance 3 of the Container
-     *
+     * <p>
      * Also you have 7 Contentlets add as follows:
      * - Contentlet_1 : Add to the FileContainer instance 1
      * - Contentlet_2 : Add to the Container instance 1
@@ -6044,12 +6059,12 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_5 : Add to the Container instance 2
      * - Contentlet_6 : Add to the FileContainer instance 3
      * - Contentlet_7 : Add to the Container instance 3
-     *
+     * <p>
      * And you move the third row to be the first
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_3 : Add to the FileContainer instance 1
      * - Contentlet_4 : Add to the FileContainer instance 1
      * - Contentlet_5 : Add to the Container instance 1
@@ -6074,7 +6089,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .nextPersisted();
 
         fileContainer = APILocator.getContainerAPI().findContainer(fileContainer.getIdentifier(), APILocator.systemUser(),
-                        false, false).orElseThrow();
+                false, false).orElseThrow();
 
         final Container container = new ContainerDataGen().nextPersisted();
 
@@ -6196,21 +6211,22 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout expectedTemplateLayout = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(50)
-                .withContainer(fileContainer, "1")
+                .withContainer(fileContainer, "1", list("2", "1"))
                 .addColumn(50)
-                .withContainer(container, "1")
+                .withContainer(container, "1", list("2", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(fileContainer, "2")
+                .withContainer(fileContainer, "2", list("1", "2"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "2")
+                .withContainer(container, "2", list("1", "2"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(fileContainer, "3")
+                .withContainer(fileContainer, "3", list("3", "3"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "3")
+                .withContainer(container, "3", list("3", "3"))
+                .version(2)
                 .next();
 
         assertEquals(expectedTemplateLayout, templateLayoutFromDB);
@@ -6256,7 +6272,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 3, column 2:  instance 2 of the Container
      * - Row 4, column 1:  instance 3 of the FileContainer
      * - Row 4, column 2:  instance 3 of the Container
-     *
+     * <p>
      * Also you have 7 Contentlets add as follows:
      * - Contentlet_1 : Add to the FileContainer instance 1
      * - Contentlet_2 : Add to the Container instance 1
@@ -6265,12 +6281,12 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_5 : Add to the Container instance 2
      * - Contentlet_6 : Add to the FileContainer instance 3
      * - Contentlet_7 : Add to the Container instance 3
-     *
+     * <p>
      * And you remove the third row
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the FileContainer instance 1
      * - Contentlet_2 : Add to the Container instance 1
      * - Contentlet_3 : REMOVED
@@ -6284,7 +6300,7 @@ public class TemplateAPITest extends IntegrationTestBase {
     @Test
     public void removeFileContainerAndContainersUpdateMultiTrees() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
-        final String containerName = "moveFileContainerAndContainersUpdateMultiTrees" + System.currentTimeMillis();
+        final String containerName = "removeFileContainerAndContainersUpdateMultiTrees" + System.currentTimeMillis();
 
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
 
@@ -6412,16 +6428,17 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout expectedTemplateLayout = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(100)
-                .withContainer(fileContainer, "1")
+                .withContainer(fileContainer, "1", list("1", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "1")
+                .withContainer(container, "1", list("1", "1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(fileContainer, "2")
+                .withContainer(fileContainer, "2", list("3", "2"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "2")
+                .withContainer(container, "2", list("3", "2"))
+                .version(2)
                 .next();
 
         assertEquals(expectedTemplateLayout, templateLayoutFromDB);
@@ -6458,7 +6475,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Row 3, column 2:  instance 2 of the Container
      * - Row 4, column 1:  instance 3 of the FileContainer
      * - Row 4, column 2:  instance 3 of the Container
-     *
+     * <p>
      * Also you have 7 Contentlets add as follows:
      * - Contentlet_1 : Add to the FileContainer instance 1
      * - Contentlet_2 : Add to the Container instance 1
@@ -6467,12 +6484,12 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_5 : Add to the Container instance 2
      * - Contentlet_6 : Add to the FileContainer instance 3
      * - Contentlet_7 : Add to the Container instance 3
-     *
+     * <p>
      * And you move the third row to be the first
-     *
+     * <p>
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
-     *
+     * <p>
      * - Contentlet_1 : Add to the FileContainer instance 2
      * - Contentlet_2 : Add to the Container instance 2
      * - Contentlet_3 : Add to the FileContainer instance 3
@@ -6486,7 +6503,7 @@ public class TemplateAPITest extends IntegrationTestBase {
     @Test
     public void addFileContainerAndContainersUpdateMultiTrees() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
-        final String containerName = "moveFileContainerAndContainersUpdateMultiTrees" + System.currentTimeMillis();
+        final String containerName = "addFileContainerAndContainersUpdateMultiTrees" + System.currentTimeMillis();
 
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
 
@@ -6624,26 +6641,27 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateLayout expectedTemplateLayout = new TemplateLayoutDataGen()
                 .addRow()
                 .addColumn(50)
-                .withContainer(fileContainer, "1")
+                .withContainer(fileContainer, "1", list("1"))
                 .addColumn(50)
-                .withContainer(container, "1")
+                .withContainer(container, "1", list("1"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(fileContainer, "2")
+                .withContainer(fileContainer, "2", list("1", "2"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "2")
+                .withContainer(container, "2", list("1", "2"))
                 .addRow()
                 .addColumn(50)
-                .withContainer(fileContainer, "3")
+                .withContainer(fileContainer, "3", list("2", "3"))
                 .addColumn(50)
-                .withContainer(container, "3")
+                .withContainer(container, "3", list("2", "3"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(fileContainer, "4")
+                .withContainer(fileContainer, "4", list("3", "4"))
                 .addRow()
                 .addColumn(100)
-                .withContainer(container, "4")
+                .withContainer(container, "4", list("3", "4"))
+                .version(2)
                 .next();
 
         assertEquals(expectedTemplateLayout, templateLayoutFromDB);
@@ -6683,12 +6701,11 @@ public class TemplateAPITest extends IntegrationTestBase {
      * Method to test: Testing the #getImageContent method
      * Given Scenario: Creates a CT + image + template and associated to the template as an image
      * ExpectedResult: The image associated is recovery successfully from the db
-     *
      */
     @Test
     public void getImageContentlet_Test() throws Exception {
 
-        final ContentType contentType  = new ContentTypeDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
         final Contentlet templateImage = new ContentletDataGen(contentType).nextPersisted();
         final String templateBody = "  This is just test<br/>  \n" +
                 "  #parseContainer   ('f4a02846-7ca4-4e08-bf07-a61366bbacbb','1552493847863')  \n" +
@@ -6706,4 +6723,1313 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertTrue(recoveryTemplateImage.isPresent());
         assertEquals(templateImage.getIdentifier(), recoveryTemplateImage.get().getIdentifier());
     }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(String, LayoutChanges)}
+     * When: You have a Page with 3 containers all of them are different instances and the follow layout:
+     * - Row 1, column 1:  instance 1 of the Container
+     * - Row 2, column 1:  instance 2 of the Container
+     * - Row 2, column 2:  instance 3 of the Container
+     * <p>
+     * Also you have 4 Contentlets add as follows:
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 3
+     * <p>
+     * And you move the last row to be the first
+     * <p>
+     * Should: The Layout should finish on the same way:
+     * The Contentlets should finish as:
+     * <p>
+     * - Contentlet_1 : Add to the instance 3
+     * - Contentlet_2 : Add to the instance 1
+     * - Contentlet_3 : Add to the instance 2
+     * - Contentlet_4 : Add to the instance 2
+     * <p>
+     * - Later you switch the 2 intance on the first row, after that the contentlets should finish as:
+     * <p>
+     * - Contentlet_1 : Add to the instance 3
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 1
+     * - Contentlet_4 : Add to the instance 1
+     * <p>
+     * The last layout and history should be as:
+     * <p>
+     * - Row 1, column 1:  instance 1 of the Container, changes history: 3,2,1
+     * - Row 1, column 1:  instance 2 of the Container, changes history: 2,1,2
+     * - Row 2, column 2:  instance 3 of the Container, changes history: 1,3
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void keepChangeHistory() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "1", list("1"))
+                .addRow()
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "2", list("2"))
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "3", list("3"))
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("1")
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("2")
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_3)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_4)
+                .nextPersisted();
+
+
+        final TemplateLayout newTemplateLayout_1 = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "2", list("2"))
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "3", list("3"))
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "1", list("1"))
+                .next();
+
+        final Template templateSaved_1 = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout_1)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
+
+        final Template templateFromDB_1 = APILocator.getTemplateAPI().find(templateSaved_1.getInode(), APILocator.systemUser(),
+                false);
+
+        final TemplateLayout newTemplateLayout_2 = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "2", list("3", "2"))
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "1", list("2", "1"))
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "3", list("1", "3"))
+                .next();
+
+        final Template templateSaved_2 = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout_2)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
+
+        final Template templateFromDB_2 = APILocator.getTemplateAPI().find(templateSaved_2.getInode(), APILocator.systemUser(),
+                false);
+
+        final TemplateLayout templateLayoutFromDB_2 = DotTemplateTool.getTemplateLayout(templateFromDB_2.getDrawedBody());
+
+        final TemplateLayout expectedTemplateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "1", list("3", "2", "1"))
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "2", list("2", "1", "2"))
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "3", list("1", "3", "3"))
+                .version(3)
+                .next();
+
+        assertEquals(expectedTemplateLayout, templateLayoutFromDB_2);
+        assertEquals(3, templateLayoutFromDB_2.getVersion());
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(LayoutChanges, Collection, String)}
+     * When: You have a Page with 3 containers all of them are different instances and the follow layout:
+     * - Row 1, column 1:  instance 1 of the Container
+     * - Row 2, column 1:  instance 2 of the Container
+     * - Row 3, column 1:  instance 3 of the Container
+     *
+     * <p>
+     * Also you have 4 Contentlets add as follows:
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 3
+     * <p>
+     * And you delete the second row
+     * <p>
+     * Should: The Layout should finish as:
+     *
+     * - Row 1, column 1:  instance 1 of the Container
+     * - Row 2, column 1:  instance 2 of the Container
+     *
+     * The Contentlets should finish as:
+     * <p>
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : REMOVED
+     * - Contentlet_3 : Add to the instance 2
+     * - Contentlet_4 : Add to the instance 2
+     * </p>
+     * The last layout and history should be as:
+     * <p>
+     * - Row 1, column 1:  instance 1 of the Container, changes history: 1,1
+     * - Row 2, column 1:  instance 3 of the Container, changes history: 3,2
+     *</p>
+     * @throws DotDataException
+     */
+    @Test
+    public void keepChangeHistoryAfterDelete() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "1", list("1"))
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "2", list("2"))
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "3", list("3"))
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("1")
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("2")
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_3)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_4)
+                .nextPersisted();
+
+
+        final TemplateLayout newTemplateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "1", list("1"))
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "3", list("3"))
+                .next();
+
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
+
+        final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
+                false);
+
+        final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+
+        final TemplateLayout expectedTemplateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "1", list("1", "1"))
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "2", list("3", "2"))
+                .version(2)
+                .next();
+
+        assertEquals(expectedTemplateLayout, templateLayoutFromDB);
+        assertEquals(2, templateLayoutFromDB.getVersion());
+    }
+
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(LayoutChanges, Collection, String)}
+     * When: You have a Page with 4 containers all of them are different instances and the follow layout:
+     * - Row 1, column 1:  instance 1 of the Container
+     * - Row 2, column 1:  instance 2 of the Container
+     * - Row 2, column 2:  instance 3 of the Container
+     * - Row 3, column 1:  instance 4 of the Container
+     *
+     * Also you have 5 Contentlets add as follows:
+     *
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 3
+     * - Contentlet_5 : Add to the instance 4
+     *
+     * So let
+     * - Remove the last row
+     * - Move the second one to the top
+     * - switch its content
+     * - Add a row at last
+     *
+     * but I am going to do all this with the history.
+     * so ths history of each Container finish as follow:
+     *
+     * - Row 1, column 1:  instance 1 of the Container, changes history: 1,3,3,2,11
+     * - Row 1, column 2:  instance 2 of the Container, changes history: 2,2,1,22
+     * - Row 2, column 1:  instance 3 of the Container, changes history: 1,1,3,3,3
+     * - Row 3, column 1:  instance 4 of the Container, changes history: 4
+     *
+     * Should: The Layout should finish as follow:
+     *
+     * - Row 1, column 1:  instance 1 of the Container
+     * - Row 1, column 2:  instance 2 of the Container
+     * - Row 2, column 1:  instance 3 of the Container
+     * - Row 3, column 1:  instance 4 of the Container
+     *
+     * The Contentlets should finish as:
+     *
+     * - Contentlet_1 : Add to the instance 3
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 1
+     * - Contentlet_4 : Add to the instance 1
+     * - Contentlet_5 : REMOVED
+     *
+     * This is the way how work when we sent a Template using PP.
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void updateLayoutUsingHistory() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_5 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "1", list("1"))
+                .addRow()
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "2", list("2"))
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "3", list("3"))
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "4", list("4"))
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("1")
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("2")
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_3)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_4)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("4")
+                .setContentlet(contentlet_5)
+                .nextPersisted();
+
+        final TemplateLayout newTemplateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "1", list("3", "3", "2", "1", "1"))
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "2", list("2", "2", "1", "2", "2"))
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "3", list("1", "1", "3", "3", "3"))
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "4", list("4"))
+                .version(5)
+                .next();
+
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .setUseHistory(true)
+                .build(), APILocator.systemUser(), false);
+
+        final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
+                false);
+        final TemplateLayout templateLayoutFromDB_2 = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+
+        assertEquals(newTemplateLayout, templateLayoutFromDB_2);
+
+        final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+        assertEquals(4, multiTreesFromDB.size());
+
+        for (final MultiTree multiTree : multiTreesFromDB) {
+            if (multiTree.getContentlet().equals(contentlet_1.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("3", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_2.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("2", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_3.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("1", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_4.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("1", multiTree.getRelationType());
+            } else {
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(LayoutChanges, Collection, String)}
+     * When: You have a Page with 3 containers all of them are different instances and the follow layout and history:
+     *
+     * - Row 1, column 1:  instance 1 of the Container, changes history: 1
+     * - Row 2, column 1:  instance 2 of the Container, changes history: 1,2
+     * - Row 2, column 1:  instance 3 of the Container, changes history: 2,3
+     *
+     *  This is a second version of the Template, maybe the second row was added first and then the first wor was added on the top
+     * Also you have 4 Contentlets add as follows:
+     *
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 3
+     *
+     * I am going to simulate a moves:
+     * - Add a row with another Container instances on the second roe
+     * - remove the top row
+     *
+     * So the new history and layout is going to be as follows:
+     *
+     * - Row 1, column 1:  instance 1 of the Container, changes history: 2,1
+     * - Row 1, column 1:  instance 2 of the Container, changes history: 1,2,3,2
+     * - Row 2, column 2:  instance 3 of the Container, changes history: 2,3,4,3
+     *
+     *  Now this is the version 4 of the TemplateLayout
+     *
+     * The Contentlets should finish as:
+     *
+     * - Contentlet_1 : REMOVED
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 3
+     *
+     * This is the way how work when we sent a Template using PP.
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void updateLayoutWhenOldHistoryExists() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "1", list("1"))
+                .addRow()
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "2", list( "1", "2"))
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "3", list("2", "3"))
+                .version(2)
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("1")
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("2")
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_3)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_4)
+                .nextPersisted();
+
+        final TemplateLayout newTemplateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "1", list( "2", "1"))
+                .addRow()
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "2", list("1", "2", "3", "2"))
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "3", list("2", "3", "4", "3"))
+                .version(4)
+                .next();
+
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .setUseHistory(true)
+                .build(), APILocator.systemUser(), false);
+
+        final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
+                false);
+
+        final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+
+        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+        assertEquals(3, multiTreesFromDB.size());
+
+        for (final MultiTree multiTree : multiTreesFromDB) {
+            if (multiTree.getContentlet().equals(contentlet_2.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("2", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_3.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("3", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_4.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("3", multiTree.getRelationType());
+            } else {
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(LayoutChanges, Collection, String)}
+     * When: You have a Page with 2 containers and 2 instances of each one sort on the follow layout and history:
+     *
+     * - Row 1, column 1:  instance 1 of the Container A, changes history: 2,1
+     * - Row 1, column 2:  instance 1 of the Container B, changes history: 2,1
+     * - Row 2, column 1:  instance 2 of the Container B, changes history: 1,2
+     * - Row 2, column 2:  instance 2 of the Container A, changes history: 1,2
+     * version = 1
+     *
+     * Also you have 4 Contentlets add as follows:
+     *
+     * - Contentlet_1 : Add to the instance 1 Container A
+     * - Contentlet_2 : Add to the instance 1 Container B
+     * - Contentlet_3 : Add to the instance 2 Container B
+     * - Contentlet_4 : Add to the instance 2 Container A
+     *
+     * I am going to simulate a move: switch the Container A instances
+     * So the new history and layout is going to be as follows:
+     *
+     * - Row 1, column 1:  instance 1 of the Container A, changes history: 1,2,1
+     * - Row 1, column 2:  instance 1 of the Container B, changes history: 2,1,1
+     * - Row 2, column 1:  instance 2 of the Container B, changes history: 2,1,2
+     * - Row 2, column 2:  instance 2 of the Container A, changes history: 1,2,2
+     *
+     * The Contentlets should finish as:
+     *
+     * - Contentlet_1 : Add to the instance 2 Container A
+     * - Contentlet_2 : Add to the instance 1 Container B
+     * - Contentlet_3 : Add to the instance 2 Container B
+     * - Contentlet_4 : Add to the instance 1 Container A
+     *
+     * This is the way how work when we sent a Template using PP.
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void updateLayoutUsingHistoryAndDifferentContainers() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Container containerA = new ContainerDataGen().nextPersisted();
+        final Container containerB = new ContainerDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(50)
+                .withContainer(containerA.getIdentifier(), "1", list("2", "1"))
+                .addColumn(50)
+                .withContainer(containerB.getIdentifier(), "1", list("2", "1"))
+                .addRow()
+                .addColumn(50)
+                .withContainer(containerB.getIdentifier(), "2", list("1", "2"))
+                .addColumn(50)
+                .withContainer(containerA.getIdentifier(), "2", list("1", "2"))
+                .version(2)
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(containerA)
+                .setInstanceID("1")
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(containerB)
+                .setInstanceID("1")
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(containerB)
+                .setInstanceID("2")
+                .setContentlet(contentlet_3)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(containerA)
+                .setInstanceID("2")
+                .setContentlet(contentlet_4)
+                .nextPersisted();
+
+        final TemplateLayout newTemplateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(50)
+                .withContainer(containerA.getIdentifier(), "1", list("1", "2", "1"))
+                .addColumn(50)
+                .withContainer(containerB.getIdentifier(), "1", list("2", "1", "1"))
+                .addRow()
+                .addColumn(50)
+                .withContainer(containerB.getIdentifier(), "2", list("1", "2", "2"))
+                .addColumn(50)
+                .withContainer(containerA.getIdentifier(), "2", list("2", "1", "2"))
+                .version(3)
+                .next();
+
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .setUseHistory(true)
+                .build(), APILocator.systemUser(), false);
+
+        final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
+                false);
+
+        final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+
+        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+        assertEquals(4, multiTreesFromDB.size());
+
+        for (final MultiTree multiTree : multiTreesFromDB) {
+            if (multiTree.getContentlet().equals(contentlet_1.getIdentifier())) {
+                assertEquals(containerA.getIdentifier(), multiTree.getContainer());
+                assertEquals("2", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_2.getIdentifier())) {
+                assertEquals(containerB.getIdentifier(), multiTree.getContainer());
+                assertEquals("1", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_3.getIdentifier())) {
+                assertEquals(containerB.getIdentifier(), multiTree.getContainer());
+                assertEquals("2", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_4.getIdentifier())) {
+                assertEquals(containerA.getIdentifier(), multiTree.getContainer());
+                assertEquals("1", multiTree.getRelationType());
+            } else {
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(LayoutChanges, Collection, String)}
+     * When: You have a Page with 3 containers all of them are different instances and the follow layout:
+     * - Row 1, column 1:  instance 1 of the Container
+     * - Row 2, column 1:  instance 2 of the Container
+     * - Row 2, column 2:  instance 3 of the Container
+     *
+     * Also you have 4 Contentlets add as follows:
+     *
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 3
+     *
+     * So let insert a new Row on the top wit a new instance of the same Container
+     * but I am going to do all this with the history.
+     * so ths history of each Container finish as follows:
+     *
+     * - Row 1, column 1:  instance 1 of the Container, changes history: 1
+     * - Row 2, column 1:  instance 1 of the Container, changes history: 1,2
+     * - Row 3, column 1:  instance 2 of the Container, changes history: 2,3
+     * - Row 3, column 2:  instance 3 of the Container, changes history: 3,4
+     *
+     * Should: The Layout should finish as follows:
+     *
+     * - Row 1, column 1:  instance 1 of the Container
+     * - Row 2, column 1:  instance 2 of the Container
+     * - Row 3, column 1:  instance 3 of the Container
+     * - Row 3, column 1:  instance 4 of the Container
+     *
+     * The Contentlets should finish as:
+     *
+     * - Contentlet_1 : Add to the instance 2
+     * - Contentlet_2 : Add to the instance 3
+     * - Contentlet_3 : Add to the instance 4
+     * - Contentlet_4 : Add to the instance 4
+     *
+     * This is the way how work when we sent a Template using PP.
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void updateLayoutUsingHistoryWithNewContainerOnTop() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "1")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "2")
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "3")
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("1")
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("2")
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_3)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_4)
+                .nextPersisted();
+
+        final TemplateLayout newTemplateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "1", list("1"))
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "2", list( "1", "2"))
+                .addRow()
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "3", list("2", "3"))
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "4", list("3", "4"))
+                .version(2)
+                .next();
+
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .setUseHistory(true)
+                .build(), APILocator.systemUser(), false);
+
+        final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
+                false);
+
+        final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+
+        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+        assertEquals(4, multiTreesFromDB.size());
+
+        for (final MultiTree multiTree : multiTreesFromDB) {
+            if (multiTree.getContentlet().equals(contentlet_1.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("2", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_2.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("3", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_3.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("4", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_4.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("4", multiTree.getRelationType());
+            } else {
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(LayoutChanges, Collection, String)}
+     * When: You have a Page with 3 containers all of them are different instances and the follow layout:
+     * - Row 1, column 1:  instance 1 of the Container
+     * - Row 2, column 1:  instance 2 of the Container
+     * - Row 2, column 2:  instance 3 of the Container
+     *
+     * Also you have 4 Contentlets add as follows:
+     *
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 3
+     *
+     * So let insert a new second Row wit a new instance of the same Container
+     * but I am going to do all this with the history.
+     * so ths history of each Container finish as follows:
+     *
+     * - Row 1, column 1:  instance 1 of the Container, changes history: 1, 1
+     * - Row 2, column 1:  instance 2 of the Container, changes history: 2
+     * - Row 3, column 1:  instance 3 of the Container, changes history: 2,3
+     * - Row 3, column 2:  instance 4 of the Container, changes history: 3,4
+     *
+     * Should: The Layout should finish as follows:
+     *
+     * - Row 1, column 1:  instance 1 of the Container
+     * - Row 2, column 1:  instance 2 of the Container
+     * - Row 3, column 1:  instance 3 of the Container
+     * - Row 3, column 1:  instance 4 of the Container
+     *
+     * The Contentlets should finish as:
+     *
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 3
+     * - Contentlet_3 : Add to the instance 4
+     * - Contentlet_4 : Add to the instance 4
+     *
+     * This is the way how work when we sent a Template using PP.
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void updateLayoutUsingHistoryWithNewContainer() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "1")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "2")
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "3")
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("1")
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("2")
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_3)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_4)
+                .nextPersisted();
+
+        final TemplateLayout newTemplateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "1", list( "1", "1"))
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "2", list("2"))
+                .addRow()
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "3", list("2", "3"))
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "4", list("3", "4"))
+                .version(2)
+                .next();
+
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .setUseHistory(true)
+                .build(), APILocator.systemUser(), false);
+
+        final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
+                false);
+
+        final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+
+        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+        assertEquals(4, multiTreesFromDB.size());
+
+        for (final MultiTree multiTree : multiTreesFromDB) {
+            if (multiTree.getContentlet().equals(contentlet_1.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("1", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_2.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("3", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_3.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("4", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_4.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("4", multiTree.getRelationType());
+            } else {
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(LayoutChanges, Collection, String)}
+     * When: You have a Page with 4 containers all of them are different instances and the follow layout:
+     * - Row 1, column 1:  instance 1 of the Container
+     * - Row 2, column 1:  instance 2 of the Container
+     * - Row 2, column 2:  instance 3 of the Container
+     * - Row 3, column 1:  instance 4 of the Container
+     *
+     * Also you have 4 Contentlets add as follows:
+     *
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 3
+     * - Contentlet_5 : Add to the instance 4
+     *
+     * So let remove the second row
+     * but I am going to do all this with the history.
+     * so ths history of each Container finish as follows:
+     *
+     * - Row 1, column 1:  instance 1 of the Container, changes history: 1, 1
+     * - Row 3, column 1:  instance 4 of the Container, changes history: 4,2
+     *
+     * Should: The Layout should finish as follows:
+     *
+     * - Row 1, column 1:  instance 1 of the Container
+     * - Row 2, column 1:  instance 2 of the Container
+     *
+     * The Contentlets should finish as:
+     *
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : REMOVED
+     * - Contentlet_3 : REMOVED
+     * - Contentlet_4 : Add to the instance 2
+     *
+     * This is the way how work when we sent a Template using PP.
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void updateLayoutUsingEqualsHistoryRemovingContainerIntheMiddle() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_5 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "1")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "2")
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "3")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "4")
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("1")
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("2")
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_3)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_4)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("4")
+                .setContentlet(contentlet_5)
+                .nextPersisted();
+
+        final TemplateLayout newTemplateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "1", list("1", "1"))
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "2", list("4", "2"))
+                .version(2)
+                .next();
+
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .setUseHistory(true)
+                .build(), APILocator.systemUser(), false);
+
+        final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
+                false);
+
+        final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+
+        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+        assertEquals(2, multiTreesFromDB.size());
+
+        for (final MultiTree multiTree : multiTreesFromDB) {
+            if (multiTree.getContentlet().equals(contentlet_1.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("1", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_5.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("2", multiTree.getRelationType());
+            } else {
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(LayoutChanges, Collection, String)}
+     * When: You have a Page with 4 containers all of them are different instances and the follow layout:
+     * - Row 1, column 1:  instance 1 of the Container
+     * - Row 2, column 1:  instance 2 of the Container
+     * - Row 2, column 2:  instance 3 of the Container
+     * - Row 3, column 1:  instance 4 of the Container
+     *
+     * Also you have 4 Contentlets add as follows:
+     *
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 3
+     * - Contentlet_5 : Add to the instance 4
+     *
+     * We call the method withou do any change
+     *
+     * Should: The Layout and contents should keep the same
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void updateLayoutUsingEqualsHistory() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_5 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "1")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "2")
+                .addColumn(50)
+                .withContainer(container.getIdentifier(), "3")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container.getIdentifier(), "4")
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("1")
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("2")
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_3)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_4)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("4")
+                .setContentlet(contentlet_5)
+                .nextPersisted();
+
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(templateLayout)
+                .setSite(host)
+                .setUseHistory(true)
+                .build(), APILocator.systemUser(), false);
+
+        final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
+                false);
+        final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+        assertEquals(templateLayout, templateLayoutFromDB);
+
+        final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+        assertEquals(5, multiTreesFromDB.size());
+
+        for (final MultiTree multiTree : multiTreesFromDB) {
+            if (multiTree.getContentlet().equals(contentlet_1.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("1", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_2.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("2", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_3.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("3", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_4.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("3", multiTree.getRelationType());
+            } else if (multiTree.getContentlet().equals(contentlet_5.getIdentifier())) {
+                assertEquals(container.getIdentifier(), multiTree.getContainer());
+                assertEquals("4", multiTree.getRelationType());
+            } else {
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
+            }
+        }
+    }
+
 }

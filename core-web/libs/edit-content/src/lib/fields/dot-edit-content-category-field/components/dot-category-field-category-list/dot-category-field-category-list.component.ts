@@ -19,6 +19,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { TreeModule } from 'primeng/tree';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     DotEmptyContainerComponent,
     PrincipalConfiguration,
@@ -33,7 +34,7 @@ import {
 } from '../../models/dot-category-field.models';
 import { DotCategoryFieldListSkeletonComponent } from '../dot-category-field-list-skeleton/dot-category-field-list-skeleton.component';
 
-export const MINIMUM_CATEGORY_COLUMNS = 4;
+export const MINIMUM_CATEGORY_COLUMNS = 3;
 
 const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
 
@@ -94,19 +95,25 @@ export class DotCategoryFieldCategoryListComponent {
     });
 
     /**
-     * Represents a variable indicating if the component is in loading state.
-     */
-    $isLoading = input<boolean>(true, { alias: 'isLoading' });
-
-    /**
-     * Represents a variable indicating if the component is in initial state.
-     */
-    $isInitialState = input<boolean>(true, { alias: 'isInitialState' });
-
-    /**
      * Represents the breadcrumbs to display
      */
     $breadcrumbs = input<DotCategoryFieldKeyValueObj[]>([], { alias: 'breadcrumbs' });
+
+    /**
+     * Represents the current state of the component.
+     */
+    $state = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'state' });
+
+    stateList = ComponentStatus;
+
+    $showMainSkeleton = computed(() => {
+        const isInitialLoadingState = [ComponentStatus.INIT, ComponentStatus.LOADING].includes(
+            this.$state()
+        );
+        const categoriesEmpty = this.$categories().length === 0;
+
+        return isInitialLoadingState && categoriesEmpty;
+    });
 
     /**
      * Represents the breadcrumbs menu to display

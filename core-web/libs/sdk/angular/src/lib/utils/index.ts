@@ -2,6 +2,10 @@ import { DotCMSContainer, DotCMSPageAssetContainer } from '../models/dotcms.mode
 
 //Changed the type, to avoid SQ issue.
 //This should be put inside a lib
+/**
+ * Represents a mapping of numbers to corresponding CSS class names for column end values.
+ * @typedef {Record<number, string | null>} EndClassMap
+ */
 const endClassMap: Record<number, string | null> = {
     1: 'col-end-1',
     2: 'col-end-2',
@@ -20,6 +24,10 @@ const endClassMap: Record<number, string | null> = {
 
 //Changed the type, to avoid SQ issue.
 //This should be put inside a lib
+/**
+ * Represents a mapping of numbers to CSS class names for starting columns.
+ * @typedef {Record<number, string | null>} StartClassMap
+ */
 const startClassMap: Record<number, string | null> = {
     1: 'col-start-1',
     2: 'col-start-2',
@@ -35,6 +43,13 @@ const startClassMap: Record<number, string | null> = {
     12: 'col-start-12'
 };
 
+/**
+ * Retrieves the data for a set of containers.
+ *
+ * @param containers - The DotCMSPageAssetContainer object containing the containers.
+ * @param containerRef - The DotCMSContainer object representing the container reference.
+ * @returns An object containing the container data, accept types, contentlets, and variant ID.
+ */
 export const getContainersData = (
     containers: DotCMSPageAssetContainer,
     containerRef: DotCMSContainer
@@ -59,6 +74,13 @@ export const getContainersData = (
     };
 };
 
+/**
+ * Returns the position style classes based on the start and end values.
+ * Used to set the grid column start and end values.
+ * @param start - The start value.
+ * @param end - The end value.
+ * @returns An object containing the startClass and endClass.
+ */
 export const getPositionStyleClasses = (start: number, end: number) => {
     const startClass = startClassMap[start];
     const endClass = endClassMap[end];

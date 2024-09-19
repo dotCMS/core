@@ -206,6 +206,9 @@ jobs:
     environment: trunk
     if: always() && github.event.inputs.dry-run == false
     steps:
+
+      - uses: actions/checkout@v4
+
       - name: Compose Message
         id: compose-message
         run: |
@@ -221,20 +224,9 @@ jobs:
           echo "::endgroup::"
           
       - name: Slack Notification
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
           channel-id: "log-starter"
-          payload: |
-            {
-              "blocks": [              
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "${{ steps.compose-message.outputs.message }}"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: ${{ steps.compose-message.outputs.message }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}       
+

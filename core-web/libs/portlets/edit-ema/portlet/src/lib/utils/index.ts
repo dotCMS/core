@@ -8,12 +8,29 @@ import {
     VanityUrl
 } from '@dotcms/dotcms-models';
 
+import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams } from '../services/dot-page-api.service';
 import { COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
 import { EDITOR_STATE } from '../shared/enums';
-import { ActionPayload, ContainerPayload, DotPage, PageContainer } from '../shared/models';
+import {
+    ActionPayload,
+    ContainerPayload,
+    ContentletDragPayload,
+    ContentTypeDragPayload,
+    DotPage,
+    DragDatasetItem,
+    PageContainer
+} from '../shared/models';
 
 export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
+
+export const TEMPORAL_DRAG_ITEM: EmaDragItem = {
+    baseType: 'dotAsset',
+    contentType: 'dotAsset',
+    draggedPayload: {
+        type: 'temp'
+    }
+};
 
 /**
  * Insert a contentlet in a container
@@ -447,4 +464,49 @@ export const compareUrlPaths = (urlPath: string, urlPath2: string): boolean => {
     const { pathname: pathname2 } = new URL(urlPath2, window.origin);
 
     return pathname1 === pathname2;
+};
+
+/**
+ * Get the data from the drag dataset
+ *
+ * @param {DragDataset} dataset
+ * @return {*}
+ */
+export const getDragItemData = ({ type, item }: DOMStringMap) => {
+    try {
+        const data = JSON.parse(item) as DragDatasetItem;
+        const { contentType, contentlet, container, move } = data;
+
+        if (type === 'content-type') {
+            return {
+                baseType: contentType.baseType,
+                contentType: contentType.variable,
+                draggedPayload: {
+                    item: {
+                        variable: contentType.variable,
+                        name: contentType.name
+                    },
+                    type,
+                    move
+                } as ContentTypeDragPayload
+            };
+        }
+
+        return {
+            baseType: contentlet.baseType,
+            contentType: contentlet.contentType,
+            draggedPayload: {
+                item: {
+                    contentlet,
+                    container
+                },
+                type,
+                move
+            } as ContentletDragPayload
+        };
+    } catch (error) {
+        // It can fail if the data.item is not a valid JSON
+        // In that case, we are draging an invalid element from the window
+        return null;
+    }
 };

@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { of as observableOf, Observable } from 'rxjs';
 
 import { DotCMSWorkflow } from '@dotcms/dotcms-models';
@@ -117,12 +116,12 @@ export const WORKFLOW_STATUS_MOCK = {
 
 export class DotWorkflowServiceMock {
     get(): Observable<DotCMSWorkflow[]> {
-        return observableOf(_.cloneDeep(mockWorkflows));
+        return observableOf(structuredClone(mockWorkflows));
     }
 
     getSystem(): Observable<DotCMSWorkflow> {
         const systemWorkflow = mockWorkflows.filter((workflow: DotCMSWorkflow) => workflow.system);
 
-        return observableOf(_.cloneDeep(systemWorkflow[0]));
+        return observableOf(structuredClone(systemWorkflow[0]));
     }
 }

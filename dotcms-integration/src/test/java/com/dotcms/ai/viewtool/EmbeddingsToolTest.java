@@ -5,13 +5,13 @@ import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.datagen.EmbeddingsDTODataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.liferay.portal.model.User;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -43,6 +43,7 @@ public class EmbeddingsToolTest {
 
     private Host host;
     private AppConfig appConfig;
+    private User user;
     private EmbeddingsTool embeddingsTool;
 
     @BeforeClass
@@ -50,16 +51,17 @@ public class EmbeddingsToolTest {
         IntegrationTestInitService.getInstance().init();
         IPUtils.disabledIpPrivateSubnet(true);
         wireMockServer = AiTest.prepareWireMock();
-        AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost());
+        AiTest.aiAppSecrets(APILocator.systemHost());
     }
 
     @Before
-    public void before() throws DotDataException, DotSecurityException {
+    public void before() throws Exception {
         final ViewContext viewContext = mock(ViewContext.class);
         when(viewContext.getRequest()).thenReturn(mock(HttpServletRequest.class));
         host = new SiteDataGen().nextPersisted();
-        AiTest.aiAppSecrets(wireMockServer, host);
+        AiTest.aiAppSecrets(host);
         appConfig = ConfigService.INSTANCE.config(host);
+        user = new UserDataGen().nextPersisted();
         embeddingsTool = prepareEmbeddingsTool(viewContext);
     }
 
@@ -135,6 +137,11 @@ public class EmbeddingsToolTest {
             @Override
             AppConfig appConfig() {
                 return appConfig;
+            }
+
+            @Override
+            public User user() {
+                return user;
             }
         };
     }

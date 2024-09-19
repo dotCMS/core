@@ -1,3 +1,4 @@
+import { createFakeEvent } from '@ngneat/spectator';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Table, TableModule } from 'primeng/table';
@@ -31,7 +32,7 @@ describe('DotCategoryFieldSearchListComponent', () => {
             props: {
                 selected: CATEGORY_MOCK_TRANSFORMED,
                 categories: CATEGORY_MOCK_TRANSFORMED,
-                status: ComponentStatus.LOADED
+                state: ComponentStatus.LOADED
             } as unknown
         });
     });
@@ -41,14 +42,14 @@ describe('DotCategoryFieldSearchListComponent', () => {
     });
 
     it('should show the skeleton if the component is loading', () => {
-        spectator.setInput('status', ComponentStatus.LOADING);
+        spectator.setInput('state', ComponentStatus.LOADING);
         spectator.detectChanges();
         expect(spectator.query(byTestId('categories-skeleton'))).not.toBeNull();
         expect(spectator.query(byTestId('categories-table'))).toBeNull();
     });
 
     it('should show the table if the component is not loading', () => {
-        spectator.setInput('status', ComponentStatus.LOADED);
+        spectator.setInput('state', ComponentStatus.LOADED);
         spectator.detectChanges();
         expect(spectator.query(byTestId('categories-table'))).not.toBeNull();
         expect(spectator.query(byTestId('categories-skeleton'))).toBeNull();
@@ -75,7 +76,7 @@ describe('DotCategoryFieldSearchListComponent', () => {
 
     it('should render `dot-empty-container` with `no results` configuration ', () => {
         const expectedConfig = CATEGORY_FIELD_EMPTY_MESSAGES.noResults;
-        spectator.setInput('status', ComponentStatus.LOADED);
+        spectator.setInput('state', ComponentStatus.LOADED);
         spectator.setInput('categories', []);
         spectator.detectChanges();
 
@@ -85,7 +86,7 @@ describe('DotCategoryFieldSearchListComponent', () => {
 
     it('should render `dot-empty-container` with `error` configuration ', () => {
         const expectedConfig = CATEGORY_FIELD_EMPTY_MESSAGES[ComponentStatus.ERROR];
-        spectator.setInput('status', ComponentStatus.ERROR);
+        spectator.setInput('state', ComponentStatus.ERROR);
         spectator.setInput('categories', []);
 
         spectator.detectChanges();
@@ -113,7 +114,10 @@ describe('DotCategoryFieldSearchListComponent', () => {
         const itemCheckedSpy = jest.spyOn(spectator.component.itemChecked, 'emit');
 
         spectator.detectChanges();
-        spectator.triggerEventHandler(Table, 'onHeaderCheckboxToggle', { checked: true });
+        spectator.triggerEventHandler(Table, 'onHeaderCheckboxToggle', {
+            originalEvent: createFakeEvent('click'),
+            checked: true
+        });
 
         expect(itemCheckedSpy).toHaveBeenCalledWith(CATEGORY_MOCK_TRANSFORMED);
     });
@@ -121,8 +125,14 @@ describe('DotCategoryFieldSearchListComponent', () => {
     it('should emit $removeItem event with all keys when header checkbox is unselected', () => {
         const removeItemSpy = jest.spyOn(spectator.component.removeItem, 'emit');
         spectator.detectChanges();
-        spectator.triggerEventHandler(Table, 'onHeaderCheckboxToggle', { checked: true });
-        spectator.triggerEventHandler(Table, 'onHeaderCheckboxToggle', { checked: false });
+        spectator.triggerEventHandler(Table, 'onHeaderCheckboxToggle', {
+            originalEvent: createFakeEvent('click'),
+            checked: true
+        });
+        spectator.triggerEventHandler(Table, 'onHeaderCheckboxToggle', {
+            originalEvent: createFakeEvent('click'),
+            checked: false
+        });
 
         const allKeys = CATEGORY_MOCK_TRANSFORMED.map((category) => category.key);
         expect(removeItemSpy).toHaveBeenCalledWith(allKeys);

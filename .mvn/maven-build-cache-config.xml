@@ -12,7 +12,7 @@ https://maven.apache.org/extensions/maven-build-cache-extension/maven-build-cach
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/BUILD-CACHE-CONFIG/1.0.0 https://maven.apache.org/xsd/build-cache-config-1.0.0.xsd">
     <configuration>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
         <hashAlgorithm>SHA-256</hashAlgorithm>
         <validateXml>true</validateXml>
         <local>

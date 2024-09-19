@@ -98,7 +98,7 @@ describe('DotEmaInfoDisplayComponent', () => {
 
             store = spectator.inject(UVEStore);
 
-            store.load({
+            store.init({
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
@@ -134,7 +134,7 @@ describe('DotEmaInfoDisplayComponent', () => {
 
             store = spectator.inject(UVEStore);
 
-            store.load({
+            store.init({
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
@@ -169,7 +169,7 @@ describe('DotEmaInfoDisplayComponent', () => {
             store = spectator.inject(UVEStore);
             router = spectator.inject(Router);
 
-            store.load({
+            store.init({
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',

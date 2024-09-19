@@ -195,4 +195,13 @@ public class ConfigUtils {
 
 	}
 
+	/**
+	 * Checks the status of a feature flag.
+	 * @param featureFlagName
+	 * @return Boolean with the feature flag value. If not set, true is returned by default
+	 */
+	public static boolean isFeatureFlagOn(final String featureFlagName) {
+		return Config.getBooleanProperty(featureFlagName, true);
+	}
+
 }

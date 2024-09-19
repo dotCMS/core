@@ -714,8 +714,7 @@ public class ContentTypeResource implements Serializable {
 							contentTypeAPI, false);
 			final ImmutableMap.Builder<Object, Object> builderMap =
 					ImmutableMap.builder()
-							.putAll(contentTypeHelper.contentTypeToMap(
-									contentTypeAPI.find(tuple2._1.variable()), user))
+							.putAll(contentTypeHelper.contentTypeToMap(tuple2._1, user))
 							.put(MAP_KEY_WORKFLOWS,
 									this.workflowHelper.findSchemesByContentType(
 											contentType.id(), initData.getUser()))

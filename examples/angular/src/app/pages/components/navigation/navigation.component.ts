@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, input } from '@angular/core';
 import { Params, Router, RouterLink } from '@angular/router';
 import { DotcmsNavigationItem } from '@dotcms/angular';
 
@@ -11,7 +11,7 @@ import { DotcmsNavigationItem } from '@dotcms/angular';
       <li>
         <a routerLink="/" [queryParams]="queryParams">Home</a>
       </li>
-      @for(item of items; track $index) {
+      @for(item of items(); track $index) {
         <li>
           <a
             [routerLink]="item.href"
@@ -27,7 +27,7 @@ import { DotcmsNavigationItem } from '@dotcms/angular';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NavigationComponent implements OnInit{
-  @Input() items!: DotcmsNavigationItem[];
+  items = input.required<DotcmsNavigationItem[]>();
 
   private readonly router = inject(Router)
   

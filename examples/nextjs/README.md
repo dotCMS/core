@@ -1,10 +1,13 @@
+# dotCMS Next.js Example
+
 DotCMS provides a Next.js example that shows how to build dotCMS pages heedlessly with Next.js JavaScript framework.
 
 ## What do you need?
 1. A dotCMS instance or you can use https://demo.dotcms.com
-2. [Node.js](https://nodejs.org) and npm installed
-3. Terminal
-4. And a code editor.
+2. A valid AUTH token for the target instance (see: https://auth.dotcms.com/docs/latest/rest-api-authentication#creating-an-api-token-in-the-ui)
+3. Node js 18+ and npm installed
+4. Terminal
+5. And a code editor.
 
 ### Create the new Next.js application
 Open your terminal and let’s create the Next.js app by running the following:

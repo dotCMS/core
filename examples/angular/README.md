@@ -1,49 +1,152 @@
-DotCMS provides an Angular example that shows how to build dotCMS pages heedlessly with Angular JavaScript framework.
+# dotCMS Angular Example
 
-## What do you need?
+This example project demonstrates how to build manageable dotCMS pages headlessly using the Angular framework. It showcases the integration between dotCMS and Angular, providing a practical implementation of content-driven web applications.
 
-1. A dotCMS instance or you can use https://demo.dotcms.com
-2. [Node.js](https://nodejs.org) and npm installed
-3. Terminal
-4. And a code editor.
+## Table of Contents
 
-### Get the Angular example code
+- [Prerequisites](#prerequisites)
+- [Getting Started](#getting-started)
+  - [Obtaining the Example Code](#downloading-the-example)
+  - [Configuration](#configuration)
+- [Running the Application](#running-the-application)
+- [Project Structure](#project-structure)
+- [Key Features](#handling-vanity-urls)
+  - [Handling Vanity URLs](#handling-vanity-urls)
+- [Troubleshooting](#troubleshooting)
+- [Further Resources](#further-resources)
 
-Get the code from the next directory
+## Prerequisites
 
-```bash
-https://github.com/dotCMS/core/tree/master/examples/angular
+Before you begin, ensure you have the following:
+
+1. Access to a dotCMS instance (you can use https://demo.dotcms.com if you don't have your own)
+2. A valid AUTH token for the target dotCMS instance ([How to create an API token](https://auth.dotcms.com/docs/latest/rest-api-authentication#creating-an-api-token-in-the-ui))
+3. Node.js (version 18 or higher) and npm installed
+4. A terminal application
+5. A code editor of your choice
+
+## Getting Started
+
+### Downloading the example
+
+You can get the code in two ways:
+
+1. Direct download:
+   ```
+   https://github.com/dotCMS/core/tree/master/examples/angular
+   ```
+
+2. Using Git sparse checkout:
+   ```bash
+   git clone -n --depth=1 --filter=tree:0 https://github.com/dotCMS/core
+   cd core
+   git sparse-checkout set --no-cone examples/angular
+   git checkout
+   ```
+   The example files will be in the `examples/angular` folder.
+
+### Configuration
+
+To configure the Angular app to use your dotCMS instance:
+
+1. Open the project folder in your code editor
+2. Navigate to `src/environments`
+3. Open `environment.development.ts` and update the following variables:
+   - `authToken`: Your dotCMS auth token
+   - `dotcmsUrl`: URL of your dotCMS instance (e.g., https://demo.dotcms.com)
+
+   ```typescript
+   export const environment = {
+     production: false,
+     authToken: 'YOUR_AUTH_TOKEN_HERE',
+     dotcmsUrl: 'https://demo.dotcms.com',
+   };
+   ```
+
+   ⚠️ **Security Note**: Ensure that the `authToken` used here has [read-only permissions](https://www.dotcms.com/docs/latest/user-permissions#FrontEndBackEnd) to minimize security risks in client-side applications.
+
+## Running the Application
+
+Once configured, follow these steps to run the app:
+
+1. Open a terminal in the project root directory
+2. Install dependencies: `npm install`
+3. Start the development server: `ng serve`
+4. Open your browser and navigate to `http://localhost:4200`
+
+🎉 Congratulations! Your dotCMS Angular example is now running.
+
+Note: When accessing `localhost:4200/about`, ensure that the `/about` page exists in your dotCMS instance.
+
+## Project Structure
+
+```
+.
+└── src/
+    └── app/
+        ├── content-types/
+        │   ├── activity
+        │   ├── banner
+        │   ├── product
+        │   └── ...other-content-types
+        ├── pages/
+        │   ├── components
+        │   └── services
+        └── shared/
+            └── contentlets-wrapper/
+                └── contentlet/  
 ```
 
-## Add the dotCMS configuration
+- `content-types/`: Components for rendering specific dotCMS content types
+- `pages/`: Main application component for rendering pages based on their path and pageAsset
+- `shared/`: Reusable components
+  - `contentlets-wrapper/`: Component for displaying lists of Contentlets
+    - `contentlet/`: Component for rendering individual Contentlets
 
-Now we need to tell the Angular app what dotCMS instance is going to use to get the data to build its pages.
+## Universal Visual Editor
+To enable the Universal Visual Editor in dotCMS, follow these steps:
 
-1. Open the folder `YOUR_NAME` in your code editor
-2. Go to `src/environments`
-3. Open the `environment.development.ts` file and update the environment variable:
+1. In your dotCMS instance, navigate to the "Apps" page
+2. Find the "UVE - Universal Visual Editor" app and click on it
+3. Then locate the site where you want to enable the UVE and click on it
+4. In the configuration field add the following:
 
-- `authToken` this is the auth token for dotCMS, you can use the dotCMS UI to create one.
-- `dotcmsUrl` this is the instance of dotCMS where your pages and content lives (license needed) if you don’t have one, you can use [https://demo.dotcms.com](https://demo.dotcms.com) (be careful it restarts every 24h)
+```json
+{
+  "config": [
+    {
+      "pattern": ".*",
+      "url": "http://localhost:4200"
+    }
+  ]
+}
+```
 
-## Run the app
+5. Click on the "Save" button to save the changes.
+6. Now edit any page and you will see the UVE.
 
-Once all the configuration is in place, it is time to run the web app.
+If you want more information about the UVE, please refer to the [dotCMS UVE Documentation](https://dotcms.com/docs/latest/universal-visual-editor-uve).
 
-1. Go back to your terminal and from the folder YOUR_NAME
-2. Run `ng serve`
-3. Open http://localhost:3000 in your browser
+## Key Features
+### Handling Vanity URLs
 
-🎉 And that’s it.
+This example demonstrates how to integrate dotCMS Vanity URLs with Angular routing. Vanity URLs in dotCMS provide alternative paths to internal or external URLs, enhancing site maintenance and SEO.
 
-Consider that if you go to `localhost:4200/about`, the page `/about` needs to exist in your dotCMS instance.
+For implementation details, refer to the [`DotCMSPagesComponent`](./src/app/pages/components/dotcms-pages/dotcms-pages.component.ts) in the example code, which handles routing and Vanity URL redirection.
 
-## Handling Vanity URLs
+## Troubleshooting
 
-In dotCMS, Vanity URLs serve as alternative reference paths to internal or external URLs. They are simple yet powerful tools that can significantly aid in site maintenance and SEO.
+If you encounter issues:
 
-Next.js is a robust framework that provides the capability to handle vanity URLs. It allows you to redirect or forward users to the appropriate content based on predefined logic. You can seamlessly integrate this feature of Next.js with dotCMS. For an implementation example, refer to this [link](https://github.com/dotCMS/core/blob/master/examples/nextjs/src/app/utils/index.js).
+1. Verify that your dotCMS instance is accessible and the AUTH token is valid
+2. Check the browser console for any error messages
+3. Ensure all dependencies are correctly installed (`npm install`)
+4. Verify that the required pages and content exist in your dotCMS instance
 
-## Further help
+## Further Resources
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+- [Angular CLI Documentation](https://angular.io/cli)
+- [dotCMS Documentation](https://dotcms.com/docs/)
+- [dotCMS REST API Authentication](https://auth.dotcms.com/docs/latest/rest-api-authentication)
+
+For more assistance with Angular, use `ng help` or visit the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.

@@ -32,7 +32,8 @@ export function withLayout() {
                     template: {
                         identifier: response?.template.identifier,
                         // The themeId should be here, in the old store we had a bad reference and we were saving all the templates with themeId undefined
-                        themeId: response?.template.theme
+                        themeId: response?.template.theme,
+                        anonymous: response?.template?.anonymous || false
                     },
                     pageId: response?.page.identifier
                 };

@@ -1,5 +1,5 @@
-/* eslint-disable no-console */
-import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import { action } from '@storybook/addon-actions';
+import { Meta, StoryObj, moduleMetadata, componentWrapperDecorator } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -14,16 +14,12 @@ const items: MenuItem[] = [
             {
                 label: 'Update',
                 icon: 'pi pi-refresh',
-                command: () => {
-                    console.log('update');
-                }
+                command: () => action('update')
             },
             {
                 label: 'Delete',
                 icon: 'pi pi-times',
-                command: () => {
-                    console.log('delete');
-                }
+                command: () => action('delete')
             }
         ]
     }
@@ -45,7 +41,8 @@ const meta: Meta<Args> = {
     decorators: [
         moduleMetadata({
             imports: [MenuModule, BrowserAnimationsModule, ButtonModule]
-        })
+        }),
+        componentWrapperDecorator((story) => `<div class="card w-50rem h-25rem">${story}</div>`)
     ],
     args: {
         items: [...items]
@@ -58,14 +55,43 @@ type Story = StoryObj;
 export const Basic: Story = {
     render: (args) => ({
         props: args,
-        template: `<p-menu #menu [model]="items" />`
+        template: `<p-menu [model]="items" appendTo="body" />`
     })
 };
 
 export const Overlay: Story = {
     render: (args) => ({
         props: args,
-        template: `<p-menu #menu [popup]="true" [model]="items" />
-    <button type="button" pButton icon="pi pi-list" label="Show" (click)="menu.toggle($event)"></button>`
+        template: `
+            <p-menu #menu [popup]="true" appendTo="body" [model]="items" />
+            <button type="button" pButton icon="pi pi-list" label="Show" (click)="menu.toggle($event)"></button>`
+    })
+};
+
+export const WithCustomLabels: Story = {
+    args: {
+        items: [
+            {
+                id: 'custom-label',
+                label: `
+                    <div> <p class="font-bold">My custom label</p></div>`,
+                escape: false,
+                target: '_self'
+            },
+            { separator: true },
+            {
+                id: 'my-account',
+                label: 'my-account',
+                icon: 'pi pi-user',
+                visible: true,
+                command: () => action('my-account')
+            }
+        ]
+    },
+    render: (args) => ({
+        props: args,
+        template: `
+            <p-menu #menu [popup]="true" appendTo="body" [model]="items" />
+            <button type="button" pButton icon="pi pi-list" label="Show" (click)="menu.toggle($event)"></button>`
     })
 };

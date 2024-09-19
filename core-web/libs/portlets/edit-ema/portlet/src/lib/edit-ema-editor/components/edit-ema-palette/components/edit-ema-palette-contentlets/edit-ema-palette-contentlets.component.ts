@@ -15,7 +15,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { PaginatorModule } from 'primeng/paginator';
+import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
@@ -69,7 +69,7 @@ export class EditEmaPaletteContentletsComponent implements OnInit, OnDestroy {
      * @param {{ query: string; contentTypeVarName: string }} filter
      * @memberof EditEmaPaletteContentletsComponent
      */
-    onPaginate(event, filter: { query: string; contentTypeVarName: string }) {
+    onPaginate(event: PaginatorState, filter: { query: string; contentTypeVarName: string }) {
         this.paginate.emit({ ...event, ...filter });
     }
 

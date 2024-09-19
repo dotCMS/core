@@ -67,6 +67,7 @@
     .p-splitbutton-defaultbutton:enabled,
     .p-splitbutton-menubutton:enabled {
         @extend #outlined-primary-severity;
+        color: $color-palette-primary;
     }
 
     &.p-button-sm {
@@ -84,6 +85,7 @@
         .p-splitbutton-defaultbutton:enabled,
         .p-splitbutton-menubutton:enabled {
             @extend #outlined-secondary-severity;
+            color: $color-palette-secondary;
         }
 
         &.p-button-sm {

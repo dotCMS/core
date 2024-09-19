@@ -20,7 +20,7 @@ import {
     updateNavigation
 } from '@dotcms/client';
 
-import { DynamicComponentEntity } from '../../models';
+import { DotCMSPageComponent } from '../../models';
 import { DotCMSPageAsset } from '../../models/dotcms.model';
 import { PageContextService } from '../../services/dotcms-context/page-context.service';
 import { RowComponent } from '../row/row.component';
@@ -47,23 +47,43 @@ import { RowComponent } from '../row/row.component';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotcmsLayoutComponent implements OnInit {
+    private _pageAsset!: DotCMSPageAsset;
+
     /**
-     * The `pageAsset` property represents the DotCMS page asset.
+     * Represents the DotCMS page asset.
      *
-     * @type {(DotCMSPageAsset)}
+     * @type {DotCMSPageAsset}
      * @memberof DotcmsLayoutComponent
-     * @required
      */
-    @Input({ required: true }) pageAsset!: DotCMSPageAsset;
+    @Input({ required: true })
+    set pageAsset(value: DotCMSPageAsset) {
+        this._pageAsset = value;
+        if (!value.layout) {
+            console.warn(
+                'Warning: pageAsset does not have a `layout` property. Might be using an advaced template or your dotCMS instance not have a enterprise license.'
+            );
+        }
+    }
+
+    /**
+     * Returns the DotCMS page asset.
+     *
+     * @readonly
+     * @type {DotCMSPageAsset}
+     * @memberof DotcmsLayoutComponent
+     */
+    get pageAsset(): DotCMSPageAsset {
+        return this._pageAsset;
+    }
 
     /**
      * The `components` property is a record of dynamic components for each Contentlet on the page.
      *
-     * @type {Record<string, DynamicComponentEntity>}
+     * @type {DotCMSPageComponent}
      * @memberof DotcmsLayoutComponent
      * @required
      */
-    @Input({ required: true }) components!: Record<string, DynamicComponentEntity>;
+    @Input({ required: true }) components!: DotCMSPageComponent;
 
     /**
      * The `onReload` property is a function that reloads the page after changes are made.
@@ -121,6 +141,10 @@ export class DotcmsLayoutComponent implements OnInit {
     }
 
     ngOnDestroy() {
+        if (!isInsideEditor()) {
+            return;
+        }
+
         this.client.editor.off('changes');
     }
 }

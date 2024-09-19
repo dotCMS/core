@@ -3,6 +3,12 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { DotPageAssetLayoutRow } from '../../models';
 import { ColumnComponent } from '../column/column.component';
 
+/**
+ * This component is responsible to display a row with columns.
+ *
+ * @export
+ * @class RowComponent
+ */
 @Component({
     selector: 'dotcms-row',
     standalone: true,
@@ -16,5 +22,11 @@ import { ColumnComponent } from '../column/column.component';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RowComponent {
+    /**
+     * The row object containing the columns.
+     *
+     * @type {DotPageAssetLayoutRow}
+     * @memberof RowComponent
+     */
     @Input({ required: true }) row!: DotPageAssetLayoutRow;
 }
