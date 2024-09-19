@@ -282,7 +282,7 @@ export const CategoryFieldStore = signalStore(
             },
 
             /**
-             * Removes the selected items with the given key(s).
+             * Removes the selected at the dialog items with the given key(s).
              *
              * @param {string | string[]} key - The key(s) of the item(s) to be removed.
              * @return {void}
@@ -293,6 +293,18 @@ export const CategoryFieldStore = signalStore(
                 patchState(store, {
                     dialog: { ...store.dialog(), selected }
                 });
+            },
+
+            /**
+             * Removes the selected items with the given key(s).
+             *
+             * @param {string | string[]} key - The key(s) of the item(s) to be removed.
+             * @return {void}
+             */
+            removeRootSelected(key: string | string[]): void {
+                const selected = removeItemByKey(store.selected(), key);
+
+                patchState(store, { selected });
             },
 
             /**

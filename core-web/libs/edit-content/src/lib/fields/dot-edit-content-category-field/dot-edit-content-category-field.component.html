@@ -2,7 +2,7 @@
     <dot-category-field-chips
         data-testId="category-chip-list"
         [categories]="store.selected()"
-        (remove)="store.removeSelected($event)" />
+        (remove)="store.removeRootSelected($event)" />
 }
 
 <div class="dot-category-field__select">

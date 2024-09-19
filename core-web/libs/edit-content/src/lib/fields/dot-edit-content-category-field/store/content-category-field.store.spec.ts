@@ -64,7 +64,6 @@ describe('CategoryFieldStore', () => {
             ];
 
             store.load({ field: CATEGORY_FIELD_MOCK, contentlet: CATEGORY_FIELD_CONTENTLET_MOCK });
-            console.log(store.selected());
             expect(store.selected()).toEqual(expectedCategoryValues);
             expect(store.rootCategoryInode()).toEqual(CATEGORY_FIELD_MOCK.values);
         });
