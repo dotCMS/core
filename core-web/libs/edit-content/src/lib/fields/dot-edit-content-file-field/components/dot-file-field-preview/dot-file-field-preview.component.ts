@@ -6,7 +6,6 @@ import { CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, Component } from '@ang
     imports: [],
     providers: [],
     templateUrl: './dot-file-field-preview.component.html',
-    styleUrls: ['./dot-file-field-preview.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
