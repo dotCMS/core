@@ -190,7 +190,7 @@ jobs:
         id: create-pull-request
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
           branch: ${{ steps.update-pom.outputs.auxiliary-branch }}
           commit-message: "📦 Publishing an Empty Starter version [${{ steps.update-pom.outputs.starter-version }}]"
           title: 'Update starter.deploy.version to [${{ steps.update-pom.outputs.starter-version }}]'
