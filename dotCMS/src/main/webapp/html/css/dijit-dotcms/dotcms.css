@@ -5320,7 +5320,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-size: 100%;
+  font-size: 0.875rem;
   font-weight: normal;
 }
 
@@ -5808,32 +5808,33 @@ body {
 }
 
 h1 {
-  font-size: 174%;
+  font-size: 1.5rem;
 }
 
 h2 {
-  font-size: 138.5%;
+  font-size: 1.25rem;
   line-height: 115%;
   margin: 0 0 0.2em 0;
   font-weight: normal;
 }
 
 h3 {
-  font-size: 100%;
+  font-size: 0.875rem;
   margin: 0 0 0.2em 0;
   font-weight: bold;
 }
 
 h4 {
+  font-size: 0.875rem;
   font-weight: bold;
 }
 
 h5 {
-  font-size: 77%;
+  font-size: 0.75rem;
 }
 
 h6 {
-  font-size: 77%;
+  font-size: 0.75rem;
   font-style: italic;
 }
 
@@ -5893,7 +5894,7 @@ ul li {
 }
 
 .inputCaption {
-  font-size: 85%;
+  font-size: 0.75rem;
   color: #888;
   font-style: italic;
 }
@@ -5919,12 +5920,12 @@ kbd,
 samp,
 tt {
   font-family: monospace;
-  *font-size: 108%;
+  *font-size: 1rem;
   line-height: 99%;
 }
 
 sup {
-  font-size: 60%;
+  font-size: 0.625rem;
 }
 
 abbr {
@@ -6032,7 +6033,7 @@ select[multiple]:hover {
   position: absolute;
   top: 4px;
   right: 30px;
-  font-size: 85%;
+  font-size: 0.75rem;
   color: #ddd;
 }
 
@@ -6124,7 +6125,7 @@ select[multiple]:hover {
   right: 30px;
   top: 34px;
   width: 225px;
-  font-size: 85%;
+  font-size: 0.75rem;
   border: 1px solid #d1d4db;
   border-top: 0;
   background: #fff;
@@ -6233,7 +6234,7 @@ select[multiple]:hover {
 .changeHost {
   cursor: pointer;
   float: right;
-  font-size: 85%;
+  font-size: 0.75rem;
   line-height: 15px;
   margin: 6px 10px 0 0;
   padding: 0;
@@ -6442,7 +6443,7 @@ tr.active {
 .excelDownload {
   text-align: right;
   padding: 5px 10px;
-  font-size: 85%;
+  font-size: 0.75rem;
 }
 
 .excelDownload a {
@@ -6631,7 +6632,7 @@ tr.active {
 }
 
 .tagsBox a {
-  font-size: 93%;
+  font-size: 0.875rem;
   color: #999;
 }
 
@@ -6639,7 +6640,7 @@ tr.active {
   display: block;
   color: #999;
   line-height: 140%;
-  font-size: 80%;
+  font-size: 0.75rem;
   margin: 3px 0 0 5px;
 }
 
@@ -7354,7 +7355,7 @@ table.sTypeTable.sTypeItem {
 }
 
 .siteOverview span {
-  font-size: 300%;
+  font-size: 48px;
   display: block;
   padding: 8px;
 }
@@ -7376,7 +7377,7 @@ table.dojoxLegendNode td {
 #pieChartLegend td.dojoxLegendText {
   text-align: left;
   vertical-align: top;
-  font-size: 85%;
+  font-size: 0.75rem;
   line-height: 131%;
 }
 
@@ -7401,7 +7402,7 @@ table.dojoxLegendNode td {
   border-radius: 10px;
   color: #fff;
   text-align: center;
-  font-size: 131%;
+  font-size: 1.25rem;
 }
 
 .noPie {
@@ -7669,7 +7670,7 @@ div#_dotHelpMenu {
   background: #fff;
   color: #5f5f5f;
   display: block;
-  font-size: 85%;
+  font-size: 0.75rem;
   margin: 0;
   padding: 3px 10px;
   vertical-align: middle;
@@ -7717,7 +7718,7 @@ div#_dotHelpMenu {
 }
 .navbar .navMenu-title {
   color: #404040;
-  font-size: 93%;
+  font-size: 0.875rem;
   font-weight: 700;
   line-height: 14px;
   margin: 0;
@@ -7726,7 +7727,7 @@ div#_dotHelpMenu {
 }
 .navbar .navMenu-subtitle {
   color: #5f5f5f;
-  font-size: 77%;
+  font-size: 0.625rem;
   margin: 0;
   overflow: hidden;
   padding: 0;
@@ -9492,7 +9493,7 @@ dd .buttonCaption {
 .dayEventsSection span {
   font-weight: bold;
   text-transform: uppercase;
-  font-size: 77%;
+  font-size: 0.625rem;
 }
 
 /* NAV MENU STYLES */
@@ -9548,7 +9549,7 @@ dd .buttonCaption {
 
 #eventDetailTitle {
   font-weight: bold;
-  font-size: 1.2em;
+  font-size: 1rem;
   padding-bottom: 5px;
   width: 459;
   overflow: hidden;
