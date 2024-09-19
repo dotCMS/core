@@ -26,6 +26,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
+import com.dotcms.test.TestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Clickstream;
@@ -33,6 +34,8 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
@@ -71,6 +74,10 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -125,6 +132,7 @@ public class PageResourceTest {
     private Container container2;
     private InitDataObject initDataObject;
     private ContentType contentGenericType;
+    private HostWebAPI hostWebAPI;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -133,7 +141,8 @@ public class PageResourceTest {
     }
 
     @Before
-    public void init() throws DotSecurityException, DotDataException {
+    public void init()
+            throws DotSecurityException, DotDataException, SystemException, PortalException {
 
         // Collection to store attributes keys/values
         final Map<String, Object> attributes = new ConcurrentHashMap<>();
@@ -156,8 +165,14 @@ public class PageResourceTest {
         when(webResource.init(false, request, true)).thenReturn(initDataObject);
         when(webResource.init(any(WebResource.InitBuilder.class))).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
-        pageResource = new PageResource(pageResourceHelper, webResource, htmlPageAssetRenderedAPI, esapi);
-        this.pageResourceWithHelper = new PageResource(PageResourceHelper.getInstance(), webResource, htmlPageAssetRenderedAPI, this.esapi);
+
+        hostWebAPI = mock(HostWebAPI.class);
+        when(hostWebAPI.getCurrentHost(request, user)).thenReturn(host);
+        when(hostWebAPI.getCurrentHost(request)).thenReturn(host);
+        when(hostWebAPI.getCurrentHost()).thenReturn(host);
+
+        pageResource = new PageResource(pageResourceHelper, webResource, htmlPageAssetRenderedAPI, esapi, hostWebAPI);
+        this.pageResourceWithHelper = new PageResource(PageResourceHelper.getInstance(), webResource, htmlPageAssetRenderedAPI, this.esapi, hostWebAPI);
 
         when(request.getRequestURI()).thenReturn("/test");
         when(request.getSession()).thenReturn(session);
@@ -456,7 +471,7 @@ public class PageResourceTest {
         final Contentlet checkin = APILocator.getContentletAPIImpl().checkin(checkout, systemUser, false);
         final Response response = pageResource
                 .loadJson(request, this.response, pageUri, null, null,
-                        String.valueOf(languageId), null);
+                        String.valueOf(languageId), null, null);
 
         RestUtilTest.verifySuccessResponse(response);
 
@@ -537,7 +552,7 @@ public class PageResourceTest {
 
         final Response response = pageResource
                 .loadJson(request, this.response, pagePath, "PREVIEW_MODE", null,
-                        "1", null);
+                        "1", null, null);
 
         RestUtilTest.verifySuccessResponse(response);
 
@@ -582,14 +597,14 @@ public class PageResourceTest {
 
         final Response response = pageResource
                 .render(request, this.response, String.format("%s/text", baseUrl), "PREVIEW_MODE", null,
-                        "1", null);
+                        "1", null, null);
 
         RestUtilTest.verifySuccessResponse(response);
     }
 
 
     /**
-     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}
      * Given Scenario: Create a page with URL Pattern, with a no publish content, and try to get it in ADMIN_MODE
      * ExpectedResult: Should return a 404 HTTP error
      *
@@ -630,11 +645,11 @@ public class PageResourceTest {
 
         pageResource
                 .render(request, this.response, String.format("%s/text", baseUrl), PageMode.ADMIN_MODE.toString(), null,
-                        "1", null);
+                        "1", null, null);
     }
 
     /**
-     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}
      * Given Scenario: Create a page with URL Pattern, with a no publish content, and try to get it in ADMIN_MODE
      * ExpectedResult: Should return a 404 HTTP error
      *
@@ -675,7 +690,7 @@ public class PageResourceTest {
 
         pageResource
                 .render(request, this.response, String.format("%s/text", baseUrl), PageMode.LIVE.toString(), null,
-                        "1", null);
+                        "1", null, null);
     }
 
     /**
@@ -731,7 +746,7 @@ public class PageResourceTest {
 
         final Response response = pageResource
                 .loadJson(request, this.response, pageUri, null, null,
-                        String.valueOf(languageId), null);
+                        String.valueOf(languageId), null, null);
 
         RestUtilTest.verifySuccessResponse(response);
 
@@ -771,7 +786,7 @@ public class PageResourceTest {
 
         final Response response = pageResource
                 .render(request, this.response, page.getURI(), modeParam, persona.getIdentifier(),
-                        String.valueOf(languageId), null);
+                        String.valueOf(languageId), null, null);
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
         PageRenderVerifier.verifyPageView(pageView, pageRenderTest, APILocator.systemUser());
@@ -818,7 +833,7 @@ public class PageResourceTest {
 
         final Response response = pageResource
                 .render(request, this.response, page.getURI(), null, persona.getIdentifier(),
-                        String.valueOf(languageId), null);
+                        String.valueOf(languageId), null, null);
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
         PageRenderVerifier.verifyPageView(pageView, pageRenderTest, user);
@@ -827,7 +842,7 @@ public class PageResourceTest {
     }
 
     /***
-     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}
      * Given Scenario: Create a page with two containers and a content in each of then
      * ExpectedResult: Should render the containers with the contents, the check it look into the render code the
      * content div <pre>assertTrue(code.indexOf("data-dot-object=\"contentlet\"") != -1)</pre>
@@ -859,22 +874,22 @@ public class PageResourceTest {
 
         final Response response = pageResource
                 .render(request, this.response, page.getURI(), "EDIT_MODE", null,
-                        String.valueOf(languageId), null);
+                        String.valueOf(languageId), null, null);
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
         PageRenderVerifier.verifyPageView(pageView, pageRenderTest, APILocator.systemUser());
 
         final Collection<? extends ContainerRendered> containers = (Collection<ContainerRendered>) pageView.getContainers();
-        assertTrue(containers.size() > 0);
+        assertFalse(containers.isEmpty());
 
         for (ContainerRendered container : containers) {
             final Map<String, Object> rendered = container.getRendered();
             final Collection<Object> codes = rendered.values();
-            assertTrue(codes.size() > 0);
+            assertFalse(codes.isEmpty());
 
             for (final Object code : codes) {
-                assertTrue(code.toString().indexOf("data-dot-object=\"container\"") != -1);
-                assertTrue(code.toString().indexOf("data-dot-object=\"contentlet\"") != -1);
+                assertTrue(code.toString().contains("data-dot-object=\"container\""));
+                assertTrue(code.toString().contains("data-dot-object=\"contentlet\""));
             }
         }
         assertNull(pageView.getViewAs().getPersona());
@@ -882,7 +897,7 @@ public class PageResourceTest {
 
 
     /**
-     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}
      * Given Scenario: Create a page with not LIVE version, then publish the page, and then update the page to crate a
      * new working version
      * ExpectedResult: Should return a LIVE attribute to true just in after the page is publish
@@ -904,7 +919,7 @@ public class PageResourceTest {
 
         Response response = pageResource
                 .render(request, this.response, page.getURI(), PageMode.PREVIEW_MODE.toString(), null,
-                        String.valueOf(languageId), null);
+                        String.valueOf(languageId), null, null);
 
         PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
         assertFalse(pageView.isLive());
@@ -915,7 +930,7 @@ public class PageResourceTest {
 
         response = pageResource
                 .render(request, this.response, page.getURI(), PageMode.PREVIEW_MODE.toString(), null,
-                        String.valueOf(languageId), null);
+                        String.valueOf(languageId), null, null);
 
         pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
         assertTrue(pageView.isLive());
@@ -926,7 +941,7 @@ public class PageResourceTest {
 
         response = pageResource
                 .render(request, this.response, page.getURI(), PageMode.PREVIEW_MODE.toString(), null,
-                        String.valueOf(languageId), null);
+                        String.valueOf(languageId), null, null);
 
         pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
         assertTrue(pageView.isLive());
@@ -986,7 +1001,7 @@ public class PageResourceTest {
 
         final Response response = pageResource
                 .render(request, this.response, page.getURI(), modeParam, null,
-                        String.valueOf(languageId), null);
+                        String.valueOf(languageId), null, null);
 
         final HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) ((ResponseEntityView) response.getEntity()).getEntity();
 
@@ -1092,7 +1107,7 @@ public class PageResourceTest {
 
         final Response response = pageResource
                 .render(request, this.response, page.getURI(), modeParam, null,
-                        String.valueOf(languageId), null);
+                        String.valueOf(languageId), null, null);
 
         final HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) ((ResponseEntityView) response.getEntity()).getEntity();
 
@@ -1126,7 +1141,7 @@ public class PageResourceTest {
 
     /**
      * <ul>
-     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}</li>
+     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}</li>
      *     <li><b>Given Scenario:</b> In Edit Mode, test the rest API</li>
      *     <li><b>Expected Result:</b> Receive the on-number-of-pages data attribute for the contentlet object inside rendered element.</li>
      * </ul>
@@ -1148,7 +1163,7 @@ public class PageResourceTest {
         final Container container = pageRenderTestOne.getFirstContainer();
         final Contentlet testContent = pageRenderTestOne.addContent(container);
         Response pageResponse = this.pageResource.render(this.request, this.response, pageOne.getURI(), modeParam, null,
-                String.valueOf(languageId), null);
+                String.valueOf(languageId), null, null);
 
         final HTMLPageAssetRendered htmlPageAssetRendered =
                 (HTMLPageAssetRendered) ((ResponseEntityView<?>) pageResponse.getEntity()).getEntity();
@@ -1160,7 +1175,7 @@ public class PageResourceTest {
 
     /**
      * <ul>
-     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}</li>
+     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}</li>
      *     <li><b>Given Scenario:</b> The deviceInode is not set as part of the request</li>
      *     <li><b>Expected Result:</b> The {@link WebKeys#CURRENT_DEVICE} is removed from session</li>
      * </ul>
@@ -1169,14 +1184,14 @@ public class PageResourceTest {
     public void testCleanUpSessionWhenDeviceInodeIsNull() throws Exception {
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
 
-        pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), null);
+        pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), null, null);
 
         verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
     }
 
     /**
      * <ul>
-     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}</li>
+     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}</li>
      *     <li><b>Given Scenario:</b> The deviceInode in the request is blank</li>
      *     <li><b>Expected Result:</b> The {@link WebKeys#CURRENT_DEVICE} is removed from session</li>
      * </ul>
@@ -1185,8 +1200,90 @@ public class PageResourceTest {
     public void testCleanUpSessionWhenDeviceInodeIsBlank() throws Exception {
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
 
-        pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), "");
+        pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), "", null);
 
         verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
     }
+
+    /**
+     * Given scenario: A page with a container and a contentlet is created. The contentlet is published in a future date.
+     * Expected result: The contentlet should be rendered in the page once we pass the future date as a parameter.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testRenderWithTimeMachine() throws DotDataException, DotSecurityException {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final long languageId = 1L;
+
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container localContainer = new ContainerDataGen().withStructure(structure, "")
+                .friendlyName("container-1-friendly-name").title("container-1-title")
+                .nextPersisted();
+
+        final TemplateLayout templateLayout = TemplateLayoutDataGen.get()
+                .withContainer(localContainer.getIdentifier())
+                .next();
+
+        final Template newTemplate = new TemplateDataGen()
+                .drawedBody(templateLayout)
+                .withContainer(localContainer.getIdentifier()
+                ).nextPersisted();
+        final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+        versionableAPI.setWorking(newTemplate);
+        versionableAPI.setLive(newTemplate);
+
+        final Contentlet checkout = APILocator.getContentletAPIImpl()
+                .checkout(pageAsset.getInode(), systemUser, false);
+        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate.getIdentifier());
+
+        APILocator.getContentletAPIImpl().checkin(checkout, systemUser, false);
+
+        final LocalDateTime futureDate = LocalDateTime.now().plusDays(10);
+        // Convert to Instant (UTC)
+        final Instant futureInstant = futureDate.atZone(ZoneId.systemDefault()).toInstant();
+        final Date pulishDate = Date.from(futureInstant);
+
+        final ContentType blogContentType = TestDataUtils.getBlogLikeContentType();
+        final Contentlet blog = new ContentletDataGen(blogContentType.id())
+                .languageId(languageId)
+                .host(host)
+                .setProperty("title", "myBlogTest")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .setProperty("sysPublishDate", pulishDate)
+                .nextPersisted();
+
+        blog.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        blog.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        blog.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        APILocator.getContentletAPI().publish(blog, systemUser, false);
+
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final MultiTree multiTree = new MultiTree(pageAsset.getIdentifier(),
+                localContainer.getIdentifier(), blog.getIdentifier(), "1", 1);
+        multiTreeAPI.saveMultiTree(multiTree);
+
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(
+                String.valueOf(languageId));
+
+        final String futureIso8601 = futureInstant.toString();
+
+        final Response response = pageResource
+                .loadJson(request, this.response, pagePath, "PREVIEW_MODE", null,
+                        "1", null, futureIso8601);
+
+        RestUtilTest.verifySuccessResponse(response);
+
+        final PageView pageView = (PageView) ((ResponseEntityView<?>) response.getEntity()).getEntity();
+        assertEquals(1, pageView.getNumberContents());
+        pageView.getContainers().stream()
+                .map(containerRaw -> containerRaw.getContentlets().values())
+                .forEach(contentlets -> {
+                    contentlets.forEach(contentlet -> {
+                        assertEquals(blog.getIdentifier(), contentlet.get(0).getIdentifier());
+                    });
+                });
+    }
+
 }
