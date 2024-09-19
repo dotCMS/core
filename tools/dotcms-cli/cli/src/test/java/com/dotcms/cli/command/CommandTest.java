@@ -51,6 +51,9 @@ public abstract class CommandTest {
     @Inject
     RestClientFactory clientFactory;
 
+    @Inject
+    CustomConfiguration customConfiguration;
+
     @ConfigProperty(name = "test.dotcms.service.url", defaultValue = "http://localhost:8080")
     String dotcmsServiceURL;
 
@@ -61,7 +64,6 @@ public abstract class CommandTest {
     }
 
     protected CommandLine createCommand() {
-        final CustomConfiguration customConfiguration = new CustomConfiguration();
         return customConfiguration.customCommandLine(factory);
     }
 

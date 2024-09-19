@@ -477,7 +477,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     describe('filterBy', () => {
         beforeEach(() => {
-            router.queryParams = of({
+            router.data = of({
                 filterBy: 'FORM'
             });
 

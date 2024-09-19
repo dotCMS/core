@@ -1,7 +1,22 @@
-<!--
-    The `If` is needed because the component build the editor with the `init` @Input
-    If the `init` is not provided the editor will throw an error
--->
-@if (init()) {
-    <editor [formControlName]="field.variable" [init]="init()" />
-}
+<div class="wysiwyg__editor">
+    @if ($selectedEditor() === editorTypes.TinyMCE) {
+        <dot-wysiwyg-tinymce [field]="$field()" />
+    } @else {
+        <dot-wysiwyg-monaco [field]="$field()" [language]="$selectedLanguage()" />
+    }
+</div>
+<div class="wysiwyg__controls">
+    <p-dropdown
+        [options]="editorOptions"
+        [(ngModel)]="$selectedEditor"
+        [ngModelOptions]="{ standalone: true }"
+        data-testId="editor-selector" />
+
+    @if ($selectedEditor() === editorTypes.Monaco) {
+        <p-dropdown
+            [options]="monacoLanguagesOptions"
+            [(ngModel)]="$selectedLanguage"
+            [ngModelOptions]="{ standalone: true }"
+            data-testId="language-selector" />
+    }
+</div>

@@ -5,11 +5,14 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
+
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink;
 import com.dotmarketing.portlets.contentlet.transform.strategy.FileViewStrategy;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
 import java.io.ByteArrayInputStream;
@@ -22,6 +25,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
@@ -911,5 +916,42 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			Logger.error(this, e.getMessage());
 			Logger.debug(this, e.getMessage(), e);
 		}
+	}
+
+	@Override
+	public FileAsset getFileByPath(final String uri, final Host site,
+								   final long languageId, final boolean live) {
+
+		FileAsset fileAsset = null;
+
+		if (Objects.nonNull(site)) {
+
+			Logger.debug(this, ()-> "Getting the file by path: " + uri + " for host: " + site.getHostname());
+			try {
+
+				final Identifier identifier = APILocator.getIdentifierAPI().find(site, uri);
+				final Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI()
+						.getContentletVersionInfo(identifier.getId(), languageId);
+
+				if (cinfo.isPresent()) {
+
+					final ContentletVersionInfo versionInfo = cinfo.get();
+					final Contentlet contentlet = APILocator.getContentletAPI()
+							.find(live ? versionInfo.getLiveInode() : versionInfo.getWorkingInode(),
+									APILocator.systemUser(), false);
+					if (contentlet.getContentType().baseType() == BaseContentType.FILEASSET) {
+
+						fileAsset = fromContentlet(contentlet);
+					}
+				}
+			} catch (DotDataException | DotSecurityException e) {
+
+				Logger.error(this, "Error getting the fileasset for the path: "
+						+ uri + " for host: " + site.getHostname() + ", msg: " + e.getMessage(), e);
+				throw new DotRuntimeException(e.getMessage(), e);
+			}
+        }
+
+		return fileAsset;
 	}
 }
