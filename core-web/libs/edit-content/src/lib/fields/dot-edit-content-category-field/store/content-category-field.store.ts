@@ -36,7 +36,6 @@ import {
 export type CategoryFieldState = {
     field: DotCMSContentTypeField;
     selected: DotCategoryFieldKeyValueObj[]; // <- source of selected
-    confirmedCategories: DotCategoryFieldKeyValueObj[]; // <- source of confirmed categories in the modal.
     categories: DotCategory[][];
     keyParentPath: string[]; // Delete when we have the endpoint for this
     state: ComponentStatus;
@@ -44,18 +43,26 @@ export type CategoryFieldState = {
     // search
     filter: string;
     searchCategories: DotCategory[];
+    //dialog
+    dialog: {
+        selected: DotCategoryFieldKeyValueObj[];
+        state: 'open' | 'closed';
+    };
 };
 
 export const initialState: CategoryFieldState = {
     field: {} as DotCMSContentTypeField,
     selected: [],
-    confirmedCategories: [],
     categories: [],
     keyParentPath: [],
     state: ComponentStatus.INIT,
     mode: 'list',
     filter: '',
-    searchCategories: []
+    searchCategories: [],
+    dialog: {
+        selected: [],
+        state: 'closed'
+    }
 };
 
 /**
@@ -67,23 +74,11 @@ export const CategoryFieldStore = signalStore(
     withState(initialState),
     withComputed((store) => ({
         /**
-         * Current confirmed Categories items (key) from the contentlet
-         */
-        confirmedCategoriesValues: computed(() =>
-            store.confirmedCategories().map((item) => item.key)
-        ),
-
-        /**
          * Categories for render with added properties
          */
         categoryList: computed(() =>
             store.categories().map((column) => transformCategories(column, store.keyParentPath()))
         ),
-
-        /**
-         * Indicates whether any categories are confirmed.
-         */
-        hasConfirmedCategories: computed(() => !!store.confirmedCategories().length),
 
         /**
          * Get the root category inode.
@@ -143,7 +138,21 @@ export const CategoryFieldStore = signalStore(
             const keyParentPath = store.keyParentPath();
 
             return getMenuItemsFromKeyParentPath(categories, keyParentPath);
-        })
+        }),
+
+        // Dialog
+        /**
+         * Computed property that checks if a dialog is open.
+         */
+        isDialogOpen: computed(() => store.dialog.state() === 'open'),
+
+        /**
+         * A computed property that retrieves the keys of selected dialog items.
+         * This function accesses the store's dialog and maps each selected item's key.
+         *
+         * @returns {Array} An array of keys of selected dialog items.
+         */
+        dialogSelectedKeys: computed(() => store.dialog.selected().map((item) => item.key))
     })),
     withMethods(
         (
@@ -169,13 +178,12 @@ export const CategoryFieldStore = signalStore(
                         return categoryService.getSelectedHierarchy(selectedKeys).pipe(
                             tapResponse({
                                 next: (categoryWithParentPath) => {
-                                    const confirmedCategories =
+                                    const selected =
                                         transformToSelectedObject(categoryWithParentPath);
 
                                     patchState(store, {
                                         field,
-                                        selected: confirmedCategories,
-                                        confirmedCategories,
+                                        selected,
                                         state: ComponentStatus.LOADED
                                     });
                                 },
@@ -205,6 +213,30 @@ export const CategoryFieldStore = signalStore(
             },
 
             /**
+             * Opens the dialog with the current selected items and sets the state to 'open'.
+             */
+            openDialog(): void {
+                patchState(store, {
+                    dialog: {
+                        selected: [...store.selected()],
+                        state: 'open'
+                    }
+                });
+            },
+
+            /**
+             * Closes the dialog and resets the selected items.
+             */
+            closeDialog(): void {
+                patchState(store, {
+                    dialog: {
+                        selected: [],
+                        state: 'closed'
+                    }
+                });
+            },
+
+            /**
              * Updates the selected items based on the items keyed by the provided selected keys.
              * This method receives the selected keys from the list of categories, searches in the category array
              * for the item with all the necessary data and stores it in the state as a selected item.
@@ -214,13 +246,13 @@ export const CategoryFieldStore = signalStore(
              */
             updateSelected(categoryListChecked: string[], item: DotCategoryFieldKeyValueObj): void {
                 const currentChecked: DotCategoryFieldKeyValueObj[] = updateChecked(
-                    store.selected(),
+                    store.dialog.selected(),
                     categoryListChecked,
                     item
                 );
 
                 patchState(store, {
-                    selected: currentChecked
+                    dialog: { ...store.dialog(), selected: [...currentChecked] }
                 });
             },
 
@@ -233,9 +265,33 @@ export const CategoryFieldStore = signalStore(
             addSelected(
                 selectedItem: DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]
             ): void {
-                const updatedSelected = addSelected(store.selected(), selectedItem);
+                const updatedSelected = addSelected(store.dialog.selected(), selectedItem);
                 patchState(store, {
-                    selected: updatedSelected
+                    dialog: { state: 'open', selected: updatedSelected }
+                });
+            },
+
+            /**
+             * Applies the selected items from the dialog to the store.
+             */
+            applyDialogSelection(): void {
+                const { selected } = store.dialog();
+                patchState(store, {
+                    selected
+                });
+            },
+
+            /**
+             * Removes the selected at the dialog items with the given key(s).
+             *
+             * @param {string | string[]} key - The key(s) of the item(s) to be removed.
+             * @return {void}
+             */
+            removeSelected(key: string | string[]): void {
+                const selected = removeItemByKey(store.dialog.selected(), key);
+
+                patchState(store, {
+                    dialog: { ...store.dialog(), selected }
                 });
             },
 
@@ -245,54 +301,14 @@ export const CategoryFieldStore = signalStore(
              * @param {string | string[]} key - The key(s) of the item(s) to be removed.
              * @return {void}
              */
-            removeSelected(key: string | string[]): void {
-                const newSelected = removeItemByKey(store.selected(), key);
+            removeRootSelected(key: string | string[]): void {
+                const selected = removeItemByKey(store.selected(), key);
 
-                patchState(store, {
-                    selected: newSelected
-                });
+                patchState(store, { selected });
             },
 
             /**
-             * Removes the confirmed categories with the given key(s).
-             *
-             * @param {string | string[]} key - The key(s) of the item(s) to be removed.
-             * @return {void}
-             */
-            removeConfirmedCategories(key: string | string[]): void {
-                const newConfirmed = removeItemByKey(store.confirmedCategories(), key);
-
-                patchState(store, {
-                    confirmedCategories: newConfirmed
-                });
-            },
-
-            /**
-             * Adds the selected categories to the confirmed categories in the store.
-             * This method is used when the user confirms the selection of categories in the Dialog.
-             *
-             * @return {void}
-             */
-            addConfirmedCategories(): void {
-                patchState(store, {
-                    confirmedCategories: store.selected()
-                });
-            },
-
-            /**
-             * Sets the selected categories in the store to the confirmed categories.
-             * This method is used when the user open the Dialog  of categories.
-             *
-             * @return {void}
-             */
-            setSelectedCategories(): void {
-                patchState(store, {
-                    selected: store.confirmedCategories()
-                });
-            },
-
-            /**
-             * Clears all categories from the store, effectively resetting state related to categories and their parent paths.
+             * Resets the store to its initial state.
              */
             clean() {
                 patchState(store, {
