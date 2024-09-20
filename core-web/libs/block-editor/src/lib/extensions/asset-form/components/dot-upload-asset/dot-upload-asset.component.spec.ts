@@ -190,8 +190,6 @@ describe('DotUploadAssetComponent', () => {
             );
             const emitSpy = jest.spyOn(component.uploadedFile, 'emit');
 
-            console.log(de.nativeElement.innerHTML);
-
             // Click on Upload Button
             const btn = de.query(By.css('[data-test-id="upload-btn"]'));
             const btnBack = de.query(By.css('[data-test-id="back-btn"]'));
