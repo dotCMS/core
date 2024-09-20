@@ -543,7 +543,7 @@ public class OSGIUtil {
             exportedPackagesSet.addAll(osgiUserPackages);
             this.writeExtraPackagesFiles(exportedPackagesSet, testDryRun);
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
         }
     }
