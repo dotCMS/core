@@ -60,12 +60,12 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
      * Determines whether a job should be retried based on the provided job and exception.
      *
      * @param job       The job in question.
-     * @param exception The exception that occurred during the execution of the job.
+     * @param exceptionClass The class of the exception that caused the failure.
      * @return true if the job should be retried, false otherwise.
      */
     @Override
-    public boolean shouldRetry(final Job job, final Throwable exception) {
-        return job.retryCount() < maxRetries && isRetryableException(exception);
+    public boolean shouldRetry(final Job job, final Class<? extends Throwable> exceptionClass) {
+        return job.retryCount() < maxRetries && isRetryableException(exceptionClass);
     }
 
     /**
@@ -93,14 +93,15 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
     }
 
     @Override
-    public boolean isRetryableException(final Throwable exception) {
-        if (exception == null) {
+    public boolean isRetryableException(final Class<? extends Throwable> exceptionClass) {
+        if (exceptionClass == null) {
             return false;
         }
         if (retryableExceptions.isEmpty()) {
             return true; // If no specific exceptions are set, all are retryable
         }
-        return retryableExceptions.stream().anyMatch(clazz -> clazz.isInstance(exception));
+        return retryableExceptions.stream()
+                .anyMatch(clazz -> clazz.isAssignableFrom(exceptionClass));
     }
 
     @Override

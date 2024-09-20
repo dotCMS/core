@@ -39,7 +39,7 @@ public interface AbstractJob {
 
     Map<String, Object> parameters();
 
-    Optional<Throwable> lastException();
+    Optional<String> lastExceptionClass();
 
     @Default
     default int retryCount() {
@@ -78,7 +78,7 @@ public interface AbstractJob {
         return Job.builder().from(this)
                 .state(JobState.FAILED)
                 .result(result)
-                .lastException(result.errorDetail().get().exception())
+                .lastExceptionClass(result.errorDetail().get().exceptionClass())
                 .build();
     }
 

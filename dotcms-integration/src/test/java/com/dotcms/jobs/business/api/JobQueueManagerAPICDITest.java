@@ -78,9 +78,6 @@ public class JobQueueManagerAPICDITest {
     @Test
     void test_JobQueueManagerAPIFields() {
 
-        // There are not JobQueue implementations yet
-        //Assertions.assertNotNull(impl.getJobQueue(), "JobQueue should be injected");
-
         assertNotNull(jobQueueManagerAPI.getCircuitBreaker(),
                 "CircuitBreaker should be injected");
         assertNotNull(jobQueueManagerAPI.getDefaultRetryStrategy(),

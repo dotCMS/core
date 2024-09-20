@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.postgresql.util.PGobject;
 
 /**
  * Utility class for transforming database result sets into Job objects. This class provides static
@@ -64,6 +65,19 @@ public class DBJobTransformer {
     }
 
     /**
+     * Retrieves a JSON string value from the row map.
+     *
+     * @param row    The row map
+     * @param column The column name
+     * @return The JSON string value, or null if not present
+     */
+    private static String getJSONAsString(
+            final Map<String, Object> row, final String column) {
+        final var json = (PGobject) row.get(column);
+        return json != null ? json.getValue() : null;
+    }
+
+    /**
      * Retrieves an optional string value from the row map.
      *
      * @param row    The row map
@@ -94,7 +108,7 @@ public class DBJobTransformer {
      */
     private static Map<String, Object> getParameters(final Map<String, Object> row) {
 
-        String paramsJson = getString(row, "parameters");
+        String paramsJson = getJSONAsString(row, "parameters");
         if (!UtilMethods.isSet(paramsJson)) {
             return new HashMap<>();
         }
@@ -115,7 +129,7 @@ public class DBJobTransformer {
      */
     private static Optional<JobResult> getJobResult(final Map<String, Object> row) {
 
-        String resultJson = getString(row, "result");
+        String resultJson = getJSONAsString(row, "result");
         if (!UtilMethods.isSet(resultJson)) {
             return Optional.empty();
         }
@@ -144,12 +158,17 @@ public class DBJobTransformer {
         }
 
         try {
+            if (resultJsonObject.isNull("errorDetail")) {
+                return Optional.empty();
+            }
+
             JSONObject errorDetailJson = resultJsonObject.getJSONObject("errorDetail");
             return Optional.of(ErrorDetail.builder()
                     .message(errorDetailJson.optString("message"))
                     .exceptionClass(errorDetailJson.optString("exceptionClass"))
                     .timestamp(getDateTime(errorDetailJson.opt("timestamp")))
                     .processingStage(errorDetailJson.optString("processingStage"))
+                    .stackTrace(errorDetailJson.optString("stackTrace"))
                     .build());
         } catch (JSONException e) {
             throw new DotRuntimeException("Error parsing error detail", e);
@@ -169,6 +188,9 @@ public class DBJobTransformer {
         }
 
         try {
+            if (resultJsonObject.isNull("metadata")) {
+                return Optional.empty();
+            }
             return Optional.of(resultJsonObject.getJSONObject("metadata").toMap());
         } catch (JSONException e) {
             throw new DotRuntimeException("Error parsing metadata", e);
@@ -220,6 +242,8 @@ public class DBJobTransformer {
     private static LocalDateTime getDateTime(final Object value) {
         if (value instanceof Timestamp) {
             return ((Timestamp) value).toLocalDateTime();
+        } else if (value instanceof String) {
+            return LocalDateTime.parse((String) value);
         }
         return null;
     }

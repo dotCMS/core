@@ -138,8 +138,7 @@ public interface JobQueue {
      *
      * @param jobId The ID of the job to remove.
      * @throws JobQueueDataException if there's a data storage error while removing the job
-     * @throws JobNotFoundException  if the job with the given ID does not exist
      */
-    void removeJob(String jobId) throws JobQueueDataException, JobNotFoundException;
+    void removeJobFromQueue(String jobId) throws JobQueueDataException;
 
 }

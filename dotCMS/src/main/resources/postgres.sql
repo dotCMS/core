@@ -2552,12 +2552,11 @@ CREATE TABLE job
 );
 
 -- Table for detailed job history
-CREATE TABLE job_detail_history
+CREATE TABLE job_history
 (
     id             VARCHAR(255) PRIMARY KEY,
     job_id         VARCHAR(255) NOT NULL,
     state          VARCHAR(50)  NOT NULL,
-    progress       FLOAT,
     execution_node VARCHAR(255),
     created_at     timestamptz  NOT NULL,
     result         JSONB,
@@ -2567,7 +2566,8 @@ CREATE TABLE job_detail_history
 -- Indexes (add an index for the new parameters field in job_queue)
 CREATE INDEX idx_job_queue_status ON job_queue (state);
 CREATE INDEX idx_job_queue_priority_created_at ON job_queue (priority DESC, created_at ASC);
-CREATE INDEX idx_job_queue_parameters ON job_queue USING GIN (parameters);
-CREATE INDEX idx_job_status ON job (status);
+CREATE INDEX idx_job_parameters ON job USING GIN (parameters);
+CREATE INDEX idx_job_result ON job USING GIN (result);
+CREATE INDEX idx_job_status ON job (state);
 CREATE INDEX idx_job_created_at ON job (created_at);
-CREATE INDEX idx_job_detail_history_job_id ON job_detail_history (job_id);
+CREATE INDEX idx_job_history_job_id ON job_history (job_id);

@@ -13,6 +13,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.jonpeterson.jackson.module.versioning.VersioningModule;
+import io.vavr.Lazy;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -41,7 +47,7 @@ import java.util.stream.Collectors;
  * `SELECT FOR UPDATE SKIP LOCKED` for efficient job queue management in concurrent environments.
  *
  * <p>Note: This class assumes the existence of appropriate database tables (job_queue, job,
- * job_detail_history) as defined in the database schema. Ensure that these tables are properly
+ * job_history) as defined in the database schema. Ensure that these tables are properly
  * set up before using this class.
  *
  * @see JobQueue
@@ -54,8 +60,13 @@ public class PostgresJobQueue implements JobQueue {
             + "(id, queue_name, state, created_at) VALUES (?, ?, ?, ?)";
 
     private static final String CREATE_JOB_QUERY = "INSERT INTO job "
-            + "(id, queue_name, state, parameters, created_at, updated_at) "
-            + "VALUES (?, ?, ?, ?::jsonb, ?, ?)";
+            + "(id, queue_name, state, parameters, created_at, execution_node, updated_at) "
+            + "VALUES (?, ?, ?, ?::jsonb, ?, ?, ?)";
+
+    private static final String CREATE_JOB_HISTORY_QUERY =
+            "INSERT INTO job_history "
+                    + "(id, job_id, state, execution_node, created_at) "
+                    + "VALUES (?, ?, ?, ?, ?)";
 
     private static final String SELECT_JOB_BY_ID_QUERY = "SELECT * FROM job WHERE id = ?";
 
@@ -111,10 +122,10 @@ public class PostgresJobQueue implements JobQueue {
             + "updated_at = ?, started_at = ?, completed_at = ?, execution_node = ?, retry_count = ?, "
             + "result = ?::jsonb WHERE id = ?";
 
-    private static final String INSERT_INTO_JOB_DETAIL_HISTORY_QUERY =
-            "INSERT INTO job_detail_history "
-                    + "(id, job_id, state, progress, execution_node, created_at, result) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?::jsonb)";
+    private static final String INSERT_INTO_JOB_HISTORY_QUERY =
+            "INSERT INTO job_history "
+                    + "(id, job_id, state, execution_node, created_at, result) "
+                    + "VALUES (?, ?, ?, ?, ?, ?::jsonb)";
 
     private static final String DELETE_JOB_FROM_QUEUE_QUERY = "DELETE FROM job_queue WHERE id = ?";
 
@@ -125,17 +136,31 @@ public class PostgresJobQueue implements JobQueue {
     private static final String UPDATE_JOB_PROGRESS = "UPDATE job SET progress = ?, updated_at = ?"
             + " WHERE id = ?";
 
+    /**
+     * Jackson mapper configuration and lazy initialized instance.
+     */
+    private final Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        objectMapper.registerModule(new Jdk8Module());
+        objectMapper.registerModule(new GuavaModule());
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.registerModule(new VersioningModule());
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        return objectMapper;
+    });
+
     @Override
     public String createJob(final String queueName, final Map<String, Object> parameters)
             throws JobQueueException {
 
-        try {
+        final String serverId = APILocator.getServerAPI().readServerId();
 
-            final ObjectMapper objectMapper = new ObjectMapper();
+        try {
 
             final String jobId = UUID.randomUUID().toString();
 
-            final var parametersJson = objectMapper.writeValueAsString(parameters);
+            final var parametersJson = objectMapper.get().writeValueAsString(parameters);
             final var now = Timestamp.valueOf(LocalDateTime.now());
             final var jobState = JobState.PENDING.name();
 
@@ -146,14 +171,24 @@ public class PostgresJobQueue implements JobQueue {
                     .addParam(jobState)
                     .addParam(parametersJson)
                     .addParam(now)
+                    .addParam(serverId)
                     .addParam(now)
                     .loadResult();
 
-            // Creating the jobqueue entry as well
+            // Creating the jobqueue entry
             new DotConnect().setSQL(CREATE_JOB_QUEUE_QUERY)
                     .addParam(jobId)
                     .addParam(queueName)
                     .addParam(jobState)
+                    .addParam(now)
+                    .loadResult();
+
+            // Creating job_history entry
+            new DotConnect().setSQL(CREATE_JOB_HISTORY_QUERY)
+                    .addParam(UUID.randomUUID().toString())
+                    .addParam(jobId)
+                    .addParam(jobState)
+                    .addParam(serverId)
                     .addParam(now)
                     .loadResult();
 
@@ -353,7 +388,7 @@ public class PostgresJobQueue implements JobQueue {
             dc.addParam(job.retryCount());
             dc.addParam(job.result().map(r -> {
                 try {
-                    return new ObjectMapper().writeValueAsString(r);
+                    return objectMapper.get().writeValueAsString(r);
                 } catch (Exception e) {
                     Logger.error(this, "Failed to serialize job result", e);
                     return null;
@@ -362,18 +397,17 @@ public class PostgresJobQueue implements JobQueue {
             dc.addParam(job.id());
             dc.loadResult();
 
-            // Update job_detail_history
+            // Update job_history
             DotConnect historyDc = new DotConnect();
-            historyDc.setSQL(INSERT_INTO_JOB_DETAIL_HISTORY_QUERY);
+            historyDc.setSQL(INSERT_INTO_JOB_HISTORY_QUERY);
             historyDc.addParam(UUID.randomUUID().toString());
             historyDc.addParam(job.id());
             historyDc.addParam(job.state().name());
-            historyDc.addParam(job.progress());
             historyDc.addParam(serverId);
             historyDc.addParam(Timestamp.valueOf(LocalDateTime.now()));
             historyDc.addParam(job.result().map(r -> {
                 try {
-                    return new ObjectMapper().writeValueAsString(r);
+                    return objectMapper.get().writeValueAsString(r);
                 } catch (Exception e) {
                     Logger.error(this, "Failed to serialize job result for history", e);
                     return null;
@@ -385,7 +419,7 @@ public class PostgresJobQueue implements JobQueue {
             if (job.state() == JobState.COMPLETED
                     || job.state() == JobState.FAILED
                     || job.state() == JobState.CANCELLED) {
-                removeJob(job.id());
+                removeJobFromQueue(job.id());
             }
         } catch (DotDataException e) {
             Logger.error(this, "Database error while updating job status", e);
@@ -419,16 +453,22 @@ public class PostgresJobQueue implements JobQueue {
     public void putJobBackInQueue(final Job job) throws JobQueueDataException {
 
         try {
+
+            final var updatedJob = job.withState(JobState.PENDING);
+
             DotConnect dc = new DotConnect();
             dc.setSQL(PUT_JOB_BACK_TO_QUEUE_QUERY);
             dc.addParam(job.id());
             dc.addParam(job.queueName());
-            dc.addParam(JobState.PENDING.name());
+            dc.addParam(job.state().name());
             dc.addParam(0); // Default priority
             dc.addParam(Timestamp.valueOf(LocalDateTime.now()));
-            dc.addParam(JobState.PENDING.name());
+            dc.addParam(job.state().name());
             dc.addParam(0); // Default priority
             dc.loadResult();
+
+            // Update the job status
+            updateJobStatus(updatedJob);
         } catch (DotDataException e) {
             Logger.error(this, "Database error while putting job back in queue", e);
             throw new JobQueueDataException(
@@ -495,7 +535,7 @@ public class PostgresJobQueue implements JobQueue {
     }
 
     @Override
-    public void removeJob(final String jobId) throws JobQueueDataException {
+    public void removeJobFromQueue(final String jobId) throws JobQueueDataException {
 
         try {
             DotConnect dc = new DotConnect();

@@ -29,6 +29,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -560,11 +561,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         Logger.warn(this, "Job " + job.id() + " has failed and cannot be retried.");
 
         try {
-            jobQueue.removeJob(job.id());
+            jobQueue.removeJobFromQueue(job.id());
         } catch (JobQueueDataException e) {
             throw new DotDataException("Error removing failed job", e);
-        } catch (JobNotFoundException e) {
-            throw new DoesNotExistException(e);
         }
     }
 
@@ -609,8 +608,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                         "Error processing job " + runningJob.id() + ": " + e.getMessage(), e
                 );
                 handleJobFailure(
-                        runningJob, processor, e,
-                        "Job processing failed", "Job execution"
+                        runningJob, processor, e, e.getMessage(), "Job execution"
                 );
             }
         } else {
@@ -681,7 +679,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         final var errorDetail = ErrorDetail.builder()
                 .message(errorMessage)
-                .exception(exception)
+                .stackTrace(stackTrace(exception))
                 .exceptionClass(exception.getClass().getName())
                 .processingStage(processingStage)
                 .timestamp(LocalDateTime.now())
@@ -735,8 +733,19 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @return {@code true} if the job is eligible for retry, {@code false} otherwise.
      */
     private boolean canRetry(final Job job) {
+
         final RetryStrategy retryStrategy = retryStrategy(job.queueName());
-        return retryStrategy.shouldRetry(job, job.lastException().orElse(null));
+
+        Class<?> lastExceptionClass = null;
+        if (job.lastExceptionClass().isPresent()) {
+            try {
+                lastExceptionClass = Class.forName(job.lastExceptionClass().get());
+            } catch (ClassNotFoundException e) {
+                Logger.error(this, "Error loading exception class: " + e.getMessage(), e);
+            }
+        }
+
+        return retryStrategy.shouldRetry(job, (Class<? extends Throwable>) lastExceptionClass);
     }
 
     /**
@@ -748,6 +757,43 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private long nextRetryDelay(final Job job) {
         final RetryStrategy retryStrategy = retryStrategy(job.queueName());
         return retryStrategy.nextRetryDelay(job);
+    }
+
+    /**
+     * Generates and returns the stack trace of the exception as a string. This is a derived value
+     * and will be computed only when accessed.
+     *
+     * @param exception The exception for which to generate the stack trace.
+     * @return A string representation of the exception's stack trace, or null if no exception is
+     * present.
+     */
+    private String stackTrace(final Throwable exception) {
+        if (exception != null) {
+            return Arrays.stream(exception.getStackTrace())
+                    .map(StackTraceElement::toString)
+                    .reduce((a, b) -> a + "\n" + b)
+                    .orElse("");
+        }
+        return null;
+    }
+
+    /**
+     * Returns a truncated version of the stack trace.
+     *
+     * @param exception The exception for which to generate the truncated stack trace.
+     * @param maxLines  The maximum number of lines to include in the truncated stack trace.
+     * @return A string containing the truncated stacktrace, or null if no exception is present.
+     */
+    private String truncatedStackTrace(Throwable exception, int maxLines) {
+        String fullTrace = stackTrace(exception);
+        if (fullTrace == null) {
+            return null;
+        }
+        String[] lines = fullTrace.split("\n");
+        return Arrays.stream(lines)
+                .limit(maxLines)
+                .reduce((a, b) -> a + "\n" + b)
+                .orElse("");
     }
 
     /**

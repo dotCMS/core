@@ -564,7 +564,7 @@ public class JobQueueManagerAPITest {
         // Verify the job was not retried after reaching the max retry limit
         verify(mockRetryStrategy, times(maxRetries + 1)).
                 shouldRetry(any(), any()); // Retries + final attempt
-        verify(mockJobQueue, times(1)).removeJob(mockJob.id());
+        verify(mockJobQueue, times(1)).removeJobFromQueue(mockJob.id());
 
         // Stop the job queue
         jobQueueManagerAPI.close();
@@ -692,13 +692,13 @@ public class JobQueueManagerAPITest {
         // Verify the job was not retried
         verify(mockRetryStrategy, times(1)).shouldRetry(any(), any());
         verify(mockJobQueue, never()).putJobBackInQueue(any());
-        verify(mockJobQueue, times(1)).removeJob(mockJob.id());
+        verify(mockJobQueue, times(1)).removeJobFromQueue(mockJob.id());
 
         // Capture and verify the error details
         ArgumentCaptor<JobResult> jobResultCaptor = ArgumentCaptor.forClass(JobResult.class);
         verify(mockJob).markAsFailed(jobResultCaptor.capture());
         ErrorDetail capturedErrorDetail = jobResultCaptor.getValue().errorDetail().get();
-        assertEquals("Non-retryable error", capturedErrorDetail.exception().getMessage());
+        assertEquals("Non-retryable error", capturedErrorDetail.message());
 
         // Stop the job queue
         jobQueueManagerAPI.close();
