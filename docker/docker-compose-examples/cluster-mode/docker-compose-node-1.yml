@@ -49,7 +49,7 @@ services:
       - opensearch
       - db
     volumes:
-      - cms-shared:/data/shared
+      #- {local_data_path}:/data/shared
       #- {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
       - db_net

@@ -23,7 +23,7 @@ services:
         DOT_DOTCMS_CLUSTER_ID:  'dotcms-production'
         #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20240719/starter-20240719.zip'
     volumes:
-      - cms-shared:/data/shared
+      #- {local_data_path}:/data/shared
       #- {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
       - cluster-mode_db_net
