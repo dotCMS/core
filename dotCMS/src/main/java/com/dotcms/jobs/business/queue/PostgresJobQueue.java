@@ -70,50 +70,77 @@ public class PostgresJobQueue implements JobQueue {
 
     private static final String SELECT_JOB_BY_ID_QUERY = "SELECT * FROM job WHERE id = ?";
 
-    private static final String GET_ACTIVE_JOBS_QUERY =
-            "WITH job_data AS ("
-                    + "    SELECT *, COUNT(*) OVER() as total_count"
-                    + "    FROM job"
-                    + "    WHERE queue_name = ? AND state IN (?, ?)"
-                    + "    ORDER BY created_at"
-                    + ") "
-                    + "SELECT * FROM job_data "
-                    + "LIMIT ? OFFSET ?";
-
     private static final String UPDATE_AND_GET_NEXT_JOB_WITH_LOCK_QUERY =
             "UPDATE job_queue SET state = ? "
                     + "WHERE id = (SELECT id FROM job_queue WHERE state = ? "
                     + "ORDER BY priority DESC, created_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED) "
                     + "RETURNING *";
 
+    private static final String GET_ACTIVE_JOBS_QUERY =
+            "WITH total AS (" +
+                    "    SELECT COUNT(*) AS total_count " +
+                    "    FROM job " +
+                    "    WHERE queue_name = ? AND state IN (?, ?) " +
+                    "), " +
+                    "paginated_data AS (" +
+                    "    SELECT * " +
+                    "    FROM job " +
+                    "    WHERE queue_name = ? AND state IN (?, ?) " +
+                    "    ORDER BY created_at " +
+                    "    LIMIT ? OFFSET ? " +
+                    ") " +
+                    "SELECT p.*, t.total_count " +
+                    "FROM total t " +
+                    "LEFT JOIN paginated_data p ON true";
+
     private static final String GET_COMPLETED_JOBS_QUERY =
-            "WITH completed_job_data AS (" +
-                    "    SELECT *, COUNT(*) OVER() as total_count " +
+            "WITH total AS (" +
+                    "    SELECT COUNT(*) AS total_count " +
                     "    FROM job " +
                     "    WHERE queue_name = ? AND state = ? AND completed_at BETWEEN ? AND ? " +
-                    "    ORDER BY completed_at DESC" +
-                    ") " +
-                    "SELECT * FROM completed_job_data " +
-                    "LIMIT ? OFFSET ?";
-
-    private static final String GET_JOBS_QUERY =
-            "WITH job_data AS (" +
-                    "    SELECT *, COUNT(*) OVER() as total_count " +
+                    "), " +
+                    "paginated_data AS (" +
+                    "    SELECT * " +
                     "    FROM job " +
-                    "    ORDER BY created_at DESC" +
+                    "    WHERE queue_name = ? AND state = ? AND completed_at BETWEEN ? AND ? " +
+                    "    ORDER BY completed_at DESC " +
+                    "    LIMIT ? OFFSET ? " +
                     ") " +
-                    "SELECT * FROM job_data " +
-                    "LIMIT ? OFFSET ?";
+                    "SELECT p.*, t.total_count " +
+                    "FROM total t " +
+                    "LEFT JOIN paginated_data p ON true";
 
     private static final String GET_FAILED_JOBS_QUERY =
-            "WITH failed_job_data AS (" +
-                    "    SELECT *, COUNT(*) OVER() as total_count " +
+            "WITH total AS (" +
+                    "    SELECT COUNT(*) AS total_count " +
                     "    FROM job " +
                     "    WHERE state = ? " +
-                    "    ORDER BY updated_at DESC" +
+                    "), " +
+                    "paginated_data AS (" +
+                    "    SELECT * " +
+                    "    FROM job " +
+                    "    WHERE state = ? " +
+                    "    ORDER BY updated_at DESC " +
+                    "    LIMIT ? OFFSET ? " +
                     ") " +
-                    "SELECT * FROM failed_job_data " +
-                    "LIMIT ? OFFSET ?";
+                    "SELECT p.*, t.total_count " +
+                    "FROM total t " +
+                    "LEFT JOIN paginated_data p ON true";
+
+    private static final String GET_JOBS_QUERY =
+            "WITH total AS (" +
+                    "    SELECT COUNT(*) AS total_count " +
+                    "    FROM job " +
+                    "), " +
+                    "paginated_data AS (" +
+                    "    SELECT * " +
+                    "    FROM job " +
+                    "    ORDER BY created_at DESC " +
+                    "    LIMIT ? OFFSET ? " +
+                    ") " +
+                    "SELECT p.*, t.total_count " +
+                    "FROM total t " +
+                    "LEFT JOIN paginated_data p ON true";
 
     private static final String GET_UPDATED_JOBS_SINCE_QUERY = "SELECT * FROM job "
             + "WHERE id = ANY(?) AND updated_at > ?";
@@ -234,6 +261,9 @@ public class PostgresJobQueue implements JobQueue {
             dc.addParam(queueName);
             dc.addParam(JobState.PENDING.name());
             dc.addParam(JobState.RUNNING.name());
+            dc.addParam(queueName);  // Repeated for paginated_data CTE
+            dc.addParam(JobState.PENDING.name());
+            dc.addParam(JobState.RUNNING.name());
             dc.addParam(pageSize);
             dc.addParam((page - 1) * pageSize);
 
@@ -245,6 +275,7 @@ public class PostgresJobQueue implements JobQueue {
             if (!results.isEmpty()) {
                 totalCount = ((Number) results.get(0).get("total_count")).longValue();
                 jobs = results.stream()
+                        .filter(row -> row.get("id") != null) // Filter out rows without job data
                         .map(DBJobTransformer::toJob)
                         .collect(Collectors.toList());
             }
@@ -274,6 +305,10 @@ public class PostgresJobQueue implements JobQueue {
             dc.addParam(JobState.COMPLETED.name());
             dc.addParam(Timestamp.valueOf(startDate));
             dc.addParam(Timestamp.valueOf(endDate));
+            dc.addParam(queueName);  // Repeated for paginated_data CTE
+            dc.addParam(JobState.COMPLETED.name());
+            dc.addParam(Timestamp.valueOf(startDate));
+            dc.addParam(Timestamp.valueOf(endDate));
             dc.addParam(pageSize);
             dc.addParam((page - 1) * pageSize);
 
@@ -285,6 +320,7 @@ public class PostgresJobQueue implements JobQueue {
             if (!results.isEmpty()) {
                 totalCount = ((Number) results.get(0).get("total_count")).longValue();
                 jobs = results.stream()
+                        .filter(row -> row.get("id") != null) // Filter out rows without job data
                         .map(DBJobTransformer::toJob)
                         .collect(Collectors.toList());
             }
@@ -319,6 +355,7 @@ public class PostgresJobQueue implements JobQueue {
             if (!results.isEmpty()) {
                 totalCount = ((Number) results.get(0).get("total_count")).longValue();
                 jobs = results.stream()
+                        .filter(row -> row.get("id") != null) // Filter out rows without job data
                         .map(DBJobTransformer::toJob)
                         .collect(Collectors.toList());
             }
@@ -343,6 +380,7 @@ public class PostgresJobQueue implements JobQueue {
             DotConnect dc = new DotConnect();
             dc.setSQL(GET_FAILED_JOBS_QUERY);
             dc.addParam(JobState.FAILED.name());
+            dc.addParam(JobState.FAILED.name());  // Repeated for paginated_data CTE
             dc.addParam(pageSize);
             dc.addParam((page - 1) * pageSize);
 
@@ -354,6 +392,7 @@ public class PostgresJobQueue implements JobQueue {
             if (!results.isEmpty()) {
                 totalCount = ((Number) results.get(0).get("total_count")).longValue();
                 jobs = results.stream()
+                        .filter(row -> row.get("id") != null) // Filter out rows without job data
                         .map(DBJobTransformer::toJob)
                         .collect(Collectors.toList());
             }

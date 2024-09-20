@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
@@ -403,6 +404,146 @@ public class PostgresJobQueueIntegrationTest {
 
         // Verify job is not returned by nextJob
         assertNull(jobQueue.nextJob());
+    }
+
+    /**
+     * Method to test: createJob, updateJobStatus, and getJob in PostgresJobQueue
+     * Given Scenario: A job is created, all its fields are modified, the job is updated,
+     *                 and then retrieved again
+     * ExpectedResult: All job fields are correctly updated and retrieved, demonstrating
+     *                 proper persistence and retrieval of all job attributes
+     */
+    @Test
+    void test_createUpdateAndRetrieveJob() throws JobQueueException {
+
+        String queueName = "testQueue";
+        Map<String, Object> initialParameters = new HashMap<>();
+        initialParameters.put("initialKey", "initialValue");
+
+        // Create initial job
+        String jobId = jobQueue.createJob(queueName, initialParameters);
+        Job initialJob = jobQueue.getJob(jobId);
+        assertNotNull(initialJob);
+
+        // Modify all fields
+        JobResult jobResult = JobResult.builder()
+                .errorDetail(ErrorDetail.builder()
+                        .message("Test error")
+                        .exceptionClass("TestException")
+                        .timestamp(LocalDateTime.now())
+                        .stackTrace("Test stack trace")
+                        .processingStage("Test stage")
+                        .build())
+                .metadata(Collections.singletonMap("metaKey", "metaValue"))
+                .build();
+
+        Job updatedJob = Job.builder()
+                .from(initialJob)
+                .state(JobState.COMPLETED)
+                .progress(0.75f)
+                .startedAt(Optional.of(LocalDateTime.now().minusHours(1)))
+                .completedAt(Optional.of(LocalDateTime.now()))
+                .retryCount(2)
+                .result(Optional.of(jobResult))
+                .build();
+
+        // Update the job
+        jobQueue.updateJobStatus(updatedJob);
+
+        // Retrieve the updated job
+        Job retrievedJob = jobQueue.getJob(jobId);
+
+        // Verify all fields
+        assertEquals(jobId, retrievedJob.id());
+        assertEquals(queueName, retrievedJob.queueName());
+        assertEquals(JobState.COMPLETED, retrievedJob.state());
+        assertEquals(initialParameters, retrievedJob.parameters());
+        assertEquals(0.75f, retrievedJob.progress(), 0.001);
+        assertTrue(retrievedJob.startedAt().isPresent());
+        assertTrue(retrievedJob.completedAt().isPresent());
+        assertNotNull(retrievedJob.executionNode());
+        assertEquals(2, retrievedJob.retryCount());
+        assertTrue(retrievedJob.result().isPresent());
+        assertEquals("Test error",
+                retrievedJob.result().get().errorDetail().get().message());
+        assertEquals("Test stack trace",
+                retrievedJob.result().get().errorDetail().get().stackTrace());
+        assertEquals("TestException",
+                retrievedJob.result().get().errorDetail().get().exceptionClass());
+        assertEquals("Test stage",
+                retrievedJob.result().get().errorDetail().get().processingStage());
+        assertEquals(Collections.singletonMap("metaKey", "metaValue"),
+                retrievedJob.result().get().metadata().get());
+    }
+
+    /**
+     * Method to test: getJobs in PostgresJobQueue with pagination
+     * Given Scenario: Multiple jobs are created and retrieved using pagination
+     * ExpectedResult: Jobs are correctly paginated and retrieved in the expected order
+     */
+    @Test
+    void test_getJobsPagination() throws JobQueueException {
+
+        String queueName = "paginationTestQueue";
+        int totalJobs = 25;
+        int pageSize = 10;
+
+        // Create jobs
+        List<String> createdJobIds = new ArrayList<>();
+        for (int i = 0; i < totalJobs; i++) {
+            Map<String, Object> params = new HashMap<>();
+            params.put("index", i);
+            String jobId = jobQueue.createJob(queueName, params);
+            createdJobIds.add(jobId);
+        }
+
+        // Test first page
+        JobPaginatedResult page1 = jobQueue.getJobs(1, pageSize);
+        assertEquals(pageSize, page1.jobs().size());
+        assertEquals(totalJobs, page1.total());
+        assertEquals(1, page1.page());
+        assertEquals(pageSize, page1.pageSize());
+
+        // Test second page
+        JobPaginatedResult page2 = jobQueue.getJobs(2, pageSize);
+        assertEquals(pageSize, page2.jobs().size());
+        assertEquals(totalJobs, page2.total());
+        assertEquals(2, page2.page());
+        assertEquals(pageSize, page2.pageSize());
+
+        // Test last page
+        JobPaginatedResult page3 = jobQueue.getJobs(3, pageSize);
+        assertEquals(5, page3.jobs().size());  // 25 total, 20 in first two pages, 5 in last
+        assertEquals(totalJobs, page3.total());
+        assertEquals(3, page3.page());
+        assertEquals(pageSize, page3.pageSize());
+
+        // Verify no overlap between pages
+        Set<String> jobIdsPage1 = page1.jobs().stream().map(Job::id).collect(Collectors.toSet());
+        Set<String> jobIdsPage2 = page2.jobs().stream().map(Job::id).collect(Collectors.toSet());
+        Set<String> jobIdsPage3 = page3.jobs().stream().map(Job::id).collect(Collectors.toSet());
+
+        assertEquals(pageSize, jobIdsPage1.size());
+        assertEquals(pageSize, jobIdsPage2.size());
+        assertEquals(5, jobIdsPage3.size());
+
+        assertTrue(Collections.disjoint(jobIdsPage1, jobIdsPage2));
+        assertTrue(Collections.disjoint(jobIdsPage1, jobIdsPage3));
+        assertTrue(Collections.disjoint(jobIdsPage2, jobIdsPage3));
+
+        // Verify all jobs are retrieved
+        Set<String> allRetrievedJobIds = new HashSet<>();
+        allRetrievedJobIds.addAll(jobIdsPage1);
+        allRetrievedJobIds.addAll(jobIdsPage2);
+        allRetrievedJobIds.addAll(jobIdsPage3);
+        assertEquals(new HashSet<>(createdJobIds), allRetrievedJobIds);
+
+        // Test invalid page
+        JobPaginatedResult invalidPage = jobQueue.getJobs(10, pageSize);
+        assertTrue(invalidPage.jobs().isEmpty());
+        assertEquals(totalJobs, invalidPage.total());
+        assertEquals(10, invalidPage.page());
+        assertEquals(pageSize, invalidPage.pageSize());
     }
 
     /**
