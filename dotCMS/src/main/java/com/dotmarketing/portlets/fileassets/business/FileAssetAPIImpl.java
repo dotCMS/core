@@ -322,7 +322,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 	}
 
-	public List<IFileAsset> fromContentletsI(final List<Contentlet> contentlets) throws DotDataException, DotSecurityException {
+	public List<IFileAsset> fromContentletsI(final List<Contentlet> contentlets) {
 		final List<IFileAsset> fileAssets = new ArrayList<>();
 		for (Contentlet con : contentlets) {
 			if (con.isDotAsset()) {
@@ -336,19 +336,23 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 	}
 
-	private FileAsset transformDotAsset(Contentlet con) throws DotDataException, DotSecurityException {
-		con.setProperty(FileAssetAPI.BINARY_FIELD, Try.of(()->con.getBinary("asset")).getOrNull());
+	private FileAsset transformDotAsset(Contentlet con) {
+		try {
+			con.setProperty(FileAssetAPI.BINARY_FIELD, Try.of(()->con.getBinary("asset")).getOrNull());
 
-		FileAsset fileAsset = FileViewStrategy.convertToFileAsset(con, this);
+			FileAsset fileAsset = FileViewStrategy.convertToFileAsset(con, this);
 
-		final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-		if	(request != null) {
-			final String fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, APILocator.systemUser(), fileAsset, "fileAsset");
+			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+			if	(request != null) {
+				final String fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, APILocator.systemUser(), fileAsset, "fileAsset");
 
-			fileAsset.getMap().put("fileLink", fileLink);
+				fileAsset.getMap().put("fileLink", fileLink);
+			}
+			return fileAsset;
+		} catch (DotDataException | DotSecurityException e) {
+			throw new DotRuntimeException(e);
 		}
-		return fileAsset;
-	}
+    }
 
 	@CloseDBIfOpened
 	public FileAssetMap fromFileAsset(final FileAsset fileAsset) throws DotStateException {

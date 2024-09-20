@@ -77,7 +77,7 @@ public interface FileAssetAPI {
 	 * @return
 	 * @throws DotStateException
 	 */
-	List<IFileAsset> fromContentletsI(List<Contentlet> cons) throws DotStateException, DotDataException, DotSecurityException;
+	List<IFileAsset> fromContentletsI(List<Contentlet> cons) throws DotStateException;
 
 	/**
 	 *
