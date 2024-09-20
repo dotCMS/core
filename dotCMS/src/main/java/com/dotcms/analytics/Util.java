@@ -1,10 +1,8 @@
 package com.dotcms.analytics;
 
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.urlmap.UrlMapContext;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
 import io.vavr.control.Try;
 
 import static com.dotcms.exception.ExceptionUtil.getErrorMessage;

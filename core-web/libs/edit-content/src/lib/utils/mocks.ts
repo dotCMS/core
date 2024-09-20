@@ -486,6 +486,54 @@ export const BINARY_FIELD_MOCK: DotCMSContentTypeField = {
     variable: 'binaryField'
 };
 
+export const IMAGE_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableImageField',
+    contentTypeId: 'a8f941d835e4b4f3e4e71b45add34c60',
+    dataType: 'TEXT',
+    fieldType: 'Image',
+    fieldTypeLabel: 'Image',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1726517012000,
+    id: 'fec3e11696cf9b0f99139c160a598e02',
+    indexed: false,
+    listed: false,
+    modDate: 1726517012000,
+    name: 'Image Field',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 2,
+    unique: false,
+    variable: 'imageField',
+    hint: 'Helper label to be displayed below the field'
+};
+
+export const FILE_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableFileField',
+    contentTypeId: 'a8f941d835e4b4f3e4e71b45add34c60',
+    dataType: 'TEXT',
+    fieldType: 'File',
+    fieldTypeLabel: 'File',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1726507692000,
+    id: 'f90afb1384e04507ba03e8701f7e4000',
+    indexed: false,
+    listed: false,
+    modDate: 1726517016000,
+    name: 'File Field',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 3,
+    unique: false,
+    variable: 'file1',
+    hint: 'Helper label to be displayed below the field'
+};
+
 export const CUSTOM_FIELD_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableCustomField',
     contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
@@ -698,6 +746,8 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     MULTI_SELECT_FIELD_MOCK,
     BLOCK_EDITOR_FIELD_MOCK,
     BINARY_FIELD_MOCK,
+    FILE_FIELD_MOCK,
+    IMAGE_FIELD_MOCK,
     CUSTOM_FIELD_MOCK,
     JSON_FIELD_MOCK,
     KEY_VALUE_MOCK,
