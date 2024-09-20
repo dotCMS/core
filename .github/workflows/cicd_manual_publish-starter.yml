@@ -213,14 +213,32 @@ jobs:
         id: compose-message
         run: |
           echo "::group::Compose Message"
-          BASE_MESSAGE="> :large_green_circle: *Attention dotters:* a new Starter published!\n \n>This automated script is happy to announce that a new *_${{ env.STARTER_TYPE }} starter_* :package: \`${{ needs.deploy-artifacts.outputs.filename }}\` is now available on \`ARTIFACTORY\` :frog:!\n \n> \n>:link: ${{ needs.deploy-artifacts.outputs.url }}\n>*Changelog* \n>\`\`\`${{ github.event.inputs.changelog }}\`\`\`"
+          ARTIFACT_FILENAME="${{ needs.deploy-artifacts.outputs.filename }}"
+          ARTIFACT_URL="${{ needs.deploy-artifacts.outputs.url }}"
+          CHANGELOG="${{ github.event.inputs.changelog }}"
+          PULL_REQUEST_URL="${{ needs.update-pom.outputs.pull-request-url }}"
           if [ "$STARTER_TYPE" == "empty" ]; then
-            PR_ALERT="\n \n> \n> :bangbang: Approvals required to apply the latest version of *_Empty Starter_* to the project. \n \n> :globe_with_meridians: ${{ needs.update-pom.outputs.pull-request-url }}"  
-          fi  
-          MESSAGE=${BASE_MESSAGE}${PR_ALERT}
+            PR_ALERT="> :exclamation:*Approvals required*:exclamation: *PR* ${PULL_REQUEST_URL}"
+          fi          
+          
+          BASE_MESSAGE=$(cat <<-EOF
+          > :large_green_circle: *Attention dotters:* a new Starter published!
+          > This automated script is happy to announce that a new *_${STARTER_TYPE} starter_* :package: \`${ARTIFACT_FILENAME}\` is now available on \`ARTIFACTORY\` :frog:!
+          >
+          > :link: ${ARTIFACT_URL}
+          > *Changelog*
+          > \`\`\`${CHANGELOG}\`\`\`
+          >
+          ${PR_ALERT}
+          EOF
+          )
+          
+          MESSAGE="${BASE_MESSAGE}"
           
           echo "Message: ${MESSAGE}"
-          echo "message=${MESSAGE}" >> $GITHUB_OUTPUT
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          echo "${MESSAGE}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           echo "::endgroup::"
           
       - name: Slack Notification
