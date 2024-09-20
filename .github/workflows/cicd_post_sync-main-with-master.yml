@@ -13,15 +13,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 'Setup git config'
-        run: |
-          git config user.name "${{ secrets.CI_MACHINE_USER }}"
-          git config user.email "dotCMS-Machine-User@dotcms.com"
-          
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Fetch all history for all branches
+
+      - name: 'Setup git config'
+        run: |
+          git config user.name "${{ secrets.CI_MACHINE_USER }}"
+          git config user.email "dotCMS-Machine-User@dotcms.com"
 
       - name: Create or update main branch
         run: |
@@ -35,5 +35,10 @@ jobs:
             git checkout -b main origin/master
           fi
 
-          # Push the updated main branch
-          git push origin main --force
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.CI_MACHINE_TOKEN }}
+          branch: main
+          force: true
+          tags: true

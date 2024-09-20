@@ -4,7 +4,7 @@
             <h3>{{ title }}</h3>
         }
         <dot-suggestion-list #list>
-            @for (item of items; track $index) {
+            @for (item of items; track item) {
                 @if (item.id !== 'divider') {
                     <dot-suggestions-list-item
                         [command]="item.command"
@@ -16,9 +16,6 @@
                 } @else {
                     <div class="divider"></div>
                 }
-                <ng-template #divider>
-                    <div class="divider"></div>
-                </ng-template>
             }
         </dot-suggestion-list>
     </div>

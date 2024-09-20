@@ -34,7 +34,7 @@ export const MyPage: FC<MyPageProps> = ({ pageAsset, nav }) => {
             isInsideEditor: false,
           }}
           config={{
-            pathname: "/",
+            pathname: window.location.pathname,
 
             editor: {
               params: {

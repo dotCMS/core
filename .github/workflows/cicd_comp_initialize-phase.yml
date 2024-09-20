@@ -64,6 +64,13 @@ jobs:
         shell: bash
         run: |
           echo "Initializing..."
+        # Check can be removed if we have resolved root cause
+        # We cannot use a local github action for this as it is run before we checkout the repo
+        # secrets.GITHUB_TOKEN is not available in composite workflows so it needs to be passed in.
+      - name: Check API Rate Limit
+        shell: bash
+        run: |
+          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/rate_limit || true
 
   # This job checks for artifacts from previous builds and determines if they can be reused
   check-previous-build:
@@ -123,17 +130,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         if: ${{ inputs.validation-level != 'none' }}
+
+      # Execute the paths-filter step to determine changes
       - uses: dorny/paths-filter@v3.0.1
         if: ${{ inputs.validation-level != 'none' }}
         id: filter
         with:
           filters: .github/filters.yaml
           list-files: 'escape'
+          
       - name: Rewrite Filter
         id: filter-rewrite
         env:
           CICD_SKIP_TESTS: ${{ vars.CICD_SKIP_TESTS }}
         run: |
+          echo "::group::Rewrite Fiter"
           # Default action outcomes based on paths-filter action outputs
           frontend=${{ steps.filter.outputs.frontend || 'true'}}
           cli=${{ steps.filter.outputs.cli || 'true' }}
@@ -145,7 +156,7 @@ jobs:
           # Check if the commit is to the master branch
           skip_tests=${CICD_SKIP_TESTS:-false}  # Use environment variable, default to 'false'
 
-          # The below line ensures that if skip_tests is true, all tests are set to false.
+          # If skip_tests is true, set all tests to false
           if [ "$skip_tests" == "true" ]; then
             echo "Skipping tests as per CICD_SKIP_TESTS flag."
             frontend=false
@@ -161,7 +172,7 @@ jobs:
             backend=false
             build=false
             jvm_unit_test=false
-            sdk_libs=false
+
             IFS=',' read -r -a custom_modules_list <<< "${{ inputs.custom-modules }}"
             for module in "${custom_modules_list[@]}"; do
               if [ "${module}" == "frontend" ]; then
@@ -175,7 +186,7 @@ jobs:
               elif [ "${module}" == "jvm_unit_test" ]; then
                 jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }}
               elif [ "${module}" == "sdk_libs" ]; then
-                sdk=${{ steps.filter.outputs.sdk_libs }}
+                sdk_libs=${sdk_libs}                
               fi
             done
           fi          
@@ -194,3 +205,4 @@ jobs:
           echo "build=${build}" >> $GITHUB_OUTPUT
           echo "jvm_unit_test=${jvm_unit_test}" >> $GITHUB_OUTPUT
           echo "sdk_libs=${sdk_libs}" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
