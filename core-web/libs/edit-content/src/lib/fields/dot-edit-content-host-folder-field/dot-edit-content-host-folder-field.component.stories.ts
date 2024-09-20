@@ -47,7 +47,7 @@ const meta: Meta<Args> = {
                 {
                     provide: DotEditContentService,
                     useValue: {
-                        getSitesTreePath: () => of(TREE_SELECT_MOCK),
+                        getSitesTreePath: () => of(TREE_SELECT_MOCK)
                         // getFoldersTreeNode: () => of([])
                     }
                 }
