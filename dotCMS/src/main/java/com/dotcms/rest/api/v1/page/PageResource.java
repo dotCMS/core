@@ -222,8 +222,8 @@ public class PageResource {
             @QueryParam(TM_DATE) final String timeMachineDateAsISO8601
             ) throws DotDataException, DotSecurityException {
         Logger.debug(this, () -> String.format(
-                "Rendering page as JSON: uri -> %s , mode -> %s , language -> %s , persona -> %s , device_inode -> %s",
-                uri, modeParam, languageId, personaId, deviceInode));
+                "Rendering page as JSON: uri -> %s , mode -> %s , language -> %s , persona -> %s , device_inode -> %s, timeMachineDate -> %s",
+                uri, modeParam, languageId, personaId, deviceInode, timeMachineDateAsISO8601));
         final HttpServletRequest request = this.pageResourceHelper.decorateRequest (originalRequest);
         // Force authentication
         final InitDataObject initData =
@@ -317,8 +317,8 @@ public class PageResource {
                     , deviceInode, timeMachineDateAsISO8601);
         }
         Logger.debug(this, () -> String.format(
-                "Rendering page: uri -> %s , mode -> %s , language -> %s , persona -> %s , device_inode -> %s",
-                uri, modeParam, languageId, personaId, deviceInode));
+                "Rendering page: uri -> %s , mode -> %s , language -> %s , persona -> %s , device_inode -> %s , timeMachineDate -> %s",
+                uri, modeParam, languageId, personaId, deviceInode, timeMachineDateAsISO8601));
         final HttpServletRequest request = this.pageResourceHelper.decorateRequest(originalRequest);
         // Force authentication
         final InitDataObject initData =

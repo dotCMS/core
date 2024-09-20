@@ -26,7 +26,6 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
-import com.dotcms.test.TestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Clickstream;
@@ -1213,13 +1212,16 @@ public class PageResourceTest {
      */
     @Test
     public void testRenderWithTimeMachine() throws DotDataException, DotSecurityException {
+        // Prep the test
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         final long languageId = 1L;
 
         final Structure structure = new StructureDataGen().nextPersisted();
-        final Container localContainer = new ContainerDataGen().withStructure(structure, "")
-                .friendlyName("container-1-friendly-name").title("container-1-title")
+        final Container localContainer = new ContainerDataGen()
+                .withStructure(structure, "")
+                .friendlyName("container-1-friendly-name")
+                .title("container-1-title")
                 .nextPersisted();
 
         final TemplateLayout templateLayout = TemplateLayoutDataGen.get()
@@ -1228,8 +1230,8 @@ public class PageResourceTest {
 
         final Template newTemplate = new TemplateDataGen()
                 .drawedBody(templateLayout)
-                .withContainer(localContainer.getIdentifier()
-                ).nextPersisted();
+                .withContainer(localContainer.getIdentifier())
+                .nextPersisted();
         final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
         versionableAPI.setWorking(newTemplate);
         versionableAPI.setLive(newTemplate);
@@ -1240,10 +1242,20 @@ public class PageResourceTest {
 
         APILocator.getContentletAPIImpl().checkin(checkout, systemUser, false);
 
-        final LocalDateTime futureDate = LocalDateTime.now().plusDays(10);
-        // Convert to Instant (UTC)
-        final Instant futureInstant = futureDate.atZone(ZoneId.systemDefault()).toInstant();
-        final Date pulishDate = Date.from(futureInstant);
+        // Call the sub-method with different parameters
+        validatePageRendering("PREVIEW_MODE", true, 10, languageId, systemUser, localContainer);  // 10 days in the future
+       // validatePageRendering("LIVE", true, 10, languageId, systemUser, localContainer);  // 10 days in the future
+       // validatePageRendering("ADMIN_MODE", false, -5, languageId, systemUser, localContainer);  // 5 days in the past
+       // validatePageRendering("PREVIEW_MODE", true, 0, languageId, systemUser, localContainer);  // Today
+       // validatePageRendering("WORKING", true, 3, languageId, systemUser, localContainer);  // 3 days in the future
+       // validatePageRendering("EDIT_MODE", false, -2, languageId, systemUser, localContainer);  // 2 days in the past
+    }
+
+    private void validatePageRendering(String mode, boolean expectContentlet, int daysRelativeToToday, long languageId, User systemUser, Container localContainer) throws DotDataException, DotSecurityException {
+        // Calculate the date relative to today
+        final LocalDateTime relativeDate = LocalDateTime.now().plusDays(daysRelativeToToday);
+        final Instant relativeInstant = relativeDate.atZone(ZoneId.systemDefault()).toInstant();
+        final Date publishDate = Date.from(relativeInstant);
 
         final ContentType blogContentType = TestDataUtils.getBlogLikeContentType();
         final Contentlet blog = new ContentletDataGen(blogContentType.id())
@@ -1251,7 +1263,7 @@ public class PageResourceTest {
                 .host(host)
                 .setProperty("title", "myBlogTest")
                 .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
-                .setProperty("sysPublishDate", pulishDate)
+                .setProperty("sysPublishDate", publishDate)  // Set the publish-date to the relative date
                 .nextPersisted();
 
         blog.setIndexPolicy(IndexPolicy.WAIT_FOR);
@@ -1264,26 +1276,31 @@ public class PageResourceTest {
                 localContainer.getIdentifier(), blog.getIdentifier(), "1", 1);
         multiTreeAPI.saveMultiTree(multiTree);
 
-        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(
-                String.valueOf(languageId));
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
-        final String futureIso8601 = futureInstant.toString();
+        // Convert the date to ISO 8601 format if necessary
+        final String futureIso8601 = relativeInstant.toString();
 
         final Response response = pageResource
-                .loadJson(request, this.response, pagePath, "PREVIEW_MODE", null,
+                .loadJson(request, this.response, pagePath, mode, null,
                         "1", null, futureIso8601);
 
         RestUtilTest.verifySuccessResponse(response);
 
         final PageView pageView = (PageView) ((ResponseEntityView<?>) response.getEntity()).getEntity();
-        assertEquals(1, pageView.getNumberContents());
-        pageView.getContainers().stream()
-                .map(containerRaw -> containerRaw.getContentlets().values())
-                .forEach(contentlets -> {
-                    contentlets.forEach(contentlet -> {
-                        assertEquals(blog.getIdentifier(), contentlet.get(0).getIdentifier());
+        if (expectContentlet) {
+            assertEquals(1, pageView.getNumberContents());
+            pageView.getContainers().stream()
+                    .map(containerRaw -> containerRaw.getContentlets().values())
+                    .forEach(contentlets -> {
+                        contentlets.forEach(contentlet -> {
+                            assertEquals(blog.getIdentifier(), contentlet.get(0).getIdentifier());
+                        });
                     });
-                });
+        } else {
+            assertEquals(0, pageView.getNumberContents());
+        }
     }
+
 
 }
