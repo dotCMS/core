@@ -757,12 +757,12 @@
 		"basic": [
 			{
 				"key": "password",
-				"value": "{{password}}",
+				"value": "admin",
 				"type": "string"
 			},
 			{
 				"key": "username",
-				"value": "{{user}}",
+				"value": "admin@dotcms.com",
 				"type": "string"
 			}
 		]
@@ -774,8 +774,8 @@
 				"type": "text/javascript",
 				"packages": {},
 				"exec": [
-					"pm.environment.get(\"user\");",
-					"pm.environment.get(\"password\");"
+					"",
+					""
 				]
 			}
 		},
