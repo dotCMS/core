@@ -130,7 +130,11 @@ describe('useDotcmsEditor', () => {
             };
 
             it('should send a message to the editor when the client is ready', () => {
-                const editor: sdkClient.EditorConfig = { params: {} };
+                const editor: sdkClient.EditorConfig = {
+                    params: {
+                        depth: '0'
+                    }
+                };
 
                 renderHook(() =>
                     useDotcmsEditor({

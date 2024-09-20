@@ -2,7 +2,6 @@ package com.dotcms.jobs.business.api;
 
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
-import com.dotcms.jobs.business.error.ExponentialBackoffRetryStrategy;
 import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.ProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
@@ -11,7 +10,6 @@ import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.queue.JobQueue;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.LocalDateTime;
@@ -26,6 +24,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 /**
  * Manages the processing of jobs in a distributed job queue system. This class is responsible for
@@ -68,6 +68,7 @@ import java.util.function.Consumer;
  *     }
  * }</pre>
  */
+@ApplicationScoped
 public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     private final AtomicBoolean isStarted = new AtomicBoolean(false);
@@ -84,87 +85,24 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private final Map<String, RetryStrategy> retryStrategies;
     private final RetryStrategy defaultRetryStrategy;
 
-    // The number of threads to use for job processing.
-    static final int DEFAULT_THREAD_POOL_SIZE = Config.getIntProperty(
-            "JOB_QUEUE_THREAD_POOL_SIZE", 10
-    );
-
-    // The number of failures that will cause the circuit to open
-    static final int DEFAULT_CIRCUIT_BREAKER_FAILURE_THRESHOLD = Config.getIntProperty(
-            "DEFAULT_CIRCUIT_BREAKER_FAILURE_THRESHOLD", 5
-    );
-
-    // The time in milliseconds after which to attempt to close the circuit
-    static final int DEFAULT_CIRCUIT_BREAKER_RESET_TIMEOUT = Config.getIntProperty(
-            "DEFAULT_CIRCUIT_BREAKER_RESET_TIMEOUT", 60000
-    );
-
-    // The initial delay between retries in milliseconds
-    static final int DEFAULT_RETRY_STRATEGY_INITIAL_DELAY = Config.getIntProperty(
-            "DEFAULT_RETRY_STRATEGY_INITIAL_DELAY", 1000
-    );
-
-    // The maximum delay between retries in milliseconds
-    static final int DEFAULT_RETRY_STRATEGY_MAX_DELAY = Config.getIntProperty(
-            "DEFAULT_RETRY_STRATEGY_MAX_DELAY", 60000
-    );
-
-    // The factor by which the delay increases with each retry
-    static final float DEFAULT_RETRY_STRATEGY_BACK0FF_FACTOR = Config.getFloatProperty(
-            "DEFAULT_RETRY_STRATEGY_BACK0FF_FACTOR", 2.0f
-    );
-
-    // The maximum number of retry attempts allowed
-    static final int DEFAULT_RETRY_STRATEGY_MAX_RETRIES = Config.getIntProperty(
-            "DEFAULT_RETRY_STRATEGY_MAX_RETRIES", 5
-    );
-
-    /**
-     * Constructs a new JobQueueManagerAPIImpl with the default job queue implementation and the default
-     * number of threads.
-     */
-    public JobQueueManagerAPIImpl() {
-        // We don't have yet a JobQueue implementation, an implementation will be developed in a
-        // later task.
-        this(null, DEFAULT_THREAD_POOL_SIZE);
-    }
-
     /**
      * Constructs a new JobQueueManagerAPIImpl.
      *
-     * @param jobQueue       The JobQueue implementation to use.
-     * @param threadPoolSize The number of threads to use for job processing.
+     * @param jobQueue             The JobQueue implementation to use.
+     * @param jobQueueConfig       The JobQueueConfig implementation to use.
+     * @param circuitBreaker       The CircuitBreaker implementation to use.
+     * @param defaultRetryStrategy The default retry strategy to use.
      */
-    @VisibleForTesting
-    public JobQueueManagerAPIImpl(JobQueue jobQueue, int threadPoolSize) {
-        this(jobQueue, threadPoolSize,
-                new CircuitBreaker(
-                        DEFAULT_CIRCUIT_BREAKER_FAILURE_THRESHOLD,
-                        DEFAULT_CIRCUIT_BREAKER_RESET_TIMEOUT
-                )
-        );
-    }
+    @Inject
+    public JobQueueManagerAPIImpl(JobQueue jobQueue, JobQueueConfig jobQueueConfig,
+            CircuitBreaker circuitBreaker, RetryStrategy defaultRetryStrategy) {
 
-    /**
-     * Constructs a new JobQueueManagerAPIImpl.
-     *
-     * @param jobQueue       The JobQueue implementation to use.
-     * @param threadPoolSize The number of threads to use for job processing.
-     * @param circuitBreaker The CircuitBreaker implementation to use.
-     */
-    @VisibleForTesting
-    public JobQueueManagerAPIImpl(JobQueue jobQueue, int threadPoolSize, CircuitBreaker circuitBreaker) {
         this.jobQueue = jobQueue;
-        this.threadPoolSize = threadPoolSize;
+        this.threadPoolSize = jobQueueConfig.getThreadPoolSize();
         this.processors = new ConcurrentHashMap<>();
         this.jobWatchers = new ConcurrentHashMap<>();
         this.retryStrategies = new ConcurrentHashMap<>();
-        this.defaultRetryStrategy = new ExponentialBackoffRetryStrategy(
-                DEFAULT_RETRY_STRATEGY_INITIAL_DELAY,
-                DEFAULT_RETRY_STRATEGY_MAX_DELAY,
-                DEFAULT_RETRY_STRATEGY_BACK0FF_FACTOR,
-                DEFAULT_RETRY_STRATEGY_MAX_RETRIES
-        );
+        this.defaultRetryStrategy = defaultRetryStrategy;
         this.circuitBreaker = circuitBreaker;
     }
 
@@ -321,7 +259,19 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     @Override
     @VisibleForTesting
     public CircuitBreaker getCircuitBreaker() {
-        return circuitBreaker;
+        return this.circuitBreaker;
+    }
+
+    @Override
+    @VisibleForTesting
+    public int getThreadPoolSize() {
+        return this.threadPoolSize;
+    }
+
+    @Override
+    @VisibleForTesting
+    public RetryStrategy getDefaultRetryStrategy() {
+        return this.defaultRetryStrategy;
     }
 
     /**

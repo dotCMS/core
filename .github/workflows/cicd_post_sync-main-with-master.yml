@@ -1,0 +1,44 @@
+## Temp workflow to keep the main branch synchronized with changes in master.
+## This workflow will be deleted after finishing the migration from master to main.
+## Epic: https://github.com/dotCMS/core/issues/29554
+name: Sync main with master
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  sync-main:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all branches
+
+      - name: 'Setup git config'
+        run: |
+          git config user.name "${{ secrets.CI_MACHINE_USER }}"
+          git config user.email "dotCMS-Machine-User@dotcms.com"
+
+      - name: Create or update main branch
+        run: |
+          # Check if 'main' branch exists
+          if git show-ref --quiet refs/heads/main; then
+            # If 'main' branch exists, update it to match 'master'
+            git checkout main
+            git reset --hard origin/master
+          else
+            # If 'main' branch does not exist, create it from 'master'
+            git checkout -b main origin/master
+          fi
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.CI_MACHINE_TOKEN }}
+          branch: main
+          force: true
+          tags: true

@@ -8,7 +8,7 @@ A single instance of dotcms running on port 8080 that will download and install 
 #### Environment setup
 Specifiy a custom starter that will be included:
 ```
-"CUSTOM_STARTER_URL": "https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/xxxxxxxxxx.zip"
+CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/xxxxxxxxxx.zip'
 ```
 A local path to license pack can be set here:
 

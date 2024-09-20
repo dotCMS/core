@@ -112,7 +112,8 @@ export function withEditor() {
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
-                    const isLoading = store.status() === UVE_STATUS.LOADING;
+                    const isLoading = !isClientReady || store.status() === UVE_STATUS.LOADING;
+
                     const isPageReady = isTraditionalPage || isClientReady;
 
                     const { dragIsActive, isScrolling } = getEditorStates(state);
