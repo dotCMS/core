@@ -69,8 +69,19 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      - name: Cleanup
-        uses: ./.github/actions/core-cicd/cleanup-runner
+
+      - name: Get SDKMan Version
+        id: get-sdkman-version
+        shell: bash
+        run: |
+          if [ -f .sdkmanrc ]; then
+            SDKMAN_JAVA_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
+            echo "using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
+            echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_OUTPUT
+          else
+            echo "No .sdkmanrc file found"
+            exit 1
+          fi
 
       - name: Restore Docker Context
         id: restore-docker-context
@@ -90,12 +101,11 @@ jobs:
           
           echo "rebuild=${rebuild}" >> $GITHUB_OUTPUT
 
-      - name: Setup Java
-        uses: actions/setup-java@v3
+      - name: Prepare Runner
+        uses: ./.github/actions/core-cicd/prepare-runner
         with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRO }}
-        if: steps.build-status.outputs.rebuild == 'true'
+          cleanup-runner: true
+          require-java: ${{ steps.build-status.outputs.rebuild == 'true' || 'false'}}
 
       - name: Build Core
         run: |
@@ -273,6 +283,8 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
         if: success()
 
       - name: Format Tags
