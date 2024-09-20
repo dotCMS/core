@@ -14,10 +14,10 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentHostFolderFieldComponent } from './dot-edit-content-host-folder-field.component';
 import { HostFolderFiledStore } from './store/host-folder-field.store';
-import { MessageServiceMock } from './utils/mocks';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { HOST_FOLDER_TEXT_MOCK, TREE_SELECT_MOCK } from '../../utils/mocks';
@@ -36,7 +36,7 @@ const meta: Meta<Args> = {
                 provideHttpClient(),
                 {
                     provide: DotMessageService,
-                    useValue: MessageServiceMock
+                    useValue: new MockDotMessageService({})
                 }
             ]
         }),
@@ -47,7 +47,7 @@ const meta: Meta<Args> = {
                 {
                     provide: DotEditContentService,
                     useValue: {
-                        getSitesTreePath: () => of(TREE_SELECT_MOCK)
+                        getSitesTreePath: () => of(TREE_SELECT_MOCK),
                         // getFoldersTreeNode: () => of([])
                     }
                 }
