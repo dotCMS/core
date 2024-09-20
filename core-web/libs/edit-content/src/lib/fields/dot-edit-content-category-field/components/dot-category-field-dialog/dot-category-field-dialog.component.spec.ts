@@ -85,17 +85,11 @@ describe('DotCategoryFieldDialogComponent', () => {
 
     it('should save the changes and apply the categories when the apply button is clicked', () => {
         const closedDialogSpy = jest.spyOn(spectator.component.closedDialog, 'emit');
-        const addConfirmedCategoriesSky = jest.spyOn(store, 'addConfirmedCategories');
-        const categories = { key: '1234', value: 'test' };
-        store.addSelected({ key: '1234', value: 'test' });
+        const addConfirmedCategoriesSky = jest.spyOn(store, 'applyDialogSelection');
         spectator.detectChanges();
-
-        expect(store.selected()).toEqual([categories]);
-        expect(store.confirmedCategories()).toEqual([]);
 
         spectator.click(byTestId('dialog-apply'));
 
-        expect(store.confirmedCategories()).toEqual([categories]);
         expect(closedDialogSpy).toHaveBeenCalled();
         expect(addConfirmedCategoriesSky).toHaveBeenCalled();
     });

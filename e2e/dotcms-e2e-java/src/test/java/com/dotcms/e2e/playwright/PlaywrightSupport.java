@@ -43,7 +43,8 @@ public class PlaywrightSupport {
                 .launch(new com.microsoft.playwright.BrowserType.LaunchOptions().setHeadless(isCi()));
     }
 
-    public <C extends AutoCloseable> void close(C... stuffToClose) {
+    @SafeVarargs
+    public final <C extends AutoCloseable> void close(C... stuffToClose) {
         Stream.of(stuffToClose)
                 .filter(Objects::nonNull)
                 .forEach(closeable -> Try
