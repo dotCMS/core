@@ -114,6 +114,11 @@ public class LogicalFilter implements Filter {
             return this;
         }
 
+        public Builder add(final SimpleFilter filter){
+            filters.add(filter);
+            return this;
+        }
+
         public Builder add(final LogicalFilter logicalFilter){
             filters.add(logicalFilter);
             return this;

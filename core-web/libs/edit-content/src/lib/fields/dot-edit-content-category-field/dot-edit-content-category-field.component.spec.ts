@@ -16,8 +16,10 @@ import {
     CATEGORY_FIELD_MOCK,
     CATEGORY_FIELD_VARIABLE_NAME,
     CATEGORY_HIERARCHY_MOCK,
-    SELECTED_LIST_MOCK
+    CATEGORY_LEVEL_2,
+    MOCK_SELECTED_CATEGORIES_OBJECT
 } from './mocks/category-field.mocks';
+import { DotCategoryFieldKeyValueObj } from './models/dot-category-field.models';
 import { CategoriesService } from './services/categories.service';
 import { CategoryFieldStore } from './store/content-category-field.store';
 
@@ -86,7 +88,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
             it('should categoryFieldControl has the values loaded on the store', () => {
                 const categoryValue = spectator.component.categoryFieldControl.value;
 
-                expect(categoryValue).toEqual(SELECTED_LIST_MOCK);
+                expect(categoryValue).toEqual(MOCK_SELECTED_CATEGORIES_OBJECT);
             });
         });
 
@@ -186,30 +188,50 @@ describe('DotEditContentCategoryFieldComponent', () => {
             // Check if the form has the correct value
             const categoryValue = spectator.component.categoryFieldControl.value;
 
-            expect(categoryValue).toEqual(SELECTED_LIST_MOCK);
+            expect(categoryValue).toEqual(MOCK_SELECTED_CATEGORIES_OBJECT);
         }));
 
         it('should set categoryFieldControl value when adding a new category', () => {
-            store.addSelected({
-                key: '1234',
-                value: 'test'
-            });
-            store.addConfirmedCategories();
-            spectator.flushEffects();
+            const newItem: DotCategoryFieldKeyValueObj = {
+                key: CATEGORY_LEVEL_2[0].key,
+                value: CATEGORY_LEVEL_2[0].categoryName,
+                inode: CATEGORY_LEVEL_2[0].inode,
+                path: CATEGORY_LEVEL_2[0].categoryName
+            };
 
-            const categoryValue = spectator.component.categoryFieldControl.value;
+            // this apply selected to the dialog
+            store.openDialog();
 
-            expect(categoryValue).toEqual([...SELECTED_LIST_MOCK, '1234']);
+            // Add the new category
+            store.addSelected(newItem);
+            // Apply the selected to the field
+            store.applyDialogSelection();
+
+            spectator.detectChanges();
+
+            const categoryValues = spectator.component.categoryFieldControl.value;
+
+            expect(categoryValues).toEqual([...MOCK_SELECTED_CATEGORIES_OBJECT, newItem]);
         });
 
         it('should set categoryFieldControl value when removing a category', () => {
-            store.removeConfirmedCategories(SELECTED_LIST_MOCK[0]);
+            const categoryValue: DotCategoryFieldKeyValueObj[] =
+                spectator.component.categoryFieldControl.value;
 
-            spectator.flushEffects();
+            const expectedSelected = [categoryValue[0]];
 
-            const categoryValue = spectator.component.categoryFieldControl.value;
+            expect(categoryValue.length).toBe(2);
+            store.openDialog(); // this apply selected to the dialog
 
-            expect(categoryValue).toEqual([SELECTED_LIST_MOCK[1]]);
+            store.removeSelected(categoryValue[1].key);
+            store.applyDialogSelection(); // this apply the selected in the dialog to the final selected
+
+            spectator.detectChanges();
+
+            const newCategoryValue = spectator.component.categoryFieldControl.value;
+
+            expect(newCategoryValue).toEqual(expectedSelected);
+            expect(newCategoryValue.length).toBe(1);
         });
     });
 });
