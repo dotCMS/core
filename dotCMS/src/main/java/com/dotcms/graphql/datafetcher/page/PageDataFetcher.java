@@ -118,7 +118,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             return transformer.hydrate().get(0);
 
         } catch (Exception e) {
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
             throw e;
         }
     }
