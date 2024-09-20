@@ -345,6 +345,12 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @Override
     @VisibleForTesting
+    public JobQueue getJobQueue() {
+        return this.jobQueue;
+    }
+
+    @Override
+    @VisibleForTesting
     public int getThreadPoolSize() {
         return this.threadPoolSize;
     }

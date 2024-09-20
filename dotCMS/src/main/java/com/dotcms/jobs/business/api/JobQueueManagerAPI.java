@@ -6,6 +6,7 @@ import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.processor.JobProcessor;
+import com.dotcms.jobs.business.queue.JobQueue;
 import com.dotmarketing.exception.DotDataException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -115,6 +116,11 @@ public interface JobQueueManagerAPI extends AutoCloseable {
      * @return The CircuitBreaker instance
      */
     CircuitBreaker getCircuitBreaker();
+
+    /**
+     * @return The JobQueue instance
+     */
+    JobQueue getJobQueue();
 
     /**
      * @return The size of the thread pool
