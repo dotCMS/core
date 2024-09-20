@@ -175,7 +175,7 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
      * @return the fileAsset
      * @throws DotDataException if the content type is not found
      */
-    private  FileAsset convertToFileAsset(final Contentlet dotAsset, final FileAssetAPI api) throws DotDataException {
+    public static FileAsset convertToFileAsset(final Contentlet dotAsset, final FileAssetAPI api) throws DotDataException {
         final ContentType contentType =
                Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find("FileAsset")).getOrNull();
 
