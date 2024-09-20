@@ -5,6 +5,13 @@ import java.util.regex.Pattern;
 
 /**
  * Time Dimension Parser
+ * Example:
+ * <pre>
+ *     TimeDimensionParser.parseTimeDimension("Events.day day");
+ * </pre>
+ *
+ * This should return Events.day and day (term and field)
+ *  Note: this is not support intervals for dates, but will introduce on the future
  * @author jsanca
  */
 public class TimeDimensionParser {

@@ -40,7 +40,7 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
         delegate.add(new ResponseMetaDataWebInterceptor());
         delegate.add(new EventLogWebInterceptor());
         delegate.add(new CurrentVariantWebInterceptor());
-        delegate.add(new AnalyticsTrackWebInterceptor());
+        //delegate.add(new AnalyticsTrackWebInterceptor()); // turn on when needed.
     } // addInterceptors.
 
 } // E:O:F:InterceptorFilter.

@@ -10,6 +10,12 @@ import java.util.regex.Pattern;
 
 /**
  * Parser for a filter expression
+ * Example:
+ * <pre>
+ *     FilterParser.parseFilterExpression("Events.variant = ['B'] or Events.experiments = ['C']");
+ * </pre>
+ * should return 2 tokens and 1 logical operator
+ * Tokens are member, operator and values (Events.variant, =, B) and the operator is 'and' or 'or'
  * @author jsanca
  */
 public class FilterParser {

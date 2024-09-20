@@ -133,6 +133,11 @@ describe('DotExperimentsConfigurationComponent', () => {
         jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
     });
 
+    afterEach(() => {
+        jest.resetAllMocks();
+        jest.restoreAllMocks();
+    });
+
     it('should show the skeleton component when is loading', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,

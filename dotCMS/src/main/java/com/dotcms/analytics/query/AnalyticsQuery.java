@@ -6,7 +6,29 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.Set;
 
 /**
- * Encapsulates a simplificated query for the analytics backend
+ * Encapsulates a simple query for the analytics backend
+ * Example:
+ * <pre>
+ *     {
+ *     "query": {
+ *         "dimensions": [
+ *             "Events.experiment",
+ *             "Events.variant",
+ *             "Events.lookBackWindow"
+ *         ],
+ *         "measures": [
+ *             "Events.count"
+ *         ],
+ *         "filters": "Events.variant = ['B']",
+ *         "limit": 100,
+ *         "offset": 1,
+ *         "timeDimensions": "Events.day day",
+ *         "orders": "Events.day ASC"
+ *     }
+ * }
+ *
+ * @see AnalyticsQueryParser
+ * </pre>
  * @author jsanca
  */
 @JsonDeserialize(builder = AnalyticsQuery.Builder.class)

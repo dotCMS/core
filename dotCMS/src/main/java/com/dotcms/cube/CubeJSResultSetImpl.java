@@ -1,7 +1,5 @@
 package com.dotcms.cube;
 
-import com.dotcms.analytics.model.ResultSetItem;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
