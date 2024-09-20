@@ -952,7 +952,7 @@ public class JSONObject implements Serializable, Map {
     }
 
     /**
-     * Apparently we have to annotations to ignore fields in the JSON serialization and we have been mixing them up
+     * Apparently we have two annotations to ignore fields in the JSON serialization, and we have been mixing them up
      * @param method the method to check
      * @return true if the method should be ignored
      */
