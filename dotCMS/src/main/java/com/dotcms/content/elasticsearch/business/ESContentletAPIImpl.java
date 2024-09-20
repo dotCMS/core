@@ -5012,6 +5012,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             //This way no matter how many times the contentlet reference that we're passing in gets override.
             //On the way back this updates the original contentlet references updating the new inode and identifier
+            if (null == contentletOut) {
+                throw new DotDataException("Checked in contentlet is null. This must never happen!");
+            }
             contentletIn.setIdentifier(contentletOut.getIdentifier());
             contentletIn.setInode(contentletOut.getInode());
 
@@ -7688,7 +7691,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                             final Map<String, Object> uniqueContentMap = uniqueContent.getMap();
                             final Object obj = uniqueContentMap.get(field.getVelocityVarName());
-                            if ((isDataTypeNumber && fieldValue.equals(obj)) ||
+                            if ((isDataTypeNumber && Objects.equals(fieldValue, obj)) ||
                                     (!isDataTypeNumber && ((String) obj).equalsIgnoreCase(
                                             ((String) fieldValue)))) {
                                 unique = false;

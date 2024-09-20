@@ -302,10 +302,8 @@ public class Logger {
             if (!message.equalsIgnoreCase(ex.getMessage())) {
                 logger.warn(ex.getMessage());
             }
-            try {
+            if (UtilMethods.isSet(ex.getStackTrace()) && null != ex.getStackTrace()[0]) {
                 logger.warn(ex.getStackTrace()[0]);
-            } catch (final Throwable t) {
-                logger.debug(() -> t);
             }
             logger.debug(() -> message, ex);
         } catch (final IllegalStateException e) {
