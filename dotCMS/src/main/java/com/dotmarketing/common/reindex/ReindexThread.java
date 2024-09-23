@@ -340,8 +340,8 @@ public class ReindexThread {
                                             new ThreadPoolExecutor.DiscardOldestPolicy())
                                     .build()
                     );
-            submitter.submit(thread);
             getInstance().state(ThreadState.RUNNING);
+            submitter.submit(thread);
         }
 
     }
