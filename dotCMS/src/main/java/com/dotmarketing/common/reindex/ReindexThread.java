@@ -1,9 +1,9 @@
 package com.dotmarketing.common.reindex;
 
+import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.SystemCache;
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
@@ -11,27 +11,32 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.util.I18NMessage;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+
 import com.dotmarketing.util.ThreadUtils;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
-import org.apache.felix.framework.OSGISystem;
-import org.elasticsearch.action.bulk.BulkProcessor;
-
-import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicLong;
+import org.elasticsearch.action.bulk.BulkProcessor;
 
 /**
  * This thread is in charge of re-indexing the contenlet information placed in the
@@ -69,9 +74,15 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ReindexThread {
 
-    private enum ThreadState {
-        STOPPED, PAUSED, RUNNING;
-    }
+
+
+    private final AtomicBoolean running = new AtomicBoolean(false);
+    private final AtomicBoolean paused = new AtomicBoolean(false);
+    private final ScheduledExecutorService executor;
+
+    AtomicBoolean shutdownRequested = new AtomicBoolean(false);
+
+    private CompletableFuture<Void> currentTask = CompletableFuture.completedFuture(null);
 
     private final ContentletIndexAPI indexAPI;
     private final ReindexQueueAPI queueApi;
@@ -79,11 +90,11 @@ public class ReindexThread {
     private final RoleAPI roleAPI;
     private final UserAPI userAPI;
 
-    private static ReindexThread instance;
+    private static final ReindexThread INSTANCE = new ReindexThread();
 
-    private final long SLEEP = Config.getLongProperty("REINDEX_THREAD_SLEEP", 250);
-    private final int SLEEP_ON_ERROR = Config.getIntProperty("REINDEX_THREAD_SLEEP_ON_ERROR", 500);
-    private long contentletsIndexed = 0;
+    private final long sleep = Config.getLongProperty("REINDEX_THREAD_SLEEP", 250);
+    private final int sleepOnError = Config.getIntProperty("REINDEX_THREAD_SLEEP_ON_ERROR", 500);
+    private final AtomicLong contentletsIndexed = new AtomicLong(0);
     // bulk up to this many requests
     public static final int ELASTICSEARCH_BULK_ACTIONS =
             Config.getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS", 10);
@@ -116,13 +127,10 @@ public class ReindexThread {
             "WAIT_BEFORE_PAUSE_SECONDS", 0);
 
 
-    private AtomicReference<ThreadState> state = new AtomicReference<>(ThreadState.STOPPED);
+    private static final String REINDEX_THREAD_PAUSED = "REINDEX_THREAD_PAUSED";
+    private static final Lazy<SystemCache> cache = Lazy.of(() -> CacheLocator.getSystemCache());
 
-
-    private final static String REINDEX_THREAD_PAUSED = "REINDEX_THREAD_PAUSED";
-    private final static Lazy<SystemCache> cache = Lazy.of(() -> CacheLocator.getSystemCache());
-
-    private final static AtomicBoolean rebuildBulkIndexer = new AtomicBoolean(false);
+    private static final AtomicBoolean rebuildBulkIndexer = new AtomicBoolean(false);
 
     public static void rebuildBulkIndexer() {
         Logger.warn(ReindexThread.class, "--- ReindexThread BulkProcessor needs to be Rebuilt");
@@ -145,52 +153,159 @@ public class ReindexThread {
         this.userAPI = userAPI;
         this.roleAPI = roleAPI;
         this.indexAPI = indexAPI;
-        instance = this;
+        this.executor = Executors.newSingleThreadScheduledExecutor();
+    }
 
+    public static ReindexThread getInstance() {
+        return INSTANCE;
     }
 
 
-    private final Runnable ReindexThreadRunnable = () -> {
+    public void start() {
+        if (running.compareAndSet(false, true)) {
+
+            currentTask = CompletableFuture.runAsync(this::run, executor)
+                    .exceptionally(ex -> {
+                        Logger.error(ReindexThread.class, "ReindexThread Task failed: " + ex.getMessage());
+                        return null;
+                    })
+                    .thenRun(() -> running.set(false));
+        }
+    }
+
+    public void stop() {
+        if (running.compareAndSet(true, false)) {
+            shutdownRequested.set(true);
+            paused.set(false);
+            try {
+                currentTask.get(60, TimeUnit.SECONDS);
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                Logger.error(ReindexThread.class, "Error stopping ReindexThread", e);
+            }
+        }
+    }
+
+
+    public void setPaused() {
+        if (paused.compareAndSet(false, true)) {
+            Logger.debug(ReindexThread.class, "--- ReindexThread - Paused");
+            cache.get().put(REINDEX_THREAD_PAUSED, System.currentTimeMillis() + Duration
+                    .ofMinutes(Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 10))
+                    .toMillis());
+        }
+    }
+
+    public void unpauseInt() {
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            Logger.debug(ReindexThread.class, "--- Adding unpause commit listener");
+            HibernateUtil.addCommitListener("unpauseIndex", this::unpauseImpl);
+        } else {
+            unpauseImpl();
+        }
+    }
+
+    private void unpauseImpl() {
+        if (paused.compareAndSet(true, false)) {
+            Logger.debug(ReindexThread.class, "--- ReindexThread - Unpaused");
+            cache.get().remove(REINDEX_THREAD_PAUSED);
+        }
+        if (!running.get()) {
+            start();
+        }
+    }
+
+
+    private void run() {
         Logger.info(this.getClass(),
                 "---  ReindexThread is starting, background indexing will begin");
-
-        while (state.get() != ThreadState.STOPPED) {
+        BulkProcessorContext context = new BulkProcessorContext(null, null);
+        while (running.get() && !shutdownRequested.get() && !Thread.currentThread().isInterrupted()) {
             try {
-                runReindexLoop();
+            runReindexLoop(context);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             } catch (Exception e) {
-                Logger.error(this.getClass(), e.getMessage(), e);
+                Logger.error(this, "ReindexThread Exception", e);
             }
         }
         Logger.warn(this.getClass(),
                 "---  ReindexThread is stopping, background indexing will not take place");
 
-    };
+    }
 
     @VisibleForTesting
     long totalESPuts() {
-        return contentletsIndexed;
+        return contentletsIndexed.get();
     }
 
 
-    private BulkProcessor closeBulkProcessor(final BulkProcessor bulkProcessor)
-            throws InterruptedException {
-        if (bulkProcessor != null) {
-            bulkProcessor.awaitClose(BULK_PROCESSOR_AWAIT_TIMEOUT, TimeUnit.SECONDS);
+    private synchronized void closeBulkProcessor(final BulkProcessorContext context) {
+        if (context.getBulkProcessor() != null) {
+            try {
+                boolean closed = context.getBulkProcessor().awaitClose(BULK_PROCESSOR_AWAIT_TIMEOUT, TimeUnit.SECONDS);
+                if (!closed) {
+                    Logger.warn(this.getClass(), "BulkProcessor did not close within the timeout period.");
+                }
+                handleResults(context.getBulkProcessorListener());
+            } catch (InterruptedException e) {
+                Logger.error(this.getClass(), "Interrupted while waiting for BulkProcessor to close", e);
+                Thread.currentThread().interrupt(); // Restore the interrupted status
+            } catch (Exception e) {
+                Logger.error(this.getClass(), "Error closing BulkProcessor", e);
+            }
+
+            // Perform any cleanup if necessary for BulkProcessorListener
+            context.setBulkProcessorListener(null);
+            context.setBulkProcessor(null);
         }
+
         rebuildBulkIndexer.set(false);
-        return null;
+    }
+
+    private void handleResults(BulkProcessorListener bulkProcessorListener) {
+        List<ReindexEntry> success = bulkProcessorListener.getSuccesful();
+        Map<ReindexEntry,String> failures = bulkProcessorListener.getFailures();
+        int totalRequests = bulkProcessorListener.getWorkingRecords().size();
+        handleSuccess(success);
+        failures.forEach(this::handleFailure);
+        if(totalRequests > 0) {
+            Logger.info(this.getClass(), "ReindexThread: Successfully indexed " + success.size() + " of "+totalRequests+" contentlets");
+            if (!failures.isEmpty()) {
+                Logger.info(this.getClass(), "ReindexThread: Failed to index " + failures.size() + " contentlets");
+            }
+        }
+    }
+    private void handleSuccess(final List<ReindexEntry> successful) {
+
+        try {
+            if (!successful.isEmpty()) {
+                APILocator.getReindexQueueAPI().deleteReindexEntry(successful);
+                CacheLocator.getESQueryCache().clearCache();
+            }
+        } catch (DotDataException e) {
+            Logger.warnAndDebug(this.getClass(), "unable to delete indexjournal:" + e.getMessage(), e);
+        }
+    }
+
+    private void handleFailure(final ReindexEntry idx, final String cause) {
+        try {
+            APILocator.getReindexQueueAPI().markAsFailed(idx, cause);
+        } catch (DotDataException e) {
+            Logger.warnAndDebug(this.getClass(), "unable to reque indexjournal:" + idx, e);
+        }
     }
 
 
-    private BulkProcessor finalizeReIndex(BulkProcessor bulkProcessor)
-            throws InterruptedException, LanguageException, DotDataException, SQLException {
-        bulkProcessor = closeBulkProcessor(bulkProcessor);
+    private BulkProcessorContext finalizeReIndex(BulkProcessorContext context) throws DotDataException {
+        closeBulkProcessor(context);
         switchOverIfNeeded();
         if (!indexAPI.isInFullReindex()) {
             ReindexThread.pause();
         }
-        return bulkProcessor;
-
+        return context;
     }
 
 
@@ -201,56 +316,53 @@ public class ReindexThread {
      * be sent to the user via the Notifications API to take care of the problem as soon as
      * possible.
      */
-    private void runReindexLoop() {
-        BulkProcessor bulkProcessor = null;
-        BulkProcessorListener bulkProcessorListener = null;
-        while (state.get() != ThreadState.STOPPED) {
-            try {
+    private void runReindexLoop(BulkProcessorContext context) throws InterruptedException {
 
-                final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
+        try {
+            processReindexing(context);
+        }
+        catch (Exception ex) {
+            Logger.error(this, "ReindexThread Exception", ex);
+            closeBulkProcessor(context);
+            context.setBulkProcessor(null);
+            context.setBulkProcessorListener(null);
+            ThreadUtils.sleep(sleepOnError);
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
+        while (paused.get()) {
 
-                if (workingRecords.isEmpty()) {
-                    bulkProcessor = finalizeReIndex(bulkProcessor);
-                }
-
-                if (!workingRecords.isEmpty() && !ElasticReadOnlyCommand.getInstance()
-                        .isIndexOrClusterReadOnly()) {
-                    Logger.debug(this,
-                            "Found  " + workingRecords + " index items to process");
-
-                    if (bulkProcessor == null || rebuildBulkIndexer.get()) {
-                        closeBulkProcessor(bulkProcessor);
-                        bulkProcessorListener = new BulkProcessorListener();
-                        bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
-                    }
-                    bulkProcessorListener.workingRecords.putAll(workingRecords);
-                    indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
-                    contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
-                    // otherwise, reindex normally
-
-                }
-            } catch (Throwable ex) {
-                Logger.error(this, "ReindexThread Exception", ex);
-                ThreadUtils.sleep(SLEEP_ON_ERROR);
-            } finally {
-                DbConnectionFactory.closeSilently();
+            Logger.infoEvery(ReindexThread.class, "--- ReindexThread Paused",
+                    Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 60) * 60000);
+            TimeUnit.MILLISECONDS.sleep(sleep);
+            Long restartTime = (Long) cache.get().get(REINDEX_THREAD_PAUSED);
+            if (restartTime == null || restartTime < System.currentTimeMillis()) {
+                unpauseImpl();
             }
-            while (state.get() == ThreadState.PAUSED) {
-                ThreadUtils.sleep(SLEEP);
-                //Logs every 60 minutes
-                Logger.infoEvery(ReindexThread.class, "--- ReindexThread Paused",
-                        Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 60) * 60000);
-                Long restartTime = (Long) cache.get().get(REINDEX_THREAD_PAUSED);
-                if (restartTime == null || restartTime < System.currentTimeMillis()) {
-                    state.set(ThreadState.RUNNING);
-                }
+
+        }
+    }
+
+    private void processReindexing(BulkProcessorContext context) throws DotDataException {
+        final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
+
+        if (workingRecords.isEmpty()) {
+            finalizeReIndex(context);
+            return;
+        }
+
+        if (!isClusterReadOnly() && !workingRecords.isEmpty()) {
+            try {
+                processRecords(workingRecords, context);
+            } catch (Exception e) {
+                Logger.error(this, "Error processing records", e);
+                closeBulkProcessor(context);
+                throw e; // Rethrow to handle in runReindexLoop
             }
         }
     }
 
-
-    private boolean switchOverIfNeeded()
-            throws LanguageException, DotDataException, SQLException, InterruptedException {
+    private boolean switchOverIfNeeded() throws DotDataException {
         if (ESReindexationProcessStatus.inFullReindexation() && queueApi.recordsInQueue() == 0) {
             // The re-indexation process has finished successfully
             if (indexAPI.reindexSwitchover(false)) {
@@ -262,92 +374,64 @@ public class ReindexThread {
         return false;
     }
 
-    /**
-     * Tells the thread to start processing. Starts the thread
-     */
+
     public static void startThread() {
-        unpause();
+        getInstance().unpauseInt();
     }
 
-    private void state(ThreadState state) {
-        getInstance().state.set(state);
+    public static void unpause()
+    {
+        getInstance().unpauseInt();
     }
 
     /**
      * Tells the thread to stop processing. Doesn't shut down the thread.
      */
     public static void stopThread() {
-        getInstance().state(ThreadState.STOPPED);
-
+        getInstance().stop();
     }
 
-
-    /**
-     * This instance is intended to already be started. It will try to restart the thread if
-     * instance is null.
-     */
-    public static ReindexThread getInstance() {
-        if (instance == null) {
-            synchronized (ReindexThread.class) {
-                if (instance == null) {
-                    return new ReindexThread().instance;
-                }
-            }
-
-        }
-        return instance;
-    }
 
     public static void pause() {
-        Logger.debug(ReindexThread.class, "--- ReindexThread - Paused");
-        cache.get().put(REINDEX_THREAD_PAUSED, System.currentTimeMillis() + Duration
-                .ofMinutes(Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 10))
-                .toMillis());
-        getInstance().state(ThreadState.PAUSED);
-    }
-
-    public static void unpause() {
-        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
-            Logger.debug(ReindexThread.class, "--- Adding unpause commit listener");
-            HibernateUtil.addCommitListener("unpauseIndex", ReindexThread::unpauseImpl);
-        } else {
-            unpauseImpl();
-        }
-    }
-
-    private static void unpauseImpl() {
-
-        ThreadState state = getInstance().state.get();
-        if (state == ThreadState.PAUSED) {
-            Logger.info(ReindexThread.class, "--- Unpausing reindex thread ");
-            cache.get().remove(REINDEX_THREAD_PAUSED);
-            getInstance().state(ThreadState.RUNNING);
-        } else if (state == ThreadState.STOPPED) {
-            Logger.info(ReindexThread.class, "--- Recreating ReindexThread from stopped");
-            OSGISystem.getInstance().initializeFramework();
-            Logger.infoEvery(ReindexThread.class, "--- ReindexThread Running", 60000);
-            cache.get().remove(REINDEX_THREAD_PAUSED);
-
-            final DotSubmitter submitter = DotConcurrentFactory.getInstance()
-                    .getSubmitter("ReindexThreadSubmitter",
-                            new DotConcurrentFactory.SubmitterConfigBuilder()
-                                    .poolSize(1)
-                                    .maxPoolSize(1)
-                                    .queueCapacity(2)
-                                    .rejectedExecutionHandler(
-                                            new ThreadPoolExecutor.DiscardOldestPolicy())
-                                    .build()
-                    );
-            getInstance().state(ThreadState.RUNNING);
-            submitter.submit(getInstance().ReindexThreadRunnable);
-        }
-
+        getInstance().setPaused();
     }
 
     public static boolean isWorking() {
-        return getInstance().state.get() == ThreadState.RUNNING;
+        return getInstance().isRunning();
     }
 
+    private boolean isRunning() {
+        return running.get();
+    }
+
+    private boolean isClusterReadOnly() {
+        return ElasticReadOnlyCommand.getInstance().isIndexOrClusterReadOnly();
+    }
+
+    private void processRecords(Map<String, ReindexEntry> workingRecords, BulkProcessorContext context)
+            throws DotDataException {
+        Logger.debug(this, "Found " + workingRecords.size() + " index items to process");
+
+        if (context.getBulkProcessor() == null || rebuildBulkIndexer.get()) {
+            closeBulkProcessor(context);
+            context.setBulkProcessorListener(new BulkProcessorListener());
+
+            try {
+                BulkProcessor newBulkProcessor = indexAPI.createBulkProcessor(context.getBulkProcessorListener());
+                context.setBulkProcessor(newBulkProcessor);
+                context.getBulkProcessorListener().workingRecords.putAll(workingRecords);
+                indexAPI.appendToBulkProcessor(newBulkProcessor, workingRecords.values());
+                contentletsIndexed.addAndGet(context.getBulkProcessorListener().getContentletsIndexed());
+            } catch (Exception e) {
+                Logger.error(this, "Error creating or using new BulkProcessor", e);
+                throw new DotDataException("Error creating or using new BulkProcessor", e);
+            }
+        } else {
+            context.getBulkProcessorListener().workingRecords.putAll(workingRecords);
+            indexAPI.appendToBulkProcessor(context.getBulkProcessor(), workingRecords.values());
+            contentletsIndexed.addAndGet(context.getBulkProcessorListener().getContentletsIndexed());
+        }
+    }
 
     /**
      * Generates a new notification displayed at the top left side of the back-end page in dotCMS.
@@ -361,11 +445,11 @@ public class ReindexThread {
      *                   properties file. Otherwise, the message key will be returned.
      * @param error      - true if we want to send an error notification
      * @throws DotDataException  The notification could not be posted to the system.
-     * @throws LanguageException The language properties could not be retrieved.
+     * @throws DotDataException The language properties could not be retrieved.
      */
     protected void sendNotification(final String key, final Object[] msgParams,
             final String defaultMsg, boolean error)
-            throws DotDataException, LanguageException {
+            throws DotDataException {
 
         NotificationLevel notificationLevel =
                 error ? NotificationLevel.ERROR : NotificationLevel.INFO;
@@ -380,5 +464,31 @@ public class ReindexThread {
                 notificationLevel, NotificationType.GENERIC, Visibility.ROLE, cmsAdminRole.getId(),
                 systemUser.getUserId(),
                 systemUser.getLocale());
+    }
+
+    private static class BulkProcessorContext {
+        private BulkProcessor bulkProcessor;
+        private BulkProcessorListener bulkProcessorListener;
+
+        public BulkProcessorContext(BulkProcessor bulkProcessor, BulkProcessorListener bulkProcessorListener) {
+            this.bulkProcessor = bulkProcessor;
+            this.bulkProcessorListener = bulkProcessorListener;
+        }
+
+        public BulkProcessor getBulkProcessor() {
+            return bulkProcessor;
+        }
+
+        public void setBulkProcessor(BulkProcessor bulkProcessor) {
+            this.bulkProcessor = bulkProcessor;
+        }
+
+        public BulkProcessorListener getBulkProcessorListener() {
+            return bulkProcessorListener;
+        }
+
+        public void setBulkProcessorListener(BulkProcessorListener bulkProcessorListener) {
+            this.bulkProcessorListener = bulkProcessorListener;
+        }
     }
 }
