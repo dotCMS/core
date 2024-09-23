@@ -271,7 +271,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 return null;
             }
         }
-        Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath Identifier: " + id== null? "Not Found" : id.toString());
+        Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath Identifier: " + (id== null? "Not Found" : id.toString()));
         if (id == null || id.getId() == null) {
             return null;
         }

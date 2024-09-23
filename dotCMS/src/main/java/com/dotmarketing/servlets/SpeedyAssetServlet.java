@@ -94,10 +94,9 @@ public class SpeedyAssetServlet extends HttpServlet {
 
         PageMode mode = PageMode.get(request);
         Logger.debug(this, "SpeedyAssetServlet_service PageMode: " + mode);
-        HttpSession session = request.getSession(false);
 
 
-		//GIT-4506
+        //GIT-4506
 
         boolean serveWorkingVersion = !mode.showLive;
         Logger.debug(this, "SpeedyAssetServlet_service Serve Working Version: " + serveWorkingVersion);
@@ -150,7 +149,7 @@ public class SpeedyAssetServlet extends HttpServlet {
     private Identifier resolveIdentifier(HttpServletRequest request) {
         Logger.debug(this, "--SpeedyAssetServlet_resolveIdentifier from Request--");
         Identifier ident = (Identifier) request.getAttribute(Constants.CMS_FILTER_IDENTITY);
-        Logger.debug(this, "SpeedyAssetServlet_resolveIdentifier Identifier from attribute: " + ident.toString());
+        Logger.debug(this, "SpeedyAssetServlet_resolveIdentifier Identifier from attribute: " + (ident == null ? "Not Found" : ident.toString()));
         if(ident==null){
             if(request.getParameter("path")==null) {
                 Logger.debug(this, "SpeedyAssetServlet_resolveIdentifier Param 'Path' is null, getting from the URI");
@@ -171,7 +170,7 @@ public class SpeedyAssetServlet extends HttpServlet {
                 Logger.debug(SpeedyAssetServlet.class, "SpeedyAssetServlet_resolveIdentifier Loading identifier: " + identifier);
                 try {
                     ident = APILocator.getIdentifierAPI().find(identifier);
-                    Logger.debug(this.getClass(), "SpeedyAssetServlet_resolveIdentifier Identifier: " + ident == null? "Not Found" : ident.toString());
+                    Logger.debug(this.getClass(), "SpeedyAssetServlet_resolveIdentifier Identifier: " + (ident == null? "Not Found" : ident.toString()));
                 } catch (DotDataException e) {
                     Logger.debug(this.getClass(), e.getMessage());
 
@@ -183,7 +182,7 @@ public class SpeedyAssetServlet extends HttpServlet {
                     host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
                     Logger.debug(this, "SpeedyAssetServlet_service Host object retrieved from the request is: " + host.getIdentifier());
                     ident = APILocator.getIdentifierAPI().find(host, request.getParameter("path"));
-                    Logger.debug(this.getClass(), "SpeedyAssetServlet_resolveIdentifier Identifier: " + ident == null? "Not Found" : ident.toString());
+                    Logger.debug(this.getClass(), "SpeedyAssetServlet_resolveIdentifier Identifier: " + (ident == null? "Not Found" : ident.toString()));
                 } catch (DotDataException | PortalException | SystemException | DotSecurityException e) {
                     Logger.debug(this.getClass(), e.getMessage());
                 }

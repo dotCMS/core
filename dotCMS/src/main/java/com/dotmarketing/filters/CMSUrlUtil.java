@@ -23,7 +23,6 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import com.liferay.util.Xss;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -40,8 +39,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -232,7 +229,7 @@ public class CMSUrlUtil {
 				}
 				Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype Trying to get Contentlet");
 				Contentlet c = APILocator.getContentletAPI().find(cinfo.get().getWorkingInode(), APILocator.systemUser(),false);
-				Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype Contentlet found " + (c == null ? "Not Found" : c.toString()));
+				Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype Contentlet found " + c.toString());
 				return Tuple.of(c.isHTMLPage(), IAmSubType.NONE);
 
 			} catch (Exception e) {
@@ -282,7 +279,7 @@ public class CMSUrlUtil {
 			Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
 			return false;
 		}
-		Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset Id " + id == null? "Not Found" : id.toString());
+		Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset Id " + (id == null? "Not Found" : id.toString()));
 		if (id == null || id.getId() == null) {
 			return false;
 		}
@@ -316,7 +313,7 @@ public class CMSUrlUtil {
 					Contentlet c = APILocator.getContentletAPI()
 							.find(cinfo.get().getWorkingInode(), APILocator.getUserAPI().getSystemUser(),
 									false);
-					Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset Contentlet found " + (c == null ? "Not Found" : c.toString()));
+					Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset Contentlet found " + c.toString());
 					return (c.getContentType().baseType() == BaseContentType.FILEASSET);
 				}
 			} catch (Exception e) {
@@ -349,7 +346,7 @@ public class CMSUrlUtil {
 
 		try {
 			id = APILocator.getIdentifierAPI().find(host, uri);
-			Logger.debug(this.getClass(), "CMSUrlUtil_isFolder Id " + id == null? "Not Found" : id.toString());
+			Logger.debug(this.getClass(), "CMSUrlUtil_isFolder Id " + (id == null? "Not Found" : id.toString()));
 			if (id == null || id.getId() == null) {
 				return false;
 			}
@@ -514,8 +511,7 @@ public class CMSUrlUtil {
 	/**
 	 * Verifies if the URI was overridden by a filter
 	 */
-	Boolean wasURIOverridden(HttpServletRequest request)
-			throws UnsupportedEncodingException {
+	Boolean wasURIOverridden(HttpServletRequest request) {
 		return (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null);
 	}
 
@@ -523,8 +519,7 @@ public class CMSUrlUtil {
 	 * Search for an overridden query string by a filter and if nothing is found the query string
 	 * will be read from the request.
 	 */
-	String getURLQueryStringFromRequest(HttpServletRequest request)
-			throws UnsupportedEncodingException {
+	String getURLQueryStringFromRequest(HttpServletRequest request) {
 
 		return (request.getAttribute(CMS_FILTER_QUERY_STRING_OVERRIDE) != null) ? (String) request
 				.getAttribute(CMS_FILTER_QUERY_STRING_OVERRIDE)
