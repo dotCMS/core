@@ -154,3 +154,4 @@ This maintenance release includes the following code fixes:
 147. https://github.com/dotCMS/core/issues/29213 : Copying a contentlet without having Edit Permissions causes copy to have incorrect permissions. #29213
 148. https://github.com/dotCMS/core/issues/28580 : fix: avoid NPE on Patch WF API when there is not any contentlet map #28580
 149. https://github.com/dotCMS/core/issues/28489 : Creating new content don't respect language selected #28489
+150. https://github.com/dotCMS/core/issues/28814 : Rules permission checkbox is not visible #28814

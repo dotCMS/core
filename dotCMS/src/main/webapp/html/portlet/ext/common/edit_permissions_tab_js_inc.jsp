@@ -216,7 +216,7 @@
 
 				// Memo size to make displayed child
 				this._containerContentBox = {
-					h: this._verticalSpace,
+					h: 'auto',
 					w: mySize.w
 				};
 
