@@ -1,5 +1,11 @@
 package com.dotcms.e2e;
 
+/**
+ * This class defines a set of constant keys used in the end-to-end tests for the dotCMS application.
+ * These keys are used to retrieve configuration values such as URLs, browser types, and user credentials.
+ *
+ * @author vico
+ */
 public class E2eKeys {
 
     public static final String CI_KEY = "ci";

@@ -267,8 +267,16 @@ public class PushPublisherConfig extends PublisherConfig {
 		return bundleAssets;
 	}
 
+	/**
+	 * Add an asset to the bundle. If the asset is already added, it will not be added again.
+	 * It will be included in the dependency processor, so its dependencies are included too.
+	 * @param asset The asset to be added
+	 * @param pusheableAsset The object type of the asset
+	 * @param evaluateReason The reason why the asset is being added
+	 * @return true if the asset was added, false otherwise
+	 */
 	public <T> boolean addWithDependencies(final T asset, final PusheableAsset pusheableAsset,
-			final String reason) {
+			final String evaluateReason) {
 		final String key = DependencyManager.getBundleKey(asset);
 		final boolean added = bundleAssets.isAdded(key, pusheableAsset);
 		final boolean isAlreadyAdded = bundleAssets.isDependenciesAdded(key, pusheableAsset);
@@ -278,46 +286,73 @@ public class PushPublisherConfig extends PublisherConfig {
 			this.dependencyProcessor.addAsset(asset, pusheableAsset);
 
 			if (!added) {
-				writeIncludeManifestItem(asset, reason);
+				writeIncludeManifestItem(asset, evaluateReason);
 			}
 		}
 
 		return !isAlreadyAdded;
 	}
 
-	public <T> boolean add(final T asset, final PusheableAsset pusheableAsset, final String reason) {
+	/**
+	 * Add an asset to the bundle. If the asset is already added, it will not be added again.
+	 * @param asset The asset to be added
+	 * @param pusheableAsset The object type of the asset
+	 * @param evaluateReason The reason why the asset is being added
+	 * @return true if the asset was added, false otherwise
+	 */
+	public <T> boolean add(final T asset, final PusheableAsset pusheableAsset, final String evaluateReason) {
 		final String key = DependencyManager.getBundleKey(asset);
 
 		if(!bundleAssets.isAdded(key, pusheableAsset)) {
 			bundleAssets.add(key, pusheableAsset);
-			writeIncludeManifestItem(asset, reason);
+			writeIncludeManifestItem(asset, evaluateReason);
 			return true;
 		} else {
 			return false;
 		}
 	}
 
+	/**
+	 * Returns true if the asset is already added to the bundle, false otherwise.
+	 * @param asset The asset to be checked
+	 * @param pusheableAsset The object type of the asset
+	 * @return true if the asset is already added, false otherwise
+	 */
 	public <T> boolean contains(final T asset, final PusheableAsset pusheableAsset) {
 		final String key = DependencyManager.getBundleKey(asset);
 		return bundleAssets.isAdded(key, pusheableAsset);
 	}
 
-	public <T> boolean exclude(final T asset, final PusheableAsset pusheableAsset, final String reason) {
+	/**
+	 * Add an asset to the list of assets that will be excluded from the bundle.
+	 * If the asset is already excluded, it will not be excluded again.
+	 * @param asset The asset to be excluded
+	 * @param pusheableAsset The object type of the asset
+	 * @param evaluateReason The reason why the asset is being evaluated
+	 * @param excludeReason The reason why the asset is being excluded
+	 * @return true if the asset was excluded, false otherwise
+	 */
+	public <T> boolean exclude(final T asset, final PusheableAsset pusheableAsset, final String evaluateReason, final String excludeReason) {
 		final String key = DependencyManager.getBundleKey(asset);
 
 		if(!excludes.contains(key)) {
 			excludes.add(key);
-			writeExcludeManifestItem(asset, reason);
+			writeExcludeManifestItem(asset, evaluateReason, excludeReason);
 			return true;
 		} else {
 			return false;
 		}
 	}
 
-	public <T> void writeIncludeManifestItem(final T asset, final String reason) {
+	/**
+	 * Write a line to the manifest file as an included item.
+	 * @param asset The asset to be included
+	 * @param evaluateReason The reason why the asset is being included
+	 */
+	public <T> void writeIncludeManifestItem(final T asset, final String evaluateReason) {
 		if (ManifestItem.class.isAssignableFrom(asset.getClass())) {
 			if (UtilMethods.isSet(manifestBuilder)) {
-				manifestBuilder.include((ManifestItem) asset, reason);
+				manifestBuilder.include((ManifestItem) asset, evaluateReason);
 			}
 		} else {
 			Logger.warn(PushPublisherConfig.class,
@@ -325,10 +360,16 @@ public class PushPublisherConfig extends PublisherConfig {
 		}
 	}
 
-	private <T> void writeExcludeManifestItem(final T asset, final String reason) {
+	/**
+	 * Write a line to the manifest file as an excluded item.
+	 * @param asset The asset to be excluded
+	 * @param evaluateReason The reason why the asset is being evaluated
+	 * @param excludeReason The reason why the asset is being excluded
+	 */
+	private <T> void writeExcludeManifestItem(final T asset, final String evaluateReason, final String excludeReason) {
 		if (ManifestItem.class.isAssignableFrom(asset.getClass())) {
 			if (UtilMethods.isSet(manifestBuilder)) {
-				manifestBuilder.exclude((ManifestItem) asset, reason);
+				manifestBuilder.exclude((ManifestItem) asset, evaluateReason, excludeReason);
 			}
 		} else {
 			Logger.warn(PushPublisherConfig.class,
