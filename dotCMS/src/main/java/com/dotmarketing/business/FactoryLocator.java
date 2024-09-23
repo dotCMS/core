@@ -413,7 +413,7 @@ enum FactoryIndex
             case SYSTEM_TABLE_FACTORY: return new SystemTableFactoryImpl();
             case CUBEJS_CLIENT_FACTORY: return new CubeJSClientFactoryImpl();
             case LANGUAGE_VARIABLE_FACTORY: return new LanguageVariableFactoryImpl();
-            case CONTENT_ANALYTICS_FACTORY: CDIUtils.getBean(ContentAnalyticsFactory.class).get();
+            case CONTENT_ANALYTICS_FACTORY: CDIUtils.getBean(ContentAnalyticsFactory.class).orElseThrow(() -> new DotRuntimeException("ContentAnalyticsFactory not found"));
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

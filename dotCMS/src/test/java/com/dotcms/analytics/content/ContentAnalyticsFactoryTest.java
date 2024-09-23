@@ -13,7 +13,6 @@ import com.dotcms.http.server.mock.MockHttpServer;
 import com.dotcms.http.server.mock.MockHttpServerContext;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.network.IPUtils;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
@@ -114,7 +113,7 @@ public class ContentAnalyticsFactoryTest {
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort),
                     getAccessToken());
 
-            final User systemUser = APILocator.systemUser();
+            final User systemUser = new User();
             CubeJSClientFactory mockCubeJsClientFactory = Mockito.mock(CubeJSClientFactory.class);
             Mockito.when(mockCubeJsClientFactory.create(systemUser)).thenReturn(cubeClient);
             final ContentAnalyticsFactory contentAnalyticsFactory = new ContentAnalyticsFactoryImpl(new AnalyticsQueryParser(), mockCubeJsClientFactory);

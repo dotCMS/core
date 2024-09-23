@@ -1432,7 +1432,7 @@ enum APIIndex
 			case SYSTEM_API: return new SystemAPIImpl();
 			case ARTIFICIAL_INTELLIGENCE_API: return new DotAIAPIFacadeImpl();
 			case ACHECKER_API: return new ACheckerAPIImpl();
-			case CONTENT_ANALYTICS_API: CDIUtils.getBean(ContentAnalyticsAPI.class).get();
+			case CONTENT_ANALYTICS_API: CDIUtils.getBean(ContentAnalyticsAPI.class).orElseThrow(() -> new DotRuntimeException("Content Analytics API not found"));
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

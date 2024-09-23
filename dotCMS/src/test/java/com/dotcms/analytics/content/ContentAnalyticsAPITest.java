@@ -2,7 +2,6 @@ package com.dotcms.analytics.content;
 
 import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.analytics.query.AnalyticsQuery;
-import com.dotmarketing.business.APILocator;
 import com.liferay.portal.model.User;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -68,7 +67,7 @@ public class ContentAnalyticsAPITest {
                 .limit(100)
                 .offset(1)
                 .build();
-        final User systemUser = APILocator.systemUser();
+        final User systemUser = new User();
         ContentAnalyticsFactory mockContentAnalyticsFactory = Mockito.mock(ContentAnalyticsFactory.class);
         Mockito.when(mockContentAnalyticsFactory.getReport(analyticsQuery, systemUser)).thenReturn(new ReportResponse(dataList));
         final ContentAnalyticsAPI contentAnalyticsAPI = new ContentAnalyticsAPIImpl(mockContentAnalyticsFactory);
