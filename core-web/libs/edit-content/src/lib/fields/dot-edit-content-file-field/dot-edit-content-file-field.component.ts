@@ -1,10 +1,10 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    effect,
     forwardRef,
     inject,
     input,
-    signal,
     OnInit
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -12,12 +12,13 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
     DotMessagePipe,
     DotAIImagePromptComponent,
-    DotSpinnerModule
+    DotSpinnerModule,
+    DropZoneFileEvent
 } from '@dotcms/ui';
 
 import { DotFileFieldPreviewComponent } from './components/dot-file-field-preview/dot-file-field-preview.component';
@@ -54,11 +55,20 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
     readonly #messageService = inject(DotMessageService);
 
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $fieldVariable = input.required<string>({ alias: 'fieldVariable' });
 
     private onChange: (value: string) => void;
     private onTouched: () => void;
 
-    $value = signal('');
+    constructor() {
+        effect(() => {
+            const value = this.store.value();
+            console.log('current value', value);
+            this.onChange(value);
+            this.onTouched();
+        });
+    }
 
     ngOnInit() {
         this.store.initLoad({
@@ -72,7 +82,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
     }
 
     writeValue(value: string): void {
-        this.$value.set(value);
+        this.store.setValue(value);
     }
     registerOnChange(fn: (value: string) => void) {
         this.onChange = fn;
@@ -80,5 +90,29 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
 
     registerOnTouched(fn: () => void) {
         this.onTouched = fn;
+    }
+
+    /**
+     * Handle file drop
+     *
+     * @param {DropZoneFileEvent} { validity, file }
+     * @return {*}
+     * @memberof DotEditContentBinaryFieldComponent
+     */
+    handleFileDrop({ validity, file }: DropZoneFileEvent): void {
+        if (!file) {
+            return;
+        }
+
+        if (!validity.valid) {
+            //this.handleFileDropError(validity);
+
+            return;
+        }
+
+        const fileList = new FileList();
+        fileList[0] = file;
+
+        this.store.handleUploadFile(fileList);
     }
 }

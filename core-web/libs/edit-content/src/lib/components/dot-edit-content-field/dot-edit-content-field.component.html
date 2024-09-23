@@ -95,12 +95,16 @@
     }
     @case (fieldTypes.FILE) {
         <dot-edit-content-file-field
+            [fieldVariable]="field.variable"
+            [contentlet]="contentlet"
             [formControlName]="field.variable"
             [attr.data-testId]="'field-' + field.variable"
             [field]="field" />
     }
     @case (fieldTypes.IMAGE) {
         <dot-edit-content-file-field
+            [fieldVariable]="field.variable"
+            [contentlet]="contentlet"
             [formControlName]="field.variable"
             [attr.data-testId]="'field-' + field.variable"
             [field]="field" />

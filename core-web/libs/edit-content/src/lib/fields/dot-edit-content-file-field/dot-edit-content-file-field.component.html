@@ -7,10 +7,23 @@
             <div
                 [class.file-field__drop-zone--active]="store.dropZoneActive()"
                 class="file-field__drop-zone">
-                <dot-drop-zone data-testId="dropzone">
+                <input
+                    #inputFile
+                    [accept]="store.acceptedFiles().join(',')"
+                    (change)="store.handleUploadFile(inputFile.files)"
+                    data-testId="file-field__file-input"
+                    type="file" />
+                <dot-drop-zone
+                    [accept]="store.acceptedFiles()"
+                    [maxFileSize]="store.maxFileSize()"
+                    (fileDragLeave)="store.setDropZoneState(false)"
+                    (fileDragOver)="store.setDropZoneState(true)"
+                    (fileDropped)="handleFileDrop($event)"
+                    data-testId="dropzone">
                     @if (store.uiMessage()) {
                         <dot-file-field-ui-message [uiMessage]="store.uiMessage()">
                             <button
+                                (click)="inputFile.click()"
                                 class="file-field__drop-zone-btn"
                                 data-testId="choose-file-btn"
                                 type="button">
@@ -19,7 +32,6 @@
                         </dot-file-field-ui-message>
                     }
                 </dot-drop-zone>
-                <input #inputFile data-testId="file-field__file-input" type="file" />
             </div>
 
             <div class="file-field__actions">
@@ -76,7 +88,12 @@
             <dot-spinner data-testId="loading" />
         }
         @case ('preview') {
-            <dot-file-field-preview />
+            @if (store.previewFile()) {
+                <dot-file-field-preview
+                    (removeFile)="store.removeFile()"
+                    [previewFile]="store.previewFile()"
+                    [fieldVariable]="store.fieldVariable()" />
+            }
         }
     }
 </div>
