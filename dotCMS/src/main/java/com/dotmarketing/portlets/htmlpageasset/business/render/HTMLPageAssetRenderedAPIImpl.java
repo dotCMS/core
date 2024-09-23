@@ -290,10 +290,13 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final HttpServletRequest request,
             final HttpServletResponse response)
             throws DotSecurityException, DotDataException {
+        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml Getting the HTML for the context: " + context.toString());
 
         final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
+        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml Host object retrieved from the request is: " + host.getIdentifier());
         final HTMLPageUrl htmlPageUrl = getHtmlPageAsset(context, host, request);
         final HTMLPageAsset page = htmlPageUrl.getHTMLPage();
+        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml HTMLPageUrl: " + htmlPageUrl.toString());
 
         final String pageHTML = new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
@@ -306,10 +309,12 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .getPageHTML(context.getPageMode());
 
         if (context.getPageMode() == PageMode.LIVE && ConfigExperimentUtil.INSTANCE.isExperimentAutoJsInjection()) {
+            Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml experiments is running");
             return experimentWebAPI.getCode(host, request)
                     .map(jsCodeToBeInjected -> injectJSCode(pageHTML, jsCodeToBeInjected))
                     .orElse(pageHTML);
         } else {
+            Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml Page HTML: " + pageHTML);
             return pageHTML;
         }
     }
@@ -340,19 +345,24 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
      */
     private HTMLPageUrl getHtmlPageAsset(final PageContext context, final Host host, final HttpServletRequest request)
             throws DotDataException, DotSecurityException {
+        Logger.debug(this, "--HTMLPageAssetRenderedAPIImpl_getHtmlPageAsset--");
 
         Optional<HTMLPageUrl> htmlPageUrlOptional = findPageByContext(host, context);
 
         if (htmlPageUrlOptional.isEmpty()) {
+            Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getHtmlPageAsset htmlPageUrlOptional is Empty trying to find by URL Map");
             htmlPageUrlOptional = findByURLMap(context, host, request);
         }
 
         if(htmlPageUrlOptional.isEmpty()){
+            Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getHtmlPageAsset htmlPageUrlOptional is Empty throwing HTMLPageAssetNotFoundException");
             throw new HTMLPageAssetNotFoundException(context.getPageUri());
         }
 
         final HTMLPageUrl htmlPageUrl = htmlPageUrlOptional.get();
+        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getHtmlPageAsset htmlPageUrl: " + htmlPageUrl.htmlPage.toString());
         checkPagePermission(context, htmlPageUrl.htmlPage);
+        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getHtmlPageAsset User has permission to access the page");
 
         return htmlPageUrl;
     }
@@ -369,6 +379,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
      */
     private void checkPagePermission(final PageContext context, final IHTMLPage htmlPageAsset)
             throws DotDataException, DotSecurityException {
+        Logger.debug(this, "--HTMLPageAssetRenderedAPIImpl_checkPagePermission--");
 
         final boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(
                 htmlPageAsset,
@@ -380,6 +391,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final String message = String.format("User: %s does not have permissions %s for page %s",
                     context.getUser(),
                     PermissionLevel.READ, htmlPageAsset.getURI());
+            Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_checkPagePermission " + message);
             throw new DotSecurityException(message);
         }
     }
@@ -403,10 +415,12 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final String uri = context.getPageUri();
         final PageMode mode = context.getPageMode();
         final String pageUri = (UUIDUtil.isUUID(uri) ||( uri.length()>0 && '/' == uri.charAt(0))) ? uri : ("/" + uri);
+        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_findPageByContext user: " + user + " uri: " + uri + " mode: " + mode + " host: " + host + " pageUri: " + pageUri);
         final HTMLPageAsset htmlPageAsset = (HTMLPageAsset) (UUIDUtil.isUUID(pageUri) ?
                 this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :
                 getPageByUri(mode, host, pageUri));
 
+        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_findPageByContext htmlPageAsset: " + (htmlPageAsset == null ? "Not Found" : htmlPageAsset.toString()));
         return Optional.ofNullable(htmlPageAsset == null ? null : new HTMLPageUrl(htmlPageAsset));
     }
 
@@ -466,12 +480,16 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final Language defaultLanguage = this.languageAPI.getDefaultLanguage();
         final Language language = this.getCurrentLanguage(request);
+        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageByUri pageUri: " + pageUri + " host: " + host + " language: " + language + " mode: " + mode);
 
         IHTMLPage htmlPage = this.htmlPageAssetAPI.getPageByPath(pageUri, host, language.getId(),
                 mode.showLive);
 
+        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageByUri page found: " + htmlPage);
+
         if (htmlPage == null && !defaultLanguage.equals(language)
                 && APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage()) {
+            Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageByUri page not found trying to get the default language");
 
             htmlPage = this.htmlPageAssetAPI.getPageByPath(pageUri, host, defaultLanguage.getId(),
                     mode.showLive);
@@ -539,6 +557,16 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         public HTMLPageAsset getHTMLPage() {
             return htmlPage;
+        }
+
+        //Create toString method
+        @Override
+        public String toString() {
+            return "HTMLPageUrl{" +
+                    "urlMapInfo=" + (urlMapInfo != null ? urlMapInfo.toString() : "null") +
+                    ", htmlPage=" + (htmlPage != null ? htmlPage.toString() : "null") +
+                    ", hasLive=" + hasLive() +
+                    '}';
         }
 
     }
