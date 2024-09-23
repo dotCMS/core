@@ -351,11 +351,21 @@ public class ReindexThread {
         } finally {
             DbConnectionFactory.closeSilently();
         }
+
         while (paused.get()) {
 
-            Logger.infoEvery(ReindexThread.class, "--- ReindexThread Paused",
-                    Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 60) * 60000);
-            TimeUnit.MILLISECONDS.sleep(sleep);
+            // Even when we pause we may still have results of in process requests we need to handle
+            if (context.getBulkProcessorListener()!=null && !context.getBulkProcessorListener().getWorkingRecords().isEmpty()) {
+                boolean gotAll = handleResults(context.getBulkProcessorListener());
+                if (gotAll)
+                {
+                    Logger.info(this, "All running records processed, pausing");
+                } else
+                    // Don't wait too long to handle completed records
+                    TimeUnit.MILLISECONDS.sleep(sleep<2000 ? sleep : 2000);
+            } else
+                TimeUnit.MILLISECONDS.sleep(sleep);
+
             Long restartTime = (Long) cache.get().get(REINDEX_THREAD_PAUSED);
             if (restartTime == null || restartTime < System.currentTimeMillis()) {
                 unpauseImpl();
