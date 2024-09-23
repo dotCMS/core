@@ -1,5 +1,8 @@
 package com.dotmarketing.common.reindex;
 
+import com.dotmarketing.common.reindex.BulkProcessorListener.ReindexResult;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import com.dotcms.api.system.event.Visibility;
@@ -249,7 +252,10 @@ public class ReindexThread {
                 if (!closed) {
                     Logger.warn(this.getClass(), "BulkProcessor did not close within the timeout period.");
                 }
-                handleResults(context.getBulkProcessorListener());
+                boolean isDone = handleResults(context.getBulkProcessorListener());
+                if (!isDone) {
+                    Logger.warn(this.getClass(), "BulkProcessor did not finish processing all records.");
+                }
             } catch (InterruptedException e) {
                 Logger.error(this.getClass(), "Interrupted while waiting for BulkProcessor to close", e);
                 Thread.currentThread().interrupt(); // Restore the interrupted status
@@ -265,18 +271,33 @@ public class ReindexThread {
         rebuildBulkIndexer.set(false);
     }
 
-    private void handleResults(BulkProcessorListener bulkProcessorListener) {
-        List<ReindexEntry> success = bulkProcessorListener.getSuccesful();
-        Map<ReindexEntry,String> failures = bulkProcessorListener.getFailures();
-        int totalRequests = bulkProcessorListener.getWorkingRecords().size();
-        handleSuccess(success);
-        failures.forEach(this::handleFailure);
-        if(totalRequests > 0) {
-            Logger.info(this.getClass(), "ReindexThread: Successfully indexed " + success.size() + " of "+totalRequests+" contentlets");
-            if (!failures.isEmpty()) {
-                Logger.info(this.getClass(), "ReindexThread: Failed to index " + failures.size() + " contentlets");
+    private boolean handleResults(BulkProcessorListener bulkProcessorListener) {
+
+        List<ReindexResult> results = new ArrayList<>();
+        bulkProcessorListener.getQueue().drainTo(results,250);
+        while (!results.isEmpty()) {
+            int failureCount = 0;
+            List<ReindexEntry> success = new ArrayList<>();
+            for (ReindexResult result : results) {
+                if (result.success) {
+                    success.add(result.entry);
+                } else {
+                    failureCount++;
+                    handleFailure(result.entry, result.error);
+                }
             }
+            handleSuccess(success);
+            Logger.info(
+                    this.getClass(),
+                    "Completed "
+                            + results.size()
+                            + " reindex requests with "
+                            + failureCount
+                            + " failures");
+            results.clear();
+            bulkProcessorListener.getQueue().drainTo(results,250);
         }
+        return bulkProcessorListener.getWorkingRecords().isEmpty();
     }
     private void handleSuccess(final List<ReindexEntry> successful) {
 
@@ -360,6 +381,9 @@ public class ReindexThread {
                 throw e; // Rethrow to handle in runReindexLoop
             }
         }
+        // Handle any results from the BulkProcessor
+        if (context.getBulkProcessorListener()!=null)
+            handleResults(context.getBulkProcessorListener());
     }
 
     private boolean switchOverIfNeeded() throws DotDataException {
@@ -419,7 +443,7 @@ public class ReindexThread {
             try {
                 BulkProcessor newBulkProcessor = indexAPI.createBulkProcessor(context.getBulkProcessorListener());
                 context.setBulkProcessor(newBulkProcessor);
-                context.getBulkProcessorListener().workingRecords.putAll(workingRecords);
+                context.getBulkProcessorListener().addWorkingRecord(workingRecords);
                 indexAPI.appendToBulkProcessor(newBulkProcessor, workingRecords.values());
                 contentletsIndexed.addAndGet(context.getBulkProcessorListener().getContentletsIndexed());
             } catch (Exception e) {
