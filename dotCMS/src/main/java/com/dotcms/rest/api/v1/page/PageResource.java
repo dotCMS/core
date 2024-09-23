@@ -460,8 +460,8 @@ public class PageResource {
                 session.setAttribute(DOT_CACHE, "refresh");
                 currentHost(renderParams).ifPresentOrElse(
                         host -> session.setAttribute(TM_HOST, host),
-                        () -> Logger.error(this, "Error getting current host"));
-
+                        () -> Logger.warn(this, "I wasn't able to fallback to default host.")
+                );
             }
         }
     }
@@ -486,16 +486,15 @@ public class PageResource {
      * @return current host if any, otherwise the default host.
      */
     private Optional<Host> currentHost(final PageRenderParams renderParams) {
-       return Optional.ofNullable(
-               Try.of(()->hostWebAPI.getCurrentHostNoThrow(renderParams.request())).getOrElse(()-> {
-                   try {
-                       return hostWebAPI.findDefaultHost(renderParams.user(), false);
-                   } catch ( DotSecurityException | DotDataException e) {
-                       Logger.warn(this, "Error getting default host", e);
-                   }
-                   return null;
-               })
-       );
+         Host currentHost = hostWebAPI.getCurrentHostNoThrow(renderParams.request());
+        if (null == currentHost) {
+            try {
+                currentHost = hostWebAPI.findDefaultHost(renderParams.user(), false);
+            } catch ( DotSecurityException | DotDataException e) {
+                Logger.error(this, "Error getting default host", e);
+            }
+        }
+        return Optional.ofNullable(currentHost);
     }
 
     /**

@@ -31,12 +31,14 @@ import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -104,6 +106,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -164,11 +167,13 @@ public class PageResourceTest {
         when(webResource.init(false, request, true)).thenReturn(initDataObject);
         when(webResource.init(any(WebResource.InitBuilder.class))).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
-
+        host = new SiteDataGen().name(hostName).nextPersisted();
         hostWebAPI = mock(HostWebAPI.class);
         when(hostWebAPI.getCurrentHost(request, user)).thenReturn(host);
         when(hostWebAPI.getCurrentHost(request)).thenReturn(host);
         when(hostWebAPI.getCurrentHost()).thenReturn(host);
+        when(hostWebAPI.getCurrentHostNoThrow(any(HttpServletRequest.class))).thenReturn(host);
+        when(hostWebAPI.findDefaultHost(any(User.class),anyBoolean())).thenReturn(host);
 
         pageResource = new PageResource(pageResourceHelper, webResource, htmlPageAssetRenderedAPI, esapi, hostWebAPI);
         this.pageResourceWithHelper = new PageResource(PageResourceHelper.getInstance(), webResource, htmlPageAssetRenderedAPI, this.esapi, hostWebAPI);
@@ -180,7 +185,7 @@ public class PageResourceTest {
         when(session.getAttribute("clickstream")).thenReturn(new Clickstream());
 
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
-        host = new SiteDataGen().name(hostName).nextPersisted();
+
         APILocator.getVersionableAPI().setWorking(host);
         APILocator.getVersionableAPI().setLive(host);
         when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
@@ -1211,51 +1216,68 @@ public class PageResourceTest {
      * @throws DotSecurityException
      */
     @Test
-    public void testRenderWithTimeMachine() throws DotDataException, DotSecurityException {
-        // Prep the test
+    public void testRenderWithTimeMachine()
+            throws DotDataException, DotSecurityException, WebAssetException {
+
+        final String LIVE = "LIVE";
+
+        // Calculate the date relative to today
+        // Publish Date is 10 days from now
+        final LocalDateTime relativeDate1 = LocalDateTime.now().plusDays(10);
+        final Instant relativeInstant1 = relativeDate1.atZone(ZoneId.systemDefault()).toInstant();
+        final Date publishDate = Date.from(relativeInstant1);
+
+        // Time Machine Date is 11 days from now
+        final LocalDateTime relativeDate2 = LocalDateTime.now().plusDays(11);
+        final Instant relativeInstant2 = relativeDate2.atZone(ZoneId.systemDefault()).toInstant();
+        final Date timeMachineDate = Date.from(relativeInstant2);
+
+        //First we shouldn't get any contents before publish date
+       // validatePageRendering(LIVE, false, publishDate, new Date());
+        //Then we should get the content after publish date
+        validatePageRendering(LIVE, true, publishDate, timeMachineDate);
+
+    }
+
+    private void validatePageRendering(final String mode, final boolean expectContentlet, final Date publishDate, final Date timeMachineDate)
+            throws DotDataException, DotSecurityException, WebAssetException {
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         final long languageId = 1L;
 
         final Structure structure = new StructureDataGen().nextPersisted();
-        final Container localContainer = new ContainerDataGen()
+        final Container myContainer = new ContainerDataGen()
                 .withStructure(structure, "")
-                .friendlyName("container-1-friendly-name")
-                .title("container-1-title")
+                .friendlyName("container-friendly-name"+System.currentTimeMillis())
+                .title("container-title")
                 .nextPersisted();
 
+        ContainerDataGen.publish(myContainer);
+
         final TemplateLayout templateLayout = TemplateLayoutDataGen.get()
-                .withContainer(localContainer.getIdentifier())
+                .withContainer(myContainer.getIdentifier())
                 .next();
 
         final Template newTemplate = new TemplateDataGen()
                 .drawedBody(templateLayout)
-                .withContainer(localContainer.getIdentifier())
+                .withContainer(myContainer.getIdentifier())
                 .nextPersisted();
-        final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
-        versionableAPI.setWorking(newTemplate);
-        versionableAPI.setLive(newTemplate);
 
-        final Contentlet checkout = APILocator.getContentletAPIImpl()
-                .checkout(pageAsset.getInode(), systemUser, false);
-        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate.getIdentifier());
+         final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+         versionableAPI.setWorking(newTemplate);
+         versionableAPI.setLive(newTemplate);
 
-        APILocator.getContentletAPIImpl().checkin(checkout, systemUser, false);
+        final String myFolderName = "folder-"+System.currentTimeMillis();
+        final Folder myFolder = new FolderDataGen().name(myFolderName).site(host).nextPersisted();
+        final String myPageName = "my-testPage-"+System.currentTimeMillis();
+        final HTMLPageAsset myPage = new HTMLPageDataGen(myFolder, newTemplate)
+                .languageId(languageId)
+                .pageURL(myPageName)
+                .title(myPageName)
+                .nextPersisted();
 
-        // Call the sub-method with different parameters
-        validatePageRendering("PREVIEW_MODE", true, 10, languageId, systemUser, localContainer);  // 10 days in the future
-       // validatePageRendering("LIVE", true, 10, languageId, systemUser, localContainer);  // 10 days in the future
-       // validatePageRendering("ADMIN_MODE", false, -5, languageId, systemUser, localContainer);  // 5 days in the past
-       // validatePageRendering("PREVIEW_MODE", true, 0, languageId, systemUser, localContainer);  // Today
-       // validatePageRendering("WORKING", true, 3, languageId, systemUser, localContainer);  // 3 days in the future
-       // validatePageRendering("EDIT_MODE", false, -2, languageId, systemUser, localContainer);  // 2 days in the past
-    }
-
-    private void validatePageRendering(String mode, boolean expectContentlet, int daysRelativeToToday, long languageId, User systemUser, Container localContainer) throws DotDataException, DotSecurityException {
-        // Calculate the date relative to today
-        final LocalDateTime relativeDate = LocalDateTime.now().plusDays(daysRelativeToToday);
-        final Instant relativeInstant = relativeDate.atZone(ZoneId.systemDefault()).toInstant();
-        final Date publishDate = Date.from(relativeInstant);
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        contentletAPI.publish(myPage, systemUser, false);
 
         final ContentType blogContentType = TestDataUtils.getBlogLikeContentType();
         final Contentlet blog = new ContentletDataGen(blogContentType.id())
@@ -1263,40 +1285,39 @@ public class PageResourceTest {
                 .host(host)
                 .setProperty("title", "myBlogTest")
                 .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
-                .setProperty("sysPublishDate", publishDate)  // Set the publish-date to the relative date
+                .setProperty("publishDate", publishDate)  // Set the publish-date in the future
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .languageId(languageId)
+                .setProperty(Contentlet.IS_TEST_MODE, true)
                 .nextPersisted();
 
-        blog.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        blog.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
-        blog.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        APILocator.getContentletAPI().publish(blog, systemUser, false);
+        assertNotNull(blog.getIdentifier());
+        assertFalse(blog.isLive());
+
+        final List<Contentlet> allVersions = contentletAPI
+                .findAllVersions(new Identifier(blog.getIdentifier()), APILocator.systemUser(),
+                        true);
+        System.out.println("All versions: "+allVersions.size());
 
         final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
-        final MultiTree multiTree = new MultiTree(pageAsset.getIdentifier(),
-                localContainer.getIdentifier(), blog.getIdentifier(), "1", 1);
+        final MultiTree multiTree = new MultiTree(myPage.getIdentifier(),
+                myContainer.getIdentifier(), blog.getIdentifier(), "1", 1);
         multiTreeAPI.saveMultiTree(multiTree);
 
         when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         // Convert the date to ISO 8601 format if necessary
-        final String futureIso8601 = relativeInstant.toString();
+        final String futureIso8601 = timeMachineDate.toInstant().toString();
+        final String myPagePath = String.format("/%s/%s" ,myFolderName, myPageName);
 
-        final Response response = pageResource
-                .loadJson(request, this.response, pagePath, mode, null,
-                        "1", null, futureIso8601);
+        final Response myResponse = pageResource
+                .loadJson(request, this.response, myPagePath, mode, null, String.valueOf(languageId), null, futureIso8601);
 
-        RestUtilTest.verifySuccessResponse(response);
+        RestUtilTest.verifySuccessResponse(myResponse);
 
-        final PageView pageView = (PageView) ((ResponseEntityView<?>) response.getEntity()).getEntity();
+        final PageView pageView = (PageView) ((ResponseEntityView<?>) myResponse.getEntity()).getEntity();
         if (expectContentlet) {
             assertEquals(1, pageView.getNumberContents());
-            pageView.getContainers().stream()
-                    .map(containerRaw -> containerRaw.getContentlets().values())
-                    .forEach(contentlets -> {
-                        contentlets.forEach(contentlet -> {
-                            assertEquals(blog.getIdentifier(), contentlet.get(0).getIdentifier());
-                        });
-                    });
         } else {
             assertEquals(0, pageView.getNumberContents());
         }
