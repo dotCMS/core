@@ -8,12 +8,12 @@ import java.io.IOException;
 public class TestManifestBuilder implements ManifestBuilder {
 
     @Override
-    public <T> void include(ManifestItem manifestItem, String reason) {
+    public <T> void include(ManifestItem manifestItem, String evaluateReason) {
 
     }
 
     @Override
-    public <T> void exclude(ManifestItem manifestItem, String reason) {
+    public <T> void exclude(ManifestItem manifestItem, String evaluateReason, String excludeReason) {
 
     }
 

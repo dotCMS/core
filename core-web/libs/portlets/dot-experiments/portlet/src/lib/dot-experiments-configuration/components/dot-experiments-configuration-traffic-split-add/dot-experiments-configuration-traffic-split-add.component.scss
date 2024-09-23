@@ -10,16 +10,13 @@
 
     label {
         font-weight: $font-weight-bold;
-        margin-bottom: $spacing-3;
         font-size: $font-size-lmd;
     }
 
-    p-radioButton {
-        display: block;
-    }
-
-    p-radioButton:first-of-type {
-        margin-bottom: $spacing-3;
+    .experiment-traffic-split__radio {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-3;
     }
 
     .experiment-traffic-split__variants {
