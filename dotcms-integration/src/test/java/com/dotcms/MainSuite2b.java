@@ -21,6 +21,7 @@ import com.dotcms.cache.lettuce.RedisClientTest;
 import com.dotcms.cdi.SimpleInjectionIT;
 import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.business.json.ContentletJsonAPITest;
+import com.dotcms.content.business.json.LegacyJSONObjectRenderTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest;
@@ -323,7 +324,8 @@ import org.junit.runners.Suite.SuiteClasses;
         OpenAIContentPromptActionletTest.class,
         JobQueueManagerAPITest.class,
         ConfigUtilsTest.class,
-        SimpleInjectionIT.class
+        SimpleInjectionIT.class,
+        LegacyJSONObjectRenderTest.class
 })
 
 public class MainSuite2b {

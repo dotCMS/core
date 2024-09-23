@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
@@ -23,6 +24,7 @@ import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.WorkflowActionClassDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -45,6 +47,8 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDeletedEvent;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -4845,6 +4849,53 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertEquals(String.format("Actionlet class '%s' is not the expected one", actionClass.getClazz()),
                     expectedActionletData.get(workFlowActionlet.getName()), actionClass.getClazz());
         }
+    }
+
+
+    /**
+     * Method to test: This test tries the {@link WorkflowAPIImpl#findWorkflowTaskFilesAsContent(WorkflowTask, User)}
+     * Given Scenario: Attaching a file to a workflow task when it is a dotAsset
+     * ExpectedResult: The addition of the dotAsset should be made without throwing exceptions and it also should add a new "fileLink" property.
+     */
+    @Test
+    public void testAttachDotAssetToWorkflowTask()
+            throws DotDataException, DotSecurityException {
+        final User systemUser = APILocator.systemUser();
+        final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+        //final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+
+        Contentlet contentlet = null;
+
+        try {
+            contentlet = TestDataUtils.getPageContent(true, language.getId());
+
+            //save workflow task
+            final WorkflowStep workflowStep = workflowAPI.findStep(
+                    SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
+            workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, systemUser);
+            final WorkflowTask workflowTask = workflowAPI
+                    .createWorkflowTask(contentlet, systemUser, workflowStep, "test", "test");
+            workflowAPI.saveWorkflowTask(workflowTask);
+
+
+
+            //save workflow task dot asset file
+            final Contentlet fileAsset = TestDataUtils.getDotAssetLikeContentlet();
+            workflowAPI.attachFileToTask(workflowTask, fileAsset.getInode());
+
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(new MockInternalRequest().request());
+
+            List<IFileAsset> files = workflowAPI.findWorkflowTaskFilesAsContent(workflowTask, systemUser);
+
+            assertNotNull(((FileAsset) files.get(0)).getMap().get("fileLink"));
+
+        } finally {
+            if (contentlet != null && contentlet.getInode() != null) {
+                ContentletDataGen.destroy(contentlet);
+            }
+
+        }
+
     }
 
 }
