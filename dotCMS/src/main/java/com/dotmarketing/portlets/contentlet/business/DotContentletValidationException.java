@@ -273,7 +273,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 				i++;
 			}
 		}
-		return builder.toString();
+		return builder.toString().trim();
 	}
 
 	@Override
