@@ -1,7 +1,6 @@
 package com.dotmarketing.business;
 
 import com.dotcms.analytics.content.ContentAnalyticsFactory;
-import com.dotcms.analytics.content.ContentAnalyticsFactoryImpl;
 import com.dotcms.business.SystemTableFactory;
 import com.dotcms.business.SystemTableFactoryImpl;
 import com.dotcms.cdi.CDIUtils;
@@ -37,6 +36,8 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointFactoryImpl;
 import com.dotcms.publisher.environment.business.EnvironmentFactory;
 import com.dotcms.publisher.environment.business.EnvironmentFactoryImpl;
+import com.dotcms.variant.VariantFactory;
+import com.dotcms.variant.VariantFactoryImpl;
 import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginFactory;
@@ -66,8 +67,6 @@ import com.dotmarketing.portlets.personas.business.PersonaFactory;
 import com.dotmarketing.portlets.personas.business.PersonaFactoryImpl;
 import com.dotmarketing.portlets.templates.business.TemplateFactory;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImpl;
-import com.dotcms.variant.VariantFactory;
-import com.dotcms.variant.VariantFactoryImpl;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.business.WorkflowFactoryImpl;
 import com.dotmarketing.tag.business.TagFactory;

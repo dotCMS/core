@@ -7,7 +7,6 @@ import com.dotcms.analytics.AnalyticsAPIImpl;
 import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.BayesianAPIImpl;
 import com.dotcms.analytics.content.ContentAnalyticsAPI;
-import com.dotcms.analytics.content.ContentAnalyticsAPIImpl;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;

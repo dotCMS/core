@@ -10,7 +10,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 
 import javax.enterprise.context.ApplicationScoped;

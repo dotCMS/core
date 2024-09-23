@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.analytics.content;
 
 import com.dotcms.analytics.query.AnalyticsQuery;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 

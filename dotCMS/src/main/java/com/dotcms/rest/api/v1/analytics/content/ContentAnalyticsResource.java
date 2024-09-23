@@ -6,14 +6,13 @@ import com.dotcms.cdi.CDIUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -37,7 +36,7 @@ public class ContentAnalyticsResource {
     private final ContentAnalyticsAPI contentAnalyticsAPI;
 
     public ContentAnalyticsResource() {
-        this(CDIUtils.getBean(ContentAnalyticsAPI.class).get());
+        this(CDIUtils.getBean(ContentAnalyticsAPI.class).orElseGet(APILocator::getContentAnalyticsAPI));
     }
 
     //@Inject

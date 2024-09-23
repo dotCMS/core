@@ -1,10 +1,11 @@
 package com.dotcms.analytics.model;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public class ResultSetItem {
+public class ResultSetItem implements Serializable {
 
     private Map<String, Object> item;
 

@@ -33,7 +33,6 @@ import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.internal.util.Base64;
 import org.glassfish.jersey.server.ContainerRequest;
 
-import javax.enterprise.context.Dependent;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
