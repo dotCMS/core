@@ -112,15 +112,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -1939,7 +1931,8 @@ public class WorkflowResource {
                     offset, null,
                     initDataObject.getUser(), mode.respectAnonPerms);
 
-            final IndexPolicy indexPolicy = MapToContentletPopulator.recoverIndexPolicy(fireActionForm.getContentletFormData(),
+            final IndexPolicy indexPolicy = MapToContentletPopulator.recoverIndexPolicy(
+                    (Objects.isNull(fireActionForm) || Objects.isNull(fireActionForm.getContentletFormData()))?Map.of():fireActionForm.getContentletFormData(),
                     contentletSearches.size()> 10? IndexPolicy.DEFER: IndexPolicy.WAIT_FOR, request);
 
             for (final ContentletSearch contentletSearch : contentletSearches) {
