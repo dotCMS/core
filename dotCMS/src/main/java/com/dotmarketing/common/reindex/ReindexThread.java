@@ -338,11 +338,9 @@ public class ReindexThread {
      * possible.
      */
     private void runReindexLoop(BulkProcessorContext context) throws InterruptedException {
-
         try {
             processReindexing(context);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             Logger.error(this, "ReindexThread Exception", ex);
             closeBulkProcessor(context);
             context.setBulkProcessor(null);
@@ -353,24 +351,24 @@ public class ReindexThread {
         }
 
         while (paused.get()) {
+            handlePausedState(context);
+        }
+    }
 
-            // Even when we pause we may still have results of in process requests we need to handle
-            if (context.getBulkProcessorListener()!=null && !context.getBulkProcessorListener().getWorkingRecords().isEmpty()) {
-                boolean gotAll = handleResults(context.getBulkProcessorListener());
-                if (gotAll)
-                {
-                    Logger.info(this, "All running records processed, pausing");
-                } else
-                    // Don't wait too long to handle completed records
-                    TimeUnit.MILLISECONDS.sleep(sleep<2000 ? sleep : 2000);
-            } else
-                TimeUnit.MILLISECONDS.sleep(sleep);
-
-            Long restartTime = (Long) cache.get().get(REINDEX_THREAD_PAUSED);
-            if (restartTime == null || restartTime < System.currentTimeMillis()) {
-                unpauseImpl();
+    private void handlePausedState(BulkProcessorContext context) throws InterruptedException {
+        if (context.getBulkProcessorListener() != null && !context.getBulkProcessorListener().getWorkingRecords().isEmpty()) {
+            if (handleResults(context.getBulkProcessorListener())) {
+                Logger.info(this, "All running records processed, pausing");
+            } else {
+                TimeUnit.MILLISECONDS.sleep(Math.min(sleep, 2000));
             }
+        } else {
+            TimeUnit.MILLISECONDS.sleep(sleep);
+        }
 
+        Long restartTime = (Long) cache.get().get(REINDEX_THREAD_PAUSED);
+        if (restartTime == null || restartTime < System.currentTimeMillis()) {
+            unpauseImpl();
         }
     }
 

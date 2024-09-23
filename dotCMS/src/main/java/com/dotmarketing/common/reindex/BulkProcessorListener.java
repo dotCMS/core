@@ -32,7 +32,7 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
 
     final Map<String, ReindexEntry> workingRecords;
 
-    final static List<String> RESERVED_IDS = List.of(Host.SYSTEM_HOST);
+    static final List<String> RESERVED_IDS = List.of(Host.SYSTEM_HOST);
 
     private long contentletsIndexed;
 
@@ -85,7 +85,7 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
     public void beforeBulk(final long executionId, final BulkRequest request) {
 
         String serverId=APILocator.getServerAPI().readServerId();
-        List<String> servers = Try.of(()->APILocator.getServerAPI().getReindexingServers()).getOrElse(ImmutableList.of(APILocator.getServerAPI().readServerId()));
+        List<String> servers = Try.of(()->APILocator.getServerAPI().getReindexingServers()).getOrElse(List.of(APILocator.getServerAPI().readServerId()));
         Logger.info(this.getClass(), "-----------");
         Logger.info(this.getClass(), "Reindexing Server #  : " + (servers.indexOf(serverId)+1) + " of " + servers.size());
         Logger.info(this.getClass(), "Total Indexed        : " + contentletsIndexed);
@@ -103,38 +103,42 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
         Logger.debug(this.getClass(), "Bulk process completed");
 
         for (BulkItemResponse bulkItemResponse : response) {
-            DocWriteResponse itemResponse = bulkItemResponse.getResponse();
             totalResponses.incrementAndGet();
-            String id;
-            if (bulkItemResponse.isFailed() || itemResponse == null) {
-
-                final String reservedId = getMatchingReservedIdIfAny(bulkItemResponse.getFailure().getId());
-
-                id = reservedId!=null ? reservedId: bulkItemResponse.getFailure().getId().substring(0,
-                        bulkItemResponse.getFailure().getId().indexOf(StringPool.UNDERLINE));
-            } else {
-                final String reservedId = getMatchingReservedIdIfAny(itemResponse.getId());
-
-                id = reservedId!=null ? reservedId: itemResponse.getId()
-                        .substring(0, itemResponse.getId().indexOf(StringPool.UNDERLINE));
-            }
+            String id = getIdFromResponse(bulkItemResponse);
 
             ReindexEntry idx = workingRecords.remove(id);
-            if (idx == null) {
-                continue;
-            }
-            if (bulkItemResponse.isFailed() || itemResponse == null) {
+            if (idx == null) continue;
+
+            if (bulkItemResponse.isFailed() || bulkItemResponse.getResponse() == null) {
                 addErrorToQueue(idx, bulkItemResponse.getFailure().getMessage());
             } else {
                 addSuccessToQueue(idx);
             }
         }
 
-        // 50% failure rate forces a rebuild of the BulkProcessor
-        if(totalResponses.get()==0 || ((double) successCount.get() / totalResponses.get() < .5)) {
-          ReindexThread.rebuildBulkIndexer();
+        if (shouldRebuildBulkProcessor()) {
+            ReindexThread.rebuildBulkIndexer();
         }
+    }
 
+    private String getIdFromResponse(BulkItemResponse bulkItemResponse) {
+        String id;
+        if (bulkItemResponse.isFailed() || bulkItemResponse.getResponse() == null) {
+            id = getMatchingReservedIdIfAny(bulkItemResponse.getFailure().getId());
+            if (id == null) {
+                id = bulkItemResponse.getFailure().getId().split(StringPool.UNDERLINE)[0];
+            }
+        } else {
+            id = getMatchingReservedIdIfAny(bulkItemResponse.getResponse().getId());
+            if (id == null) {
+                id = bulkItemResponse.getResponse().getId().split(StringPool.UNDERLINE)[0];
+            }
+        }
+        return id;
+    }
+
+    private boolean shouldRebuildBulkProcessor() {
+        return totalResponses.get() == 0 || ((double) successCount.get() / totalResponses.get() < 0.5);
     }
 
     private void addSuccessToQueue(ReindexEntry bulkItemResponse) {
