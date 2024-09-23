@@ -327,8 +327,6 @@ public class ReindexThread {
             OSGISystem.getInstance().initializeFramework();
             Logger.infoEvery(ReindexThread.class, "--- ReindexThread Running", 60000);
             cache.get().remove(REINDEX_THREAD_PAUSED);
-            final Thread thread = new Thread(getInstance().ReindexThreadRunnable,
-                    "ReindexThreadRunnable");
 
             final DotSubmitter submitter = DotConcurrentFactory.getInstance()
                     .getSubmitter("ReindexThreadSubmitter",
@@ -341,7 +339,7 @@ public class ReindexThread {
                                     .build()
                     );
             getInstance().state(ThreadState.RUNNING);
-            submitter.submit(thread);
+            submitter.submit(getInstance().ReindexThreadRunnable);
         }
 
     }
