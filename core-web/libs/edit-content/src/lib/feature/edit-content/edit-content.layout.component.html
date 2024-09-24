@@ -34,6 +34,8 @@
         [loading]="vm.loading"
         [contentlet]="vm.contentlet"
         [contentType]="vm.contentType"
+        [collapsed]="vm.layout.showSidebar"
+        (toggle)="toggleSidebar($event)"
         class="sidebar" />
 } @else {
     {{ 'edit.content.layout.no.content.to.show ' | dm }}

@@ -1,7 +1,8 @@
 import { Observable, forkJoin, of } from 'rxjs';
 
+import { animate, state, style, transition, trigger } from '@angular/animations';
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, HostBinding } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
@@ -27,6 +28,8 @@ import { DotEditContentToolbarComponent } from '../../components/dot-edit-conten
 import { EditContentPayload } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 
+const SIDEBAR_LOCAL_STORAGE_KEY = 'dot-edit-content-form-sidebar';
+
 @Component({
     selector: 'dot-edit-content-form-layout',
     standalone: true,
@@ -50,9 +53,28 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         DotEditContentService,
         MessageService,
         DotEditContentStore
+    ],
+    animations: [
+        trigger('sidebarAnimation', [
+            state(
+                'false',
+                style({
+                    'grid-template-columns': '1fr 2rem'
+                })
+            ),
+            state(
+                'true',
+                style({
+                    'grid-template-columns': '1fr 21.875rem'
+                })
+            ),
+            transition('false <=> true', animate('300ms ease-in-out'))
+        ])
     ]
 })
 export class EditContentLayoutComponent implements OnInit {
+    @HostBinding('@sidebarAnimation') showSidebar: boolean;
+
     private readonly store = inject(DotEditContentStore);
 
     private readonly dotEditContentService = inject(DotEditContentService);
@@ -77,9 +99,21 @@ export class EditContentLayoutComponent implements OnInit {
                 contentType,
                 actions,
                 contentlet,
-                loading: false
+                loading: false,
+                layout: {
+                    showSidebar: this.getSidebarSateFromLocalStorage()
+                }
             });
         });
+
+        this.store.layout$.subscribe((layout) => {
+            this.showSidebar = layout.showSidebar;
+        });
+    }
+
+    toggleSidebar(isOpen: boolean) {
+        this.store.updateSidebarState(isOpen);
+        localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, String(isOpen));
     }
 
     /**
@@ -130,7 +164,7 @@ export class EditContentLayoutComponent implements OnInit {
     /**
      * Get the contentlet, content type and actions for the given inode
      *
-     * @private
+     * @privateocal
      * @param {*} inode
      * @return {*}
      * @memberof EditContentLayoutComponent
@@ -147,5 +181,9 @@ export class EditContentLayoutComponent implements OnInit {
                 });
             })
         );
+    }
+
+    private getSidebarSateFromLocalStorage() {
+        return localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY) === 'true';
     }
 }

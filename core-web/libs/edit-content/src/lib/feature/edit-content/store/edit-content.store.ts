@@ -23,6 +23,9 @@ interface EditContentState {
     contentType: DotCMSContentType;
     contentlet: DotCMSContentlet;
     loading: boolean;
+    layout: {
+        showSidebar: boolean;
+    };
 }
 
 /**
@@ -44,12 +47,15 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
     private readonly dotMessageService = inject(DotMessageService);
     private readonly location = inject(Location);
 
-    readonly vm$ = this.select(({ actions, contentType, contentlet, loading }) => ({
+    readonly vm$ = this.select(({ actions, contentType, contentlet, loading, layout }) => ({
         actions,
         contentType,
         contentlet,
-        loading
+        loading,
+        layout
     }));
+
+    readonly layout$ = this.select(({ layout }) => layout);
 
     /**
      * Update the state
@@ -59,6 +65,14 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
     readonly updateState = this.updater((state, newState: EditContentState) => ({
         ...state,
         ...newState
+    }));
+
+    readonly updateSidebarState = this.updater((state, showSidebar: boolean) => ({
+        ...state,
+        layout: {
+            ...state.layout,
+            showSidebar
+        }
     }));
 
     /**

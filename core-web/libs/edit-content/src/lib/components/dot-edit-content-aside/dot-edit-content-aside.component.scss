@@ -12,8 +12,40 @@
     box-shadow: $shadow-m;
 }
 
+.sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    background-color: #f0f0f0;
+    cursor: pointer;
+    z-index: 1;
+}
+
 .content-aside {
     overflow: auto;
+}
+
+:host {
+    &.collapsed {
+        .content-aside__toolbar {
+            //flex-direction: row;
+            width: 2rem;
+        }
+    }
+}
+
+.p-button.content-aside__closeBtn {
+    svg {
+        color: $color-palette-primary-500;
+    }
+}
+
+.content-aside__toolbar {
+    display: flex;
+    padding: $spacing-2;
+    flex-direction: row-reverse;
+    transition: all 650ms ease-in-out;
 }
 
 .content-aside,
