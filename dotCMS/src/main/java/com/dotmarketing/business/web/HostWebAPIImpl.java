@@ -163,10 +163,16 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
                             : (String) request.getAttribute(Host.HOST_VELOCITY_VAR_NAME);
 
             Host host = find(hostIdOrName, user, respectAnonPerms);
+            Logger.error(this, "----**2.1 Host host = find(hostIdOrName, user, respectAnonPerms) ->" + (host == null));
 
             if(host!=null) return Optional.of(host);
 
-            return this.resolveHostNameWithoutDefault(hostIdOrName, user, respectAnonPerms);
+            var optionalHost = this.resolveHostNameWithoutDefault(hostIdOrName, user, respectAnonPerms);
+            Logger.error(this,
+                    "----**2.1 this.resolveHostNameWithoutDefault(hostIdOrName, user, respectAnonPerms) ->"
+                            + optionalHost.isPresent()
+            );
+            return optionalHost;
         } else if (request.getAttribute(WebKeys.CURRENT_HOST) != null) {
 	        return Optional.of((Host) request.getAttribute(WebKeys.CURRENT_HOST));
         } else {
