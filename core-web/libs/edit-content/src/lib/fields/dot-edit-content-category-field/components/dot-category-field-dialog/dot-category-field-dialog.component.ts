@@ -2,7 +2,6 @@ import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    computed,
     inject,
     model,
     OnDestroy,
@@ -68,11 +67,6 @@ export class DotCategoryFieldDialogComponent implements OnInit, OnDestroy {
      */
     readonly store = inject(CategoryFieldStore);
 
-    /**
-     * Computed property for retrieving all category keys.
-     */
-    $allCategoryKeys = computed(() => this.store.selected().map((category) => category.key));
-
     ngOnInit(): void {
         this.store.getCategories();
     }
@@ -82,7 +76,7 @@ export class DotCategoryFieldDialogComponent implements OnInit, OnDestroy {
     }
 
     confirmCategories(): void {
-        this.store.addConfirmedCategories();
+        this.store.applyDialogSelection();
         this.closedDialog.emit();
     }
 }

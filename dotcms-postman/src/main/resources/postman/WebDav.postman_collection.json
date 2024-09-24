@@ -1,0 +1,793 @@
+{
+	"info": {
+		"_postman_id": "fc8e8110-1313-41cf-b29c-ce96a90a67a8",
+		"name": "WebDav",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "3028555"
+	},
+	"item": [
+		{
+			"name": "Test WebDav conection",
+			"item": [
+				{
+					"name": "SetSiteName",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.environment.set(\"hostName\", jsonData.entity.hostname);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/currentSite",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"currentSite"
+							]
+						},
+						"description": "### Get Current Site\n\nThis endpoint makes an HTTP GET request to retrieve information about the current site.\n\n#### Request Body\n\nThis request does not require a request body.\n\n#### Response\n\n- Status: 200\n    \n- Content-Type: application/json\n    \n\n##### Response Body\n\nThe response contains information about the current site in JSON format, including various attributes such as aliases, archived status, category ID, content type ID, default status, host, language ID, title, and more."
+					},
+					"response": []
+				},
+				{
+					"name": "List directories",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//Validate response code",
+									"",
+									"pm.test(\"Status code is 207\", function () {",
+									"    pm.response.to.have.status(207);",
+									"});",
+									"",
+									"// Validate the XML response",
+									"pm.test(\"Validate the XML response\", function () {",
+									"    var responseXML = xml2Json(pm.response.text());",
+									"    var expectedHrefValue = \"/webdav/live/1/demo.dotcms.com/\";",
+									"    var hrefValue = responseXML['d:multistatus']['d:response'][0]['d:href'];",
+									"    pm.expect(hrefValue).to.eql(expectedHrefValue);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PROPFIND",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<D:propfind xmlns:D=\"DAV:\">\n  <D:allprop/>\n</D:propfind>",
+							"options": {
+								"raw": {
+									"language": "xml"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}"
+							]
+						},
+						"description": "The `PROPFIND` request is used to retrieve properties of a resource identified by the request-URI.\n\n### Request Body\n\nThe request body is in XML format and includes the element with the child element to retrieve all properties of the specified resource.\n\n### Response\n\nThe response has a status code of 207 and a content type of `application/xml`. The body of the response is a JSON schema representing the properties of the specified resource. The schema includes properties such as `creationdate`, `quota-used-bytes`, `getlastmodified`, `getetag`, `iscollection`, `quota-available-bytes`, `supported-report-set`, `getcontentlength`, `resourcetype`, `getcreated`, `lockdiscovery`, `getcontenttype`, `displayname`, `supportedlock`, `isreadonly`, and `name`. Each property is represented within the `d:prop` object.\n\n``` json\n{\n  \"d:multistatus\": {\n    \"$\": {\n      \"xmlns:cal\": \"\",\n      \"xmlns:cs\": \"\",\n      \"xmlns:card\": \"\",\n      \"xmlns:d\": \"\"\n    },\n    \"d:response\": [\n      {\n        \"d:href\": \"\",\n        \"d:propstat\": {\n          \"d:prop\": {\n            \"d:creationdate\": \"\",\n            \"d:quota-used-bytes\": \"\",\n            \"d:getlastmodified\": \"\",\n            \"d:getetag\": \"\",\n            \"d:iscollection\": \"\",\n            \"d:quota-available-bytes\": \"\",\n            \"d:supported-report-set\": \"\",\n            \"d:getcontentlength\": \"\",\n            \"d:resourcetype\": {\n              \"d:collection\": \"\"\n            },\n            \"d:getcreated\": \"\",\n            \"d:lockdiscovery\": \"\",\n            \"d:getcontenttype\": \"\",\n            \"d:displayname\": \"\",\n            \"d:supportedlock\": {\n              \"d:lockentry\": {\n                \"d:lockscope\": {\n                  \"d:exclusive\": \"\"\n                },\n                \"d:locktype\": {\n                  \"d:write\": \"\"\n                }\n              }\n            },\n            \"d:isreadonly\": \"\",\n            \"d:name\": \"\"\n          },\n          \"d:status\": \"\"\n        }\n      }\n    ]\n  }\n}\n\n ```"
+					},
+					"response": []
+				}
+			],
+			"description": "Validate the connection to dotCMS via WebDav"
+		},
+		{
+			"name": "Create folder",
+			"item": [
+				{
+					"name": "Create new folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "MKCOL",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/QA",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"QA"
+							]
+						},
+						"description": "### Create Collection (MKCOL)\n\nThe `MKCOL` request is used to create a new collection (or folder) at the specified location.\n\n#### Request Body\n\nThis request does not require a request body.\n\n#### Response\n\n- Status: 201\n    \n- Content-Type: text/xml\n    \n\nThe response for this request is expected to be in XML format. To document the response as a JSON schema, please refer to the XML response structure and convert it to a corresponding JSON schema."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate folder has been created",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//Validate response code",
+									"pm.test(\"Status code is 207\", function () {",
+									"    pm.response.to.have.status(207);",
+									"});",
+									"",
+									"pm.test(\"Validate the response includes the new folder\", function () {",
+									"    var responseXML = xml2Json(pm.response.text());",
+									"    var expectedHrefValue = \"QA\";",
+									"    var hrefValue = responseXML['d:multistatus']['d:response']['d:href'];",
+									"    pm.expect(hrefValue).to.contain(expectedHrefValue);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PROPFIND",
+						"header": [
+							{
+								"key": "Depth",
+								"value": "0",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<D:propfind xmlns:D=\"DAV:\">\n  <D:allprop/>\n</D:propfind>",
+							"options": {
+								"raw": {
+									"language": "xml"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/QA",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"QA"
+							]
+						},
+						"description": "The `PROPFIND` request is used to retrieve properties of a resource identified by the request-URI.\n\n### Request Body\n\nThe request body is in XML format and includes the element with the child element to retrieve all properties of the specified resource.\n\n### Response\n\nThe response has a status code of 207 and a content type of `application/xml`. The body of the response is a JSON schema representing the properties of the specified resource. The schema includes properties such as `creationdate`, `quota-used-bytes`, `getlastmodified`, `getetag`, `iscollection`, `quota-available-bytes`, `supported-report-set`, `getcontentlength`, `resourcetype`, `getcreated`, `lockdiscovery`, `getcontenttype`, `displayname`, `supportedlock`, `isreadonly`, and `name`. Each property is represented within the `d:prop` object.\n\nAdditionally, the response includes the `d:href` property, which represents the href of the resource. The value of `d:href` and its validation in the XML response are not provided in the given response data.\n\n``` json\n{\n  \"d:multistatus\": {\n    \"$\": {\n      \"xmlns:cal\": \"\",\n      \"xmlns:cs\": \"\",\n      \"xmlns:card\": \"\",\n      \"xmlns:d\": \"\"\n    },\n    \"d:response\": [\n      {\n        \"d:href\": \"\",  // The value of d:href is not provided\n        \"d:propstat\": {\n          \"d:prop\": {\n            \"d:creationdate\": \"\",\n            \"d:quota-used-bytes\": \"\",\n            \"d:getlastmodified\": \"\",\n            \"d:getetag\": \"\",\n            \"d:iscollection\": \"\",\n            \"d:quota-available-bytes\": \"\",\n            \"d:supported-report-set\": \"\",\n            \"d:getcontentlength\": \"\",\n            \"d:resourcetype\": {\n              \"d:collection\": \"\"\n            },\n            \"d:getcreated\": \"\",\n            \"d:lockdiscovery\": \"\",\n            \"d:getcontenttype\": \"\",\n            \"d:displayname\": \"\",\n            \"d:supportedlock\": {\n              \"d:lockentry\": {\n                \"d:lockscope\": {\n                  \"d:exclusive\": \"\"\n                },\n                \"d:locktype\": {\n                  \"d:write\": \"\"\n                }\n              }\n            },\n            \"d:isreadonly\": \"\",\n            \"d:name\": \"\"\n          },\n          \"d:status\": \"\"\n        }\n      }\n    ]\n  }\n}\n\n ```"
+					},
+					"response": []
+				}
+			],
+			"description": "Creates a new folder nd validate the folder has been created"
+		},
+		{
+			"name": "Upload files to the folder",
+			"item": [
+				{
+					"name": "Upload a new file with content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "This is a test file uploaded via WebDAV API using Postman.\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/QA/testFile.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"QA",
+								"testFile.txt"
+							]
+						},
+						"description": "### Update WebDAV File\n\nThis endpoint allows the user to update a file in the WebDAV server.\n\n#### Request Body\n\n- Raw (text)\n    \n    - This is a test file uploaded via WebDAV API using Postman.\n        \n\n#### Response\n\nThe response for this request is in XML format with a status code of 201. Since the user has requested to document the response as a JSON schema, the response schema will need to be provided separately."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate file has been created",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//Validate response code",
+									"pm.test(\"Status code is 207\", function () {",
+									"    pm.response.to.have.status(207);",
+									"});",
+									"",
+									"pm.test(\"Validate the response includes the new folder\", function () {",
+									"    var responseXML = xml2Json(pm.response.text());",
+									"    var expectedHrefValue = \"QA/testFile.txt\";",
+									"    var hrefValue = responseXML['d:multistatus']['d:response']['d:href'];",
+									"    pm.expect(hrefValue).to.contain(expectedHrefValue);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PROPFIND",
+						"header": [
+							{
+								"key": "Depth",
+								"value": "0",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<D:propfind xmlns:D=\"DAV:\">\n  <D:allprop/>\n</D:propfind>",
+							"options": {
+								"raw": {
+									"language": "xml"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/QA/testFile.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"QA",
+								"testFile.txt"
+							]
+						},
+						"description": "The `PROPFIND` request is used to retrieve properties of a resource identified by the request-URI.\n\n### Request Body\n\nThe request body is in XML format and includes the element with the child element to retrieve all properties of the specified resource.\n\n### Response\n\nThe response has a status code of 207 and a content type of `application/xml`. The body of the response is a JSON schema representing the properties of the specified resource. The schema includes properties such as `creationdate`, `quota-used-bytes`, `getlastmodified`, `getetag`, `iscollection`, `quota-available-bytes`, `supported-report-set`, `getcontentlength`, `resourcetype`, `getcreated`, `lockdiscovery`, `getcontenttype`, `displayname`, `supportedlock`, `isreadonly`, and `name`. Each property is represented within the `d:prop` object.\n\n``` json\n{\n  \"d:multistatus\": {\n    \"$\": {\n      \"xmlns:cal\": \"\",\n      \"xmlns:cs\": \"\",\n      \"xmlns:card\": \"\",\n      \"xmlns:d\": \"\"\n    },\n    \"d:response\": [\n      {\n        \"d:href\": \"\",\n        \"d:propstat\": {\n          \"d:prop\": {\n            \"d:creationdate\": \"\",\n            \"d:quota-used-bytes\": \"\",\n            \"d:getlastmodified\": \"\",\n            \"d:getetag\": \"\",\n            \"d:iscollection\": \"\",\n            \"d:quota-available-bytes\": \"\",\n            \"d:supported-report-set\": \"\",\n            \"d:getcontentlength\": \"\",\n            \"d:resourcetype\": {\n              \"d:collection\": \"\"\n            },\n            \"d:getcreated\": \"\",\n            \"d:lockdiscovery\": \"\",\n            \"d:getcontenttype\": \"\",\n            \"d:displayname\": \"\",\n            \"d:supportedlock\": {\n              \"d:lockentry\": {\n                \"d:lockscope\": {\n                  \"d:exclusive\": \"\"\n                },\n                \"d:locktype\": {\n                  \"d:write\": \"\"\n                }\n              }\n            },\n            \"d:isreadonly\": \"\",\n            \"d:name\": \"\"\n          },\n          \"d:status\": \"\"\n        }\n      }\n    ]\n  }\n}\n\n ```"
+					},
+					"response": []
+				},
+				{
+					"name": "Upload a new file without content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/QA/testEmptyFile.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"QA",
+								"testEmptyFile.txt"
+							]
+						},
+						"description": "This endpoint allows you to update a file named testEmptyFile.txt in the QA directory of the specified host. The request should be sent as an HTTP PUT request to the provided URL.\n\n### Request Body\n\nThe request should include the updated content of the file in the request body.\n\n### Expected Response\n\nUpon successful execution, the server will respond with a status code of 201 and a Content-Type of text/xml. The response body will contain the updated information of the file."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate the empty file has been created",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//Validate response code",
+									"pm.test(\"Status code is 207\", function () {",
+									"    pm.response.to.have.status(207);",
+									"});",
+									"",
+									"pm.test(\"Validate the response includes the new folder\", function () {",
+									"    var responseXML = xml2Json(pm.response.text());",
+									"    var expectedHrefValue = \"QA/testEmptyFile.txt\";",
+									"    var hrefValue = responseXML['d:multistatus']['d:response']['d:href'];",
+									"    pm.expect(hrefValue).to.contain(expectedHrefValue);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PROPFIND",
+						"header": [
+							{
+								"key": "Depth",
+								"value": "0",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<D:propfind xmlns:D=\"DAV:\">\n  <D:allprop/>\n</D:propfind>",
+							"options": {
+								"raw": {
+									"language": "xml"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/QA/testEmptyFile.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"QA",
+								"testEmptyFile.txt"
+							]
+						},
+						"description": "The `PROPFIND` request is used to retrieve properties of a resource identified by the request-URI.\n\n### Request Body\n\nThe request body is in XML format and includes the element with the child element to retrieve all properties of the specified resource.\n\n### Response\n\nThe response has a status code of 207 and a content type of `application/xml`. The body of the response is a JSON schema representing the properties of the specified resource. The schema includes properties such as `creationdate`, `quota-used-bytes`, `getlastmodified`, `getetag`, `iscollection`, `quota-available-bytes`, `supported-report-set`, `getcontentlength`, `resourcetype`, `getcreated`, `lockdiscovery`, `getcontenttype`, `displayname`, `supportedlock`, `isreadonly`, and `name`. Each property is represented within the `d:prop` object.\n\n``` json\n{\n  \"d:multistatus\": {\n    \"$\": {\n      \"xmlns:cal\": \"\",\n      \"xmlns:cs\": \"\",\n      \"xmlns:card\": \"\",\n      \"xmlns:d\": \"\"\n    },\n    \"d:response\": [\n      {\n        \"d:href\": \"\",\n        \"d:propstat\": {\n          \"d:prop\": {\n            \"d:creationdate\": \"\",\n            \"d:quota-used-bytes\": \"\",\n            \"d:getlastmodified\": \"\",\n            \"d:getetag\": \"\",\n            \"d:iscollection\": \"\",\n            \"d:quota-available-bytes\": \"\",\n            \"d:supported-report-set\": \"\",\n            \"d:getcontentlength\": \"\",\n            \"d:resourcetype\": {\n              \"d:collection\": \"\"\n            },\n            \"d:getcreated\": \"\",\n            \"d:lockdiscovery\": \"\",\n            \"d:getcontenttype\": \"\",\n            \"d:displayname\": \"\",\n            \"d:supportedlock\": {\n              \"d:lockentry\": {\n                \"d:lockscope\": {\n                  \"d:exclusive\": \"\"\n                },\n                \"d:locktype\": {\n                  \"d:write\": \"\"\n                }\n              }\n            },\n            \"d:isreadonly\": \"\",\n            \"d:name\": \"\"\n          },\n          \"d:status\": \"\"\n        }\n      }\n    ]\n  }\n}\n\n ```"
+					},
+					"response": []
+				}
+			],
+			"description": "Upload some txt files to the created folder"
+		},
+		{
+			"name": "Update file",
+			"item": [
+				{
+					"name": "Update the file",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "This is a updated file content",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/QA/testFile.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"QA",
+								"testFile.txt"
+							]
+						},
+						"description": "This endpoint allows you to update a file at the specified location. The HTTP PUT request should be made to {{serverURL}}/webdav/live/1/{{hostName}}/QA/testFile.txt with the updated file content as the raw request body.\n\n### Request Body\n\n- Type: Text\n    \n- Description: This is the updated file content\n    \n\n### Response\n\n- Status: 201\n    \n- Content-Type: text/xml\n    \n- Body: The response body is not available"
+					},
+					"response": []
+				},
+				{
+					"name": "Validate file has been updated",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//Validate response code",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Validate the file has been updated",
+									"pm.test(\"File content match with the updated values\", function () {",
+									"    pm.expect(pm.response.text()).to.equal('This is a updated file content');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Depth",
+								"value": "0",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<D:propfind xmlns:D=\"DAV:\">\n  <D:allprop/>\n</D:propfind>",
+							"options": {
+								"raw": {
+									"language": "xml"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/QA/testFile.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"QA",
+								"testFile.txt"
+							]
+						},
+						"description": "The `PROPFIND` request is used to retrieve properties of a resource identified by the request-URI.\n\n### Request Body\n\nThe request body is in XML format and includes the element with the child element to retrieve all properties of the specified resource.\n\n### Response\n\nThe response has a status code of 207 and a content type of `application/xml`. The body of the response is a JSON schema representing the properties of the specified resource. The schema includes properties such as `creationdate`, `quota-used-bytes`, `getlastmodified`, `getetag`, `iscollection`, `quota-available-bytes`, `supported-report-set`, `getcontentlength`, `resourcetype`, `getcreated`, `lockdiscovery`, `getcontenttype`, `displayname`, `supportedlock`, `isreadonly`, and `name`. Each property is represented within the `d:prop` object.\n\n``` json\n{\n  \"d:multistatus\": {\n    \"$\": {\n      \"xmlns:cal\": \"\",\n      \"xmlns:cs\": \"\",\n      \"xmlns:card\": \"\",\n      \"xmlns:d\": \"\"\n    },\n    \"d:response\": [\n      {\n        \"d:href\": \"\",\n        \"d:propstat\": {\n          \"d:prop\": {\n            \"d:creationdate\": \"\",\n            \"d:quota-used-bytes\": \"\",\n            \"d:getlastmodified\": \"\",\n            \"d:getetag\": \"\",\n            \"d:iscollection\": \"\",\n            \"d:quota-available-bytes\": \"\",\n            \"d:supported-report-set\": \"\",\n            \"d:getcontentlength\": \"\",\n            \"d:resourcetype\": {\n              \"d:collection\": \"\"\n            },\n            \"d:getcreated\": \"\",\n            \"d:lockdiscovery\": \"\",\n            \"d:getcontenttype\": \"\",\n            \"d:displayname\": \"\",\n            \"d:supportedlock\": {\n              \"d:lockentry\": {\n                \"d:lockscope\": {\n                  \"d:exclusive\": \"\"\n                },\n                \"d:locktype\": {\n                  \"d:write\": \"\"\n                }\n              }\n            },\n            \"d:isreadonly\": \"\",\n            \"d:name\": \"\"\n          },\n          \"d:status\": \"\"\n        }\n      }\n    ]\n  }\n}\n\n ```"
+					},
+					"response": []
+				}
+			],
+			"description": "Update the existing files and validate that the content has been updated"
+		},
+		{
+			"name": "Delete file",
+			"item": [
+				{
+					"name": "Delete the file",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/QA/testFile.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"QA",
+								"testFile.txt"
+							]
+						},
+						"description": "### Delete Test File\n\nThis endpoint is used to delete a specific file from the environment.\n\n#### Request Body\n\nThis request does not require a request body.\n\n#### Response Body\n\nThe response for this request does not include a body.\n\n#### Response JSON Schema\n\n``` json\n{\n    \"type\": \"object\",\n    \"properties\": {\n        \"status\": {\n            \"type\": \"number\",\n            \"description\": \"The HTTP status code indicating the success of the request.\"\n        },\n        \"Content-Type\": {\n            \"type\": \"string\",\n            \"description\": \"The type of content in the response.\"\n        }\n    }\n}\n\n ```"
+					},
+					"response": []
+				},
+				{
+					"name": "Validate file has been deleted",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//Validate response code",
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"// Validate the file has been deleted",
+									"pm.test(\"Response body contains the proper error\", function () {",
+									"    pm.expect(pm.response.text()).to.include('QA/testFile.txt Not Found (404)');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Depth",
+								"value": "0",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<D:propfind xmlns:D=\"DAV:\">\n  <D:allprop/>\n</D:propfind>",
+							"options": {
+								"raw": {
+									"language": "xml"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/QA/testFile.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"QA",
+								"testFile.txt"
+							]
+						},
+						"description": "The `GET` request is used to retrieve the specified file \"testFile.txt\" from the QA directory.\n\n### Response\n\nThe response has a status code of 404 and a content type of `text/html`. The body of the response includes the following error message:\n\n``` html\n<html><body><h1 class=&#x27;preserveHtml&#x27; class=&#x27;preserveHtml&#x27;>/webdav/live/1/{{hostName}}/QA/testFile.txt Not Found (404)</h1></body></html>\n\n ```\n\nThe response indicates that the specified file \"testFile.txt\" in the QA directory was not found, resulting in a 404 error."
+					},
+					"response": []
+				}
+			],
+			"description": "Delete the created files and validate that the files have been deleted"
+		},
+		{
+			"name": "Delete the folder",
+			"item": [
+				{
+					"name": "Delete the folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/QA",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"QA"
+							]
+						},
+						"description": "This endpoint sends an HTTP DELETE request to remove the specified resource located at /webdav/live/1/{{hostName}}/QA. The request does not contain a request body, and the response returns a status code of 204 with a Content-Type of text/xml."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate folder has been deleted",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//Validate response code",
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"// Validate the file has been deleted",
+									"pm.test(\"Response body contains the proper error\", function () {",
+									"    pm.expect(pm.response.text()).to.include('QA Not Found (404)');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Depth",
+								"value": "0",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<D:propfind xmlns:D=\"DAV:\">\n  <D:allprop/>\n</D:propfind>",
+							"options": {
+								"raw": {
+									"language": "xml"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/QA",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"QA"
+							]
+						},
+						"description": "## Request Description\n\nThe `GET` request is used to retrieve properties of a resource identified by the request-URI. The request is sent to `{{serverURL}}/webdav/live/1/{{hostName}}/QA`.\n\n### Request Body\n\nThe request body is in XML format and includes the following payload:\n\n``` xml\n<D:propfind xmlns:D=\"DAV:\">\n  <D:allprop/>\n</D:propfind>\n\n ```\n\n## Response\n\nThe response to the request has a status code of 404 and a content type of `text/html`. The body of the response is an HTML message indicating that the resource was not found (404).\n\n### Response JSON Schema\n\nThe response body represents the properties of the specified resource in a JSON schema format. The schema includes properties such as `creationdate`, `quota-used-bytes`, `getlastmodified`, `getetag`, `iscollection`, `quota-available-bytes`, `supported-report-set`, `getcontentlength`, `resourcetype`, `getcreated`, `lockdiscovery`, `getcontenttype`, `displayname`, `supportedlock`, `isreadonly`, and `name`. Each property is represented within the `d:prop` object.\n\n``` json\n{\n  \"d:multistatus\": {\n    \"$\": {\n      \"xmlns:cal\": \"\",\n      \"xmlns:cs\": \"\",\n      \"xmlns:card\": \"\",\n      \"xmlns:d\": \"\"\n    },\n    \"d:response\": [\n      {\n        \"d:href\": \"\",\n        \"d:propstat\": {\n          \"d:prop\": {\n            \"d:creationdate\": \"\",\n            \"d:quota-used-bytes\": \"\",\n            \"d:getlastmodified\": \"\",\n            \"d:getetag\": \"\",\n            \"d:iscollection\": \"\",\n            \"d:quota-available-bytes\": \"\",\n            \"d:supported-report-set\": \"\",\n            \"d:getcontentlength\": \"\",\n            \"d:resourcetype\": {\n              \"d:collection\": \"\"\n            },\n            \"d:getcreated\": \"\",\n            \"d:lockdiscovery\": \"\",\n            \"d:getcontenttype\": \"\",\n            \"d:displayname\": \"\",\n            \"d:supportedlock\": {\n              \"d:lockentry\": {\n                \"d:lockscope\": {\n                  \"d:exclusive\": \"\"\n                },\n                \"d:locktype\": {\n                  \"d:write\": \"\"\n                }\n              }\n            },\n            \"d:isreadonly\": \"\",\n            \"d:name\": \"\"\n          },\n          \"d:status\": \"\"\n        }\n      }\n    ]\n  }\n}\n\n ```"
+					},
+					"response": []
+				}
+			],
+			"description": "Deletes the created folder and validate"
+		}
+	],
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "password",
+				"value": "admin",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "admin@dotcms.com",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"",
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

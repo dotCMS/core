@@ -19,6 +19,8 @@
 <%@ page import="com.dotmarketing.portlets.workflows.business.WorkflowAPI" %>
 <%@page import="java.util.Date" %>
 <%@page import="java.util.Optional" %>
+<%@ page import="com.liferay.portal.language.LanguageUtil" %>
+<%@ page import="com.dotmarketing.portlets.fileassets.business.FileAsset" %>
 
 <%!
 
@@ -404,10 +406,14 @@ public String getGravatar(String postedBy){
 		                          str_style="class=\"alternate_2\"";
 		                        }
 		                        x++;
+								FileAsset fileAsset = null;
+								if (file instanceof FileAsset){
+									fileAsset = (FileAsset) file;
+								}
 		                %>
 		                    <tr <%=str_style %>>
-								<a href="<%= file.getURI() %>" target="_blank">
-									<%= file.getFileName() %>
+								<a href="<%= (fileAsset != null && fileAsset.getMap().get("fileLink") != null) ? fileAsset.getMap().get("fileLink") : file.getURI() %>" target="_blank">
+									<%= (fileAsset != null && fileAsset.getMap().get("fileLink") != null) ? fileAsset.getUnderlyingFileName() : file.getFileName() %>
 								</a>
 
 								<td>
