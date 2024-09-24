@@ -450,6 +450,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         Set<Host> cachedSites = hostCache.getAllSites();
         if(null == cachedSites){
             final List<Host> allFromDB = findAllFromDB(user, respectFrontendRoles);
+            Logger.debug(this, "Loading all sites from DB to cache:"+allFromDB);
             hostCache.addAll(allFromDB);
             cachedSites = hostCache.getAllSites();
         }
@@ -987,6 +988,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
      * @param site The {@link Host} object that was modified, which triggers a complete flush of the Site Cache Region.
      */
     private void flushAllCaches(final Host site) {
+        Logger.debug(this, "Flushing all caches for Site: " + site);
         this.hostCache.remove(site);
         this.hostCache.clearCache();
     }

@@ -36,6 +36,8 @@ public class HostCacheImpl extends HostCache {
 		if(host == null){
 			return null;
 		}
+		Logger.info(this, "Adding host to cache: " + host.getIdentifier() + ":"+ host.getHostname());
+
 		String key = host.getIdentifier();
 		String key2 =host.getHostname();
 
@@ -135,6 +137,7 @@ public class HostCacheImpl extends HostCache {
 	 * @see com.dotmarketing.business.PermissionCache#clearCache()
 	 */
 	public void clearCache() {
+		Logger.info(this, "Clearing cache");
         // clear the cache
         cache.flushGroup(PRIMARY_GROUP);
         cache.flushGroup(ALIAS_GROUP);
@@ -149,6 +152,8 @@ public class HostCacheImpl extends HostCache {
 		if(host == null || StringUtils.isBlank(host.getIdentifier())){
 			return;
 		}
+
+		Logger.info(this, "Removing host from cache: " + host.getIdentifier() + ":"+ host.getHostname());
     	// always remove default host
     	String _defaultHost =PRIMARY_GROUP +DEFAULT_HOST;
     	cache.remove(_defaultHost,PRIMARY_GROUP);
