@@ -193,6 +193,11 @@ public class HostFactoryImpl implements HostFactory {
         final Host cachedSiteByName = siteCache.getByName(siteName);;
         if (UtilMethods.isSet(() -> cachedSiteByName.getIdentifier())) {
             if (HostCache.CACHE_404_HOST.equals(cachedSiteByName.getIdentifier())) {
+                Logger.error(this,
+                        String.format("----> Host with alias '%s' and identifier '%s' was not found",
+                                siteName,
+                                cachedSiteByName.getIdentifier())
+                );
                 return null;
             }
             site = cachedSiteByName;
@@ -238,6 +243,11 @@ public class HostFactoryImpl implements HostFactory {
         Host cachedSiteByAlias = this.siteCache.getHostByAlias(alias);
         if (UtilMethods.isSet(() -> cachedSiteByAlias.getIdentifier())) {
             if (HostCache.CACHE_404_HOST.equals(cachedSiteByAlias.getIdentifier())) {
+                Logger.error(this,
+                        String.format("----> Host with alias '%s' and identifier '%s' was not found",
+                                alias,
+                                cachedSiteByAlias.getIdentifier())
+                );
                 return null;
             }
             site = cachedSiteByAlias;

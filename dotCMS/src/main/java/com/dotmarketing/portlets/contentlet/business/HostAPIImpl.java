@@ -125,6 +125,11 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         final Host cachedHostByAlias = hostCache.getHostByAlias(serverName);
         if (UtilMethods.isSet(() -> cachedHostByAlias.getIdentifier())) {
             if (HostCache.CACHE_404_HOST.equals(cachedHostByAlias.getIdentifier())) {
+                Logger.error(this,
+                        String.format("----> Host with alias '%s' and identifier '%s' was not found",
+                                serverName,
+                                cachedHostByAlias.getIdentifier())
+                );
                 return null;
             }
             host = cachedHostByAlias;
@@ -157,6 +162,11 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         final Host cachedHostByAlias = hostCache.getHostByAlias(serverName);
         if (UtilMethods.isSet(() -> cachedHostByAlias.getIdentifier())) {
             if (HostCache.CACHE_404_HOST.equals(cachedHostByAlias.getIdentifier())) {
+                Logger.error(this,
+                        String.format("----> Host with alias '%s' and identifier '%s' was not found",
+                                serverName,
+                                cachedHostByAlias.getIdentifier())
+                );
                 return Optional.empty();
             }
             host = cachedHostByAlias;
@@ -315,6 +325,10 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         Host cachedSiteById = hostCache.getById(id);
         if (UtilMethods.isSet(() -> cachedSiteById.getIdentifier())) {
             if (HostCache.CACHE_404_HOST.equals(cachedSiteById.getIdentifier())) {
+                Logger.error(this,
+                        String.format("----> Host with id '%s' and identifier '%s' was not found",
+                                id, cachedSiteById.getIdentifier())
+                );
                 return null;
             }
             site = cachedSiteById;
