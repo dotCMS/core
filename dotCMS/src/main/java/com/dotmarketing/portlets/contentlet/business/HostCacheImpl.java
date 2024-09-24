@@ -49,6 +49,7 @@ public class HostCacheImpl extends HostCache {
         cache.put(key2, host,PRIMARY_GROUP);
         
         if(host.isDefault()){
+			Logger.info(this, "Adding default host to cache: " + host.getIdentifier() + ":"+ host.getHostname());
     		String key3 =DEFAULT_HOST;
         	cache.put(key3,host,PRIMARY_GROUP);
         }

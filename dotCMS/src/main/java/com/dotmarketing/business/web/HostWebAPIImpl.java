@@ -84,6 +84,7 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 
         if (optionalHost.isEmpty() && user.isBackendUser()){
             optionalHost = this.getCurrentHostFromSession(request, user, respectAnonPerms);
+            Logger.info(this, "Getting host by session: " + optionalHost);
         }
 
         final Host host = optionalHost.isPresent() ? optionalHost.get() : resolveHostName(request.getServerName(),
@@ -147,6 +148,7 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 	    final String hostId = request.getParameter("host_id");
 
 	    if (hostId != null && user.isBackendUser()) {
+            Logger.info(this, "Getting host by host_id: " + hostId);
 	        return Optional.ofNullable(find(hostId, user, respectAnonPerms));
         } else if (UtilMethods.isSet(request.getParameter(Host.HOST_VELOCITY_VAR_NAME))
             || UtilMethods.isSet(request.getAttribute(Host.HOST_VELOCITY_VAR_NAME))) {
@@ -159,11 +161,24 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 
             Host host = find(hostIdOrName, user, respectAnonPerms);
 
-            if(host!=null) return Optional.of(host);
+            if(host!=null) {
+                Logger.info(this, "Getting host by host velocity var name: " + hostIdOrName);
+                return Optional.of(host);
+            }
 
-            return this.resolveHostNameWithoutDefault(hostIdOrName, user, respectAnonPerms);
+            Optional<Host> res = this.resolveHostNameWithoutDefault(hostIdOrName, user,
+                    respectAnonPerms);
+            if (res.isPresent()) {
+                Logger.info(this, "Getting host by host resolveHostNameWithoutDefault: " + hostIdOrName);
+            }
+            return res;
         } else if (request.getAttribute(WebKeys.CURRENT_HOST) != null) {
-	        return Optional.of((Host) request.getAttribute(WebKeys.CURRENT_HOST));
+
+            Optional<Host> res = Optional.of((Host) request.getAttribute(WebKeys.CURRENT_HOST));
+            if (res.isPresent()) {
+                Logger.info(this, "Getting host by WebKeys.CURRENT_HOST: " + res.get().getHostname());
+            }
+            return res;
         } else {
 	        return Optional.empty();
         }

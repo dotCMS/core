@@ -365,6 +365,7 @@ public class HostFactoryImpl implements HostFactory {
         if (dbResults.size() > 1) {
             Logger.fatal(this, "ERROR: There's more than one working version of the System Host!!");
         }
+        Logger.info(this, "Adding SystemHost to cache: " + systemHost);
         this.siteCache.add(systemHost);
         return systemHost;
     }
