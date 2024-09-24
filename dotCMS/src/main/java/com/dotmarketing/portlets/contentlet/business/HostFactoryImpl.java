@@ -210,9 +210,17 @@ public class HostFactoryImpl implements HostFactory {
                 final List<Map<String, String>> dbResults = dc.loadResults();
                 if (dbResults.isEmpty()) {
                     siteCache.add404HostByName(siteName);
-                    Logger.error(this,
-                            String.format("---->3 Added Host '%s' as 404", siteName)
-                    );
+                    if (siteName.equals("SYSTEM_HOST")) {
+                        var error = new DotRuntimeException("SYSTEM_HOST not found");
+                        Logger.error(this,
+                                String.format("---->3 Added Host '%s' as 404", siteName),
+                                error
+                        );
+                    } else {
+                        Logger.error(this,
+                                String.format("---->3 Added Host '%s' as 404", siteName)
+                        );
+                    }
                     return null;
                 }
                 final String siteInode = dbResults.get(0).get("inode");
