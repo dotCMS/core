@@ -1,11 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -26,12 +20,16 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.JSONField;
+import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -129,7 +127,6 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.personas.model.Persona;
-import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -184,6 +181,18 @@ import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import javax.activation.MimeType;
+import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -211,17 +220,12 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.activation.MimeType;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -245,7 +249,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final PermissionAPI permissionAPI;
     private final CategoryAPI categoryAPI;
     private final RelationshipAPI relationshipAPI;
-    private final FieldAPI fieldAPI;
     private final LanguageAPI languageAPI;
     private final ReindexQueueAPI reindexQueueAPI;
     private final TagAPI tagAPI;
@@ -281,7 +284,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     ;
 
     private static final Supplier<String> ND_SUPPLIER = () -> "N/D";
-    private ElasticReadOnlyCommand elasticReadOnlyCommand;
+    private final ElasticReadOnlyCommand elasticReadOnlyCommand;
 
     /**
      * Default class constructor.
@@ -289,7 +292,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @VisibleForTesting
     public ESContentletAPIImpl(final ElasticReadOnlyCommand readOnlyCommand) {
         indexAPI = new ContentletIndexAPIImpl();
-        fieldAPI = APILocator.getFieldAPI();
         contentFactory = new ESContentFactoryImpl();
         permissionAPI = APILocator.getPermissionAPI();
         categoryAPI = APILocator.getCategoryAPI();
@@ -4988,9 +4990,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 generateSystemEvent);
 
                 if (workflowContentletOpt.isPresent()) {
-
                     Logger.info(this,
-                            "A Workflow has been ran instead of checkin the contentlet: " +
+                            "A Workflow has been run instead of checking in Contentlet with ID: " +
                                     workflowContentletOpt.get().getIdentifier());
                     return workflowContentletOpt.get();
                 }
@@ -5001,14 +5002,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 contentletIn, contentRelationships, categories, user,
                                 respectFrontendRoles, createNewVersion
                         )
-                ); // end synchronized block
+                );
             } catch (final Throwable t) {
-                Logger.warn(getClass(), t.getMessage(), t);
+                if (!(t instanceof DotContentletValidationException)) {
+                    Logger.warn(this, ExceptionUtil.getErrorMessage(t), t);
+                }
                 bubbleUpException(t);
             }
 
             //This way no matter how many times the contentlet reference that we're passing in gets override.
             //On the way back this updates the original contentlet references updating the new inode and identifier
+            if (null == contentletOut) {
+                throw new DotDataException("Checked in contentlet is null. This must never happen!");
+            }
             contentletIn.setIdentifier(contentletOut.getIdentifier());
             contentletIn.setInode(contentletOut.getInode());
 
@@ -7376,18 +7382,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         boolean hasError = false;
         final DotContentletValidationException cve = new DotContentletValidationException(
-                String.format(
-                        "Contentlet with id:`%s` and title:`%s` has invalid / missing field(s).",
+                String.format("Contentlet with ID '%s' ['%s'] has invalid/missing field(s).",
                         contentIdentifier, contentlet.getTitle())
         );
         final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentTypeId);
         final Map<String, Object> contentletMap = contentlet.getMap();
         final Set<String> nullValueProperties = contentlet.getNullProperties();
         for (final Field field : fields) {
-            final Object fieldValue = (nullValueProperties.contains(field.getVelocityVarName())
-                    ? null : contentletMap.get(field.getVelocityVarName()));
             final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(
                     field);
+            if (isIgnorableField(newField)) {
+                continue;
+            }
+            final Object fieldValue = (nullValueProperties.contains(field.getVelocityVarName())
+                    ? null : contentletMap.get(field.getVelocityVarName()));
             // Validate Field Type
             if (fieldValue != null) {
                 if (isFieldTypeString(field) && !(newField instanceof JSONField)) {
@@ -7531,7 +7539,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 } else if (field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
                     continue;
                 } else if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
-                    if (cats == null || cats.size() == 0) {
+                    if (UtilMethods.isNotSet(cats)) {
                         cve.addRequiredField(field);
                         hasError = true;
                         Logger.warn(this, "Category Field [" + field.getVelocityVarName()
@@ -7548,11 +7556,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             boolean found = false;
                             for (Category cat : childrenCats) {
                                 for (Category passedCat : cats) {
-                                    try {
-                                        if (passedCat.getInode().equalsIgnoreCase(cat.getInode())) {
-                                            found = true;
-                                        }
-                                    } catch (NumberFormatException e) {
+                                    if (passedCat.getInode().equalsIgnoreCase(cat.getInode())) {
+                                        found = true;
                                     }
                                 }
                             }
@@ -7564,13 +7569,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 continue;
                             }
                         }
-                    } catch (DotDataException | DotSecurityException e) {
+                    } catch (final DotDataException | DotSecurityException e) {
+                        cve.addRequiredField(field);
+                        hasError = true;
                         Logger.warn(this,
-                                "Unable to validate a category field [" + field.getVelocityVarName()
-                                        + "]", e);
-                        throw new DotContentletValidationException(
-                                "Unable to validate a category field: "
-                                        + field.getVelocityVarName(), e);
+                                "Unable to validate category field [" + field.getVelocityVarName()
+                                        + "]: " + ExceptionUtil.getErrorMessage(e), e);
+                        continue;
                     }
                 } else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
                     if (!UtilMethods.isSet(contentlet.getHost()) && !UtilMethods.isSet(
@@ -7614,7 +7619,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 } else if (field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
                     if (fieldValue instanceof String) {
                         String s = (String) fieldValue;
-                        if (s.trim().toLowerCase().equals("<br>")) {
+                        if (s.trim().equalsIgnoreCase("<br>")) {
                             cve.addRequiredField(field);
                             hasError = true;
                             Logger.warn(this, "WYSIWYG Field [" + field.getVelocityVarName()
@@ -7632,7 +7637,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 || field.getDataType().contains(DataTypes.FLOAT.toString());
                 try {
                     final StringBuilder buffy = new StringBuilder(UUIDGenerator.generateUuid());
-                    buffy.append(" +structureInode:" + contentlet.getStructureInode());
+                    buffy.append(" +structureInode:" + contentlet.getContentTypeId());
                     if (UtilMethods.isSet(contentlet.getIdentifier())) {
                         buffy.append(" -(identifier:" + contentlet.getIdentifier() + ")");
                     }
@@ -7672,7 +7677,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     int size = contentlets.size();
                     if (size > 0 && !hasError) {
-                        Boolean unique = true;
+                        boolean unique = true;
                         for (final ContentletSearch contentletSearch : contentlets) {
                             final Contentlet uniqueContent = contentFactory.find(
                                     contentletSearch.getInode());
@@ -7686,7 +7691,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                             final Map<String, Object> uniqueContentMap = uniqueContent.getMap();
                             final Object obj = uniqueContentMap.get(field.getVelocityVarName());
-                            if ((isDataTypeNumber && fieldValue.equals(obj)) ||
+                            if ((isDataTypeNumber && Objects.equals(fieldValue, obj)) ||
                                     (!isDataTypeNumber && ((String) obj).equalsIgnoreCase(
                                             ((String) fieldValue)))) {
                                 unique = false;
@@ -7698,7 +7703,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             if (UtilMethods.isSet(contentlet.getIdentifier())) {
                                 Iterator<ContentletSearch> contentletsIter = contentlets.iterator();
                                 while (contentletsIter.hasNext()) {
-                                    ContentletSearch cont = (ContentletSearch) contentletsIter.next();
+                                    ContentletSearch cont = contentletsIter.next();
                                     if (!contentlet.getIdentifier()
                                             .equalsIgnoreCase(cont.getIdentifier())) {
                                         cve.addUniqueField(field);
@@ -7718,9 +7723,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                         }
                     }
-                } catch (DotDataException | DotSecurityException e) {
+                } catch (final DotDataException | DotSecurityException e) {
                     Logger.warn(this, "Unable to get contentlets for Content Type: "
-                            + contentlet.getStructure().getName(), e);
+                            + contentlet.getContentType().name(), e);
                 }
             }
 
@@ -7728,10 +7733,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             String dataType = (field.getFieldContentlet() != null) ? field.getFieldContentlet()
                     .replaceAll("[0-9]*", "") : "";
             if (UtilMethods.isSet(fieldValue) && dataType.equals("text")) {
-                String s = "";
                 try {
-                    s = (String) fieldValue;
-                } catch (Exception e) {
+                    final String stringValue = (String) fieldValue;
+                } catch (final Exception e) {
                     Logger.warn(this, "Unable to get string value from text field ["
                             + field.getVelocityVarName() +
                             "] in contentlet", e);
@@ -7772,17 +7776,26 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
             }
-
             // validate binary
             if (isFieldTypeBinary(field)) {
-                this.validateBinary(File.class.cast(fieldValue), field.getVelocityVarName(), field,
-                        contentType);
+                this.validateBinary((File) fieldValue, field.getVelocityVarName(), field, contentType);
             }
-
         }
         if (hasError) {
             throw cve;
         }
+    }
+
+    /**
+     * Determines whether Contentlet Validation process can safely ignore the specified field.
+     *
+     * @param newField The {@link com.dotcms.contenttype.model.field.Field} that might be safely
+     *                 ignored.
+     *
+     * @return If the filed can be ignored, returns {@code true}.
+     */
+    private boolean isIgnorableField(final com.dotcms.contenttype.model.field.Field newField) {
+        return newField instanceof RowField || newField instanceof ColumnField || newField instanceof TabDividerField || newField instanceof LineDividerField;
     }
 
     private String getUniqueFieldErrorMessage(final Field field, final Object fieldValue,
@@ -8218,7 +8231,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             // a parent...
                             if (relationship.getCardinality()
                                     == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()
-                                    && relatedContents.size() > 0
+                                    && !relatedContents.isEmpty()
                                     && !relatedContents.get(0).getIdentifier()
                                     .equals(contentlet.getIdentifier())) {
                                 final StringBuilder error = new StringBuilder();
