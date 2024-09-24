@@ -1,16 +1,13 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.content.elasticsearch.business.ClusterStats;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
-import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -35,6 +32,9 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 
 class MonitorHelper {
+    final boolean accessGranted ;
+    final boolean useExtendedFormat;
+    private static final String IPV6_LOCALHOST = "0:0:0:0:0:0:0:1";
 
 
     private static final String[] DEFAULT_IP_ACL_VALUE = new String[]{"127.0.0.1/32", "10.0.0.0/8", "172.16.0.0/12",
@@ -52,41 +52,62 @@ class MonitorHelper {
 
 
     static final AtomicReference<Tuple2<Long, MonitorStats>> cachedStats = new AtomicReference<>();
-    boolean accessGranted = false;
-    boolean useExtendedFormat = false;
 
 
-    MonitorHelper(final HttpServletRequest request)  {
+    MonitorHelper(final HttpServletRequest request, final boolean heavyCheck) {
+        this.useExtendedFormat = heavyCheck;
+        this.accessGranted = isAccessGranted(request);
+    }
+
+    /**
+     * Determines if the IP address of the request is allowed to access this monitor service. We use
+     * an ACL list to determine if the user/service accessing the monitor has permission to do so.
+     * ACL IPs can be defined via the {@code SYSTEM_STATUS_API_IP_ACL} property.
+     *
+     * @param request The current instance of the {@link HttpServletRequest}.
+     *
+     * @return If the IP address of the request is allowed to access this monitor service, returns
+     * {@code true}.
+     */
+    boolean isAccessGranted(final HttpServletRequest request){
         try {
-            this.useExtendedFormat = request.getParameter("extended") != null;
-
-            // set this.accessGranted
+            if(IPV6_LOCALHOST.equals(request.getRemoteAddr()) || ACLS_IPS == null || ACLS_IPS.length == 0){
+                return true;
+            }
 
             final String clientIP = HttpRequestDataUtil.getIpAddress(request).toString().split(StringPool.SLASH)[1];
-            if (ACLS_IPS == null || ACLS_IPS.length == 0) {
-                this.accessGranted = true;
-            } else {
-                for (String aclIP : ACLS_IPS) {
-                    if (IPUtils.isIpInCIDR(clientIP, aclIP)) {
-                        this.accessGranted = true;
-                        break;
-                    }
+            for (final String aclIP : ACLS_IPS) {
+                if (IPUtils.isIpInCIDR(clientIP, aclIP)) {
+                    return true;
                 }
             }
 
 
-        } catch (Exception e) {
-            Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
-            throw new DotRuntimeException(e);
+        } catch (final Exception e) {
+            Logger.warnEveryAndDebug(this.getClass(), e, 60000);
         }
+        return false;
     }
 
-    boolean startedUp() {
+    /**
+     * Determines if dotCMS has started up by checking if the {@code dotcms.started.up} system
+     * property has been set.
+     *
+     * @return If dotCMS has started up, returns {@code true}.
+     */
+    boolean isStartedUp() {
         return System.getProperty(WebKeys.DOTCMS_STARTED_UP)!=null;
     }
 
 
-
+    /**
+     * Retrieves the current status of the different subsystems of dotCMS. This method caches the
+     * response for a period of time defined by the {@code SYSTEM_STATUS_CACHE_RESPONSE_SECONDS}
+     * property.
+     *
+     * @return An instance of {@link MonitorStats} containing the status of the different
+     * subsystems.
+     */
     MonitorStats getMonitorStats()  {
         if (cachedStats.get() != null && cachedStats.get()._1 > System.currentTimeMillis()) {
             return cachedStats.get()._2;
@@ -94,30 +115,26 @@ class MonitorHelper {
         return getMonitorStatsNoCache();
     }
 
-
+    /**
+     * Retrieves the current status of the different subsystems of dotCMS. If cached monitor stats
+     * are available, return them instead.
+     *
+     * @return An instance of {@link MonitorStats} containing the status of the different
+     * subsystems.
+     */
     synchronized MonitorStats getMonitorStatsNoCache()  {
         // double check
         if (cachedStats.get() != null && cachedStats.get()._1 > System.currentTimeMillis()) {
             return cachedStats.get()._2;
         }
-
-
-
-        final MonitorStats monitorStats = new MonitorStats();
-
-        final IndiciesInfo indiciesInfo = Try.of(()->APILocator.getIndiciesAPI().loadIndicies()).getOrElseThrow(DotRuntimeException::new);
-
-        monitorStats.subSystemStats.isDBHealthy = isDBHealthy();
-        monitorStats.subSystemStats.isLiveIndexHealthy = isIndexHealthy(indiciesInfo.getLive());
-        monitorStats.subSystemStats.isWorkingIndexHealthy = isIndexHealthy(indiciesInfo.getWorking());
-        monitorStats.subSystemStats.isCacheHealthy = isCacheHealthy();
-        monitorStats.subSystemStats.isLocalFileSystemHealthy = isLocalFileSystemHealthy();
-        monitorStats.subSystemStats.isAssetFileSystemHealthy = isAssetFileSystemHealthy();
-
-
-        monitorStats.serverId = getServerID();
-        monitorStats.clusterId = getClusterID();
-
+        final MonitorStats monitorStats = new MonitorStats
+                .Builder()
+                .cacheHealthy(isCacheHealthy())
+                .assetFSHealthy(isAssetFileSystemHealthy())
+                .localFSHealthy(isLocalFileSystemHealthy())
+                .dBHealthy(isDBHealthy())
+                .esHealthy(canConnectToES())
+                .build();
 
         // cache a healthy response
         if (monitorStats.isDotCMSHealthy()) {
@@ -127,12 +144,16 @@ class MonitorHelper {
         return monitorStats;
     }
 
-
+    /**
+     * Determines if the database server is healthy by executing a simple query.
+     *
+     * @return If the database server is healthy, returns {@code true}.
+     */
     boolean isDBHealthy()  {
 
 
         return Try.of(()->
-                        new DotConnect().setSQL("SELECT count(*) as count FROM (SELECT 1 FROM dot_cluster LIMIT 1) AS t")
+                        new DotConnect().setSQL("SELECT 1 as count")
                                 .loadInt("count"))
                 .onFailure(e->Logger.warnAndDebug(MonitorHelper.class, "unable to connect to db:" + e.getMessage(),e))
                 .getOrElse(0) > 0;
@@ -141,34 +162,28 @@ class MonitorHelper {
     }
 
 
-    boolean isIndexHealthy(final String index) {
-
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(QueryBuilders.matchAllQuery());
-        searchSourceBuilder.size(0);
-        searchSourceBuilder.timeout(TimeValue
-                .timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-        searchSourceBuilder.fetchSource(new String[]{"inode"}, null);
-        SearchRequest searchRequest = new SearchRequest();
-        searchRequest.source(searchSourceBuilder);
-        searchRequest.indices(index);
-
-        long totalHits = Try.of(()->
-                        RestHighLevelClientProvider
-                                .getInstance()
-                                .getClient()
-                                .search(searchRequest,RequestOptions.DEFAULT)
-                                .getHits()
-                                .getTotalHits()
-                                .value)
-                .onFailure(e->Logger.warnAndDebug(MonitorHelper.class, "unable to connect to index:" + e.getMessage(),e))
-                .getOrElse(0L);
-
-        return totalHits > 0;
-
+    /**
+     * Determines if dotCMS can connect to Elasticsearch by checking the ES Server cluster
+     * statistics. If they're available, it means dotCMS can connect to ES.
+     *
+     * @return If dotCMS can connect to Elasticsearch, returns {@code true}.
+     */
+    boolean canConnectToES() {
+        try {
+            final ClusterStats stats = APILocator.getESIndexAPI().getClusterStats();
+            return stats != null && stats.getClusterName() != null;
+        } catch (final Exception e) {
+            Logger.warnAndDebug(this.getClass(),
+                    "Unable to connect to ES: " + ExceptionUtil.getErrorMessage(e), e);
+            return false;
+        }
     }
 
-
+    /**
+     * Determines if the cache is healthy by checking if the SYSTEM_HOST identifier is available.
+     *
+     * @return If the cache is healthy, returns {@code true}.
+     */
     boolean isCacheHealthy()  {
         try {
             APILocator.getIdentifierAPI().find(Host.SYSTEM_HOST);
@@ -181,30 +196,33 @@ class MonitorHelper {
 
     }
 
+    /**
+     * Determines if the local file system is healthy by writing a file to the Dynamic Content Path
+     * directory.
+     *
+     * @return If the local file system is healthy, returns {@code true}.
+     */
     boolean isLocalFileSystemHealthy()  {
 
         return new FileSystemTest(ConfigUtils.getDynamicContentPath()).call();
 
     }
 
+    /**
+     * Determines if the asset file system is healthy by writing a file to the Asset Path
+     * directory.
+     *
+     * @return If the asset file system is healthy, returns {@code true}.
+     */
     boolean isAssetFileSystemHealthy() {
 
         return new FileSystemTest(ConfigUtils.getAssetPath()).call();
 
     }
 
-
-    private String getServerID()  {
-        return APILocator.getServerAPI().readServerId();
-
-    }
-
-    private String getClusterID()  {
-        return ClusterFactory.getClusterId();
-
-
-    }
-
+    /**
+     * This class is used to test the health of the file system by writing a file to a given path.
+     */
     static final class FileSystemTest implements Callable<Boolean> {
 
         final String initialPath;
@@ -229,7 +247,7 @@ class MonitorHelper {
                     return file.delete();
                 }
             } catch (Exception e) {
-                Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
+                Logger.warnAndDebug(this.getClass(), "Unable to write a file to: " + initialPath + " : " +e.getMessage(), e);
                 return false;
             }
             return false;

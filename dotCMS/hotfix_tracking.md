@@ -158,4 +158,4 @@ This maintenance release includes the following code fixes:
 151. https://github.com/dotCMS/core/issues/29293 : Cannot change folder URL to lowercase #29293
 152. https://github.com/dotCMS/core/issues/29321 : An Asset name starts with number and specific alphabets considers as an Image #29321
 153. https://github.com/dotCMS/core/issues/29668 : Spike: PP bundles not being processed by Receiver #29668
-
+154. https://github.com/dotCMS/core/issues/29719 : relax ES checks in /api/v1/probes/startup #29719
