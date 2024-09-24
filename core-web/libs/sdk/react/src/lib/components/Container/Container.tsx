@@ -99,8 +99,7 @@ export function Container({ containerRef }: ContainerProps) {
                 data-dot-container={JSON.stringify(container)}
                 data-dot-on-number-of-pages={contentlet.onNumberOfPages}
                 key={contentlet.identifier}
-                style={styles}
-                >
+                style={styles}>
                 <Component {...contentlet} />
             </div>
         ) : (
