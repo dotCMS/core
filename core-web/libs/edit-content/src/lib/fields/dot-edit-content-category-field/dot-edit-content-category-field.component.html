@@ -1,26 +1,26 @@
-@if (store.confirmedCategories().length) {
+@if (store.selected().length) {
     <dot-category-field-chips
         data-testId="category-chip-list"
-        [categories]="store.confirmedCategories()"
-        (remove)="store.removeConfirmedCategories($event)" />
+        [categories]="store.selected()"
+        (remove)="store.removeRootSelected($event)" />
 }
 
 <div class="dot-category-field__select">
     <button
         type="button"
         (click)="openCategoriesDialog()"
-        [disabled]="$showCategoriesDialog()"
+        [disabled]="store.isDialogOpen()"
         [label]="'edit.content.category-field.show-categories-dialog' | dm"
         class="p-button-sm p-button-text p-button-secondary"
         data-testId="show-dialog-btn"
         pButton></button>
 </div>
 
-@if ($showCategoriesDialog()) {
-    @defer (when $showCategoriesDialog()) {
+@if (store.isDialogOpen()) {
+    @defer (when store.isDialogOpen()) {
         <dot-category-field-dialog
-            [isVisible]="$showCategoriesDialog()"
-            (closedDialog)="closeCategoriesDialog()"
+            [isVisible]="store.isDialogOpen()"
+            (closedDialog)="store.closeDialog()"
             data-testId="dialog-placeholder" />
     }
 }

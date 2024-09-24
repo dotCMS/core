@@ -4,6 +4,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContainerAsFileDataGen;
@@ -56,10 +57,11 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class CSVManifestBuilderTest {
 
-    private static String headers = "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by";
+    private static String headers = "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, reason to be evaluated";
 
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        LicenseTestUtil.getLicense();
     }
 
     @DataProvider()
@@ -279,17 +281,18 @@ public class CSVManifestBuilderTest {
     @Test
     @UseDataProvider("assets")
     public void exclude(final TestCase testCase) throws IOException {
-        final String exludeReason = "Exclude testing";
+        final String excludeReason = "Exclude testing";
+        final String evaluateReason = "Evaluate testing";
 
         File manifestFile = null;
 
         try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
-            manifestBuilder.exclude(testCase.asset, exludeReason);
+            manifestBuilder.exclude(testCase.asset, evaluateReason, excludeReason);
             manifestFile = manifestBuilder.getManifestFile();
         }
 
         final List<String> expected = list(headers);
-        expected.add("EXCLUDED," + testCase.lineExpected + "," + exludeReason + ",");
+        expected.add("EXCLUDED," + testCase.lineExpected + "," + excludeReason + "," + evaluateReason);
 
         assertManifestLines(manifestFile, expected);
     }
@@ -400,10 +403,11 @@ public class CSVManifestBuilderTest {
     @Test(expected = IllegalStateException.class)
     public void callAddHeaderAfterExclude(){
         final String excludedReason = "exclude testing";
+        final String evaluateReason = "evaluate testing";
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
 
         try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
-            manifestBuilder.exclude(contentType, excludedReason);
+            manifestBuilder.exclude(contentType, evaluateReason, excludedReason);
             manifestBuilder.addMetadata("header_1", "first test header");
         }
     }

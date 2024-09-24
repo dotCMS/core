@@ -1403,7 +1403,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@CloseDBIfOpened
-	public List<IFileAsset> findWorkflowTaskFilesAsContent(final WorkflowTask task, final User user) throws DotDataException {
+	public List<IFileAsset> findWorkflowTaskFilesAsContent(final WorkflowTask task, final User user) throws DotDataException{
 
 		final List<Contentlet> contents =  workFlowFactory.findWorkflowTaskFilesAsContent(task, user);
 		return APILocator.getFileAssetAPI().fromContentletsI(contents);

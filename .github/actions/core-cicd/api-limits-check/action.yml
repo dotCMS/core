@@ -1,0 +1,15 @@
+name: 'Check GitHub API Rate Limit'
+description: 'Outputs information on GitHub API /rate_limit endpoint'
+
+inputs:
+  token:
+    description: 'GitHub token to authenticate the API request'
+    required: true
+    default: ${{ github.token }}
+
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        curl -s -H "Authorization: token ${{ inputs.token }}" https://api.github.com/rate_limit
+      shell: bash

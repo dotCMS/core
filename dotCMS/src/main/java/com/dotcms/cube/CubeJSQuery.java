@@ -169,6 +169,26 @@ public class CubeJSQuery {
         return orders;
     }
 
+    public String[] dimensions() {
+        return dimensions;
+    }
+
+    public String[] measures() {
+        return measures;
+    }
+
+    public long limit() {
+        return limit;
+    }
+
+    public long offset() {
+        return offset;
+    }
+
+    public TimeDimension[] timeDimensions() {
+        return timeDimensions;
+    }
+
     public CubeJSQuery.Builder builder() {
         final Builder builder = new Builder()
                 .dimensions(dimensions)
@@ -280,12 +300,12 @@ public class CubeJSQuery {
             return UtilMethods.isSet(array) ? Arrays.asList(array) : Collections.emptyList();
         }
 
-        private Builder dimensions(final Collection<String> dimensions) {
+        public Builder dimensions(final Collection<String> dimensions) {
             this.dimensions = dimensions.toArray(new String[dimensions.size()]);
             return this;
         }
 
-        private Builder measures(final Collection<String> measures) {
+        public Builder measures(final Collection<String> measures) {
             this.measures = measures.toArray(new String[measures.size()]);
             return this;
         }
@@ -370,7 +390,7 @@ public class CubeJSQuery {
         }
     }
 
-    static class TimeDimension {
+    public static class TimeDimension {
         String dimension;
         String granularity;
 
@@ -388,7 +408,7 @@ public class CubeJSQuery {
         }
     }
 
-    static class OrderItem {
+    public static class OrderItem {
         private String orderBy;
         private Order order;
 
