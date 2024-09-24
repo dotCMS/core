@@ -50,8 +50,12 @@ public class ThreadNameFilter implements Filter {
 	
 			Host host;
 			try {
-				Logger.error(this, "----**1 Trying to resolve host from request [" + uri + "]");
+				Logger.error(this, "----**1 ["+Thread.currentThread().getId()+"] Trying to resolve host from request [" + uri + "]");
 				host = hapi.getCurrentHost(request);
+				if (host == null) {
+					Logger.error(this, "----**5 ["+Thread.currentThread().getId()+"] null host");
+					host = hapi.getHost(request);
+				}
 			} catch (Exception e) {
 				Logger.error(this, "Unable to retrieve current request host for URI " + uri);
 				throw new ServletException(e.getMessage(), e);
