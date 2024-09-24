@@ -1,6 +1,5 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
-import { JsonPipe } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
@@ -9,9 +8,7 @@ import {
     inject,
     input,
     model,
-    OnChanges,
-    signal,
-    SimpleChanges
+    signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -53,7 +50,6 @@ import { CountOccurrences } from './dot-edit-content-wysiwyg-field.utils';
         DotWysiwygTinymceComponent,
         DotWysiwygMonacoComponent,
         MonacoEditorModule,
-        JsonPipe,
         ConfirmDialogModule
     ],
     templateUrl: './dot-edit-content-wysiwyg-field.component.html',
@@ -86,9 +82,21 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
      */
     $selectedLanguageDropdown = model<string>(DEFAULT_EDITOR);
 
+    /**
+     * The signal representing the currently displayed editor in the application.
+     * It holds an `AvailableEditor` type, which determines which editor is actively shown to the user.
+     * The initial value is set to `DEFAULT_EDITOR`.
+     */
     $displayedEditor = signal<AvailableEditor>(DEFAULT_EDITOR);
 
-    $defaultEditorUsed = computed(() => {
+    /**
+     * Computed property that determines the default editor used for a contentlet.
+     *
+     * It inspects the value of a specific field from the contentlet object and returns an
+     * appropriate editor based on the content of the field.
+     *
+     */
+    $contentEditorUsed = computed(() => {
         const fieldValue = this.$field().variable;
         const contentlet = this.$contentlet();
 
@@ -110,20 +118,11 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     });
 
     /**
-     * A computed property that detects the programming language used in the editor.
-     *
-     * Determines the appropriate language based on the editor type and content.
-     * Defaults to a specific language if the Monaco editor is not used, or if content
-     * is absent. Analyzes the content to detect languages such as JavaScript and Markdown.
-     *
-     * Languages are detected based on the presence of specific keywords and syntax:
-     * - JavaScript: Uses keywords like 'function', 'const ', 'let ', etc.
-     * - Markdown: Based on the frequency of markdown syntax elements like '# ', '```', etc.
-     * - Plain text
-     *
+     * A computed property that determines the appropriate language mode for the content editor.
+     * This is based on the content type present in the editor.
      */
-    $detectLanguage = computed(() => {
-        if (this.$defaultEditorUsed() !== AvailableEditor.Monaco) {
+    $contentLanguageUsed = computed(() => {
+        if (this.$contentEditorUsed() !== AvailableEditor.Monaco) {
             return DEFAULT_MONACO_LANGUAGE;
         }
 
@@ -165,13 +164,20 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
 
     ngAfterViewInit(): void {
         // Assign the selected editor value
-        this.$selectedEditorDropdown.set(this.$defaultEditorUsed());
+        this.$selectedEditorDropdown.set(this.$contentEditorUsed());
         // Editor showed
-        this.$displayedEditor.set(this.$defaultEditorUsed());
+        this.$displayedEditor.set(this.$contentEditorUsed());
         // Assign the selected language
-        this.$selectedLanguageDropdown.set(this.$detectLanguage());
+        this.$selectedLanguageDropdown.set(this.$contentLanguageUsed());
     }
 
+    /**
+     * Handles the editor change event by prompting the user for confirmation.
+     * If accepted, the new editor is set. If rejected, the displayed editor remains unchanged.
+     *
+     * @param {AvailableEditor} newEditor - The editor to switch to.
+     * @return {void} - This method does not return a value.
+     */
     onEditorChange(newEditor: AvailableEditor) {
         const currentDisplayedEditor = this.$displayedEditor();
 
