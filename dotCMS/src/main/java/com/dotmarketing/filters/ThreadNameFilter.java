@@ -53,7 +53,7 @@ public class ThreadNameFilter implements Filter {
 				Logger.error(this, "----**1 ["+Thread.currentThread().getId()+"] Trying to resolve host from request [" + uri + "]");
 				host = hapi.getCurrentHost(request);
 				if (host == null) {
-					Logger.error(this, "----**5 ["+Thread.currentThread().getId()+"] null host");
+					Logger.error(this, "----**2 ["+Thread.currentThread().getId()+"] null host");
 					host = hapi.getHost(request);
 				}
 			} catch (Exception e) {
