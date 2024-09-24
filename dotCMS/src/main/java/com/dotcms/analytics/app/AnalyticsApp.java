@@ -130,20 +130,6 @@ public class AnalyticsApp {
             .orElse(AppSecrets.empty());
     }
 
-    /**
-     * Returns true if the host or the system host has any secrets for the analytics app.
-     * @param host
-     * @return
-     */
-    public static boolean anySecrets (final Host host) {
-
-        return   Try.of(
-                        () ->
-                                APILocator.getAppsAPI().getSecrets(
-                                        ANALYTICS_APP_KEY, true, host, APILocator.systemUser()).isPresent())
-                .getOrElseGet(e -> false);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

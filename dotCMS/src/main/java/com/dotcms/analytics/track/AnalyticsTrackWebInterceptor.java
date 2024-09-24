@@ -9,15 +9,19 @@ import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.WhiteBlackList;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,23 +40,41 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
 
     private final static String ANALYTICS_TURNED_ON_KEY = "ANALYTICS_TURNED_ON";
     private final static Map<String, RequestMatcher> requestMatchersMap = new ConcurrentHashMap<>();
-    private final AtomicBoolean isTurnedOn = new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_TURNED_ON_KEY, true));
+    private final HostWebAPI hostWebAPI;
+    private final AppsAPI appsAPI;
 
     /// private static final String[] DEFAULT_BLACKLISTED_PROPS = new String[]{"^/api/*"};
     private static final String[] DEFAULT_BLACKLISTED_PROPS = new String[]{StringPool.BLANK};
-    private final WhiteBlackList whiteBlackList = new WhiteBlackList.Builder()
-            .addWhitePatterns(Config.getStringArrayProperty("ANALYTICS_WHITELISTED_KEYS",
-                    new String[]{StringPool.BLANK})) // allows everything
-            .addBlackPatterns(CollectionsUtils.concat(Config.getStringArrayProperty(  // except this
-                    "ANALYTICS_BLACKLISTED_KEYS", new String[]{}), DEFAULT_BLACKLISTED_PROPS)).build();
+    private final WhiteBlackList whiteBlackList;
+    private final AtomicBoolean isTurnedOn;
 
     public AnalyticsTrackWebInterceptor() {
 
-        addRequestMatcher(
+        this(WebAPILocator.getHostWebAPI(), APILocator.getAppsAPI(),
+                new WhiteBlackList.Builder()
+                        .addWhitePatterns(Config.getStringArrayProperty("ANALYTICS_WHITELISTED_KEYS",
+                                new String[]{StringPool.BLANK})) // allows everything
+                        .addBlackPatterns(CollectionsUtils.concat(Config.getStringArrayProperty(  // except this
+                                "ANALYTICS_BLACKLISTED_KEYS", new String[]{}), DEFAULT_BLACKLISTED_PROPS)).build(),
+                new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_TURNED_ON_KEY, true)),
                 new PagesAndUrlMapsRequestMatcher(),
                 new FilesRequestMatcher(),
-         //       new RulesRedirectsRequestMatcher(),
+                //       new RulesRedirectsRequestMatcher(),
                 new VanitiesRequestMatcher());
+
+    }
+
+    public AnalyticsTrackWebInterceptor(final HostWebAPI hostWebAPI,
+                        final AppsAPI appsAPI,
+                        final WhiteBlackList whiteBlackList,
+                        final AtomicBoolean isTurnedOn,
+                        final RequestMatcher... requestMatchers) {
+
+        this.hostWebAPI = hostWebAPI;
+        this.appsAPI    = appsAPI;
+        this.whiteBlackList = whiteBlackList;
+        this.isTurnedOn = isTurnedOn;
+        addRequestMatcher(requestMatchers);
     }
 
     /**
@@ -111,10 +133,24 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
 
     private boolean anyConfig(final HttpServletRequest request) {
 
-        final Host currentSite = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final Host currentSite = this.hostWebAPI.getCurrentHostNoThrow(request);
 
-        return AnalyticsApp.anySecrets(currentSite);
+        return anySecrets(currentSite);
 
+    }
+
+    /**
+     * Returns true if the host or the system host has any secrets for the analytics app.
+     * @param host
+     * @return
+     */
+    private boolean anySecrets (final Host host) {
+
+        return   Try.of(
+                        () ->
+                                this.appsAPI.getSecrets(
+                                        AnalyticsApp.ANALYTICS_APP_KEY, true, host, APILocator.systemUser()).isPresent())
+                .getOrElseGet(e -> false);
     }
 
     private void addRequestId(final HttpServletRequest request) {
