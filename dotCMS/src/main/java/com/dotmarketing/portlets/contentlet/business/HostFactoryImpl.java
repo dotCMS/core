@@ -212,6 +212,9 @@ public class HostFactoryImpl implements HostFactory {
                 final List<Map<String, String>> dbResults = dc.loadResults();
                 if (dbResults.isEmpty()) {
                     siteCache.add404HostByName(siteName);
+                    Logger.error(this,
+                            String.format("----> Added Host with alias '%s' as 404", siteName)
+                    );
                     return null;
                 }
                 final String siteInode = dbResults.get(0).get("inode");
@@ -272,6 +275,9 @@ public class HostFactoryImpl implements HostFactory {
                 final List<Map<String, String>> dbResults = dc.loadResults();
                 if (dbResults.isEmpty()) {
                     siteCache.addHostAlias(alias, HostCache.cache404Contentlet);
+                    Logger.error(this,
+                            String.format("----> Added Host with alias '%s' as 404", alias)
+                    );
                     return null;
                 }
                 if (dbResults.size() == 1) {
@@ -435,6 +441,9 @@ public class HostFactoryImpl implements HostFactory {
         }
         if (null == site && !Host.SYSTEM_HOST.equals(id)) {
             this.siteCache.add404HostById(id);
+            Logger.error(this,
+                    String.format("----> Added Host with id '%s' as 404", id)
+            );
             Logger.warn(HostAPIImpl.class, String.format("Site with id '%s' not found", id));
         }
         return site;

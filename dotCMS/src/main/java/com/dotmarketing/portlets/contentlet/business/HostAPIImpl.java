@@ -146,6 +146,9 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                 hostCache.addHostAlias(serverName, host);
             } else {
                 hostCache.addHostAlias(serverName, HostCache.cache404Contentlet);
+                Logger.error(this,
+                        String.format("----> Added Host with alias '%s' as 404", serverName)
+                );
             }
         }
         if (host != null) {
@@ -180,6 +183,9 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
             if (host == null) {
                 hostCache.addHostAlias(serverName, HostCache.cache404Contentlet);
+                Logger.error(this,
+                        String.format("----> Added Host with alias '%s' as 404", serverName)
+                );
             } else {
                 hostCache.addHostAlias(serverName, host);
             }
