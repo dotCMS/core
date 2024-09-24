@@ -5,3 +5,17 @@
  * .container {
  * }
 */
+
+div[data-dot-object="contentlet"]:empty {
+    min-height: 32px;
+    min-width: 100%;
+}
+
+div[data-dot-object="contentlet"]:empty::after {
+    content: "Contentlet component with empty HTML content";
+    color: rgb(3, 14, 50);
+    display: block;
+    padding: 10px;
+    text-align: center;
+    background-color: rgb(236, 240, 253);
+}

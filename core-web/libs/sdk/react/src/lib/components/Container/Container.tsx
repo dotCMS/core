@@ -1,5 +1,7 @@
 import { useContext } from 'react';
 
+import styles from './Container.module.css';
+
 import { PageContext } from '../../contexts/PageContext';
 import { DotCMSPageContext } from '../../models';
 import { getContainersData } from '../../utils/utils';
@@ -96,7 +98,9 @@ export function Container({ containerRef }: ContainerProps) {
                 data-dot-type={contentlet.contentType}
                 data-dot-container={JSON.stringify(container)}
                 data-dot-on-number-of-pages={contentlet.onNumberOfPages}
-                key={contentlet.identifier}>
+                key={contentlet.identifier}
+                style={styles}
+                >
                 <Component {...contentlet} />
             </div>
         ) : (
