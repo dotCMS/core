@@ -181,23 +181,28 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
      */
     onEditorChange(newEditor: AvailableEditor) {
         const currentDisplayedEditor = this.$displayedEditor();
+        const content = this.$fieldContent();
 
-        this.#confirmationService.confirm({
-            header: this.#dotMessageService.get(
-                'edit.content.wysiwyg.confirm.switch-editor.header'
-            ),
-            message: this.#dotMessageService.get(
-                'edit.content.wysiwyg.confirm.switch-editor.message'
-            ),
-            rejectButtonStyleClass: 'p-button-text',
-            acceptIcon: 'none',
-            rejectIcon: 'none',
-            accept: () => {
-                this.$displayedEditor.set(newEditor);
-            },
-            reject: () => {
-                this.$selectedEditorDropdown.set(currentDisplayedEditor);
-            }
-        });
+        if (content.length > 0) {
+            this.#confirmationService.confirm({
+                header: this.#dotMessageService.get(
+                    'edit.content.wysiwyg.confirm.switch-editor.header'
+                ),
+                message: this.#dotMessageService.get(
+                    'edit.content.wysiwyg.confirm.switch-editor.message'
+                ),
+                rejectButtonStyleClass: 'p-button-text',
+                acceptIcon: 'none',
+                rejectIcon: 'none',
+                accept: () => {
+                    this.$displayedEditor.set(newEditor);
+                },
+                reject: () => {
+                    this.$selectedEditorDropdown.set(currentDisplayedEditor);
+                }
+            });
+        } else {
+            this.$displayedEditor.set(newEditor);
+        }
     }
 }
