@@ -1,4 +1,4 @@
-import { MonacoEditorModule } from "@materia-ui/ngx-monaco-editor";
+import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
 import {
     AfterViewInit,
@@ -9,21 +9,22 @@ import {
     input,
     model,
     signal
-} from "@angular/core";
-import { FormsModule } from "@angular/forms";
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
-import { ConfirmationService } from "primeng/api";
-import { ConfirmDialogModule } from "primeng/confirmdialog";
-import { DropdownModule } from "primeng/dropdown";
+import { ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DropdownModule } from 'primeng/dropdown';
 
-import { DotMessageService } from "@dotcms/data-access";
-import { DotCMSContentlet, DotCMSContentTypeField } from "@dotcms/dotcms-models";
+import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { DotWysiwygMonacoComponent } from "./components/dot-wysiwyg-monaco/dot-wysiwyg-monaco.component";
-import { DotWysiwygTinymceComponent } from "./components/dot-wysiwyg-tinymce/dot-wysiwyg-tinymce.component";
+import { DotWysiwygMonacoComponent } from './components/dot-wysiwyg-monaco/dot-wysiwyg-monaco.component';
+import { DotWysiwygTinymceComponent } from './components/dot-wysiwyg-tinymce/dot-wysiwyg-tinymce.component';
 import {
     AvailableEditor,
-    AvailableLanguageMonaco, COMMENT_TINYMCE,
+    AvailableLanguageMonaco,
+    COMMENT_TINYMCE,
     DEFAULT_EDITOR,
     DEFAULT_MONACO_LANGUAGE,
     EditorOptions,
@@ -31,8 +32,8 @@ import {
     JsKeywords,
     MdSyntax,
     MonacoLanguageOptions
-} from "./dot-edit-content-wysiwyg-field.constant";
-import { CountOccurrences } from "./dot-edit-content-wysiwyg-field.utils";
+} from './dot-edit-content-wysiwyg-field.constant';
+import { CountOccurrences } from './dot-edit-content-wysiwyg-field.utils';
 
 /**
  * Component representing a WYSIWYG (What You See Is What You Get) editor field for editing content in DotCMS.
@@ -94,16 +95,8 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
      *
      */
     $contentEditorUsed = computed(() => {
-        const fieldValue = this.$field().variable;
-        const contentlet = this.$contentlet();
-
-        if (contentlet == null) {
-            return DEFAULT_EDITOR;
-        }
-
-        const content = contentlet[fieldValue] as string;
-
-        if (!content || content.trim() === COMMENT_TINYMCE) {
+        const content = this.$fieldContent();
+        if (content.trim() === COMMENT_TINYMCE || content.length === 0) {
             return DEFAULT_EDITOR;
         }
 
@@ -115,6 +108,24 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     });
 
     /**
+     * Computed property that returns the content corresponding to the specified field value.
+     * It retrieves the `variable` property from `$field` and uses it to access the corresponding
+     * value in the `$contentlet`. If the `$contentlet` is null, it returns an empty string.
+     *
+     * @type {string}
+     */
+    $fieldContent = computed<string>(() => {
+        const fieldValue = this.$field().variable;
+        const contentlet = this.$contentlet();
+
+        if (contentlet == null) {
+            return '';
+        }
+
+        return contentlet[fieldValue] as string;
+    });
+
+    /**
      * A computed property that determines the appropriate language mode for the content editor.
      * This is based on the content type present in the editor.
      */
@@ -123,14 +134,7 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
             return DEFAULT_MONACO_LANGUAGE;
         }
 
-        const fieldValue = this.$field().variable;
-        const contentlet = this.$contentlet();
-
-        if (contentlet == null) {
-            return DEFAULT_MONACO_LANGUAGE;
-        }
-
-        const content = contentlet[fieldValue] as string;
+        const content = this.$fieldContent();
 
         if (!content) {
             return DEFAULT_MONACO_LANGUAGE;
