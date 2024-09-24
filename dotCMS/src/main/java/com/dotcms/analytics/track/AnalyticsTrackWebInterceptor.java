@@ -13,13 +13,11 @@ import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.WhiteBlackList;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import javax.servlet.http.HttpServletRequest;
@@ -28,6 +26,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
 /**
@@ -38,7 +37,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
 
     private final static String ANALYTICS_TURNED_ON_KEY = "ANALYTICS_TURNED_ON";
     private final static Map<String, RequestMatcher> requestMatchersMap = new ConcurrentHashMap<>();
-    private final MutableBoolean isTurnedOn = new MutableBoolean(Config.getBooleanProperty(ANALYTICS_TURNED_ON_KEY, true));
+    private final AtomicBoolean isTurnedOn = new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_TURNED_ON_KEY, true));
 
     /// private static final String[] DEFAULT_BLACKLISTED_PROPS = new String[]{"^/api/*"};
     private static final String[] DEFAULT_BLACKLISTED_PROPS = new String[]{StringPool.BLANK};
@@ -106,7 +105,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
      */
     private boolean isAllowed(final HttpServletRequest request) {
 
-        return  isTurnedOn.getValue() &&
+        return  isTurnedOn.get() &&
                 anyConfig(request) &&
                 whiteBlackList.isAllowed(request.getRequestURI());
     }
@@ -171,7 +170,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
     @Override
     public void notify(final SystemTableUpdatedKeyEvent event) {
         if (event.getKey().contains(ANALYTICS_TURNED_ON_KEY)) {
-            isTurnedOn.setValue(Config.getBooleanProperty(ANALYTICS_TURNED_ON_KEY, true));
+            isTurnedOn.set(Config.getBooleanProperty(ANALYTICS_TURNED_ON_KEY, true));
         }
     }
 }
