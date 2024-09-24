@@ -9,11 +9,12 @@ import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
-import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.WhiteBlackList;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
@@ -96,17 +97,26 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
         return Result.NEXT;
     }
 
+    /**
+     * If the feature flag under {@link #ANALYTICS_TURNED_ON_KEY} is on
+     * and there is any configuration for the analytics app
+     * and the white black list allowed the current request
+     * @param request
+     * @return
+     */
     private boolean isAllowed(final HttpServletRequest request) {
 
         return  isTurnedOn.getValue() &&
-                anyConfig() &&
+                anyConfig(request) &&
                 whiteBlackList.isAllowed(request.getRequestURI());
     }
 
-    private boolean anyConfig() {
-        return
-                Try.of(()->APILocator.getAppsAPI().getAppDescriptor(AnalyticsApp.ANALYTICS_APP_KEY,
-                        APILocator.systemUser())).getOrElseGet(e->Optional.empty()).isPresent();
+    private boolean anyConfig(final HttpServletRequest request) {
+
+        final Host currentSite = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+
+        return AnalyticsApp.anySecrets(currentSite);
+
     }
 
     private void addRequestId(final HttpServletRequest request) {
@@ -118,14 +128,18 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
     @Override
     public boolean afterIntercept(final HttpServletRequest request, final HttpServletResponse response) {
 
-        if (isAllowed(request)) {
-            final Optional<RequestMatcher> matcherOpt = this.anyMatcher(request, response, RequestMatcher::runAfterRequest);
-            if (matcherOpt.isPresent()) {
+        try {
+            if (isAllowed(request)) {
+                final Optional<RequestMatcher> matcherOpt = this.anyMatcher(request, response, RequestMatcher::runAfterRequest);
+                if (matcherOpt.isPresent()) {
 
-                addRequestId (request);
-                Logger.debug(this, () -> "afterIntercept, Matched: " + matcherOpt.get().getId() + " request: " + request.getRequestURI());
-                fireNext(request, response, matcherOpt.get());
+                    addRequestId(request);
+                    Logger.debug(this, () -> "afterIntercept, Matched: " + matcherOpt.get().getId() + " request: " + request.getRequestURI());
+                    fireNext(request, response, matcherOpt.get());
+                }
             }
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage(), e);
         }
 
         return true;
