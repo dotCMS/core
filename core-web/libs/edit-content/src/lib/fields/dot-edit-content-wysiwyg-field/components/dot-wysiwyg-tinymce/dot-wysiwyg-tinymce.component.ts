@@ -22,6 +22,8 @@ import { getFieldVariablesParsed, stringToJson } from '../../../../utils/functio
 import { DEFAULT_TINYMCE_CONFIG } from '../../dot-edit-content-wysiwyg-field.constant';
 import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
 
+export const COMMENT_TINYMCE = '<!--dotcms:wysiwyg-->';
+
 @Component({
     selector: 'dot-wysiwyg-tinymce',
     standalone: true,
@@ -80,7 +82,21 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
             ...DEFAULT_TINYMCE_CONFIG,
             ...(this.$wideConfig() || {}),
             ...this.$customPropsContentField(),
-            setup: (editor) => this.#dotWysiwygPluginService.initializePlugins(editor)
+            setup: (editor) => {
+                this.#dotWysiwygPluginService.initializePlugins(editor);
+                // TODO: Remove this when the contentype saved by the user can preserve the selection
+                const ensureSingleComment = (content) => {
+                    if (content.includes(COMMENT_TINYMCE)) {
+                        content = content.replace(new RegExp(COMMENT_TINYMCE, 'g'), '');
+                    }
+
+                    return COMMENT_TINYMCE + content;
+                };
+
+                editor.on('GetContent', function (e) {
+                    e.content = ensureSingleComment(e.content);
+                });
+            }
         };
     });
 

@@ -100,7 +100,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             expect(spectator.query(DotWysiwygTinymceComponent)).toBeTruthy();
             expect(spectator.query(DotWysiwygMonacoComponent)).toBeNull();
 
-            spectator.component.$selectedEditor.set(AvailableEditor.Monaco);
+            spectator.component.$selectedEditorDropdown.set(AvailableEditor.Monaco);
             spectator.detectChanges();
 
             expect(spectator.query(DotWysiwygTinymceComponent)).toBeNull();
@@ -111,7 +111,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
     // describe('TinyMCE Editor', () => {});
     describe('With Monaco Editor', () => {
         beforeEach(() => {
-            spectator.component.$selectedEditor.set(AvailableEditor.Monaco);
+            spectator.component.$selectedEditorDropdown.set(AvailableEditor.Monaco);
             spectator.detectChanges();
         });
 
