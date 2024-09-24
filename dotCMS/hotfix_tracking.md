@@ -156,4 +156,4 @@ This maintenance release includes the following code fixes:
 149. https://github.com/dotCMS/core/issues/28489 : Creating new content don't respect language selected #28489
 150. https://github.com/dotCMS/core/issues/28814 : Rules permission checkbox is not visible #28814
 151. https://github.com/dotCMS/core/issues/29293 : Cannot change folder URL to lowercase #29293
-
+152. https://github.com/dotCMS/core/issues/29321 : An Asset name starts with number and specific alphabets considers as an Image #29321
