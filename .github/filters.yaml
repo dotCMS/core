@@ -31,8 +31,6 @@ frontend: &frontend
 
 cli: &cli
   - 'tools/dotcms-cli/**'
-  - *full_build_test
-  - *backend
 
 sdk_libs: &sdk_libs
   - 'core-web/libs/sdk/**'  
