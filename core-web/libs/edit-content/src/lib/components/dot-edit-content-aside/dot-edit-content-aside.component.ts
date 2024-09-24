@@ -48,7 +48,11 @@ import { DotContentAsideWorkflowComponent } from './components/dot-content-aside
             ),
             transition('closed <=> open', animate('300ms ease-in-out'))
         ])
-    ]
+    ],
+    host: {
+        '[class.dot-edit-content-aside--open]': 'collapsed',
+        '[class.dot-edit-content-aside--closed]': '!collapsed'
+    }
 })
 export class DotEditContentAsideComponent {
     @Input() contentlet!: DotCMSContentlet;

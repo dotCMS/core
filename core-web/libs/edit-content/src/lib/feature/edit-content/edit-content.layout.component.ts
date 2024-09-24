@@ -59,7 +59,7 @@ const SIDEBAR_LOCAL_STORAGE_KEY = 'dot-edit-content-form-sidebar';
             state(
                 'false',
                 style({
-                    'grid-template-columns': '1fr 2rem'
+                    'grid-template-columns': '1fr 3.5rem'
                 })
             ),
             state(

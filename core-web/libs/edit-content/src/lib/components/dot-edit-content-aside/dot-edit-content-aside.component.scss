@@ -30,7 +30,7 @@
     &.collapsed {
         .content-aside__toolbar {
             //flex-direction: row;
-            width: 2rem;
+            width: 3.5rem;
         }
     }
 }
@@ -42,10 +42,10 @@
 }
 
 .content-aside__toolbar {
-    display: flex;
     padding: $spacing-2;
-    flex-direction: row-reverse;
     transition: all 650ms ease-in-out;
+    display: flex;
+    justify-content: space-between;
 }
 
 .content-aside,
