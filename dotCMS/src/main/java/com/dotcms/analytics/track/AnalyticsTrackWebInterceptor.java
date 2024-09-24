@@ -38,13 +38,12 @@ import java.util.function.Predicate;
  */
 public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubscriber<SystemTableUpdatedKeyEvent> {
 
-    private final static String ANALYTICS_TURNED_ON_KEY = "ANALYTICS_TURNED_ON";
+    private static final String[] DEFAULT_BLACKLISTED_PROPS = new String[]{StringPool.BLANK};
+    private final static String ANALYTICS_TURNED_ON_KEY = "FEATURE_FLAG_CONTENT_ANALYTICS";
     private final static Map<String, RequestMatcher> requestMatchersMap = new ConcurrentHashMap<>();
     private final HostWebAPI hostWebAPI;
     private final AppsAPI appsAPI;
 
-    /// private static final String[] DEFAULT_BLACKLISTED_PROPS = new String[]{"^/api/*"};
-    private static final String[] DEFAULT_BLACKLISTED_PROPS = new String[]{StringPool.BLANK};
     private final WhiteBlackList whiteBlackList;
     private final AtomicBoolean isTurnedOn;
 
