@@ -828,7 +828,9 @@ public class DotWebdavHelper {
 
 						final File binary = contentlet.getBinary(FileAssetAPI.BINARY_FIELD);
 
-						Logger.debug(this, "inode " + contentlet.getInode() + " size: " + (null != binary? binary.length():0));
+						Logger.debug(this,
+								() -> "inode " + contentlet.getInode() + " size: " + (null != binary
+										? binary.length() : 0));
 						if(null == binary || binary.length() == 0){
 							Logger.debug(this, "deleting version " + contentlet.getInode());
 							conAPI.deleteVersion(contentlet, user, false);
