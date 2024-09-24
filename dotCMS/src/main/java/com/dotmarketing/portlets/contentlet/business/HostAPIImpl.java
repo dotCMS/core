@@ -125,6 +125,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         final Host cachedHostByAlias = hostCache.getHostByAlias(serverName);
         if (UtilMethods.isSet(() -> cachedHostByAlias.getIdentifier())) {
             if (HostCache.CACHE_404_HOST.equals(cachedHostByAlias.getIdentifier())) {
+                Logger.error(this, String.format("404 Host with alias '%s' was not found", serverName));
                 return null;
             }
             host = cachedHostByAlias;
@@ -157,6 +158,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         final Host cachedHostByAlias = hostCache.getHostByAlias(serverName);
         if (UtilMethods.isSet(() -> cachedHostByAlias.getIdentifier())) {
             if (HostCache.CACHE_404_HOST.equals(cachedHostByAlias.getIdentifier())) {
+                Logger.error(this, String.format("404 Host with alias '%s' was not found", serverName));
                 return Optional.empty();
             }
             host = cachedHostByAlias;

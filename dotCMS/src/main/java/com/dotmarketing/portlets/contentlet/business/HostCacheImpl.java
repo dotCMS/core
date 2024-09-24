@@ -200,6 +200,7 @@ public class HostCacheImpl extends HostCache {
 	@Override
 	protected void add404HostById(String id) {
 		if (id != null) {
+			Logger.info(this, "Adding host id to 404 cache for id: " + id);
 			cache.put(id, cache404Contentlet, NOT_FOUND_BY_ID_GROUP);
 		}
 	}
@@ -211,6 +212,7 @@ public class HostCacheImpl extends HostCache {
 	@Override
 	protected void add404HostByName(String name) {
 		if (name != null) {
+			Logger.info(this, "Adding host id to 404 cache for name: " + name);
 			cache.put(name, cache404Contentlet, NOT_FOUND_BY_NAME_GROUP);
 		}
 	}
