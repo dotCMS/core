@@ -19,10 +19,11 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotWysiwygTinymceService } from './service/dot-wysiwyg-tinymce.service';
 
 import { getFieldVariablesParsed, stringToJson } from '../../../../utils/functions.util';
-import { DEFAULT_TINYMCE_CONFIG } from '../../dot-edit-content-wysiwyg-field.constant';
+import {
+    COMMENT_TINYMCE,
+    DEFAULT_TINYMCE_CONFIG
+} from '../../dot-edit-content-wysiwyg-field.constant';
 import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
-
-export const COMMENT_TINYMCE = '<!--dotcms:wysiwyg-->';
 
 @Component({
     selector: 'dot-wysiwyg-tinymce',
@@ -68,7 +69,7 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
     /**
      * Represents a signal that contains the wide configuration properties for the TinyMCE WYSIWYG editor.
      */
-    $wideConfig = toSignal(this.#dotWysiwygTinymceService.getProps());
+    $wideConfig = toSignal<RawEditorOptions>(this.#dotWysiwygTinymceService.getProps());
 
     /**
      * A computed property that generates the configuration object for the TinyMCE editor.
@@ -78,14 +79,14 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
      */
 
     $editorConfig = computed<RawEditorOptions>(() => {
-        return {
+        const config: RawEditorOptions = {
             ...DEFAULT_TINYMCE_CONFIG,
             ...(this.$wideConfig() || {}),
             ...this.$customPropsContentField(),
             setup: (editor) => {
                 this.#dotWysiwygPluginService.initializePlugins(editor);
-                // TODO: Remove this when the contentype saved by the user can preserve the selection
-                const ensureSingleComment = (content) => {
+                // TODO: Remove this when the content type saved by the user can preserve the selection
+                const ensureSingleComment = (content: string): string => {
                     if (content.includes(COMMENT_TINYMCE)) {
                         content = content.replace(new RegExp(COMMENT_TINYMCE, 'g'), '');
                     }
@@ -93,11 +94,13 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
                     return COMMENT_TINYMCE + content;
                 };
 
-                editor.on('GetContent', function (e) {
+                editor.on('GetContent', (e) => {
                     e.content = ensureSingleComment(e.content);
                 });
             }
         };
+
+        return config;
     });
 
     /**

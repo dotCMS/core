@@ -1,4 +1,4 @@
-import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+import { MonacoEditorModule } from "@materia-ui/ngx-monaco-editor";
 
 import {
     AfterViewInit,
@@ -9,24 +9,21 @@ import {
     input,
     model,
     signal
-} from '@angular/core';
-import { FormsModule } from '@angular/forms';
+} from "@angular/core";
+import { FormsModule } from "@angular/forms";
 
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DropdownModule } from 'primeng/dropdown';
+import { ConfirmationService } from "primeng/api";
+import { ConfirmDialogModule } from "primeng/confirmdialog";
+import { DropdownModule } from "primeng/dropdown";
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessageService } from "@dotcms/data-access";
+import { DotCMSContentlet, DotCMSContentTypeField } from "@dotcms/dotcms-models";
 
-import { DotWysiwygMonacoComponent } from './components/dot-wysiwyg-monaco/dot-wysiwyg-monaco.component';
-import {
-    COMMENT_TINYMCE,
-    DotWysiwygTinymceComponent
-} from './components/dot-wysiwyg-tinymce/dot-wysiwyg-tinymce.component';
+import { DotWysiwygMonacoComponent } from "./components/dot-wysiwyg-monaco/dot-wysiwyg-monaco.component";
+import { DotWysiwygTinymceComponent } from "./components/dot-wysiwyg-tinymce/dot-wysiwyg-tinymce.component";
 import {
     AvailableEditor,
-    AvailableLanguageMonaco,
+    AvailableLanguageMonaco, COMMENT_TINYMCE,
     DEFAULT_EDITOR,
     DEFAULT_MONACO_LANGUAGE,
     EditorOptions,
@@ -34,8 +31,8 @@ import {
     JsKeywords,
     MdSyntax,
     MonacoLanguageOptions
-} from './dot-edit-content-wysiwyg-field.constant';
-import { CountOccurrences } from './dot-edit-content-wysiwyg-field.utils';
+} from "./dot-edit-content-wysiwyg-field.constant";
+import { CountOccurrences } from "./dot-edit-content-wysiwyg-field.utils";
 
 /**
  * Component representing a WYSIWYG (What You See Is What You Get) editor field for editing content in DotCMS.
