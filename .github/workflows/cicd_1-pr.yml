@@ -25,6 +25,7 @@ on:
   pull_request:
     branches:
       - main
+      - master
     types:
       - opened
       - synchronize
