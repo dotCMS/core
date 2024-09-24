@@ -126,9 +126,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if (UtilMethods.isSet(() -> cachedHostByAlias.getIdentifier())) {
             if (HostCache.CACHE_404_HOST.equals(cachedHostByAlias.getIdentifier())) {
                 Logger.error(this,
-                        String.format("----> Host with alias '%s' and identifier '%s' was not found",
-                                serverName,
-                                cachedHostByAlias.getIdentifier())
+                        String.format("----<1 Host '%s' was not found - 404", serverName)
                 );
                 return null;
             }
@@ -147,7 +145,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             } else {
                 hostCache.addHostAlias(serverName, HostCache.cache404Contentlet);
                 Logger.error(this,
-                        String.format("----> Added Host with alias '%s' as 404", serverName)
+                        String.format("---->1 Added Host '%s' as 404", serverName)
                 );
             }
         }
@@ -166,9 +164,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if (UtilMethods.isSet(() -> cachedHostByAlias.getIdentifier())) {
             if (HostCache.CACHE_404_HOST.equals(cachedHostByAlias.getIdentifier())) {
                 Logger.error(this,
-                        String.format("----> Host with alias '%s' and identifier '%s' was not found",
-                                serverName,
-                                cachedHostByAlias.getIdentifier())
+                        String.format("----<2 Host '%s' was not found - 404", serverName)
                 );
                 return Optional.empty();
             }
@@ -184,7 +180,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             if (host == null) {
                 hostCache.addHostAlias(serverName, HostCache.cache404Contentlet);
                 Logger.error(this,
-                        String.format("----> Added Host with alias '%s' as 404", serverName)
+                        String.format("---->2 Added Host '%s' as 404", serverName)
                 );
             } else {
                 hostCache.addHostAlias(serverName, host);
@@ -332,8 +328,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if (UtilMethods.isSet(() -> cachedSiteById.getIdentifier())) {
             if (HostCache.CACHE_404_HOST.equals(cachedSiteById.getIdentifier())) {
                 Logger.error(this,
-                        String.format("----> Host with id '%s' and identifier '%s' was not found",
-                                id, cachedSiteById.getIdentifier())
+                        String.format("----<3 Host '%s' was not found - 404", id)
                 );
                 return null;
             }

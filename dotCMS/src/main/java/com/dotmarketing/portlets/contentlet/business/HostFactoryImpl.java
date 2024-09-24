@@ -194,9 +194,7 @@ public class HostFactoryImpl implements HostFactory {
         if (UtilMethods.isSet(() -> cachedSiteByName.getIdentifier())) {
             if (HostCache.CACHE_404_HOST.equals(cachedSiteByName.getIdentifier())) {
                 Logger.error(this,
-                        String.format("----> Host with alias '%s' and identifier '%s' was not found",
-                                siteName,
-                                cachedSiteByName.getIdentifier())
+                        String.format("----<4 Host '%s' was not found - 404", siteName)
                 );
                 return null;
             }
@@ -213,7 +211,7 @@ public class HostFactoryImpl implements HostFactory {
                 if (dbResults.isEmpty()) {
                     siteCache.add404HostByName(siteName);
                     Logger.error(this,
-                            String.format("----> Added Host with alias '%s' as 404", siteName)
+                            String.format("---->3 Added Host '%s' as 404", siteName)
                     );
                     return null;
                 }
@@ -247,9 +245,7 @@ public class HostFactoryImpl implements HostFactory {
         if (UtilMethods.isSet(() -> cachedSiteByAlias.getIdentifier())) {
             if (HostCache.CACHE_404_HOST.equals(cachedSiteByAlias.getIdentifier())) {
                 Logger.error(this,
-                        String.format("----> Host with alias '%s' and identifier '%s' was not found",
-                                alias,
-                                cachedSiteByAlias.getIdentifier())
+                        String.format("----<5 Host '%s' was not found - 404", alias)
                 );
                 return null;
             }
@@ -276,7 +272,7 @@ public class HostFactoryImpl implements HostFactory {
                 if (dbResults.isEmpty()) {
                     siteCache.addHostAlias(alias, HostCache.cache404Contentlet);
                     Logger.error(this,
-                            String.format("----> Added Host with alias '%s' as 404", alias)
+                            String.format("---->4 Added Host '%s' as 404", alias)
                     );
                     return null;
                 }
@@ -442,7 +438,7 @@ public class HostFactoryImpl implements HostFactory {
         if (null == site && !Host.SYSTEM_HOST.equals(id)) {
             this.siteCache.add404HostById(id);
             Logger.error(this,
-                    String.format("----> Added Host with id '%s' as 404", id)
+                    String.format("---->5 Added Host '%s' as 404", id)
             );
             Logger.warn(HostAPIImpl.class, String.format("Site with id '%s' not found", id));
         }

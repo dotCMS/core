@@ -92,7 +92,7 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
                 user, respectAnonPerms);
 
         Logger.error(this, "----**4 optionalHost.isPresent() ? optionalHost.get() : "
-                + "resolveHostName(request.getServerName(),user, respectAnonPerms) ->" + (host == null));
+                + "resolveHostName(request.getServerName(),user, respectAnonPerms) ->" + (host != null));
 
         checkHostPermission(user, respectAnonPerms, host);
         storeCurrentHost(request, user, host);
@@ -163,7 +163,7 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
                             : (String) request.getAttribute(Host.HOST_VELOCITY_VAR_NAME);
 
             Host host = find(hostIdOrName, user, respectAnonPerms);
-            Logger.error(this, "----**2.1 Host host = find(hostIdOrName, user, respectAnonPerms) ->" + (host == null));
+            Logger.error(this, "----**2.1 Host host = find(hostIdOrName, user, respectAnonPerms) ->" + (host != null));
 
             if(host!=null) return Optional.of(host);
 

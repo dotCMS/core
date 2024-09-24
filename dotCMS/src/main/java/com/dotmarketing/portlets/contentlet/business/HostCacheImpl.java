@@ -140,6 +140,8 @@ public class HostCacheImpl extends HostCache {
         cache.flushGroup(ALIAS_GROUP);
 		cache.flushGroup(NOT_FOUND_BY_ID_GROUP);
 		cache.flushGroup(NOT_FOUND_BY_NAME_GROUP);
+
+		Logger.error(this, "----< CLEARING HOST CACHE >----");
     }
 
     /* (non-Javadoc)
