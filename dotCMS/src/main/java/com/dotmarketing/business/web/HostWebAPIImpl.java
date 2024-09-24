@@ -81,13 +81,18 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
         final boolean respectAnonPerms = user == null || user.isFrontendUser() || !user.isBackendUser();
 
         Optional<Host> optionalHost = this.getCurrentHostFromRequest(request, user, respectAnonPerms);
+        Logger.error(this, "----**2 this.getCurrentHostFromRequest(request, user, respectAnonPerms) ->" + optionalHost.isPresent());
 
         if (optionalHost.isEmpty() && user.isBackendUser()){
             optionalHost = this.getCurrentHostFromSession(request, user, respectAnonPerms);
+            Logger.error(this, "----**3 this.getCurrentHostFromSession(request, user, respectAnonPerms) ->" + optionalHost.isPresent());
         }
 
         final Host host = optionalHost.isPresent() ? optionalHost.get() : resolveHostName(request.getServerName(),
                 user, respectAnonPerms);
+
+        Logger.error(this, "----**4 optionalHost.isPresent() ? optionalHost.get() : "
+                + "resolveHostName(request.getServerName(),user, respectAnonPerms) ->" + (host == null));
 
         checkHostPermission(user, respectAnonPerms, host);
         storeCurrentHost(request, user, host);
