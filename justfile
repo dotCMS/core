@@ -134,9 +134,13 @@ test-e2e-java:
 test-e2e-java-debug-suspend:
     ./mvnw -pl :dotcms-e2e-java verify -De2e.test.skip=false -Pdebug-suspend-e2e-tests
 
+# Executes Node E2E tests
+test-e2e-node:
+    ./mvnw -pl :dotcms-e2e-node verify -De2e.test.skip=false
+
 # Stops E2E test services
 test-e2e-stop:
-    ./mvnw -pl :dotcms-e2e -Pdocker-stop -De2e.test.skip=false
+    ./mvnw -pl :dotcms-e2e-java,:dotcms-e2e-node -Pdocker-stop -De2e.test.skip=false
 
 # Docker Commands
 # Runs a published dotCMS Docker image on a dynamic port
