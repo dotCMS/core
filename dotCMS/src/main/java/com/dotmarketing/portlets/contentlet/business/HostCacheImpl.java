@@ -195,6 +195,7 @@ public class HostCacheImpl extends HostCache {
 
     protected void addHostAlias(String alias, Host host){
     	if(alias != null && host != null && UtilMethods.isSet(host.getIdentifier())){
+			Logger.info(this, "Adding host alias to cache: " + alias + ":"+ host.getIdentifier());
     		cache.put(alias, host.getIdentifier(),ALIAS_GROUP);
     	}
     }

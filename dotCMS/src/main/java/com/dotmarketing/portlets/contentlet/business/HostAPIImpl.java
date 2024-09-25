@@ -147,6 +147,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             }
 
             if (host != null) {
+                Logger.info(this, String.format("Host with alias '%s' was found. Adding to cache", serverName));
                 hostCache.addHostAlias(serverName, host);
             } else {
                 Logger.info(this, String.format("Host with alias '%s' was not found. Adding 404 cache", serverName));
