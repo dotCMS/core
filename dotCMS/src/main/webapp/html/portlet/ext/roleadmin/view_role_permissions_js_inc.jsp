@@ -242,7 +242,7 @@
 		container.startup();
 
 		var selectedChildPaneId = systemHost.identifier;
-		var myHeight = 428;
+		var myHeight = 500;
 		for(var i = 0; i < data.length; i++) {
 			var id = data[i].type=='host'?data[i].identifier:data[i].inode;
 			if(id != systemHost.identifier)
