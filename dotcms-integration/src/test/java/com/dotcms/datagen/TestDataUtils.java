@@ -28,6 +28,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.PersonaContentType;
+import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -243,7 +244,7 @@ public class TestDataUtils {
                 );
                 fields.add(
                         new FieldDataGen()
-                                .name("Publish")
+                                .name("publish")
                                 .velocityVarName("sysPublishDate")
                                 .defaultValue(null)
                                 .type(DateField.class)
@@ -925,8 +926,9 @@ public class TestDataUtils {
                 fields.add(
                         new FieldDataGen()
                                 .name("Code")
-                                .velocityVarName("code")
-                                .required(true)
+                                .velocityVarName(WidgetContentType.WIDGET_CODE_FIELD_VAR)
+                                .type(ConstantField.class)
+                                .required(false)
                                 .next()
                 );
 

@@ -1,10 +1,27 @@
 package com.dotcms.rest.api.v1.page;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -31,7 +48,6 @@ import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.VersionableAPI;
@@ -75,42 +91,27 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.Response;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * {@link PageResource} test
@@ -135,6 +136,10 @@ public class PageResourceTest {
     private InitDataObject initDataObject;
     private ContentType contentGenericType;
     private HostWebAPI hostWebAPI;
+
+    private final Map<String, Object> sessionAttributes = new ConcurrentHashMap<>(
+            Map.of("clickstream",new Clickstream())
+    );
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -182,7 +187,24 @@ public class PageResourceTest {
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
         when(request.getSession(true)).thenReturn(session);
-        when(session.getAttribute("clickstream")).thenReturn(new Clickstream());
+
+        //Set up the behavior of setAttribute to store values in the map
+        doAnswer(invocation -> {
+            final String key = invocation.getArgument(0);
+            final Object value = invocation.getArgument(1);
+            sessionAttributes.put(key, value);
+            return null;
+        }).when(session).setAttribute(anyString(), any());
+
+        // Set up the behavior of getAttribute to retrieve values from the map
+        when(session.getAttribute(anyString())).thenAnswer(invocation -> sessionAttributes.get(invocation.getArgument(0)));
+
+        //Set up the behavior of removeAttribute to remove values from the map
+        doAnswer(invocation -> {
+            String key = invocation.getArgument(0);
+            sessionAttributes.remove(key);
+            return null;
+        }).when(session).removeAttribute(anyString());
 
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
 
@@ -192,7 +214,7 @@ public class PageResourceTest {
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
         when(request.getAttribute("com.dotcms.repackage.org.apache.struts.action.MODULE")).thenReturn(moduleConfig);
         // Mock setAttribute
-        Mockito.doAnswer((InvocationOnMock invocation)-> {
+        doAnswer((InvocationOnMock invocation)-> {
 
                 String key = invocation.getArgument(0, String.class);
                 Object value = invocation.getArgument(1, Object.class);
@@ -200,7 +222,7 @@ public class PageResourceTest {
                     attributes.put(key, value);
                 }
                 return null;
-        }).when(request).setAttribute(Mockito.anyString(), Mockito.any());
+        }).when(request).setAttribute(anyString(), Mockito.any());
 
 
         Folder aboutUs = APILocator.getFolderAPI().findFolderByPath(String.format("/%s/",folderName), host, APILocator.systemUser(), false);
@@ -1219,37 +1241,72 @@ public class PageResourceTest {
     public void testRenderWithTimeMachine()
             throws DotDataException, DotSecurityException, WebAssetException {
 
+        final TimeZone utc = TimeZone.getTimeZone("UTC");
+        TimeZone.setDefault(utc);
         final String LIVE = "LIVE";
 
         // Calculate the date relative to today
         // Publish Date is 10 days from now
         final LocalDateTime relativeDate1 = LocalDateTime.now().plusDays(10);
-        final Instant relativeInstant1 = relativeDate1.atZone(ZoneId.systemDefault()).toInstant();
+        final Instant relativeInstant1 = relativeDate1.atZone(utc.toZoneId()).toInstant();
         final Date publishDate = Date.from(relativeInstant1);
 
         // Time Machine Date is 11 days from now
-        final LocalDateTime relativeDate2 = LocalDateTime.now().plusDays(11);
-        final Instant relativeInstant2 = relativeDate2.atZone(ZoneId.systemDefault()).toInstant();
+        final LocalDateTime relativeDate2 = LocalDateTime.now().plusDays(10).plusHours(1);
+        final Instant relativeInstant2 = relativeDate2.atZone(utc.toZoneId()).toInstant();
         final Date timeMachineDate = Date.from(relativeInstant2);
 
-        //First we shouldn't get any contents before publish date
-       // validatePageRendering(LIVE, false, publishDate, new Date());
+        // validatePageRendering(LIVE, true, null, null);
+        //We shouldn't get any contents before publish date
+        // validatePageRendering(LIVE, false, publishDate, new Date());
         //Then we should get the content after publish date
         validatePageRendering(LIVE, true, publishDate, timeMachineDate);
-
     }
 
+    String widgetCode(final Host host, final ContentType contentType) {
+        final String code = String.format(
+                "#set($blogs = $dotcontent.pullPerPage(\"+contentType:%s +(conhost:%s conhost:SYSTEM_HOST) +variant:default\", 1, 6, \"%s.postingDate desc\"))" +
+                "#set($ignore = $tool.system.out.println(\"Blogs: $message at $blogs\"))" +
+                "#set($resultList = []) \n" +
+                "#foreach($con in $blogs)\n" +
+                   "    #set($resultdoc = {})\n" +
+                   "    #set($resultdoc.identifier = ${con.identifier})\n" +
+                   "    #set($resultdoc.inode = ${con.inode})\n" +
+                   "    #set($resultdoc.title = ${con.title})\n" +
+                   "    #set($resultdoc.postingDate =  ${con.postingDate})\n" +
+                   "    #set($notUsedValue = $resultList.add($resultdoc))" +
+                 "#end\n" +
+                 "$!dotJSON.put(\"posts\", $resultList)"
+                ,
+                contentType.id(), host.getIdentifier(), contentType.variable()
+        );
+        Logger.info(this, "Container code: " + code);
+        return code;
+    }
+
+    /**
+     *
+     * @param mode LIVE, PREVIEW, EDIT or ADMIN
+     * @param expectContentlet true if we expect a contentlet to be rendered, false otherwise
+     * @param publishDate the publish-date of the contentlet null if the contentlet is needed to be published right away
+     * @param timeMachineDate the date to be used as time machine
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws WebAssetException
+     */
     private void validatePageRendering(final String mode, final boolean expectContentlet, final Date publishDate, final Date timeMachineDate)
             throws DotDataException, DotSecurityException, WebAssetException {
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         final long languageId = 1L;
+        final ContentType blogLikeContentType = TestDataUtils.getBlogLikeContentType();
 
         final Structure structure = new StructureDataGen().nextPersisted();
         final Container myContainer = new ContainerDataGen()
                 .withStructure(structure, "")
-                .friendlyName("container-friendly-name"+System.currentTimeMillis())
+                .friendlyName("container-friendly-name" + System.currentTimeMillis())
                 .title("container-title")
+                .site(host)
                 .nextPersisted();
 
         ContainerDataGen.publish(myContainer);
@@ -1263,13 +1320,13 @@ public class PageResourceTest {
                 .withContainer(myContainer.getIdentifier())
                 .nextPersisted();
 
-         final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
-         versionableAPI.setWorking(newTemplate);
-         versionableAPI.setLive(newTemplate);
+        final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+        versionableAPI.setWorking(newTemplate);
+        versionableAPI.setLive(newTemplate);
 
-        final String myFolderName = "folder-"+System.currentTimeMillis();
+        final String myFolderName = "folder-" + System.currentTimeMillis();
         final Folder myFolder = new FolderDataGen().name(myFolderName).site(host).nextPersisted();
-        final String myPageName = "my-testPage-"+System.currentTimeMillis();
+        final String myPageName = "my-testPage-" + System.currentTimeMillis();
         final HTMLPageAsset myPage = new HTMLPageDataGen(myFolder, newTemplate)
                 .languageId(languageId)
                 .pageURL(myPageName)
@@ -1278,40 +1335,65 @@ public class PageResourceTest {
 
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         contentletAPI.publish(myPage, systemUser, false);
-
-        final ContentType blogContentType = TestDataUtils.getBlogLikeContentType();
-        final Contentlet blog = new ContentletDataGen(blogContentType.id())
+        //  These are the blogs that will be shown in the widget
+        // if it's published then it'll show immediately otherwise it'll show in the future
+        // if it's set to show then we need to pass the time machine date to show it
+        final ContentletDataGen blogsDataGen = new ContentletDataGen(blogLikeContentType.id())
                 .languageId(languageId)
                 .host(host)
                 .setProperty("title", "myBlogTest")
                 .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
-                .setProperty("publishDate", publishDate)  // Set the publish-date in the future
                 .setPolicy(IndexPolicy.WAIT_FOR)
                 .languageId(languageId)
-                .setProperty(Contentlet.IS_TEST_MODE, true)
-                .nextPersisted();
+                .setProperty(Contentlet.IS_TEST_MODE, true);
 
+        if (null != publishDate) {
+            blogsDataGen.setProperty("publishDate", publishDate);  // Set the publish-date in the future
+        }
+        final Contentlet blog = blogsDataGen.nextPersisted();
         assertNotNull(blog.getIdentifier());
-        assertFalse(blog.isLive());
+        if (null != publishDate) {
+            assertFalse(blog.isLive());
+        } else {
+            ContentletDataGen.publish(blog);
+            assertTrue(blog.isLive());
+        }
 
-        final List<Contentlet> allVersions = contentletAPI
-                .findAllVersions(new Identifier(blog.getIdentifier()), APILocator.systemUser(),
-                        true);
-        System.out.println("All versions: "+allVersions.size());
+        // Create a widget to show the blog
+        //The widget hold the code that calls the $dotcontent.pullPerPage view tool which takes into consideration the tm date
+        //in a nutshell, the widget will show the blog if the tm date is greater than the publish date
+        //This is how we accomplish the time machine feature
+        final ContentType widgetLikeContentType = TestDataUtils.getWidgetLikeContentType();
+        final Contentlet myWidget = new ContentletDataGen(widgetLikeContentType)
+                .languageId(languageId)
+                .host(host)
+                .setProperty("widgetTitle", "titleContent")
+                .setProperty(WidgetContentType.WIDGET_CODE_FIELD_VAR, widgetCode(host, blogLikeContentType))
+                .nextPersisted();
+        ContentletDataGen.publish(myWidget);
+
+        final Contentlet contentlet = APILocator.getContentletAPI()
+                .find(myWidget.getInode(), APILocator.systemUser(), false);
+        System.out.println("Widget contentlet: " + contentlet);
 
         final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
         final MultiTree multiTree = new MultiTree(myPage.getIdentifier(),
-                myContainer.getIdentifier(), blog.getIdentifier(), "1", 1);
+                myContainer.getIdentifier(), myWidget.getIdentifier(), "1", 1);
         multiTreeAPI.saveMultiTree(multiTree);
 
-        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(
+                String.valueOf(languageId));
 
-        // Convert the date to ISO 8601 format if necessary
-        final String futureIso8601 = timeMachineDate.toInstant().toString();
-        final String myPagePath = String.format("/%s/%s" ,myFolderName, myPageName);
+        String futureIso8601 = null;
+        if (null != timeMachineDate) {
+            // Convert the date to ISO 8601 format if necessary
+            futureIso8601 = timeMachineDate.toInstant().toString();
+        }
 
+        final String myPagePath = String.format("/%s/%s", myFolderName, myPageName);
         final Response myResponse = pageResource
-                .loadJson(request, this.response, myPagePath, mode, null, String.valueOf(languageId), null, futureIso8601);
+                .loadJson(request, this.response, myPagePath, mode, null,
+                        String.valueOf(languageId), null, futureIso8601);
 
         RestUtilTest.verifySuccessResponse(myResponse);
 

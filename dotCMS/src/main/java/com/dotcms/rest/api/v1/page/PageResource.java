@@ -367,7 +367,7 @@ public class PageResource {
         final HttpServletResponse response = renderParams.response();
 
         //Let's set up the Time Machine if needed
-        setUpTimeMachineIfAny(renderParams);
+        setUpTimeMachineIfPresent(renderParams);
         try {
             String resolvedUri = renderParams.uri();
             final Optional<CachedVanityUrl> cachedVanityUrlOpt =
@@ -440,7 +440,7 @@ public class PageResource {
             return Response.ok(new ResponseEntityView<>(pageRendered)).build();
         } finally {
             // Let's reset the Time Machine if needed
-            resetTimeMachineIfAny(request);
+            resetTimeMachineIfPresent(request);
         }
 
     }
@@ -449,19 +449,21 @@ public class PageResource {
      * Sets up the Time Machine if the request includes a Time Machine date.
      * @param renderParams The parameters used to render the page.
      */
-    private void setUpTimeMachineIfAny(final PageRenderParams renderParams) {
+    private void setUpTimeMachineIfPresent(final PageRenderParams renderParams) {
         final Optional<Instant> timeMachineDate = renderParams.timeMachineDate();
         if(timeMachineDate.isPresent()){
             final HttpServletRequest request = renderParams.request();
             final HttpSession session = request.getSession(false);
             if (null != session) {
-                session.setAttribute(TM_DATE, String.valueOf(timeMachineDate.get().toEpochMilli()));
-                session.setAttribute(TM_LANG, renderParams.languageId());
-                session.setAttribute(DOT_CACHE, "refresh");
-                currentHost(renderParams).ifPresentOrElse(
-                        host -> session.setAttribute(TM_HOST, host),
-                        () -> Logger.warn(this, "I wasn't able to fallback to default host.")
-                );
+               session.setAttribute(TM_DATE, String.valueOf(timeMachineDate.get().toEpochMilli()));
+               session.setAttribute(TM_LANG, renderParams.languageId());
+               session.setAttribute(DOT_CACHE, "refresh");
+               final Optional<Host> host = currentHost(renderParams);
+               if(host.isPresent()){
+                   session.setAttribute(TM_HOST, host.get());
+               } else {
+                   throw new IllegalArgumentException("Unable to set a host for the Time Machine");
+               }
             }
         }
     }
@@ -470,7 +472,7 @@ public class PageResource {
      * Removes the Time Machine attributes from the session.
      * @param request The current instance of the {@link HttpServletRequest}.
      */
-    private void resetTimeMachineIfAny(final HttpServletRequest request) {
+    private void resetTimeMachineIfPresent(final HttpServletRequest request) {
         final HttpSession session = request.getSession(false);
         if (null != session) {
             session.removeAttribute(TM_DATE);
