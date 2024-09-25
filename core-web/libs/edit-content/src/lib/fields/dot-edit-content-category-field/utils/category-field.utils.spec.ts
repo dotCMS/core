@@ -21,6 +21,10 @@ import {
 } from '../mocks/category-field.mocks';
 import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models';
 
+const MOCK_SELECTED_OBJECT: DotCategoryFieldKeyValueObj[] = [
+    { key: '1f208488057007cedda0e0b5d52ee3b3', value: 'Cleaning Supplies' },
+    { key: 'cb83dc32c0a198fd0ca427b3b587f4ce', value: 'Doors & Windows' }
+];
 describe('CategoryFieldUtils', () => {
     describe('getSelectedCategories', () => {
         it('should return an empty array if contentlet is null', () => {
@@ -29,10 +33,7 @@ describe('CategoryFieldUtils', () => {
         });
 
         it('should return parsed the values', () => {
-            const expected: DotCategoryFieldKeyValueObj[] = [
-                { key: '1f208488057007cedda0e0b5d52ee3b3', value: 'Electrical' },
-                { key: 'cb83dc32c0a198fd0ca427b3b587f4ce', value: 'Doors & Windows' }
-            ];
+            const expected: DotCategoryFieldKeyValueObj[] = MOCK_SELECTED_OBJECT;
             const result = getSelectedFromContentlet(
                 CATEGORY_FIELD_MOCK,
                 CATEGORY_FIELD_CONTENTLET_MOCK
@@ -605,10 +606,7 @@ describe('CategoryFieldUtils', () => {
                 CATEGORY_FIELD_MOCK,
                 CATEGORY_FIELD_CONTENTLET_MOCK
             );
-            expect(result).toEqual([
-                { key: '1f208488057007cedda0e0b5d52ee3b3', value: 'Electrical' },
-                { key: 'cb83dc32c0a198fd0ca427b3b587f4ce', value: 'Doors & Windows' }
-            ]);
+            expect(result).toEqual(MOCK_SELECTED_OBJECT);
         });
 
         it('should handle empty selected categories in contentlet', () => {

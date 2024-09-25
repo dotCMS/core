@@ -1,12 +1,17 @@
 package com.dotmarketing.portlets.fileassets.business;
 
 import com.dotcms.api.tree.Parentable;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
-import com.dotcms.contenttype.model.type.BaseContentType;
+
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotmarketing.portlets.contentlet.model.ResourceLink;
+import com.dotmarketing.portlets.contentlet.transform.strategy.FileViewStrategy;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
@@ -17,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -65,6 +71,15 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+
+import javax.servlet.http.HttpServletRequest;
+
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LOAD_META;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
+import static com.dotmarketing.util.UtilHTML.getIconClass;
+import static com.dotmarketing.util.UtilHTML.getStatusIcons;
+import static com.dotmarketing.util.UtilMethods.*;
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * This class is a bridge impl that will support the older
@@ -310,11 +325,34 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	public List<IFileAsset> fromContentletsI(final List<Contentlet> contentlets) {
 		final List<IFileAsset> fileAssets = new ArrayList<>();
 		for (Contentlet con : contentlets) {
-			fileAssets.add(fromContentlet(con));
+			if (con.isDotAsset()) {
+
+				fileAssets.add(transformDotAsset(con));
+			} else {
+				fileAssets.add(fromContentlet(con));
+			}
 		}
 		return fileAssets;
 
 	}
+
+	private FileAsset transformDotAsset(Contentlet con) {
+		try {
+			con.setProperty(FileAssetAPI.BINARY_FIELD, Try.of(()->con.getBinary("asset")).getOrNull());
+
+			FileAsset fileAsset = FileViewStrategy.convertToFileAsset(con, this);
+
+			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+			if	(request != null) {
+				final String fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, APILocator.systemUser(), fileAsset, "fileAsset");
+
+				fileAsset.getMap().put("fileLink", fileLink);
+			}
+			return fileAsset;
+		} catch (DotDataException | DotSecurityException e) {
+			throw new DotRuntimeException(e);
+		}
+    }
 
 	@CloseDBIfOpened
 	public FileAssetMap fromFileAsset(final FileAsset fileAsset) throws DotStateException {
