@@ -68,3 +68,4 @@ This maintenance release includes the following code fixes:
 62. https://github.com/dotCMS/core/issues/28814 : Rules permission checkbox is not visible #28814
 63. https://github.com/dotCMS/core/issues/29293 : Cannot change folder URL to lowercase #29293
 64. https://github.com/dotCMS/core/issues/29321 : An Asset name starts with number and specific alphabets considers as an Image #29321
+65. https://github.com/dotCMS/core/issues/29668 : Spike: PP bundles not being processed by Receiver #29668
