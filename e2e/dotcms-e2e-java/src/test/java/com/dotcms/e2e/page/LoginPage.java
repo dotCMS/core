@@ -44,7 +44,7 @@ public class LoginPage {
         final EnvironmentService environmentService = EnvironmentService.get();
         login(
                 environmentService.getProperty(E2eKeys.DEFAULT_USER_KEY),
-                environmentService.getProperty(E2eKeys.DEFAULT_PASSWORD_KEY));
+                environmentService.getProperty(E2eKeys.DEFAULT_PASSWORD_KEY + "xxx"));
     }
 
     /**
