@@ -7,6 +7,7 @@ import com.dotcms.analytics.query.AnalyticsQueryParser;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
@@ -17,6 +18,7 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * This class is a ViewTool that can be used to access the analytics data.
@@ -26,20 +28,23 @@ public class AnalyticsTool  implements ViewTool {
 
     private final ContentAnalyticsAPI contentAnalyticsAPI;
     private final AnalyticsQueryParser analyticsQueryParser;
+    private final UserWebAPI userWebAPI;
 
     private User user = null;
 
     public AnalyticsTool() {
         this(CDIUtils.getBean(ContentAnalyticsAPI.class).get(),
-                CDIUtils.getBean(AnalyticsQueryParser.class).get());
+                CDIUtils.getBean(AnalyticsQueryParser.class).get(),
+                WebAPILocator.getUserWebAPI());
     }
 
-
     public AnalyticsTool(final ContentAnalyticsAPI contentAnalyticsAPI,
-                         final AnalyticsQueryParser analyticsQueryParser) {
+                         final AnalyticsQueryParser analyticsQueryParser,
+                         final UserWebAPI userWebAPI) {
 
         this.contentAnalyticsAPI  = contentAnalyticsAPI;
         this.analyticsQueryParser = analyticsQueryParser;
+        this.userWebAPI = userWebAPI;
     }
 
     @Override
@@ -52,7 +57,7 @@ public class AnalyticsTool  implements ViewTool {
 
             if (session != null) {
                 try {
-                    user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+                    user = userWebAPI.getLoggedInUser(request);
                 } catch (DotRuntimeException e) {
                     Logger.error(this.getClass(), e.getMessage());
                 }
@@ -105,6 +110,10 @@ public class AnalyticsTool  implements ViewTool {
      */
     public ReportResponse runReportFromMap(final Map<String, Object> query) {
 
+        if (Objects.isNull(query)) {
+            throw new IllegalArgumentException("Query can not be null");
+        }
+        
         Logger.debug(this, () -> "Running report from map: " + query);
         final AnalyticsQuery analyticsQuery = DotObjectMapperProvider.getInstance()
                 .getDefaultObjectMapper().convertValue(query, AnalyticsQuery.class);
