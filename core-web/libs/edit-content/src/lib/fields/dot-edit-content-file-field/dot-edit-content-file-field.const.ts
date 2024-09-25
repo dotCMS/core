@@ -18,7 +18,7 @@ export const INPUT_CONFIG: ConfigActions = {
         allowCreateFile: true,
         allowGenerateImg: false,
         acceptedFiles: [],
-        maxFileSize: 1024
+        maxFileSize: null
     },
     Image: {
         allowExistingFile: true,
@@ -26,7 +26,7 @@ export const INPUT_CONFIG: ConfigActions = {
         allowCreateFile: false,
         allowGenerateImg: true,
         acceptedFiles: ['image/*'],
-        maxFileSize: 0
+        maxFileSize: null
     },
     Binary: {
         allowExistingFile: false,
@@ -34,6 +34,6 @@ export const INPUT_CONFIG: ConfigActions = {
         allowCreateFile: true,
         allowGenerateImg: true,
         acceptedFiles: [],
-        maxFileSize: 0
+        maxFileSize: null
     }
 };

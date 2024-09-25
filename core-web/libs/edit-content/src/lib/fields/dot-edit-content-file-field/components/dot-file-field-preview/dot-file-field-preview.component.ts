@@ -1,20 +1,28 @@
+import { of } from 'rxjs';
+
 import {
     CUSTOM_ELEMENTS_SCHEMA,
     ChangeDetectionStrategy,
     Component,
     computed,
+    inject,
     input,
     output,
-    signal
+    signal, OnInit
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
-import { DotTempFileThumbnailComponent, DotFileSizeFormatPipe, DotMessagePipe } from '@dotcms/ui';
+import { catchError } from 'rxjs/operators';
 
-import { PreviewFile } from '../../models';
+import { DotResourceLinksService } from '@dotcms/data-access';
+import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotTempFileThumbnailComponent, DotFileSizeFormatPipe, DotMessagePipe, DotCopyButtonComponent } from '@dotcms/ui';
+
+import { DotPreviewResourceLink, PreviewFile } from '../../models';
 import { getFileMetadata } from '../../utils';
+
 
 @Component({
     selector: 'dot-file-field-preview',
@@ -24,7 +32,8 @@ import { getFileMetadata } from '../../utils';
         DotFileSizeFormatPipe,
         DotMessagePipe,
         ButtonModule,
-        DialogModule
+        DialogModule,
+        DotCopyButtonComponent
     ],
     providers: [],
     templateUrl: './dot-file-field-preview.component.html',
@@ -32,7 +41,9 @@ import { getFileMetadata } from '../../utils';
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
-export class DotFileFieldPreviewComponent {
+export class DotFileFieldPreviewComponent implements OnInit {
+    readonly #dotResourceLinksService = inject(DotResourceLinksService);
+
     $previewFile = input.required<PreviewFile>({ alias: 'previewFile' });
     removeFile = output();
     $showDialog = signal(false);
@@ -46,7 +57,79 @@ export class DotFileFieldPreviewComponent {
         return getFileMetadata(previewFile.file);
     });
 
+    $downloadLink = computed(() => {
+        const previewFile = this.$previewFile();
+        if (previewFile.source === 'contentlet') {
+            const file = previewFile.file;
+
+            return `/contentAsset/raw-data/${file.inode}/asset?byInode=true&force_download=true`;
+        }
+
+        return null;
+    });
+
+    $resourceLinks = signal<DotPreviewResourceLink[]>([]);
+
+    ngOnInit() {
+        const previewFile = this.$previewFile();
+
+        if (previewFile.source === 'contentlet') {
+            this.fetchResourceLinks(previewFile.file);
+        }
+    }
+
     toggleShowDialog() {
         this.$showDialog.set(!this.$showDialog());
+    }
+
+    downloadAsset(link: string): void {
+        window.open(link, '_self');
+    }
+
+    private fetchResourceLinks(contentlet: DotCMSContentlet): void {
+        this.#dotResourceLinksService
+            .getFileResourceLinks({
+                fieldVariable: 'asset',
+                inodeOrIdentifier: contentlet.identifier
+            })
+            .pipe(
+                catchError(() => {
+                    return of({
+                        configuredImageURL: '',
+                        text: '',
+                        versionPath: '',
+                        idPath: ''
+                    });
+                })
+            )
+            .subscribe(({ configuredImageURL, text, versionPath, idPath }) => {
+                const fileLink = configuredImageURL
+                    ? `${window.location.origin}${configuredImageURL}`
+                    : '';
+
+                const options = [
+                    {
+                        key: 'FileLink',
+                        value: fileLink,
+                    },
+                    {
+                        key: 'VersionPath',
+                        value: versionPath,
+                    },
+                    {
+                        key: 'IdPath',
+                        value: idPath,
+                    }
+                ];
+
+                if (contentlet.baseType === DotCMSBaseTypesContentTypes.FILEASSET) {
+                    options.push({
+                        key: 'Resource-Link',
+                        value: text,
+                    });
+                }
+
+                this.$resourceLinks.set(options);
+            });
     }
 }

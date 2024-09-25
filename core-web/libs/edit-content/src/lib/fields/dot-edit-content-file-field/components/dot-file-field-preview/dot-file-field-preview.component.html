@@ -1,5 +1,6 @@
 @let previewFile = $previewFile();
 @let metadata = $metadata();
+@let downloadLink = $downloadLink();
 
 <div class="preview-container">
     <div class="preview-image__container">
@@ -34,12 +35,21 @@
             }
         }
     </div>
+    <!-- Actions -->
     <div class="preview-resource-links__actions">
         <p-button
             (click)="toggleShowDialog()"
             styleClass="p-button-rounded p-button-sm p-button-outlined"
             data-testId="info-btn"
             icon="pi pi-info" />
+
+        @if (downloadLink) {
+            <p-button
+                styleClass="p-button-rounded p-button-sm p-button-outlined"
+                data-testId="download-btn"
+                icon="pi pi-download"
+                (click)="downloadAsset(downloadLink)"/>
+        }
     </div>
     <div class="preview-metadata__actions">
         <p-button
@@ -49,12 +59,20 @@
             data-testId="remove-button"
             icon="pi pi-trash" />
     </div>
+    <!-- Actions in small screens -->
     <div class="preview-metadata__action--responsive">
         <p-button
             (click)="toggleShowDialog()"
             styleClass="p-button-rounded p-button-text p-button-semi-transparent"
             data-testId="infor-button-responsive"
             icon="pi pi-info" />
+        @if (downloadLink) {
+            <p-button
+                styleClass="p-button-rounded p-button-text p-button-semi-transparent"
+                data-testId="download-btn-responsive"
+                icon="pi pi-download"
+                (click)="downloadAsset(downloadLink)" />
+        }
         <p-button
             (click)="removeFile.emit()"
             styleClass="p-button-rounded p-button-text p-button-semi-transparent"
@@ -86,6 +104,17 @@
             </div>
         </div>
     </div>
+    @for (sourceLink of $resourceLinks(); track $index) {
+        <div [attr.data-testId]="'resource-link-' + sourceLink.key" class="file-info__item">
+            <span class="file-info__title">{{ sourceLink.key | dm }}:</span>
+            <div class="file-info__link">
+                <a [href]="sourceLink.value" target="_blank">
+                    {{ sourceLink.value || ('dot.binary.field.no.link.found' | dm) }}
+                </a>
+                <dot-copy-button [copy]="sourceLink.value" />
+            </div>
+        </div>
+    }
 
     <ng-template pTemplate="footer">
         <p-button

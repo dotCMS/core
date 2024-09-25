@@ -10,7 +10,7 @@
                 <input
                     #inputFile
                     [accept]="store.acceptedFiles().join(',')"
-                    (change)="store.handleUploadFile(inputFile.files[0])"
+                    (change)="fileSelected(inputFile.files)"
                     data-testId="file-field__file-input"
                     type="file" />
                 <dot-drop-zone

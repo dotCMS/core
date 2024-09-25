@@ -5,11 +5,12 @@ import { pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { filter, switchMap, tap } from 'rxjs/operators';
 
 import { DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { INPUT_CONFIG } from '../dot-edit-content-file-field.const';
 import { INPUT_TYPES, FILE_STATUS, UIMessage, PreviewFile } from '../models';
 import { getUiMessage } from '../utils/messages';
@@ -29,7 +30,7 @@ export interface FileFieldState {
     allowCreateFile: boolean;
     uiMessage: UIMessage;
     acceptedFiles: string[];
-    maxFileSize: number;
+    maxFileSize: number | null;
     fieldVariable: string;
     previewFile: PreviewFile | null;
 }
@@ -49,7 +50,7 @@ const initialState: FileFieldState = {
     allowCreateFile: false,
     uiMessage: getUiMessage('DEFAULT'),
     acceptedFiles: [],
-    maxFileSize: 0,
+    maxFileSize: null,
     fieldVariable: '',
     previewFile: null
 };
@@ -68,84 +69,131 @@ export const FileFieldStore = signalStore(
             return currentStatus === 'uploading';
         })
     })),
-    withMethods((store, fileService = inject(DotUploadFileService)) => ({
-        initLoad: (initState: {
-            inputType: FileFieldState['inputType'];
-            fieldVariable: FileFieldState['fieldVariable'];
-        }) => {
-            const { inputType, fieldVariable } = initState;
+    withMethods(
+        (
+            store,
+            fileService = inject(DotUploadFileService),
+            contentService = inject(DotEditContentService)
+        ) => ({
+            initLoad: (initState: {
+                inputType: FileFieldState['inputType'];
+                fieldVariable: FileFieldState['fieldVariable'];
+            }) => {
+                const { inputType, fieldVariable } = initState;
 
-            const actions = INPUT_CONFIG[inputType] || {};
+                const actions = INPUT_CONFIG[inputType] || {};
 
-            patchState(store, {
-                inputType,
-                fieldVariable,
-                ...actions
-            });
-        },
-        setValue: (value: string) => {
-            patchState(store, { value });
-        },
-        setUIMessage: (uiMessage: UIMessage) => {
-            const acceptedFiles = store.acceptedFiles();
-            const maxFileSize = store.maxFileSize();
+                patchState(store, {
+                    inputType,
+                    fieldVariable,
+                    ...actions
+                });
+            },
+            setUIMessage: (uiMessage: UIMessage) => {
+                const acceptedFiles = store.acceptedFiles();
+                const maxFileSize = store.maxFileSize();
 
-            patchState(store, {
-                uiMessage: {
-                    ...uiMessage,
-                    args: [acceptedFiles.join(', '), `${maxFileSize}`]
-                }
-            });
-        },
-        removeFile: () => {
-            patchState(store, {
-                contentlet: null,
-                tempFile: null,
-                value: '',
-                fileStatus: 'init'
-            });
-        },
-        setDropZoneState: (state: boolean) => {
-            patchState(store, {
-                dropZoneActive: state
-            });
-        },
-        setUploading: () => {
-            patchState(store, {
-                dropZoneActive: false,
-                fileStatus: 'uploading'
-            });
-        },
-        handleUploadFile: rxMethod<File>(
-            pipe(
-                tap(() =>
-                    patchState(store, {
-                        dropZoneActive: false,
-                        fileStatus: 'uploading'
+                patchState(store, {
+                    uiMessage: {
+                        ...uiMessage,
+                        args: [`${maxFileSize}`, acceptedFiles.join(', ')]
+                    }
+                });
+            },
+            removeFile: () => {
+                patchState(store, {
+                    contentlet: null,
+                    tempFile: null,
+                    value: '',
+                    fileStatus: 'init',
+                    uiMessage: getUiMessage('DEFAULT')
+                });
+            },
+            setDropZoneState: (state: boolean) => {
+                patchState(store, {
+                    dropZoneActive: state
+                });
+            },
+            setUploading: () => {
+                patchState(store, {
+                    dropZoneActive: false,
+                    fileStatus: 'uploading'
+                });
+            },
+            handleUploadFile: rxMethod<File>(
+                pipe(
+                    tap(() => {
+                        patchState(store, {
+                            dropZoneActive: false,
+                            fileStatus: 'uploading'
+                        });
+                    }),
+                    filter((file) => {
+                        const maxFileSize = store.maxFileSize();
+
+                        if (maxFileSize && file.size > maxFileSize) {
+                            patchState(store, {
+                                fileStatus: 'init',
+                                dropZoneActive: true,
+                                uiMessage: {
+                                    ...getUiMessage('MAX_FILE_SIZE_EXCEEDED'),
+                                    args: [`${maxFileSize}`]
+                                }
+                            });
+
+                            return false;
+                        }
+
+                        return true;
+                    }),
+                    switchMap((file) => {
+                        return fileService.uploadDotAsset(file).pipe(
+                            tapResponse({
+                                next: (file) => {
+                                    patchState(store, {
+                                        tempFile: null,
+                                        contentlet: file,
+                                        fileStatus: 'preview',
+                                        value: file.identifier,
+                                        previewFile: { source: 'contentlet', file }
+                                    });
+                                },
+                                error: () => {
+                                    patchState(store, {
+                                        fileStatus: 'init',
+                                        uiMessage: getUiMessage('SERVER_ERROR')
+                                    });
+                                }
+                            })
+                        );
                     })
-                ),
-                switchMap((file) => {
-                    return fileService.uploadDotAsset(file).pipe(
-                        tapResponse({
-                            next: (file) => {
-                                patchState(store, {
-                                    tempFile: null,
-                                    contentlet: file,
-                                    fileStatus: 'preview',
-                                    value: file.identifier,
-                                    previewFile: { source: 'contentlet', file: file }
-                                });
-                            },
-                            error: () => {
-                                patchState(store, {
-                                    fileStatus: 'init',
-                                    uiMessage: getUiMessage('SERVER_ERROR')
-                                });
-                            }
-                        })
-                    );
-                })
+                )
+            ),
+            getAssetData: rxMethod<string>(
+                pipe(
+                    switchMap((identifier) => {
+                        return contentService.getContentById(identifier).pipe(
+                            tapResponse({
+                                next: (file) => {
+                                    patchState(store, {
+                                        tempFile: null,
+                                        contentlet: file,
+                                        fileStatus: 'preview',
+                                        value: file.identifier,
+                                        previewFile: { source: 'contentlet', file }
+                                    });
+                                },
+                                error: () => {
+                                    patchState(store, {
+                                        fileStatus: 'init',
+                                        uiMessage: getUiMessage('SERVER_ERROR')
+                                    });
+                                }
+                            })
+                        );
+                    })
+                )
             )
-        )
-    }))
+        })
+    )
 );

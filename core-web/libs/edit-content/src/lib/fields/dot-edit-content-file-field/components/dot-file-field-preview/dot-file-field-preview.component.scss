@@ -29,6 +29,7 @@
     justify-content: center;
     align-items: center;
     background: $color-palette-gray-200;
+    overflow: hidden;
 }
 
 .preview-metadata__info {
@@ -46,6 +47,7 @@
     overflow: hidden;
     gap: $spacing-2;
     min-width: 150px;
+    display: none;
 
     span {
         overflow: hidden;
@@ -70,10 +72,22 @@
     gap: $spacing-1;
 }
 
+.preview-resource-links__actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-0;
+    padding-top: $spacing-1;
+    display: none;
+}
+
 .preview-metadata__actions {
     position: absolute;
     bottom: $spacing-1;
     right: 0;
+    display: none;
     justify-content: flex-end;
     align-items: center;
     gap: $spacing-1;
@@ -125,7 +139,7 @@
     gap: $spacing-0;
 }
 
-@container preview (min-width: 376px) {
+@container preview (min-width: 500px) {
     .preview-metadata__container,
     .preview-metadata__actions {
         display: flex;

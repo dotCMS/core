@@ -29,3 +29,8 @@ export type PreviewFile =
           source: 'contentlet';
           file: DotCMSContentlet;
       };
+
+    export   interface DotPreviewResourceLink {
+        key: string;
+        value: string;
+    }

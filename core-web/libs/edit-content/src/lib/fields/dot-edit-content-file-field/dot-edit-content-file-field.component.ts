@@ -71,16 +71,16 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
     }
 
     ngOnInit() {
-        console.log('content', this.$contentlet());
+        const field = this.$field();
 
         this.store.initLoad({
-            fieldVariable: this.$field().variable,
-            inputType: this.$field().fieldType as INPUT_TYPES
+            fieldVariable: field.variable,
+            inputType: field.fieldType as INPUT_TYPES
         });
     }
 
     writeValue(value: string): void {
-        this.store.setValue(value);
+        this.store.getAssetData(value);
     }
     registerOnChange(fn: (value: string) => void) {
         this.onChange = fn;
@@ -105,6 +105,16 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
         if (!validity.valid) {
             this.handleFileDropError(validity);
 
+            return;
+        }
+
+        this.store.handleUploadFile(file);
+    }
+
+    fileSelected(files: FileList) {
+        const file = files[0];
+
+        if (!file) {
             return;
         }
 
