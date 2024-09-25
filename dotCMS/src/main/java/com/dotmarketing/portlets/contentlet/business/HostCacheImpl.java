@@ -138,7 +138,7 @@ public class HostCacheImpl extends HostCache {
 	 * @see com.dotmarketing.business.PermissionCache#clearCache()
 	 */
 	public void clearCache() {
-		Logger.info(this, "Clearing cache");
+		Logger.error(this, "Clearing cache", new Throwable());
         // clear the cache
         cache.flushGroup(PRIMARY_GROUP);
         cache.flushGroup(ALIAS_GROUP);
