@@ -1,6 +1,4 @@
-import { useContext } from 'react';
-
-import styles from './Container.module.css';
+import { useContext, useEffect, useRef, useState } from 'react';
 
 import { PageContext } from '../../contexts/PageContext';
 import { DotCMSPageContext } from '../../models';
@@ -70,14 +68,37 @@ export function Container({ containerRef }: ContainerProps) {
     const containerStyles = contentlets.length
         ? undefined
         : {
-              width: '100%',
-              backgroundColor: '#ECF0FD',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              color: '#030E32',
-              height: '10rem'
-          };
+            width: '100%',
+            backgroundColor: '#ECF0FD',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            color: '#030E32',
+            height: '10rem'
+        };
+
+    const contentletDivRef = useRef<HTMLDivElement | null>(null);
+    const [haveContent, setHaveContent] = useState<boolean>(true);
+
+    useEffect(() => {
+        if (!contentletDivRef.current) {
+            return;
+        }
+
+        const childElement = contentletDivRef.current.firstElementChild;
+
+        if (!childElement) {
+            return;
+        }
+
+        const height = childElement.getBoundingClientRect().height;
+
+        if (height > 0) {
+            return;
+        }
+
+        setHaveContent(false);
+    }, []);
 
     const ContainerChildren = contentlets.map((contentlet) => {
         const ContentTypeComponent = components[contentlet.contentType];
@@ -99,7 +120,8 @@ export function Container({ containerRef }: ContainerProps) {
                 data-dot-container={JSON.stringify(container)}
                 data-dot-on-number-of-pages={contentlet.onNumberOfPages}
                 key={contentlet.identifier}
-                style={styles}>
+                ref={contentletDivRef}
+                style={{ minHeight: haveContent ? undefined : '32px' }}>
                 <Component {...contentlet} />
             </div>
         ) : (

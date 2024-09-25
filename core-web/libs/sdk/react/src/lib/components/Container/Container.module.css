@@ -6,7 +6,18 @@
  * }
 */
 
-div[data-dot-object='contentlet']:empty {
+/* div[data-dot-object='']{
+    container: parent / size;
+} */
+
+/* @container  (height < 1px) {
+    div[data-dot-object='contentlet'] {
+      border: 1px solid red;
+      min-height: 32px;
+      min-width: 500px;
+    }
+  } */
+/* div[data-dot-object='contentlet']:empty {
     min-height: 32px;
     min-width: 100%;
 }
@@ -18,4 +29,24 @@ div[data-dot-object='contentlet']:empty::after {
     padding: 10px;
     text-align: center;
     background-color: rgb(236, 240, 253);
+} */
+
+
+div[data-dot-object='contentlet'] > * {
+    container: parent / size;
+    /* height: 100%; */
 }
+
+.empty-contentlet {
+    min-height: 32px;
+    min-width: 100%;
+}
+
+
+@container (height < 1px) {
+    div[data-dot-object='contentlet'] {
+      border: 1px solid red;
+      min-height: 32px;
+      min-width: 500px;
+    }
+  }
