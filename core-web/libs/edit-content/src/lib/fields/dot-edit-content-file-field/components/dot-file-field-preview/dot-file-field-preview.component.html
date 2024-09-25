@@ -2,39 +2,46 @@
 @let metadata = $metadata();
 @let downloadLink = $downloadLink();
 
-<div class="preview-container">
-    <div class="preview-image__container">
-        @if (previewFile.source === 'temp') {
-            <dot-temp-file-thumbnail
-                [tempFile]="previewFile.file"
-                [iconSize]="'48px'"
-                data-testId="temp-file-thumbnail" />
-        } @else {
-            <dot-contentlet-thumbnail
-                fieldVariable="asset"
-                [iconSize]="'48px'"
-                [contentlet]="previewFile.file"
-                [playableVideo]="true"
-                data-testId="contentlet-thumbnail" />
-        }
-    </div>
-    <div class="preview-metadata__container">
-        @if (metadata) {
-            <span class="preview-metadata_header">{{ metadata.title }}</span>
-            @if (metadata.width && metadata.height) {
-                <div class="preview-metadata__info">
-                    <i class="pi pi-arrows-alt"></i>
-                    <span>{{ metadata.width }} x {{ metadata.height }}</span>
-                </div>
+<div class="preview-container" [class.preview-container--fade]="metadata?.editableAsText">
+    @if (metadata?.editableAsText) {
+        <div class="preview-code_container" data-testId="code-preview">
+            <code>{{ $content() }}</code>
+        </div>
+    } @else {
+        <div class="preview-image__container">
+            @if (previewFile.source === 'temp') {
+                <dot-temp-file-thumbnail
+                    [tempFile]="previewFile.file"
+                    [iconSize]="'48px'"
+                    data-testId="temp-file-thumbnail" />
+            } @else {
+                <dot-contentlet-thumbnail
+                    fieldVariable="asset"
+                    [iconSize]="'48px'"
+                    [contentlet]="previewFile.file"
+                    [playableVideo]="true"
+                    data-testId="contentlet-thumbnail" />
             }
-            @if (metadata.fileSize) {
-                <div class="preview-metadata__info">
-                    <i class="pi pi-file"></i>
-                    <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
-                </div>
+        </div>
+        <div class="preview-metadata__container">
+            @if (metadata) {
+                <span class="preview-metadata_header">{{ metadata.title }}</span>
+                @if (metadata.width && metadata.height) {
+                    <div class="preview-metadata__info">
+                        <i class="pi pi-arrows-alt"></i>
+                        <span>{{ metadata.width }} x {{ metadata.height }}</span>
+                    </div>
+                }
+                @if (metadata.fileSize) {
+                    <div class="preview-metadata__info">
+                        <i class="pi pi-file"></i>
+                        <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
+                    </div>
+                }
             }
-        }
-    </div>
+        </div>
+    }
+
     <!-- Actions -->
     <div class="preview-resource-links__actions">
         <p-button
@@ -48,7 +55,7 @@
                 styleClass="p-button-rounded p-button-sm p-button-outlined"
                 data-testId="download-btn"
                 icon="pi pi-download"
-                (click)="downloadAsset(downloadLink)"/>
+                (click)="downloadAsset(downloadLink)" />
         }
     </div>
     <div class="preview-metadata__actions">
@@ -63,19 +70,19 @@
     <div class="preview-metadata__action--responsive">
         <p-button
             (click)="toggleShowDialog()"
-            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
+            styleClass="p-button-rounded"
             data-testId="infor-button-responsive"
             icon="pi pi-info" />
         @if (downloadLink) {
             <p-button
-                styleClass="p-button-rounded p-button-text p-button-semi-transparent"
+                styleClass="p-button-rounded"
                 data-testId="download-btn-responsive"
                 icon="pi pi-download"
                 (click)="downloadAsset(downloadLink)" />
         }
         <p-button
             (click)="removeFile.emit()"
-            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
+            styleClass="p-button-rounded "
             data-testId="remove-button-responsive"
             icon="pi pi-trash" />
     </div>
@@ -109,7 +116,7 @@
             <span class="file-info__title">{{ sourceLink.key | dm }}:</span>
             <div class="file-info__link">
                 <a [href]="sourceLink.value" target="_blank">
-                    {{ sourceLink.value || ('dot.binary.field.no.link.found' | dm) }}
+                    {{ sourceLink.value || ('dot.file.field.no.link.found' | dm) }}
                 </a>
                 <dot-copy-button [copy]="sourceLink.value" />
             </div>

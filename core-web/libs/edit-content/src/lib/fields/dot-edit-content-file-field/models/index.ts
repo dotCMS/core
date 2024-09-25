@@ -30,7 +30,7 @@ export type PreviewFile =
           file: DotCMSContentlet;
       };
 
-    export   interface DotPreviewResourceLink {
-        key: string;
-        value: string;
-    }
+export interface DotPreviewResourceLink {
+    key: string;
+    value: string;
+}

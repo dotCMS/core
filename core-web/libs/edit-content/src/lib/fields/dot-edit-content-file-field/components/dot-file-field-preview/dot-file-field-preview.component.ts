@@ -8,7 +8,8 @@ import {
     inject,
     input,
     output,
-    signal, OnInit
+    signal,
+    OnInit
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -18,11 +19,15 @@ import { catchError } from 'rxjs/operators';
 
 import { DotResourceLinksService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotTempFileThumbnailComponent, DotFileSizeFormatPipe, DotMessagePipe, DotCopyButtonComponent } from '@dotcms/ui';
+import {
+    DotTempFileThumbnailComponent,
+    DotFileSizeFormatPipe,
+    DotMessagePipe,
+    DotCopyButtonComponent
+} from '@dotcms/ui';
 
 import { DotPreviewResourceLink, PreviewFile } from '../../models';
 import { getFileMetadata } from '../../utils';
-
 
 @Component({
     selector: 'dot-file-field-preview',
@@ -55,6 +60,15 @@ export class DotFileFieldPreviewComponent implements OnInit {
         }
 
         return getFileMetadata(previewFile.file);
+    });
+
+    $content = computed(() => {
+        const previewFile = this.$previewFile();
+        if (previewFile.source === 'contentlet') {
+            return previewFile.file.content;
+        }
+
+        return null;
     });
 
     $downloadLink = computed(() => {
@@ -110,22 +124,22 @@ export class DotFileFieldPreviewComponent implements OnInit {
                 const options = [
                     {
                         key: 'FileLink',
-                        value: fileLink,
+                        value: fileLink
                     },
                     {
                         key: 'VersionPath',
-                        value: versionPath,
+                        value: versionPath
                     },
                     {
                         key: 'IdPath',
-                        value: idPath,
+                        value: idPath
                     }
                 ];
 
                 if (contentlet.baseType === DotCMSBaseTypesContentTypes.FILEASSET) {
                     options.push({
                         key: 'Resource-Link',
-                        value: text,
+                        value: text
                     });
                 }
 

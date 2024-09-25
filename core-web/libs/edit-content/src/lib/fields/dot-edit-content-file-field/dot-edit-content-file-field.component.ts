@@ -25,6 +25,7 @@ import {
 import { DotFileFieldPreviewComponent } from './components/dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from './components/dot-file-field-ui-message/dot-file-field-ui-message.component';
 import { INPUT_TYPES } from './models';
+import { DotFileFieldUploadService } from './services/upload-file/upload-file.service';
 import { FileFieldStore } from './store/file-field.store';
 import { getUiMessage } from './utils/messages';
 
@@ -41,6 +42,7 @@ import { getUiMessage } from './utils/messages';
         DotFileFieldPreviewComponent
     ],
     providers: [
+        DotFileFieldUploadService,
         FileFieldStore,
         {
             multi: true,
@@ -80,6 +82,10 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
     }
 
     writeValue(value: string): void {
+        if (!value) {
+            return;
+        }
+
         this.store.getAssetData(value);
     }
     registerOnChange(fn: (value: string) => void) {

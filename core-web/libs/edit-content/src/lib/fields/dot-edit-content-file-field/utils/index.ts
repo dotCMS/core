@@ -7,3 +7,7 @@ export const getFileMetadata = (contentlet: DotCMSContentlet): DotFileMetadata =
 
     return metadata || {};
 };
+
+export const getFileVersion = (contentlet: DotCMSContentlet) => {
+    return contentlet['assetVersion'] || null;
+};

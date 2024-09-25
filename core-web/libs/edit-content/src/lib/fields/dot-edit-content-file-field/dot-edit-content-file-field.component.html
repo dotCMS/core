@@ -1,6 +1,7 @@
 <div
     class="file-field__container"
-    [class.file-field__container--empty]="store.isInitOrPreview()"
+    [class.file-field__container--empty]="store.isInit()"
+    [class.file-field__container--preview]="store.isPreview()"
     [class.file-field__container--uploading]="store.isUploading()">
     @switch (store.fileStatus()) {
         @case ('init') {

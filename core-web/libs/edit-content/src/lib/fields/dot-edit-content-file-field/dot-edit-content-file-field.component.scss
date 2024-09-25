@@ -83,11 +83,14 @@ input[type="file"] {
 }
 
 @container fileField (max-width: 500px) {
+    .file-field__container--preview,
     .file-field__container--empty {
-        height: auto;
         flex-direction: column;
         justify-content: center;
         align-items: flex-start;
+    }
+    .file-field__container--empty {
+        height: auto;
     }
 
     .file-field__drop-zone {

@@ -6,6 +6,18 @@
     height: 100%;
 }
 
+dot-contentlet-thumbnail::ng-deep {
+    .background-image:not(.svg-thumbnail) {
+        img {
+            object-fit: cover;
+        }
+    }
+
+    img {
+        object-fit: contain;
+    }
+}
+
 .preview-container {
     display: flex;
     gap: $spacing-1;
@@ -63,6 +75,25 @@
     }
 }
 
+.preview-code_container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    user-select: none;
+
+    code {
+        background: #ffffff;
+        color: $color-palette-primary-500;
+        height: 100%;
+        width: 100%;
+        white-space: pre-wrap;
+        overflow: hidden;
+        line-height: normal;
+    }
+}
+
 .preview-metadata__action--responsive {
     position: absolute;
     bottom: $spacing-1;
@@ -70,6 +101,7 @@
     display: flex;
     flex-direction: column;
     gap: $spacing-1;
+    z-index: 100;
 }
 
 .preview-resource-links__actions {
@@ -137,6 +169,18 @@
     display: flex;
     align-items: center;
     gap: $spacing-0;
+}
+
+.preview-container--fade::after {
+    content: "";
+    background: linear-gradient(0deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
+    position: absolute;
+    width: 100%;
+    height: 50%;
+    bottom: 0;
+    left: 0;
+    border-radius: $border-radius-md;
+    pointer-events: none;
 }
 
 @container preview (min-width: 500px) {
