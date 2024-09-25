@@ -101,7 +101,7 @@ export function Container({ containerRef }: ContainerProps) {
                 data-dot-on-number-of-pages={contentlet.onNumberOfPages}
                 key={contentlet.identifier}
                 ref={contentletDivRef}
-                style={{ minHeight: haveContent ? undefined : '32px' }}>
+                style={{ minHeight: haveContent ? undefined : '4rem' }}>
                 <Component {...contentlet} />
             </div>
         ) : (
