@@ -11,8 +11,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
     DotMessagePipe,
@@ -56,10 +55,8 @@ import { getUiMessage } from './utils/messages';
 })
 export class DotEditContentFileFieldComponent implements ControlValueAccessor, OnInit {
     readonly store = inject(FileFieldStore);
-    readonly #messageService = inject(DotMessageService);
 
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
     private onChange: (value: string | File) => void;
     private onTouched: () => void;
