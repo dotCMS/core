@@ -79,7 +79,7 @@ public class AnalyticsTool  implements ViewTool {
      * 	"orders":"Events.day ASC"
      * }")
      *
-     * $dotanalytics.runReportFromJson($query)
+     * $analytics.runReportFromJson($query)
      * </code>
      * @param query
      * @return
@@ -103,7 +103,7 @@ public class AnalyticsTool  implements ViewTool {
      * $myMap.put('timeDimensions', "Events.day day")
      * $myMap.put('orders', "Events.day ASC")
      *
-     * $dotanalytics.runReportFromMap($myQuery)
+     * $analytics.runReportFromMap($myQuery)
      * </code>
      * @param query
      * @return
@@ -121,44 +121,32 @@ public class AnalyticsTool  implements ViewTool {
     }
 
     /**
+     * Creates a CubeJSQuery.Builder instance
+     * @return
+     */
+    public CubeJSQuery.Builder createCubeJSQueryBuilder() {
+        return new CubeJSQuery.Builder();
+    }
+
+    /**
      * Runs an analytics report based cube js raw json string query
      *
      * example:
      * <code>
-     * #set($query = "{
-     *
-     * }")
-     *
-     * $dotanalytics.runRawReportFromJson($query)
+     * #set($query = $analytics.createCubeJSQueryBuilder())
+     * $query.dimensions("Events.experiment", "Events.variant")
+     * $analytics.runRawReport($query.build())
      * </code>
      * @param query
      * @return
      */
-    public ReportResponse runRawReportFromJson(final Map<String, Object> query) {
+    public ReportResponse runRawReport(final CubeJSQuery query) {
+
+        if (Objects.isNull(query)) {
+            throw new IllegalArgumentException("Query can not be null");
+        }
 
         Logger.debug(this, () -> "Running report from raw query: " + query);
-        final CubeJSQuery cubeJSQuery = DotObjectMapperProvider.getInstance()
-                .getDefaultObjectMapper().convertValue(query, CubeJSQuery.class);
-        return contentAnalyticsAPI.runRawReport(cubeJSQuery, user);
-    }
-
-    /**
-     * Runs an analytics report based on Map query.
-     * example:
-     * <code>
-     * #set ($myQuery = {})
-     *
-     *
-     * $dotanalytics.runRawReportFromMap($myQuery)
-     * </code>
-     * @param query
-     * @return
-     */
-    public ReportResponse runRawReportFromMap(final Map<String, Object> query) {
-
-        Logger.debug(this, () -> "Running report from raw query map: " + query);
-        final CubeJSQuery cubeJSQuery = DotObjectMapperProvider.getInstance()
-                .getDefaultObjectMapper().convertValue(query, CubeJSQuery.class);
-        return contentAnalyticsAPI.runRawReport(cubeJSQuery, user);
+        return contentAnalyticsAPI.runRawReport(query, user);
     }
 }
