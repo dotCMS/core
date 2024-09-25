@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 export const useCheckHaveContent = () => {
     const contentletDivRef = useRef<HTMLDivElement | null>(null);
-    const [haveContent, setHaveContent] = useState<boolean>(true);
+    const [haveContent, setHaveContent] = useState<boolean>(false);
 
     useEffect(() => {
         if (!contentletDivRef.current) {
@@ -18,6 +18,8 @@ export const useCheckHaveContent = () => {
         const height = childElement.getBoundingClientRect().height;
 
         if (height > 0) {
+            setHaveContent(true);
+
             return;
         }
 
