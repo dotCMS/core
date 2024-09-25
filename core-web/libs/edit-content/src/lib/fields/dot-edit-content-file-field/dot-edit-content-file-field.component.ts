@@ -72,10 +72,10 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
 
     ngOnInit() {
         console.log('content', this.$contentlet());
-        
+
         this.store.initLoad({
             fieldVariable: this.$field().variable,
-            inputType: this.$field().fieldType as INPUT_TYPES,
+            inputType: this.$field().fieldType as INPUT_TYPES
         });
     }
 

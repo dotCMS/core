@@ -11,7 +11,12 @@ export interface UIMessage {
     args?: string[];
 }
 
-export type MESSAGES_TYPES = 'DEFAULT' | 'SERVER_ERROR' | 'FILE_TYPE_MISMATCH' | 'MAX_FILE_SIZE_EXCEEDED' | 'MULTIPLE_FILES_DROPPED';
+export type MESSAGES_TYPES =
+    | 'DEFAULT'
+    | 'SERVER_ERROR'
+    | 'FILE_TYPE_MISMATCH'
+    | 'MAX_FILE_SIZE_EXCEEDED'
+    | 'MULTIPLE_FILES_DROPPED';
 
 export type UIMessagesMap = Record<MESSAGES_TYPES, UIMessage>;
 

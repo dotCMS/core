@@ -14,7 +14,6 @@ import { INPUT_CONFIG } from '../dot-edit-content-file-field.const';
 import { INPUT_TYPES, FILE_STATUS, UIMessage, PreviewFile } from '../models';
 import { getUiMessage } from '../utils/messages';
 
-
 export interface FileFieldState {
     contentlet: DotCMSContentlet | null;
     tempFile: DotCMSTempFile | null;
@@ -89,12 +88,14 @@ export const FileFieldStore = signalStore(
         },
         setUIMessage: (uiMessage: UIMessage) => {
             const acceptedFiles = store.acceptedFiles();
-            const maxFileSize= store.maxFileSize();
+            const maxFileSize = store.maxFileSize();
 
-            patchState(store, { uiMessage: {
-                ...uiMessage,
-                args: [acceptedFiles.join(', '), `${maxFileSize}`]
-            } });
+            patchState(store, {
+                uiMessage: {
+                    ...uiMessage,
+                    args: [acceptedFiles.join(', '), `${maxFileSize}`]
+                }
+            });
         },
         removeFile: () => {
             patchState(store, {
@@ -117,10 +118,12 @@ export const FileFieldStore = signalStore(
         },
         handleUploadFile: rxMethod<File>(
             pipe(
-                tap(() => patchState(store, {
-                    dropZoneActive: false,
-                    fileStatus: 'uploading'
-                })),
+                tap(() =>
+                    patchState(store, {
+                        dropZoneActive: false,
+                        fileStatus: 'uploading'
+                    })
+                ),
                 switchMap((file) => {
                     return fileService.uploadDotAsset(file).pipe(
                         tapResponse({
@@ -140,8 +143,8 @@ export const FileFieldStore = signalStore(
                                 });
                             }
                         })
-                    )
-                }),
+                    );
+                })
             )
         )
     }))

@@ -1,5 +1,4 @@
-import { MESSAGES_TYPES, UIMessagesMap } from "../models";
-
+import { MESSAGES_TYPES, UIMessagesMap } from '../models';
 
 export const UiMessageMap: UIMessagesMap = {
     DEFAULT: {
