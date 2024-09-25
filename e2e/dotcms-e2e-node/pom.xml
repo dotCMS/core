@@ -16,18 +16,31 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <license.use>true</license.use>
         <skip.npm.install>false</skip.npm.install>
         <yarn.install.cmd>install --frozen-lockfile</yarn.install.cmd>
-        <playwright.install.cmd>global add playwright</playwright.install.cmd>
+        <playwright.add.cmd>global add playwright</playwright.add.cmd>
+        <playwright.install.cmd>playwright install</playwright.install.cmd>
+        <playwright.install.deps.cmd>playwright install-deps</playwright.install.deps.cmd>
         <e2e.test.skip>true</e2e.test.skip>
         <e2e.test.env>local</e2e.test.env>
+        <e2e.frontend.dir>./frontend</e2e.frontend.dir>
         <e2e.test.cmd>run start-${e2e.test.env}</e2e.test.cmd>
         <tomcat.port>8080</tomcat.port>
         <e2e.server.url>http://localhost:${tomcat.port}</e2e.server.url>
+        <version.cargo.plugin>1.10.6</version.cargo.plugin>
+        <clean.docker.volumes>true</clean.docker.volumes>
+        <buildDocker>true</buildDocker>
+        <docker.base.image>tomcat:9.0.74-jdk11</docker.base.image>
         <wiremock.api.key>${ext.wiremock.api.key}</wiremock.api.key>
         <docker.image.wiremock>${ext.docker.image.wiremock}</docker.image.wiremock>
         <docker.wm.volume>./src/test/resources</docker.wm.volume>
         <docker.wm.volume.internal>/home/wiremock</docker.wm.volume.internal>
+        <it.test.fork-folder.prefix>${project.build.directory}/testdata/fork-</it.test.fork-folder.prefix>
+        <it.test.fork-folder>${it.test.fork-folder.prefix}</it.test.fork-folder>
+        <cleanup.before.tests>true</cleanup.before.tests>
+        <tomcat.port>8080</tomcat.port>
+        <docker.jacoco.skip>false</docker.jacoco.skip>
     </properties>
 
     <build>
@@ -44,31 +57,55 @@
                         <!-- optional: the default phase is "generate-resources" -->
                         <phase>generate-resources</phase>
                         <configuration>
+                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
                             <skip>${skip.npm.install}</skip>
                             <arguments>${yarn.install.cmd}</arguments>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>install-playwrigth</id>
+                        <id>add-playwright</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
-                        <!-- optional: the default phase is "generate-resources" -->
                         <phase>generate-resources</phase>
                         <configuration>
-                            <skip>${skip.npm.install}</skip>
+                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
+                            <skip>${e2e.test.skip}</skip>
+                            <arguments>${playwright.add.cmd}</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>install-playwright</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
+                            <skip>${e2e.test.skip}</skip>
                             <arguments>${playwright.install.cmd}</arguments>
                         </configuration>
                     </execution>
                     <execution>
+                        <id>install-playwright-deps</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
+                            <skip>${e2e.test.skip}</skip>
+                            <arguments>${playwright.install.deps.cmd}</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>run node script</id>
-                        <!-- Adjust the phase as per your requirement -->
                         <goals>
                             <goal>yarn</goal>
                         </goals>
                         <phase>integration-test</phase>
                         <configuration>
-                            <workingDirectory>./frontend</workingDirectory>
+                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
                             <skip>${e2e.test.skip}</skip>
                             <arguments>${e2e.test.cmd}</arguments>
                         </configuration>
@@ -85,14 +122,6 @@
                     <execution>
                         <id>integration-test</id>
                         <phase>none</phase>
-                    </execution>
-                    <execution>
-                        <id>verify</id>
-                        <goals>
-                            <goal>verify</goal>
-                        </goals>
-                        <configuration>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
