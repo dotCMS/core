@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * This class is a ViewTool that can be used to access the analytics data.
@@ -33,9 +34,25 @@ public class AnalyticsTool  implements ViewTool {
     private User user = null;
 
     public AnalyticsTool() {
-        this(CDIUtils.getBean(ContentAnalyticsAPI.class).get(),
-                CDIUtils.getBean(AnalyticsQueryParser.class).get(),
+        this(getContentAnalyticsAPI(),
+                getAnalyticsQueryParser(),
                 WebAPILocator.getUserWebAPI());
+    }
+
+    private static ContentAnalyticsAPI getContentAnalyticsAPI() {
+        final Optional<ContentAnalyticsAPI> contentAnalyticsAPI = CDIUtils.getBean(ContentAnalyticsAPI.class);
+        if (!contentAnalyticsAPI.isPresent()) {
+            throw new DotRuntimeException("Could not instance ContentAnalyticsAPI");
+        }
+        return contentAnalyticsAPI.get();
+    }
+
+    private static AnalyticsQueryParser getAnalyticsQueryParser() {
+        final Optional<AnalyticsQueryParser> queryParserOptional = CDIUtils.getBean(AnalyticsQueryParser.class);
+        if (!queryParserOptional.isPresent()) {
+            throw new DotRuntimeException("Could not instance AnalyticsQueryParser");
+        }
+        return queryParserOptional.get();
     }
 
     public AnalyticsTool(final ContentAnalyticsAPI contentAnalyticsAPI,
