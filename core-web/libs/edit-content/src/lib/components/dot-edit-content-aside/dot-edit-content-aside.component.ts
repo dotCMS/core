@@ -1,13 +1,5 @@
-import { animate, state, style, transition, trigger } from '@angular/animations';
 import { NgClass } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    EventEmitter,
-    HostBinding,
-    Input,
-    Output
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { SidebarModule } from 'primeng/sidebar';
 
@@ -29,50 +21,31 @@ import { DotContentAsideWorkflowComponent } from './components/dot-content-aside
         DotContentAsideWorkflowComponent,
         SidebarModule,
         NgClass
-    ],
-    animations: [
-        trigger('collapseAnimation', [
-            state(
-                'true',
-                style({
-                    width: '0px',
-                    visibility: 'hidden'
-                })
-            ),
-            state(
-                'false',
-                style({
-                    width: '350px',
-                    visibility: 'visible'
-                })
-            ),
-            transition('closed <=> open', animate('300ms ease-in-out'))
-        ])
-    ],
-    host: {
-        '[class.dot-edit-content-aside--open]': 'collapsed',
-        '[class.dot-edit-content-aside--closed]': '!collapsed'
-    }
+    ]
 })
 export class DotEditContentAsideComponent {
-    @Input() contentlet!: DotCMSContentlet;
-    @Input() contentType!: DotCMSContentType;
-    @Input() loading!: boolean;
-    @Input() collapsed: boolean;
-    @Output() toggle: EventEmitter<boolean> = new EventEmitter();
+    /**
+     * A variable with the contentlet information
+     */
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
-    // @HostBinding('@collapseAnimation') get sidebarState() {
-    //     console.log('collapseAnimation', this.collapsed);
-    //
-    //     return this.collapsed;
-    // }
-    //
-    @HostBinding('class.collapsed') get isCollapsedClass() {
-        return !this.collapsed;
-    }
+    /**
+     * A variable with the content type
+     */
+    $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
 
-    toggleSidebar() {
-        this.collapsed = !this.collapsed;
-        this.toggle.emit(this.collapsed);
-    }
+    /**
+     * A variable to control the loading state
+     */
+    $loading = input.required<boolean>({ alias: 'loading' });
+
+    /**
+     * A variable to control the collapsed state
+     */
+    $collapsed = input.required<boolean>({ alias: 'collapsed' });
+
+    /**
+     * A variable to control the toggle state
+     */
+    $toggle = output<boolean>({ alias: 'toggle' });
 }

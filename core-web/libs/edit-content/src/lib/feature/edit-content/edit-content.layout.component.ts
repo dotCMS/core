@@ -2,7 +2,14 @@ import { Observable, forkJoin, of } from 'rxjs';
 
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, HostBinding } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    OnInit,
+    inject,
+    HostBinding,
+    signal
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
@@ -59,7 +66,7 @@ const SIDEBAR_LOCAL_STORAGE_KEY = 'dot-edit-content-form-sidebar';
             state(
                 'false',
                 style({
-                    'grid-template-columns': '1fr 3.5rem'
+                    'grid-template-columns': '1fr 0rem'
                 })
             ),
             state(
@@ -81,18 +88,20 @@ export class EditContentLayoutComponent implements OnInit {
     private readonly workflowActionService = inject(DotWorkflowsActionsService);
     private readonly activatedRoute = inject(ActivatedRoute);
 
-    private contentType = this.activatedRoute.snapshot.params['contentType'];
-    private initialInode = this.activatedRoute.snapshot.params['id'];
+    #$contentType = signal<string>(this.activatedRoute.snapshot.params['contentType']).asReadonly();
+    #$initialInode = signal<string>(this.activatedRoute.snapshot.params['id']).asReadonly();
 
     private formValue: Record<string, string>;
 
     vm$: Observable<EditContentPayload> = this.store.vm$;
-    featuredFlagContentKEY = FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED;
+    $featuredFlagContentKEY = signal<string>(
+        FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
+    ).asReadonly();
 
     ngOnInit(): void {
-        const obs$ = !this.initialInode
-            ? this.getNewContent(this.contentType)
-            : this.getExistingContent(this.initialInode);
+        const obs$ = !this.#$initialInode()
+            ? this.getNewContent(this.#$contentType())
+            : this.getExistingContent(this.#$initialInode());
 
         obs$.subscribe(({ contentType, actions, contentlet }) => {
             this.store.setState({
@@ -111,9 +120,9 @@ export class EditContentLayoutComponent implements OnInit {
         });
     }
 
-    toggleSidebar(isOpen: boolean) {
-        this.store.updateSidebarState(isOpen);
-        localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, String(isOpen));
+    toggleSidebar() {
+        this.store.updateSidebarState(!this.showSidebar);
+        localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, String(!this.showSidebar));
     }
 
     /**
@@ -183,6 +192,13 @@ export class EditContentLayoutComponent implements OnInit {
         );
     }
 
+    /**
+     * Get the sidebar state from local storage
+     *
+     * @private
+     * @return {*}
+     * @memberof EditContentLayoutComponent
+     */
     private getSidebarSateFromLocalStorage() {
         return localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY) === 'true';
     }
