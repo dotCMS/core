@@ -121,23 +121,16 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     @CloseDBIfOpened
     public Host resolveHostName(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        Host host = hostCache.getHostByAlias(serverName);
         User systemUser = APILocator.systemUser();
-
-        if(host == null){
-
-            try {
-                final Optional<Host> optional = resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles);
-                host = optional.isPresent() ? optional.get() : findDefaultHost(systemUser, respectFrontendRoles);
-            } catch (Exception e) {
-                host = findDefaultHost(systemUser, respectFrontendRoles);
-            }
-
-            if(host != null){
-                hostCache.addHostAlias(serverName, host);
-            }
+        Host host;
+        try {
+            final Optional<Host> optional =
+                    resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles);
+            host = optional.isPresent() ? optional.get() : findDefaultHost(systemUser, respectFrontendRoles);
+        } catch (Exception e) {
+            Logger.debug(this, "Exception resolving host using default", e);
+            host = findDefaultHost(systemUser, respectFrontendRoles);
         }
-
         checkSitePermission(user, respectFrontendRoles, host);
         return host;
     }
