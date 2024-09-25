@@ -62,3 +62,5 @@ This maintenance release includes the following code fixes:
 56. https://github.com/dotCMS/core/issues/30000 : Add More Logs that helps us investigate 404 issues #30000
 57. https://github.com/dotCMS/core/issues/29781 : Language Issue for selecting Contentlets/images in Block Editor #29781
 58. https://github.com/dotCMS/core/issues/29213 : Copying a contentlet without having Edit Permissions causes copy to have incorrect permissions. #29213
+59. https://github.com/dotCMS/core/issues/28613 : [Content Edit] : Binary D&D not working in Firefox #28613
+

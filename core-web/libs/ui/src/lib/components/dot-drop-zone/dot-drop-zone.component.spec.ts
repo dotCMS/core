@@ -118,6 +118,10 @@ describe('DotDropZoneComponent', () => {
                     dataTransfer: mockDataTransfer
                 });
 
+                // FF does not support clearData:
+                // ERROR DOMException: Modifications are not allowed for this document on FireFox
+                const spyClearData = spyOn(mockDataTransfer, 'clearData'); // It gets cleared automatically
+
                 spectator.component.onDrop(event);
 
                 expect(spy).toHaveBeenCalledWith({
@@ -129,6 +133,7 @@ describe('DotDropZoneComponent', () => {
                         valid: false
                     }
                 });
+                expect(spyClearData).not.toHaveBeenCalled();
             });
         });
 
