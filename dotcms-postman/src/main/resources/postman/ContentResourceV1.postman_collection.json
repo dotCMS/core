@@ -1,11 +1,10 @@
 {
 	"info": {
-		"_postman_id": "ddc34e79-b221-402b-81ef-15ef00a2bd07",
+		"_postman_id": "432048a5-eb89-43a5-9828-e4d69ff200dc",
 		"name": "ContentResourceV1",
 		"description": "This folder contains a comprehensive set of API requests related to the `ContentResourceV1` API endpoints. These requests cover various operations such as creating, retrieving and updating content. The folder is organized to help developers and testers efficiently validate and interact with the content resource endpoints in the system.\n\n#### Objectives:\n\n1. **Create Content**:\n    \n    - Test the creation of new content items with valid and invalid data.\n        \n    - Ensure that the response includes all necessary details for the created content.\n        \n2. **Retrieve Content**:\n    \n    - Validate the retrieval of content items by ID.\n        \n    - Ensure the response contains accurate and complete content details.\n        \n3. **Update Content**:\n    \n    - Test updating existing content items with valid and invalid data.\n        \n    - Verify that the response reflects the updated content accurately.\n        \n    - Ensure that only authorized users can update content.\n        \n4. **Error Handling**:\n    \n    - Verify that the API returns appropriate error messages for invalid requests.\n        \n    - Ensure the correct HTTP status codes are used for different error scenarios.\n        \n5. **Security**:\n    \n    - Validate that only authorized users can perform operations on the content.\n        \n    - Ensure that all security protocols are enforced during API interactions.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "10041132",
-		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/dot~b1c5dc44-8278-4b11-92c8-b3cd3fb935d3/collection/10041132-ddc34e79-b221-402b-81ef-15ef00a2bd07?action=share&source=collection_link&creator=10041132"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -201,14 +200,14 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"// Validate the errorMessage contains 'has invalid / missing field(s)'",
-											"pm.test(\"Validate errorMessage contains 'has invalid / missing field(s)'\", function () {",
+											"pm.test(\"Validate errorMessage contains 'has invalid/missing field(s)'\", function () {",
 											"  var jsonData = pm.response.json();",
 											"  jsonData.entity.results.forEach((result) => {",
 											"    var error = result[Object.keys(result)[0]].errorMessage;",
-											"    pm.expect(error).to.include('has invalid / missing field(s)');",
+											"    pm.expect(error).to.include('has invalid/missing field(s)');",
 											"  });",
-											"});"
+											"});",
+											""
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -253,15 +252,13 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"// Validate the errorMessage contains 'has invalid / missing field(s)'",
-											"pm.test(\"Validate errorMessage contains 'has invalid / missing field(s)'\", function () {",
+											"pm.test(\"Validate errorMessage contains 'has invalid/missing field(s)'\", function () {",
 											"  var jsonData = pm.response.json();",
 											"  jsonData.entity.results.forEach((result) => {",
 											"    var error = result[Object.keys(result)[0]].errorMessage;",
-											"    pm.expect(error).to.include('has invalid / missing field(s)');",
+											"    pm.expect(error).to.include('has invalid/missing field(s)');",
 											"  });",
 											"});",
-											"",
 											""
 										],
 										"type": "text/javascript",
@@ -2532,48 +2529,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "testContentId",
-			"value": ""
-		},
-		{
-			"key": "contentletIdentifier",
-			"value": ""
-		},
-		{
-			"key": "contentletInode",
-			"value": ""
-		},
-		{
-			"key": "parentId1",
-			"value": ""
-		},
-		{
-			"key": "parentInode1",
-			"value": ""
-		},
-		{
-			"key": "parent1contentlets",
-			"value": ""
-		},
-		{
-			"key": "parent2contentlets",
-			"value": ""
-		},
-		{
-			"key": "parentId2",
-			"value": ""
-		},
-		{
-			"key": "parentInode2",
-			"value": ""
-		},
-		{
-			"key": "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE_ORIGINAL_VALUE",
-			"value": ""
 		}
 	]
 }

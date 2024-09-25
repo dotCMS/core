@@ -304,6 +304,11 @@
     .pi {
         color: inherit;
     }
+
+    svg,
+    path {
+        fill: $color-palette-gray-500;
+    }
 }
 
 #button-disabled-outlined {
