@@ -102,7 +102,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         Host site;
         try{
             site  = (this.hostCache.getDefaultHost()!=null) ? this.hostCache.getDefaultHost() : getOrCreateDefaultHost();
-
+            Logger.info(this, "Default host found: " + site);
             APILocator.getPermissionAPI().checkPermission(site, PermissionLevel.READ, user);
             return site;
 
@@ -128,24 +128,35 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                 Logger.error(this, String.format("404 Host with alias '%s' was not found", serverName));
                 return null;
             }
+            Logger.info(this, String.format("Host with alias '%s' was found in cache", serverName));
             host = cachedHostByAlias;
         } else {
             final User systemUser = APILocator.systemUser();
             try {
                 final Optional<Host> optional = resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles);
                 host = optional.isPresent() ? optional.get() : findDefaultHost(systemUser, respectFrontendRoles);
+                if (host == null) {
+                    Logger.error(
+                            this,
+                            "Default Host for alias '" + serverName + "' was not found. Adding 404 cache");
+                    }
             } catch (Exception e) {
+                Logger.error(this, String.format("An error occurred when resolving the host name '%s': %s", serverName,
+                        e.getMessage()), e);
                 host = findDefaultHost(systemUser, respectFrontendRoles);
             }
 
             if (host != null) {
                 hostCache.addHostAlias(serverName, host);
             } else {
+                Logger.info(this, String.format("Host with alias '%s' was not found. Adding 404 cache", serverName));
                 hostCache.addHostAlias(serverName, HostCache.cache404Contentlet);
             }
         }
         if (host != null) {
             checkSitePermission(user, respectFrontendRoles, host);
+        } else {
+            Logger.error(this, String.format("resolveHostName returning null for %s", serverName));
         }
         return host;
     }
