@@ -628,7 +628,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		final boolean isNew = folder.getInode() == null;
 		//if the folder was renamed, we will need to create a new identifier
-		if (!folder.getName().equals(existingID.getAssetName())){
+		if (!folder.getName().equalsIgnoreCase(existingID.getAssetName())){
 			folderFactory.renameFolder(folder, folder.getName(), user, respectFrontEndPermissions);
 		} else{
 			folder.setModDate(new Date());

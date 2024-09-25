@@ -1781,4 +1781,29 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		return htmlPage;
 	}
 
+	/**
+	 * Method to test
+	 * {@link FolderAPI#save(Folder, String, User, boolean)}
+	 * Given scenario: Create a folder, then change its name for the same name but in uppercase
+	 * Expected result: The folder name should be saved in uppercase without any exception
+	 */
+	@Test
+	public void testSave_Same_Name_UpperCase()
+			throws DotDataException, DotSecurityException {
+		Identifier newIdentifier=null;
+		try {
+			final Folder existingFolder = new FolderDataGen().name("test").next();
+			newIdentifier = identifierAPI.createNew(existingFolder, host);
+			existingFolder.setIdentifier(newIdentifier.getId());
+			folderAPI.save(existingFolder, APILocator.systemUser(), false);
+			existingFolder.setName("TEST");
+			folderAPI.save(existingFolder, APILocator.systemUser(), false);
+			final Folder checkFolder = folderAPI.findFolderByPath(StringPool.SLASH + existingFolder.getName(), host, user, false);
+			assertEquals("TEST", checkFolder.getName());
+		} finally {
+			if (newIdentifier!=null)
+				identifierAPI.delete(newIdentifier);
+		}
+	}
+
 }
