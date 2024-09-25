@@ -253,6 +253,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     @CloseDBIfOpened
     @Override
     public IHTMLPage getPageByPath(final String uri, final Host site, final Long languageId, final Boolean live) {
+        Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath URI: " + uri + " Site: " + site + " LanguageId: " + languageId + " Live: " + live);
         Identifier id;
         if(!UtilMethods.isSet(uri)){
             return null;
@@ -270,7 +271,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 return null;
             }
         }
-
+        Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath Identifier: " + (id== null? "Not Found" : id.toString()));
         if (id == null || id.getId() == null) {
             return null;
         }
@@ -278,21 +279,23 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         if (Identifier.ASSET_TYPE_CONTENTLET.equals(id.getAssetType())) {
             try {
                 final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+                Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath currentVariantId: " + currentVariantId);
                 Optional<ContentletVersionInfo> cinfo = versionableAPI
                         .getContentletVersionInfo( id.getId(), languageId, currentVariantId);
-
+                Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath contentletVersionInfo: " + (cinfo.isEmpty() ? "Not Found" : cinfo.toString()));
                 if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals(CMSUrlUtil.NOT_FOUND)) {
 
                     cinfo = versionableAPI.getContentletVersionInfo( id.getId(), languageId);
 
                     if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals(CMSUrlUtil.NOT_FOUND)) {
+                        Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath contentletVersionInfo not found");
                         return null;
                     }
                 }
 
                 final Contentlet contentlet = this.contentletAPI.find(live ? cinfo.get().getLiveInode()
                         : cinfo.get().getWorkingInode(), this.userAPI.getSystemUser(), false);
-
+                Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath contentlet: " + contentlet.toString());
                 if (BaseContentType.HTMLPAGE.getType() == contentlet.getContentType().baseType().getType()) {
                     return fromContentlet(contentlet);
                 }

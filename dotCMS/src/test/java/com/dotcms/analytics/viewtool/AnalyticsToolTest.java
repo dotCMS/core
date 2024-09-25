@@ -5,7 +5,6 @@ import com.dotcms.analytics.content.ReportResponse;
 import com.dotcms.analytics.query.AnalyticsQueryParser;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.liferay.portal.model.User;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.Assert;
@@ -125,7 +124,7 @@ public class AnalyticsToolTest {
      * ExpectedResult: Should a non null ReportResponse
      */
     @Test()
-    public void test_run_report_from_json_good_json() {
+    public void test_run_report_from_json_good_json_xxxx() {
 
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         final HttpSession session = Mockito.mock(HttpSession.class);

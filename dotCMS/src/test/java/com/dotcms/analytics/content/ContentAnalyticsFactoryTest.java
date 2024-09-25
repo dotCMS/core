@@ -127,10 +127,10 @@ public class ContentAnalyticsFactoryTest {
             int i = 0;
             for (final ResultSetItem resultSetItem : report.getResults()) {
                 final Map<String, String> objectMap = dataList.get(i);
-                assertEquals(objectMap.get("request.count"), resultSetItem.get("request.count").orElse(StringPool.BLANK));
-                assertEquals(objectMap.get("request.pageId"), resultSetItem.get("request.pageId").orElse(StringPool.BLANK));
-                assertEquals(objectMap.get("request.pageTitle"), resultSetItem.get("request.pageTitle").orElse(StringPool.BLANK));
-                assertEquals(objectMap.get("request.url"), resultSetItem.get("request.url").orElse(StringPool.BLANK));
+                assertEquals("Value of request.count is not the expected one", objectMap.get("request.count"), resultSetItem.get("request.count").orElse(StringPool.BLANK));
+                assertEquals("Value of request.pageId is not the expected one", objectMap.get("request.pageId"), resultSetItem.get("request.pageId").orElse(StringPool.BLANK));
+                assertEquals("Value of request.pageTitle is not the expected one", objectMap.get("request.pageTitle"), resultSetItem.get("request.pageTitle").orElse(StringPool.BLANK));
+                assertEquals("Value of request.url is not the expected one", objectMap.get("request.url"), resultSetItem.get("request.url").orElse(StringPool.BLANK));
                 i++;
             }
         } finally {

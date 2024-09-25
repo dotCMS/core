@@ -81,10 +81,10 @@ public class ContentAnalyticsAPITest {
         int i = 0;
         for (final ResultSetItem resultSetItem : report.getResults()) {
             final ResultSetItem expectedResultSetItem = dataList.get(i);
-            assertEquals("", expectedResultSetItem.get("request.count").get(), resultSetItem.get("request.count").get());
-            assertEquals("", expectedResultSetItem.get("request.pageId").get(), resultSetItem.get("request.pageId").get());
-            assertEquals("", expectedResultSetItem.get("request.pageTitle").get(), resultSetItem.get("request.pageTitle").get());
-            assertEquals("", expectedResultSetItem.get("request.url").get(), resultSetItem.get("request.url").get());
+            assertEquals("Value of request.count is not the expected one", expectedResultSetItem.get("request.count").get(), resultSetItem.get("request.count").get());
+            assertEquals("Value of request.pageId is not the expected one", expectedResultSetItem.get("request.pageId").get(), resultSetItem.get("request.pageId").get());
+            assertEquals("Value of request.pageTitle is not the expected one", expectedResultSetItem.get("request.pageTitle").get(), resultSetItem.get("request.pageTitle").get());
+            assertEquals("Value of request.url is not the expected one", expectedResultSetItem.get("request.url").get(), resultSetItem.get("request.url").get());
             i++;
         }
     }
