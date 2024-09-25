@@ -3,7 +3,8 @@
         <div class="tabs"></div>
         <button
             class="p-button p-button-sm p-button-text p-button-rounded p-button-icon-only content-aside__closeBtn"
-            (click)="$toggle.emit(!$collapsed())">
+            (click)="$toggle.emit(!$collapsed())"
+            data-testId="toggle-button">
             <svg
                 width="16"
                 height="16"
@@ -35,7 +36,6 @@
         </button>
     </div>
 
-    <!--    @if (collapsed){-->
     <section class="content-aside__section">
         <div class="content-aside__header">
             <h2>{{ 'Information' | dm }}</h2>
@@ -60,5 +60,4 @@
             [contentType]="$contentType()"
             data-testId="workflow" />
     </section>
-    <!--    }-->
 </aside>

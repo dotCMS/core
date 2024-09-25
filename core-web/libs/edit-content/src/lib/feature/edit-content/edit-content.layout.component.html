@@ -33,7 +33,8 @@
         <button
             [class.showSidebar]="vm.layout.showSidebar"
             class="edit-content-layout__sidebar-btn p-button p-button-sm p-button-text p-button-rounded p-button-icon-only content-aside__closeBtn"
-            (click)="toggleSidebar()">
+            (click)="toggleSidebar()"
+            data-testId="sidebar-toggle">
             <svg
                 width="16"
                 height="16"

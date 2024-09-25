@@ -27,15 +27,13 @@ import {
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotEditContentStore } from './store/edit-content.store';
+import { DotEditContentStore, SIDEBAR_LOCAL_STORAGE_KEY } from './store/edit-content.store';
 
 import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
 import { DotEditContentToolbarComponent } from '../../components/dot-edit-content-toolbar/dot-edit-content-toolbar.component';
 import { EditContentPayload } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
-
-const SIDEBAR_LOCAL_STORAGE_KEY = 'dot-edit-content-form-sidebar';
 
 @Component({
     selector: 'dot-edit-content-form-layout',
@@ -82,18 +80,20 @@ const SIDEBAR_LOCAL_STORAGE_KEY = 'dot-edit-content-form-sidebar';
 export class EditContentLayoutComponent implements OnInit {
     @HostBinding('@sidebarAnimation') showSidebar: boolean;
 
-    private readonly store = inject(DotEditContentStore);
+    readonly #store = inject(DotEditContentStore);
 
-    private readonly dotEditContentService = inject(DotEditContentService);
-    private readonly workflowActionService = inject(DotWorkflowsActionsService);
-    private readonly activatedRoute = inject(ActivatedRoute);
+    readonly #dotEditContentService = inject(DotEditContentService);
+    readonly #workflowActionService = inject(DotWorkflowsActionsService);
+    readonly #activatedRoute = inject(ActivatedRoute);
 
-    #$contentType = signal<string>(this.activatedRoute.snapshot.params['contentType']).asReadonly();
-    #$initialInode = signal<string>(this.activatedRoute.snapshot.params['id']).asReadonly();
+    #$contentType = signal<string>(
+        this.#activatedRoute.snapshot.params['contentType']
+    ).asReadonly();
+    #$initialInode = signal<string>(this.#activatedRoute.snapshot.params['id']).asReadonly();
 
-    private formValue: Record<string, string>;
+    #formValue: Record<string, string>;
 
-    vm$: Observable<EditContentPayload> = this.store.vm$;
+    vm$: Observable<EditContentPayload> = this.#store.vm$;
     $featuredFlagContentKEY = signal<string>(
         FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
     ).asReadonly();
@@ -104,7 +104,7 @@ export class EditContentLayoutComponent implements OnInit {
             : this.getExistingContent(this.#$initialInode());
 
         obs$.subscribe(({ contentType, actions, contentlet }) => {
-            this.store.setState({
+            this.#store.setState({
                 contentType,
                 actions,
                 contentlet,
@@ -115,14 +115,13 @@ export class EditContentLayoutComponent implements OnInit {
             });
         });
 
-        this.store.layout$.subscribe((layout) => {
+        this.#store.layout$.subscribe((layout) => {
             this.showSidebar = layout.showSidebar;
         });
     }
 
     toggleSidebar() {
-        this.store.updateSidebarState(!this.showSidebar);
-        localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, String(!this.showSidebar));
+        this.#store.updateSidebarState(!this.showSidebar);
     }
 
     /**
@@ -132,7 +131,7 @@ export class EditContentLayoutComponent implements OnInit {
      * @memberof EditContentLayoutComponent
      */
     setFormValue(formValue: Record<string, string>) {
-        this.formValue = formValue;
+        this.#formValue = formValue;
     }
 
     /**
@@ -142,12 +141,12 @@ export class EditContentLayoutComponent implements OnInit {
      * @memberof EditContentLayoutComponent
      */
     fireWorkflowAction({ actionId, inode, contentType }): void {
-        this.store.fireWorkflowActionEffect({
+        this.#store.fireWorkflowActionEffect({
             actionId,
             inode,
             data: {
                 contentlet: {
-                    ...this.formValue,
+                    ...this.#formValue,
                     contentType
                 }
             }
@@ -164,8 +163,8 @@ export class EditContentLayoutComponent implements OnInit {
      */
     private getNewContent(contentTypeVar: string) {
         return forkJoin({
-            contentType: this.dotEditContentService.getContentType(contentTypeVar),
-            actions: this.workflowActionService.getDefaultActions(contentTypeVar),
+            contentType: this.#dotEditContentService.getContentType(contentTypeVar),
+            actions: this.#workflowActionService.getDefaultActions(contentTypeVar),
             contentlet: of(null)
         });
     }
@@ -173,19 +172,19 @@ export class EditContentLayoutComponent implements OnInit {
     /**
      * Get the contentlet, content type and actions for the given inode
      *
-     * @privateocal
+     * @private
      * @param {*} inode
      * @return {*}
      * @memberof EditContentLayoutComponent
      */
     private getExistingContent(inode) {
-        return this.dotEditContentService.getContentById(inode).pipe(
+        return this.#dotEditContentService.getContentById(inode).pipe(
             switchMap((contentlet) => {
                 const { contentType } = contentlet;
 
                 return forkJoin({
-                    contentType: this.dotEditContentService.getContentType(contentType),
-                    actions: this.workflowActionService.getByInode(inode, DotRenderMode.EDITING),
+                    contentType: this.#dotEditContentService.getContentType(contentType),
+                    actions: this.#workflowActionService.getByInode(inode, DotRenderMode.EDITING),
                     contentlet: of(contentlet)
                 });
             })
@@ -200,6 +199,8 @@ export class EditContentLayoutComponent implements OnInit {
      * @memberof EditContentLayoutComponent
      */
     private getSidebarSateFromLocalStorage() {
-        return localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY) === 'true';
+        const localStorageData = localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY);
+
+        return localStorageData ? localStorageData === 'true' : true;
     }
 }

@@ -1,7 +1,4 @@
-import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-
-import { SidebarModule } from 'primeng/sidebar';
 
 import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -15,13 +12,7 @@ import { DotContentAsideWorkflowComponent } from './components/dot-content-aside
     templateUrl: './dot-edit-content-aside.component.html',
     styleUrls: ['./dot-edit-content-aside.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [
-        DotMessagePipe,
-        DotContentAsideInformationComponent,
-        DotContentAsideWorkflowComponent,
-        SidebarModule,
-        NgClass
-    ]
+    imports: [DotMessagePipe, DotContentAsideInformationComponent, DotContentAsideWorkflowComponent]
 })
 export class DotEditContentAsideComponent {
     /**

@@ -18,6 +18,8 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentlet, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
+export const SIDEBAR_LOCAL_STORAGE_KEY = 'dot-edit-content-form-sidebar';
+
 interface EditContentState {
     actions: DotCMSWorkflowAction[];
     contentType: DotCMSContentType;
@@ -67,13 +69,22 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
         ...newState
     }));
 
-    readonly updateSidebarState = this.updater((state, showSidebar: boolean) => ({
-        ...state,
-        layout: {
-            ...state.layout,
-            showSidebar
-        }
-    }));
+    /**
+     * Update the sidebar state and save it in local storage.
+     *
+     * @memberof DotEditContentStore
+     */
+    readonly updateSidebarState = this.updater((state, showSidebar: boolean) => {
+        localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, String(showSidebar));
+
+        return {
+            ...state,
+            layout: {
+                ...state.layout,
+                showSidebar
+            }
+        };
+    });
 
     /**
      * Update the loading state
