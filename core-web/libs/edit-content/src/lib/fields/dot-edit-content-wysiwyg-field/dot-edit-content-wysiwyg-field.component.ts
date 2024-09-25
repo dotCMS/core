@@ -33,7 +33,7 @@ import {
     MdSyntax,
     MonacoLanguageOptions
 } from './dot-edit-content-wysiwyg-field.constant';
-import { CountOccurrences } from './dot-edit-content-wysiwyg-field.utils';
+import { CountOccurrences, shouldUseDefaultEditor } from './dot-edit-content-wysiwyg-field.utils';
 
 /**
  * Component representing a WYSIWYG (What You See Is What You Get) editor field for editing content in DotCMS.
@@ -96,7 +96,8 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
      */
     $contentEditorUsed = computed(() => {
         const content = this.$fieldContent();
-        if (content.trim() === COMMENT_TINYMCE || content.length === 0) {
+
+        if (shouldUseDefaultEditor(content)) {
             return DEFAULT_EDITOR;
         }
 

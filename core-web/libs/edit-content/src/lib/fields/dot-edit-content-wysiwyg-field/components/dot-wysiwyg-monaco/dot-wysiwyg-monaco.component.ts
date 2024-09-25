@@ -22,6 +22,11 @@ import {
     DEFAULT_WYSIWYG_FIELD_MONACO_CONFIG
 } from '../../dot-edit-content-wysiwyg-field.constant';
 
+/**
+ * DotWysiwygMonacoComponent is an Angular component utilizing Monaco Editor.
+ * It provides a WYSIWYG (What You See Is What You Get) editing experience,
+ * with configurations customizable by DotCMS content type fields.
+ */
 @Component({
     selector: 'dot-wysiwyg-monaco',
     standalone: true,
@@ -87,8 +92,21 @@ export class DotWysiwygMonacoComponent implements OnDestroy {
         };
     });
 
+    /**
+     * A disposable reference that manages the lifecycle of content change listeners.
+     * It starts as null and can be assigned a disposable object that will be used
+     * to clean up event listeners or other resources related to content changes.
+     *
+     * @type {monaco.IDisposable | null}
+     */
     #contentChangeDisposable: monaco.IDisposable | null = null;
 
+    /**
+     * Initializes the editor by setting up the editor reference,
+     * processing the editor content, and setting up a listener for content changes.
+     *
+     * @return {void} No return value.
+     */
     onEditorInit() {
         this.#editor = this.$editorRef().editor;
         this.processEditorContent();
