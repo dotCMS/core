@@ -20,6 +20,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
@@ -43,6 +44,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
     private final static Map<String, RequestMatcher> requestMatchersMap = new ConcurrentHashMap<>();
     private final HostWebAPI hostWebAPI;
     private final AppsAPI appsAPI;
+    private final User systemUser;
 
     private final WhiteBlackList whiteBlackList;
     private final AtomicBoolean isTurnedOn;
@@ -56,6 +58,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
                         .addBlackPatterns(CollectionsUtils.concat(Config.getStringArrayProperty(  // except this
                                 "ANALYTICS_BLACKLISTED_KEYS", new String[]{}), DEFAULT_BLACKLISTED_PROPS)).build(),
                 new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_TURNED_ON_KEY, true)),
+                APILocator.systemUser(),
                 new PagesAndUrlMapsRequestMatcher(),
                 new FilesRequestMatcher(),
                 //       new RulesRedirectsRequestMatcher(),
@@ -67,12 +70,14 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
                         final AppsAPI appsAPI,
                         final WhiteBlackList whiteBlackList,
                         final AtomicBoolean isTurnedOn,
+                        final User systemUser,
                         final RequestMatcher... requestMatchers) {
 
         this.hostWebAPI = hostWebAPI;
         this.appsAPI    = appsAPI;
         this.whiteBlackList = whiteBlackList;
         this.isTurnedOn = isTurnedOn;
+        this.systemUser = systemUser;
         addRequestMatcher(requestMatchers);
     }
 
@@ -148,7 +153,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
         return   Try.of(
                         () ->
                                 this.appsAPI.getSecrets(
-                                        AnalyticsApp.ANALYTICS_APP_KEY, true, host, APILocator.systemUser()).isPresent())
+                                        AnalyticsApp.ANALYTICS_APP_KEY, true, host, systemUser).isPresent())
                 .getOrElseGet(e -> false);
     }
 
