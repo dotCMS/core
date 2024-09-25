@@ -1,6 +1,5 @@
 package com.dotcms.jobs.business.processor;
 
-import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.JobProcessingException;
 import com.dotcms.jobs.business.job.Job;
 import java.util.Map;
@@ -18,22 +17,6 @@ public interface JobProcessor {
      * @throws JobProcessingException if an error occurs during processing.
      */
     void process(Job job) throws JobProcessingException;
-
-    /**
-     * Determines if the given job can be cancelled.
-     *
-     * @param job The job to check for cancellation capability.
-     * @return true if the job can be cancelled, false otherwise.
-     */
-    boolean canCancel(Job job);
-
-    /**
-     * Cancels the given job.
-     *
-     * @param job The job to cancel.
-     * @throws JobCancellationException if an error occurs during cancellation.
-     */
-    void cancel(Job job) throws JobCancellationException;
 
     /**
      * Returns metadata about the job execution. This metadata can be used to provide additional

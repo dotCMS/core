@@ -17,6 +17,7 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobState;
+import com.dotcms.jobs.business.processor.Cancellable;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.queue.JobQueue;
@@ -300,13 +301,13 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         }
 
         final var processor = processors.get(job.queueName());
-        if (processor != null && processor.canCancel(job)) {
+        if (processor instanceof Cancellable) {
 
             try {
 
                 Logger.info(this, "Cancelling job " + jobId);
 
-                processor.cancel(job);
+                ((Cancellable) processor).cancel(job);
                 handleJobCancellation(job, processor);
             } catch (Exception e) {
                 final var error = new DotDataException("Error cancelling job " + jobId, e);

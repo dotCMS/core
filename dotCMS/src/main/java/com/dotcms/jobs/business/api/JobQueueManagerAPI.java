@@ -16,7 +16,7 @@ import java.util.function.Consumer;
  * Defines the contract for interacting with the job queue system. This interface provides methods
  * for managing jobs, processors, and the overall state of the job queue.
  */
-public interface JobQueueManagerAPI extends AutoCloseable {
+public interface JobQueueManagerAPI {
 
     /**
      * Starts the job queue manager, initializing the thread pool for job processing.

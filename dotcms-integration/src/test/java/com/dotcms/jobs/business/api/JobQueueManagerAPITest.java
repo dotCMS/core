@@ -24,12 +24,14 @@ import static org.mockito.Mockito.when;
 import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
+import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.JobProcessingException;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobState;
+import com.dotcms.jobs.business.processor.Cancellable;
 import com.dotcms.jobs.business.processor.DefaultProgressTracker;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
@@ -1036,20 +1038,43 @@ public class JobQueueManagerAPITest {
      * ExpectedResult: Job is successfully cancelled and its status is updated
      */
     @Test
-    public void test_simple_cancelJob()
-            throws DotDataException, JobQueueDataException, JobNotFoundException {
+    public void test_simple_cancelJob2()
+            throws DotDataException, JobQueueDataException, JobNotFoundException, JobCancellationException {
 
+        class TestJobProcessor implements JobProcessor, Cancellable {
+
+            @Override
+            public void process(Job job) throws JobProcessingException {
+            }
+
+            @Override
+            public void cancel(Job job) {
+            }
+
+            @Override
+            public Map<String, Object> getResultMetadata(Job job) {
+                return null;
+            }
+        }
+
+        // Create a mock job
         Job mockJob = mock(Job.class);
         when(mockJobQueue.getJob("job123")).thenReturn(mockJob);
         when(mockJob.queueName()).thenReturn("testQueue");
         when(mockJob.id()).thenReturn("job123");
         when(mockJob.withState(any())).thenReturn(mockJob);
 
-        when(mockJobProcessor.canCancel(mockJob)).thenReturn(true);
+        // Create a mock CancellableJobProcessor
+        TestJobProcessor mockCancellableProcessor = mock(TestJobProcessor.class);
 
+        // Set up the job queue manager to return our mock cancellable processor
+        jobQueueManagerAPI.registerProcessor("testQueue", mockCancellableProcessor);
+
+        // Perform the cancellation
         jobQueueManagerAPI.cancelJob("job123");
 
-        verify(mockJobProcessor).cancel(mockJob);
+        // Verify that the cancel method was called on our mock processor
+        verify(mockCancellableProcessor).cancel(mockJob);
     }
 
     /**
@@ -1060,7 +1085,7 @@ public class JobQueueManagerAPITest {
     @Test
     public void test_complex_cancelJob() throws Exception {
 
-        class TestJobProcessor implements JobProcessor {
+        class TestJobProcessor implements JobProcessor, Cancellable {
 
             private final AtomicBoolean cancellationRequested = new AtomicBoolean(false);
             private final CountDownLatch processingStarted = new CountDownLatch(1);
@@ -1082,11 +1107,6 @@ public class JobQueueManagerAPITest {
                     processingCompleted.countDown();
                     throw new JobProcessingException(job.id(), "Job was cancelled", e);
                 }
-            }
-
-            @Override
-            public boolean canCancel(Job job) {
-                return true;
             }
 
             @Override
