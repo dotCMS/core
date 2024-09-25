@@ -1,6 +1,7 @@
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext } from 'react';
 
 import { PageContext } from '../../contexts/PageContext';
+import { useCheckHaveContent } from '../../hooks/useCheckHaveContent';
 import { DotCMSPageContext } from '../../models';
 import { getContainersData } from '../../utils/utils';
 
@@ -46,6 +47,8 @@ export function Container({ containerRef }: ContainerProps) {
 
     const { identifier, uuid } = containerRef;
 
+    const { haveContent, contentletDivRef } = useCheckHaveContent();
+
     // Get the containers from the global context
     const {
         pageAsset: { containers },
@@ -68,37 +71,14 @@ export function Container({ containerRef }: ContainerProps) {
     const containerStyles = contentlets.length
         ? undefined
         : {
-            width: '100%',
-            backgroundColor: '#ECF0FD',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            color: '#030E32',
-            height: '10rem'
-        };
-
-    const contentletDivRef = useRef<HTMLDivElement | null>(null);
-    const [haveContent, setHaveContent] = useState<boolean>(true);
-
-    useEffect(() => {
-        if (!contentletDivRef.current) {
-            return;
-        }
-
-        const childElement = contentletDivRef.current.firstElementChild;
-
-        if (!childElement) {
-            return;
-        }
-
-        const height = childElement.getBoundingClientRect().height;
-
-        if (height > 0) {
-            return;
-        }
-
-        setHaveContent(false);
-    }, []);
+              width: '100%',
+              backgroundColor: '#ECF0FD',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color: '#030E32',
+              height: '10rem'
+          };
 
     const ContainerChildren = contentlets.map((contentlet) => {
         const ContentTypeComponent = components[contentlet.contentType];
