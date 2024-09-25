@@ -4,7 +4,6 @@ import styles from './row.module.css';
 
 import { PageContext } from '../../contexts/PageContext';
 import { DotCMSPageContext } from '../../models';
-import { combineClasses } from '../../utils/utils';
 import { Column } from '../Column/Column';
 
 /**
@@ -37,8 +36,6 @@ export const Row = forwardRef<HTMLDivElement, RowProps>((props: RowProps, ref) =
     ) as DotCMSPageContext;
 
     const { row } = props;
-
-    console.log(row.styleClass);
 
     const rowProps = isInsideEditor ? { 'data-dot': 'row', 'data-testid': 'row', ref } : {};
 
