@@ -89,4 +89,21 @@ export class DotUploadFileService {
             })
         );
     }
+
+    uploadDotAsset(file: File): Observable<DotCMSContentlet> {
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('json', JSON.stringify({
+            contentlet: {
+                file: file.name,
+                contentType : 'dotAsset'
+            }
+        }));
+
+        return this.http.put<DotCMSContentlet>(`/api/v1/workflow/actions/default/fire/NEW`, formData)
+        .pipe(
+            pluck('entity')
+        );
+    }
 }

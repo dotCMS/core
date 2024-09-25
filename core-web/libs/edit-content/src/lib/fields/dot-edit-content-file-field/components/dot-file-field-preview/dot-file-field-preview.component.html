@@ -10,7 +10,7 @@
                 data-testId="temp-file-thumbnail" />
         } @else {
             <dot-contentlet-thumbnail
-                [fieldVariable]="$fieldVariable()"
+                fieldVariable="asset"
                 [iconSize]="'48px'"
                 [contentlet]="previewFile.file"
                 [playableVideo]="true"
@@ -47,6 +47,18 @@
             [label]="'dot.common.remove' | dm"
             styleClass="p-button-link p-button-sm"
             data-testId="remove-button"
+            icon="pi pi-trash" />
+    </div>
+    <div class="preview-metadata__action--responsive">
+        <p-button
+            (click)="toggleShowDialog()"
+            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
+            data-testId="infor-button-responsive"
+            icon="pi pi-info" />
+        <p-button
+            (click)="removeFile.emit()"
+            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
+            data-testId="remove-button-responsive"
             icon="pi pi-trash" />
     </div>
 </div>

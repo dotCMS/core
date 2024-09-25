@@ -18,13 +18,15 @@ import {
     DotMessagePipe,
     DotAIImagePromptComponent,
     DotSpinnerModule,
-    DropZoneFileEvent
+    DropZoneFileEvent,
+    DropZoneFileValidity
 } from '@dotcms/ui';
 
 import { DotFileFieldPreviewComponent } from './components/dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from './components/dot-file-field-ui-message/dot-file-field-ui-message.component';
 import { INPUT_TYPES } from './models';
 import { FileFieldStore } from './store/file-field.store';
+import { getUiMessage } from './utils/messages';
 
 @Component({
     selector: 'dot-edit-content-file-field',
@@ -56,28 +58,24 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
 
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
-    $fieldVariable = input.required<string>({ alias: 'fieldVariable' });
 
-    private onChange: (value: string) => void;
+    private onChange: (value: string | File) => void;
     private onTouched: () => void;
 
     constructor() {
         effect(() => {
             const value = this.store.value();
-            console.log('current value', value);
             this.onChange(value);
             this.onTouched();
         });
     }
 
     ngOnInit() {
+        console.log('content', this.$contentlet());
+        
         this.store.initLoad({
+            fieldVariable: this.$field().variable,
             inputType: this.$field().fieldType as INPUT_TYPES,
-            uiMessage: {
-                message: this.#messageService.get('dot.file.field.drag.and.drop.message'),
-                severity: 'info',
-                icon: 'pi pi-upload'
-            }
         });
     }
 
@@ -105,14 +103,17 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
         }
 
         if (!validity.valid) {
-            //this.handleFileDropError(validity);
+            this.handleFileDropError(validity);
 
             return;
         }
 
-        const fileList = new FileList();
-        fileList[0] = file;
+        this.store.handleUploadFile(file);
+    }
 
-        this.store.handleUploadFile(fileList);
+    private handleFileDropError({ errorsType }: DropZoneFileValidity): void {
+        const errorType = errorsType[0];
+        const uiMessage = getUiMessage(errorType);
+        this.store.setUIMessage(uiMessage);
     }
 }

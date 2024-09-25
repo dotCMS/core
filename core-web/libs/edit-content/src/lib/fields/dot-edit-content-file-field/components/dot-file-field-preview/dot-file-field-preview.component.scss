@@ -61,6 +61,15 @@
     }
 }
 
+.preview-metadata__action--responsive {
+    position: absolute;
+    bottom: $spacing-1;
+    right: $spacing-1;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
+}
+
 .preview-metadata__actions {
     position: absolute;
     bottom: $spacing-1;
@@ -117,7 +126,8 @@
 }
 
 @container preview (min-width: 376px) {
-    .preview-metadata__container {
+    .preview-metadata__container,
+    .preview-metadata__actions {
         display: flex;
     }
 

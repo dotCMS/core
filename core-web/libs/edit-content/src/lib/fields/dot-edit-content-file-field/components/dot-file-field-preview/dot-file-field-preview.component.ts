@@ -34,7 +34,6 @@ import { getFileMetadata } from '../../utils';
 })
 export class DotFileFieldPreviewComponent {
     $previewFile = input.required<PreviewFile>({ alias: 'previewFile' });
-    $fieldVariable = input.required<string>({ alias: 'fieldVariable' });
     removeFile = output();
     $showDialog = signal(false);
 
@@ -44,7 +43,7 @@ export class DotFileFieldPreviewComponent {
             return previewFile.file.metadata;
         }
 
-        return getFileMetadata(previewFile.file, this.$fieldVariable());
+        return getFileMetadata(previewFile.file);
     });
 
     toggleShowDialog() {
