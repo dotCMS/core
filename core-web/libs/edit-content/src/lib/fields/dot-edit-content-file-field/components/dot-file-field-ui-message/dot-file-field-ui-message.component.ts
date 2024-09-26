@@ -14,5 +14,10 @@ import { UIMessage } from '../../models';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFileFieldUiMessageComponent {
+    /**
+     * The UI message.
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
     $uiMessage = input.required<UIMessage>({ alias: 'uiMessage' });
 }

@@ -48,11 +48,29 @@ import { getFileMetadata } from '../../utils';
 })
 export class DotFileFieldPreviewComponent implements OnInit {
     readonly #dotResourceLinksService = inject(DotResourceLinksService);
-
+    /**
+     * Preview file
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
     $previewFile = input.required<PreviewFile>({ alias: 'previewFile' });
+    /**
+     * Remove file
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
     removeFile = output();
+    /**
+     * Show dialog
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
     $showDialog = signal(false);
-
+    /**
+     * File metadata
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
     $metadata = computed(() => {
         const previewFile = this.$previewFile();
         if (previewFile.source === 'temp') {
@@ -61,7 +79,11 @@ export class DotFileFieldPreviewComponent implements OnInit {
 
         return getFileMetadata(previewFile.file);
     });
-
+    /**
+     * Content
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
     $content = computed(() => {
         const previewFile = this.$previewFile();
         if (previewFile.source === 'contentlet') {
@@ -70,7 +92,11 @@ export class DotFileFieldPreviewComponent implements OnInit {
 
         return null;
     });
-
+    /**
+     * Download link
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
     $downloadLink = computed(() => {
         const previewFile = this.$previewFile();
         if (previewFile.source === 'contentlet') {
@@ -82,8 +108,20 @@ export class DotFileFieldPreviewComponent implements OnInit {
         return null;
     });
 
+    /**
+     * Resource links
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
     $resourceLinks = signal<DotPreviewResourceLink[]>([]);
 
+    /**
+     * OnInit lifecycle hook.
+     *
+     * If the source is 'contentlet', calls {@link fetchResourceLinks} to fetch the resource links for the file.
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
     ngOnInit() {
         const previewFile = this.$previewFile();
 
@@ -92,14 +130,33 @@ export class DotFileFieldPreviewComponent implements OnInit {
         }
     }
 
+    /**
+     * Toggle the visibility of the dialog.
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
     toggleShowDialog() {
         this.$showDialog.set(!this.$showDialog());
     }
 
+    /**
+     * Downloads the file at the given link.
+     *
+     * @param {string} link The link to the file to download.
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
     downloadAsset(link: string): void {
         window.open(link, '_self');
     }
 
+    /**
+     * Fetches the resource links for the given contentlet.
+     *
+     * @private
+     * @param {DotCMSContentlet} contentlet The contentlet to fetch the resource links for.
+     * @memberof DotFileFieldPreviewComponent
+     */
     private fetchResourceLinks(contentlet: DotCMSContentlet): void {
         this.#dotResourceLinksService
             .getFileResourceLinks({

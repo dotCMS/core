@@ -73,125 +73,147 @@ export const FileFieldStore = signalStore(
             return currentStatus === 'uploading';
         })
     })),
-    withMethods((store, uploadService = inject(DotFileFieldUploadService)) => ({
-        initLoad: (initState: {
-            inputType: FileFieldState['inputType'];
-            fieldVariable: FileFieldState['fieldVariable'];
-        }) => {
-            const { inputType, fieldVariable } = initState;
+    withMethods((store) => {
+        const uploadService = inject(DotFileFieldUploadService);
 
-            const actions = INPUT_CONFIG[inputType] || {};
+        return {
+            /**
+             * initLoad is used to init load
+             * @param initState
+             */
+            initLoad: (initState: {
+                inputType: FileFieldState['inputType'];
+                fieldVariable: FileFieldState['fieldVariable'];
+            }) => {
+                const { inputType, fieldVariable } = initState;
 
-            patchState(store, {
-                inputType,
-                fieldVariable,
-                ...actions
-            });
-        },
-        setUIMessage: (uiMessage: UIMessage) => {
-            const acceptedFiles = store.acceptedFiles();
-            const maxFileSize = store.maxFileSize();
+                const actions = INPUT_CONFIG[inputType] || {};
 
-            patchState(store, {
-                uiMessage: {
-                    ...uiMessage,
-                    args: [`${maxFileSize}`, acceptedFiles.join(', ')]
-                }
-            });
-        },
-        removeFile: () => {
-            patchState(store, {
-                contentlet: null,
-                tempFile: null,
-                value: '',
-                fileStatus: 'init',
-                uiMessage: getUiMessage('DEFAULT')
-            });
-        },
-        setDropZoneState: (state: boolean) => {
-            patchState(store, {
-                dropZoneActive: state
-            });
-        },
-        setUploading: () => {
-            patchState(store, {
-                dropZoneActive: false,
-                fileStatus: 'uploading'
-            });
-        },
-        handleUploadFile: rxMethod<File>(
-            pipe(
-                tap(() => {
-                    patchState(store, {
-                        dropZoneActive: false,
-                        fileStatus: 'uploading'
-                    });
-                }),
-                filter((file) => {
-                    const maxFileSize = store.maxFileSize();
+                patchState(store, {
+                    inputType,
+                    fieldVariable,
+                    ...actions
+                });
+            },
+            /**
+             * setUIMessage is used to set uiMessage
+             * @param uiMessage
+             */
+            setUIMessage: (uiMessage: UIMessage) => {
+                const acceptedFiles = store.acceptedFiles();
+                const maxFileSize = store.maxFileSize();
 
-                    if (maxFileSize && file.size > maxFileSize) {
-                        patchState(store, {
-                            fileStatus: 'init',
-                            dropZoneActive: true,
-                            uiMessage: {
-                                ...getUiMessage('MAX_FILE_SIZE_EXCEEDED'),
-                                args: [`${maxFileSize}`]
-                            }
-                        });
-
-                        return false;
+                patchState(store, {
+                    uiMessage: {
+                        ...uiMessage,
+                        args: [`${maxFileSize}`, acceptedFiles.join(', ')]
                     }
+                });
+            },
+            /**
+             * removeFile is used to remove file
+             * @param
+             */
+            removeFile: () => {
+                patchState(store, {
+                    contentlet: null,
+                    tempFile: null,
+                    value: '',
+                    fileStatus: 'init',
+                    uiMessage: getUiMessage('DEFAULT')
+                });
+            },
+            /**
+             * setDropZoneState is used to set dropZoneActive
+             * @param state
+             */
+            setDropZoneState: (state: boolean) => {
+                patchState(store, {
+                    dropZoneActive: state
+                });
+            },
+            /**
+             * handleUploadFile is used to upload file
+             * @param File
+             */
+            handleUploadFile: rxMethod<File>(
+                pipe(
+                    tap(() => {
+                        patchState(store, {
+                            dropZoneActive: false,
+                            fileStatus: 'uploading'
+                        });
+                    }),
+                    filter((file) => {
+                        const maxFileSize = store.maxFileSize();
 
-                    return true;
-                }),
-                switchMap((file) => {
-                    return uploadService.uploadDotAsset(file).pipe(
-                        tapResponse({
-                            next: (file) => {
-                                patchState(store, {
-                                    tempFile: null,
-                                    contentlet: file,
-                                    fileStatus: 'preview',
-                                    value: file.identifier,
-                                    previewFile: { source: 'contentlet', file }
-                                });
-                            },
-                            error: () => {
-                                patchState(store, {
-                                    fileStatus: 'init',
-                                    uiMessage: getUiMessage('SERVER_ERROR')
-                                });
-                            }
-                        })
-                    );
-                })
+                        if (maxFileSize && file.size > maxFileSize) {
+                            patchState(store, {
+                                fileStatus: 'init',
+                                dropZoneActive: true,
+                                uiMessage: {
+                                    ...getUiMessage('MAX_FILE_SIZE_EXCEEDED'),
+                                    args: [`${maxFileSize}`]
+                                }
+                            });
+
+                            return false;
+                        }
+
+                        return true;
+                    }),
+                    switchMap((file) => {
+                        return uploadService.uploadDotAsset(file).pipe(
+                            tapResponse({
+                                next: (file) => {
+                                    patchState(store, {
+                                        tempFile: null,
+                                        contentlet: file,
+                                        fileStatus: 'preview',
+                                        value: file.identifier,
+                                        previewFile: { source: 'contentlet', file }
+                                    });
+                                },
+                                error: () => {
+                                    patchState(store, {
+                                        fileStatus: 'init',
+                                        uiMessage: getUiMessage('SERVER_ERROR')
+                                    });
+                                }
+                            })
+                        );
+                    })
+                )
+            ),
+            /**
+             * getAssetData is used to get asset data
+             * @param File
+             */
+            getAssetData: rxMethod<string>(
+                pipe(
+                    switchMap((identifier) => {
+                        return uploadService.getContentById(identifier).pipe(
+                            tapResponse({
+                                next: (file) => {
+                                    patchState(store, {
+                                        tempFile: null,
+                                        contentlet: file,
+                                        fileStatus: 'preview',
+                                        value: file.identifier,
+                                        previewFile: { source: 'contentlet', file }
+                                    });
+                                },
+                                error: () => {
+                                    patchState(store, {
+                                        fileStatus: 'init',
+                                        uiMessage: getUiMessage('SERVER_ERROR')
+                                    });
+                                }
+                            })
+                        );
+                    })
+                )
             )
-        ),
-        getAssetData: rxMethod<string>(
-            pipe(
-                switchMap((identifier) => {
-                    return uploadService.getContentById(identifier).pipe(
-                        tapResponse({
-                            next: (file) => {
-                                patchState(store, {
-                                    tempFile: null,
-                                    contentlet: file,
-                                    fileStatus: 'preview',
-                                    value: file.identifier,
-                                    previewFile: { source: 'contentlet', file }
-                                });
-                            },
-                            error: () => {
-                                patchState(store, {
-                                    fileStatus: 'init',
-                                    uiMessage: getUiMessage('SERVER_ERROR')
-                                });
-                            }
-                        })
-                    );
-                })
-            )
-        )
-    }))
+        };
+    })
 );

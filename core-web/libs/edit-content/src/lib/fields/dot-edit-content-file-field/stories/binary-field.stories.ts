@@ -5,16 +5,19 @@ import {
     applicationConfig,
     argsToTemplate
 } from '@storybook/angular';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { BINARY_FIELD_MOCK } from '../../../utils/mocks';
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { BINARY_FIELD_MOCK, NEW_FILE_MOCK } from '../../../utils/mocks';
 import { DotEditContentFileFieldComponent } from '../dot-edit-content-file-field.component';
+import { DotFileFieldUploadService } from '../services/upload-file/upload-file.service';
 import { FileFieldStore } from '../store/file-field.store';
 import { MessageServiceMock } from '../utils/mocks';
 
@@ -38,16 +41,40 @@ const meta: Meta<Args> = {
         }),
         moduleMetadata({
             imports: [BrowserAnimationsModule, FormsModule],
-            providers: [FileFieldStore]
+            providers: [
+                {
+                    provide: DotUploadFileService,
+                    useValue: {}
+                },
+                {
+                    provide: DotEditContentService,
+                    useValue: {}
+                },
+                {
+                    provide: DotFileFieldUploadService,
+                    useValue: {
+                        uploadDotAsset: () => of(NEW_FILE_MOCK.entity),
+                        getContentById: () => of(NEW_FILE_MOCK.entity)
+                    }
+                },
+                FileFieldStore
+            ]
         })
     ],
-    render: (args) => ({
-        props: args,
-        template: `
-            <dot-edit-content-file-field ${argsToTemplate(args)} [(ngModel)]="value" />
-            <p>Current value: {{ value }}</p>
-        `
-    })
+    render: (args) => {
+        const { value, ...newArgs } = args;
+
+        return {
+            props: {
+                ...newArgs,
+                value
+            },
+            template: `
+                <dot-edit-content-file-field ${argsToTemplate(newArgs)} [(ngModel)]="value" />
+                <p>Current value: {{ value }}</p>
+            `
+        };
+    }
 };
 export default meta;
 

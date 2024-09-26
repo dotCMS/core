@@ -54,8 +54,17 @@ import { getUiMessage } from './utils/messages';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentFileFieldComponent implements ControlValueAccessor, OnInit {
+    /**
+     * FileFieldStore
+     *
+     * @memberof DotEditContentFileFieldComponent
+     */
     readonly store = inject(FileFieldStore);
-
+    /**
+     * DotCMS Content Type Field
+     *
+     * @memberof DotEditContentFileFieldComponent
+     */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
     private onChange: (value: string | File) => void;
@@ -69,6 +78,13 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
         });
     }
 
+    /**
+     * OnInit lifecycle hook.
+     *
+     * Initialize the store with the content type field data.
+     *
+     * @memberof DotEditContentFileFieldComponent
+     */
     ngOnInit() {
         const field = this.$field();
 
@@ -78,6 +94,13 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
         });
     }
 
+    /**
+     * Set the value of the field.
+     * If the value is empty, nothing happens.
+     * If the value is not empty, the store is called to get the asset data.
+     *
+     * @param value the value to set
+     */
     writeValue(value: string): void {
         if (!value) {
             return;
@@ -85,20 +108,35 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
 
         this.store.getAssetData(value);
     }
+    /**
+     * Registers a callback function that is called when the control's value changes in the UI.
+     * This function is passed to the {@link NG_VALUE_ACCESSOR} token.
+     *
+     * @param fn The callback function to register.
+     */
     registerOnChange(fn: (value: string) => void) {
         this.onChange = fn;
     }
 
+    /**
+     * Registers a callback function that is called when the control is marked as touched in the UI.
+     * This function is passed to the {@link NG_VALUE_ACCESSOR} token.
+     *
+     * @param fn The callback function to register.
+     */
     registerOnTouched(fn: () => void) {
         this.onTouched = fn;
     }
 
     /**
-     * Handle file drop
+     * Handle file drop event.
+     *
+     * If the file is invalid, show an error message.
+     * If the file is valid, call the store to handle the upload file.
      *
      * @param {DropZoneFileEvent} { validity, file }
-     * @return {*}
-     * @memberof DotEditContentBinaryFieldComponent
+     *
+     * @return {void}
      */
     handleFileDrop({ validity, file }: DropZoneFileEvent): void {
         if (!file) {
@@ -114,6 +152,16 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
         this.store.handleUploadFile(file);
     }
 
+    /**
+     * Handles the file input change event.
+     *
+     * If the file is empty, nothing happens.
+     * If the file is not empty, the store is called to handle the upload file.
+     *
+     * @param files The file list from the input change event.
+     *
+     * @return {void}
+     */
     fileSelected(files: FileList) {
         const file = files[0];
 
@@ -124,6 +172,16 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
         this.store.handleUploadFile(file);
     }
 
+    /**
+     * Handles the file drop error event.
+     *
+     * Gets the first error type from the validity and gets the corresponding UI message.
+     * Sets the UI message in the store.
+     *
+     * @param {DropZoneFileValidity} validity The validity object with the error type.
+     *
+     * @return {void}
+     */
     private handleFileDropError({ errorsType }: DropZoneFileValidity): void {
         const errorType = errorsType[0];
         const uiMessage = getUiMessage(errorType);
