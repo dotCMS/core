@@ -5,8 +5,10 @@ import static org.junit.Assert.assertEquals;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
 import java.io.File;
+import java.util.Collection;
 import java.util.Set;
 
+import com.dotmarketing.util.ResourceCollectorUtil;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -225,4 +227,16 @@ public class OSGIUtilTest {
                 felixDirectory + File.separator + "undeployed");
     }
 
+    /**
+     * Method to test: include this in case the method to test does not belong to the class this test-class is testing
+     * Given Scenario: Scenario under test
+     * ExpectedResult: Expected result that the assertion is checking against
+     *
+     */
+    @Test(expected = OsgiException.class)
+    public void test_test_dry_run_wrong_version_format() {
+
+        final String packageString ="com.liferay.portal.model;version=0.1.0#(*%&#(*%&#(*$&#$,com.liferay.portal.util,io.vavr;version=\"0.10\",javax.servlet.http;version=\"3.1,4\"";
+        OSGIUtil.getInstance().testDryRun(packageString);
+    }
 }

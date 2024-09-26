@@ -1,12 +1,12 @@
 # Prepare Runner Action
 
-This GitHub Action prepares the runner environment with basic setup steps. It provides a flexible way to configure the runner for various workflow requirements, including cleanup, Java setup, and ensuring the master branch is available.
+This GitHub Action prepares the runner environment with basic setup steps. It provides a flexible way to configure the runner for various workflow requirements, including cleanup, Java setup, and ensuring the main branch is available.
 
 ## Features
 
 - Optional runner cleanup for extra disk space
 - Optional Java and GraalVM setup
-- Ensures master branch is available locally if required
+- Ensures main branch is available locally if required
 - Flexible configuration through inputs
 
 ## Inputs
@@ -16,7 +16,7 @@ This GitHub Action prepares the runner environment with basic setup steps. It pr
 | `cleanup-runner` | Perform runner cleanup for extra disk space | Yes | `false` |
 | `require-graalvm` | Install GraalVM | Yes | `false` |
 | `require-java` | Install Java | No | `true` |
-| `require-master` | Ensure master branch is available locally | Yes | `false` |
+| `require-main` | Ensure main branch is available locally | Yes | `false` |
 | `java-version` | Specify the Java version to install | No | - |
 | `graalvm-version` | Specify the GraalVM version to install | No | - |
 
@@ -33,7 +33,7 @@ To use this action in your workflow, add the following step:
     java-version: '17.0.2-tem'
     require-graalvm: 'true'
     graalvm-version: '21.0.2-graalce'
-    require-master: 'true'
+    require-main: 'true'
 ```
 
 
@@ -64,7 +64,7 @@ jobs:
           require-java: 'true'
           java-version: '17.0.2-tem'
           require-graalvm: 'true'
-          require-master: 'true'
+          require-main: 'true'
 
       - name: Build with Maven
         run: mvn clean install
@@ -75,6 +75,6 @@ jobs:
 ## Notes
 
 - The `cleanup-runner` step is useful when you need extra disk space for your workflow.
-- If `require-master` is set to 'true', the action will ensure the master branch is available locally without switching the current branch.
+- If `require-main` is set to 'true', the action will ensure the main branch is available locally without switching the current branch.
 - Java setup is performed by default unless `require-java` is set to 'false'.
 - GraalVM is only installed if `require-graalvm` is set to 'true'.

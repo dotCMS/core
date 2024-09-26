@@ -1,7 +1,7 @@
 # Sonarqube Phase Workflow
 #
 # This reusable workflow is responsible for running SonarQube analysis on the codebase
-# and checking the quality gate status. It's designed to be run on the master branch
+# and checking the quality gate status. It's designed to be run on the main branch
 # or for pull requests in the main repository.
 #
 # Key features:
@@ -30,9 +30,9 @@ jobs:
   sonarqube:
     name: SonarQube Scan
     runs-on: ubuntu-latest
-    # Only run on master branch or pull requests in the main repository
+    # Only run on main branch or pull requests in the main repository
     if: |
-      (github.ref == 'refs/heads/master' || github.event_name == 'pull_request') && github.repository == 'dotCMS/core'
+      (github.ref == 'refs/heads/main' || github.event_name == 'pull_request') && github.repository == 'dotCMS/core'
     steps:
       # Checkout the repository with full history for accurate analysis
       - uses: actions/checkout@v4
@@ -46,7 +46,7 @@ jobs:
           stage-name: "SonarQube Scan"
           artifacts-from: ${{ inputs.artifact-run-id }}
           restore-classes: true
-          require-master: true
+          require-main: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cache-sonar: true
           java-version: 21.0.3-ms # Specific Java version required for compatibility

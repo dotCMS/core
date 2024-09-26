@@ -12,7 +12,7 @@ Branch to build from.
 
 - **Description**: Branch to build the project from.
 - **Required**: No
-- **Default**: `master`
+- **Default**: `main`
 
 ### `github-token`
 
@@ -58,7 +58,7 @@ Workflow to search for artifacts.
 
 - **Description**: Name of the workflow to search for to get the artifacts.
 - **Required**: No
-- **Default**: `build-test-master.yml`
+- **Default**: `build-test-main.yml`
 
 ### `artifact-id`
 
@@ -74,7 +74,7 @@ Artifact id.
 - name: CLI Publish NPM Package
   uses: ./.github/actions/core-cicd/deployment/deploy-cli-npm
   with:
-    ref: 'master'
+    ref: 'main'
     github-token: ${{ secrets.GITHUB_TOKEN }}
     npm-token: ${{ secrets.NPM_TOKEN }}
     npm-package-name: 'dotcli'

@@ -85,7 +85,7 @@
         <surefire-report-maven.version>3.1.0</surefire-report-maven.version>
         <project-info-reports.version>3.4.5</project-info-reports.version>
         <gib.fetchBaseBranch>true</gib.fetchBaseBranch>
-        <gib.referenceBranch>refs/remotes/origin/master</gib.referenceBranch>
+        <gib.referenceBranch>refs/remotes/origin/main</gib.referenceBranch>
         <gitflow-incremental-builder.version>4.4.1</gitflow-incremental-builder.version>
         <insecure.repositories>WARN</insecure.repositories>
         <!-- jandex maven plugin version -->

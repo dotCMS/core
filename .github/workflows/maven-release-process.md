@@ -23,7 +23,7 @@ The reason to have options representing different steps as flags is that in the 
 
 ### Use Workflow from (Required):
 
-This field is used in order to select which branch you want to generate the release for, in the case of agile release we always will generate this from the “trunk (master)” branch.
+This field is used in order to select which branch you want to generate the release for, in the case of agile release we always will generate this from the “trunk (main)” branch.
 
   
 
