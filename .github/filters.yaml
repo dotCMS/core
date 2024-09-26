@@ -12,6 +12,7 @@ backend: &backend
   - 'core-web/pom.xml'
   - 'dotCMS/src/main/webapp/html/**/!(*.{css,js})'
   - 'dotcms-postman/**'
+  - 'e2e/**'
   - 'dotCMS/!(src/main/webapp/html/)**'
   - 'dotcms-integration/**'
   - 'independent-projects/**'

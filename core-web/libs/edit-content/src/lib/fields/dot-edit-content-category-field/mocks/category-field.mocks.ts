@@ -15,7 +15,7 @@ export const CATEGORY_FIELD_CONTENTLET_MOCK: DotCMSContentlet = {
     baseType: 'CONTENT',
     [CATEGORY_FIELD_VARIABLE_NAME]: [
         {
-            '1f208488057007cedda0e0b5d52ee3b3': 'Electrical'
+            '1f208488057007cedda0e0b5d52ee3b3': 'Cleaning Supplies'
         },
         {
             cb83dc32c0a198fd0ca427b3b587f4ce: 'Doors & Windows'
@@ -197,14 +197,32 @@ export const CATEGORY_LEVEL_2: DotCategory[] = [
 export const CATEGORY_LIST_MOCK: DotCategory[][] = [[...CATEGORY_LEVEL_1], [...CATEGORY_LEVEL_2]];
 
 /**
- * Represent the selected categories
+ * Represent the selected categories keys
  */
-export const SELECTED_LIST_MOCK = [CATEGORY_LEVEL_1[0].key, CATEGORY_LEVEL_1[1].key];
+export const MOCK_SELECTED_CATEGORIES_KEYS = [CATEGORY_LEVEL_1[0].key, CATEGORY_LEVEL_1[1].key];
+
+/**
+ * Represent the selected categories as an object
+ */
+export const MOCK_SELECTED_CATEGORIES_OBJECT: DotCategoryFieldKeyValueObj[] = [
+    {
+        key: CATEGORY_LEVEL_1[0].key,
+        value: CATEGORY_LEVEL_1[0].categoryName,
+        inode: CATEGORY_LEVEL_1[0].inode,
+        path: CATEGORY_LEVEL_1[0].categoryName // root categories is the categoryName
+    },
+    {
+        key: CATEGORY_LEVEL_1[1].key,
+        value: CATEGORY_LEVEL_1[1].categoryName,
+        inode: CATEGORY_LEVEL_1[1].inode,
+        path: CATEGORY_LEVEL_1[1].categoryName // root categories is the categoryName
+    }
+];
 
 export const CATEGORY_LIST_MOCK_TRANSFORMED_MATRIX: DotCategoryFieldKeyValueObj[][] =
     CATEGORY_LIST_MOCK.map(
         (categoryLevel) => transformCategories(categoryLevel) as DotCategoryFieldKeyValueObj[],
-        SELECTED_LIST_MOCK
+        MOCK_SELECTED_CATEGORIES_KEYS
     );
 
 export const CATEGORY_MOCK_TRANSFORMED: DotCategoryFieldKeyValueObj[] = [
@@ -295,9 +313,9 @@ export const CATEGORY_HIERARCHY_MOCK: HierarchyParent[] = [
                 name: CATEGORY_FIELD_MOCK.categories.categoryName
             },
             {
-                inode: CATEGORY_LEVEL_1[0].inode,
-                key: CATEGORY_LEVEL_1[0].key,
-                name: CATEGORY_LEVEL_1[0].categoryName
+                inode: CATEGORY_LEVEL_1[1].inode,
+                key: CATEGORY_LEVEL_1[1].key,
+                name: CATEGORY_LEVEL_1[1].categoryName
             }
         ]
     }

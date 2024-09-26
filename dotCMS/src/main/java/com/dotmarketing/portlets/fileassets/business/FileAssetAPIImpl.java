@@ -345,7 +345,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 			if	(request != null) {
 				final String fileLink = new ResourceLink.ResourceLinkBuilder().build(request, APILocator.systemUser(), fileAsset, "fileAsset").getConfiguredImageURL();
-						//getFileLink(request, APILocator.systemUser(), fileAsset, "fileAsset");
+
 
 				fileAsset.getMap().put("fileLink", fileLink);
 			}

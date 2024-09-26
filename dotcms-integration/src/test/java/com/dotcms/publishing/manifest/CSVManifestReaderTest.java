@@ -4,6 +4,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContainerAsFileDataGen;
@@ -44,16 +45,13 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.io.BufferedReader;
+
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
@@ -61,10 +59,11 @@ import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class CSVManifestReaderTest {
-    private static String headers = "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by";
+    private static String headers = "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, reason to be evaluated";
 
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        LicenseTestUtil.getLicense();
     }
 
     @DataProvider()
@@ -259,7 +258,8 @@ public class CSVManifestReaderTest {
 
         try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
             manifestBuilder.include(testCase.asset, includeReason);
-            manifestBuilder.exclude(systemHost, ManifestReason.EXCLUDE_SYSTEM_OBJECT.getMessage());
+            manifestBuilder.exclude(systemHost, includeReason,
+                    ManifestReason.EXCLUDE_SYSTEM_OBJECT.getMessage());
             manifestFile = manifestBuilder.getManifestFile();
         }
 
@@ -344,13 +344,16 @@ public class CSVManifestReaderTest {
     @Test
     @UseDataProvider("assets")
     public void exclude(final CSVManifestReaderTest.TestCase testCase) throws IOException {
+        final String includeReason = ManifestReason.INCLUDE_BY_USER.getMessage();
+
         File manifestFile = null;
 
         final Language language = new LanguageDataGen().nextPersisted();
 
         try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
-            manifestBuilder.exclude(testCase.asset, ManifestReason.EXCLUDE_BY_FILTER.getMessage());
-            manifestBuilder.include(language, ManifestReason.INCLUDE_AUTOMATIC_BY_DOTCMS.getMessage());
+            manifestBuilder.exclude(testCase.asset, includeReason,
+                    ManifestReason.EXCLUDE_BY_FILTER.getMessage());
+            manifestBuilder.include(language, includeReason);
             manifestFile = manifestBuilder.getManifestFile();
         }
 
