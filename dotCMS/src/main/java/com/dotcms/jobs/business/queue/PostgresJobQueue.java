@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -162,7 +161,7 @@ public class PostgresJobQueue implements JobQueue {
 
     private static final String UPDATE_JOB_PROGRESS_QUERY =
             "UPDATE job SET progress = ?, updated_at = ?"
-            + " WHERE id = ?";
+                    + " WHERE id = ?";
 
     private static final String HAS_JOB_BEEN_IN_STATE_QUERY = "SELECT "
             + "EXISTS (SELECT 1 FROM job_history WHERE job_id = ? AND state = ?)";
