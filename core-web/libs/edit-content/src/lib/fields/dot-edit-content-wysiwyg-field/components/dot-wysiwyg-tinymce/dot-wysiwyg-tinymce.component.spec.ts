@@ -12,9 +12,10 @@ import { DotUploadFileService } from '@dotcms/data-access';
 import { DotWysiwygTinymceComponent } from './dot-wysiwyg-tinymce.component';
 import { DotWysiwygTinymceService } from './service/dot-wysiwyg-tinymce.service';
 
-import { createFormGroupDirectiveMock, WYSIWYG_MOCK } from '../../../../utils/mocks';
+import { createFormGroupDirectiveMock } from '../../../../utils/mocks';
 import { DEFAULT_TINYMCE_CONFIG } from '../../dot-edit-content-wysiwyg-field.constant';
 import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
+import { WYSIWYG_MOCK } from '../../mocks/dot-edit-content-wysiwyg-field.mock';
 
 const mockSystemWideConfig = { systemWideOption: 'value' };
 

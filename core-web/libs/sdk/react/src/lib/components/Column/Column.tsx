@@ -33,11 +33,7 @@ export function Column({ column }: ColumnProps) {
         column.width + column.leftOffset
     );
 
-    const combinedClasses = combineClasses([
-        styles[endClass],
-        styles[startClass],
-        column.styleClass
-    ]);
+    const combinedClasses = combineClasses([styles[endClass], styles[startClass]]);
 
     const columnProps = isInsideEditor
         ? {
@@ -48,12 +44,14 @@ export function Column({ column }: ColumnProps) {
 
     return (
         <div {...columnProps} className={combinedClasses}>
-            {column.containers.map((container) => (
-                <Container
-                    key={`${container.identifier}-${container.uuid}`}
-                    containerRef={container}
-                />
-            ))}
+            <div className={column.styleClass}>
+                {column.containers.map((container) => (
+                    <Container
+                        key={`${container.identifier}-${container.uuid}`}
+                        containerRef={container}
+                    />
+                ))}
+            </div>
         </div>
     );
 }

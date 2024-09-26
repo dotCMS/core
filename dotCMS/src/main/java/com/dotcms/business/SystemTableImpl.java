@@ -1,10 +1,12 @@
 package com.dotcms.business;
 
+import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import io.vavr.control.Try;
 
 import java.util.Map;
@@ -59,7 +61,9 @@ class SystemTableImpl implements SystemTable {
     @WrapInTransaction
     public void set(final String key, final String value) {
 
-        Logger.debug(this, ()-> "Saving or Updating the key: " + key + " value: " + value);
+        SecurityLogger.logInfo(this.getClass(), "Saving system table value for key:" + key + "=" + JVMInfoResource.obfuscateIfNeeded(
+                key,value));
+
         Try.run(()-> this.systemTableFactory.saveOrUpdate(key, value))
                 .getOrElseThrow((e)-> new DotRuntimeException(e.getMessage(), e));
 
@@ -71,7 +75,7 @@ class SystemTableImpl implements SystemTable {
     @WrapInTransaction
     public void delete(String key) {
 
-        Logger.debug(this, ()-> "Deleting the key: " + key);
+        SecurityLogger.logInfo(this.getClass(), "Deleting system table key:" + key );
         Try.run(()-> this.systemTableFactory.delete(key))
                 .getOrElseThrow((e)-> new DotRuntimeException(e.getMessage(), e));
 

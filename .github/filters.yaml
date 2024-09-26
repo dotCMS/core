@@ -34,7 +34,7 @@ cli: &cli
   - *full_build_test
   - *backend
 
-sdk_libs: &sdk_libs
+sdk_libs:
   - 'core-web/libs/sdk/**'  
 
 jvm_unit_test:
