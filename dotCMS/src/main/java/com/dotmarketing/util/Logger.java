@@ -5,28 +5,29 @@
  */
 package com.dotmarketing.util;
 
+import com.dotcms.business.expiring.ExpiringMap;
+import com.dotcms.business.expiring.ExpiringMapBuilder;
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rest.api.v1.system.logger.ChangeLoggerLevelEvent;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.github.benmanes.caffeine.cache.RemovalListener;
+import com.google.common.base.Objects;
+import com.liferay.util.StringPool;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.velocity.servlet.VelocityServlet;
+import org.apache.velocity.tools.view.tools.ViewTool;
+
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.dotcms.rest.api.v1.system.logger.ChangeLoggerLevelEvent;
-import com.liferay.util.StringPool;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.velocity.servlet.VelocityServlet;
-import org.apache.velocity.tools.view.tools.ViewTool;
-import com.dotcms.business.expiring.ExpiringMap;
-import com.dotcms.business.expiring.ExpiringMapBuilder;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.RemovalCause;
-import com.github.benmanes.caffeine.cache.RemovalListener;
-import com.google.common.base.Objects;
-import io.vavr.Lazy;
-import io.vavr.control.Try;
 
 /**
  * @author David Torres
@@ -293,20 +294,21 @@ public class Logger {
      * @param message
      * @param ex
      */
-    public static void warnAndDebug(String clazz, String message, Throwable ex) {
-        org.apache.logging.log4j.Logger logger = loadLogger(clazz);
+    public static void warnAndDebug(final String clazz, final String message, final Throwable ex) {
+        final org.apache.logging.log4j.Logger logger = loadLogger(clazz);
+        logger.warn(message);
         try {
-            logger.warn(message);
-            // we don't want to eat the real message - EVER
-            logger.warn(ex.getMessage());
-            try {
+            // Never swallow the original message, EVER! Unless it's the same as the current one
+            if (!message.equalsIgnoreCase(ex.getMessage())) {
+                logger.warn(ex.getMessage());
+            }
+            if (UtilMethods.isSet(ex.getStackTrace()) && null != ex.getStackTrace()[0]) {
                 logger.warn(ex.getStackTrace()[0]);
-            } catch (Throwable t) {
-                logger.debug(() -> t);
             }
             logger.debug(() -> message, ex);
-        } catch (java.lang.IllegalStateException e) {
-            ex.printStackTrace();
+        } catch (final IllegalStateException e) {
+            logger.warn(String.format("Failed to log warnAndDebug message: %s",
+                    ExceptionUtil.getErrorMessage(e)));
         }
     }
 

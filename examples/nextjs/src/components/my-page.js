@@ -63,14 +63,14 @@ export function MyPage({ pageAsset, nav }) {
     pageAsset = usePageAsset(pageAsset);
 
     return (
-        <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
+        <div className="flex flex-col gap-6 min-h-screen bg-lime-50">
             {pageAsset.layout.header && (
                 <Header>
                     <Navigation items={nav} />
                 </Header>
             )}
 
-            <main className="container flex flex-col gap-8 m-auto">
+            <main className="flex flex-col gap-8 m-auto">
                 <DotLayoutComponent
                     pageContext={{
                         components: componentsMap,
