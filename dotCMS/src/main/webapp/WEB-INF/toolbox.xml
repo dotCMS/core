@@ -322,4 +322,9 @@
 		<scope>request</scope>
 		<class>com.dotcms.ai.viewtool.AIViewTool</class>
 	</tool>
+	<tool>
+		<key>analytics</key>
+		<scope>request</scope>
+		<class>com.dotcms.analytics.viewtool.AnalyticsTool</class>
+	</tool>
 </toolbox>

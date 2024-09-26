@@ -1,6 +1,7 @@
 package com.dotcms.analytics.content;
 
 import com.dotcms.analytics.query.AnalyticsQuery;
+import com.dotcms.cube.CubeJSQuery;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -29,6 +30,13 @@ public class ContentAnalyticsAPIImpl implements ContentAnalyticsAPI {
         Logger.debug(this, ()-> "Running the report for the query: " + query);
         // note: should check any permissions for an user.
         return this.contentAnalyticsFactory.getReport(query, user);
+    }
+
+    @Override
+    public ReportResponse runRawReport(CubeJSQuery cubeJSQuery, User user) {
+        Logger.debug(this, ()-> "Running the report for the raw query: " + cubeJSQuery);
+        // note: should check any permissions for an user.
+        return this.contentAnalyticsFactory.getRawReport(cubeJSQuery, user);
     }
 
 }
