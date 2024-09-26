@@ -16,6 +16,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
+import { WYSIWYG_MOCK } from '../fields/dot-edit-content-wysiwyg-field/mocks/dot-edit-content-wysiwyg-field.mock';
 import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
 import { EditContentPayload } from '../models/dot-edit-content-form.interface';
 import {
@@ -604,30 +605,6 @@ export const KEY_VALUE_MOCK: DotCMSContentTypeField = {
     unique: false,
     values: '{ "key1": "value1" }',
     variable: 'KeyValue'
-};
-
-export const WYSIWYG_MOCK: DotCMSContentTypeField = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableWYSIWYGField',
-    contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
-    dataType: 'TEXT',
-    fieldType: 'WYSIWYG',
-    fieldTypeLabel: 'WYSIWYG',
-    fieldVariables: [],
-    fixed: false,
-    hint: 'A hint text',
-    iDate: 1698291913000,
-    id: '96909fa20a00497cd3b766b52edac0ec',
-    indexed: false,
-    listed: false,
-    modDate: 1698291913000,
-    name: 'WYSIWYG',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 1,
-    unique: false,
-    values: '<p>HELLO</p>',
-    variable: 'WYSIWYG'
 };
 
 export const HOST_FOLDER_TEXT_MOCK = {

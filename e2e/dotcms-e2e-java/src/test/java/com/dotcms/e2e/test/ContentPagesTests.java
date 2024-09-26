@@ -7,6 +7,7 @@ import com.dotcms.e2e.page.LoginPage;
 import com.dotcms.e2e.page.MenuNavigation;
 import com.dotcms.e2e.page.PagesPage;
 import com.dotcms.e2e.page.ToolEntries;
+import com.dotcms.e2e.playwright.PlaywrightSupport;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
@@ -65,7 +66,8 @@ public class ContentPagesTests extends BaseE2eTest {
         pagesPage.fillPagesForm(pagesDetailFrame, "Testing Page", "Default Template");
         // validations
         assertThat(page.locator("li")
-                .filter(new Locator.FilterOptions().setHasText("Testing Page"))).isVisible();
+                .filter(new Locator.FilterOptions().setHasText("Testing Page")))
+                .isVisible(PlaywrightSupport.get().assertVisibleTimeout());
     }
 
 
@@ -104,7 +106,7 @@ public class ContentPagesTests extends BaseE2eTest {
                 new Page.GetByRoleOptions().setName("Status"))).isVisible();
         //execute the delete action
         pagesPage.executePagesWorkflow("Testing Page", "Delete");
-        assertThat(page.getByText("Workflow executed")).isVisible();
+        assertThat(page.getByText("Workflow executed")).isVisible(PlaywrightSupport.get().assertVisibleTimeout());
     }
 
 }
