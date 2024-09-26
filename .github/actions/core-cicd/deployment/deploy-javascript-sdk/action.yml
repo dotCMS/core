@@ -16,7 +16,7 @@ inputs:
   ref:
     description: 'Branch to build from'
     required: false
-    default: 'master'
+    default: 'main'
   npm-token:
     description: 'NPM token'
     required: true

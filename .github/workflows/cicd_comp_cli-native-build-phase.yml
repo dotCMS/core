@@ -4,7 +4,7 @@
 # for different operating systems. It can be configured to build for multiple platforms
 # or just for Linux, depending on the input parameters.
 #
-# Due to the extra runner requirements and extra cost of macOS runners, the workflow is currently run only after merging to master
+# Due to the extra runner requirements and extra cost of macOS runners, the workflow is currently run only after merging to main
 # We may change this or test a single native build before this stage in the future for extra coverage.
 # Native builds should not act different based upon changes to core server so we should be able to restrict these builds/tests
 # to only run on changes to the CLI tool.

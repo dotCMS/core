@@ -84,7 +84,7 @@ const TEMP_FILE_MOCK = {
     image: false,
     length: 10000,
     mimeType: 'text/html',
-    referenceUrl: 'https://raw.githubusercontent.com/angular/angular/master/README.md',
+    referenceUrl: 'https://raw.githubusercontent.com/angular/angular/main/README.md',
     thumbnailUrl: '',
     content: 'HOLA'
 };
