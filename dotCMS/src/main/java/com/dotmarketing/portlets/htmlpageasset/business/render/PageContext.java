@@ -112,4 +112,16 @@ public class PageContext {
         return vanityUrl;
     }
 
+    //Create a toString method
+    @Override
+    public String toString() {
+        return "PageContext{" +
+                "user=" + user +
+                ", pageUri='" + pageUri + '\'' +
+                ", pageMode=" + pageMode +
+                ", page=" + page +
+                ", graphQL=" + graphQL +
+                ", parseJSON=" + parseJSON +
+                '}';
+    }
 }

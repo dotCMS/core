@@ -4,7 +4,7 @@
   "description": "Official JavaScript library for interacting with DotCMS REST APIs.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dotCMS/core.git#master"
+    "url": "git+https://github.com/dotCMS/core.git#main"
   },
   "scripts": {
     "build": "nx run sdk-client:build:js; cd ../../../../dotCMS/src/main/webapp/html/js/editor-js; rm -rf src package.json *.esm.d.ts"
@@ -21,5 +21,5 @@
   "bugs": {
     "url": "https://github.com/dotCMS/core/issues"
   },
-  "homepage": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/client/README.md"
+  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/client/README.md"
 }
