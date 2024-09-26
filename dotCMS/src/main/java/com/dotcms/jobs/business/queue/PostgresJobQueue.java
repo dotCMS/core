@@ -160,8 +160,12 @@ public class PostgresJobQueue implements JobQueue {
             + "(id, queue_name, state, priority, created_at) "
             + "VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET state = ?, priority = ?";
 
-    private static final String UPDATE_JOB_PROGRESS = "UPDATE job SET progress = ?, updated_at = ?"
+    private static final String UPDATE_JOB_PROGRESS_QUERY =
+            "UPDATE job SET progress = ?, updated_at = ?"
             + " WHERE id = ?";
+
+    private static final String HAS_JOB_BEEN_IN_STATE_QUERY = "SELECT "
+            + "EXISTS (SELECT 1 FROM job_history WHERE job_id = ? AND state = ?)";
 
     /**
      * Jackson mapper configuration and lazy initialized instance.
@@ -535,7 +539,7 @@ public class PostgresJobQueue implements JobQueue {
                 // Update the job status to RUNNING
                 Job updatedJob = Job.builder()
                         .from(job)
-                        .state(JobState.RUNNING)
+                        .state(JobState.READY_TO_RUN)
                         .startedAt(Optional.of(LocalDateTime.now()))
                         .build();
 
@@ -562,7 +566,7 @@ public class PostgresJobQueue implements JobQueue {
 
         try {
             DotConnect dc = new DotConnect();
-            dc.setSQL(UPDATE_JOB_PROGRESS);
+            dc.setSQL(UPDATE_JOB_PROGRESS_QUERY);
             dc.addParam(progress);
             dc.addParam(Timestamp.valueOf(LocalDateTime.now()));
             dc.addParam(jobId);
@@ -584,6 +588,27 @@ public class PostgresJobQueue implements JobQueue {
         } catch (DotDataException e) {
             Logger.error(this, "Database error while removing job", e);
             throw new JobQueueDataException("Database error while removing job", e);
+        }
+    }
+
+    @Override
+    public boolean hasJobBeenInState(String jobId, JobState state) throws JobQueueDataException {
+
+        try {
+            DotConnect dc = new DotConnect();
+            dc.setSQL(HAS_JOB_BEEN_IN_STATE_QUERY);
+            dc.addParam(jobId);
+            dc.addParam(state.name());
+            List<Map<String, Object>> results = dc.loadObjectResults();
+
+            if (!results.isEmpty()) {
+                return (Boolean) results.get(0).get("exists");
+            }
+
+            return false;
+        } catch (Exception e) {
+            Logger.error(this, "Error checking job state history", e);
+            throw new JobQueueDataException("Error checking job state history", e);
         }
     }
 

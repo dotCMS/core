@@ -4,6 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.jobs.business.api.events.EventProducer;
 import com.dotcms.jobs.business.api.events.JobCancelledEvent;
+import com.dotcms.jobs.business.api.events.JobCancellingEvent;
 import com.dotcms.jobs.business.api.events.JobCompletedEvent;
 import com.dotcms.jobs.business.api.events.JobCreatedEvent;
 import com.dotcms.jobs.business.api.events.JobFailedEvent;
@@ -41,6 +42,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -288,7 +290,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 Logger.info(this, "Cancelling job " + jobId);
 
                 ((Cancellable) processor).cancel(job);
-                handleJobCancellation(job, processor);
+                handleJobCancelling(job, processor);
             } catch (Exception e) {
                 final var error = new DotDataException("Error cancelling job " + jobId, e);
                 Logger.error(JobQueueManagerAPIImpl.class, error);
@@ -371,25 +373,35 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      *
      * @param job             The job whose progress to update.
      * @param progressTracker The processor progress tracker
+     * @param previousProgress The previous progress value
      */
     @WrapInTransaction
-    private void updateJobProgress(final Job job, final ProgressTracker progressTracker)
-            throws DotDataException {
+    private float updateJobProgress(final Job job, final ProgressTracker progressTracker,
+            final float previousProgress) throws DotDataException {
 
         try {
             if (job != null) {
 
                 float progress = progressTracker.progress();
-                Job updatedJob = job.withProgress(progress);
 
-                jobQueue.updateJobProgress(job.id(), updatedJob.progress());
-                eventProducer.getEvent(JobProgressUpdatedEvent.class).fire(
-                        new JobProgressUpdatedEvent(updatedJob, LocalDateTime.now())
-                );
+                // Only update progress if it has changed
+                if (progress > previousProgress) {
+
+                    Job updatedJob = job.withProgress(progress);
+
+                    jobQueue.updateJobProgress(job.id(), updatedJob.progress());
+                    eventProducer.getEvent(JobProgressUpdatedEvent.class).fire(
+                            new JobProgressUpdatedEvent(updatedJob, LocalDateTime.now())
+                    );
+
+                    return progress;
+                }
             }
         } catch (JobQueueDataException e) {
             throw new DotDataException("Error updating job progress", e);
         }
+
+        return -1;
     }
 
     /**
@@ -575,11 +587,17 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 final ProgressTracker progressTracker = processor.progressTracker();
 
                 // Start a separate thread to periodically update and persist progress
+                AtomicReference<Float> currentProgress = new AtomicReference<>((float) 0);
                 ScheduledExecutorService progressUpdater = closeableExecutor.getExecutorService();
                 progressUpdater.scheduleAtFixedRate(() ->
                         {
                             try {
-                                updateJobProgress(runningJob, progressTracker);
+                                final var progress = updateJobProgress(
+                                        runningJob, progressTracker, currentProgress.get()
+                                );
+                                if (progress >= 0) {
+                                    currentProgress.set(progress);
+                                }
                             } catch (DotDataException e) {
                                 Logger.error(this, "Error updating job progress: " + e.getMessage(), e);
                                 throw new DotRuntimeException("Error updating job progress", e);
@@ -590,7 +608,11 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 // Process the job
                 processor.process(runningJob);
 
-                handleJobCompletion(runningJob, processor);
+                if (jobQueue.hasJobBeenInState(runningJob.id(), JobState.CANCELLING)) {
+                    handleJobCancellation(runningJob, processor);
+                } else {
+                    handleJobCompletion(runningJob, processor);
+                }
             } catch (Exception e) {
 
                 Logger.error(this,
@@ -630,6 +652,23 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         updateJobStatus(completedJob);
         eventProducer.getEvent(JobCompletedEvent.class).fire(
                 new JobCompletedEvent(completedJob, LocalDateTime.now())
+        );
+    }
+
+    /**
+     * Handles the cancellation of a job.
+     *
+     * @param job       The job that was cancelled.
+     * @param processor The processor that handled the job.
+     */
+    @WrapInTransaction
+    private void handleJobCancelling(final Job job, final JobProcessor processor)
+            throws DotDataException {
+
+        Job cancelJob = job.withState(JobState.CANCELLING);
+        updateJobStatus(cancelJob);
+        eventProducer.getEvent(JobCancellingEvent.class).fire(
+                new JobCancellingEvent(cancelJob, LocalDateTime.now())
         );
     }
 

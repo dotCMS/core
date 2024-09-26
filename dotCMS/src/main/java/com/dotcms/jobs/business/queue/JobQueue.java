@@ -2,6 +2,7 @@ package com.dotcms.jobs.business.queue;
 
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
+import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.queue.error.JobLockingException;
 import com.dotcms.jobs.business.queue.error.JobNotFoundException;
 import com.dotcms.jobs.business.queue.error.JobQueueDataException;
@@ -140,5 +141,15 @@ public interface JobQueue {
      * @throws JobQueueDataException if there's a data storage error while removing the job
      */
     void removeJobFromQueue(String jobId) throws JobQueueDataException;
+
+    /**
+     * Checks if a job has ever been in a specific state.
+     *
+     * @param jobId The ID of the job to check.
+     * @param state The state to check for.
+     * @return true if the job has been in the specified state, false otherwise.
+     * @throws JobQueueDataException if there's an error accessing the job data.
+     */
+    boolean hasJobBeenInState(String jobId, JobState state) throws JobQueueDataException;
 
 }

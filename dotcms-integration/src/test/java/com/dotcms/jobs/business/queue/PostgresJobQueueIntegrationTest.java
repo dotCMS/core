@@ -203,7 +203,7 @@ public class PostgresJobQueueIntegrationTest {
                         // Ensure this job hasn't been processed before
                         assertTrue(processedJobIds.add(nextJob.id()),
                                 "Job " + nextJob.id() + " was processed more than once");
-                        assertEquals(JobState.RUNNING, nextJob.state());
+                        assertEquals(JobState.READY_TO_RUN, nextJob.state());
 
                         // Simulate some processing time
                         Thread.sleep(1000);
@@ -381,7 +381,7 @@ public class PostgresJobQueueIntegrationTest {
         Job nextJob = jobQueue.nextJob();
         assertNotNull(nextJob);
         assertEquals(jobId, nextJob.id());
-        assertEquals(JobState.RUNNING, nextJob.state());
+        assertEquals(JobState.READY_TO_RUN, nextJob.state());
     }
 
     /**
@@ -544,6 +544,35 @@ public class PostgresJobQueueIntegrationTest {
         assertEquals(totalJobs, invalidPage.total());
         assertEquals(10, invalidPage.page());
         assertEquals(pageSize, invalidPage.pageSize());
+    }
+
+    /**
+     * Method to test: hasJobBeenInState in PostgresJobQueue
+     * Given Scenario: A job is created and its state is updated
+     * ExpectedResult: The job's state history is correctly validated
+     */
+    @Test
+    void test_hasJobBeenInState() throws JobQueueException {
+
+        String queueName = "testQueue";
+        String jobId = jobQueue.createJob(queueName, new HashMap<>());
+
+        Job job = jobQueue.getJob(jobId);
+
+        // Make sure it is validating properly the given states
+
+        jobQueue.updateJobStatus(job.withState(JobState.RUNNING));
+        assertTrue(jobQueue.hasJobBeenInState(jobId, JobState.RUNNING));
+
+        assertFalse(jobQueue.hasJobBeenInState(jobId, JobState.CANCELLED));
+
+        jobQueue.updateJobStatus(job.withState(JobState.COMPLETED));
+        assertTrue(jobQueue.hasJobBeenInState(jobId, JobState.COMPLETED));
+
+        assertFalse(jobQueue.hasJobBeenInState(jobId, JobState.CANCELLING));
+
+        jobQueue.updateJobStatus(job.withState(JobState.CANCELLING));
+        assertTrue(jobQueue.hasJobBeenInState(jobId, JobState.CANCELLING));
     }
 
     /**

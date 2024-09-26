@@ -2571,3 +2571,4 @@ CREATE INDEX idx_job_result ON job USING GIN (result);
 CREATE INDEX idx_job_status ON job (state);
 CREATE INDEX idx_job_created_at ON job (created_at);
 CREATE INDEX idx_job_history_job_id ON job_history (job_id);
+CREATE INDEX idx_job_history_job_id_state ON job_history (job_id, state);

@@ -2,6 +2,16 @@ package com.dotcms.util;
 
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.config.DotInitializationService;
+import com.dotcms.jobs.business.api.JobQueueConfig;
+import com.dotcms.jobs.business.api.JobQueueConfigProducer;
+import com.dotcms.jobs.business.api.JobQueueManagerAPIImpl;
+import com.dotcms.jobs.business.api.events.EventProducer;
+import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
+import com.dotcms.jobs.business.error.CircuitBreaker;
+import com.dotcms.jobs.business.error.RetryStrategy;
+import com.dotcms.jobs.business.error.RetryStrategyProducer;
+import com.dotcms.jobs.business.queue.JobQueue;
+import com.dotcms.jobs.business.queue.JobQueueProducer;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
@@ -12,15 +22,14 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.SystemProperties;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.awaitility.Awaitility;
 import org.jboss.weld.bootstrap.api.helpers.RegistrySingletonProvider;
 import org.jboss.weld.environment.se.Weld;
 import org.jboss.weld.environment.se.WeldContainer;
 import org.mockito.Mockito;
-
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Sets up the web environment needed to execute integration tests without a server application
@@ -51,6 +60,17 @@ public class IntegrationTestInitService {
             if (initCompleted.compareAndSet(false, true)) {
 
                 weld = new Weld().containerId(RegistrySingletonProvider.STATIC_INSTANCE)
+                        .beanClasses(
+                                JobQueueManagerAPIImpl.class,
+                                JobQueueConfig.class,
+                                JobQueue.class,
+                                RetryStrategy.class,
+                                CircuitBreaker.class,
+                                JobQueueProducer.class,
+                                JobQueueConfigProducer.class,
+                                RetryStrategyProducer.class,
+                                RealTimeJobMonitor.class,
+                                EventProducer.class)
                         .initialize();
 
                 System.setProperty(TestUtil.DOTCMS_INTEGRATION_TEST, TestUtil.DOTCMS_INTEGRATION_TEST);

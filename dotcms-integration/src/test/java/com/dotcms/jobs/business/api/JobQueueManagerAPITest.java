@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyMap;
 import static org.mockito.Mockito.anyString;
@@ -1101,19 +1102,13 @@ public class JobQueueManagerAPITest {
             @Override
             public void process(Job job) throws JobProcessingException {
                 processingStarted.countDown();
-                try {
+                // Simulate work and wait for cancellation
+                Awaitility.await()
+                        .pollInterval(100, TimeUnit.MILLISECONDS)
+                        .atMost(30, TimeUnit.SECONDS)
+                        .until(cancellationRequested::get);
 
-                    // Simulate work and wait for cancellation
-                    Awaitility.await()
-                            .pollInterval(100, TimeUnit.MILLISECONDS)
-                            .atMost(30, TimeUnit.SECONDS)
-                            .until(cancellationRequested::get);
-
-                    throw new InterruptedException("Job cancelled");
-                } catch (InterruptedException e) {
-                    processingCompleted.countDown();
-                    throw new JobProcessingException(job.id(), "Job was cancelled", e);
-                }
+                processingCompleted.countDown();
             }
 
             @Override
@@ -1148,6 +1143,7 @@ public class JobQueueManagerAPITest {
         // Configure JobQueue
         when(mockJobQueue.getJob("job123")).thenReturn(mockJob);
         when(mockJobQueue.nextJob()).thenReturn(mockJob).thenReturn(null);
+        when(mockJobQueue.hasJobBeenInState(any(), eq(JobState.CANCELLING))).thenReturn(true);
 
         // List to capture job state updates
         List<JobState> stateUpdates = new CopyOnWriteArrayList<>();
