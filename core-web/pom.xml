@@ -27,7 +27,7 @@
         <sonar.test.inclusions>**/*.spec.ts</sonar.test.inclusions>
         <skip.core-web.updates>false</skip.core-web.updates>
         <skip.validate>true</skip.validate>
-        <git.origin.branch>origin/master</git.origin.branch>
+        <git.origin.branch>origin/main</git.origin.branch>
         <nx.affected.options>--base=${git.origin.branch} --head=HEAD</nx.affected.options>
         <pretty.quick.options>--branch=${git.origin.branch}</pretty.quick.options>
     </properties>
@@ -302,7 +302,7 @@
                 </property>
             </activation>
             <properties>
-                <git.origin.branch>origin/master</git.origin.branch>
+                <git.origin.branch>origin/main</git.origin.branch>
                 <nx.affected.options>--base=${git.origin.branch} --head=HEAD</nx.affected.options>
                 <pretty.quick.options>--branch=${git.origin.branch}</pretty.quick.options>
                 <skip.validate>false</skip.validate>

@@ -1,7 +1,9 @@
 package com.dotmarketing.business;
 
+import com.dotcms.analytics.content.ContentAnalyticsFactory;
 import com.dotcms.business.SystemTableFactory;
 import com.dotcms.business.SystemTableFactoryImpl;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cluster.business.ServerFactory;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
@@ -34,6 +36,8 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointFactoryImpl;
 import com.dotcms.publisher.environment.business.EnvironmentFactory;
 import com.dotcms.publisher.environment.business.EnvironmentFactoryImpl;
+import com.dotcms.variant.VariantFactory;
+import com.dotcms.variant.VariantFactoryImpl;
 import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginFactory;
@@ -63,8 +67,6 @@ import com.dotmarketing.portlets.personas.business.PersonaFactory;
 import com.dotmarketing.portlets.personas.business.PersonaFactoryImpl;
 import com.dotmarketing.portlets.templates.business.TemplateFactory;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImpl;
-import com.dotcms.variant.VariantFactory;
-import com.dotcms.variant.VariantFactoryImpl;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.business.WorkflowFactoryImpl;
 import com.dotmarketing.tag.business.TagFactory;
@@ -278,6 +280,16 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (LanguageVariableFactory) getInstance(FactoryIndex.LANGUAGE_VARIABLE_FACTORY);
     }
 
+    /**
+     * Returns the Factory object that handles operations related to {@link ContentAnalyticsFactory}
+     * in dotCMS.
+     *
+     * @return An instance of the {@link ContentAnalyticsFactory} object.
+     */
+    public static ContentAnalyticsFactory getContentAnalyticsFactory() {
+        return (ContentAnalyticsFactory) getInstance(FactoryIndex.CONTENT_ANALYTICS_FACTORY);
+    }
+
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -356,8 +368,8 @@ enum FactoryIndex
     EXPERIMENTS_FACTORY,
     SYSTEM_TABLE_FACTORY,
     CUBEJS_CLIENT_FACTORY,
-    LANGUAGE_VARIABLE_FACTORY
-    ;
+    LANGUAGE_VARIABLE_FACTORY,
+    CONTENT_ANALYTICS_FACTORY;
 
 	Object create() {
 		switch(this) {
@@ -401,6 +413,7 @@ enum FactoryIndex
             case SYSTEM_TABLE_FACTORY: return new SystemTableFactoryImpl();
             case CUBEJS_CLIENT_FACTORY: return new CubeJSClientFactoryImpl();
             case LANGUAGE_VARIABLE_FACTORY: return new LanguageVariableFactoryImpl();
+            case CONTENT_ANALYTICS_FACTORY: CDIUtils.getBean(ContentAnalyticsFactory.class).orElseThrow(() -> new DotRuntimeException("ContentAnalyticsFactory not found"));
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

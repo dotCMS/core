@@ -184,13 +184,13 @@ public class JVMInfoResource implements Serializable {
     
     
     
-    private String obfuscateIfNeeded(final String key, final Object valueObject) {
+    public static String obfuscateIfNeeded(final String key, final Object valueObject) {
         final String value = (String) valueObject;
         if(UtilMethods.isEmpty(value)) return "";
         return obfuscatePattern.matcher(key).find() ? obfuscate(value) : value;
     }
     
-    private String obfuscate(final String value) {
+    private static String obfuscate(final String value) {
         return value.charAt(0)
                 + "*********"
                 + value.charAt(value.length() - 1);

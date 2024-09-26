@@ -8,6 +8,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.Logger;
@@ -495,7 +496,9 @@ public class OSGIResource {
         final String extraPackages = extraPackagesForm.getPackages();
 
         Logger.debug(this, ()->"Modifying the extra packages OSGI jar " + extraPackages);
-        OSGIUtil.getInstance().writeOsgiExtras(extraPackages);
+
+        final boolean testDryRun = ConversionUtils.toBoolean(request.getParameter("testDryRun"), true);
+        OSGIUtil.getInstance().writeOsgiExtras(extraPackages, testDryRun);
         return new ResponseEntityStringView("OSGI Extra Packages Saved");
     }
 

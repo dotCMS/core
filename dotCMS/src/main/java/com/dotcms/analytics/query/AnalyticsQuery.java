@@ -3,6 +3,7 @@ package com.dotcms.analytics.query;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import java.io.Serializable;
 import java.util.Set;
 
 /**
@@ -32,7 +33,7 @@ import java.util.Set;
  * @author jsanca
  */
 @JsonDeserialize(builder = AnalyticsQuery.Builder.class)
-public class AnalyticsQuery {
+public class AnalyticsQuery implements Serializable {
 
     private final Set<String> dimensions; // ["Events.referer", "Events.experiment", "Events.variant", "Events.utcTime", "Events.url", "Events.lookBackWindow", "Events.eventType"]
     private final Set<String> measures; // ["Events.count", "Events.uniqueCount"]

@@ -24,7 +24,7 @@ describe('QueryBuilder', () => {
         expect(queryForBlogsInSuperCoolSite).toBe('+contentType:Blog +conhost:my-super-cool-site');
     });
 
-    it("should return a query with an 'OR' operand", () => {
+    it('should return a query with an "OR" operand', () => {
         const queryForBlogsOrArticles = queryBuilder
             .field('contentType')
             .equals('Blog')
@@ -35,7 +35,7 @@ describe('QueryBuilder', () => {
         expect(queryForBlogsOrArticles).toBe('+contentType:Blog OR Article');
     });
 
-    it("should return a query with an 'AND' operand", () => {
+    it('should return a query with an "AND" operand', () => {
         const queryForBlogsAndArticles = queryBuilder
             .field('contentType')
             .equals('Blog')
@@ -46,7 +46,7 @@ describe('QueryBuilder', () => {
         expect(queryForBlogsAndArticles).toBe('+contentType:Blog AND Article');
     });
 
-    it("should return a query with a 'NOT' operand", () => {
+    it('should return a query with a "NOT" operand', () => {
         const queryForSkiingTripsNotInSwissAlps = queryBuilder
             .field('summary')
             .equals('Skiing trip')
@@ -54,7 +54,7 @@ describe('QueryBuilder', () => {
             .equals('Swiss Alps')
             .build();
 
-        expect(queryForSkiingTripsNotInSwissAlps).toBe('+summary:"Skiing trip" NOT "Swiss Alps"');
+        expect(queryForSkiingTripsNotInSwissAlps).toBe(`+summary:'Skiing trip' NOT 'Swiss Alps'`);
     });
 
     it('should return a query with an exclusion field', () => {
@@ -68,7 +68,7 @@ describe('QueryBuilder', () => {
             .build();
 
         expect(queryForFootballBlogsWithoutMessi).toBe(
-            '+contentType:Blog +title:Football -summary:"Lionel Messi"'
+            `+contentType:Blog +title:Football -summary:'Lionel Messi'`
         );
     });
 
@@ -81,7 +81,7 @@ describe('QueryBuilder', () => {
             .equals('Blog')
             .build();
 
-        expect(queryForBlogs).toBe('+summary:Snowboard NOT "Swiss Alps" +contentType:Blog');
+        expect(queryForBlogs).toBe(`+summary:Snowboard NOT 'Swiss Alps' +contentType:Blog`);
     });
 
     it('should return a query with a raw query appended', () => {
@@ -93,7 +93,7 @@ describe('QueryBuilder', () => {
             .equals('Swiss Alps')
             .build();
 
-        expect(queryForBlogs).toBe('+contentType:Blog +summary:Snowboard NOT "Swiss Alps"');
+        expect(queryForBlogs).toBe(`+contentType:Blog +summary:Snowboard NOT 'Swiss Alps'`);
     });
 
     it('should return a query with a raw query created with a queryBuilder appended and a term', () => {
@@ -153,7 +153,7 @@ describe('QueryBuilder', () => {
         const query = withoutJaneDoeHelp.build();
 
         expect(query).toBe(
-            '+contentType:Blog OR Activity +conhost:48190c8c-42c4-46af-8d1a-0cd5db894797 OR cool-site +languageId:1 AND 2 +deleted:false +working:true +variant:default +title:Snowboard -summary:"Swiss Alps" +authors:"John Doe" NOT "Jane Doe"'
+            `+contentType:Blog OR Activity +conhost:48190c8c-42c4-46af-8d1a-0cd5db894797 OR cool-site +languageId:1 AND 2 +deleted:false +working:true +variant:default +title:Snowboard -summary:'Swiss Alps' +authors:'John Doe' NOT 'Jane Doe'`
         );
     });
 });
