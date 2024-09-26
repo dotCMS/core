@@ -496,22 +496,16 @@ public class PostgresJobQueue implements JobQueue {
     public void putJobBackInQueue(final Job job) throws JobQueueDataException {
 
         try {
-
-            final var updatedJob = job.withState(JobState.PENDING);
-
             DotConnect dc = new DotConnect();
             dc.setSQL(PUT_JOB_BACK_TO_QUEUE_QUERY);
             dc.addParam(job.id());
             dc.addParam(job.queueName());
-            dc.addParam(job.state().name());
+            dc.addParam(JobState.PENDING.name());
             dc.addParam(0); // Default priority
             dc.addParam(Timestamp.valueOf(LocalDateTime.now()));
-            dc.addParam(job.state().name());
+            dc.addParam(JobState.PENDING.name());
             dc.addParam(0); // Default priority
             dc.loadResult();
-
-            // Update the job status
-            updateJobStatus(updatedJob);
         } catch (DotDataException e) {
             Logger.error(this, "Database error while putting job back in queue", e);
             throw new JobQueueDataException(
@@ -534,17 +528,7 @@ public class PostgresJobQueue implements JobQueue {
 
                 // Fetch full job details from the job table
                 String jobId = (String) results.get(0).get("id");
-                final var job = getJob(jobId);
-
-                // Update the job status to RUNNING
-                Job updatedJob = Job.builder()
-                        .from(job)
-                        .state(JobState.READY_TO_RUN)
-                        .startedAt(Optional.of(LocalDateTime.now()))
-                        .build();
-
-                updateJobStatus(updatedJob);
-                return updatedJob;
+                return getJob(jobId);
             }
 
             return null;

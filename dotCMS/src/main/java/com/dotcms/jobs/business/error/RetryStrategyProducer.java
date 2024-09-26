@@ -28,7 +28,7 @@ public class RetryStrategyProducer {
 
     // The maximum number of retry attempts allowed
     static final int DEFAULT_RETRY_STRATEGY_MAX_RETRIES = Config.getIntProperty(
-            "DEFAULT_RETRY_STRATEGY_MAX_RETRIES", 5
+            "DEFAULT_RETRY_STRATEGY_MAX_RETRIES", 3
     );
 
     /**

@@ -203,7 +203,7 @@ public class PostgresJobQueueIntegrationTest {
                         // Ensure this job hasn't been processed before
                         assertTrue(processedJobIds.add(nextJob.id()),
                                 "Job " + nextJob.id() + " was processed more than once");
-                        assertEquals(JobState.READY_TO_RUN, nextJob.state());
+                        assertEquals(JobState.PENDING, nextJob.state());
 
                         // Simulate some processing time
                         Thread.sleep(1000);
@@ -373,15 +373,15 @@ public class PostgresJobQueueIntegrationTest {
         // Put the job back in the queue
         jobQueue.putJobBackInQueue(job);
 
-        // Verify the job is back in PENDING state
+        // Verify the job maintains the FAILED state, needed for the retry mechanism to work
         Job retrievedJob = jobQueue.getJob(jobId);
-        assertEquals(JobState.PENDING, retrievedJob.state());
+        assertEquals(JobState.FAILED, retrievedJob.state());
 
         // Verify the job can be retrieved by nextJob
         Job nextJob = jobQueue.nextJob();
         assertNotNull(nextJob);
         assertEquals(jobId, nextJob.id());
-        assertEquals(JobState.READY_TO_RUN, nextJob.state());
+        assertEquals(JobState.FAILED, nextJob.state());
     }
 
     /**

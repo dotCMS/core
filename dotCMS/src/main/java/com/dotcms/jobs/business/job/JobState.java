@@ -11,11 +11,6 @@ public enum JobState {
     PENDING,
 
     /**
-     * The job is ready to start processing.
-     */
-    READY_TO_RUN,
-
-    /**
      * The job is currently being executed.
      */
     RUNNING,

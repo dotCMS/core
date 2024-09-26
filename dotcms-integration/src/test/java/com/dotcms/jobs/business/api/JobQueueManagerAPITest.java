@@ -50,12 +50,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import javax.enterprise.event.Event;
@@ -264,6 +264,7 @@ public class JobQueueManagerAPITest {
         // Mock JobQueue behavior
         when(mockJobQueue.getJob(jobId)).thenReturn(mockJob);
         when(mockJobQueue.nextJob()).thenReturn(mockJob).thenReturn(null);
+        when(mockJob.markAsRunning()).thenReturn(mockJob);
 
         // Make the circuit breaker always allow requests
         when(mockCircuitBreaker.allowRequest()).thenReturn(true);
@@ -337,8 +338,14 @@ public class JobQueueManagerAPITest {
         AtomicInteger retryCount = new AtomicInteger(0);
         when(mockJob.retryCount()).thenAnswer(inv -> retryCount.get());
 
+        when(mockJob.completedAt()).thenAnswer(inv -> Optional.of(LocalDateTime.now()));
+
         when(mockJob.withState(any())).thenAnswer(inv -> {
             jobState.set(inv.getArgument(0));
+            return mockJob;
+        });
+        when(mockJob.markAsRunning()).thenAnswer(inv -> {
+            jobState.set(JobState.RUNNING);
             return mockJob;
         });
         when(mockJob.incrementRetry()).thenAnswer(inv -> {
@@ -419,19 +426,23 @@ public class JobQueueManagerAPITest {
 
         AtomicReference<JobState> jobState = new AtomicReference<>(JobState.PENDING);
         AtomicInteger retryCount = new AtomicInteger(0);
-        AtomicLong lastRetryTimestamp = new AtomicLong(System.currentTimeMillis());
+        AtomicReference<LocalDateTime> lastRetry = new AtomicReference<>(LocalDateTime.now());
 
         when(mockJob.state()).thenAnswer(inv -> jobState.get());
         when(mockJob.retryCount()).thenAnswer(inv -> retryCount.get());
-        when(mockJob.lastRetryTimestamp()).thenAnswer(inv -> lastRetryTimestamp.get());
+        when(mockJob.completedAt()).thenAnswer(inv -> Optional.of(lastRetry.get()));
 
         when(mockJob.withState(any())).thenAnswer(inv -> {
             jobState.set(inv.getArgument(0));
             return mockJob;
         });
+        when(mockJob.markAsRunning()).thenAnswer(inv -> {
+            jobState.set(JobState.RUNNING);
+            return mockJob;
+        });
         when(mockJob.incrementRetry()).thenAnswer(inv -> {
             retryCount.incrementAndGet();
-            lastRetryTimestamp.set(System.currentTimeMillis());
+            lastRetry.set(LocalDateTime.now());
             return mockJob;
         });
         when(mockJob.markAsCompleted(any())).thenAnswer(inv -> {
@@ -485,11 +496,11 @@ public class JobQueueManagerAPITest {
 
         // Verify state transitions
         InOrder inOrder = inOrder(mockJob);
-        inOrder.verify(mockJob).withState(JobState.RUNNING);
+        inOrder.verify(mockJob).markAsRunning();
         inOrder.verify(mockJob).markAsFailed(any());
-        inOrder.verify(mockJob).withState(JobState.RUNNING);
+        inOrder.verify(mockJob).markAsRunning();
         inOrder.verify(mockJob).markAsFailed(any());
-        inOrder.verify(mockJob).withState(JobState.RUNNING);
+        inOrder.verify(mockJob).markAsRunning();
         inOrder.verify(mockJob).markAsCompleted(any());
 
         // Verify retry behavior
@@ -519,20 +530,24 @@ public class JobQueueManagerAPITest {
 
         AtomicReference<JobState> jobState = new AtomicReference<>(JobState.PENDING);
         AtomicInteger retryCount = new AtomicInteger(0);
-        AtomicLong lastRetryTimestamp = new AtomicLong(System.currentTimeMillis());
+        AtomicReference<LocalDateTime> lastRetry = new AtomicReference<>(LocalDateTime.now());
         int maxRetries = 3;
 
         when(mockJob.state()).thenAnswer(inv -> jobState.get());
         when(mockJob.retryCount()).thenAnswer(inv -> retryCount.get());
-        when(mockJob.lastRetryTimestamp()).thenAnswer(inv -> lastRetryTimestamp.get());
+        when(mockJob.completedAt()).thenAnswer(inv -> Optional.of(lastRetry.get()));
 
         when(mockJob.withState(any())).thenAnswer(inv -> {
             jobState.set(inv.getArgument(0));
             return mockJob;
         });
+        when(mockJob.markAsRunning()).thenAnswer(inv -> {
+            jobState.set(JobState.RUNNING);
+            return mockJob;
+        });
         when(mockJob.incrementRetry()).thenAnswer(inv -> {
             retryCount.incrementAndGet();
-            lastRetryTimestamp.set(System.currentTimeMillis());
+            lastRetry.set(LocalDateTime.now());
             return mockJob;
         });
         when(mockJob.markAsFailed(any())).thenAnswer(inv -> {
@@ -603,6 +618,10 @@ public class JobQueueManagerAPITest {
             jobState.set(inv.getArgument(0));
             return mockJob;
         });
+        when(mockJob.markAsRunning()).thenAnswer(inv -> {
+            jobState.set(JobState.RUNNING);
+            return mockJob;
+        });
         when(mockJob.markAsCompleted(any())).thenAnswer(inv -> {
             jobState.set(JobState.COMPLETED);
             return mockJob;
@@ -665,6 +684,10 @@ public class JobQueueManagerAPITest {
             jobState.set(inv.getArgument(0));
             return mockJob;
         });
+        when(mockJob.markAsRunning()).thenAnswer(inv -> {
+            jobState.set(JobState.RUNNING);
+            return mockJob;
+        });
         when(mockJob.markAsFailed(any())).thenAnswer(inv -> {
             jobState.set(JobState.FAILED);
             return mockJob;
@@ -701,7 +724,7 @@ public class JobQueueManagerAPITest {
 
         // Verify the job was not retried
         verify(mockRetryStrategy, times(1)).shouldRetry(any(), any());
-        verify(mockJobQueue, never()).putJobBackInQueue(any());
+        verify(mockJobQueue, times(1)).putJobBackInQueue(any());
         verify(mockJobQueue, times(1)).removeJobFromQueue(mockJob.id());
 
         // Capture and verify the error details
@@ -733,6 +756,10 @@ public class JobQueueManagerAPITest {
         when(mockJob.state()).thenAnswer(inv -> jobState.get());
         when(mockJob.withState(any())).thenAnswer(inv -> {
             jobState.set(inv.getArgument(0));
+            return mockJob;
+        });
+        when(mockJob.markAsRunning()).thenAnswer(inv -> {
+            jobState.set(JobState.RUNNING);
             return mockJob;
         });
         when(mockJob.markAsCompleted(any())).thenAnswer(inv -> {
@@ -921,6 +948,7 @@ public class JobQueueManagerAPITest {
         when(mockJobQueue.nextJob()).thenReturn(mockJob);
         when(mockJobQueue.getJob(anyString())).thenReturn(mockJob);
         when(mockJob.withState(any())).thenReturn(mockJob);
+        when(mockJob.markAsRunning()).thenReturn(mockJob);
         when(mockJob.markAsFailed(any())).thenReturn(mockJob);
 
         // Configure progress tracker
@@ -1150,6 +1178,10 @@ public class JobQueueManagerAPITest {
 
         when(mockJob.withState(any())).thenAnswer(inv -> {
             stateUpdates.add(inv.getArgument(0));
+            return mockJob;
+        });
+        when(mockJob.markAsRunning()).thenAnswer(inv -> {
+            stateUpdates.add(JobState.RUNNING);
             return mockJob;
         });
         when(mockJob.markAsCancelled(any())).thenAnswer(inv -> {

@@ -39,15 +39,8 @@ public interface AbstractJob {
 
     Map<String, Object> parameters();
 
-    Optional<String> lastExceptionClass();
-
     @Default
     default int retryCount() {
-        return 0;
-    }
-
-    @Default
-    default long lastRetryTimestamp() {
         return 0;
     }
 
@@ -64,7 +57,6 @@ public interface AbstractJob {
     default Job incrementRetry() {
         return Job.builder().from(this)
                 .retryCount(retryCount() + 1)
-                .lastRetryTimestamp(System.currentTimeMillis())
                 .build();
     }
 
@@ -78,7 +70,22 @@ public interface AbstractJob {
         return Job.builder().from(this)
                 .state(JobState.FAILED)
                 .result(result)
-                .lastExceptionClass(result.errorDetail().get().exceptionClass())
+                .completedAt(Optional.of(LocalDateTime.now()))
+                .updatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * Creates a new Job marked as running.
+     *
+     * @return A new Job instance marked as running.
+     */
+    default Job markAsRunning() {
+        return Job.builder().from(this)
+                .state(JobState.RUNNING)
+                .result(Optional.empty())
+                .startedAt(this.startedAt().orElse(LocalDateTime.now()))
+                .updatedAt(LocalDateTime.now())
                 .build();
     }
 

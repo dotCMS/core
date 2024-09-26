@@ -32,6 +32,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -543,9 +544,13 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param job The job to check for retry eligibility.
      * @return {@code true} if the job is ready for retry, {@code false} otherwise.
      */
-    private boolean isReadyForRetry(Job job) {
+    private boolean isReadyForRetry(Job job) throws DotDataException {
         long now = System.currentTimeMillis();
-        long nextRetryTime = job.lastRetryTimestamp() + nextRetryDelay(job);
+        long lastCompletedAt = job.completedAt()
+                .orElseThrow(() -> new DotDataException("Job has not completed at"))
+                .atZone(ZoneId.systemDefault()).toInstant()
+                .toEpochMilli();
+        long nextRetryTime = lastCompletedAt + nextRetryDelay(job);
         return now >= nextRetryTime;
     }
 
@@ -576,7 +581,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         JobProcessor processor = processors.get(job.queueName());
         if (processor != null) {
 
-            Job runningJob = job.withState(JobState.RUNNING);
+            Job runningJob = job.markAsRunning();
             updateJobStatus(runningJob);
             eventProducer.getEvent(JobStartedEvent.class).fire(
                     new JobStartedEvent(runningJob, LocalDateTime.now())
@@ -733,6 +738,13 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 new JobFailedEvent(failedJob, LocalDateTime.now())
         );
 
+        try {
+            // Put the job back in the queue for later retry
+            jobQueue.putJobBackInQueue(job);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error re-queueing job", e);
+        }
+
         // Record the failure in the circuit breaker
         getCircuitBreaker().recordFailure();
     }
@@ -772,12 +784,19 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         final RetryStrategy retryStrategy = retryStrategy(job.queueName());
 
+        final var jobResult = job.result();
+
         Class<?> lastExceptionClass = null;
-        if (job.lastExceptionClass().isPresent()) {
-            try {
-                lastExceptionClass = Class.forName(job.lastExceptionClass().get());
-            } catch (ClassNotFoundException e) {
-                Logger.error(this, "Error loading exception class: " + e.getMessage(), e);
+        if (jobResult.isPresent() && jobResult.get().errorDetail().isPresent()) {
+
+            final var errorDetail = jobResult.get().errorDetail().get();
+            final var exceptionClass = errorDetail.exceptionClass();
+            if (exceptionClass != null) {
+                try {
+                    lastExceptionClass = Class.forName(errorDetail.exceptionClass());
+                } catch (ClassNotFoundException e) {
+                    Logger.error(this, "Error loading exception class: " + e.getMessage(), e);
+                }
             }
         }
 
