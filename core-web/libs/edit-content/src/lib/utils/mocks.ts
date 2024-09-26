@@ -12,6 +12,7 @@ import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
+    DotCMSTempFile,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -1394,56 +1395,58 @@ export const NEW_FILE_MOCK: { entity: DotCMSContentlet } = {
         __IS_NEW_CONTENT__: true,
         __icon__: 'Icon',
         archived: false,
-        asset: '/dA/3e90dce2-c86e-4a54-acca-78ac38219387/asset/enterprise-angular.pdf',
-        assetContentAsset: '3e90dce2-c86e-4a54-acca-78ac38219387/asset',
+        asset: '/dA/a991ddc5-39dc-4782-bc04-f4c4fa0ccff6/asset/image 2.jpg',
+        assetContentAsset: 'a991ddc5-39dc-4782-bc04-f4c4fa0ccff6/asset',
         assetMetaData: {
-            contentType: 'application/pdf',
+            contentType: 'image/jpeg',
             editableAsText: false,
-            fileSize: 13909932,
-            isImage: false,
-            length: 13909932,
-            modDate: 1727356106050,
-            name: 'enterprise-angular.pdf',
-            sha256: '7f8bc1f6485876ca6d49be77917bd35ae3de99f9a56ff94a42df3217419b30cd',
-            title: 'Enterprise Angular: Micro Frontends and Moduliths with Angular',
-            version: 20220201
+            fileSize: 3878653,
+            height: 1536,
+            isImage: true,
+            length: 3878653,
+            modDate: 1727377876393,
+            name: 'image 2.jpg',
+            sha256: '132597a99d807d12d0b13d9bf3149c6644d9f252e33896d95fc9fd177320da62',
+            title: 'image 2.jpg',
+            version: 20220201,
+            width: 2688
         },
-        assetVersion: '/dA/1bce4dc1-4bcf-4623-8219-08e994b41aa1/asset/enterprise-angular.pdf',
+        assetVersion: '/dA/fe160e65-5cf4-4ef6-9b1d-47c5326fec30/asset/image 2.jpg',
         baseType: 'DOTASSET',
         contentType: 'dotAsset',
-        creationDate: 1727356106091,
-        extension: 'pdf',
+        creationDate: 1727377876409,
+        extension: 'jpg',
         folder: 'SYSTEM_FOLDER',
         hasLiveVersion: true,
         hasTitleImage: true,
         host: 'SYSTEM_HOST',
         hostName: 'System Host',
-        identifier: '3e90dce2-c86e-4a54-acca-78ac38219387',
-        inode: '1bce4dc1-4bcf-4623-8219-08e994b41aa1',
+        identifier: 'a991ddc5-39dc-4782-bc04-f4c4fa0ccff6',
+        inode: 'fe160e65-5cf4-4ef6-9b1d-47c5326fec30',
         isContentlet: true,
         languageId: 1,
         live: true,
         locked: false,
-        mimeType: 'application/pdf',
-        modDate: '1727356106088',
+        mimeType: 'image/jpeg',
+        modDate: '1727377876407',
         modUser: 'dotcms.org.1',
         modUserName: 'Admin User',
-        name: 'enterprise-angular.pdf',
+        name: 'image 2.jpg',
         owner: 'dotcms.org.1',
         ownerName: 'Admin User',
-        path: '/content.1bce4dc1-4bcf-4623-8219-08e994b41aa1',
-        publishDate: 1727356106149,
+        path: '/content.fe160e65-5cf4-4ef6-9b1d-47c5326fec30',
+        publishDate: 1727377876428,
         publishUser: 'dotcms.org.1',
         publishUserName: 'Admin User',
-        size: 13909932,
+        size: 3878653,
         sortOrder: 0,
         stInode: 'f2d8a1c7-2b77-2081-bcf1-b5348988c08d',
         statusIcons:
             "<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>",
-        title: 'enterprise-angular.pdf',
+        title: 'image 2.jpg',
         titleImage: 'asset',
         type: 'dotasset',
-        url: '/content.1bce4dc1-4bcf-4623-8219-08e994b41aa1',
+        url: '/content.fe160e65-5cf4-4ef6-9b1d-47c5326fec30',
         working: true
     }
 };
@@ -1504,6 +1507,31 @@ export const NEW_FILE_EDITABLE_MOCK: { entity: DotCMSContentlet } = {
         titleImage: 'TITLE_IMAGE_NOT_FOUND',
         type: 'dotasset',
         url: '/content.eccdb89f-5aa1-4f0c-a9ec-aa97304d80d5',
-        working: true
+        working: true,
+        content: 'my content'
     }
+};
+
+export const TEMP_FILE_MOCK: DotCMSTempFile = {
+    fileName: 'enterprise-angular.pdf',
+    folder: '',
+    id: 'temp_1e8021f973',
+    image: false,
+    length: 13909932,
+    metadata: {
+        contentType: 'application/pdf',
+        editableAsText: false,
+        fileSize: 13909932,
+        isImage: false,
+        length: 13909932,
+        modDate: 1727375044693,
+        name: 'enterprise-angular.pdf',
+        sha256: '7f8bc1f6485876ca6d49be77917bd35ae3de99f9a56ff94a42df3217419b30cd',
+        title: 'enterprise-angular.pdf',
+        version: 20220201
+    },
+    mimeType: 'application/pdf',
+    referenceUrl: '/dA/temp_1e8021f973/tmp/enterprise-angular.pdf',
+    thumbnailUrl:
+        '/contentAsset/image/temp_1e8021f973/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/enterprise-angular.pdf'
 };

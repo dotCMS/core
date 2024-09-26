@@ -21,7 +21,12 @@ import { FileFieldStore } from './store/file-field.store';
 import { MessageServiceMock } from './utils/mocks';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
-import { BINARY_FIELD_MOCK, FILE_FIELD_MOCK, IMAGE_FIELD_MOCK, NEW_FILE_MOCK } from '../../utils/mocks';
+import {
+    BINARY_FIELD_MOCK,
+    FILE_FIELD_MOCK,
+    IMAGE_FIELD_MOCK,
+    NEW_FILE_MOCK
+} from '../../utils/mocks';
 
 type Args = DotEditContentFileFieldComponent & {
     field: DotCMSContentTypeField;

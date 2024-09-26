@@ -591,12 +591,19 @@
                         <h2>Tooltips</h2>
                         <ul>
                             <li>
-                                <span id="ttRich"><strong>rich</strong> <em>text</em> tooltip</span>
+                                <span id="ttRich">
+                                    <strong>rich</strong>
+                                    <em>text</em>
+                                    tooltip
+                                </span>
                                 <span
                                     data-dojo-type="dijit/Tooltip"
                                     data-dojo-props="connectId:'ttRich'"
                                     style="display: none">
-                                    Embedded <strong>bold</strong> <em>RICH</em> text
+                                    Embedded
+                                    <strong>bold</strong>
+                                    <em>RICH</em>
+                                    text
                                     <span style="color: #309; font-size: x-large">weirdness!</span>
                                 </span>
                             </li>
@@ -606,9 +613,9 @@
                                 <span
                                     data-dojo-type="dijit/Tooltip"
                                     data-dojo-props='connectId:"ttOne"'
-                                    style="display: none"
-                                    >tooltip on anchor</span
-                                >
+                                    style="display: none">
+                                    tooltip on anchor
+                                </span>
                             </li>
                         </ul>
 
@@ -621,7 +628,9 @@
                                         data-dojo-type="dijit/Tooltip"
                                         data-dojo-props="connectId:'ttBelow', position:['below-centered']"
                                         style="display: none; width: 100px">
-                                        I'm <em>below</em>!
+                                        I'm
+                                        <em>below</em>
+                                        !
                                     </div>
                                 </td>
                                 <td></td>
@@ -633,7 +642,11 @@
                                         data-dojo-type="dijit/Tooltip"
                                         data-dojo-props="connectId:'ttRight', position:['after-centered']"
                                         style="display: none">
-                                        I'm on the <em>right</em>!<br />(or left on RTL systems)
+                                        I'm on the
+                                        <em>right</em>
+                                        !
+                                        <br />
+                                        (or left on RTL systems)
                                     </div>
                                 </td>
                                 <td></td>
@@ -643,7 +656,11 @@
                                         data-dojo-type="dijit/Tooltip"
                                         data-dojo-props="connectId:'ttLeft', position:['before-centered','after-centered']"
                                         style="display: none">
-                                        I'm on the <em>left</em>!<br />(or right on RTL systems)
+                                        I'm on the
+                                        <em>left</em>
+                                        !
+                                        <br />
+                                        (or right on RTL systems)
                                     </div>
                                 </td>
                             </tr>
@@ -655,7 +672,9 @@
                                         data-dojo-type="dijit/Tooltip"
                                         data-dojo-props="connectId:'ttAbove', position:['above-centered']"
                                         style="display: none">
-                                        I'm <em>above</em>!
+                                        I'm
+                                        <em>above</em>
+                                        !
                                     </div>
                                 </td>
                                 <td></td>
@@ -667,14 +686,14 @@
                         <h2>Dialogs</h2>
                         <ul>
                             <li>
-                                <a href="#" onclick="registry.byId('dialog1').show()"
-                                    >slow loading modal dialog</a
-                                >
+                                <a href="#" onclick="registry.byId('dialog1').show()">
+                                    slow loading modal dialog
+                                </a>
                             </li>
                             <li>
-                                <a href="#" onclick="registry.byId('dialogAB').show()"
-                                    >modal dialog w/action bar</a
-                                >
+                                <a href="#" onclick="registry.byId('dialogAB').show()">
+                                    modal dialog w/action bar
+                                </a>
                             </li>
                         </ul>
 
@@ -852,7 +871,8 @@
                             Toggle
                         </div>
 
-                        <br /><br />
+                        <br />
+                        <br />
 
                         <label for="">Disabled:</label>
 
@@ -1087,12 +1107,12 @@
                     <hr class="spacer" />
 
                     <h2>dijit/form/NumberSpinner max=100</h2>
-                    <label for="spinner1">Enabled: </label>
+                    <label for="spinner1">Enabled:</label>
                     <input
                         id="spinner1"
                         data-dojo-type="dijit/form/NumberSpinner"
                         data-dojo-props="constraints:{max:100,places:0}, value:10" />
-                    <label for="spinner2">Disabled: </label>
+                    <label for="spinner2">Disabled:</label>
                     <input
                         id="spinner2"
                         data-dojo-type="dijit/form/NumberSpinner"
@@ -1112,27 +1132,33 @@
                         value="AK"
                         aria-labelledby="l_selectEnabled">
                         <span data-dojo-value="AL"><strong>Alabama</strong></span>
-                        <span data-dojo-value="AK"
-                            ><span style="color: red">A</span><span style="color: orange">l</span
-                            ><span style="color: yellow">a</span><span style="color: green">s</span
-                            ><span style="color: blue">k</span
-                            ><span style="color: purple">a</span></span
-                        >
+                        <span data-dojo-value="AK">
+                            <span style="color: red">A</span>
+                            <span style="color: orange">l</span>
+                            <span style="color: yellow">a</span>
+                            <span style="color: green">s</span>
+                            <span style="color: blue">k</span>
+                            <span style="color: purple">a</span>
+                        </span>
                         <span data-dojo-value="AZ"><em>Arizona</em></span>
                         <span data-dojo-value="AR"><span class="ark">Arkansas</span></span>
-                        <span data-dojo-value="CA"
-                            ><span style="font-size: 25%">C</span
-                            ><span style="font-size: 50%">a</span
-                            ><span style="font-size: 75%">l</span
-                            ><span style="font-size: 90%">i</span
-                            ><span style="font-size: 100%">f</span
-                            ><span style="font-size: 125%">o</span
-                            ><span style="font-size: 133%">r</span
-                            ><span style="font-size: 150%">n</span
-                            ><span style="font-size: 175%">i</span
-                            ><span style="font-size: 200%">a</span></span
-                        >
-                        <span data-dojo-value="NM">New<br />&nbsp;&nbsp;Mexico</span>
+                        <span data-dojo-value="CA">
+                            <span style="font-size: 25%">C</span>
+                            <span style="font-size: 50%">a</span>
+                            <span style="font-size: 75%">l</span>
+                            <span style="font-size: 90%">i</span>
+                            <span style="font-size: 100%">f</span>
+                            <span style="font-size: 125%">o</span>
+                            <span style="font-size: 133%">r</span>
+                            <span style="font-size: 150%">n</span>
+                            <span style="font-size: 175%">i</span>
+                            <span style="font-size: 200%">a</span>
+                        </span>
+                        <span data-dojo-value="NM">
+                            New
+                            <br />
+                            &nbsp;&nbsp;Mexico
+                        </span>
                     </div>
 
                     <span id="l_selectDisabled">Disabled:</span>
@@ -1143,33 +1169,39 @@
                         disabled
                         aria-labelledby="l_selectDisabled">
                         <span data-dojo-value="AL"><strong>Alabama</strong></span>
-                        <span data-dojo-value="AK"
-                            ><span style="color: red">A</span><span style="color: orange">l</span
-                            ><span style="color: yellow">a</span><span style="color: green">s</span
-                            ><span style="color: blue">k</span
-                            ><span style="color: purple">a</span></span
-                        >
+                        <span data-dojo-value="AK">
+                            <span style="color: red">A</span>
+                            <span style="color: orange">l</span>
+                            <span style="color: yellow">a</span>
+                            <span style="color: green">s</span>
+                            <span style="color: blue">k</span>
+                            <span style="color: purple">a</span>
+                        </span>
                         <span data-dojo-value="AZ"><em>Arizona</em></span>
                         <span data-dojo-value="AR"><span class="ark">Arkansas</span></span>
-                        <span data-dojo-value="CA"
-                            ><span style="font-size: 25%">C</span
-                            ><span style="font-size: 50%">a</span
-                            ><span style="font-size: 75%">l</span
-                            ><span style="font-size: 90%">i</span
-                            ><span style="font-size: 100%">f</span
-                            ><span style="font-size: 125%">o</span
-                            ><span style="font-size: 133%">r</span
-                            ><span style="font-size: 150%">n</span
-                            ><span style="font-size: 175%">i</span
-                            ><span style="font-size: 200%">a</span></span
-                        >
-                        <span data-dojo-value="NM">New<br />&nbsp;&nbsp;Mexico</span>
+                        <span data-dojo-value="CA">
+                            <span style="font-size: 25%">C</span>
+                            <span style="font-size: 50%">a</span>
+                            <span style="font-size: 75%">l</span>
+                            <span style="font-size: 90%">i</span>
+                            <span style="font-size: 100%">f</span>
+                            <span style="font-size: 125%">o</span>
+                            <span style="font-size: 133%">r</span>
+                            <span style="font-size: 150%">n</span>
+                            <span style="font-size: 175%">i</span>
+                            <span style="font-size: 200%">a</span>
+                        </span>
+                        <span data-dojo-value="NM">
+                            New
+                            <br />
+                            &nbsp;&nbsp;Mexico
+                        </span>
                     </div>
 
                     <hr class="spacer" />
 
                     <h2>dijit/form/FilteringSelect</h2>
-                    <label for="filteringSelect">Enabled w/placeHolder: </label>
+                    <label for="filteringSelect">Enabled w/placeHolder:</label>
                     <input
                         id="filteringSelect"
                         data-dojo-type="dijit/form/FilteringSelect"
@@ -1180,7 +1212,7 @@
                                 name:'state2'
                             " />
 
-                    <label for="filteringSelect2">Disabled w/placeHolder: </label>
+                    <label for="filteringSelect2">Disabled w/placeHolder:</label>
                     <input
                         id="filteringSelect2"
                         data-dojo-type="dijit/form/FilteringSelect"
@@ -1188,7 +1220,7 @@
                                 disabled:true, store:continentStore, name:'state2', searchAttr:'name'
                             " />
 
-                    <label for="filteringSelect3">Disabled w/value: </label>
+                    <label for="filteringSelect3">Disabled w/value:</label>
                     <input
                         id="filteringSelect3"
                         data-dojo-type="dijit/form/FilteringSelect"
@@ -1282,8 +1314,9 @@ Lorem ipsum dolor sit &#8234;amet,&#8236;
                         data-dojo-props="height:175, extraPlugins:['|', 'createLink', 'fontName'], styleSheets:'./css/document.css'">
                         <ul>
                             <li>
-                                Lorem <a href="http://dojotoolkit.org">and a link</a>, what do you
-                                think?
+                                Lorem
+                                <a href="http://dojotoolkit.org">and a link</a>
+                                , what do you think?
                             </li>
                             <li>This is the Editor with a Toolbar attached.</li>
                         </ul>
@@ -1295,8 +1328,9 @@ Lorem ipsum dolor sit &#8234;amet,&#8236;
                         data-dojo-props="height:175, extraPlugins:['|', 'createLink', 'fontName'], styleSheets:'./css/document.css', disabled:true">
                         <ul>
                             <li>
-                                Lorem <a href="http://dojotoolkit.org">and a link</a>, what do you
-                                think?
+                                Lorem
+                                <a href="http://dojotoolkit.org">and a link</a>
+                                , what do you think?
                             </li>
                             <li>This is the Editor with a Toolbar attached.</li>
                         </ul>
@@ -1337,12 +1371,8 @@ Lorem ipsum dolor sit &#8234;amet,&#8236;
                                 data-dojo-props="container:'rightDecoration', style:'width:2em;', maximum:100, count:6, numericMargin:1, constraints:{ pattern:'#' }"></ol>
                         </div>
                         <br />
-                        Slider2 Value:<input
-                            id="slider2input"
-                            disabled
-                            size="3"
-                            value="10"
-                            autocomplete="off" />
+                        Slider2 Value:
+                        <input id="slider2input" disabled size="3" value="10" autocomplete="off" />
                     </div>
 
                     <div
@@ -1369,7 +1399,8 @@ Lorem ipsum dolor sit &#8234;amet,&#8236;
                             <li>highest</li>
                         </ol>
                     </div>
-                    <br />Value:
+                    <br />
+                    Value:
                     <input id="slider1input" disabled size="5" value="10.0%" autocomplete="off" />
 
                     <div
@@ -1532,13 +1563,13 @@ Lorem ipsum dolor sit &#8234;amet,&#8236;
 
                     <p>
                         These links will
-                        <a href="#" onclick="registry.byId('areaEditable').set('disabled', true)"
-                            >disable</a
-                        >
+                        <a href="#" onclick="registry.byId('areaEditable').set('disabled', true)">
+                            disable
+                        </a>
                         /
-                        <a href="#" onclick="registry.byId('areaEditable').set('disabled', false)"
-                            >enable</a
-                        >
+                        <a href="#" onclick="registry.byId('areaEditable').set('disabled', false)">
+                            enable
+                        </a>
                         the text area above.
                     </p>
 
@@ -1576,9 +1607,9 @@ Lorem ipsum dolor sit &#8234;amet,&#8236;
                                 editor: "dijit/form/FilteringSelect",
                                 editorParams:{ store: continentStore, autoComplete: true, promptMessage: "Please enter a place"},
                                 width:"300px"
-                            '
-                        >The earth</span
-                    >
+                            '>
+                        The earth
+                    </span>
                     (HTML after)
                 </div>
                 <!-- end InlineEditBox tab -->
@@ -1593,9 +1624,18 @@ Lorem ipsum dolor sit &#8234;amet,&#8236;
                         <div
                             data-dojo-type="dojo/dnd/Source"
                             style="border: 3px solid #ccc; padding: 1em 3em">
-                            <div class="dojoDndItem">Item <strong>X</strong></div>
-                            <div class="dojoDndItem">Item <strong>Y</strong></div>
-                            <div class="dojoDndItem">Item <strong>Z</strong></div>
+                            <div class="dojoDndItem">
+                                Item
+                                <strong>X</strong>
+                            </div>
+                            <div class="dojoDndItem">
+                                Item
+                                <strong>Y</strong>
+                            </div>
+                            <div class="dojoDndItem">
+                                Item
+                                <strong>Z</strong>
+                            </div>
                         </div>
                     </div>
                     <div style="float: left; margin: 5px">
@@ -1605,9 +1645,18 @@ Lorem ipsum dolor sit &#8234;amet,&#8236;
                             data-dojo-type="dojo/dnd/Source"
                             data-dojo-props="horizontal: true"
                             style="border: 3px solid #ccc; padding: 1em 3em">
-                            <div class="dojoDndItem">Item <strong>1</strong></div>
-                            <div class="dojoDndItem">Item <strong>2</strong></div>
-                            <div class="dojoDndItem">Item <strong>3</strong></div>
+                            <div class="dojoDndItem">
+                                Item
+                                <strong>1</strong>
+                            </div>
+                            <div class="dojoDndItem">
+                                Item
+                                <strong>2</strong>
+                            </div>
+                            <div class="dojoDndItem">
+                                Item
+                                <strong>3</strong>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1661,7 +1710,8 @@ Lorem ipsum dolor sit &#8234;amet,&#8236;
 
                     <p>
                         I am whole slew of Widgets on a page. Jump to
-                        <a href="../tests/">dijit tests</a> to test individual components.
+                        <a href="../tests/">dijit tests</a>
+                        to test individual components.
                     </p>
 
                     <p>There is a right-click [context] pop-up menu here, as well.</p>
@@ -1700,7 +1750,7 @@ Lorem ipsum dolor sit &#8234;amet,&#8236;
             style="display: none">
             <table>
                 <tr>
-                    <td><label for="name">Name: </label></td>
+                    <td><label for="name">Name:</label></td>
                     <td>
                         <input
                             id="name"
@@ -1710,7 +1760,7 @@ Lorem ipsum dolor sit &#8234;amet,&#8236;
                     </td>
                 </tr>
                 <tr>
-                    <td><label for="loc">Location: </label></td>
+                    <td><label for="loc">Location:</label></td>
                     <td>
                         <input
                             id="loc"
@@ -1720,7 +1770,7 @@ Lorem ipsum dolor sit &#8234;amet,&#8236;
                     </td>
                 </tr>
                 <tr>
-                    <td><label for="date">Date: </label></td>
+                    <td><label for="date">Date:</label></td>
                     <td>
                         <input
                             id="date"

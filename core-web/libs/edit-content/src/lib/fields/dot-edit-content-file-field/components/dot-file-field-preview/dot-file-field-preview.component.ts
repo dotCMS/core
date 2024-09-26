@@ -136,7 +136,7 @@ export class DotFileFieldPreviewComponent implements OnInit {
      * @memberof DotFileFieldPreviewComponent
      */
     toggleShowDialog() {
-        this.$showDialog.set(!this.$showDialog());
+        this.$showDialog.update((value) => !value);
     }
 
     /**
