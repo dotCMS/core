@@ -2374,7 +2374,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + BINARY_FIELD_NAME + "\r\n" +
                     "test1" + time + ", " +
                     "test1" + time + ", " +
-                    "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif");
+                    "https://raw.githubusercontent.com/dotCMS/core/main/dotCMS/src/main/webapp/html/images/skin/logo.gif");
             csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
             csvHeaders = csvreader.getHeaders();
@@ -2456,7 +2456,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     "https://raw.githubusercontent.com/dotCMS/core/throws/dotCMS/404.jpg" + "\r\n" +
                     "testDoesNotStartWithHTTPorHTTPS" + time + ", " +
                     "testDoesNotStartWithHTTPorHTTPS" + time + ", " +
-                    "test://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif");
+                    "test://raw.githubusercontent.com/dotCMS/core/main/dotCMS/src/main/webapp/html/images/skin/logo.gif");
             csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
             csvHeaders = csvreader.getHeaders();
@@ -2660,7 +2660,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + BINARY_FIELD_NAME + "\r\n" +
                     "test1" + time + ", " +
                     "test1" + time + ", " +
-                    "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif");
+                    "https://raw.githubusercontent.com/dotCMS/core/main/dotCMS/src/main/webapp/html/images/skin/logo.gif");
             csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
             csvHeaders = csvreader.getHeaders();

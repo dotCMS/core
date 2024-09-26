@@ -151,6 +151,31 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <skip>${e2e.test.skip}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>install-playwright</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>./mvnw</executable>
+                            <arguments>
+                                <argument>exec:java</argument>
+                                <argument>-e</argument>
+                                <argument>-Dexec.mainClass=com.microsoft.playwright.CLI</argument>
+                                <argument>-Dexec.args="install-deps"</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
@@ -165,7 +190,11 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>default</id>
+                        <id>integration-test</id>
+                        <phase>none</phase> <!-- This disables automatic test execution in the integration-test phase -->
+                    </execution>
+                    <execution>
+                        <id>verify</id>
                         <goals>
                             <goal>integration-test</goal>
                             <goal>verify</goal>
@@ -247,16 +276,6 @@
                         </goals>
                         <phase>verify</phase>
                     </execution>
-                    <!--<execution>
-                        <id>docker-stop</id>
-                        <goals>
-                            <goal>stop</goal>
-                        </goals>
-                        <phase>post-integration-test</phase>
-                        <configuration>
-                            <skip>${e2e.test.skip}</skip>
-                        </configuration>
-                    </execution>-->
                 </executions>
             </plugin>
         </plugins>

@@ -309,7 +309,9 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
                     'Content-Type' : 'application/json;charset=utf-8',
                 },
                 handle : function(dataOrError, ioArgs) {
-                    // do nothing
+                    if(dataOrError.message){
+                        showDotCMSSystemMessage(dataOrError.responseText, true);
+                    }
                 }
             };
             dojo.xhrPut(xhrArgs);

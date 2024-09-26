@@ -94,8 +94,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             } catch (HTMLPageAssetNotFoundException e) {
                 Logger.error(this, e.getMessage());
                 return null;
-            }catch (DotSecurityException e) {
-                Logger.error(this, e.getMessage());
+            } catch (DotSecurityException e) {
                 if(mode.equals(PageMode.WORKING)) {
                     throw new PermissionDeniedGraphQLException(
                             "Unauthorized: You do not have the necessary permissions to request this page in edit mode.");
@@ -119,7 +118,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             return transformer.hydrate().get(0);
 
         } catch (Exception e) {
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
             throw e;
         }
     }

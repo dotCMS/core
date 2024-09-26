@@ -1,5 +1,7 @@
 package com.dotcms.cube;
 
+import com.dotcms.analytics.model.ResultSetItem;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +15,7 @@ public class CubeJSResultSetImpl implements CubeJSResultSet {
     private final List<ResultSetItem> data;
 
     public CubeJSResultSetImpl(final List<Map<String, Object>> data){
-        this.data = data.stream().map(CubeJSResultSet.ResultSetItem::new).collect(Collectors.toList());
+        this.data = data.stream().map(ResultSetItem::new).collect(Collectors.toList());
     }
 
     public long size() {
@@ -24,9 +26,5 @@ public class CubeJSResultSetImpl implements CubeJSResultSet {
     public Iterator<ResultSetItem> iterator() {
         return data.iterator();
     }
-
-
-
-
 
 }

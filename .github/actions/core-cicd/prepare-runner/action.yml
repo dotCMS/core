@@ -1,11 +1,11 @@
 # This composite action prepares the GitHub Actions runner with basic setup steps.
 # It can optionally clean up the runner, set up Java and GraalVM, and ensure the
-# master branch is available locally.
+# main branch is available locally.
 #
 # Features:
 # - Optional runner cleanup for extra disk space
 # - Optional Java and GraalVM setup
-# - Ensures master branch is available locally if required
+# - Ensures main branch is available locally if required
 # - Flexible configuration through inputs
 
 name: 'Prepare Runner'
@@ -22,8 +22,8 @@ inputs:
   require-java:
     description: 'Require java to be installed'
     default: 'true'
-  require-master:
-    description: 'require the master tag to run this action'
+  require-main:
+    description: 'require the main tag to run this action'
     required: true
     default: 'false'
   java-version:
@@ -35,10 +35,10 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Setup master branch locally without switching current branch
+    - name: Setup main branch locally without switching current branch
       shell: bash
-      if: (github.ref != 'refs/heads/master' && inputs.require-master == 'true')
-      run: git fetch origin master:master
+      if: (github.ref != 'refs/heads/main' && inputs.require-main == 'true')
+      run: git fetch origin main:main
     - name: Cleanup Runner
       if: ${{ inputs.cleanup-runner == 'true' }}
       uses: ./.github/actions/core-cicd/cleanup-runner
