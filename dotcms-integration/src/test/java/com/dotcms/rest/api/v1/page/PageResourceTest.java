@@ -17,6 +17,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.TextField;
@@ -36,6 +37,9 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TemplateLayoutDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
+import com.dotcms.rendering.velocity.viewtools.content.ContentTool;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
@@ -81,6 +85,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -107,6 +112,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import org.elasticsearch.action.search.SearchResponse;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -1265,20 +1271,19 @@ public class PageResourceTest {
 
     String widgetCode(final Host host, final ContentType contentType) {
         final String code = String.format(
-                "#set($blogs = $dotcontent.pullPerPage(\"+contentType:%s +(conhost:%s conhost:SYSTEM_HOST) +variant:default\", 1, 6, \"%s.postingDate desc\"))" +
-                "#set($ignore = $tool.system.out.println(\"Blogs: $message at $blogs\"))" +
+                "#set($blogs = $dotcontent.pullPerPage(\"+contentType:%s +(conhost:%s conhost:SYSTEM_HOST) +variant:default\", 0, 100, null))" +
                 "#set($resultList = []) \n" +
                 "#foreach($con in $blogs)\n" +
                    "    #set($resultdoc = {})\n" +
                    "    #set($resultdoc.identifier = ${con.identifier})\n" +
                    "    #set($resultdoc.inode = ${con.inode})\n" +
-                   "    #set($resultdoc.title = ${con.title})\n" +
+                   "    #set($resultdoc.title = $!{con.title})\n" +
                    "    #set($resultdoc.postingDate =  ${con.postingDate})\n" +
                    "    #set($notUsedValue = $resultList.add($resultdoc))" +
                  "#end\n" +
                  "$!dotJSON.put(\"posts\", $resultList)"
                 ,
-                contentType.id(), host.getIdentifier(), contentType.variable()
+                contentType.variable(), host.getIdentifier(), contentType.variable()
         );
         Logger.info(this, "Container code: " + code);
         return code;
@@ -1338,6 +1343,9 @@ public class PageResourceTest {
         //  These are the blogs that will be shown in the widget
         // if it's published then it'll show immediately otherwise it'll show in the future
         // if it's set to show then we need to pass the time machine date to show it
+        //Our blog content type has to have a publishDate field set otherwise it will never make it properly into the index
+        assertNotNull(blogLikeContentType.publishDateVar());
+
         final ContentletDataGen blogsDataGen = new ContentletDataGen(blogLikeContentType.id())
                 .languageId(languageId)
                 .host(host)
@@ -1359,22 +1367,29 @@ public class PageResourceTest {
             assertTrue(blog.isLive());
         }
 
+        final String query = String.format(
+                "+contentType:%s +(conhost:%s conhost:SYSTEM_HOST) +variant:default +live:true",
+                blogLikeContentType.variable(), host.getIdentifier());
+
+        if(null != timeMachineDate) {
+            final PaginatedContentList<Contentlet> pull = ContentUtils.pullPerPage(query, 0, 10,
+                    null, APILocator.systemUser(), String.valueOf(timeMachineDate.getTime())
+            );
+            assertFalse("We should get items from using the time-machine date",pull.isEmpty());
+        }
+
         // Create a widget to show the blog
         //The widget hold the code that calls the $dotcontent.pullPerPage view tool which takes into consideration the tm date
         //in a nutshell, the widget will show the blog if the tm date is greater than the publish date
         //This is how we accomplish the time machine feature
-        final ContentType widgetLikeContentType = TestDataUtils.getWidgetLikeContentType();
+        final ContentType widgetLikeContentType = TestDataUtils.getWidgetLikeContentType(()-> widgetCode(host, blogLikeContentType));
         final Contentlet myWidget = new ContentletDataGen(widgetLikeContentType)
                 .languageId(languageId)
                 .host(host)
-                .setProperty("widgetTitle", "titleContent")
-                .setProperty(WidgetContentType.WIDGET_CODE_FIELD_VAR, widgetCode(host, blogLikeContentType))
+                .setProperty("widgetTitle", "myWidgetThatCallsDotContent#pullPerPageSoThatTimeMachineWorks")
+                .setProperty("code","meh.")
                 .nextPersisted();
         ContentletDataGen.publish(myWidget);
-
-        final Contentlet contentlet = APILocator.getContentletAPI()
-                .find(myWidget.getInode(), APILocator.systemUser(), false);
-        System.out.println("Widget contentlet: " + contentlet);
 
         final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
         final MultiTree multiTree = new MultiTree(myPage.getIdentifier(),
@@ -1390,14 +1405,21 @@ public class PageResourceTest {
             futureIso8601 = timeMachineDate.toInstant().toString();
         }
 
+        HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+
+        when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.EDIT_MODE);
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+
         final String myPagePath = String.format("/%s/%s", myFolderName, myPageName);
         final Response myResponse = pageResource
-                .loadJson(request, this.response, myPagePath, mode, null,
+                .loadJson(this.request, this.response, myPagePath, mode, null,
                         String.valueOf(languageId), null, futureIso8601);
 
         RestUtilTest.verifySuccessResponse(myResponse);
 
         final PageView pageView = (PageView) ((ResponseEntityView<?>) myResponse.getEntity()).getEntity();
+        System.out.println(pageView);
         if (expectContentlet) {
             assertEquals(1, pageView.getNumberContents());
         } else {
