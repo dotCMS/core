@@ -7,11 +7,12 @@ import { monacoMock } from '@dotcms/utils-testing';
 
 import { DotWysiwygMonacoComponent } from './dot-wysiwyg-monaco.component';
 
-import { createFormGroupDirectiveMock, WYSIWYG_MOCK } from '../../../../utils/mocks';
+import { createFormGroupDirectiveMock } from '../../../../utils/mocks';
 import {
     DEFAULT_MONACO_LANGUAGE,
     DEFAULT_WYSIWYG_FIELD_MONACO_CONFIG
 } from '../../dot-edit-content-wysiwyg-field.constant';
+import { WYSIWYG_MOCK } from '../../mocks/dot-edit-content-wysiwyg-field.mock';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any).monaco = monacoMock;

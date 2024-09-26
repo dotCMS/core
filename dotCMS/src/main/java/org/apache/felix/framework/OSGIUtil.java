@@ -34,12 +34,16 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.felix.framework.util.FelixConstants;
+import org.apache.felix.framework.util.manifestparser.ManifestParser;
+import org.apache.felix.framework.util.manifestparser.ParsedHeaderClause;
 import org.apache.felix.main.AutoProcessor;
 import org.apache.felix.main.Main;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.Version;
 import org.osgi.framework.launch.Framework;
 
 import javax.servlet.ServletException;
@@ -52,6 +56,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -208,24 +213,26 @@ public class OSGIUtil {
      * @throws ServletException
      * @throws IOException
      */
-    public void writeOsgiExtras ( final String extraPackages )  {
+    public void writeOsgiExtras (final String extraPackages, final boolean testDryRun)  {
 
         if(UtilMethods.isEmpty(extraPackages)) {
             return ;
         }
         
-            if("RESET".equals(extraPackages)) {
+        if("RESET".equals(extraPackages)) {
             new File(OSGIUtil.getInstance().getOsgiExtraConfigPath()).delete();
             debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
             return;
         }
 
+        if (Config.getBooleanProperty("OSGI_TEST_DRY_RUN", true) && testDryRun) {
+            this.testDryRun(extraPackages);
+        }
+
         //Override the file with the values we just read
-        
         final String osgiExtraFile = OSGIUtil.getInstance().getOsgiExtraConfigPath();
         final String osgiExtraFileTmp = osgiExtraFile + "_" + UUIDGenerator.shorty();
-        
-        
+
         try(BufferedWriter writer = new BufferedWriter( new FileWriter( osgiExtraFileTmp   ) )){
             writer.write( extraPackages );
             Logger.info( this, "OSGI Extra Packages Saved");
@@ -235,19 +242,10 @@ public class OSGIUtil {
             throw new DotRuntimeException( e.getMessage(), e );
         }
         new File(osgiExtraFileTmp).renameTo(new File(osgiExtraFile));
-        
-        
+
         //restart OSGI after delay
         debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
-        
-        
-        
-        
     }
-    
-    
-    
-    
 
     public String getOsgiExtraConfigPath () {
 
@@ -255,6 +253,73 @@ public class OSGIUtil {
                 + File.separator + "server" + File.separator + "osgi" + File.separator +  "osgi-extra.conf";
         final String dirPath = Config.getStringProperty(OSGI_EXTRA_CONFIG_FILE_PATH_KEY, supplier.get());
         return Paths.get(dirPath).normalize().toString();
+    }
+
+    /**
+     * Test if the Osgi Packages are ok to be overriden
+     * @param osgiPackages
+     */
+    public void testDryRun (final String osgiPackages) {
+
+        final List<ParsedHeaderClause> exportClauses =
+                invokeParserStandardHeader(osgiPackages);
+        for (final ParsedHeaderClause clause : exportClauses) {
+
+            for (final String packageName : clause.m_paths) {
+                if (packageName.equals(".")) {
+
+                    Logger.error(this, "Exporing '.' is invalid.");
+                    throw new OsgiException("Exporing '.' is invalid.");
+                }
+
+                if (packageName.length() == 0) {
+
+                    Logger.error(this, "Exported package names cannot be zero length.\nPackages: " + osgiPackages);
+                    throw new OsgiException(
+                            "Exported package names cannot be zero length.");
+                }
+            }
+
+            // Check for "version" and "specification-version" attributes
+            // and verify they are the same if both are specified.
+            final Object versionAttr = clause.m_attrs.get(Constants.VERSION_ATTRIBUTE);
+            final Object packageSpecVersion = clause.m_attrs.get(Constants.PACKAGE_SPECIFICATION_VERSION);
+            if ((versionAttr != null) && (packageSpecVersion != null)) {
+                // Verify they are equal.
+                if (!String.class.cast (versionAttr).trim().equals(String.class.cast(packageSpecVersion).trim())) {
+                    throw new OsgiException(
+                            "Both version and specification-version are specified, but they are not equal.");
+                }
+            }
+
+            try {
+                if (versionAttr != null) {
+                    // check version format
+                    Version.parseVersion(versionAttr.toString());
+                }
+
+                if (packageSpecVersion != null) {
+                    // check version format
+                    Version.parseVersion(packageSpecVersion.toString());
+                }
+            } catch (IllegalArgumentException e) {
+
+                Logger.error(this, e.getMessage() + ".\nPackages: " + osgiPackages);
+                throw new OsgiException(e.getMessage(), e);
+            }
+        }
+    }
+
+    private  List<ParsedHeaderClause>  invokeParserStandardHeader (final String osgiPackages) {
+
+        try {
+            final Method method = ManifestParser.class.getDeclaredMethod("parseStandardHeader", String.class);
+            method.setAccessible(true);
+            return (List<ParsedHeaderClause>) method.invoke(null, osgiPackages);
+        } catch (Exception e) {
+            throw new OsgiException(
+                    "Can not access the parseStandardHeader to run the dry run");
+        }
     }
 
     /**
@@ -314,7 +379,8 @@ public class OSGIUtil {
 
             final String fileUploadDirectory = felixProps.getProperty(FELIX_UPLOAD_DIR);
             // before init we have to check if any new bundle has been upload
-            this.fireReload(new File(fileUploadDirectory));
+            final boolean testDryRun = false; // we do not want to do test dry run when starting the osgi
+            this.fireReload(new File(fileUploadDirectory), testDryRun);
             // Create an instance and initialize the framework.
             FrameworkFactory factory = getFrameworkFactory();
             felixFramework = factory.newFramework(felixProps);
@@ -409,7 +475,8 @@ public class OSGIUtil {
                 try {
 
                     Logger.debug(this, () -> "Trying to lock to start the reload");
-                    lockManager.tryClusterLock(() -> this.fireReload(uploadFolderFile));
+                    final boolean testDryRun = true;
+                    lockManager.tryClusterLock(() -> this.fireReload(uploadFolderFile, testDryRun));
                     Logger.debug(this, () -> "File Reload Done");
                 } catch (Throwable e) {
 
@@ -430,11 +497,7 @@ public class OSGIUtil {
         return UtilMethods.isSet(pathnames) && pathnames.length > 0;
     }
 
-
-    
-    
-    
-    private void fireReload(final File uploadFolderFile) {
+    private void fireReload(final File uploadFolderFile, final boolean testDryRun) {
 
         Logger.info(this, ()-> "Starting the osgi reload on folder: " + uploadFolderFile);
 
@@ -459,13 +522,14 @@ public class OSGIUtil {
                 osgiUserPackages.addAll(packages);
             }
 
-            processOsgiPackages(uploadFolderFile, pathnames, osgiUserPackages);
+            processOsgiPackages(uploadFolderFile, pathnames, osgiUserPackages, testDryRun);
         }
     }
     
     private void processOsgiPackages(final File uploadFolderFile,
                                      final String[] pathnames,
-                                     final Set<String> osgiUserPackages) {
+                                     final Set<String> osgiUserPackages,
+                                     final boolean testDryRun) {
         try {
 
             final LinkedHashSet<String> exportedPackagesSet = this.getExportedPackagesAsSet();
@@ -477,9 +541,9 @@ public class OSGIUtil {
                 
             Logger.info(this, "There are a new changes into the exported packages");
             exportedPackagesSet.addAll(osgiUserPackages);
-            this.writeExtraPackagesFiles(exportedPackagesSet);
+            this.writeExtraPackagesFiles(exportedPackagesSet, testDryRun);
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
         }
     }
@@ -851,11 +915,10 @@ public class OSGIUtil {
         
 
     }
-    
-    
-    private void writeExtraPackagesFiles(final Set<String> packages) throws IOException {
 
-        this.writeOsgiExtras(packagesToOrderedString(packages));
+    private void writeExtraPackagesFiles(final Set<String> packages, final boolean testDryRun) {
+
+        this.writeOsgiExtras(packagesToOrderedString(packages), testDryRun);
     }
 
     /**

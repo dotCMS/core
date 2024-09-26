@@ -33,7 +33,7 @@ You can get the code in two ways:
 
 1. Direct download:
    ```
-   https://github.com/dotCMS/core/tree/master/examples/angular
+   https://github.com/dotCMS/core/tree/main/examples/angular
    ```
 
 2. Using Git sparse checkout:

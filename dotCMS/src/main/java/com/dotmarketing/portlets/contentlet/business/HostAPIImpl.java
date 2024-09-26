@@ -121,31 +121,17 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     @CloseDBIfOpened
     public Host resolveHostName(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        User systemUser = APILocator.systemUser();
         Host host;
-        final Host cachedHostByAlias = hostCache.getHostByAlias(serverName);
-        if (UtilMethods.isSet(() -> cachedHostByAlias.getIdentifier())) {
-            if (HostCache.CACHE_404_HOST.equals(cachedHostByAlias.getIdentifier())) {
-                return null;
-            }
-            host = cachedHostByAlias;
-        } else {
-            final User systemUser = APILocator.systemUser();
-            try {
-                final Optional<Host> optional = resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles);
-                host = optional.isPresent() ? optional.get() : findDefaultHost(systemUser, respectFrontendRoles);
-            } catch (Exception e) {
-                host = findDefaultHost(systemUser, respectFrontendRoles);
-            }
-
-            if (host != null) {
-                hostCache.addHostAlias(serverName, host);
-            } else {
-                hostCache.addHostAlias(serverName, HostCache.cache404Contentlet);
-            }
+        try {
+            final Optional<Host> optional =
+                    resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles);
+            host = optional.isPresent() ? optional.get() : findDefaultHost(systemUser, respectFrontendRoles);
+        } catch (Exception e) {
+            Logger.debug(this, "Exception resolving host using default", e);
+            host = findDefaultHost(systemUser, respectFrontendRoles);
         }
-        if (host != null) {
-            checkSitePermission(user, respectFrontendRoles, host);
-        }
+        checkSitePermission(user, respectFrontendRoles, host);
         return host;
     }
 
