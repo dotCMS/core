@@ -4,7 +4,7 @@ inputs:
   ref:
     description: 'Branch to build from'
     required: false
-    default: 'master'
+    default: 'main'
   github-token:
     description: 'GitHub Token'
     required: true
