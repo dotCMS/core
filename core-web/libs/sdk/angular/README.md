@@ -81,7 +81,7 @@ private readonly client = inject(DOTCMS_CLIENT_TOKEN);
 this.client.page
     .get({ ...pageParams })
     .then((response) => {
-        // Use your response 
+        // Use your response
     })
     .catch((e) => {
       const error: PageError = {
@@ -91,13 +91,13 @@ this.client.page
       // Use the error response
     })
 ```
-For more information to how to use DotCms Client, you can visit the [documentation](https://github.com/dotCMS/core/blob/master/core-web/libs/sdk/client/README.md)
+For more information to how to use DotCms Client, you can visit the [documentation](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/client/README.md)
 
 ## DotCMS Page API
 
 The `DotcmsLayoutComponent` requires a `DotCMSPageAsset` object to be passed in to it. This object represents a dotCMS page and can be fetched using the `@dotcms/client` library.
 
-- [DotCMS Official Angular Example](https://github.com/dotCMS/core/tree/master/examples/angular)
+- [DotCMS Official Angular Example](https://github.com/dotCMS/core/tree/main/examples/angular)
 - [`@dotcms/client` documentation](https://www.npmjs.com/package/@dotcms/client)
 - [Page API documentation](https://dotcms.com/docs/latest/page-api)
 
@@ -137,10 +137,10 @@ export class PagesComponent {
         ),
         // Add other components as needed
     };
-    
+
     components = signal(this.DYNAMIC_COMPONENTS);
     editorConfig = signal<EditorConfig>({ params: { depth: 2 } });
-    
+
     // Assume pageAsset is fetched or provided somehow
     pageAsset: DotCMSPageAsset;
 }
@@ -149,10 +149,10 @@ export class PagesComponent {
 In your template file (e.g., `pages.component.html`):
 
 ```html
-<dotcms-layout 
-    [pageAsset]="pageAsset" 
-    [components]="components()" 
-    [editor]="editorConfig()" 
+<dotcms-layout
+    [pageAsset]="pageAsset"
+    [components]="components()"
+    [editor]="editorConfig()"
 />
 ```
 

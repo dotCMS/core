@@ -12,7 +12,7 @@ This GitHub Action is designed to automate the process of publishing dotCMS SDK 
 
 | Name             | Description                       | Required | Default |
 |------------------|-----------------------------------|----------|---------|
-| `ref`            | Branch to build from              | No       | `master`|
+| `ref`            | Branch to build from              | No       | `main`|
 | `npm-token`      | NPM token                         | Yes      |         |
 | `npm-package-tag`| Package tag                       | No       | `alpha` |
 | `node-version`   | Node.js version                   | No       | `19`    |
@@ -66,7 +66,7 @@ name: 'Publish SDK Libraries'
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 jobs:
@@ -76,7 +76,7 @@ jobs:
       - name: Publish to NPM
         uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
         with:
-          ref: 'master'
+          ref: 'main'
           npm-token: ${{ secrets.NPM_TOKEN }}
           npm-package-tag: 'latest'
           node-version: '18'

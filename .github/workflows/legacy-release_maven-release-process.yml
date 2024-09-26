@@ -352,7 +352,7 @@ jobs:
       - name: Checkout core
         uses: actions/checkout@v4
         with:
-          ref: master
+          ref: main
 
       - uses: ./.github/actions/core-cicd/cleanup-runner
 
