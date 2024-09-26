@@ -300,3 +300,7 @@ This maintenance release includes the following code fixes:
 228. https://github.com/dotCMS/core/issues/29667 : Update CLEANUP_BUNDLES_OLDER_THAN_DAYS default value to 4 #29667
 229. https://github.com/dotCMS/core/issues/28857 : dotAsset is Breaking FileViewStrategy #28857
 230. https://github.com/dotCMS/core/issues/29259 : Page API: Image field content gone when request page with depth #29259
+
+**Release-23.01.24**
+
+231. https://github.com/dotCMS/core/issues/29535 : Investigate and Resolve Session Already Invalidated Issue for PATCH API Call with Bearer Token #29535
