@@ -60,7 +60,12 @@ public class EnvironmentService {
      * @return the property value or the default value if not found
      */
     public String getProperty(final String key, final String defaultValue) {
-        final String propValue = props.getProperty(key);
+        String propValue = props.getProperty(key);
+        if (StringUtils.isNotBlank(propValue)) {
+            return propValue;
+        }
+
+        propValue = System.getProperty(key);
         if (StringUtils.isNotBlank(propValue)) {
             return propValue;
         }

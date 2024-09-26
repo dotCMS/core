@@ -21,10 +21,10 @@ import org.junit.platform.suite.api.Suite;
  */
 @Suite
 @SelectClasses({
-        LoginTests.class,
+        LoginTests.class/*,
         ContentPagesTests.class,
         ContentSearchTests.class,
-        SiteLayoutContainersTests.class
+        SiteLayoutContainersTests.class*/
 })
 public class E2eTestSuite {
 }

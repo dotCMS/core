@@ -62,7 +62,7 @@ public class LoginTests extends BaseE2eTest {
     @Test
     public void test_loginWrongPass() {
         loginPage.login("admin@dotcms.com", "winteriscoming");
-        assertThat(page.getByTestId("message")).isVisible(PlaywrightSupport.get().visibleTimeout(10000));
+        assertThat(page.getByTestId("message")).isVisible(PlaywrightSupport.get().assertVisibleTimeout());
     }
 
     /**

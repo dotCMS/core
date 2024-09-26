@@ -4,7 +4,6 @@ import styles from './row.module.css';
 
 import { PageContext } from '../../contexts/PageContext';
 import { DotCMSPageContext } from '../../models';
-import { combineClasses } from '../../utils/utils';
 import { Column } from '../Column/Column';
 
 /**
@@ -38,15 +37,17 @@ export const Row = forwardRef<HTMLDivElement, RowProps>((props: RowProps, ref) =
 
     const { row } = props;
 
-    const combinedClasses = combineClasses([styles.row, row.styleClass]);
-
     const rowProps = isInsideEditor ? { 'data-dot': 'row', 'data-testid': 'row', ref } : {};
 
     return (
-        <div {...rowProps} className={combinedClasses}>
-            {row.columns.map((column, index) => (
-                <Column key={index} column={column} />
-            ))}
+        <div className={row.styleClass}>
+            <div className="container">
+                <div {...rowProps} className={styles.row}>
+                    {row.columns.map((column, index) => (
+                        <Column key={index} column={column} />
+                    ))}
+                </div>
+            </div>
         </div>
     );
 });
