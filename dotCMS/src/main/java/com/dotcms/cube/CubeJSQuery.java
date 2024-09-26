@@ -1,19 +1,17 @@
 package com.dotcms.cube;
 
 
-
-import com.dotcms.api.system.event.SystemEventsFactory;
+import com.dotcms.cube.filters.Filter;
 import com.dotcms.cube.filters.Filter.Order;
 import com.dotcms.cube.filters.LogicalFilter;
 import com.dotcms.cube.filters.SimpleFilter;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
-import com.dotcms.cube.filters.Filter;
-import com.dotcms.experiments.business.result.ExperimentResults;
-import com.dotcms.experiments.business.result.ExperimentResults.Builder;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Iterables;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,16 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 

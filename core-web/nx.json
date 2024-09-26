@@ -164,6 +164,6 @@
             }
         }
     ],
-    "defaultBase": "master",
+    "defaultBase": "main",
     "ignorePatterns": ["**/node_modules"]
 }

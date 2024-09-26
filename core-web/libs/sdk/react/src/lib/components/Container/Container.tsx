@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 
 import { PageContext } from '../../contexts/PageContext';
+import { useCheckHaveContent } from '../../hooks/useCheckHaveContent';
 import { DotCMSPageContext } from '../../models';
 import { getContainersData } from '../../utils/utils';
 
@@ -45,6 +46,8 @@ export function Container({ containerRef }: ContainerProps) {
     const { isInsideEditor } = useContext(PageContext) as DotCMSPageContext;
 
     const { identifier, uuid } = containerRef;
+
+    const { haveContent, contentletDivRef } = useCheckHaveContent();
 
     // Get the containers from the global context
     const {
@@ -96,7 +99,9 @@ export function Container({ containerRef }: ContainerProps) {
                 data-dot-type={contentlet.contentType}
                 data-dot-container={JSON.stringify(container)}
                 data-dot-on-number-of-pages={contentlet.onNumberOfPages}
-                key={contentlet.identifier}>
+                key={contentlet.identifier}
+                ref={contentletDivRef}
+                style={{ minHeight: haveContent ? undefined : '4rem' }}>
                 <Component {...contentlet} />
             </div>
         ) : (

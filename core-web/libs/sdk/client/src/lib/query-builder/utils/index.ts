@@ -46,7 +46,7 @@ export function sanitizeQuery(str: string): string {
  * @return {*}  {string}
  */
 export function sanitizePhrases(term: string): string {
-    return term.includes(' ') ? `"${term}"` : term;
+    return term.includes(' ') ? `'${term}'` : term;
 }
 
 /**

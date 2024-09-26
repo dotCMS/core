@@ -39,12 +39,14 @@ import java.util.stream.Stream;
  *   <li>{@link #close(AutoCloseable...)} - Closes the provided resources.</li>
  *   <li>{@link #createContextAndPage(Browser)} - Creates a new browser context and page.</li>
  *   <li>{@link #resolveBrowser(Playwright, String)} - Resolves the browser type from a string.</li>
- *   <li>{@link #visibleTimeout(double)} - Creates visibility timeout options for assertions.</li>
+ *   <li>{@link #assertVisibleTimeout(double)} - Creates visibility timeout options for assertions.</li>
  * </ul>
  *
  * @author vico
  */
 public class PlaywrightSupport {
+
+    private static final double DEFAULT_TIMEOUT = 10000;
 
     private static final PlaywrightSupport INSTANCE = new PlaywrightSupport();
 
@@ -52,7 +54,10 @@ public class PlaywrightSupport {
         return INSTANCE;
     }
 
+    private final boolean ci;
+
     private PlaywrightSupport() {
+        ci = Boolean.parseBoolean(EnvironmentService.get().getProperty(E2eKeys.CI_KEY));
     }
 
     /**
@@ -70,7 +75,7 @@ public class PlaywrightSupport {
      * @return true if the current environment is a CI environment, false otherwise
      */
     public boolean isCi() {
-        return Boolean.parseBoolean(EnvironmentService.get().getProperty(E2eKeys.CI_KEY));
+        return ci;
     }
 
     /**
@@ -153,8 +158,17 @@ public class PlaywrightSupport {
      * @param timeout the timeout value in milliseconds
      * @return the visibility timeout options
      */
-    public LocatorAssertions.IsVisibleOptions visibleTimeout(final double timeout) {
+    public LocatorAssertions.IsVisibleOptions assertVisibleTimeout(final double timeout) {
         return new LocatorAssertions.IsVisibleOptions().setTimeout(timeout);
+    }
+
+    /**
+     * Creates visibility timeout options for assertions.
+     *
+     * @return the visibility timeout options
+     */
+    public LocatorAssertions.IsVisibleOptions assertVisibleTimeout() {
+        return assertVisibleTimeout(DEFAULT_TIMEOUT);
     }
 
 }
