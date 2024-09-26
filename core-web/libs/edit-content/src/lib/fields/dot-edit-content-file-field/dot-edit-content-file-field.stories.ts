@@ -14,20 +14,23 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService, DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
-import { BINARY_FIELD_MOCK, NEW_FILE_MOCK } from '../../../utils/mocks';
-import { DotEditContentFileFieldComponent } from '../dot-edit-content-file-field.component';
-import { DotFileFieldUploadService } from '../services/upload-file/upload-file.service';
-import { FileFieldStore } from '../store/file-field.store';
-import { MessageServiceMock } from '../utils/mocks';
+import { DotEditContentFileFieldComponent } from './dot-edit-content-file-field.component';
+import { UIMessage } from './models';
+import { DotFileFieldUploadService } from './services/upload-file/upload-file.service';
+import { FileFieldStore } from './store/file-field.store';
+import { MessageServiceMock } from './utils/mocks';
+
+import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { BINARY_FIELD_MOCK, FILE_FIELD_MOCK, IMAGE_FIELD_MOCK, NEW_FILE_MOCK } from '../../utils/mocks';
 
 type Args = DotEditContentFileFieldComponent & {
     field: DotCMSContentTypeField;
     value: string;
+    uiMessage?: UIMessage;
 };
 
 const meta: Meta<Args> = {
-    title: 'Library / Edit Content / New Binary Field',
+    title: 'Library / Edit Content / File Field',
     component: DotEditContentFileFieldComponent,
     decorators: [
         applicationConfig({
@@ -80,6 +83,13 @@ export default meta;
 
 type Story = StoryObj<Args>;
 
+export const FileField: Story = {
+    args: {
+        value: '',
+        field: { ...FILE_FIELD_MOCK }
+    }
+};
+
 export const BinaryField: Story = {
     args: {
         value: '',
@@ -87,18 +97,32 @@ export const BinaryField: Story = {
     }
 };
 
-export const ResposiveBinaryField: Story = {
+export const ImageField: Story = {
     args: {
         value: '',
-        field: { ...BINARY_FIELD_MOCK }
+        field: { ...IMAGE_FIELD_MOCK }
+    }
+};
+
+export const ResposiveFileField: Story = {
+    args: {
+        value: '',
+        field: { ...FILE_FIELD_MOCK }
     },
-    render: (args) => ({
-        props: args,
-        template: `
-            <div class="w-20rem">
-                <dot-edit-content-file-field ${argsToTemplate(args)} [(ngModel)]="value" />
-                <p>Current value: {{ value }}</p>
-            </div>
-        `
-    })
+    render: (args) => {
+        const { value, ...newArgs } = args;
+
+        return {
+            props: {
+                ...newArgs,
+                value
+            },
+            template: `
+                <div class="w-20rem">
+                    <dot-edit-content-file-field ${argsToTemplate(newArgs)} [(ngModel)]="value" />
+                    <p>Current value: {{ value }}</p>
+                </div>
+            `
+        };
+    }
 };
