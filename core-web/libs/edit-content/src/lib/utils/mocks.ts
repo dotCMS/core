@@ -1411,7 +1411,7 @@ export const TREE_SELECT_MOCK_NODE: CustomTreeNode = {
     }
 };
 
-export const NEW_FILE_MOCK = {
+export const NEW_FILE_MOCK: { entity: DotCMSContentlet } = {
     entity: {
         AUTO_ASSIGN_WORKFLOW: false,
         __IS_NEW_CONTENT__: true,
@@ -1448,7 +1448,7 @@ export const NEW_FILE_MOCK = {
         live: true,
         locked: false,
         mimeType: 'application/pdf',
-        modDate: 1727356106088,
+        modDate: '1727356106088',
         modUser: 'dotcms.org.1',
         modUserName: 'Admin User',
         name: 'enterprise-angular.pdf',
@@ -1471,7 +1471,7 @@ export const NEW_FILE_MOCK = {
     }
 };
 
-export const NEW_FILE_EDITABLE_MOCK = {
+export const NEW_FILE_EDITABLE_MOCK: { entity: DotCMSContentlet } = {
     entity: {
         AUTO_ASSIGN_WORKFLOW: false,
         __IS_NEW_CONTENT__: true,
@@ -1508,7 +1508,7 @@ export const NEW_FILE_EDITABLE_MOCK = {
         live: true,
         locked: false,
         mimeType: 'unknown',
-        modDate: 1727356262665,
+        modDate: '1727356262665',
         modUser: 'dotcms.org.1',
         modUserName: 'Admin User',
         name: 'docker-compose.yml',
@@ -1528,10 +1528,5 @@ export const NEW_FILE_EDITABLE_MOCK = {
         type: 'dotasset',
         url: '/content.eccdb89f-5aa1-4f0c-a9ec-aa97304d80d5',
         working: true
-    },
-    errors: [],
-    i18nMessagesMap: {},
-    messages: [],
-    pagination: null,
-    permissions: []
+    }
 };
