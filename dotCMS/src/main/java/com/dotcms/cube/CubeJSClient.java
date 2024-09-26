@@ -80,18 +80,27 @@ public class CubeJSClient {
         DotPreconditions.notNull(query, "Query not must be NULL");
         DotPreconditions.notNull(accessToken, "Access token not must be NULL");
 
+        final String queryAsString = query.toString();
+        return send(queryAsString);
+    }
+
+    public CubeJSResultSet send(final String queryAsString) {
+
+        DotPreconditions.notNull(queryAsString, "Query not must be NULL");
+        DotPreconditions.notNull(accessToken, "Access token not must be NULL");
+
         final CircuitBreakerUrl cubeJSClient;
         final String cubeJsUrl = String.format("%s/cubejs-api/v1/load", url);
-        final String queryAsString = query.toString();
+
         try {
             cubeJSClient = CircuitBreakerUrl.builder()
-                .setMethod(Method.GET)
-                .setHeaders(cubeJsHeaders(accessToken))
-                .setUrl(cubeJsUrl)
-                .setParams(new HashMap<>(Map.of("query", queryAsString)))
-                .setTimeout(4000)
-                .setThrowWhenNot2xx(false)
-                .build();
+                    .setMethod(Method.GET)
+                    .setHeaders(cubeJsHeaders(accessToken))
+                    .setUrl(cubeJsUrl)
+                    .setParams(new HashMap<>(Map.of("query", queryAsString)))
+                    .setTimeout(4000)
+                    .setThrowWhenNot2xx(false)
+                    .build();
         } catch (AnalyticsException e) {
             throw new RuntimeException(e);
         }
@@ -101,7 +110,7 @@ public class CubeJSClient {
         try {
             final String responseAsString = response.getResponse();
             final Map<String, Object> responseAsMap = UtilMethods.isSet(responseAsString) && !responseAsString.equals("[]") ?
-                   JsonUtil.getJsonFromString(responseAsString) : new HashMap<>();
+                    JsonUtil.getJsonFromString(responseAsString) : new HashMap<>();
             final List<Map<String, Object>> data = (List<Map<String, Object>>) responseAsMap.get("data");
 
             return new CubeJSResultSetImpl(UtilMethods.isSet(data) ? data : Collections.emptyList());
@@ -138,5 +147,6 @@ public class CubeJSClient {
             .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatBearer(accessToken))
             .build();
     }
+
 
 }

@@ -39,4 +39,11 @@ public class ContentAnalyticsAPIImpl implements ContentAnalyticsAPI {
         return this.contentAnalyticsFactory.getRawReport(cubeJSQuery, user);
     }
 
+    @Override
+    public ReportResponse runRawReport(final String cubeJsQueryJson, final User user) {
+
+        Logger.debug(this, ()-> "Running the report for the raw json query: " + cubeJsQueryJson);
+        // note: should check any permissions for an user.
+        return this.contentAnalyticsFactory.getRawReport(cubeJsQueryJson, user);
+    }
 }
