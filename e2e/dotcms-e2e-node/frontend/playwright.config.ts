@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 import * as path from "node:path";
 import { defineConfig, devices } from '@playwright/test';
 
-
 const resolveEnvs = () => {
   const envFiles = ['.env'];
 
@@ -20,12 +19,7 @@ const resolveEnvs = () => {
   });
 };
 
-const prepareForTesting = () => {
-
-};
-
 resolveEnvs();
-prepareForTesting();
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -41,7 +35,10 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: [['junit', { outputFile: '../target/failsafe-reports/failsafe-summary.xml' }]],
+  reporter: [
+    ['junit'],
+    ['github']
+  ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     baseURL: process.env.BASE_URL,
