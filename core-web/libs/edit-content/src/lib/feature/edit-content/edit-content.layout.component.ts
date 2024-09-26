@@ -120,6 +120,11 @@ export class EditContentLayoutComponent implements OnInit {
         });
     }
 
+    /**
+     * Toggle the show of the sidebar.
+     *
+     * @memberof EditContentLayoutComponent
+     */
     toggleSidebar() {
         this.#store.updateSidebarState(!this.showSidebar);
     }
