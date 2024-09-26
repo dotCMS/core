@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.ObservesAsync;
+import javax.enterprise.event.Observes;
 
 /**
  * Manages real-time monitoring of jobs in the system. This class handles registration of job
@@ -73,7 +73,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobStartedEvent.
      */
-    public void onJobStarted(@ObservesAsync JobStartedEvent event) {
+    public void onJobStarted(@Observes JobStartedEvent event) {
         updateWatchers(event.getJob());
     }
 
@@ -82,7 +82,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobCancelledEvent.
      */
-    public void onCanceledJob(@ObservesAsync JobCancelledEvent event) {
+    public void onJobCanceled(@Observes JobCancelledEvent event) {
         updateWatchers(event.getJob());
     }
 
@@ -91,7 +91,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobCompletedEvent.
      */
-    public void onJobCompleted(@ObservesAsync JobCompletedEvent event) {
+    public void onJobCompleted(@Observes JobCompletedEvent event) {
         updateWatchers(event.getJob());
     }
 
@@ -100,7 +100,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobFailedEvent.
      */
-    public void onFailedJob(@ObservesAsync JobFailedEvent event) {
+    public void onJobFailed(@Observes JobFailedEvent event) {
         updateWatchers(event.getJob());
     }
 
@@ -109,7 +109,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobProgressUpdatedEvent.
      */
-    public void onJobProgressUpdated(@ObservesAsync JobProgressUpdatedEvent event) {
+    public void onJobProgressUpdated(@Observes JobProgressUpdatedEvent event) {
         updateWatchers(event.getJob());
     }
 

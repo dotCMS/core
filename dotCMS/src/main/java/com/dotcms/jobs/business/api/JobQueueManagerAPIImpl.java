@@ -2,6 +2,7 @@ package com.dotcms.jobs.business.api;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.jobs.business.api.events.EventProducer;
 import com.dotcms.jobs.business.api.events.JobCancelledEvent;
 import com.dotcms.jobs.business.api.events.JobCompletedEvent;
 import com.dotcms.jobs.business.api.events.JobCreatedEvent;
@@ -42,7 +43,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Event;
 import javax.inject.Inject;
 
 /**
@@ -104,12 +104,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private LocalDateTime lastPollJobUpdateTime = LocalDateTime.now();
 
     private final RealTimeJobMonitor realTimeJobMonitor;
-    private final Event<JobCreatedEvent> jobCreatedEvent;
-    private final Event<JobStartedEvent> jobStartedEvent;
-    private final Event<JobProgressUpdatedEvent> jobProgressUpdatedEvent;
-    private final Event<JobCompletedEvent> jobCompletedEvent;
-    private final Event<JobFailedEvent> jobFailedEvent;
-    private final Event<JobCancelledEvent> jobCancelledEvent;
+    private final EventProducer eventProducer;
 
     /**
      * Constructs a new JobQueueManagerAPIImpl.
@@ -120,12 +115,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param circuitBreaker       The CircuitBreaker implementation for fault tolerance.
      * @param defaultRetryStrategy The default retry strategy to use for failed jobs.
      * @param realTimeJobMonitor   The RealTimeJobMonitor for handling real-time job updates.
-     * @param jobCreatedEvent      Event for job creation notifications.
-     * @param jobStartedEvent      Event for job start notifications.
-     * @param jobProgressUpdatedEvent Event for job progress update notifications.
-     * @param jobCompletedEvent    Event for job completion notifications.
-     * @param jobFailedEvent       Event for job failure notifications.
-     * @param jobCancelledEvent    Event for job cancellation notifications.
+     * @param eventProducer        The EventProducer for firing job-related events.
      * <p>
      * This constructor performs the following initializations:
      * - Sets up the job queue and related configurations.
@@ -140,12 +130,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             CircuitBreaker circuitBreaker,
             RetryStrategy defaultRetryStrategy,
             RealTimeJobMonitor realTimeJobMonitor,
-            Event<JobCreatedEvent> jobCreatedEvent,
-            Event<JobStartedEvent> jobStartedEvent,
-            Event<JobProgressUpdatedEvent> jobProgressUpdatedEvent,
-            Event<JobCompletedEvent> jobCompletedEvent,
-            Event<JobFailedEvent> jobFailedEvent,
-            Event<JobCancelledEvent> jobCancelledEvent) {
+            EventProducer eventProducer) {
 
         this.jobQueue = jobQueue;
         this.threadPoolSize = jobQueueConfig.getThreadPoolSize();
@@ -162,12 +147,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         // Events
         this.realTimeJobMonitor = realTimeJobMonitor;
-        this.jobCreatedEvent = jobCreatedEvent;
-        this.jobStartedEvent = jobStartedEvent;
-        this.jobProgressUpdatedEvent = jobProgressUpdatedEvent;
-        this.jobCompletedEvent = jobCompletedEvent;
-        this.jobFailedEvent = jobFailedEvent;
-        this.jobCancelledEvent = jobCancelledEvent;
+        this.eventProducer = eventProducer;
     }
 
     @Override
@@ -256,7 +236,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         try {
             String jobId = jobQueue.createJob(queueName, parameters);
-            jobCreatedEvent.fire(
+            eventProducer.getEvent(JobCreatedEvent.class).fire(
                     new JobCreatedEvent(jobId, queueName, LocalDateTime.now(), parameters)
             );
             return jobId;
@@ -403,7 +383,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 Job updatedJob = job.withProgress(progress);
 
                 jobQueue.updateJobProgress(job.id(), updatedJob.progress());
-                jobProgressUpdatedEvent.fire(
+                eventProducer.getEvent(JobProgressUpdatedEvent.class).fire(
                         new JobProgressUpdatedEvent(updatedJob, LocalDateTime.now())
                 );
             }
@@ -452,7 +432,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      *
      * @return {@code true} if a job was processed, {@code false} if the queue is empty.
      */
-    @WrapInTransaction
+    @CloseDBIfOpened
     private boolean processNextJob() throws DotDataException {
 
         try {
@@ -531,8 +511,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
                     Logger.debug(this, "Job " + job.id() + " is not ready for retry, "
                             + "putting back in queue.");
-                    // Put the job back in the queue for later retry
                     try {
+                        // Put the job back in the queue for later retry
                         jobQueue.putJobBackInQueue(job);
                     } catch (JobQueueDataException e) {
                         throw new DotDataException("Error re-queueing job", e);
@@ -586,7 +566,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
             Job runningJob = job.withState(JobState.RUNNING);
             updateJobStatus(runningJob);
-            jobStartedEvent.fire(new JobStartedEvent(runningJob, LocalDateTime.now()));
+            eventProducer.getEvent(JobStartedEvent.class).fire(
+                    new JobStartedEvent(runningJob, LocalDateTime.now())
+            );
 
             try (final CloseableScheduledExecutor closeableExecutor = new CloseableScheduledExecutor()) {
 
@@ -633,6 +615,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param job       The job that completed.
      * @param processor The processor that handled the job.
      */
+    @WrapInTransaction
     private void handleJobCompletion(final Job job, final JobProcessor processor)
             throws DotDataException {
 
@@ -645,7 +628,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         final Job completedJob = job.markAsCompleted(jobResult);
         updateJobStatus(completedJob);
-        jobCompletedEvent.fire(new JobCompletedEvent(completedJob, LocalDateTime.now()));
+        eventProducer.getEvent(JobCompletedEvent.class).fire(
+                new JobCompletedEvent(completedJob, LocalDateTime.now())
+        );
     }
 
     /**
@@ -654,6 +639,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param job       The job that was cancelled.
      * @param processor The processor that handled the job.
      */
+    @WrapInTransaction
     private void handleJobCancellation(final Job job, final JobProcessor processor)
             throws DotDataException {
 
@@ -666,7 +652,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         Job cancelledJob = job.markAsCancelled(jobResult);
         updateJobStatus(cancelledJob);
-        jobCancelledEvent.fire(
+        eventProducer.getEvent(JobCancelledEvent.class).fire(
                 new JobCancelledEvent(cancelledJob, LocalDateTime.now())
         );
     }
@@ -680,6 +666,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param errorMessage    The error message to include in the job result.
      * @param processingStage The stage of processing where the failure occurred.
      */
+    @WrapInTransaction
     private void handleJobFailure(final Job job, final JobProcessor processor,
             final Exception exception, final String errorMessage, final String processingStage)
             throws DotDataException {
@@ -703,7 +690,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         final Job failedJob = job.markAsFailed(jobResult);
         updateJobStatus(failedJob);
-        jobFailedEvent.fire(new JobFailedEvent(failedJob, LocalDateTime.now()));
+        eventProducer.getEvent(JobFailedEvent.class).fire(
+                new JobFailedEvent(failedJob, LocalDateTime.now())
+        );
 
         // Record the failure in the circuit breaker
         getCircuitBreaker().recordFailure();
@@ -715,6 +704,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param job The job to update.
      * @throws DotDataException if there's an error updating the job status.
      */
+    @WrapInTransaction
     private void updateJobStatus(final Job job) throws DotDataException {
         try {
             jobQueue.updateJobStatus(job);

@@ -21,6 +21,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.jobs.business.api.events.EventProducer;
 import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
@@ -75,6 +76,8 @@ public class JobQueueManagerAPITest {
 
     private JobQueueManagerAPI jobQueueManagerAPI;
 
+    private EventProducer eventProducer;
+
     @Before
     public void setUp() {
 
@@ -82,14 +85,18 @@ public class JobQueueManagerAPITest {
         mockJobProcessor = mock(JobProcessor.class);
         mockRetryStrategy = mock(RetryStrategy.class);
         mockCircuitBreaker = mock(CircuitBreaker.class);
+        eventProducer = mock(EventProducer.class);
 
         jobQueueManagerAPI = newJobQueueManagerAPI(
-                mockJobQueue, mockCircuitBreaker, mockRetryStrategy,
+                mockJobQueue, mockCircuitBreaker, mockRetryStrategy, eventProducer,
                 1, 10
         );
 
         jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
         jobQueueManagerAPI.setRetryStrategy("testQueue", mockRetryStrategy);
+
+        var event = mock(Event.class);
+        when(eventProducer.getEvent(any())).thenReturn(event);
     }
 
     /**
@@ -862,7 +869,7 @@ public class JobQueueManagerAPITest {
 
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
         JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
-                mockJobQueue, circuitBreaker, mockRetryStrategy,
+                mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer,
                 1, 1000
         );
 
@@ -945,7 +952,7 @@ public class JobQueueManagerAPITest {
 
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
         JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
-                mockJobQueue, circuitBreaker, mockRetryStrategy,
+                mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer,
                 1, 1000
         );
         jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
@@ -1005,7 +1012,7 @@ public class JobQueueManagerAPITest {
 
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
         JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
-                mockJobQueue, circuitBreaker, mockRetryStrategy,
+                mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer,
                 1, 1000
         );
         jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
@@ -1213,15 +1220,14 @@ public class JobQueueManagerAPITest {
     private JobQueueManagerAPI newJobQueueManagerAPI(JobQueue jobQueue,
             CircuitBreaker circuitBreaker,
             RetryStrategy retryStrategy,
+            EventProducer eventProducer,
             int threadPoolSize, int pollJobUpdatesIntervalMilliseconds) {
 
-        var event = mock(Event.class);
         final var realTimeJobMonitor = new RealTimeJobMonitor();
 
         return new JobQueueManagerAPIImpl(
                 jobQueue, new JobQueueConfig(threadPoolSize, pollJobUpdatesIntervalMilliseconds),
-                circuitBreaker, retryStrategy, realTimeJobMonitor, event, event, event, event,
-                event, event
+                circuitBreaker, retryStrategy, realTimeJobMonitor, eventProducer
         );
     }
 
