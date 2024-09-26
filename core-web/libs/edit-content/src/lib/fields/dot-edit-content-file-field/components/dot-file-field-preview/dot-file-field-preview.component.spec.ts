@@ -101,19 +101,18 @@ describe('DotFileFieldPreviewComponent', () => {
             spectator.detectChanges();
 
             const infoBtnElement = spectator.query(byTestId('info-btn'));
-            
+
             const dialogComponent = spectator.query(Dialog);
 
             spectator.click(infoBtnElement);
             expect(dialogComponent.visible).toBeTruthy();
         });
-        
 
         it('should show a dialog when click on the proper responsive btn', async () => {
             spectator.detectChanges();
 
             const infoBtnElement = spectator.query(byTestId('info-btn-responsive'));
-            
+
             const dialogComponent = spectator.query(Dialog);
 
             spectator.click(infoBtnElement);
@@ -150,7 +149,7 @@ describe('DotFileFieldPreviewComponent', () => {
 
             const links = spectator.queryAll('.file-info__item');
             const copyBtns = spectator.queryAll(DotCopyButtonComponent);
-        
+
             expect(links.length).toBe(4);
             expect(copyBtns.length).toBe(3);
         });

@@ -39,7 +39,9 @@
                 @if (metadata.fileSize) {
                     <div class="preview-metadata__info">
                         <i class="pi pi-file"></i>
-                        <span data-testId="metadata-file-size">{{ metadata.fileSize | dotFileSizeFormat }}</span>
+                        <span data-testId="metadata-file-size">
+                            {{ metadata.fileSize | dotFileSizeFormat }}
+                        </span>
                     </div>
                 }
             }
