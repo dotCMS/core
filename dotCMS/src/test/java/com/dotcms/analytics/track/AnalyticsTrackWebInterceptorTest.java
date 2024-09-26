@@ -65,7 +65,7 @@ public class AnalyticsTrackWebInterceptorTest {
         final TestMatcher testMatcher = new TestMatcher();
         final User user = new User();
         final AnalyticsTrackWebInterceptor interceptor = new AnalyticsTrackWebInterceptor(
-                hostWebAPI, appsAPI, whiteBlackList, isTurnedOn, user, testMatcher);
+                hostWebAPI, appsAPI, whiteBlackList, isTurnedOn, ()->user, testMatcher);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
         try {
@@ -98,7 +98,7 @@ public class AnalyticsTrackWebInterceptorTest {
                 true, currentHost, user)).thenReturn(Optional.empty()); // no config
 
         final AnalyticsTrackWebInterceptor interceptor = new AnalyticsTrackWebInterceptor(
-                hostWebAPI, appsAPI, whiteBlackList, isTurnedOn, user, testMatcher);
+                hostWebAPI, appsAPI, whiteBlackList, isTurnedOn, ()->user, testMatcher);
 
         try {
             interceptor.intercept(request, response);
@@ -134,7 +134,7 @@ public class AnalyticsTrackWebInterceptorTest {
         Mockito.when(request.getRequestURI()).thenReturn("/some-uri");
 
         final AnalyticsTrackWebInterceptor interceptor = new AnalyticsTrackWebInterceptor(
-                hostWebAPI, appsAPI, whiteBlackList, isTurnedOn, user, testMatcher);
+                hostWebAPI, appsAPI, whiteBlackList, isTurnedOn, ()->user, testMatcher);
 
         try {
             interceptor.intercept(request, response);

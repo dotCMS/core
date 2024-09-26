@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * Web Interceptor to track analytics
@@ -44,7 +45,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
     private final static Map<String, RequestMatcher> requestMatchersMap = new ConcurrentHashMap<>();
     private final HostWebAPI hostWebAPI;
     private final AppsAPI appsAPI;
-    private final User systemUser;
+    private final Supplier<User> systemUserSupplier;
 
     private final WhiteBlackList whiteBlackList;
     private final AtomicBoolean isTurnedOn;
@@ -58,7 +59,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
                         .addBlackPatterns(CollectionsUtils.concat(Config.getStringArrayProperty(  // except this
                                 "ANALYTICS_BLACKLISTED_KEYS", new String[]{}), DEFAULT_BLACKLISTED_PROPS)).build(),
                 new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_TURNED_ON_KEY, true)),
-                APILocator.systemUser(),
+                ()->APILocator.systemUser(),
                 new PagesAndUrlMapsRequestMatcher(),
                 new FilesRequestMatcher(),
                 //       new RulesRedirectsRequestMatcher(),
@@ -70,14 +71,14 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
                         final AppsAPI appsAPI,
                         final WhiteBlackList whiteBlackList,
                         final AtomicBoolean isTurnedOn,
-                        final User systemUser,
+                        final Supplier<User> systemUser,
                         final RequestMatcher... requestMatchers) {
 
         this.hostWebAPI = hostWebAPI;
         this.appsAPI    = appsAPI;
         this.whiteBlackList = whiteBlackList;
         this.isTurnedOn = isTurnedOn;
-        this.systemUser = systemUser;
+        this.systemUserSupplier = systemUser;
         addRequestMatcher(requestMatchers);
     }
 
@@ -153,7 +154,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
         return   Try.of(
                         () ->
                                 this.appsAPI.getSecrets(
-                                        AnalyticsApp.ANALYTICS_APP_KEY, true, host, systemUser).isPresent())
+                                        AnalyticsApp.ANALYTICS_APP_KEY, true, host, systemUserSupplier.get()).isPresent())
                 .getOrElseGet(e -> false);
     }
 
