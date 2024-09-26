@@ -21,4 +21,11 @@ public class ReportResponse implements Serializable {
     public List<ResultSetItem> getResults() {
         return results;
     }
+
+    @Override
+    public String toString() {
+        return "ReportResponse{" +
+                "results=" + results +
+                '}';
+    }
 }
