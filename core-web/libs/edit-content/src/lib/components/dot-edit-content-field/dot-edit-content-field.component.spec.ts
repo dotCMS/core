@@ -73,17 +73,21 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
     [FIELD_TYPES.FILE]: {
         component: DotEditContentFileFieldComponent,
-        providers: [{
-            provide: DotFileFieldUploadService,
-            useValue: {}
-        }],
+        providers: [
+            {
+                provide: DotFileFieldUploadService,
+                useValue: {}
+            }
+        ]
     },
     [FIELD_TYPES.IMAGE]: {
         component: DotEditContentFileFieldComponent,
-        providers: [{
-            provide: DotFileFieldUploadService,
-            useValue: {}
-        }],
+        providers: [
+            {
+                provide: DotFileFieldUploadService,
+                useValue: {}
+            }
+        ]
     },
     [FIELD_TYPES.TEXTAREA]: DotEditContentTextAreaComponent,
     [FIELD_TYPES.SELECT]: DotEditContentSelectFieldComponent,
