@@ -22,7 +22,6 @@ import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -37,8 +36,6 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TemplateLayoutDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.UserDataGen;
-import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
-import com.dotcms.rendering.velocity.viewtools.content.ContentTool;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.rest.EmptyHttpResponse;
@@ -90,6 +87,8 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -102,8 +101,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -112,7 +113,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import org.elasticsearch.action.search.SearchResponse;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -1238,6 +1238,15 @@ public class PageResourceTest {
     }
 
     /**
+     * This is probably the most intricate test in this class.
+     * It tests the behavior of the page rendering when a contentlet is published in the future.
+     * This explains the complexity of the test:
+     * 1. We need to create a page with a container and a contentlet.
+     * 2. The container has to hold a widget that will render the contentlet in the future using the dotcontent velocity tool.
+     * 3. The container and the widget must be published.
+     * 4. Then we need to create a contentlet that will be published in the future. in this case we're going to use a blog
+     * 5. We need to publish the page and everything else. But the blog. The blog is set to be published in the future using the publishDate property.
+     * 6. The blog content-type must be prepared indicating what property will be used as the publish date.
      * Given scenario: A page with a container and a contentlet is created. The contentlet is published in a future date.
      * Expected result: The contentlet should be rendered in the page once we pass the future date as a parameter.
      * @throws DotDataException
@@ -1245,11 +1254,10 @@ public class PageResourceTest {
      */
     @Test
     public void testRenderWithTimeMachine()
-            throws DotDataException, DotSecurityException, WebAssetException {
+            throws DotDataException, DotSecurityException, WebAssetException, JsonProcessingException {
 
         final TimeZone utc = TimeZone.getTimeZone("UTC");
         TimeZone.setDefault(utc);
-        final String LIVE = "LIVE";
 
         // Calculate the date relative to today
         // Publish Date is 10 days from now
@@ -1262,30 +1270,43 @@ public class PageResourceTest {
         final Instant relativeInstant2 = relativeDate2.atZone(utc.toZoneId()).toInstant();
         final Date timeMachineDate = Date.from(relativeInstant2);
 
-        // validatePageRendering(LIVE, true, null, null);
-        //We shouldn't get any contents before publish date
-        // validatePageRendering(LIVE, false, publishDate, new Date());
+        final LocalDateTime relativeDate3 = LocalDateTime.now().plusDays(4);
+        final Instant relativeInstant3 = relativeDate3.atZone(utc.toZoneId()).toInstant();
+        final Date timeMachineDateBefore = Date.from(relativeInstant3);
+
         //Then we should get the content after publish date
-        validatePageRendering(LIVE, true, publishDate, timeMachineDate);
+        validatePageRendering(PageMode.LIVE, false, null, null);
+
+        validatePageRendering(PageMode.LIVE, true, publishDate, timeMachineDate);
+        validatePageRendering(PageMode.PREVIEW_MODE, true, publishDate, timeMachineDate);
+        validatePageRendering(PageMode.EDIT_MODE, true, publishDate, timeMachineDate);
+
+        validatePageRendering(PageMode.LIVE, false, publishDate, timeMachineDateBefore);
+        validatePageRendering(PageMode.PREVIEW_MODE, false, publishDate, timeMachineDateBefore);
+        validatePageRendering(PageMode.EDIT_MODE, false, publishDate, timeMachineDateBefore);
     }
 
+    /**
+     * Widget code that will render the contentlet in the future
+     * This mirrors the code we ship with the dotCMS this is how we actually render the contentlets in the future
+     * @param host the host our content is in
+     * @param contentType the content type of the content we want to render
+     * @return the widget code
+     */
     String widgetCode(final Host host, final ContentType contentType) {
         final String code = String.format(
-                "#set($blogs = $dotcontent.pullPerPage(\"+contentType:%s +(conhost:%s conhost:SYSTEM_HOST) +variant:default\", 0, 100, null))" +
+                "#set($blogs = $dotcontent.pullPerPage(\"+contentType:%s +(conhost:%s conhost:SYSTEM_HOST) +variant:default\", 0, 100, null))\n" +
                 "#set($resultList = []) \n" +
                 "#foreach($con in $blogs)\n" +
                    "    #set($resultdoc = {})\n" +
                    "    #set($resultdoc.identifier = ${con.identifier})\n" +
                    "    #set($resultdoc.inode = ${con.inode})\n" +
                    "    #set($resultdoc.title = $!{con.title})\n" +
-                   "    #set($resultdoc.postingDate =  ${con.postingDate})\n" +
-                   "    #set($notUsedValue = $resultList.add($resultdoc))" +
+                   "    #set($notUsedValue = $resultList.add($resultdoc))\n" +
                  "#end\n" +
-                 "$!dotJSON.put(\"posts\", $resultList)"
-                ,
+                 "!$dotJSON.put(\"posts\", $resultList)",
                 contentType.variable(), host.getIdentifier(), contentType.variable()
         );
-        Logger.info(this, "Container code: " + code);
         return code;
     }
 
@@ -1299,8 +1320,8 @@ public class PageResourceTest {
      * @throws DotSecurityException
      * @throws WebAssetException
      */
-    private void validatePageRendering(final String mode, final boolean expectContentlet, final Date publishDate, final Date timeMachineDate)
-            throws DotDataException, DotSecurityException, WebAssetException {
+    private void validatePageRendering(final PageMode mode, final boolean expectContentlet, final Date publishDate, final Date timeMachineDate)
+            throws DotDataException, DotSecurityException, WebAssetException, JsonProcessingException {
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         final long languageId = 1L;
@@ -1362,20 +1383,20 @@ public class PageResourceTest {
         assertNotNull(blog.getIdentifier());
         if (null != publishDate) {
             assertFalse(blog.isLive());
-        } else {
-            ContentletDataGen.publish(blog);
-            assertTrue(blog.isLive());
         }
 
-        final String query = String.format(
-                "+contentType:%s +(conhost:%s conhost:SYSTEM_HOST) +variant:default +live:true",
-                blogLikeContentType.variable(), host.getIdentifier());
-
-        if(null != timeMachineDate) {
+        //Here we're testing the time machine  query will return contentlets that are published in the future
+        if(null != timeMachineDate ) {
+            final String query = String.format(
+                    "+contentType:%s +(conhost:%s conhost:SYSTEM_HOST) +variant:default +live:true",
+                    blogLikeContentType.variable(), host.getIdentifier());
             final PaginatedContentList<Contentlet> pull = ContentUtils.pullPerPage(query, 0, 10,
-                    null, APILocator.systemUser(), String.valueOf(timeMachineDate.getTime())
-            );
-            assertFalse("We should get items from using the time-machine date",pull.isEmpty());
+                    null, APILocator.systemUser(), String.valueOf(timeMachineDate.getTime()));
+            if(expectContentlet) {
+                assertFalse("We should get items from using the time-machine date", pull.isEmpty());
+            } else {
+                assertTrue("We should not get items from using the time-machine date", pull.isEmpty());
+            }
         }
 
         // Create a widget to show the blog
@@ -1408,24 +1429,57 @@ public class PageResourceTest {
         HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
         HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
 
-        when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.EDIT_MODE);
+        //This param is required to be live to behave correctly when building the query 
+        when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE);
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
 
         final String myPagePath = String.format("/%s/%s", myFolderName, myPageName);
         final Response myResponse = pageResource
-                .loadJson(this.request, this.response, myPagePath, mode, null,
+                .loadJson(this.request, this.response, myPagePath, mode.name(), null,
                         String.valueOf(languageId), null, futureIso8601);
 
         RestUtilTest.verifySuccessResponse(myResponse);
 
         final PageView pageView = (PageView) ((ResponseEntityView<?>) myResponse.getEntity()).getEntity();
-        System.out.println(pageView);
-        if (expectContentlet) {
-            assertEquals(1, pageView.getNumberContents());
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final String json = objectMapper.writeValueAsString(pageView);
+        final JsonNode node = objectMapper.readTree(json);
+        final Optional<JsonNode> widgetCodeJSON = findNode(node, "widgetCodeJSON");
+
+        if(widgetCodeJSON.isPresent()){
+            final JsonNode posts = widgetCodeJSON.get().get("posts");
+            if(expectContentlet){
+                assertFalse(posts.isEmpty());
+            } else {
+                assertTrue(posts.isEmpty());
+            }
         } else {
-            assertEquals(0, pageView.getNumberContents());
+            assertFalse(expectContentlet);
         }
     }
 
+    /**
+     * Utility method to find a node in a JSON tree
+     * @param currentNode
+     * @param nodeName
+     * @return
+     */
+    public static Optional<JsonNode> findNode(JsonNode currentNode, String nodeName) {
+        if (currentNode.has(nodeName)) {
+            return Optional.of(currentNode.get(nodeName));  // Node found in the current level
+        }
+
+        // if the current node is an object or array, iterate over its children
+        Iterator<JsonNode> elements = currentNode.elements();
+        while (elements.hasNext()) {
+            JsonNode child = elements.next();
+            Optional<JsonNode> result = findNode(child, nodeName);  // recursive call
+            if (result.isPresent()) {
+                return result;
+            }
+        }
+
+        return Optional.empty();  // Node not found
+    }
 
 }
