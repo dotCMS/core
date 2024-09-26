@@ -31,4 +31,10 @@ public class ResultSetItem implements Serializable {
         return new HashMap<>(item);
     }
 
+    @Override
+    public String toString() {
+        return "ResultSetItem{" +
+                "item=" + item +
+                '}';
+    }
 }

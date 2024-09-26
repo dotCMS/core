@@ -28,6 +28,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 /**
+ * Resource class that exposes endpoints to query content analytics data.
  * This REST Endpoint exposes different operations to query Content Analytics data. Content
  * Analytics will enable customers to track the health and engagement of their content at the level
  * of individual content items.
@@ -48,6 +49,7 @@ public class ContentAnalyticsResource {
         this(CDIUtils.getBean(ContentAnalyticsAPI.class).orElseGet(APILocator::getContentAnalyticsAPI));
     }
 
+    //@Inject
     @VisibleForTesting
     public ContentAnalyticsResource(final ContentAnalyticsAPI contentAnalyticsAPI) {
         this(new WebResource(), contentAnalyticsAPI);
@@ -60,12 +62,14 @@ public class ContentAnalyticsResource {
         this.contentAnalyticsAPI = contentAnalyticsAPI;
     }
 
-    @POST
-    @Path("/_query")
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    /**
+     * Query Content Analytics data.
+     *
+     * @param request   the HTTP request.
+     * @param response  the HTTP response.
+     * @param queryForm the query form.
+     * @return the report response entity view.
+     */
     @Operation(
             operationId = "postContentAnalyticsQuery",
             summary = "Retrieve Content Analytics data",
@@ -101,18 +105,27 @@ public class ContentAnalyticsResource {
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
+    @POST
+    @Path("/_query")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ReportResponseEntityView query(@Context final HttpServletRequest request,
                                           @Context final HttpServletResponse response,
                                           final QueryForm queryForm) {
+
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
                 .init();
+
+        final User user = initDataObject.getUser();
         DotPreconditions.checkNotNull(queryForm, IllegalArgumentException.class, "The 'query' JSON data cannot be null");
         Logger.debug(this, () -> "Querying content analytics data with the form: " + queryForm);
         final ReportResponse reportResponse =
-                this.contentAnalyticsAPI.runReport(queryForm.getQuery(), initDataObject.getUser());
+                this.contentAnalyticsAPI.runReport(queryForm.getQuery(), user);
         return new ReportResponseEntityView(reportResponse);
     }
 
