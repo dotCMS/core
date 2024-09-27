@@ -1,5 +1,6 @@
 package com.dotcms.jobs.business.job;
 
+import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.LocalDateTime;
@@ -38,6 +39,8 @@ public interface AbstractJob {
     Optional<JobResult> result();
 
     Map<String, Object> parameters();
+
+    Optional<ProgressTracker> progressTracker();
 
     @Default
     default int retryCount() {
@@ -110,19 +113,12 @@ public interface AbstractJob {
      * @return A new Job instance marked as completed.
      */
     default Job markAsCompleted(final JobResult result) {
-        if (result != null) {
-            return Job.builder().from(this)
-                    .state(JobState.COMPLETED)
-                    .result(result)
-                    .completedAt(Optional.of(LocalDateTime.now()))
-                    .updatedAt(LocalDateTime.now())
-                    .build();
-        }
 
         return Job.builder().from(this)
                 .state(JobState.COMPLETED)
                 .completedAt(Optional.of(LocalDateTime.now()))
                 .updatedAt(LocalDateTime.now())
+                .result(result != null ? Optional.of(result) : Optional.empty())
                 .build();
     }
 
@@ -134,19 +130,12 @@ public interface AbstractJob {
      * @return A new Job instance marked as canceled.
      */
     default Job markAsCancelled(final JobResult result) {
-        if (result != null) {
-            return Job.builder().from(this)
-                    .state(JobState.CANCELLED)
-                    .result(result)
-                    .completedAt(Optional.of(LocalDateTime.now()))
-                    .updatedAt(LocalDateTime.now())
-                    .build();
-        }
 
         return Job.builder().from(this)
                 .state(JobState.CANCELLED)
                 .completedAt(Optional.of(LocalDateTime.now()))
                 .updatedAt(LocalDateTime.now())
+                .result(result != null ? Optional.of(result) : Optional.empty())
                 .build();
     }
 

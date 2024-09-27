@@ -9,6 +9,7 @@ import com.dotcms.jobs.business.api.events.JobCompletedEvent;
 import com.dotcms.jobs.business.api.events.JobCreatedEvent;
 import com.dotcms.jobs.business.api.events.JobFailedEvent;
 import com.dotcms.jobs.business.api.events.JobProgressUpdatedEvent;
+import com.dotcms.jobs.business.api.events.JobRemovedFromQueueEvent;
 import com.dotcms.jobs.business.api.events.JobStartedEvent;
 import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.error.CircuitBreaker;
@@ -20,6 +21,7 @@ import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.processor.Cancellable;
+import com.dotcms.jobs.business.processor.DefaultProgressTracker;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.queue.JobQueue;
@@ -399,6 +401,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 }
             }
         } catch (JobQueueDataException e) {
+            Logger.error(this, "Error updating job progress: " + e.getMessage(), e);
             throw new DotDataException("Error updating job progress", e);
         }
 
@@ -566,6 +569,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         try {
             jobQueue.removeJobFromQueue(job.id());
+            eventProducer.getEvent(JobRemovedFromQueueEvent.class).fire(
+                    new JobRemovedFromQueueEvent(job, LocalDateTime.now())
+            );
         } catch (JobQueueDataException e) {
             throw new DotDataException("Error removing failed job", e);
         }
@@ -581,15 +587,14 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         JobProcessor processor = processors.get(job.queueName());
         if (processor != null) {
 
-            Job runningJob = job.markAsRunning();
+            final ProgressTracker progressTracker = new DefaultProgressTracker();
+            Job runningJob = job.markAsRunning().withProgressTracker(progressTracker);
             updateJobStatus(runningJob);
             eventProducer.getEvent(JobStartedEvent.class).fire(
                     new JobStartedEvent(runningJob, LocalDateTime.now())
             );
 
             try (final CloseableScheduledExecutor closeableExecutor = new CloseableScheduledExecutor()) {
-
-                final ProgressTracker progressTracker = processor.progressTracker();
 
                 // Start a separate thread to periodically update and persist progress
                 AtomicReference<Float> currentProgress = new AtomicReference<>((float) 0);
@@ -604,7 +609,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                                     currentProgress.set(progress);
                                 }
                             } catch (DotDataException e) {
-                                Logger.error(this, "Error updating job progress: " + e.getMessage(), e);
                                 throw new DotRuntimeException("Error updating job progress", e);
                             }
                         }, 0, 1, TimeUnit.SECONDS
@@ -653,7 +657,12 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             jobResult = JobResult.builder().metadata(resultMetadata).build();
         }
 
-        final Job completedJob = job.markAsCompleted(jobResult);
+        float progress = job.progress();
+        if (job.progressTracker().isPresent()) {
+            progress = job.progressTracker().get().progress();
+        }
+
+        final Job completedJob = job.markAsCompleted(jobResult).withProgress(progress);
         updateJobStatus(completedJob);
         eventProducer.getEvent(JobCompletedEvent.class).fire(
                 new JobCompletedEvent(completedJob, LocalDateTime.now())
@@ -694,7 +703,12 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             jobResult = JobResult.builder().metadata(resultMetadata).build();
         }
 
-        Job cancelledJob = job.markAsCancelled(jobResult);
+        float progress = job.progress();
+        if (job.progressTracker().isPresent()) {
+            progress = job.progressTracker().get().progress();
+        }
+
+        Job cancelledJob = job.markAsCancelled(jobResult).withProgress(progress);
         updateJobStatus(cancelledJob);
         eventProducer.getEvent(JobCancelledEvent.class).fire(
                 new JobCancelledEvent(cancelledJob, LocalDateTime.now())
@@ -732,7 +746,12 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             }
         }
 
-        final Job failedJob = job.markAsFailed(jobResult);
+        float progress = job.progress();
+        if (job.progressTracker().isPresent()) {
+            progress = job.progressTracker().get().progress();
+        }
+
+        final Job failedJob = job.markAsFailed(jobResult).withProgress(progress);
         updateJobStatus(failedJob);
         eventProducer.getEvent(JobFailedEvent.class).fire(
                 new JobFailedEvent(failedJob, LocalDateTime.now())

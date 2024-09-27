@@ -45,7 +45,7 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
     public ExponentialBackoffRetryStrategy(long initialDelay, long maxDelay, double backoffFactor,
             int maxRetries, Set<Class<? extends Throwable>> retryableExceptions) {
 
-        if (initialDelay <= 0 || maxDelay <= 0 || backoffFactor <= 1 || maxRetries <= 0) {
+        if (initialDelay <= 0 || maxDelay <= 0 || backoffFactor <= 1) {
             throw new IllegalArgumentException("Invalid retry strategy parameters");
         }
 

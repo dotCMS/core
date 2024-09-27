@@ -28,14 +28,4 @@ public interface JobProcessor {
      */
     Map<String, Object> getResultMetadata(Job job);
 
-    /**
-     * Provides a progress tracker. The default implementation returns a new instance of
-     * DefaultProgressTracker.
-     *
-     * @return A ProgressTracker instance
-     */
-    default ProgressTracker progressTracker() {
-        return new DefaultProgressTracker();
-    }
-
 }

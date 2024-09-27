@@ -1,7 +1,6 @@
 package com.dotcms.jobs.business.api.events;
 
 import com.dotcms.jobs.business.job.Job;
-import com.dotcms.jobs.business.job.JobState;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,12 +59,16 @@ public class RealTimeJobMonitor {
         List<Consumer<Job>> watchers = jobWatchers.get(job.id());
         if (watchers != null) {
             watchers.forEach(watcher -> watcher.accept(job));
-            if (watchers.isEmpty() || (job.state() == JobState.COMPLETED
-                    || job.state() == JobState.FAILED
-                    || job.state() == JobState.CANCELLED)) {
-                jobWatchers.remove(job.id());
-            }
         }
+    }
+
+    /**
+     * Removes the watcher associated with the specified job ID.
+     *
+     * @param jobId The ID of the job whose watcher is to be removed.
+     */
+    private void removeWatcher(String jobId) {
+        jobWatchers.remove(jobId);
     }
 
     /**
@@ -93,6 +96,7 @@ public class RealTimeJobMonitor {
      */
     public void onJobCanceled(@Observes JobCancelledEvent event) {
         updateWatchers(event.getJob());
+        removeWatcher(event.getJob().id());
     }
 
     /**
@@ -102,6 +106,16 @@ public class RealTimeJobMonitor {
      */
     public void onJobCompleted(@Observes JobCompletedEvent event) {
         updateWatchers(event.getJob());
+        removeWatcher(event.getJob().id());
+    }
+
+    /**
+     * Handles the job removed from queue event when failed and is not retryable.
+     *
+     * @param event The JobRemovedFromQueueEvent.
+     */
+    public void onJobRemovedFromQueueEvent(@Observes JobRemovedFromQueueEvent event) {
+        removeWatcher(event.getJob().id());
     }
 
     /**

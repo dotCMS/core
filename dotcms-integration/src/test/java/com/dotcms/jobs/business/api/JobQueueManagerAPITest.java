@@ -265,13 +265,14 @@ public class JobQueueManagerAPITest {
         when(mockJobQueue.getJob(jobId)).thenReturn(mockJob);
         when(mockJobQueue.nextJob()).thenReturn(mockJob).thenReturn(null);
         when(mockJob.markAsRunning()).thenReturn(mockJob);
+        when(mockJob.withProgressTracker(any(DefaultProgressTracker.class))).thenReturn(mockJob);
 
         // Make the circuit breaker always allow requests
         when(mockCircuitBreaker.allowRequest()).thenReturn(true);
 
         // Mock JobProcessor behavior
         ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
-        when(mockJobProcessor.progressTracker()).thenReturn(mockProgressTracker);
+        when(mockJob.progressTracker()).thenReturn(Optional.ofNullable(mockProgressTracker));
         when(mockJob.progress()).thenReturn(0f);
         when(mockJob.withProgress(anyFloat())).thenReturn(mockJob);
 
@@ -361,6 +362,8 @@ public class JobQueueManagerAPITest {
             return mockJob;
         });
 
+        when(mockJob.withProgressTracker(any(DefaultProgressTracker.class))).thenReturn(mockJob);
+
         // Set up the job queue to return our mock job twice (for initial attempt and retry)
         when(mockJobQueue.nextJob()).thenReturn(mockJob, mockJob, null);
 
@@ -373,7 +376,7 @@ public class JobQueueManagerAPITest {
 
         // Configure progress tracker
         ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
-        when(mockJobProcessor.progressTracker()).thenReturn(mockProgressTracker);
+        when(mockJob.progressTracker()).thenReturn(Optional.ofNullable(mockProgressTracker));
         when(mockJob.progress()).thenReturn(0f);
         when(mockJob.withProgress(anyFloat())).thenReturn(mockJob);
 
@@ -454,6 +457,8 @@ public class JobQueueManagerAPITest {
             return mockJob;
         });
 
+        when(mockJob.withProgressTracker(any(DefaultProgressTracker.class))).thenReturn(mockJob);
+
         // Configure job queue to always return the mockJob until it's completed
         when(mockJobQueue.nextJob()).thenAnswer(inv ->
                 jobState.get() != JobState.COMPLETED ? mockJob : null
@@ -468,7 +473,7 @@ public class JobQueueManagerAPITest {
 
         // Configure progress tracker
         ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
-        when(mockJobProcessor.progressTracker()).thenReturn(mockProgressTracker);
+        when(mockJob.progressTracker()).thenReturn(Optional.ofNullable(mockProgressTracker));
         when(mockJob.progress()).thenReturn(0f);
         when(mockJob.withProgress(anyFloat())).thenReturn(mockJob);
 
@@ -555,6 +560,8 @@ public class JobQueueManagerAPITest {
             return mockJob;
         });
 
+        when(mockJob.withProgressTracker(any(DefaultProgressTracker.class))).thenReturn(mockJob);
+
         // Configure job queue
         when(mockJobQueue.nextJob()).thenReturn(mockJob, mockJob, mockJob, mockJob, mockJob, null);
 
@@ -568,7 +575,7 @@ public class JobQueueManagerAPITest {
 
         // Configure progress tracker
         ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
-        when(mockJobProcessor.progressTracker()).thenReturn(mockProgressTracker);
+        when(mockJob.progressTracker()).thenReturn(Optional.ofNullable(mockProgressTracker));
 
         // Configure job processor to always fail
         doThrow(new RuntimeException("Simulated failure")).when(mockJobProcessor).process(any());
@@ -626,13 +633,14 @@ public class JobQueueManagerAPITest {
             jobState.set(JobState.COMPLETED);
             return mockJob;
         });
+        when(mockJob.withProgressTracker(any(DefaultProgressTracker.class))).thenReturn(mockJob);
 
         // Configure job queue
         when(mockJobQueue.nextJob()).thenReturn(mockJob, null);
 
         // Configure progress tracker
         ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
-        when(mockJobProcessor.progressTracker()).thenReturn(mockProgressTracker);
+        when(mockJob.progressTracker()).thenReturn(Optional.ofNullable(mockProgressTracker));
         when(mockJob.progress()).thenReturn(0f);
         when(mockJob.withProgress(anyFloat())).thenReturn(mockJob);
 
@@ -692,6 +700,7 @@ public class JobQueueManagerAPITest {
             jobState.set(JobState.FAILED);
             return mockJob;
         });
+        when(mockJob.withProgressTracker(any(DefaultProgressTracker.class))).thenReturn(mockJob);
 
         // Configure job queue
         when(mockJobQueue.nextJob()).thenReturn(mockJob, mockJob, null);
@@ -704,7 +713,7 @@ public class JobQueueManagerAPITest {
 
         // Configure progress tracker
         ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
-        when(mockJobProcessor.progressTracker()).thenReturn(mockProgressTracker);
+        when(mockJob.progressTracker()).thenReturn(Optional.ofNullable(mockProgressTracker));
         when(mockJob.progress()).thenReturn(0f);
         when(mockJob.withProgress(anyFloat())).thenReturn(mockJob);
 
@@ -766,6 +775,7 @@ public class JobQueueManagerAPITest {
             jobState.set(JobState.COMPLETED);
             return mockJob;
         });
+        when(mockJob.withProgressTracker(any(DefaultProgressTracker.class))).thenReturn(mockJob);
 
         when(mockJob.progress()).thenAnswer(inv -> jobProgress.get());
         when(mockJob.withProgress(anyFloat())).thenAnswer(inv -> {
@@ -779,7 +789,7 @@ public class JobQueueManagerAPITest {
 
         // Create a real ProgressTracker
         ProgressTracker realProgressTracker = new DefaultProgressTracker();
-        when(mockJobProcessor.progressTracker()).thenReturn(realProgressTracker);
+        when(mockJob.progressTracker()).thenReturn(Optional.of(realProgressTracker));
 
         // Make the circuit breaker always allow requests
         when(mockCircuitBreaker.allowRequest()).thenReturn(true);
@@ -882,10 +892,11 @@ public class JobQueueManagerAPITest {
         when(mockJobQueue.getJob(anyString())).thenReturn(failingJob);
         when(failingJob.withState(any())).thenReturn(failingJob);
         when(failingJob.markAsFailed(any())).thenReturn(failingJob);
+        when(failingJob.markAsRunning()).thenReturn(failingJob);
 
         // Configure progress tracker
         ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
-        when(mockJobProcessor.progressTracker()).thenReturn(mockProgressTracker);
+        when(failingJob.progressTracker()).thenReturn(Optional.ofNullable(mockProgressTracker));
         when(failingJob.progress()).thenReturn(0f);
         when(failingJob.withProgress(anyFloat())).thenReturn(failingJob);
 
@@ -950,10 +961,11 @@ public class JobQueueManagerAPITest {
         when(mockJob.withState(any())).thenReturn(mockJob);
         when(mockJob.markAsRunning()).thenReturn(mockJob);
         when(mockJob.markAsFailed(any())).thenReturn(mockJob);
+        when(mockJob.withProgressTracker(any(DefaultProgressTracker.class))).thenReturn(mockJob);
 
         // Configure progress tracker
         ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
-        when(mockJobProcessor.progressTracker()).thenReturn(mockProgressTracker);
+        when(mockJob.progressTracker()).thenReturn(Optional.ofNullable(mockProgressTracker));
         when(mockJob.progress()).thenReturn(0f);
         when(mockJob.withProgress(anyFloat())).thenReturn(mockJob);
 
@@ -1026,10 +1038,13 @@ public class JobQueueManagerAPITest {
         when(mockJobQueue.getJob(anyString())).thenReturn(failingJob);
         when(failingJob.withState(any())).thenReturn(failingJob);
         when(failingJob.markAsFailed(any())).thenReturn(failingJob);
+        when(failingJob.markAsRunning()).thenReturn(failingJob);
+        when(failingJob.withProgressTracker(any(DefaultProgressTracker.class))).thenReturn(
+                failingJob);
 
         // Configure progress tracker
         ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
-        when(mockJobProcessor.progressTracker()).thenReturn(mockProgressTracker);
+        when(failingJob.progressTracker()).thenReturn(Optional.ofNullable(mockProgressTracker));
         when(failingJob.progress()).thenReturn(0f);
         when(failingJob.withProgress(anyFloat())).thenReturn(failingJob);
 
@@ -1198,6 +1213,7 @@ public class JobQueueManagerAPITest {
         });
         when(mockJob.progress()).thenReturn(0f);
         when(mockJob.withProgress(anyFloat())).thenReturn(mockJob);
+        when(mockJob.withProgressTracker(any(DefaultProgressTracker.class))).thenReturn(mockJob);
 
         when(mockJobQueue.getUpdatedJobsSince(anySet(), any(LocalDateTime.class)))
                 .thenAnswer(invocation -> Collections.singletonList(mockJob));
