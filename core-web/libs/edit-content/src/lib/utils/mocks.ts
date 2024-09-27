@@ -12,6 +12,7 @@ import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
+    DotCMSTempFile,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -1389,4 +1390,151 @@ export const TREE_SELECT_MOCK_NODE: CustomTreeNode = {
         path: 'demo.dotcms.com',
         folders: [...TREE_SELECT_MOCK[0].children]
     }
+};
+
+export const NEW_FILE_MOCK: { entity: DotCMSContentlet } = {
+    entity: {
+        AUTO_ASSIGN_WORKFLOW: false,
+        __IS_NEW_CONTENT__: true,
+        __icon__: 'Icon',
+        archived: false,
+        asset: '/dA/a991ddc5-39dc-4782-bc04-f4c4fa0ccff6/asset/image 2.jpg',
+        assetContentAsset: 'a991ddc5-39dc-4782-bc04-f4c4fa0ccff6/asset',
+        assetMetaData: {
+            contentType: 'image/jpeg',
+            editableAsText: false,
+            fileSize: 3878653,
+            height: 1536,
+            isImage: true,
+            length: 3878653,
+            modDate: 1727377876393,
+            name: 'image 2.jpg',
+            sha256: '132597a99d807d12d0b13d9bf3149c6644d9f252e33896d95fc9fd177320da62',
+            title: 'image 2.jpg',
+            version: 20220201,
+            width: 2688
+        },
+        assetVersion: '/dA/fe160e65-5cf4-4ef6-9b1d-47c5326fec30/asset/image 2.jpg',
+        baseType: 'DOTASSET',
+        contentType: 'dotAsset',
+        creationDate: 1727377876409,
+        extension: 'jpg',
+        folder: 'SYSTEM_FOLDER',
+        hasLiveVersion: true,
+        hasTitleImage: true,
+        host: 'SYSTEM_HOST',
+        hostName: 'System Host',
+        identifier: 'a991ddc5-39dc-4782-bc04-f4c4fa0ccff6',
+        inode: 'fe160e65-5cf4-4ef6-9b1d-47c5326fec30',
+        isContentlet: true,
+        languageId: 1,
+        live: true,
+        locked: false,
+        mimeType: 'image/jpeg',
+        modDate: '1727377876407',
+        modUser: 'dotcms.org.1',
+        modUserName: 'Admin User',
+        name: 'image 2.jpg',
+        owner: 'dotcms.org.1',
+        ownerName: 'Admin User',
+        path: '/content.fe160e65-5cf4-4ef6-9b1d-47c5326fec30',
+        publishDate: 1727377876428,
+        publishUser: 'dotcms.org.1',
+        publishUserName: 'Admin User',
+        size: 3878653,
+        sortOrder: 0,
+        stInode: 'f2d8a1c7-2b77-2081-bcf1-b5348988c08d',
+        statusIcons:
+            "<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>",
+        title: 'image 2.jpg',
+        titleImage: 'asset',
+        type: 'dotasset',
+        url: '/content.fe160e65-5cf4-4ef6-9b1d-47c5326fec30',
+        working: true
+    }
+};
+
+export const NEW_FILE_EDITABLE_MOCK: { entity: DotCMSContentlet } = {
+    entity: {
+        AUTO_ASSIGN_WORKFLOW: false,
+        __IS_NEW_CONTENT__: true,
+        __icon__: 'Icon',
+        archived: false,
+        asset: '/dA/a1bb59eb-6708-4701-aeea-ab93c8831203/asset/docker-compose.yml',
+        assetContentAsset: 'a1bb59eb-6708-4701-aeea-ab93c8831203/asset',
+        assetMetaData: {
+            contentType: 'text/plain; charset=ISO-8859-1',
+            editableAsText: true,
+            fileSize: 3786,
+            isImage: false,
+            length: 3786,
+            modDate: 1727356262640,
+            name: 'docker-compose.yml',
+            sha256: 'd5d719c2f9fe025252e421b0344310d5839ff39ef9e4a38bafd93148591a2439',
+            title: 'docker-compose.yml',
+            version: 20220201
+        },
+        assetVersion: '/dA/eccdb89f-5aa1-4f0c-a9ec-aa97304d80d5/asset/docker-compose.yml',
+        baseType: 'DOTASSET',
+        contentType: 'dotAsset',
+        creationDate: 1727356262667,
+        extension: 'yml',
+        folder: 'SYSTEM_FOLDER',
+        hasLiveVersion: true,
+        hasTitleImage: false,
+        host: 'SYSTEM_HOST',
+        hostName: 'System Host',
+        identifier: 'a1bb59eb-6708-4701-aeea-ab93c8831203',
+        inode: 'eccdb89f-5aa1-4f0c-a9ec-aa97304d80d5',
+        isContentlet: true,
+        languageId: 1,
+        live: true,
+        locked: false,
+        mimeType: 'unknown',
+        modDate: '1727356262665',
+        modUser: 'dotcms.org.1',
+        modUserName: 'Admin User',
+        name: 'docker-compose.yml',
+        owner: 'dotcms.org.1',
+        ownerName: 'Admin User',
+        path: '/content.eccdb89f-5aa1-4f0c-a9ec-aa97304d80d5',
+        publishDate: 1727356262706,
+        publishUser: 'dotcms.org.1',
+        publishUserName: 'Admin User',
+        size: 3786,
+        sortOrder: 0,
+        stInode: 'f2d8a1c7-2b77-2081-bcf1-b5348988c08d',
+        statusIcons:
+            "<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>",
+        title: 'docker-compose.yml',
+        titleImage: 'TITLE_IMAGE_NOT_FOUND',
+        type: 'dotasset',
+        url: '/content.eccdb89f-5aa1-4f0c-a9ec-aa97304d80d5',
+        working: true,
+        content: 'my content'
+    }
+};
+
+export const TEMP_FILE_MOCK: DotCMSTempFile = {
+    fileName: 'enterprise-angular.pdf',
+    folder: '',
+    id: 'temp_1e8021f973',
+    image: false,
+    length: 13909932,
+    metadata: {
+        contentType: 'application/pdf',
+        editableAsText: false,
+        fileSize: 13909932,
+        isImage: false,
+        length: 13909932,
+        modDate: 1727375044693,
+        name: 'enterprise-angular.pdf',
+        sha256: '7f8bc1f6485876ca6d49be77917bd35ae3de99f9a56ff94a42df3217419b30cd',
+        title: 'enterprise-angular.pdf',
+        version: 20220201
+    },
+    mimeType: 'application/pdf',
+    referenceUrl: '/dA/temp_1e8021f973/tmp/enterprise-angular.pdf',
+    thumbnailUrl:
+        '/contentAsset/image/temp_1e8021f973/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/enterprise-angular.pdf'
 };

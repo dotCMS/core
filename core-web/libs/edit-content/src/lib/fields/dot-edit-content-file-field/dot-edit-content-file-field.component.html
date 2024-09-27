@@ -1,25 +1,36 @@
 <div
     class="file-field__container"
-    [class.file-field__container--empty]="store.isEmpty()"
+    [class.file-field__container--empty]="store.isInit()"
+    [class.file-field__container--preview]="store.isPreview()"
     [class.file-field__container--uploading]="store.isUploading()">
     @switch (store.fileStatus()) {
         @case ('init') {
             <div
                 [class.file-field__drop-zone--active]="store.dropZoneActive()"
                 class="file-field__drop-zone">
-                <dot-drop-zone data-testId="dropzone">
-                    @if (store.uiMessage()) {
-                        <dot-file-field-ui-message [uiMessage]="store.uiMessage()">
-                            <button
-                                class="file-field__drop-zone-btn"
-                                data-testId="choose-file-btn"
-                                type="button">
-                                {{ 'dot.file.field.action.choose.file' | dm }}
-                            </button>
-                        </dot-file-field-ui-message>
-                    }
+                <input
+                    #inputFile
+                    [accept]="store.acceptedFiles().join(',')"
+                    (change)="fileSelected(inputFile.files)"
+                    data-testId="file-field__file-input"
+                    type="file" />
+                <dot-drop-zone
+                    [accept]="store.acceptedFiles()"
+                    [maxFileSize]="store.maxFileSize()"
+                    (fileDragLeave)="store.setDropZoneState(false)"
+                    (fileDragOver)="store.setDropZoneState(true)"
+                    (fileDropped)="handleFileDrop($event)"
+                    data-testId="dropzone">
+                    <dot-file-field-ui-message [uiMessage]="store.uiMessage()">
+                        <button
+                            (click)="inputFile.click()"
+                            class="file-field__drop-zone-btn"
+                            data-testId="choose-file-btn"
+                            type="button">
+                            {{ 'dot.file.field.action.choose.file' | dm }}
+                        </button>
+                    </dot-file-field-ui-message>
                 </dot-drop-zone>
-                <input #inputFile data-testId="file-field__file-input" type="file" />
             </div>
 
             <div class="file-field__actions">
@@ -48,7 +59,7 @@
                     <p-button
                         tooltipPosition="bottom"
                         data-testId="action-generate-with-ai"
-                        [label]="'dot.binary.field.action.generate.with.dotai' | dm"
+                        [label]="'dot.file.field.action.generate.with.dotai' | dm"
                         styleClass="p-button-link p-button-sm pointer-events-auto">
                         <ng-template pTemplate="icon">
                             <svg
@@ -76,7 +87,11 @@
             <dot-spinner data-testId="loading" />
         }
         @case ('preview') {
-            <dot-file-field-preview />
+            @if (store.previewFile()) {
+                <dot-file-field-preview
+                    (removeFile)="store.removeFile()"
+                    [previewFile]="store.previewFile()" />
+            }
         }
     }
 </div>
