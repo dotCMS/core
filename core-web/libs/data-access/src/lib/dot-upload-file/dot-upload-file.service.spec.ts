@@ -9,7 +9,6 @@ describe('DotUploadFileService', () => {
     let spectator: SpectatorHttp<DotUploadFileService>;
     let dotWorkflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
 
-
     const createHttp = createHttpFactory({
         service: DotUploadFileService,
         providers: [DotUploadFileService, mockProvider(DotWorkflowActionsFireService)]
@@ -27,7 +26,9 @@ describe('DotUploadFileService', () => {
 
     describe('uploadDotAsset', () => {
         it('should upload a file as a dotAsset', () => {
-            dotWorkflowActionsFireService.newContentlet.mockReturnValueOnce(of({ entity: { identifier: 'test' } }));
+            dotWorkflowActionsFireService.newContentlet.mockReturnValueOnce(
+                of({ entity: { identifier: 'test' } })
+            );
 
             const file = new File([''], 'test.png', {
                 type: 'image/png'

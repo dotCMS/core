@@ -85,10 +85,12 @@ describe('DotWorkflowActionsFireService', () => {
         const formData = new FormData();
         formData.append('file', file);
 
-        spectator.service.newContentlet('dotAsset', { file: file.name }, formData).subscribe((res) => {
-            expect(res).toEqual([mockResult]);
-            done();
-        });
+        spectator.service
+            .newContentlet('dotAsset', { file: file.name }, formData)
+            .subscribe((res) => {
+                expect(res).toEqual([mockResult]);
+                done();
+            });
 
         const req = spectator.expectOne(
             '/api/v1/workflow/actions/default/fire/NEW',

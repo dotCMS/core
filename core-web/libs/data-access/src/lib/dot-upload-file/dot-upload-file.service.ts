@@ -32,7 +32,7 @@ export class DotUploadFileService {
     readonly #BASE_URL = '/api/v1/workflow/actions/default';
     readonly #httpClient = inject(HttpClient);
     readonly #uploadService = inject(DotUploadService);
-    readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService)
+    readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService);
 
     publishContent({
         data,
@@ -95,6 +95,10 @@ export class DotUploadFileService {
         const formData = new FormData();
         formData.append('file', file);
 
-        return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>('dotAsset', { file: file.name }, formData);
+        return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>(
+            'dotAsset',
+            { file: file.name },
+            formData
+        );
     }
 }
