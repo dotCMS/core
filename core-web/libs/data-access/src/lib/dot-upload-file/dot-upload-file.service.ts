@@ -1,7 +1,7 @@
 import { from, Observable, throwError } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { catchError, pluck, switchMap } from 'rxjs/operators';
 
@@ -29,10 +29,10 @@ interface PublishContentProps {
  */
 @Injectable()
 export class DotUploadFileService {
-    constructor(
-        private http: HttpClient,
-        private dotUploadService: DotUploadService
-    ) {}
+
+    readonly #BASE_URL = '/api/v1/workflow/actions/default';
+    readonly #httpClient = inject(HttpClient);
+    readonly #uploadService = inject(DotUploadService);
 
     publishContent({
         data,
@@ -59,9 +59,9 @@ export class DotUploadFileService {
 
                 statusCallback(FileStatus.IMPORT);
 
-                return this.http
+                return this.#httpClient
                     .post(
-                        '/api/v1/workflow/actions/default/fire/PUBLISH',
+                        `${this.#BASE_URL}/fire/PUBLISH`,
                         JSON.stringify({ contentlets }),
                         {
                             headers: {
@@ -82,7 +82,7 @@ export class DotUploadFileService {
         signal
     }: PublishContentProps): Observable<DotCMSTempFile | DotCMSTempFile[]> {
         return from(
-            this.dotUploadService.uploadFile({
+            this.#uploadService.uploadFile({
                 file,
                 maxSize,
                 signal
@@ -90,6 +90,11 @@ export class DotUploadFileService {
         );
     }
 
+    /**
+     * Uploads a file to dotCMS and creates a new dotAsset contentlet
+     * @param file the file to be uploaded
+     * @returns an Observable that emits the created contentlet
+     */
     uploadDotAsset(file: File): Observable<DotCMSContentlet> {
         const formData = new FormData();
         formData.append('file', file);
@@ -103,8 +108,8 @@ export class DotUploadFileService {
             })
         );
 
-        return this.http
-            .put<DotCMSContentlet>(`/api/v1/workflow/actions/default/fire/NEW`, formData)
+        return this.#httpClient
+            .put<DotCMSContentlet>(`${this.#BASE_URL}/fire/NEW`, formData)
             .pipe(pluck('entity'));
     }
 }
