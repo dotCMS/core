@@ -16,6 +16,22 @@
     overflow: auto;
 }
 
+.p-button.content-aside__closeBtn {
+    rect {
+        stroke: $color-palette-primary;
+    }
+
+    path {
+        fill: $color-palette-primary;
+    }
+}
+
+.content-aside__toolbar {
+    padding: $spacing-2;
+    display: flex;
+    justify-content: space-between;
+}
+
 .content-aside,
 .content-aside__section {
     display: block;
