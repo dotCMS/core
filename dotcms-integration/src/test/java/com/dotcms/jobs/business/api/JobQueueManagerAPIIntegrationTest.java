@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -65,6 +66,12 @@ public class JobQueueManagerAPIIntegrationTest {
 
         jobQueueManagerAPI.close();
         clearJobs();
+    }
+
+    @BeforeEach
+    void reset() {
+        // Reset circuit breaker
+        jobQueueManagerAPI.getCircuitBreaker().reset();
     }
 
     /**
@@ -309,6 +316,109 @@ public class JobQueueManagerAPIIntegrationTest {
             assertTrue(progressUpdates.get(i) >= progressUpdates.get(i - 1),
                     "Progress should increase or stay the same");
         }
+    }
+
+    /**
+     * Method to test: Multiple scenarios in JobQueueManagerAPI including success, failure, and
+     * cancellation Given Scenario: Multiple jobs are created simultaneously with different expected
+     * outcomes:
+     * - Two jobs expected to succeed
+     * - One job expected to fail and be retried
+     * - One job to be cancelled mid-execution ExpectedResult: All jobs reach their expected final
+     * states within the timeout period:
+     * - Successful jobs complete
+     * - Failing job retries and ultimately fails
+     * - Cancellable job is successfully cancelled All job states and related details (retry counts,
+     * error details, cancellation status) are verified
+     */
+    @Test
+    void test_CombinedScenarios() throws Exception {
+
+        // Register processors for different scenarios
+        jobQueueManagerAPI.registerProcessor("successQueue", new TestJobProcessor());
+        jobQueueManagerAPI.registerProcessor("failQueue", new FailingJobProcessor());
+        jobQueueManagerAPI.registerProcessor("cancelQueue", new CancellableJobProcessor());
+
+        // Set up retry strategy for failing jobs
+        RetryStrategy retryStrategy = new ExponentialBackoffRetryStrategy(
+                100, 1000, 2.0, 2
+        );
+        jobQueueManagerAPI.setRetryStrategy("failQueue", retryStrategy);
+
+        // Ensure JobQueueManagerAPI is started
+        if (!jobQueueManagerAPI.isStarted()) {
+            jobQueueManagerAPI.start();
+            jobQueueManagerAPI.awaitStart(5, TimeUnit.SECONDS);
+        }
+
+        // Create jobs
+        String successJob1Id = jobQueueManagerAPI.createJob("successQueue", new HashMap<>());
+        String successJob2Id = jobQueueManagerAPI.createJob("successQueue", new HashMap<>());
+        String failJobId = jobQueueManagerAPI.createJob("failQueue", new HashMap<>());
+        String cancelJobId = jobQueueManagerAPI.createJob("cancelQueue", new HashMap<>());
+
+        // Set up latches to track job completions
+        CountDownLatch successLatch = new CountDownLatch(2);
+        CountDownLatch failLatch = new CountDownLatch(1);
+        CountDownLatch cancelLatch = new CountDownLatch(1);
+
+        // Watch jobs
+        jobQueueManagerAPI.watchJob(successJob1Id, job -> {
+            if (job.state() == JobState.COMPLETED) {
+                successLatch.countDown();
+            }
+        });
+        jobQueueManagerAPI.watchJob(successJob2Id, job -> {
+            if (job.state() == JobState.COMPLETED) {
+                successLatch.countDown();
+            }
+        });
+        jobQueueManagerAPI.watchJob(failJobId, job -> {
+            if (job.state() == JobState.FAILED) {
+                failLatch.countDown();
+            }
+        });
+        jobQueueManagerAPI.watchJob(cancelJobId, job -> {
+            if (job.state() == JobState.CANCELLED) {
+                cancelLatch.countDown();
+            }
+        });
+
+        // Wait a bit before cancelling the job
+        Thread.sleep(500);
+        jobQueueManagerAPI.cancelJob(cancelJobId);
+
+        // Wait for all jobs to complete (or timeout after 30 seconds)
+        boolean allCompleted = successLatch.await(30, TimeUnit.SECONDS)
+                && failLatch.await(30, TimeUnit.SECONDS)
+                && cancelLatch.await(30, TimeUnit.SECONDS);
+
+        assertTrue(allCompleted, "All jobs should complete within the timeout period");
+
+        // Verify final states
+        assertEquals(JobState.COMPLETED, jobQueueManagerAPI.getJob(successJob1Id).state(),
+                "First success job should be completed");
+        assertEquals(JobState.COMPLETED, jobQueueManagerAPI.getJob(successJob2Id).state(),
+                "Second success job should be completed");
+        assertEquals(JobState.FAILED, jobQueueManagerAPI.getJob(failJobId).state(),
+                "Fail job should be in failed state");
+        assertEquals(JobState.CANCELLED, jobQueueManagerAPI.getJob(cancelJobId).state(),
+                "Cancel job should be cancelled");
+
+        // Wait for job processing to complete as we have retries running
+        Awaitility.await().atMost(30, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> {
+                    Job failedJob = jobQueueManagerAPI.getJob(failJobId);
+                    assertEquals(2, failedJob.retryCount(),
+                            "Job should have been retried " + 2 + " times");
+                    assertEquals(JobState.FAILED, failedJob.state(),
+                            "Job should be in FAILED state");
+                    assertTrue(failedJob.result().isPresent(),
+                            "Failed job should have a result");
+                    assertTrue(failedJob.result().get().errorDetail().isPresent(),
+                            "Failed job should have error details");
+                });
     }
 
     private static class ProgressTrackingJobProcessor implements JobProcessor {
