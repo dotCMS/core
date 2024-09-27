@@ -16,7 +16,11 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class EventProducer {
 
-    private final BeanManager beanManager;
+    private BeanManager beanManager;
+
+    public EventProducer() {
+        // Default constructor for CDI
+    }
 
     /**
      * Constructs a new EventProducer.
