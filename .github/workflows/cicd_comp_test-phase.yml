@@ -41,6 +41,10 @@ on:
         required: false
         type: boolean
         default: false
+      e2e:
+        required: false
+        type: boolean
+        default: false
     secrets:
       DOTCMS_LICENSE:
         required: true
@@ -154,7 +158,7 @@ jobs:
   # Postman Tests
   linux-postman-tests:
     name: Run Postman Tests - ${{matrix.collection_group}}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: inputs.postman || inputs.run-all-tests
     strategy:
       fail-fast: false
@@ -169,6 +173,37 @@ jobs:
         with:
           stage-name: "Postman ${{ matrix.collection_group }}"
           maven-args: "-Pcoverage verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=${{ matrix.collection_group }}"
+          generates-test-results: true
+          dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
+          requires-node: true
+          needs-docker-image: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+          cleanup-runner: true
+
+  # E2E Tests
+  linux-e2e-tests:
+    name: E2E Tests ${{matrix.suites.name}}
+    runs-on: ubuntu-24.04
+    if: inputs.e2e || inputs.run-all-tests
+    timeout-minutes: 240
+    env:
+      MAVEN_OPTS: -Xmx2048m
+    strategy:
+      fail-fast: false
+      matrix:
+        suites:
+          - { name: "JVM E2E Suite", pathName: "jvme2etestsuite", maven_args: '-Dit.test=E2eTestSuite -Dci=true -pl :dotcms-e2e-java' }
+          - { name: "Node.js E2E Suite", pathName: "nodee2etestsuite", maven_args: '-De2e.test.env=ci -pl :dotcms-e2e-node' }
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/core-cicd/maven-job
+        with:
+          stage-name: "E2E ${{ matrix.suites.name }}"
+          maven-args: "verify -Pcoverage -De2e.test.skip=false ${{ matrix.suites.maven_args}}"
           generates-test-results: true
           dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
           requires-node: true

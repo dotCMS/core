@@ -16,6 +16,7 @@ interface DotActionRequestOptions {
     data: { [key: string]: string };
     action: ActionToFire;
     individualPermissions?: { [key: string]: string[] };
+    formData?: FormData;
 }
 
 export interface DotFireActionOptions<T> {
@@ -86,8 +87,12 @@ export class DotWorkflowActionsFireService {
      *
      * @memberof DotWorkflowActionsFireService
      */
-    newContentlet<T>(contentType: string, data: { [key: string]: string }): Observable<T> {
-        return this.request<T>({ contentType, data, action: ActionToFire.NEW });
+    newContentlet<T>(
+        contentType: string,
+        data: { [key: string]: string },
+        formData?: FormData
+    ): Observable<T> {
+        return this.request<T>({ contentType, data, action: ActionToFire.NEW, formData });
     }
 
     /**
@@ -171,21 +176,28 @@ export class DotWorkflowActionsFireService {
         contentType,
         data,
         action,
-        individualPermissions
+        individualPermissions,
+        formData
     }: DotActionRequestOptions): Observable<T> {
+        let url = `${this.BASE_URL}/actions/default/fire/${action}`;
+
         const contentlet = contentType ? { contentType: contentType, ...data } : data;
         const bodyRequest = individualPermissions
             ? { contentlet, individualPermissions }
             : { contentlet };
 
+        if (data['inode']) {
+            url += `?inode=${data['inode']}`;
+        }
+
+        if (formData) {
+            formData.append('json', JSON.stringify(bodyRequest));
+        }
+
         return this.httpClient
-            .put(
-                `${this.BASE_URL}/actions/default/fire/${action}${
-                    data['inode'] ? `?inode=${data['inode']}` : ''
-                }`,
-                bodyRequest,
-                { headers: this.defaultHeaders }
-            )
+            .put(url, formData ? formData : bodyRequest, {
+                headers: formData ? new HttpHeaders() : this.defaultHeaders
+            })
             .pipe(take(1), pluck('entity'));
     }
 }

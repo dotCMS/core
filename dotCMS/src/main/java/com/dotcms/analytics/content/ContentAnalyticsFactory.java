@@ -1,6 +1,7 @@
 package com.dotcms.analytics.content;
 
 import com.dotcms.analytics.query.AnalyticsQuery;
+import com.dotcms.cube.CubeJSQuery;
 import com.liferay.portal.model.User;
 
 /**
@@ -19,5 +20,14 @@ public interface ContentAnalyticsFactory {
      * @return the report response.
      */
     ReportResponse getReport(final AnalyticsQuery query, final User user);
+
+    /**
+     * Runs the raw report based on the cube js query and user.
+     *
+     * @param query the query to run the report.
+     * @param user the user to run the report.
+     * @return the report response.
+     */
+    ReportResponse getRawReport(final CubeJSQuery query, final User user);
 
 }

@@ -5,4 +5,7 @@ export interface EditContentPayload {
     actions: DotCMSWorkflowAction[];
     contentlet?: DotCMSContentlet;
     loading: boolean;
+    layout: {
+        showSidebar: boolean;
+    };
 }

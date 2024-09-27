@@ -47,13 +47,13 @@ public class TempFileAPITest {
 
     @Test
     public void testValidURL_urlReturn200_returnTrue() {
-        final String url =  "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif";
+        final String url =  "https://raw.githubusercontent.com/dotCMS/core/main/dotCMS/src/main/webapp/html/images/skin/logo.gif";
         assertTrue(APILocator.getTempFileAPI().validUrl(url));
     }
 
     @Test
     public void testValidURL_noHTTP_returnFalse() {
-        final String url =  "test://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif";
+        final String url =  "test://raw.githubusercontent.com/dotCMS/core/main/dotCMS/src/main/webapp/html/images/skin/logo.gif";
         assertFalse(APILocator.getTempFileAPI().validUrl(url));
     }
 
