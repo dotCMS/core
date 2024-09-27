@@ -1,9 +1,4 @@
-import {
-    Spectator,
-    byTestId,
-    createComponentFactory,
-} from '@ngneat/spectator/jest';
-
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -38,7 +33,7 @@ describe('DotFileFieldUiMessageComponent', () => {
                 } as unknown
             });
         });
-    
+
         it('should be created', () => {
             spectator.detectChanges();
             expect(spectator.component).toBeTruthy();
@@ -47,7 +42,7 @@ describe('DotFileFieldUiMessageComponent', () => {
         it('should have proper data', () => {
             spectator.detectChanges();
 
-            const expectMessage = getUiMessage('DEFAULT')
+            const expectMessage = getUiMessage('DEFAULT');
 
             const severity = spectator.query(byTestId('ui-message-icon-container'));
             const messageIcon = spectator.query(byTestId('ui-message-icon'));
@@ -58,6 +53,4 @@ describe('DotFileFieldUiMessageComponent', () => {
             expect(messageText).toContainText('Drag and Drop File');
         });
     });
-
-    
 });
