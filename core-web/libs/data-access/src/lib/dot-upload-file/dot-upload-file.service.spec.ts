@@ -1,12 +1,14 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+
 import { DotUploadFileService } from './dot-upload-file.service';
 
 describe('DotUploadFileService', () => {
     let spectator: SpectatorHttp<DotUploadFileService>;
     const createHttp = createHttpFactory({
         service: DotUploadFileService,
-        providers: [DotUploadFileService]
+        providers: [DotUploadFileService, DotWorkflowActionsFireService]
     });
 
     beforeEach(() => (spectator = createHttp()));

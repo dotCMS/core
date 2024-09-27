@@ -17,7 +17,7 @@ import { getUiMessage } from '../utils/messages';
 export interface FileFieldState {
     contentlet: DotCMSContentlet | null;
     tempFile: DotCMSTempFile | null;
-    value: string | File;
+    value: string;
     inputType: INPUT_TYPES | null;
     fileStatus: FILE_STATUS;
     dropZoneActive: boolean;

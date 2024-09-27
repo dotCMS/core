@@ -5,7 +5,7 @@ import { inject, Injectable } from '@angular/core';
 
 import { catchError, pluck, switchMap } from 'rxjs/operators';
 
-import { DotUploadService } from '@dotcms/data-access';
+import { DotUploadService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 
 export enum FileStatus {
@@ -32,6 +32,7 @@ export class DotUploadFileService {
     readonly #BASE_URL = '/api/v1/workflow/actions/default';
     readonly #httpClient = inject(HttpClient);
     readonly #uploadService = inject(DotUploadService);
+    readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService)
 
     publishContent({
         data,
@@ -90,21 +91,10 @@ export class DotUploadFileService {
      * @param file the file to be uploaded
      * @returns an Observable that emits the created contentlet
      */
-    uploadDotAsset(file: File): Observable<DotCMSContentlet> {
+    uploadDotAsset(file: File) {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append(
-            'json',
-            JSON.stringify({
-                contentlet: {
-                    file: file.name,
-                    contentType: 'dotAsset'
-                }
-            })
-        );
 
-        return this.#httpClient
-            .put<DotCMSContentlet>(`${this.#BASE_URL}/fire/NEW`, formData)
-            .pipe(pluck('entity'));
+        return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>('dotAsset', { file: file.name }, formData);
     }
 }

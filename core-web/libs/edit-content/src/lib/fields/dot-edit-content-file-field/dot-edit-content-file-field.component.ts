@@ -67,7 +67,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
      */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
-    private onChange: (value: string | File) => void;
+    private onChange: (value: string) => void;
     private onTouched: () => void;
 
     constructor() {
