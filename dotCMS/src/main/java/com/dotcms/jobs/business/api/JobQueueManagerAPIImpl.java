@@ -657,10 +657,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             jobResult = JobResult.builder().metadata(resultMetadata).build();
         }
 
-        float progress = job.progress();
-        if (job.progressTracker().isPresent()) {
-            progress = job.progressTracker().get().progress();
-        }
+        final float progress = getJobProgress(job);
 
         final Job completedJob = job.markAsCompleted(jobResult).withProgress(progress);
         updateJobStatus(completedJob);
@@ -703,10 +700,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             jobResult = JobResult.builder().metadata(resultMetadata).build();
         }
 
-        float progress = job.progress();
-        if (job.progressTracker().isPresent()) {
-            progress = job.progressTracker().get().progress();
-        }
+        final float progress = getJobProgress(job);
 
         Job canceledJob = job.markAsCanceled(jobResult).withProgress(progress);
         updateJobStatus(canceledJob);
@@ -729,6 +723,10 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             final Exception exception, final String errorMessage, final String processingStage)
             throws DotDataException {
 
+        if (exception == null) {
+            throw new IllegalArgumentException("Exception cannot be null");
+        }
+
         final var errorDetail = ErrorDetail.builder()
                 .message(errorMessage)
                 .stackTrace(stackTrace(exception))
@@ -746,10 +744,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             }
         }
 
-        float progress = job.progress();
-        if (job.progressTracker().isPresent()) {
-            progress = job.progressTracker().get().progress();
-        }
+        final float progress = getJobProgress(job);
 
         final Job failedJob = job.markAsFailed(jobResult).withProgress(progress);
         updateJobStatus(failedJob);
@@ -806,15 +801,19 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         final var jobResult = job.result();
 
         Class<?> lastExceptionClass = null;
-        if (jobResult.isPresent() && jobResult.get().errorDetail().isPresent()) {
+        if (jobResult.isPresent()) {
 
-            final var errorDetail = jobResult.get().errorDetail().get();
-            final var exceptionClass = errorDetail.exceptionClass();
-            if (exceptionClass != null) {
-                try {
-                    lastExceptionClass = Class.forName(errorDetail.exceptionClass());
-                } catch (ClassNotFoundException e) {
-                    Logger.error(this, "Error loading exception class: " + e.getMessage(), e);
+            final var errorDetailOptional = jobResult.get().errorDetail();
+
+            if (errorDetailOptional.isPresent()) {
+                final var errorDetail = errorDetailOptional.get();
+                final var exceptionClass = errorDetail.exceptionClass();
+                if (exceptionClass != null) {
+                    try {
+                        lastExceptionClass = Class.forName(errorDetail.exceptionClass());
+                    } catch (ClassNotFoundException e) {
+                        Logger.error(this, "Error loading exception class: " + e.getMessage(), e);
+                    }
                 }
             }
         }
@@ -852,22 +851,20 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     }
 
     /**
-     * Returns a truncated version of the stack trace.
+     * Gets the progress of a job, or the progress of the job's progress tracker if present.
      *
-     * @param exception The exception for which to generate the truncated stack trace.
-     * @param maxLines  The maximum number of lines to include in the truncated stack trace.
-     * @return A string containing the truncated stacktrace, or null if no exception is present.
+     * @param job The job to get the progress for.
+     * @return The progress of the job, or the progress of the job's progress tracker if present.
      */
-    private String truncatedStackTrace(Throwable exception, int maxLines) {
-        String fullTrace = stackTrace(exception);
-        if (fullTrace == null) {
-            return null;
+    private float getJobProgress(final Job job) {
+
+        float progress = job.progress();
+        var progressTracker = job.progressTracker();
+        if (progressTracker.isPresent()) {
+            progress = progressTracker.get().progress();
         }
-        String[] lines = fullTrace.split("\n");
-        return Arrays.stream(lines)
-                .limit(maxLines)
-                .reduce((a, b) -> a + "\n" + b)
-                .orElse("");
+
+        return progress;
     }
 
     /**

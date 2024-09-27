@@ -10,6 +10,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,6 +22,9 @@ import org.postgresql.util.PGobject;
  * components.
  */
 public class DBJobTransformer {
+
+    private static final String ATTRIBUTE_RESULT_ERROR_DETAIL = "errorDetail";
+    private static final String ATTRIBUTE_RESULT_METADATA = "metadata";
 
     private DBJobTransformer() {
         // Prevent instantiation
@@ -40,12 +44,12 @@ public class DBJobTransformer {
         return Job.builder()
                 .id(getString(row, "id"))
                 .queueName(getString(row, "queue_name"))
-                .state(getJobState(row))
+                .state(Objects.requireNonNull(getJobState(row)))
                 .parameters(getParameters(row))
                 .result(getJobResult(row))
                 .progress(getFloat(row, "progress"))
-                .createdAt(getDateTime(row, "created_at"))
-                .updatedAt(getDateTime(row, "updated_at"))
+                .createdAt(Objects.requireNonNull(getDateTime(row, "created_at")))
+                .updatedAt(Objects.requireNonNull(getDateTime(row, "updated_at")))
                 .startedAt(getOptionalDateTime(row, "started_at"))
                 .completedAt(getOptionalDateTime(row, "completed_at"))
                 .executionNode(getOptionalString(row, "execution_node"))
@@ -153,20 +157,20 @@ public class DBJobTransformer {
      */
     private static Optional<ErrorDetail> getErrorDetail(final JSONObject resultJsonObject) {
 
-        if (!resultJsonObject.has("errorDetail")) {
+        if (!resultJsonObject.has(ATTRIBUTE_RESULT_ERROR_DETAIL)) {
             return Optional.empty();
         }
 
         try {
-            if (resultJsonObject.isNull("errorDetail")) {
+            if (resultJsonObject.isNull(ATTRIBUTE_RESULT_ERROR_DETAIL)) {
                 return Optional.empty();
             }
 
-            JSONObject errorDetailJson = resultJsonObject.getJSONObject("errorDetail");
+            JSONObject errorDetailJson = resultJsonObject.getJSONObject(ATTRIBUTE_RESULT_ERROR_DETAIL);
             return Optional.of(ErrorDetail.builder()
                     .message(errorDetailJson.optString("message"))
                     .exceptionClass(errorDetailJson.optString("exceptionClass"))
-                    .timestamp(getDateTime(errorDetailJson.opt("timestamp")))
+                    .timestamp(Objects.requireNonNull(getDateTime(errorDetailJson.opt("timestamp"))))
                     .processingStage(errorDetailJson.optString("processingStage"))
                     .stackTrace(errorDetailJson.optString("stackTrace"))
                     .build());
@@ -183,15 +187,15 @@ public class DBJobTransformer {
      */
     private static Optional<Map<String, Object>> getMetadata(final JSONObject resultJsonObject) {
 
-        if (!resultJsonObject.has("metadata")) {
+        if (!resultJsonObject.has(ATTRIBUTE_RESULT_METADATA)) {
             return Optional.empty();
         }
 
         try {
-            if (resultJsonObject.isNull("metadata")) {
+            if (resultJsonObject.isNull(ATTRIBUTE_RESULT_METADATA)) {
                 return Optional.empty();
             }
-            return Optional.of(resultJsonObject.getJSONObject("metadata").toMap());
+            return Optional.of(resultJsonObject.getJSONObject(ATTRIBUTE_RESULT_METADATA).toMap());
         } catch (JSONException e) {
             throw new DotRuntimeException("Error parsing metadata", e);
         }
