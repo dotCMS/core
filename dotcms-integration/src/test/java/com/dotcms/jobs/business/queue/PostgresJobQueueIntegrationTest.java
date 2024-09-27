@@ -564,7 +564,7 @@ public class PostgresJobQueueIntegrationTest {
         jobQueue.updateJobStatus(job.withState(JobState.RUNNING));
         assertTrue(jobQueue.hasJobBeenInState(jobId, JobState.RUNNING));
 
-        assertFalse(jobQueue.hasJobBeenInState(jobId, JobState.CANCELLED));
+        assertFalse(jobQueue.hasJobBeenInState(jobId, JobState.CANCELED));
 
         jobQueue.updateJobStatus(job.withState(JobState.COMPLETED));
         assertTrue(jobQueue.hasJobBeenInState(jobId, JobState.COMPLETED));

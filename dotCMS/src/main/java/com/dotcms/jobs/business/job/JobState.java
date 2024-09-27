@@ -31,7 +31,7 @@ public enum JobState {
     FAILED,
 
     /**
-     * The job was cancelled before it could complete.
+     * The job was canceled before it could complete.
      */
-    CANCELLED
+    CANCELED
 }

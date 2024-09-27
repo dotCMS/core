@@ -129,10 +129,10 @@ public interface AbstractJob {
      *
      * @return A new Job instance marked as canceled.
      */
-    default Job markAsCancelled(final JobResult result) {
+    default Job markAsCanceled(final JobResult result) {
 
         return Job.builder().from(this)
-                .state(JobState.CANCELLED)
+                .state(JobState.CANCELED)
                 .completedAt(Optional.of(LocalDateTime.now()))
                 .updatedAt(LocalDateTime.now())
                 .result(result != null ? Optional.of(result) : Optional.empty())

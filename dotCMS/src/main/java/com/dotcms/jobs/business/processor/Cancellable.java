@@ -4,7 +4,7 @@ import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.job.Job;
 
 /**
- * The Cancellable interface represents a contract for objects that can be cancelled,
+ * The Cancellable interface represents a contract for objects that can be canceled,
  * typically long-running operations or jobs.
  * <p>
  * Implementations of this interface should provide a mechanism to interrupt or
@@ -31,7 +31,7 @@ public interface Cancellable {
      * terminate, but there's no guarantee about when the termination will occur.
      *
      * @throws JobCancellationException if there is an error during the cancellation process.
-     *         This could occur if the job is in a state where it cannot be cancelled,
+     *         This could occur if the job is in a state where it cannot be canceled,
      *         or if there's an unexpected error while attempting to cancel.
      */
     void cancel(Job job) throws JobCancellationException;

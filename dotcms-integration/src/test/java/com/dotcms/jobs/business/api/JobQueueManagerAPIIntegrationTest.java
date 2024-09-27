@@ -168,8 +168,8 @@ public class JobQueueManagerAPIIntegrationTest {
 
     /**
      * Method to test: cancelJob method in JobQueueManagerAPI
-     * Given Scenario: A running job is cancelled
-     * ExpectedResult: The job is successfully cancelled, its state is set to CANCELLED, and the
+     * Given Scenario: A running job is canceled
+     * ExpectedResult: The job is successfully canceled, its state is set to CANCELED, and the
      * processor acknowledges the cancellation
      */
     @Test
@@ -194,23 +194,23 @@ public class JobQueueManagerAPIIntegrationTest {
 
         CountDownLatch latch = new CountDownLatch(1);
         jobQueueManagerAPI.watchJob(jobId, job -> {
-            if (job.state() == JobState.CANCELLED) {
+            if (job.state() == JobState.CANCELED) {
                 latch.countDown();
             }
         });
 
         boolean processed = latch.await(10, TimeUnit.SECONDS);
-        assertTrue(processed, "Job should be cancelled within 10 seconds");
+        assertTrue(processed, "Job should be canceled within 10 seconds");
 
         // Wait for job processing to complete
         Awaitility.await().atMost(10, TimeUnit.SECONDS)
                 .pollInterval(100, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> {
                     Job job = jobQueueManagerAPI.getJob(jobId);
-                    assertEquals(JobState.CANCELLED, job.state(),
-                            "Job should be in CANCELLED state");
-                    assertTrue(processor.wasCancelled(),
-                            "Job processor should have been cancelled");
+                    assertEquals(JobState.CANCELED, job.state(),
+                            "Job should be in CANCELED state");
+                    assertTrue(processor.wasCanceled(),
+                            "Job processor should have been canceled");
                 });
     }
 
@@ -324,11 +324,11 @@ public class JobQueueManagerAPIIntegrationTest {
      * outcomes:
      * - Two jobs expected to succeed
      * - One job expected to fail and be retried
-     * - One job to be cancelled mid-execution ExpectedResult: All jobs reach their expected final
+     * - One job to be canceled mid-execution ExpectedResult: All jobs reach their expected final
      * states within the timeout period:
      * - Successful jobs complete
      * - Failing job retries and ultimately fails
-     * - Cancellable job is successfully cancelled All job states and related details (retry counts,
+     * - Cancellable job is successfully canceled All job states and related details (retry counts,
      * error details, cancellation status) are verified
      */
     @Test
@@ -379,7 +379,7 @@ public class JobQueueManagerAPIIntegrationTest {
             }
         });
         jobQueueManagerAPI.watchJob(cancelJobId, job -> {
-            if (job.state() == JobState.CANCELLED) {
+            if (job.state() == JobState.CANCELED) {
                 cancelLatch.countDown();
             }
         });
@@ -402,8 +402,8 @@ public class JobQueueManagerAPIIntegrationTest {
                 "Second success job should be completed");
         assertEquals(JobState.FAILED, jobQueueManagerAPI.getJob(failJobId).state(),
                 "Fail job should be in failed state");
-        assertEquals(JobState.CANCELLED, jobQueueManagerAPI.getJob(cancelJobId).state(),
-                "Cancel job should be cancelled");
+        assertEquals(JobState.CANCELED, jobQueueManagerAPI.getJob(cancelJobId).state(),
+                "Cancel job should be canceled");
 
         // Wait for job processing to complete as we have retries running
         Awaitility.await().atMost(30, TimeUnit.SECONDS)
@@ -490,12 +490,12 @@ public class JobQueueManagerAPIIntegrationTest {
 
     private static class CancellableJobProcessor implements JobProcessor, Cancellable {
 
-        private final AtomicBoolean cancelled = new AtomicBoolean(false);
-        private final AtomicBoolean wasCancelled = new AtomicBoolean(false);
+        private final AtomicBoolean canceled = new AtomicBoolean(false);
+        private final AtomicBoolean wasCanceled = new AtomicBoolean(false);
 
         @Override
         public void process(Job job) {
-            while (!cancelled.get()) {
+            while (!canceled.get()) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
@@ -513,8 +513,8 @@ public class JobQueueManagerAPIIntegrationTest {
 
         @Override
         public void cancel(Job job) {
-            cancelled.set(true);
-            wasCancelled.set(true);
+            canceled.set(true);
+            wasCanceled.set(true);
         }
 
         @Override
@@ -522,8 +522,8 @@ public class JobQueueManagerAPIIntegrationTest {
             return new HashMap<>();
         }
 
-        public boolean wasCancelled() {
-            return wasCancelled.get();
+        public boolean wasCanceled() {
+            return wasCanceled.get();
         }
     }
 

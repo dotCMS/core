@@ -1086,7 +1086,7 @@ public class JobQueueManagerAPITest {
     /**
      * Method to test: cancelJob in JobQueueManagerAPI
      * Given Scenario: Valid job ID for a cancellable job is provided
-     * ExpectedResult: Job is successfully cancelled and its status is updated
+     * ExpectedResult: Job is successfully canceled and its status is updated
      */
     @Test
     public void test_simple_cancelJob2()
@@ -1130,8 +1130,8 @@ public class JobQueueManagerAPITest {
 
     /**
      * Method to test: Job cancellation in JobQueueManagerAPI
-     * Given Scenario: Running job is cancelled
-     * ExpectedResult: Job is successfully cancelled and its state transitions are correct
+     * Given Scenario: Running job is canceled
+     * ExpectedResult: Job is successfully canceled and its state transitions are correct
      */
     @Test
     public void test_complex_cancelJob() throws Exception {
@@ -1199,8 +1199,8 @@ public class JobQueueManagerAPITest {
             stateUpdates.add(JobState.RUNNING);
             return mockJob;
         });
-        when(mockJob.markAsCancelled(any())).thenAnswer(inv -> {
-            stateUpdates.add(JobState.CANCELLED);
+        when(mockJob.markAsCanceled(any())).thenAnswer(inv -> {
+            stateUpdates.add(JobState.CANCELED);
             return mockJob;
         });
         when(mockJob.markAsCompleted(any())).thenAnswer(inv -> {
@@ -1243,7 +1243,7 @@ public class JobQueueManagerAPITest {
         Awaitility.await()
                 .atMost(10, TimeUnit.SECONDS)
                 .pollInterval(100, TimeUnit.MILLISECONDS)
-                .until(() -> stateUpdates.contains(JobState.CANCELLED));
+                .until(() -> stateUpdates.contains(JobState.CANCELED));
 
         // Clean up
         jobQueueManagerAPI.close();

@@ -90,11 +90,11 @@ public class RealTimeJobMonitor {
     }
 
     /**
-     * Handles the job cancelled event.
+     * Handles the job-canceled event.
      *
-     * @param event The JobCancelledEvent.
+     * @param event The JobCanceledEvent.
      */
-    public void onJobCanceled(@Observes JobCancelledEvent event) {
+    public void onJobCanceled(@Observes JobCanceledEvent event) {
         updateWatchers(event.getJob());
         removeWatcher(event.getJob().id());
     }

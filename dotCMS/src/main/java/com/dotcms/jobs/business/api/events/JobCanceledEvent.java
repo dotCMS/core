@@ -4,20 +4,20 @@ import com.dotcms.jobs.business.job.Job;
 import java.time.LocalDateTime;
 
 /**
- * Event fired when a job is being canceled.
+ * Event fired when a job is canceled.
  */
-public class JobCancellingEvent {
+public class JobCanceledEvent {
 
     private final Job job;
     private final LocalDateTime canceledAt;
 
     /**
-     * Constructs a new JobCancellingEvent.
+     * Constructs a new JobCanceledEvent.
      *
      * @param job         The canceled job.
      * @param canceledAt The timestamp when the job was canceled.
      */
-    public JobCancellingEvent(Job job, LocalDateTime canceledAt) {
+    public JobCanceledEvent(Job job, LocalDateTime canceledAt) {
         this.job = job;
         this.canceledAt = canceledAt;
     }

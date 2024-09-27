@@ -457,10 +457,10 @@ public class PostgresJobQueue implements JobQueue {
             }).orElse(null));
             historyDc.loadResult();
 
-            // Remove from job_queue if completed, failed, or cancelled
+            // Remove from job_queue if completed, failed, or canceled
             if (job.state() == JobState.COMPLETED
                     || job.state() == JobState.FAILED
-                    || job.state() == JobState.CANCELLED) {
+                    || job.state() == JobState.CANCELED) {
                 removeJobFromQueue(job.id());
             }
         } catch (DotDataException e) {

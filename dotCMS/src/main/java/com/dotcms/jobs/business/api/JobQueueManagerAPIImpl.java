@@ -3,7 +3,7 @@ package com.dotcms.jobs.business.api;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.jobs.business.api.events.EventProducer;
-import com.dotcms.jobs.business.api.events.JobCancelledEvent;
+import com.dotcms.jobs.business.api.events.JobCanceledEvent;
 import com.dotcms.jobs.business.api.events.JobCancellingEvent;
 import com.dotcms.jobs.business.api.events.JobCompletedEvent;
 import com.dotcms.jobs.business.api.events.JobCreatedEvent;
@@ -307,7 +307,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 throw error;
             }
 
-            final var error = new DotDataException(jobId, "Job " + jobId + " cannot be cancelled");
+            final var error = new DotDataException(jobId, "Job " + jobId + " cannot be canceled");
             Logger.error(JobQueueManagerAPIImpl.class, error);
             throw error;
         }
@@ -672,7 +672,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     /**
      * Handles the cancellation of a job.
      *
-     * @param job       The job that was cancelled.
+     * @param job       The job that was canceled.
      * @param processor The processor that handled the job.
      */
     @WrapInTransaction
@@ -689,7 +689,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     /**
      * Handles the cancellation of a job.
      *
-     * @param job       The job that was cancelled.
+     * @param job       The job that was canceled.
      * @param processor The processor that handled the job.
      */
     @WrapInTransaction
@@ -708,10 +708,10 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             progress = job.progressTracker().get().progress();
         }
 
-        Job cancelledJob = job.markAsCancelled(jobResult).withProgress(progress);
-        updateJobStatus(cancelledJob);
-        eventProducer.getEvent(JobCancelledEvent.class).fire(
-                new JobCancelledEvent(cancelledJob, LocalDateTime.now())
+        Job canceledJob = job.markAsCanceled(jobResult).withProgress(progress);
+        updateJobStatus(canceledJob);
+        eventProducer.getEvent(JobCanceledEvent.class).fire(
+                new JobCanceledEvent(canceledJob, LocalDateTime.now())
         );
     }
 

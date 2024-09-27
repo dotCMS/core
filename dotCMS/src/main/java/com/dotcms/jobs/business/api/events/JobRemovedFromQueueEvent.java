@@ -15,11 +15,11 @@ public class JobRemovedFromQueueEvent {
      * Constructs a new JobRemovedFromQueueEvent.
      *
      * @param job         The non-retryable job.
-     * @param cancelledAt The timestamp when the job was removed from the queue.
+     * @param canceledAt The timestamp when the job was removed from the queue.
      */
-    public JobRemovedFromQueueEvent(Job job, LocalDateTime cancelledAt) {
+    public JobRemovedFromQueueEvent(Job job, LocalDateTime canceledAt) {
         this.job = job;
-        this.removedAt = cancelledAt;
+        this.removedAt = canceledAt;
     }
 
     /**
