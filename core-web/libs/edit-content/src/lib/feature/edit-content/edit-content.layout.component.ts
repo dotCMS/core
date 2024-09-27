@@ -14,6 +14,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
@@ -47,7 +48,8 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         RouterLink,
         DotEditContentFormComponent,
         DotEditContentAsideComponent,
-        DotEditContentToolbarComponent
+        DotEditContentToolbarComponent,
+        ConfirmDialogModule
     ],
     templateUrl: './edit-content.layout.component.html',
     styleUrls: ['./edit-content.layout.component.scss'],
