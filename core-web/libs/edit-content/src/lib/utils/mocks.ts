@@ -1093,7 +1093,10 @@ export const CONTENT_FORM_DATA_MOCK: EditContentPayload = {
         contentTypeIcon: 'event_note',
         variant: 'DEFAULT'
     },
-    loading: false
+    loading: false,
+    layout: {
+        showSidebar: true
+    }
 };
 
 /* CONTENT TYPE MOCKS */
