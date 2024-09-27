@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.page;
 
+import com.dotmarketing.business.APILocator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.liferay.portal.model.User;
@@ -49,7 +50,10 @@ public interface PageRenderParams {
      * The language id of the language that the request is being made in.
      * @return the language id
      */
-    String languageId();
+    @Value.Default
+    default String languageId(){
+       return String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+    }
 
     /**
      * The current {@link PageMode} used to render the page.

@@ -239,19 +239,9 @@ public class PageResource {
                 .response(response)
                 .user(user)
                 .uri(uri)
-                .languageId(languageId)
                 .asJson(true);
-        if(null != modeParam){
-            builder.modeParam(modeParam);
-        }
-        if (null != deviceInode){
-            builder.deviceInode(deviceInode);
-        }
-        if(null != timeMachineDateAsISO8601){
-            final Instant date = Try.of(()->Instant.parse(timeMachineDateAsISO8601)).getOrElseThrow(e->new IllegalArgumentException("time machine date must be ISO-8601 compliant"));
-            builder.timeMachineDate(date);
-        }
-        final PageRenderParams renderParams = builder.build();
+        final PageRenderParams renderParams = optionalRenderParams(modeParam,
+                languageId, deviceInode, timeMachineDateAsISO8601, builder);
         return getPageRender(renderParams);
     }
 
@@ -332,9 +322,28 @@ public class PageResource {
                 .request(request)
                 .response(response)
                 .user(user)
-                .uri(uri)
-                .languageId(languageId);
-        if(null != modeParam){
+                .uri(uri);
+        final PageRenderParams renderParams = optionalRenderParams(modeParam,
+                languageId, deviceInode, timeMachineDateAsISO8601, builder);
+        return getPageRender(renderParams);
+    }
+
+    /**
+     * Returns the metadata -- i.e.; the objects that make up an HTML Page -- in the form of a JSON
+     * @param modeParam      The current {@link PageMode} used to render the page.
+     * @param languageId    The {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s
+     * @param deviceInode  The {@link java.lang.String}'s inode to render the page.
+     * @param timeMachineDateAsISO8601 The date to set the Time Machine to.
+     * @param builder The builder to use to create the {@link PageRenderParams}.
+     * @return The {@link PageRenderParams} object.
+     */
+    private PageRenderParams optionalRenderParams(final String modeParam,
+            final String languageId, final String deviceInode, final String timeMachineDateAsISO8601,
+            Builder builder) {
+        if (null != languageId){
+            builder.languageId(languageId);
+        }
+        if (null != modeParam){
             builder.modeParam(modeParam);
         }
         if (null != deviceInode){
@@ -344,8 +353,7 @@ public class PageResource {
             final Instant date = Try.of(()->Instant.parse(timeMachineDateAsISO8601)).getOrElseThrow(e->new IllegalArgumentException("time machine date must be ISO-8601 compliant"));
             builder.timeMachineDate(date);
         }
-        final PageRenderParams renderParams = builder.build();
-        return getPageRender(renderParams);
+        return builder.build();
     }
 
     /**
