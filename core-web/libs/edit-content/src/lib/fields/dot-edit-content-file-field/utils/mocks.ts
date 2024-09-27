@@ -15,7 +15,8 @@ const FILE_MESSAGES_MOCK = {
     'dot.common.import': 'Import',
     'dot.common.remove': 'Remove',
     'dot.common.save': 'Save',
-    'error.form.validator.required': 'This field is required'
+    'error.form.validator.required': 'This field is required',
+    'dot.file.field.action.generate.with.dotai': 'Generate With dotAI'
 };
 
 export const MessageServiceMock = new MockDotMessageService(FILE_MESSAGES_MOCK);

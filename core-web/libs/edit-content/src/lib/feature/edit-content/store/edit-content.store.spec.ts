@@ -82,7 +82,10 @@ describe('DotEditContentStore', () => {
             actions: mockWorkflowsActions,
             contentType: CONTENT_TYPE_MOCK,
             contentlet: BINARY_FIELD_CONTENTLET,
-            loading: false
+            loading: false,
+            layout: {
+                showSidebar: true
+            }
         });
     });
 
@@ -98,7 +101,10 @@ describe('DotEditContentStore', () => {
                     actions: [],
                     contentType: CONTENT_TYPE_MOCK,
                     contentlet: BINARY_FIELD_CONTENTLET,
-                    loading: false
+                    loading: false,
+                    layout: {
+                        showSidebar: true
+                    }
                 });
                 done();
             });
@@ -106,7 +112,10 @@ describe('DotEditContentStore', () => {
                 actions: [],
                 contentType: CONTENT_TYPE_MOCK,
                 contentlet: BINARY_FIELD_CONTENTLET,
-                loading: false
+                loading: false,
+                layout: {
+                    showSidebar: true
+                }
             });
         });
 
@@ -127,6 +136,16 @@ describe('DotEditContentStore', () => {
             spectator.service.updateContentletAndActions({
                 actions: [],
                 contentlet: NEW_BINARY_FIELD_CONTENTLET
+            });
+        });
+
+        it('should update the sidebar state', (done) => {
+            spectator.service.updateSidebarState(false);
+            spectator.service.layout$.pipe().subscribe((state) => {
+                expect(state).toEqual({
+                    showSidebar: false
+                });
+                done();
             });
         });
     });

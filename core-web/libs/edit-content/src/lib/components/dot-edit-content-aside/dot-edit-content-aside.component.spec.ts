@@ -16,7 +16,6 @@ describe('DotEditContentAsideComponent', () => {
     let spectator: Spectator<DotEditContentAsideComponent>;
     const createComponent = createComponentFactory({
         component: DotEditContentAsideComponent,
-        detectChanges: false,
         imports: [
             HttpClientTestingModule,
             DotContentAsideInformationComponent,
@@ -42,8 +41,10 @@ describe('DotEditContentAsideComponent', () => {
         spectator = createComponent({
             props: {
                 contentlet: CONTENT_FORM_DATA_MOCK.contentlet,
-                contentType: dotcmsContentTypeBasicMock
-            }
+                contentType: dotcmsContentTypeBasicMock,
+                loading: false,
+                collapsed: false
+            } as unknown
         });
     });
 
@@ -69,5 +70,15 @@ describe('DotEditContentAsideComponent', () => {
             CONTENT_FORM_DATA_MOCK.contentlet.inode
         );
         expect(dotContentAsideWorkflowComponent.contentType).toEqual(dotcmsContentTypeBasicMock);
+    });
+
+    it('should emit toggle event on button click', () => {
+        const spy = jest.spyOn(spectator.component.$toggle, 'emit');
+
+        const toggleBtn = spectator.query('[data-testId="toggle-button"]');
+
+        spectator.click(toggleBtn);
+
+        expect(spy).toHaveBeenCalled();
     });
 });

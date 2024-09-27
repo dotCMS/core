@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -15,7 +15,28 @@ import { DotContentAsideWorkflowComponent } from './components/dot-content-aside
     imports: [DotMessagePipe, DotContentAsideInformationComponent, DotContentAsideWorkflowComponent]
 })
 export class DotEditContentAsideComponent {
-    @Input() contentlet!: DotCMSContentlet;
-    @Input() contentType!: DotCMSContentType;
-    @Input() loading!: boolean;
+    /**
+     * A variable with the contentlet information
+     */
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+
+    /**
+     * A variable with the content type
+     */
+    $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
+
+    /**
+     * A variable to control the loading state
+     */
+    $loading = input.required<boolean>({ alias: 'loading' });
+
+    /**
+     * A variable to control the collapsed state
+     */
+    $collapsed = input.required<boolean>({ alias: 'collapsed' });
+
+    /**
+     * A variable to control the toggle state
+     */
+    $toggle = output<boolean>({ alias: 'toggle' });
 }
