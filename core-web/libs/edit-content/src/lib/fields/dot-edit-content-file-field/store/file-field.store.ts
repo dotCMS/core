@@ -191,8 +191,8 @@ export const FileFieldStore = signalStore(
              */
             getAssetData: rxMethod<string>(
                 pipe(
-                    switchMap((identifier) => {
-                        return uploadService.getContentById(identifier).pipe(
+                    switchMap((id) => {
+                        return uploadService.getContentById(id).pipe(
                             tapResponse({
                                 next: (file) => {
                                     patchState(store, {
