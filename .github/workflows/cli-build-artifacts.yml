@@ -30,7 +30,7 @@ defaults:
 jobs:
   os-runners:
     name: 'Get OS matrix'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       runners: ${{ steps.set-os.outputs.runners }}
     steps:
@@ -63,7 +63,7 @@ jobs:
           ref: ${{ env.BRANCH }}
 
       - name: 'Cleanup Ubuntu Runner'
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ contains(matrix.os, 'ubuntu-') }}
         uses: ./.github/actions/cleanup-runner
 
       - name: 'Cleanup MacOS Runner'
@@ -82,7 +82,7 @@ jobs:
       - name: 'Set up GRAALVM for ${{ matrix.label }}'
         if: ${{ inputs.buildNativeImage == true && matrix.os != 'windows-latest' }}
         run: |
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+          if [ "${{ matrix.os }}" == "ubuntu-22.04" ]; then
             echo "GRAALVM on Linux (AMD64)"
 
             ARCH=amd64
@@ -111,7 +111,7 @@ jobs:
           tar -xzf graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
           sudo mv graalvm-ce-java11-${{ env.GRAALVM_VERSION }} $INSTALLATION_PATH
 
-          if [ "${{ matrix.os }}" != "ubuntu-latest" ]; then
+          if [ "${{ matrix.os }}" != "ubuntu-22.04" ]; then
             sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home
             GRAALVM_HOME="${INSTALLATION_PATH}/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home"
           else
