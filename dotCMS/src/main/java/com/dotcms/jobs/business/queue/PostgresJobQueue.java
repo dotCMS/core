@@ -170,14 +170,14 @@ public class PostgresJobQueue implements JobQueue {
      * Jackson mapper configuration and lazy initialized instance.
      */
     private final Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        objectMapper.registerModule(new Jdk8Module());
-        objectMapper.registerModule(new GuavaModule());
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.registerModule(new VersioningModule());
-        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        return objectMapper;
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        mapper.registerModule(new Jdk8Module());
+        mapper.registerModule(new GuavaModule());
+        mapper.registerModule(new JavaTimeModule());
+        mapper.registerModule(new VersioningModule());
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        return mapper;
     });
 
     @Override

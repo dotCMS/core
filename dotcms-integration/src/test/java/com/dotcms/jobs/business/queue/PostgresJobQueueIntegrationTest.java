@@ -29,7 +29,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -206,7 +208,10 @@ public class PostgresJobQueueIntegrationTest {
                         assertEquals(JobState.PENDING, nextJob.state());
 
                         // Simulate some processing time
-                        Thread.sleep(1000);
+                        Awaitility.await().atMost(5, TimeUnit.SECONDS)
+                                .pollInterval(100, TimeUnit.MILLISECONDS).until(() -> {
+                                    return true;
+                                });
 
                         // Mark job as completed
                         Job completedJob = nextJob.markAsCompleted(null);
@@ -324,9 +329,13 @@ public class PostgresJobQueueIntegrationTest {
         String job1Id = jobQueue.createJob(queueName, new HashMap<>());
         String job2Id = jobQueue.createJob(queueName, new HashMap<>());
 
-        Thread.sleep(100); // Ensure some time passes
+        Awaitility.await().atMost(1, TimeUnit.SECONDS)
+                .pollInterval(50, TimeUnit.MILLISECONDS)
+                .until(() -> true);// Ensure some time passes
         LocalDateTime checkpointTime = LocalDateTime.now();
-        Thread.sleep(100); // Ensure some more time passes
+        Awaitility.await().atMost(1, TimeUnit.SECONDS)
+                .pollInterval(50, TimeUnit.MILLISECONDS)
+                .until(() -> true);// Ensure some more time passes
 
         // Update job1 and create a new job after the checkpoint
         Job job1 = jobQueue.getJob(job1Id);

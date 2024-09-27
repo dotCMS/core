@@ -186,8 +186,11 @@ public class JobQueueManagerAPIIntegrationTest {
         Map<String, Object> parameters = new HashMap<>();
         String jobId = jobQueueManagerAPI.createJob("cancellableQueue", parameters);
 
-        // Wait for the job to start
-        Thread.sleep(1000);
+        Awaitility.await().atMost(5, TimeUnit.SECONDS)
+            .until(() -> {
+                Job job = jobQueueManagerAPI.getJob(jobId);
+                return job.state() == JobState.RUNNING;
+            });
 
         // Cancel the job
         jobQueueManagerAPI.cancelJob(jobId);
@@ -385,7 +388,7 @@ public class JobQueueManagerAPIIntegrationTest {
         });
 
         // Wait a bit before cancelling the job
-        Thread.sleep(500);
+        Awaitility.await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
         jobQueueManagerAPI.cancelJob(cancelJobId);
 
         // Wait for all jobs to complete (or timeout after 30 seconds)
@@ -430,12 +433,9 @@ public class JobQueueManagerAPIIntegrationTest {
             for (int i = 0; i <= 10; i++) {
                 float progress = i / 10.0f;
                 tracker.updateProgress(progress);
-                try {
-                    Thread.sleep(500); // Simulate work being done
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
+
+                // Simulate work being done
+                Awaitility.await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
             }
         }
 
@@ -495,20 +495,12 @@ public class JobQueueManagerAPIIntegrationTest {
 
         @Override
         public void process(Job job) {
-            while (!canceled.get()) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
 
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            Awaitility.await().atMost(10, TimeUnit.SECONDS)
+                    .until(canceled::get);
+
+            // Simulate some additional work after cancellation
+            Awaitility.await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
         }
 
         @Override
@@ -532,11 +524,7 @@ public class JobQueueManagerAPIIntegrationTest {
         @Override
         public void process(Job job) {
             // Simulate some work
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            Awaitility.await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
         }
 
         @Override
