@@ -304,3 +304,4 @@ This maintenance release includes the following code fixes:
 **Release-23.01.24**
 
 231. https://github.com/dotCMS/core/issues/29535 : Investigate and Resolve Session Already Invalidated Issue for PATCH API Call with Bearer Token #29535
+232. https://github.com/dotCMS/core/issues/29938 : Many to One Relationship Not Maintained When Copied to New Host #29938
