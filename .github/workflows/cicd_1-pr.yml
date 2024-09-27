@@ -69,7 +69,7 @@ jobs:
       postman: ${{ needs.initialize.outputs.backend == 'true' }}
       frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
       cli: ${{ needs.initialize.outputs.cli == 'true' }}
-      e2e: ${{ needs.initialize.outputs.build }}
+      e2e: ${{ needs.initialize.outputs.build == 'true' }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
 
