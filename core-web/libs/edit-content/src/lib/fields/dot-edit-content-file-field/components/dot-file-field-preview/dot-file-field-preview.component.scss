@@ -108,7 +108,7 @@ dot-contentlet-thumbnail::ng-deep {
     position: absolute;
     top: 0;
     right: 0;
-    display: flex;
+    display: none;
     flex-direction: column;
     gap: $spacing-0;
     padding-top: $spacing-1;
