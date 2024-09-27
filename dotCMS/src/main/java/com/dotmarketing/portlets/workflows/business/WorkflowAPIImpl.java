@@ -1,7 +1,5 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
-
 import com.dotcms.ai.workflow.DotEmbeddingsActionlet;
 import com.dotcms.ai.workflow.OpenAIAutoTagActionlet;
 import com.dotcms.ai.workflow.OpenAIContentPromptActionlet;
@@ -140,6 +138,12 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.commons.lang.time.StopWatch;
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
+import org.elasticsearch.search.query.QueryPhaseExecutionException;
+import org.osgi.framework.BundleContext;
+
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -168,11 +172,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.annotation.Nullable;
-import org.apache.commons.lang.time.StopWatch;
-import org.apache.commons.lang3.concurrent.ConcurrentUtils;
-import org.elasticsearch.search.query.QueryPhaseExecutionException;
-import org.osgi.framework.BundleContext;
+
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
 
 /**
  * Implementation class for {@link WorkflowAPI}.
@@ -2402,12 +2403,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	@Override
 	public void fireWorkflowPostCheckin(final WorkflowProcessor processor) throws DotDataException,DotWorkflowException{
-
 		try{
 			if(!processor.inProcess()){
 				return;
 			}
-
 			processor.getContentlet().setActionId(processor.getAction().getId());
 
 			final List<WorkflowActionClass> actionClasses = processor.getActionClasses();
@@ -2417,7 +2416,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					final WorkFlowActionlet actionlet = actionClass.getActionlet();
 					final Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
 					if (processor.isRunningBulk() && actionlet instanceof BatchAction) {
-						final BatchAction batchable = BatchAction.class.cast(actionlet);
+						final BatchAction batchable = (BatchAction) actionlet;
 						batchable.preBatchAction(processor, actionClass, params);
 						//gather data to run in batch later
 					} else {
@@ -2445,14 +2444,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					Logger.info(this, "Added contentlet to the index at the end of the workflow execution, dependencies: " + includeDependencies);
 				}
 			}
-		} catch(Exception e) {
-
-			/* Show a more descriptive error of what caused an issue here */
-			Logger.error(WorkflowAPIImpl.class, "There was an unexpected error: " + e.getMessage());
-			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
-			throw new DotWorkflowException(e.getMessage(), e);
+		} catch (final Exception e) {
+			final String errorMsg = String.format("Failed to fire Workflow Action '%s' [%s]: %s",
+					processor.getAction().getName(), processor.getAction().getId(), ExceptionUtil.getErrorMessage(e));
+			Logger.error(WorkflowAPIImpl.class, errorMsg);
+			Logger.debug(WorkflowAPIImpl.class, errorMsg, e);
+			throw new DotWorkflowException(ExceptionUtil.getErrorMessage(e), e);
 		} finally {
-
 			// not matters what we need to reindex in deferred the index just in case.
 			if (UtilMethods.isSet(processor.getContentlet()) &&
 					UtilMethods.isSet(processor.getContentlet().getIdentifier())) {

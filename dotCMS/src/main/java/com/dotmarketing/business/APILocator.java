@@ -6,6 +6,7 @@ import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.AnalyticsAPIImpl;
 import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.BayesianAPIImpl;
+import com.dotcms.analytics.content.ContentAnalyticsAPI;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
@@ -14,6 +15,7 @@ import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserAPIImpl;
 import com.dotcms.business.SystemAPI;
 import com.dotcms.business.SystemAPIImpl;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -1163,8 +1165,22 @@ public class APILocator extends Locator<APIIndex> {
 		return (SystemAPI) getInstance(APIIndex.SYSTEM_API);
 	}
 
+	/**
+	 * Returns a singleton instance of the {@link ACheckerAPI} class.
+	 *
+	 * @return The {@link ACheckerAPI} instance.
+	 */
 	public static ACheckerAPI getACheckerAPI() {
 		return (ACheckerAPI) getInstance(APIIndex.ACHECKER_API);
+	}
+
+	/**
+	 * Returns a singleton instance of the {@link ContentAnalyticsAPI} class.
+	 *
+	 * @return The {@link ContentAnalyticsAPI} instance.
+	 */
+	public static ContentAnalyticsAPI getContentAnalyticsAPI() {
+		return (ContentAnalyticsAPI) getInstance(APIIndex.CONTENT_ANALYTICS_API);
 	}
 
 	/**
@@ -1322,7 +1338,8 @@ enum APIIndex
 	ANALYTICS_API,
 	CONTENT_TYPE_DESTROY_API,
 	SYSTEM_API,
-	ACHECKER_API;
+	ACHECKER_API,
+	CONTENT_ANALYTICS_API;
 
 	Object create() {
 		switch(this) {
@@ -1415,6 +1432,7 @@ enum APIIndex
 			case SYSTEM_API: return new SystemAPIImpl();
 			case ARTIFICIAL_INTELLIGENCE_API: return new DotAIAPIFacadeImpl();
 			case ACHECKER_API: return new ACheckerAPIImpl();
+			case CONTENT_ANALYTICS_API: CDIUtils.getBean(ContentAnalyticsAPI.class).orElseThrow(() -> new DotRuntimeException("Content Analytics API not found"));
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

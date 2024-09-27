@@ -80,6 +80,7 @@
     @case (fieldTypes.WYSIWYG) {
         <dot-edit-content-wysiwyg-field
             [field]="field"
+            [contentlet]="contentlet"
             [attr.data-testId]="'field-' + field.variable" />
     }
     @case (fieldTypes.HOST_FOLDER) {

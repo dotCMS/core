@@ -167,18 +167,21 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 */
 	public static final String ENABLE_CONTENT_TYPE_COPY = "FEATURE_FLAG_ENABLE_CONTENT_TYPE_COPY";
 	/**
-	 * This property allows you to fall back to NOT copy related content whose parent is a
-	 * Contentlet living in System Host. Such type of relationship was being ignored because
-	 * contents living in System Host are <b>NEVER</b> copied, and were not taken into account when
-	 * copying relationship data.
+	 * This feature flag allows you to fall back to NOT copy related content whose parent is a
+	 * Contentlet living in System Host or a Site that is neither the source Site nor the
+	 * destination Site. Such types of relationship have always been ignored, so this flag allows
+	 * you to bring that behavior back.
 	 */
-	public static final String COPY_RELATED_CONTENT_IN_SYSTEM_HOST_CONTENTS =
-			"COPY_RELATED_CONTENT_IN_SYSTEM_HOST_CONTENTS";
+	public static final String KEEP_RELATED_CONTENT_FROM_DIFFERENT_SITES =
+			"KEEP_RELATED_CONTENT_FROM_DIFFERENT_SITES";
 
 	private static final Lazy<Boolean> CONTENT_TYPE_COPY_FLAG =
 			Lazy.of(() -> Config.getBooleanProperty(ENABLE_CONTENT_TYPE_COPY, false));
-	private static final Lazy<Boolean> COPY_RELATED_CONTENT_IN_SYSTEM_HOST_CONTENTS_FLAG = Lazy.of(() ->
-			Config.getBooleanProperty(COPY_RELATED_CONTENT_IN_SYSTEM_HOST_CONTENTS, true));
+	/**
+	 * The current value of the {@link #KEEP_RELATED_CONTENT_FROM_DIFFERENT_SITES} property.
+	 */
+	private static final Lazy<Boolean> KEEP_RELATED_CONTENT_FROM_DIFFERENT_SITES_FLAG = Lazy.of(() ->
+			Config.getBooleanProperty(KEEP_RELATED_CONTENT_FROM_DIFFERENT_SITES, true));
 
 	private static final boolean DONT_RESPECT_FRONTEND_ROLES = Boolean.FALSE;
 	private static final boolean RESPECT_FRONTEND_ROLES = Boolean.TRUE;
@@ -327,7 +330,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 											&& copyOptions.isCopyFolders()) {
 										// Containers as files are file assets that depend upon an existing folder
 										/// so we need to copy the containers folder and then copy the contentlet in it.
-										final FileAssetContainer sourceFileAssetContainer = FileAssetContainer.class.cast(sourceContainer);
+										final FileAssetContainer sourceFileAssetContainer = (FileAssetContainer) sourceContainer;
 										Logger.debug(HostAssetsJobImpl.class, () -> String.format("---> Copying file-asset container '%s' [ %s ]",
 												sourceFileAssetContainer.getPath(), sourceFileAssetContainer.getIdentifier()));
 										final Contentlet sourceContent = this.contentAPI.findContentletByIdentifier(
@@ -369,11 +372,8 @@ public class HostAssetsJobImpl extends ParentProxy{
 											newFileAssetContainer.setLanguage(contentlet.getLanguageId());
 											newFileAssetContainer.setInode(contentlet.getInode());
 											newFileAssetContainer.setIdentifier(contentlet.getIdentifier());
-
 											final String identifierOrPath =
-													FileAssetContainer.class.isInstance(sourceContainer) ?
-															getFullPath(sourceContainer) :
-															sourceContainer.getIdentifier();
+													FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) sourceContainer);
 
 											copiedContainersBySourceId.put(identifierOrPath, newFileAssetContainer);
 											Logger.debug(HostAssetsJobImpl.class, () -> String
@@ -643,8 +643,8 @@ public class HostAssetsJobImpl extends ParentProxy{
                 }
 
                 // Copy contentlet dependencies
-				this.copyRelatedContentlets(contentsWithRelationships,
-                        copiedContentsBySourceId, copiedRelationshipsBySourceId, copyOptions);
+				this.copyRelatedContentlets(contentsWithRelationships, copiedContentsBySourceId,
+						copiedRelationshipsBySourceId, copyOptions, sourceSite, destinationSite);
             }
 
             // Option 2: Copy all content on site
@@ -701,8 +701,8 @@ public class HostAssetsJobImpl extends ParentProxy{
                 }
 				Logger.info(this, String.format("-> A total of %d contents have been copied", contentCount));
                 // Copy contentlet dependencies
-                this.copyRelatedContentlets(contentsWithRelationships,
-                        copiedContentsBySourceId, copiedRelationshipsBySourceId, copyOptions);
+				this.copyRelatedContentlets(contentsWithRelationships, copiedContentsBySourceId,
+						copiedRelationshipsBySourceId, copyOptions, sourceSite, destinationSite);
             }
 
 			this.siteCopyStatus.updateProgress(95);
@@ -859,18 +859,18 @@ public class HostAssetsJobImpl extends ParentProxy{
 				.onFailure(e -> Logger.error(HostAssetsJobImpl.this, e.getMessage()));
 	}
 
-	private String getFullPath(Container sourceContainer) {
-		return FileAssetContainerUtil.getInstance().getFullPath(FileAssetContainer.class.cast(sourceContainer));
-	}
-
 	/**
-	 * This method will take a template and make a copy of it
-	 * but it'll also update all the references in that template to point to the new mapped containers passed in the copiedContainersBySourceId
-	 * @param sourceTemplate origin template
-	 * @param destinationSite target site
+	 * This method will take a template and make a copy of it, but it'll also update all the
+	 * references in that template to point to the new mapped containers passed in the
+	 * copiedContainersBySourceId
+	 *
+	 * @param sourceTemplate             origin template
+	 * @param destinationSite            target site
 	 * @param copiedContainersBySourceId Copy Containers reference map
+	 *
 	 * @return resulting Copy Template
-	 * @throws DotDataException
+	 *
+	 * @throws DotDataException An error occurred when interacting with the database.
 	 */
 	private Template copyTemplate(final Template sourceTemplate, final Host destinationSite,
 			final Map<String, Container> copiedContainersBySourceId) throws DotDataException {
@@ -943,14 +943,18 @@ public class HostAssetsJobImpl extends ParentProxy{
 	}
 
 	/**
-	 * Internal method that encloses the copy folder logic re-used across the copy site method
-	 * The method will update the Map folderMappingsBySourceId with the new id of the generated folder
-	 * If the folder already exist this method will skip copying it and will still return the folder object that was copied
-	 * @param sourceFolder Source original site folder
-	 * @param destinationSite Target site folder
+	 * Internal method that encloses the copy folder logic re-used across the copy site method The
+	 * method will update the Map folderMappingsBySourceId with the new id of the generated folder
+	 * If the folder already exist this method will skip copying it and will still return the
+	 * folder object that was copied.
+	 *
+	 * @param sourceFolder             Source original site folder
+	 * @param destinationSite          Target site folder
 	 * @param folderMappingsBySourceId Map that gets updated once the folder has been copied
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the database.
+	 * @throws DotSecurityException The current User does not have the permissions to perform this
+	 *                              action.
 	 */
 	private Folder copyFolder(final Folder sourceFolder, final Host destinationSite, final Map<String, FolderMapping> folderMappingsBySourceId)
 			throws DotDataException, DotSecurityException {
@@ -1102,7 +1106,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 			Logger.debug(HostAssetsJobImpl.class,()->String.format("---> Re-Mapping content: Identifier `%s` now points to `%s`.", sourceCopy.getIdentifier(), finalNewContent
 					.getIdentifier()));
 
-			this.checkRelatedContentToCopy(sourceCopy, contentsWithRelationships);
+			this.checkRelatedContentToCopy(sourceCopy, contentsWithRelationships, destinationSite);
         } catch (final Exception e) {
 			Logger.error(this, String.format("An error occurred when copying content '%s' from Site '%s' to Site '%s'." +
 					" The process will continue...", sourceCopy.getIdentifier(), sourceCopy.getHost(),
@@ -1119,6 +1123,12 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 * Content Types ARE being copied, the copied Relationships must be taken into account to save
 	 * the copied Contentlets to the new Relationship records as they reflect the new IDs for the
 	 * copied Content Types as well.</p>
+	 * <p>Now, depending on the value of the
+	 * {@link #KEEP_RELATED_CONTENT_FROM_DIFFERENT_SITES} property -- defaults to {@code
+	 * true} -- this method can simply save relationships to Contentlets that live in other Sites
+	 * as well. For instance, if the related content lives under System Host or a Site that is
+	 * neither the source Site nor the copied Site, we just need the copied record to point to them
+	 * so the relationship data won't get lost.</p>
 	 *
 	 * @param contentsWithRelationships     The list of {@link Contentlet} objects that are the
 	 *                                      parents of a given relationship.
@@ -1128,24 +1138,34 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 *                                      map keeps both the source and the destination
 	 *                                      {@link Contentlet} objects.
 	 * @param copiedRelationshipsBySourceId The {@link Map} containing the copied Relationships
-	 *                                      from the source Site. This way, the copied Contentlets
-	 *                                      will be saved just like the original ones.
+	 *                                         from
+	 *                                      the source Site. This way, the copied Contentlets will
+	 *                                      be saved just like the original ones.
 	 * @param copyOptions                   The {@link HostCopyOptions} object containing what
 	 *                                      objects from the source Site must be copied to the
 	 *                                      destination Site.
+	 * @param sourceSite                    The original Site where the data is being copied from.
+	 * @param destinationSite               The new Site where the copied data will be stored.
 	 *
 	 * @throws DotDataException     An error occurred when updating records in the database.
 	 * @throws DotSecurityException The {@link User} accessing the APIs doesn't have the required
 	 *                              permissions to perform this action.
 	 */
 	private void copyRelatedContentlets(final List<Contentlet> contentsWithRelationships,
-										final Map<String, ContentMapping> copiedContentsBySourceId, final Map<String, RelationshipMapping> copiedRelationshipsBySourceId, final HostCopyOptions copyOptions) throws DotDataException, DotSecurityException {
+										final Map<String, ContentMapping> copiedContentsBySourceId,
+										final Map<String, RelationshipMapping> copiedRelationshipsBySourceId,
+										final HostCopyOptions copyOptions, final Host sourceSite,
+										final Host destinationSite) throws DotDataException, DotSecurityException {
         for (final Contentlet sourceContent : contentsWithRelationships) {
-            boolean isDestinationContentInSystemHost = false;
+            boolean isDestinationContentInOtherSite = false;
 			Contentlet destinationContent;
-			if (Host.SYSTEM_HOST.equals(sourceContent.getHost())) {
+			if (!sourceSite.getIdentifier().equals(sourceContent.getHost())
+					&& !destinationSite.getIdentifier().equals(sourceContent.getHost())) {
+				// The related content lives in a whole different Site, so we just need to save the relationship
+				// as is and not consider copied ID vs new ID, because that comparison doesn't exist. This happens
+				// when the KEEP_RELATED_CONTENT_FROM_DIFFERENT_COPIED_SITE property is enabled only.
 				destinationContent = sourceContent;
-				isDestinationContentInSystemHost = true;
+				isDestinationContentInOtherSite = true;
 			} else {
 				destinationContent = copiedContentsBySourceId.get(sourceContent.getIdentifier()).destinationContent;
 			}
@@ -1170,7 +1190,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 							continue;
 						}
                         records.add(copiedContentsBySourceId.get(relatedContentlet.getIdentifier()).destinationContent);
-						if (isDestinationContentInSystemHost) {
+						if (isDestinationContentInOtherSite) {
 							records.add(relatedContentlet);
 						}
                     } else {
@@ -1206,13 +1226,15 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 * @param contentlet                   The Contentlet whose relationships will be verified.
 	 * @param contentletsWithRelationships The list of Contentlets that have relationships, and
 	 *                                     need to be processed later.
+	 * @param destinationSite              The new Site where the copied data will be stored.
 	 *
 	 * @throws DotDataException     An error occurred when accessing the data source.
 	 * @throws DotSecurityException The specified user does not have the required permissions to
 	 *                              perform this action.
 	 */
 	private void checkRelatedContentToCopy(final Contentlet contentlet,
-										   final List<Contentlet> contentletsWithRelationships) throws DotDataException, DotSecurityException {
+										   final List<Contentlet> contentletsWithRelationships,
+										   final Host destinationSite) throws DotDataException, DotSecurityException {
 		if (contentlet == null) {
 			return;
 		}
@@ -1221,9 +1243,13 @@ public class HostAssetsJobImpl extends ParentProxy{
 		for (final Relationship relationship : relationshipsByCT) {
 			final List<Contentlet> relatedContents = this.contentAPI.getRelatedContent(contentlet,
 					relationship, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
-			if (COPY_RELATED_CONTENT_IN_SYSTEM_HOST_CONTENTS_FLAG.get()) {
+			if (KEEP_RELATED_CONTENT_FROM_DIFFERENT_SITES_FLAG.get()) {
+				// If the related content belongs to System Host or a Site that is NOT the source
+				// or destination Site, just add it to the list so the relationship record gets
+				// copied as it is and the data doesn't get lost.
 				for (final Contentlet relatedContent : relatedContents) {
-					if (Host.SYSTEM_HOST.equals(relatedContent.getHost())) {
+					if (!contentlet.getHost().equals(relatedContent.getHost())
+							&& !destinationSite.getIdentifier().equals(relatedContent.getHost())) {
 						contentletsWithRelationships.add(relatedContent);
 					}
 				}
@@ -1241,7 +1267,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 				LicenseLevel.PRIME.level, LicenseLevel.PLATFORM.level };
     }
 
-    private class ContentMapping {
+    private static class ContentMapping {
         @SuppressWarnings("unused")
         Contentlet sourceContent;
         Contentlet destinationContent;
@@ -1253,7 +1279,7 @@ public class HostAssetsJobImpl extends ParentProxy{
         }
     }
 
-    private class FolderMapping {
+    private static class FolderMapping {
         Folder sourceFolder;
         Folder destinationFolder;
 

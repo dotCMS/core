@@ -1,6 +1,7 @@
 package com.dotmarketing.filters;
 
 import com.dotcms.analytics.track.AnalyticsTrackWebInterceptor;
+import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.ema.EMAWebInterceptor;
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
@@ -9,7 +10,9 @@ import com.dotcms.graphql.GraphqlCacheWebInterceptor;
 import com.dotcms.jitsu.EventLogWebInterceptor;
 import com.dotcms.prerender.PreRenderSEOWebInterceptor;
 import com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptor;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.variant.business.web.CurrentVariantWebInterceptor;
+import com.dotmarketing.business.APILocator;
 
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
@@ -33,6 +36,7 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
         final WebInterceptorDelegate delegate =
                 this.getDelegate(config.getServletContext());
 
+        final AnalyticsTrackWebInterceptor analyticsTrackWebInterceptor = new AnalyticsTrackWebInterceptor();
         delegate.add(new MultiPartRequestSecurityWebInterceptor());
         delegate.add(new PreRenderSEOWebInterceptor());
         delegate.add(new EMAWebInterceptor());
@@ -40,7 +44,9 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
         delegate.add(new ResponseMetaDataWebInterceptor());
         delegate.add(new EventLogWebInterceptor());
         delegate.add(new CurrentVariantWebInterceptor());
-        //delegate.add(new AnalyticsTrackWebInterceptor()); // turn on when needed.
+        delegate.add(analyticsTrackWebInterceptor);
+
+        APILocator.getLocalSystemEventsAPI().subscribe(SystemTableUpdatedKeyEvent.class, analyticsTrackWebInterceptor);
     } // addInterceptors.
 
 } // E:O:F:InterceptorFilter.

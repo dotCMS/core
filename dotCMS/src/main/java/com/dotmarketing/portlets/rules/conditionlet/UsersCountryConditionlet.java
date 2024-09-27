@@ -323,7 +323,7 @@ public class UsersCountryConditionlet extends Conditionlet<UsersCountryCondition
         try {
             country = geoIp2Util.getCountryIsoCode(ipAddress);
         } catch (IOException | GeoIp2Exception e) {
-            Logger.error(this, "Could not look up country for request. Using 'unknown': " + request.getRequestURL());
+            Logger.debug(this, "Could not look up country for request. Using 'unknown': " + request.getRequestURL());
         }
         return country;
     }

@@ -11,7 +11,7 @@ on:
         description: 'Branch'
         type: string
         required: false
-        default: master
+        default: main
       continue_on_error:
         description: 'Continue on error'
         type: boolean

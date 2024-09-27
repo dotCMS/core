@@ -44,7 +44,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
         });
         /**
          *  skip first - to avoid subscription when page loads due login user subscription:
-         *  https://github.com/dotCMS/core-web/blob/master/projects/dotcms-js/src/lib/core/site.service.ts#L58
+         *  https://github.com/dotCMS/core-web/blob/main/projects/dotcms-js/src/lib/core/site.service.ts#L58
          */
         this.siteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
             if (this.url.getValue() !== '') {
