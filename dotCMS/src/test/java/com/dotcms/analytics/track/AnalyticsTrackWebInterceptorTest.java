@@ -10,6 +10,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -17,6 +18,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -36,7 +38,7 @@ public class AnalyticsTrackWebInterceptorTest {
         @Override
         public boolean match(HttpServletRequest request, HttpServletResponse response) {
             wasMatcherCalled.setValue(true);
-            return true;
+            return false;
         }
 
         public boolean wasCalled() {
@@ -58,6 +60,7 @@ public class AnalyticsTrackWebInterceptorTest {
     @Test
     public void test_intercept_feature_flag_turn_off() throws IOException {
 
+        Config.CONTEXT = Mockito.mock(ServletContext.class);
         final HostWebAPI hostWebAPI = Mockito.mock(HostWebAPI.class);
         final AppsAPI appsAPI  = Mockito.mock(AppsAPI.class);
         final WhiteBlackList whiteBlackList  = Mockito.mock(WhiteBlackList.class);
@@ -83,6 +86,7 @@ public class AnalyticsTrackWebInterceptorTest {
     @Test
     public void test_intercept_feature_flag_turn_on_and_no_analytics_app() throws IOException, DotDataException, DotSecurityException {
 
+        Config.CONTEXT = Mockito.mock(ServletContext.class);
         final HostWebAPI hostWebAPI = Mockito.mock(HostWebAPI.class);
         final AppsAPI appsAPI  = Mockito.mock(AppsAPI.class);
         final WhiteBlackList whiteBlackList  = Mockito.mock(WhiteBlackList.class);
@@ -90,7 +94,7 @@ public class AnalyticsTrackWebInterceptorTest {
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
         final TestMatcher testMatcher = new TestMatcher();
-        final Host currentHost = new Host();
+        final Host currentHost = Mockito.mock(Host.class);
         final User user = new User();
 
         Mockito.when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(currentHost);
@@ -115,6 +119,7 @@ public class AnalyticsTrackWebInterceptorTest {
     @Test
     public void test_intercept_feature_flag_turn_on_and_with_analytics_app() throws IOException, DotDataException, DotSecurityException {
 
+        Config.CONTEXT = Mockito.mock(ServletContext.class);
         final HostWebAPI hostWebAPI = Mockito.mock(HostWebAPI.class);
         final AppsAPI appsAPI  = Mockito.mock(AppsAPI.class);
         final WhiteBlackList whiteBlackList  = new WhiteBlackList.Builder()
@@ -124,19 +129,19 @@ public class AnalyticsTrackWebInterceptorTest {
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
         final TestMatcher testMatcher = new TestMatcher();
-        final Host currentHost = new Host();
+        final Host currentHost = Mockito.mock(Host.class);
         final AppSecrets appSecrets = new AppSecrets.Builder().withKey(AnalyticsApp.ANALYTICS_APP_KEY).build();
-        final User user = new User();
+        final User user = Mockito.mock(User.class);
 
         Mockito.when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(currentHost);
         Mockito.when(appsAPI.getSecrets(AnalyticsApp.ANALYTICS_APP_KEY,
                 true, currentHost, user)).thenReturn(Optional.of(appSecrets)); // no config
         Mockito.when(request.getRequestURI()).thenReturn("/some-uri");
 
-        final AnalyticsTrackWebInterceptor interceptor = new AnalyticsTrackWebInterceptor(
-                hostWebAPI, appsAPI, whiteBlackList, isTurnedOn, ()->user, testMatcher);
-
         try {
+
+            final AnalyticsTrackWebInterceptor interceptor = new AnalyticsTrackWebInterceptor(
+                    hostWebAPI, appsAPI, whiteBlackList, isTurnedOn, ()->user, testMatcher);
             interceptor.intercept(request, response);
         }catch (Exception e) {}
 
