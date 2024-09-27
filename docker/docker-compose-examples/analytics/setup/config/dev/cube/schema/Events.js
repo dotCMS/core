@@ -264,33 +264,3 @@ cube('request', {
   }
 });
 
-
-cube('telemetry', {
-  sql: `SELECT
-          client_category,
-          client_env,
-          client_name,
-          client_version,
-          schema_version,
-          JSONExtractString(stats, 'name') AS name,
-          JSONExtractInt(stats, 'description') AS description,
-          JSONExtractString(stats, 'feature') AS feature,
-          JSONExtractString(stats, 'category') AS category,
-          JSONExtractString(stats, 'value') AS value
-        FROM
-          (SELECT client_category, client_env, client_name, client_version, schema_version, arrayJoin(JSONExtractArrayRaw(snapshot, 'stats')) as stats
-          from events
-          where event_type = 'TELEMETRY') as telemetry_events`,
-  dimensions: {
-    clientCategory: { sql: 'client_category', type: `string` },
-    clientEnv: { sql: 'client_env', type: `string` },
-    clientName: { sql: 'client_name', type: `string` },
-    clientVersion: { sql: 'client_version', type: `string` },
-    schemaVersion: { sql: 'schema_version', type: `string` },
-  },
-  measures: {
-    count: {
-      type: "count"
-    }
-  }
-});
