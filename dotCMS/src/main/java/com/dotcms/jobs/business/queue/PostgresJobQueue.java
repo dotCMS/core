@@ -76,49 +76,33 @@ public class PostgresJobQueue implements JobQueue {
                     + "RETURNING *";
 
     private static final String GET_ACTIVE_JOBS_QUERY =
-            "WITH total AS (" +
-                    "    SELECT COUNT(*) AS total_count " +
-                    "    FROM job " +
-                    "    WHERE queue_name = ? AND state IN (?, ?) " +
+            "WITH total AS (SELECT COUNT(*) AS total_count " +
+                    "    FROM job WHERE queue_name = ? AND state IN (?, ?) " +
                     "), " +
-                    "paginated_data AS (" +
-                    "    SELECT * " +
-                    "    FROM job " +
-                    "    WHERE queue_name = ? AND state IN (?, ?) " +
-                    "    ORDER BY created_at " +
-                    "    LIMIT ? OFFSET ? " +
+                    "paginated_data AS (SELECT * " +
+                    "    FROM job WHERE queue_name = ? AND state IN (?, ?) " +
+                    "    ORDER BY created_at LIMIT ? OFFSET ? " +
                     ") " +
-                    "SELECT p.*, t.total_count " +
-                    "FROM total t " +
-                    "LEFT JOIN paginated_data p ON true";
+                    "SELECT p.*, t.total_count FROM total t LEFT JOIN paginated_data p ON true";
 
     private static final String GET_COMPLETED_JOBS_QUERY =
-            "WITH total AS (" +
-                    "    SELECT COUNT(*) AS total_count " +
-                    "    FROM job " +
-                    "    WHERE queue_name = ? AND state = ? AND completed_at BETWEEN ? AND ? " +
+            "WITH total AS (SELECT COUNT(*) AS total_count " +
+                    "    FROM job WHERE queue_name = ? AND state = ? AND completed_at BETWEEN ? AND ? " +
                     "), " +
-                    "paginated_data AS (" +
-                    "    SELECT * " +
-                    "    FROM job " +
+                    "paginated_data AS (SELECT * FROM job " +
                     "    WHERE queue_name = ? AND state = ? AND completed_at BETWEEN ? AND ? " +
-                    "    ORDER BY completed_at DESC " +
-                    "    LIMIT ? OFFSET ? " +
+                    "    ORDER BY completed_at DESC LIMIT ? OFFSET ? " +
                     ") " +
-                    "SELECT p.*, t.total_count " +
-                    "FROM total t " +
-                    "LEFT JOIN paginated_data p ON true";
+                    "SELECT p.*, t.total_count FROM total t LEFT JOIN paginated_data p ON true";
 
     private static final String GET_FAILED_JOBS_QUERY =
             "WITH total AS (" +
-                    "    SELECT COUNT(*) AS total_count " +
-                    "    FROM job " +
+                    "    SELECT COUNT(*) AS total_count FROM job " +
                     "    WHERE state = ? " +
                     "), " +
                     "paginated_data AS (" +
                     "    SELECT * " +
-                    "    FROM job " +
-                    "    WHERE state = ? " +
+                    "    FROM job WHERE state = ? " +
                     "    ORDER BY updated_at DESC " +
                     "    LIMIT ? OFFSET ? " +
                     ") " +
@@ -165,6 +149,8 @@ public class PostgresJobQueue implements JobQueue {
 
     private static final String HAS_JOB_BEEN_IN_STATE_QUERY = "SELECT "
             + "EXISTS (SELECT 1 FROM job_history WHERE job_id = ? AND state = ?)";
+
+    private static final String COLUMN_TOTAL_COUNT = "total_count";
 
     /**
      * Jackson mapper configuration and lazy initialized instance.
@@ -276,7 +262,7 @@ public class PostgresJobQueue implements JobQueue {
             List<Job> jobs = new ArrayList<>();
 
             if (!results.isEmpty()) {
-                totalCount = ((Number) results.get(0).get("total_count")).longValue();
+                totalCount = ((Number) results.get(0).get(COLUMN_TOTAL_COUNT)).longValue();
                 jobs = results.stream()
                         .filter(row -> row.get("id") != null) // Filter out rows without job data
                         .map(DBJobTransformer::toJob)
@@ -321,7 +307,7 @@ public class PostgresJobQueue implements JobQueue {
             List<Job> jobs = new ArrayList<>();
 
             if (!results.isEmpty()) {
-                totalCount = ((Number) results.get(0).get("total_count")).longValue();
+                totalCount = ((Number) results.get(0).get(COLUMN_TOTAL_COUNT)).longValue();
                 jobs = results.stream()
                         .filter(row -> row.get("id") != null) // Filter out rows without job data
                         .map(DBJobTransformer::toJob)
@@ -356,7 +342,7 @@ public class PostgresJobQueue implements JobQueue {
             List<Job> jobs = new ArrayList<>();
 
             if (!results.isEmpty()) {
-                totalCount = ((Number) results.get(0).get("total_count")).longValue();
+                totalCount = ((Number) results.get(0).get(COLUMN_TOTAL_COUNT)).longValue();
                 jobs = results.stream()
                         .filter(row -> row.get("id") != null) // Filter out rows without job data
                         .map(DBJobTransformer::toJob)
@@ -393,7 +379,7 @@ public class PostgresJobQueue implements JobQueue {
             List<Job> jobs = new ArrayList<>();
 
             if (!results.isEmpty()) {
-                totalCount = ((Number) results.get(0).get("total_count")).longValue();
+                totalCount = ((Number) results.get(0).get(COLUMN_TOTAL_COUNT)).longValue();
                 jobs = results.stream()
                         .filter(row -> row.get("id") != null) // Filter out rows without job data
                         .map(DBJobTransformer::toJob)
