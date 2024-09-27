@@ -60,6 +60,10 @@ public class Config {
     @VisibleForTesting
     public static boolean enableSystemTableConfigSource = "true".equalsIgnoreCase(EnvironmentVariablesService.getInstance().getenv().getOrDefault("DOT_ENABLE_SYSTEM_TABLE_CONFIG_SOURCE", "true"));
 
+    public static boolean isSystemTableConfigSourceInit() {
+        return null != systemTableConfigSource;
+    }
+
     public static void initSystemTableConfigSource() {
         systemTableConfigSource = new SystemTableConfigSource();
     }
