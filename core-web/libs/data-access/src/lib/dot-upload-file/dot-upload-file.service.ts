@@ -29,7 +29,6 @@ interface PublishContentProps {
  */
 @Injectable()
 export class DotUploadFileService {
-
     readonly #BASE_URL = '/api/v1/workflow/actions/default';
     readonly #httpClient = inject(HttpClient);
     readonly #uploadService = inject(DotUploadService);
@@ -60,16 +59,12 @@ export class DotUploadFileService {
                 statusCallback(FileStatus.IMPORT);
 
                 return this.#httpClient
-                    .post(
-                        `${this.#BASE_URL}/fire/PUBLISH`,
-                        JSON.stringify({ contentlets }),
-                        {
-                            headers: {
-                                Origin: window.location.hostname,
-                                'Content-Type': 'application/json;charset=UTF-8'
-                            }
+                    .post(`${this.#BASE_URL}/fire/PUBLISH`, JSON.stringify({ contentlets }), {
+                        headers: {
+                            Origin: window.location.hostname,
+                            'Content-Type': 'application/json;charset=UTF-8'
                         }
-                    )
+                    })
                     .pipe(pluck('entity', 'results')) as Observable<DotCMSContentlet[]>;
             }),
             catchError((error) => throwError(error))
