@@ -38,9 +38,9 @@ jobs:
         id: set-os
         run: |
           if [[ "${{ inputs.buildNativeImage }}" == "true" ]]; then
-            RUNNERS='[{ "os": "ubuntu-latest", "label": "Linux" }, { "os": "macos-latest", "label": "macOS-Intel" }, { "os": "macos-13-xlarge", "label": "macOS-Silicon" }]'
+            RUNNERS='[{ "os": "ubuntu-22.04", "label": "Linux" }, { "os": "macos-13", "label": "macOS-Intel" }, { "os": "macos-14", "label": "macOS-Silicon" }]'
           else
-            RUNNERS='[{ "os": "ubuntu-latest", "label": "Linux" }]'
+            RUNNERS='[{ "os": "ubuntu-22.04", "label": "Linux" }]'
           fi
           echo "runners=$RUNNERS" >> $GITHUB_OUTPUT
 
