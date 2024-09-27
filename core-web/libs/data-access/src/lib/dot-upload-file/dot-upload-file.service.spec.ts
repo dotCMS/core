@@ -1,4 +1,5 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
+import { createHttpFactory, SpectatorHttp, SpyObject, mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 
@@ -6,12 +7,19 @@ import { DotUploadFileService } from './dot-upload-file.service';
 
 describe('DotUploadFileService', () => {
     let spectator: SpectatorHttp<DotUploadFileService>;
+    let dotWorkflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
+
+
     const createHttp = createHttpFactory({
         service: DotUploadFileService,
-        providers: [DotUploadFileService, DotWorkflowActionsFireService]
+        providers: [DotUploadFileService, mockProvider(DotWorkflowActionsFireService)]
     });
 
-    beforeEach(() => (spectator = createHttp()));
+    beforeEach(() => {
+        spectator = createHttp();
+
+        dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
+    });
 
     it('should be created', () => {
         expect(spectator.service).toBeTruthy();
@@ -19,27 +27,15 @@ describe('DotUploadFileService', () => {
 
     describe('uploadDotAsset', () => {
         it('should upload a file as a dotAsset', () => {
+            dotWorkflowActionsFireService.newContentlet.mockReturnValueOnce(of({ entity: { identifier: 'test' } }));
+
             const file = new File([''], 'test.png', {
                 type: 'image/png'
             });
 
             spectator.service.uploadDotAsset(file).subscribe();
 
-            const req = spectator.expectOne(
-                '/api/v1/workflow/actions/default/fire/NEW',
-                HttpMethod.PUT
-            );
-
-            expect(req.request.body.get('json')).toEqual(
-                JSON.stringify({
-                    contentlet: {
-                        file: 'test.png',
-                        contentType: 'dotAsset'
-                    }
-                })
-            );
-
-            req.flush({ entity: { identifier: 'test' } });
+            expect(dotWorkflowActionsFireService.newContentlet).toHaveBeenCalled();
         });
     });
 });

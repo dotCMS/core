@@ -14,7 +14,8 @@ import {
     DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageDisplayService,
-    DotMessageService
+    DotMessageService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotKeyValueComponent } from '@dotcms/ui';
 
@@ -159,6 +160,16 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     },
     [FIELD_TYPES.WYSIWYG]: {
         component: DotEditContentWYSIWYGFieldComponent,
+        providers: [
+            {
+                provide: DotFileFieldUploadService,
+                useValue: {}
+            },
+            {
+                provide: DotWorkflowActionsFireService,
+                useValue: {}
+            }
+        ],
         declarations: [MockComponent(EditorComponent)]
     },
     [FIELD_TYPES.CATEGORY]: {

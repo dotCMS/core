@@ -195,7 +195,7 @@ export class DotWorkflowActionsFireService {
             .put(
                 url,
                 formData ? formData : bodyRequest,
-                { headers: this.defaultHeaders }
+                { headers: formData ? new HttpHeaders() : this.defaultHeaders }
             )
             .pipe(take(1), pluck('entity'));
     }
