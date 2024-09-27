@@ -1,27 +1,42 @@
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator';
+import { createHttpFactory, SpectatorHttp, SpyObject, mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 
 import { DotUploadFileService } from './dot-upload-file.service';
 
-import { DotUploadService } from '../dot-upload/dot-upload.service';
-
 describe('DotUploadFileService', () => {
-    let spectator: SpectatorService<DotUploadFileService>;
-    let service: DotUploadFileService;
+    let spectator: SpectatorHttp<DotUploadFileService>;
+    let dotWorkflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
 
-    const createService = createServiceFactory({
+    const createHttp = createHttpFactory({
         service: DotUploadFileService,
-        imports: [HttpClientTestingModule],
-        providers: [DotUploadService]
+        providers: [DotUploadFileService, mockProvider(DotWorkflowActionsFireService)]
     });
 
     beforeEach(() => {
-        spectator = createService();
-        service = spectator.service;
+        spectator = createHttp();
+
+        dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
     });
 
     it('should be created', () => {
-        expect(service).toBeTruthy();
+        expect(spectator.service).toBeTruthy();
+    });
+
+    describe('uploadDotAsset', () => {
+        it('should upload a file as a dotAsset', () => {
+            dotWorkflowActionsFireService.newContentlet.mockReturnValueOnce(
+                of({ entity: { identifier: 'test' } })
+            );
+
+            const file = new File([''], 'test.png', {
+                type: 'image/png'
+            });
+
+            spectator.service.uploadDotAsset(file).subscribe();
+
+            expect(dotWorkflowActionsFireService.newContentlet).toHaveBeenCalled();
+        });
     });
 });

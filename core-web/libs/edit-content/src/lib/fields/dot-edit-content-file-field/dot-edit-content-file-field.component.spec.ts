@@ -7,6 +7,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotDropZoneComponent } from '@dotcms/ui';
 
 import { DotEditContentFileFieldComponent } from './dot-edit-content-file-field.component';
+import { DotFileFieldUploadService } from './services/upload-file/upload-file.service';
 import { FileFieldStore } from './store/file-field.store';
 
 import {
@@ -21,7 +22,7 @@ describe('DotEditContentFileFieldComponent', () => {
     const createComponent = createComponentFactory({
         component: DotEditContentFileFieldComponent,
         detectChanges: false,
-        componentProviders: [FileFieldStore],
+        componentProviders: [FileFieldStore, mockProvider(DotFileFieldUploadService)],
         providers: [provideHttpClient(), mockProvider(DotMessageService)],
         componentViewProviders: [
             { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
