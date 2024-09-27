@@ -69,8 +69,7 @@ jobs:
       postman: ${{ needs.initialize.outputs.backend == 'true' }}
       frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
       cli: ${{ needs.initialize.outputs.cli == 'true' }}
-#      TODO: remove this param after testing E2E tests invocation
-      e2e: true
+      e2e: ${{ needs.initialize.outputs.build == 'true' }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
 
