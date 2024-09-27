@@ -1256,34 +1256,44 @@ public class PageResourceTest {
     public void testRenderWithTimeMachine()
             throws DotDataException, DotSecurityException, WebAssetException, JsonProcessingException {
 
-        final TimeZone utc = TimeZone.getTimeZone("UTC");
-        TimeZone.setDefault(utc);
+        final TimeZone defaultZone = TimeZone.getDefault();
+        try {
+            final TimeZone utc = TimeZone.getTimeZone("UTC");
+            TimeZone.setDefault(utc);
 
-        // Calculate the date relative to today
-        // Publish Date is 10 days from now
-        final LocalDateTime relativeDate1 = LocalDateTime.now().plusDays(10);
-        final Instant relativeInstant1 = relativeDate1.atZone(utc.toZoneId()).toInstant();
-        final Date publishDate = Date.from(relativeInstant1);
+            // Calculate the date relative to today
+            // Publish Date is 10 days from now
+            final LocalDateTime relativeDate1 = LocalDateTime.now().plusDays(10);
+            final Instant relativeInstant1 = relativeDate1.atZone(utc.toZoneId()).toInstant();
+            final Date publishDate = Date.from(relativeInstant1);
 
-        // Time Machine Date is 11 days from now
-        final LocalDateTime relativeDate2 = LocalDateTime.now().plusDays(10).plusHours(1);
-        final Instant relativeInstant2 = relativeDate2.atZone(utc.toZoneId()).toInstant();
-        final Date timeMachineDate = Date.from(relativeInstant2);
+            // Time Machine Date is 11 days from now
+            final LocalDateTime relativeDate2 = LocalDateTime.now().plusDays(10).plusHours(1);
+            final Instant relativeInstant2 = relativeDate2.atZone(utc.toZoneId()).toInstant();
+            final Date timeMachineDate = Date.from(relativeInstant2);
 
-        final LocalDateTime relativeDate3 = LocalDateTime.now().plusDays(4);
-        final Instant relativeInstant3 = relativeDate3.atZone(utc.toZoneId()).toInstant();
-        final Date timeMachineDateBefore = Date.from(relativeInstant3);
+            final LocalDateTime relativeDate3 = LocalDateTime.now().plusDays(4);
+            final Instant relativeInstant3 = relativeDate3.atZone(utc.toZoneId()).toInstant();
+            final Date timeMachineDateBefore = Date.from(relativeInstant3);
 
-        //Then we should get the content after publish date
-        validatePageRendering(PageMode.LIVE, false, null, null);
+            //Then we should get the content after publish date
+            validatePageRendering(PageMode.LIVE, false, null, null);
+            validatePageRendering(PageMode.PREVIEW_MODE, false, null, null);
+            validatePageRendering(PageMode.EDIT_MODE, false, null, null);
+            validatePageRendering(PageMode.ADMIN_MODE, false, null, null);
 
-        validatePageRendering(PageMode.LIVE, true, publishDate, timeMachineDate);
-        validatePageRendering(PageMode.PREVIEW_MODE, true, publishDate, timeMachineDate);
-        validatePageRendering(PageMode.EDIT_MODE, true, publishDate, timeMachineDate);
+            validatePageRendering(PageMode.LIVE, true, publishDate, timeMachineDate);
+            validatePageRendering(PageMode.PREVIEW_MODE, true, publishDate, timeMachineDate);
+            validatePageRendering(PageMode.EDIT_MODE, true, publishDate, timeMachineDate);
+            validatePageRendering(PageMode.ADMIN_MODE, true, publishDate, timeMachineDate);
 
-        validatePageRendering(PageMode.LIVE, false, publishDate, timeMachineDateBefore);
-        validatePageRendering(PageMode.PREVIEW_MODE, false, publishDate, timeMachineDateBefore);
-        validatePageRendering(PageMode.EDIT_MODE, false, publishDate, timeMachineDateBefore);
+            validatePageRendering(PageMode.LIVE, false, publishDate, timeMachineDateBefore);
+            validatePageRendering(PageMode.PREVIEW_MODE, false, publishDate, timeMachineDateBefore);
+            validatePageRendering(PageMode.EDIT_MODE, false, publishDate, timeMachineDateBefore);
+            validatePageRendering(PageMode.ADMIN_MODE, false, publishDate, timeMachineDateBefore);
+        } finally {
+            TimeZone.setDefault(defaultZone);
+        }
     }
 
     /**
@@ -1294,7 +1304,7 @@ public class PageResourceTest {
      * @return the widget code
      */
     String widgetCode(final Host host, final ContentType contentType) {
-        final String code = String.format(
+        return String.format(
                 "#set($blogs = $dotcontent.pullPerPage(\"+contentType:%s +(conhost:%s conhost:SYSTEM_HOST) +variant:default\", 0, 100, null))\n" +
                 "#set($resultList = []) \n" +
                 "#foreach($con in $blogs)\n" +
@@ -1305,14 +1315,13 @@ public class PageResourceTest {
                    "    #set($notUsedValue = $resultList.add($resultdoc))\n" +
                  "#end\n" +
                  "!$dotJSON.put(\"posts\", $resultList)",
-                contentType.variable(), host.getIdentifier(), contentType.variable()
+                contentType.variable(), host.getIdentifier()
         );
-        return code;
     }
 
     /**
      *
-     * @param mode LIVE, PREVIEW, EDIT or ADMIN
+     * @param mode PageMode
      * @param expectContentlet true if we expect a contentlet to be rendered, false otherwise
      * @param publishDate the publish-date of the contentlet null if the contentlet is needed to be published right away
      * @param timeMachineDate the date to be used as time machine
@@ -1429,7 +1438,7 @@ public class PageResourceTest {
         HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
         HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
 
-        //This param is required to be live to behave correctly when building the query 
+        //This param is required to be live to behave correctly when building the query
         when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE);
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
 
@@ -1464,7 +1473,7 @@ public class PageResourceTest {
      * @param nodeName
      * @return
      */
-    public static Optional<JsonNode> findNode(JsonNode currentNode, String nodeName) {
+    public static Optional<JsonNode> findNode(final JsonNode currentNode, final String nodeName) {
         if (currentNode.has(nodeName)) {
             return Optional.of(currentNode.get(nodeName));  // Node found in the current level
         }
