@@ -1,8 +1,13 @@
 package com.dotcms.cms.login;
 
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -32,6 +37,7 @@ import com.liferay.portal.auth.PrincipalFinder;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.events.EventsProcessor;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -49,14 +55,18 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.Serializable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 import static com.dotmarketing.util.Constants.RESPECT_FRONT_END_ROLES;
 import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
@@ -301,7 +311,11 @@ public class LoginServiceAPIFactory implements Serializable {
 
                 this.doAuthentication(userId, rememberMe, request, response);
                 authenticated = true;
-                LicenseUtil.licenseExpiresMessage(APILocator.getUserAPI().loadUserById(userId));
+                final User logInUser = APILocator.getUserAPI().loadUserById(userId);
+                LicenseUtil.licenseExpiresMessage(logInUser);
+                if (Config.getBooleanProperty("show.lts.eol.message", false)) {
+                    messageLTSVersionEOL(logInUser);
+                }
             }
 
             if (authResult != Authenticator.SUCCESS) {
@@ -696,6 +710,49 @@ public class LoginServiceAPIFactory implements Serializable {
         }
     }
 
+    /**
+     * Message to show LTS version is reaching or already reached EOL.
+     * Must set the property date.lts.eol in dotmarketing-config.properties, the date should be in MM/dd/yyyy format.
+     * Must set the property show.lts.eol.message in dotmarketing-config.properties to true.
+     * If the user has the CMSAdmin role, show the message when the days left for LTS to EOL is less than 30.
+     * If the LTS already went EOL, show the message to everyone.
+     */
+    public static void messageLTSVersionEOL(final User user) throws DotDataException, LanguageException, ParseException {
+        final SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy");
+        final Date dateLTSEOL = dateFormat.parse(Config.getStringProperty("date.lts.eol", "12/31/2099")); //LTS EOL Date
+        final long daysleftToEOL = DateUtil.diffDates(new Date(), dateLTSEOL).get("diffDays"); //days left for LTS to EOL
+        SystemMessageBuilder message = null;
+        if (APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole()) && //check if user have CMSAdmin Role
+                (daysleftToEOL <= 30) && (daysleftToEOL > 0)) { //check if days left for LTS to EOL is less than 30 and over 0
+            //Message Admins that EOL is less than 30 days
+            message = new SystemMessageBuilder()
+                    .setMessage(LanguageUtil.format(
+                            user.getLocale(),
+                            "lts.expires.soon.message",
+                            daysleftToEOL))
+                    .setSeverity(MessageSeverity.WARNING)
+                    .setType(MessageType.SIMPLE_MESSAGE)
+                    .setLife(86400000);
+        }
+        //if LTS already EOL show message to everyone
+        if (daysleftToEOL <= 0) {
+            message = new SystemMessageBuilder()
+                    .setMessage(LanguageUtil.get(
+                            user.getLocale(),
+                            "lts.expired.message"))
+                    .setSeverity(MessageSeverity.ERROR)
+                    .setType(MessageType.SIMPLE_MESSAGE)
+                    .setLife(86400000);
+        }
+        if (null != message) {
+            final SystemMessageBuilder finalMessage = message;
+            DotConcurrentFactory.getInstance().getSubmitter().delay(() -> {
+                        SystemMessageEventUtil.getInstance().pushMessage(finalMessage.create(), list(user.getUserId()));
+                        Logger.info("", finalMessage.create().getMessage().toString());
+                    },
+                    3000, TimeUnit.MILLISECONDS);
+        }
+    }
 
 
 } // E:O:F:LoginServiceAPIFactory.
