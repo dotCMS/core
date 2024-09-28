@@ -256,25 +256,7 @@ public class PostgresJobQueue implements JobQueue {
             dc.addParam(pageSize);
             dc.addParam((page - 1) * pageSize);
 
-            final var results = dc.loadObjectResults();
-
-            long totalCount = 0;
-            List<Job> jobs = new ArrayList<>();
-
-            if (!results.isEmpty()) {
-                totalCount = ((Number) results.get(0).get(COLUMN_TOTAL_COUNT)).longValue();
-                jobs = results.stream()
-                        .filter(row -> row.get("id") != null) // Filter out rows without job data
-                        .map(DBJobTransformer::toJob)
-                        .collect(Collectors.toList());
-            }
-
-            return JobPaginatedResult.builder()
-                    .jobs(jobs)
-                    .total(totalCount)
-                    .page(page)
-                    .pageSize(pageSize)
-                    .build();
+            return jobPaginatedResult(page, pageSize, dc);
         } catch (DotDataException e) {
             Logger.error(this, "Database error while fetching active jobs", e);
             throw new JobQueueDataException("Database error while fetching active jobs", e);
@@ -301,25 +283,7 @@ public class PostgresJobQueue implements JobQueue {
             dc.addParam(pageSize);
             dc.addParam((page - 1) * pageSize);
 
-            final var results = dc.loadObjectResults();
-
-            long totalCount = 0;
-            List<Job> jobs = new ArrayList<>();
-
-            if (!results.isEmpty()) {
-                totalCount = ((Number) results.get(0).get(COLUMN_TOTAL_COUNT)).longValue();
-                jobs = results.stream()
-                        .filter(row -> row.get("id") != null) // Filter out rows without job data
-                        .map(DBJobTransformer::toJob)
-                        .collect(Collectors.toList());
-            }
-
-            return JobPaginatedResult.builder()
-                    .jobs(jobs)
-                    .total(totalCount)
-                    .page(page)
-                    .pageSize(pageSize)
-                    .build();
+            return jobPaginatedResult(page, pageSize, dc);
         } catch (DotDataException e) {
             Logger.error(this, "Database error while fetching completed jobs", e);
             throw new JobQueueDataException("Database error while fetching completed jobs", e);
@@ -336,25 +300,7 @@ public class PostgresJobQueue implements JobQueue {
             dc.addParam(pageSize);
             dc.addParam((page - 1) * pageSize);
 
-            final var results = dc.loadObjectResults();
-
-            long totalCount = 0;
-            List<Job> jobs = new ArrayList<>();
-
-            if (!results.isEmpty()) {
-                totalCount = ((Number) results.get(0).get(COLUMN_TOTAL_COUNT)).longValue();
-                jobs = results.stream()
-                        .filter(row -> row.get("id") != null) // Filter out rows without job data
-                        .map(DBJobTransformer::toJob)
-                        .collect(Collectors.toList());
-            }
-
-            return JobPaginatedResult.builder()
-                    .jobs(jobs)
-                    .total(totalCount)
-                    .page(page)
-                    .pageSize(pageSize)
-                    .build();
+            return jobPaginatedResult(page, pageSize, dc);
         } catch (DotDataException e) {
             Logger.error(this, "Database error while fetching jobs", e);
             throw new JobQueueDataException("Database error while fetching jobs", e);
@@ -373,25 +319,7 @@ public class PostgresJobQueue implements JobQueue {
             dc.addParam(pageSize);
             dc.addParam((page - 1) * pageSize);
 
-            final var results = dc.loadObjectResults();
-
-            long totalCount = 0;
-            List<Job> jobs = new ArrayList<>();
-
-            if (!results.isEmpty()) {
-                totalCount = ((Number) results.get(0).get(COLUMN_TOTAL_COUNT)).longValue();
-                jobs = results.stream()
-                        .filter(row -> row.get("id") != null) // Filter out rows without job data
-                        .map(DBJobTransformer::toJob)
-                        .collect(Collectors.toList());
-            }
-
-            return JobPaginatedResult.builder()
-                    .jobs(jobs)
-                    .total(totalCount)
-                    .page(page)
-                    .pageSize(pageSize)
-                    .build();
+            return jobPaginatedResult(page, pageSize, dc);
         } catch (DotDataException e) {
             Logger.error(this, "Database error while fetching failed jobs", e);
             throw new JobQueueDataException("Database error while fetching failed jobs", e);
@@ -579,6 +507,39 @@ public class PostgresJobQueue implements JobQueue {
             Logger.error(this, "Error checking job state history", e);
             throw new JobQueueDataException("Error checking job state history", e);
         }
+    }
+
+    /**
+     * Helper method to create a JobPaginatedResult from a DotConnect query result.
+     *
+     * @param page     The current page number
+     * @param pageSize The number of items per page
+     * @param dc       The DotConnect instance with the query results
+     * @return A JobPaginatedResult instance
+     * @throws DotDataException If there is an error loading the query results
+     */
+    private static JobPaginatedResult jobPaginatedResult(
+            int page, int pageSize, DotConnect dc) throws DotDataException {
+
+        final var results = dc.loadObjectResults();
+
+        long totalCount = 0;
+        List<Job> jobs = new ArrayList<>();
+
+        if (!results.isEmpty()) {
+            totalCount = ((Number) results.get(0).get(COLUMN_TOTAL_COUNT)).longValue();
+            jobs = results.stream()
+                    .filter(row -> row.get("id") != null) // Filter out rows without job data
+                    .map(DBJobTransformer::toJob)
+                    .collect(Collectors.toList());
+        }
+
+        return JobPaginatedResult.builder()
+                .jobs(jobs)
+                .total(totalCount)
+                .page(page)
+                .pageSize(pageSize)
+                .build();
     }
 
 }
