@@ -62,6 +62,7 @@ import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.business.ExperimentsAPIImpl;
 import com.dotcms.graphql.business.GraphqlAPI;
 import com.dotcms.graphql.business.GraphqlAPIImpl;
+import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.keyvalue.business.KeyValueAPI;
 import com.dotcms.keyvalue.business.KeyValueAPIImpl;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
@@ -283,6 +284,15 @@ public class APILocator extends Locator<APIIndex> {
 	public static DotAIAPI getDotAIAPI() {
 
 		return  (DotAIAPI)getInstance(APIIndex.ARTIFICIAL_INTELLIGENCE_API);
+	}
+
+	/**
+	 * Creates a single instance of the {@link JobQueueManagerAPI} class.
+	 *
+	 * @return The {@link JobQueueManagerAPI} class.
+	 */
+	public static JobQueueManagerAPI getJobQueueManagerAPI() {
+		return (JobQueueManagerAPI) getInstance(APIIndex.JOB_QUEUE_MANAGER_API);
 	}
 
 	/**
@@ -1339,7 +1349,8 @@ enum APIIndex
 	CONTENT_TYPE_DESTROY_API,
 	SYSTEM_API,
 	ACHECKER_API,
-	CONTENT_ANALYTICS_API;
+	CONTENT_ANALYTICS_API,
+	JOB_QUEUE_MANAGER_API;
 
 	Object create() {
 		switch(this) {
@@ -1433,6 +1444,7 @@ enum APIIndex
 			case ARTIFICIAL_INTELLIGENCE_API: return new DotAIAPIFacadeImpl();
 			case ACHECKER_API: return new ACheckerAPIImpl();
 			case CONTENT_ANALYTICS_API: CDIUtils.getBean(ContentAnalyticsAPI.class).orElseThrow(() -> new DotRuntimeException("Content Analytics API not found"));
+			case JOB_QUEUE_MANAGER_API: return CDIUtils.getBean(JobQueueManagerAPI.class).orElseThrow(() -> new DotRuntimeException("JobQueueManagerAPI not found"));
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
