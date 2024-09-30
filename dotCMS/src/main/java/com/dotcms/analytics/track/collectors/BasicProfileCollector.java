@@ -3,7 +3,11 @@ package com.dotcms.analytics.track.collectors;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.FunctionUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -41,6 +45,21 @@ public class BasicProfileCollector implements Collector {
                 FunctionUtils.getOrDefault(Objects.nonNull(serverId), ()->serverId,()->APILocator.getServerAPI().readServerId()));
         collectorPayloadBean.put("sessionId", sessionId);
         collectorPayloadBean.put("sessionNew", sessionNew);
+
+        if (UtilMethods.isSet(collectorContextMap.get("referer"))) {
+            collectorPayloadBean.put("referer", collectorContextMap.get("referer").toString());
+        }
+
+        if (UtilMethods.isSet(collectorContextMap.get("user-agent"))) {
+            collectorPayloadBean.put("userAgent", collectorContextMap.get("user-agent").toString());
+        }
+
+        final HttpServletRequest request = (HttpServletRequest)collectorContextMap.get("request");
+
+        collectorPayloadBean.put("persona",
+                WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request));
+
+        collectorPayloadBean.put("renderMode", PageMode.get(request).toString().replace("_MODE", ""));
         return collectorPayloadBean;
     }
 
