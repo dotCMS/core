@@ -3,8 +3,6 @@ import { MockComponent } from 'ng-mocks';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-import { TabViewModule } from 'primeng/tabview';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
