@@ -5,27 +5,35 @@ type Actions = {
     allowURLImport: boolean;
     allowCreateFile: boolean;
     allowGenerateImg: boolean;
+    acceptedFiles: string[];
+    maxFileSize: number;
 };
 
 type ConfigActions = Record<INPUT_TYPES, Actions>;
 
-export const INPUT_CONFIG_ACTIONS: ConfigActions = {
+export const INPUT_CONFIG: ConfigActions = {
     File: {
         allowExistingFile: true,
         allowURLImport: true,
         allowCreateFile: true,
-        allowGenerateImg: false
+        allowGenerateImg: false,
+        acceptedFiles: [],
+        maxFileSize: null
     },
     Image: {
         allowExistingFile: true,
         allowURLImport: true,
         allowCreateFile: false,
-        allowGenerateImg: true
+        allowGenerateImg: true,
+        acceptedFiles: ['image/*'],
+        maxFileSize: null
     },
     Binary: {
         allowExistingFile: false,
         allowURLImport: true,
         allowCreateFile: true,
-        allowGenerateImg: true
+        allowGenerateImg: true,
+        acceptedFiles: [],
+        maxFileSize: null
     }
 };

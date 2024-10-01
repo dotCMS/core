@@ -90,7 +90,8 @@ describe('EditEmaLayoutComponent', () => {
                 save: jest.fn(() => of(PAGE_RESPONSE))
             }),
             mockProvider(DotPageApiService, {
-                get: jest.fn(() => of(PAGE_RESPONSE))
+                get: jest.fn(() => of(PAGE_RESPONSE)),
+                getClientPage: jest.fn(() => of(PAGE_RESPONSE))
             }),
             MockProvider(DotExperimentsService, DotExperimentsServiceMock, 'useValue'),
             MockProvider(DotRouterService, new MockDotRouterJestService(jest), 'useValue'),
@@ -148,14 +149,14 @@ describe('EditEmaLayoutComponent', () => {
         });
 
         it('should trigger a save after 5 secs', fakeAsync(() => {
-            const updatePageResponseSpy = jest.spyOn(store, 'updatePageResponse');
             const setUveStatusSpy = jest.spyOn(store, 'setUveStatus');
+            const reloadSpy = jest.spyOn(store, 'reload');
 
             templateBuilder.templateChange.emit();
             tick(5000);
 
             expect(dotPageLayoutService.save).toHaveBeenCalled();
-            expect(updatePageResponseSpy).toHaveBeenCalledWith(PAGE_RESPONSE);
+            expect(reloadSpy).toHaveBeenCalled();
             expect(setUveStatusSpy).toHaveBeenCalledWith(UVE_STATUS.LOADING);
 
             expect(messageService.add).toHaveBeenNthCalledWith(1, {

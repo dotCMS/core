@@ -3,7 +3,6 @@ package com.dotcms.jobs.business.error;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import org.immutables.value.Value;
 
 /**
@@ -34,6 +33,13 @@ public interface AbstractErrorDetail {
     String exceptionClass();
 
     /**
+     * Returns the stack trace of the exception as a string.
+     *
+     * @return A string representation of the exception's stack trace.
+     */
+    String stackTrace();
+
+    /**
      * Returns the timestamp when the error occurred.
      *
      * @return A LocalDateTime representing when the error was recorded.
@@ -46,50 +52,5 @@ public interface AbstractErrorDetail {
      * @return A string describing the processing stage (e.g., "Job Execution", "Retry Handling").
      */
     String processingStage();
-
-    /**
-     * Returns the original Throwable object that caused the error.
-     *
-     * @return The Throwable object, or null if no exception is available.
-     */
-    Throwable exception();
-
-    /**
-     * Generates and returns the stack trace of the exception as a string. This is a derived value
-     * and will be computed only when accessed.
-     *
-     * @return A string representation of the exception's stack trace, or null if no exception is
-     * present.
-     */
-    @Value.Derived
-    default String stackTrace() {
-        Throwable ex = exception();
-        if (ex != null) {
-            return Arrays.stream(ex.getStackTrace())
-                    .map(StackTraceElement::toString)
-                    .reduce((a, b) -> a + "\n" + b)
-                    .orElse("");
-        }
-        return null;
-    }
-
-    /**
-     * Returns a truncated version of the stack trace.
-     *
-     * @param maxLines The maximum number of lines to include in the truncated stack trace.
-     * @return A string containing the truncated stacktrace, or null if no exception is present.
-     */
-    @Value.Derived
-    default String truncatedStackTrace(int maxLines) {
-        String fullTrace = stackTrace();
-        if (fullTrace == null) {
-            return null;
-        }
-        String[] lines = fullTrace.split("\n");
-        return Arrays.stream(lines)
-                .limit(maxLines)
-                .reduce((a, b) -> a + "\n" + b)
-                .orElse("");
-    }
 
 }
