@@ -35,10 +35,10 @@
         <docker.image.wiremock>${ext.docker.image.wiremock}</docker.image.wiremock>
         <docker.wm.volume>./src/test/resources</docker.wm.volume>
         <docker.wm.volume.internal>/home/wiremock</docker.wm.volume.internal>
+        <docker.jacoco.skip>false</docker.jacoco.skip>
         <wiremock.port>50505</wiremock.port>
         <wiremock.api.key>${ext.wiremock.api.key}</wiremock.api.key>
         <tomcat.port>8080</tomcat.port>
-        <docker.jacoco.skip>false</docker.jacoco.skip>
     </properties>
 
     <dependencies>
@@ -170,6 +170,8 @@
                                 <argument>-e</argument>
                                 <argument>-Dexec.mainClass=com.microsoft.playwright.CLI</argument>
                                 <argument>-Dexec.args="install-deps"</argument>
+                                <argument>-pl</argument>
+                                <argument>:dotcms-e2e-java</argument>
                             </arguments>
                         </configuration>
                     </execution>

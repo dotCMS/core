@@ -26,8 +26,7 @@ jobs:
       postman: ${{ needs.initialize.outputs.backend == 'true' }}
       frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
       cli: ${{ needs.initialize.outputs.cli == 'true' }}
-#      This will probably need to be re-evaluated, that is if it makes sense to tun E2E tests at the merge queue
-#      e2e: ${{ needs.initialize.outputs.build }}
+      e2e: ${{ needs.initialize.outputs.build == 'true' }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
   finalize:

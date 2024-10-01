@@ -2477,7 +2477,7 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Operation(operationId = "putFireActionByNameMultipart", summary = "Fire action by name (multipart form) \uD83D\uDEA7",
-            description = "(**Construction notice:** Still awaiting request body documentation. Coming soon!)\n\n" +
+            description = "(**Construction notice:** Still needs request body documentation. Coming soon!)\n\n" +
                     "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
                     "specified by name, on a target contentlet. Uses a multipart form to transmit its data.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
@@ -3114,16 +3114,67 @@ public class WorkflowResource {
     //@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces("application/octet-stream")
-    @Operation(operationId = "postFireSystemActionByNameMulti", summary = "Fire system action by name over multiple contentlets \uD83D\uDEA7",
-            description = "(**Construction notice:** This endpoint currently cannot succeed on calls through the playground, " +
-                    "though curl and other methods work fine.)\n\n" +
-                    "Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
-                    "by name on multiple target contentlets.",
+    @Operation(operationId = "postFireSystemActionByNameMulti", summary = "Fire system action by name over multiple contentlets",
+            description = "Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
+                    "by name on multiple target contentlets.\n\nReturns a list of resultant contentlet maps, each with an additional  " +
+            "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
+            "services that handle automatically assigning workflow schemes to content with none.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                            content = @Content(mediaType = "application/octet-stream",
+                                    schema = @Schema(implementation = ResponseEntityView.class),
+                                    examples = @ExampleObject(value = "{\n" +
+                                            "  \"entity\": {\n" +
+                                            "    \"results\": [\n" +
+                                            "      {\n" +
+                                            "        \"c2701eced2b59f0bbd55b3d9667878ce\": {\n" +
+                                            "          \"AUTO_ASSIGN_WORKFLOW\": false,\n" +
+                                            "          \"archived\": false,\n" +
+                                            "          \"baseType\": \"string\",\n" +
+                                            "          \"body\": \"string\",\n" +
+                                            "          \"body_raw\": \"string\",\n" +
+                                            "          \"contentType\": \"string\",\n" +
+                                            "          \"creationDate\": 1725051866540,\n" +
+                                            "          \"folder\": \"string\",\n" +
+                                            "          \"hasLiveVersion\": false,\n" +
+                                            "          \"hasTitleImage\": false,\n" +
+                                            "          \"host\": \"string\",\n" +
+                                            "          \"hostName\": \"string\",\n" +
+                                            "          \"identifier\": \"c2701eced2b59f0bbd55b3d9667878ce\",\n" +
+                                            "          \"inode\": \"string\",\n" +
+                                            "          \"languageId\": 1,\n" +
+                                            "          \"live\": false,\n" +
+                                            "          \"locked\": false,\n" +
+                                            "          \"modDate\": 1727438483022,\n" +
+                                            "          \"modUser\": \"string\",\n" +
+                                            "          \"modUserName\": \"string\",\n" +
+                                            "          \"owner\": \"string\",\n" +
+                                            "          \"ownerName\": \"string\",\n" +
+                                            "          \"publishDate\": 1727438483051,\n" +
+                                            "          \"publishUser\": \"string\",\n" +
+                                            "          \"publishUserName\": \"string\",\n" +
+                                            "          \"sortOrder\": 0,\n" +
+                                            "          \"stInode\": \"string\",\n" +
+                                            "          \"title\": \"string\",\n" +
+                                            "          \"titleImage\": \"string\",\n" +
+                                            "          \"url\": \"string\",\n" +
+                                            "          \"working\": false\n" +
+                                            "        }\n" +
+                                            "      }\n" +
+                                            "    ],\n" +
+                                            "    \"summary\": {\n" +
+                                            "      \"affected\": 1,\n" +
+                                            "      \"failCount\": 0,\n" +
+                                            "      \"successCount\": 1,\n" +
+                                            "      \"time\": 45\n" +
+                                            "    }\n" +
+                                            "  },\n" +
+                                            "  \"errors\": [],\n" +
+                                            "  \"i18nMessagesMap\": {},\n" +
+                                            "  \"messages\": [],\n" +
+                                            "  \"permissions\": []\n" +
+                                            "}")
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -3196,7 +3247,16 @@ public class WorkflowResource {
                                                                                                 "[the Wikipedia entry listing tz database time zones]" +
                                                                                                 "(https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). |\n\n",
                                                             content = @Content(
-                                                                    schema = @Schema(implementation = FireMultipleActionForm.class)
+                                                                    schema = @Schema(implementation = FireMultipleActionForm.class),
+                                                                    examples = @ExampleObject(value = "{\n" +
+                                                                            "  \"contentlet\": [\n" +
+                                                                            "    {\n" +
+                                                                            "      \"identifier\": \"d684c0a9abeeeceea8b9a7e32fc272ae\"\n" +
+                                                                            "    },\n" +
+                                                                            "    { \"identifier\": \"c2701eced2b59f0bbd55b3d9667878ce\" }\n" +
+                                                                            "  ],\n" +
+                                                                            "  \"comments\": \"test comment\"\n" +
+                                                                            "}")
                                                             )
                                                     ) final FireMultipleActionForm fireActionForm) throws DotDataException, DotSecurityException {
 
@@ -3347,19 +3407,70 @@ public class WorkflowResource {
     //@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Produces("application/octet-stream")
     @Consumes({MediaType.APPLICATION_JSON})
-    @Operation(operationId = "patchFireMergeSystemAction", summary = "Modify specific fields on multiple contentlets \uD83D\uDEA7",
-            description = "(**Construction notice:** This endpoint currently cannot succeed on calls through the playground, " +
-                    "though curl and other methods work fine.)\n\n" +
-                    "Assigns values to the specified fields across multiple [contentlets](https://www.dotcms.com" +
+    @Operation(operationId = "patchFireMergeSystemAction", summary = "Modify specific fields on multiple contentlets",
+            description = "Assigns values to the specified fields across multiple [contentlets](https://www.dotcms.com" +
                     "/docs/latest/content#Contentlets) simultaneously.\n\n" +
                     "Can use a [Lucene query](https://www.dotcms.com/docs/latest/content-search-syntax#Lucene) in its " +
                     "body to select all resulting content items.\n\n" +
-                    "Returns a set of JSON objects.",
+                    "Returns a list of resultant contentlet maps, each with an additional  " +
+                    "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
+                    "services that handle automatically assigning workflow schemes to content with none.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Contentlet(s) modified successfully",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntitySystemActionWorkflowActionMappings.class)
+                            content = @Content(mediaType = "application/octet-stream",
+                                    schema = @Schema(implementation = ResponseEntityView.class),
+                                    examples = @ExampleObject(value = "{\n" +
+                                            "  \"entity\": {\n" +
+                                            "    \"results\": [\n" +
+                                            "      {\n" +
+                                            "        \"c2701eced2b59f0bbd55b3d9667878ce\": {\n" +
+                                            "          \"AUTO_ASSIGN_WORKFLOW\": false,\n" +
+                                            "          \"archived\": false,\n" +
+                                            "          \"baseType\": \"string\",\n" +
+                                            "          \"body\": \"string\",\n" +
+                                            "          \"body_raw\": \"string\",\n" +
+                                            "          \"contentType\": \"string\",\n" +
+                                            "          \"creationDate\": 1725051866540,\n" +
+                                            "          \"folder\": \"string\",\n" +
+                                            "          \"hasLiveVersion\": false,\n" +
+                                            "          \"hasTitleImage\": false,\n" +
+                                            "          \"host\": \"string\",\n" +
+                                            "          \"hostName\": \"string\",\n" +
+                                            "          \"identifier\": \"c2701eced2b59f0bbd55b3d9667878ce\",\n" +
+                                            "          \"inode\": \"string\",\n" +
+                                            "          \"languageId\": 1,\n" +
+                                            "          \"live\": false,\n" +
+                                            "          \"locked\": false,\n" +
+                                            "          \"modDate\": 1727438483022,\n" +
+                                            "          \"modUser\": \"string\",\n" +
+                                            "          \"modUserName\": \"string\",\n" +
+                                            "          \"owner\": \"string\",\n" +
+                                            "          \"ownerName\": \"string\",\n" +
+                                            "          \"publishDate\": 1727438483051,\n" +
+                                            "          \"publishUser\": \"string\",\n" +
+                                            "          \"publishUserName\": \"string\",\n" +
+                                            "          \"sortOrder\": 0,\n" +
+                                            "          \"stInode\": \"string\",\n" +
+                                            "          \"title\": \"string\",\n" +
+                                            "          \"titleImage\": \"string\",\n" +
+                                            "          \"url\": \"string\",\n" +
+                                            "          \"working\": false\n" +
+                                            "        }\n" +
+                                            "      }\n" +
+                                            "    ],\n" +
+                                            "    \"summary\": {\n" +
+                                            "      \"affected\": 1,\n" +
+                                            "      \"failCount\": 0,\n" +
+                                            "      \"successCount\": 1,\n" +
+                                            "      \"time\": 45\n" +
+                                            "    }\n" +
+                                            "  },\n" +
+                                            "  \"errors\": [],\n" +
+                                            "  \"i18nMessagesMap\": {},\n" +
+                                            "  \"messages\": [],\n" +
+                                            "  \"permissions\": []\n" +
+                                            "}")
                             )
                     ),
                     @ApiResponse(responseCode = "401", description = "Invalid User"),
@@ -3462,7 +3573,14 @@ public class WorkflowResource {
                                                                                              "[the Wikipedia entry listing tz database time zones]" +
                                                                                              "(https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). |\n\n",
                                                          content = @Content(
-                                                                 schema = @Schema(implementation = FireActionForm.class)
+                                                                 schema = @Schema(implementation = FireActionForm.class),
+                                                                 examples = @ExampleObject(value = "{\n" +
+                                                                         "    \"comments\":\"Publish an existing Generic content\",\n" +
+                                                                         "    \"query\":\"+contentType:webPageContent AND title:testcontent\",\n" +
+                                                                         "    \"contentlet\": {\n" +
+                                                                         "        \"title\":\"TestContentNowWithCaps\"\n" +
+                                                                         "    }\n" +
+                                                                         "}")
                                                          )
                                                  ) final FireActionForm fireActionForm) throws DotDataException, DotSecurityException {
 
@@ -3756,7 +3874,7 @@ public class WorkflowResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(operationId = "putFireActionByIdMultipart", summary = "Fire action by ID (multipart form) \uD83D\uDEA7",
-            description = "(**Construction notice:** Still awaiting request body documentation. Coming soon!)\n\n" +
+            description = "(**Construction notice:** Still needs request body documentation. Coming soon!)\n\n" +
                     "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
                     "specified by identifier, on a target contentlet. Uses a multipart form to transmit its data.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
@@ -3906,7 +4024,7 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Operation(operationId = "putFireActionByIdMultipart", summary = "Fire action by ID (multipart form) \uD83D\uDEA7",
-            description = "(**Construction notice:** Still awaiting request body documentation. Coming soon!)\n\n" +
+            description = "(**Construction notice:** Still needs request body documentation. Coming soon!)\n\n" +
                     "Fires a default [system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
                     "on target contentlet. Uses a multipart form to transmit its data.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
