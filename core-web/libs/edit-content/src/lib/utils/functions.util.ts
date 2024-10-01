@@ -16,6 +16,7 @@ import {
     FIELD_TYPES
 } from '../models/dot-edit-content-field.enum';
 import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
+import { SIDEBAR_LOCAL_STORAGE_KEY } from '../models/dot-edit-content.constant';
 
 // This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
 export const castSingleSelectableValue = (
@@ -209,4 +210,30 @@ export const createPaths = (path: string): string[] => {
 
         return array;
     }, []);
+};
+
+/**
+ * Retrieves the sidebar state from the local storage.
+ *
+ * This function accesses the local storage using a predefined key `SIDEBAR_LOCAL_STORAGE_KEY`
+ * and returns the parsed state of the sidebar. If the value in local storage is 'true',
+ * it returns `true`; otherwise, it returns `false`. If there is no value stored under
+ * the key, it defaults to returning `true`.
+ *
+ * @returns {boolean} The state of the sidebar, either `true` (opened) or `false` (closed).
+ */
+export const getPersistSidebarState = (): boolean => {
+    const localStorageData = localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY);
+
+    return localStorageData ? localStorageData === 'true' : true;
+};
+
+/**
+ * Function to persist the state of the sidebar in local storage.
+ *
+ * @param {string} value - The state of the sidebar to persist.
+ *                         Typically a string representing whether the sidebar is open or closed.
+ */
+export const setPersistSidebarState = (value: string) => {
+    localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, value);
 };

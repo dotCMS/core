@@ -17,7 +17,7 @@ import {
 } from '@dotcms/data-access';
 import { MockDotMessageService, mockWorkflowsActions } from '@dotcms/utils-testing';
 
-import { DotEditContentStore } from './edit-content.store';
+import { DotEditContentStoreOld } from './edit-content.store';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { BINARY_FIELD_CONTENTLET, CONTENT_TYPE_MOCK } from '../../../utils/mocks';
@@ -28,14 +28,14 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 describe('DotEditContentStore', () => {
-    let spectator: SpectatorService<DotEditContentStore>;
+    let spectator: SpectatorService<DotEditContentStoreOld>;
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
     let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
     let location: Location;
     let messageService: MessageService;
 
     const createService = createServiceFactory({
-        service: DotEditContentStore,
+        service: DotEditContentStoreOld,
         imports: [HttpClientTestingModule],
         providers: [
             Location,

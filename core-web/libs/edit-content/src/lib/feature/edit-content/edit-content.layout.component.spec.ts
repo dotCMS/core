@@ -23,7 +23,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
-import { DotEditContentStore } from './store/edit-content.store';
+import { DotEditContentStoreOld } from './store/edit-content.store';
 
 import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
@@ -34,7 +34,7 @@ import { BINARY_FIELD_CONTENTLET, CONTENT_TYPE_MOCK } from '../../utils/mocks';
 
 describe('EditContentLayoutComponent', () => {
     let spectator: Spectator<EditContentLayoutComponent>;
-    let dotEditContentStore: DotEditContentStore;
+    let dotEditContentStore: DotEditContentStoreOld;
     let dotEditContentService: DotEditContentService;
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
 
@@ -53,7 +53,7 @@ describe('EditContentLayoutComponent', () => {
             mockProvider(DotContentTypeService),
             mockProvider(DotMessageService),
             mockProvider(DotFormatDateService),
-            mockProvider(DotEditContentStore),
+            mockProvider(DotEditContentStoreOld),
             mockProvider(DotWorkflowActionsFireService)
         ]
     });
@@ -96,7 +96,7 @@ describe('EditContentLayoutComponent', () => {
 
             dotEditContentService = spectator.inject(DotEditContentService, true);
             dotWorkflowsActionsService = spectator.inject(DotWorkflowsActionsService, true);
-            dotEditContentStore = spectator.inject(DotEditContentStore, true);
+            dotEditContentStore = spectator.inject(DotEditContentStoreOld, true);
         });
 
         it('should get content data', () => {
