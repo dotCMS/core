@@ -141,10 +141,9 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
         return totalResponses.get() == 0 || ((double) successCount.get() / totalResponses.get() < 0.5);
     }
 
-    private void addSuccessToQueue(ReindexEntry bulkItemResponse) {
+    private void addSuccessToQueue(ReindexEntry idx) {
         successCount.incrementAndGet();
-        workingRecords.remove(bulkItemResponse.getId());
-        queue.add(new ReindexResult(bulkItemResponse));
+        queue.add(new ReindexResult(idx));
     }
 
     private void addErrorToQueue(ReindexEntry idx, String errorMessage) {

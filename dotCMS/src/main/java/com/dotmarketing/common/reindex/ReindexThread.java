@@ -2,7 +2,6 @@ package com.dotmarketing.common.reindex;
 
 import com.dotmarketing.common.reindex.BulkProcessorListener.ReindexResult;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import com.dotcms.api.system.event.Visibility;
