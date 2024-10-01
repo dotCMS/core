@@ -31,7 +31,7 @@ public class CorsFilter implements ContainerResponseFilter {
     final public static String CORS_DEFAULT = "default";
     final private Lazy<Map<String, List<String[]>>> headerMap = Lazy.of(this::loadHeaders);
 
-    public Map<String, List<String[]>> loadHeaders() {
+    Map<String, List<String[]>> loadHeaders() {
         Map<String, List<String[]>> loadingMap  = new HashMap<>();
         final List<String> props = Config.subsetContainsAsList(CORS_PREFIX);
         props.forEach(key -> {
