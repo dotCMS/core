@@ -60,6 +60,7 @@ public class IntegrationTestInitService {
             if (initCompleted.compareAndSet(false, true)) {
 
                 weld = new Weld().containerId(RegistrySingletonProvider.STATIC_INSTANCE)
+                        /*
                         .beanClasses(
                                 JobQueueManagerAPIImpl.class,
                                 JobQueueConfig.class,
@@ -71,6 +72,7 @@ public class IntegrationTestInitService {
                                 RetryStrategyProducer.class,
                                 RealTimeJobMonitor.class,
                                 EventProducer.class)
+                         */
                         .initialize();
 
                 System.setProperty(TestUtil.DOTCMS_INTEGRATION_TEST, TestUtil.DOTCMS_INTEGRATION_TEST);

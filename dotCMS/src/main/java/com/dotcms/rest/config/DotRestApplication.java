@@ -47,7 +47,6 @@ import org.glassfish.jersey.server.ResourceConfig;
 public class DotRestApplication extends ResourceConfig {
 
 	public DotRestApplication() {
-
 		register(MultiPartFeature.class).
 		register(JacksonJaxbJsonProvider.class).
 		registerClasses(customClasses.keySet()).

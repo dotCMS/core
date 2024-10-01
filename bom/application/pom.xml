@@ -1152,7 +1152,7 @@
             <dependency>
                 <groupId>org.jboss.weld.servlet</groupId>
                 <artifactId>weld-servlet-shaded</artifactId>
-                <version>3.1.9.Final</version>
+                <version>4.0.0.Final</version>
             </dependency>
 
             <dependency>
@@ -1165,6 +1165,12 @@
                 <groupId>org.glassfish.hk2</groupId>
                 <artifactId>hk2-locator</artifactId>
                 <version>2.5.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.jersey.inject</groupId>
+                <artifactId>jersey-cdi2-se</artifactId>
+                <version>2.28</version>
             </dependency>
 
             <dependency>
