@@ -1,4 +1,4 @@
-import { MESSAGES_TYPES, UIMessagesMap } from '../models';
+import { MESSAGES_TYPES, UIMessage, UIMessagesMap } from '../models';
 
 export const UiMessageMap: UIMessagesMap = {
     DEFAULT: {
@@ -28,6 +28,17 @@ export const UiMessageMap: UIMessagesMap = {
     }
 };
 
-export function getUiMessage(key: MESSAGES_TYPES) {
-    return UiMessageMap[key];
+/**
+ * Returns a uiMessage given its key
+ * @param key The key of the uiMessage
+ * @returns The uiMessage
+ */
+export function getUiMessage(key: MESSAGES_TYPES): UIMessage {
+    const uiMessage = UiMessageMap[key];
+
+    if (!uiMessage) {
+        throw new Error(`Key ${key} not found in UiMessageMap`);
+    }
+
+    return uiMessage;
 }

@@ -72,6 +72,10 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
 
     constructor() {
         effect(() => {
+            if (!this.onChange && !this.onTouched) {
+                return;
+            }
+
             const value = this.store.value();
             this.onChange(value);
             this.onTouched();

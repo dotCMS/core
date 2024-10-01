@@ -26,6 +26,7 @@
         <e2e.test.env>local</e2e.test.env>
         <e2e.frontend.dir>./frontend</e2e.frontend.dir>
         <e2e.test.cmd>run start-${e2e.test.env}</e2e.test.cmd>
+        <e2e.post.test.cmd>run post-testing</e2e.post.test.cmd>
         <tomcat.port>8080</tomcat.port>
         <e2e.server.url>http://localhost:${tomcat.port}</e2e.server.url>
         <version.cargo.plugin>1.10.6</version.cargo.plugin>
@@ -36,8 +37,6 @@
         <docker.image.wiremock>${ext.docker.image.wiremock}</docker.image.wiremock>
         <docker.wm.volume>./src/test/resources</docker.wm.volume>
         <docker.wm.volume.internal>/home/wiremock</docker.wm.volume.internal>
-        <it.test.fork-folder.prefix>${project.build.directory}/testdata/fork-</it.test.fork-folder.prefix>
-        <it.test.fork-folder>${it.test.fork-folder.prefix}</it.test.fork-folder>
         <cleanup.before.tests>true</cleanup.before.tests>
         <tomcat.port>8080</tomcat.port>
         <docker.jacoco.skip>false</docker.jacoco.skip>
@@ -110,6 +109,18 @@
                             <arguments>${e2e.test.cmd}</arguments>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>run post node script</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <phase>integration-test</phase>
+                        <configuration>
+                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
+                            <skip>${e2e.test.skip}</skip>
+                            <arguments>${e2e.post.test.cmd}</arguments>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -122,6 +133,14 @@
                     <execution>
                         <id>integration-test</id>
                         <phase>none</phase>
+                    </execution>
+                    <execution>
+                        <id>verify</id>
+                        <goals>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -168,7 +187,6 @@
                                     <DOT_AI_IMAGE_API_URL>http://wm:8080/i</DOT_AI_IMAGE_API_URL>
                                     <DOT_AI_EMBEDDINGS_API_URL>http://wm:8080/e</DOT_AI_EMBEDDINGS_API_URL>
                                     <DOT_AI_MODELS_API_URL>http://wm:8080/m</DOT_AI_MODELS_API_URL>
-                                    <DOT_AI_DEBUG_LOGGER>true</DOT_AI_DEBUG_LOGGER>
                                 </env>
                                 <links combine.children="append">
                                     <link>wiremock:wm</link>

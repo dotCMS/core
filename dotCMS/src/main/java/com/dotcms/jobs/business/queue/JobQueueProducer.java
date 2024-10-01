@@ -1,5 +1,6 @@
 package com.dotcms.jobs.business.queue;
 
+import com.dotmarketing.util.Config;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 
@@ -9,6 +10,11 @@ import javax.enterprise.inject.Produces;
  */
 @ApplicationScoped
 public class JobQueueProducer {
+
+    // The type of job queue implementation to use
+    private static final String JOB_QUEUE_IMPLEMENTATION_TYPE = Config.getStringProperty(
+            "JOB_QUEUE_IMPLEMENTATION_TYPE", "postgres"
+    );
 
     /**
      * Produces a JobQueue instance. This method is called by the CDI container to create a JobQueue
@@ -20,17 +26,13 @@ public class JobQueueProducer {
     @ApplicationScoped
     public JobQueue produceJobQueue() {
 
-        // Potential future implementation:
-        // String queueType = System.getProperty("job.queue.type", "postgres");
-        // if ("postgres".equals(queueType)) {
-        //     return new PostgresJobQueue();
-        // } else if ("redis".equals(queueType)) {
-        //     return new RedisJobQueue();
-        // }
-        // throw new IllegalStateException("Unknown job queue type: " + queueType);
+        if (JOB_QUEUE_IMPLEMENTATION_TYPE.equals("postgres")) {
+            return new PostgresJobQueue();
+        }
 
-        //return new PostgresJobQueue();
-        return null;
+        throw new IllegalStateException(
+                "Unknown job queue implementation type: " + JOB_QUEUE_IMPLEMENTATION_TYPE
+        );
     }
 
 }

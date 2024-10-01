@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
+import { TabViewModule } from 'primeng/tabview';
+
 import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -12,7 +14,12 @@ import { DotContentAsideWorkflowComponent } from './components/dot-content-aside
     templateUrl: './dot-edit-content-aside.component.html',
     styleUrls: ['./dot-edit-content-aside.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotMessagePipe, DotContentAsideInformationComponent, DotContentAsideWorkflowComponent]
+    imports: [
+        DotMessagePipe,
+        DotContentAsideInformationComponent,
+        DotContentAsideWorkflowComponent,
+        TabViewModule
+    ]
 })
 export class DotEditContentAsideComponent {
     /**
