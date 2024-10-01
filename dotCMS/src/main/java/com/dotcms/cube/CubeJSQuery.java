@@ -372,6 +372,11 @@ public class CubeJSQuery {
             return this;
         }
 
+        public Builder timeDimension(final String dimension, final String granularity, final String dateRange) {
+            this.timeDimensions.add(new TimeDimension(dimension, granularity, dateRange));
+            return this;
+        }
+
         public Builder timeDimensions(Collection<TimeDimension> timeDimensions) {
             this.timeDimensions.addAll(timeDimensions);
             return this;
