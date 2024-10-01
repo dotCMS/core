@@ -20,42 +20,60 @@ public class TimeDimensionParser {
         // singleton
     }
 
-    private static final String FIELD_REGEX = "(\\w+\\.\\w+)\\s+(\\w+)";
+    private static final String FIELD_REGEX = "^(\\w+\\.\\w+)\\s+(\\w+)(?:\\s+(.+))?$";
+    private static final Pattern PATTERN = Pattern.compile(FIELD_REGEX);
 
     public static class TimeDimension {
-        private String term;
-        private String field;
 
-        public TimeDimension(final String term, final String field) {
-            this.term = term;
-            this.field = field;
+        private final String dimension;
+        private final String granularity;
+        private final String dateRange;
+
+        public TimeDimension(final String dimension, final String granularity) {
+            this.dimension = dimension;
+            this.granularity = granularity;
+            this.dateRange = null;
         }
 
-        public String getTerm() {
-            return term;
+        public TimeDimension(final String dimension, final String granularity, final String dateRange) {
+            this.dimension = dimension;
+            this.granularity = granularity;
+            this.dateRange = dateRange;
         }
 
-        public String getField() {
-            return field;
+        public String getDimension() {
+            return dimension;
+        }
+
+        public String getGranularity() {
+            return granularity;
+        }
+
+        public String getDateRange() {
+            return dateRange;
         }
 
         @Override
         public String toString() {
-            return "Term: " + term + ", Field: " + field;
+            return "TimeDimension{" +
+                    "dimension='" + dimension + '\'' +
+                    ", granularity='" + granularity + '\'' +
+                    ", dateRange='" + dateRange + '\'' +
+                    '}';
         }
     }
 
     public static TimeDimension parseTimeDimension(final String expression) throws IllegalArgumentException {
         // cache and checked
-        final Pattern pattern = Pattern.compile(FIELD_REGEX);
-        final Matcher matcher = pattern.matcher(expression.trim());
+        final Matcher matcher = PATTERN.matcher(expression.trim());
 
         if (matcher.matches()) {
 
-            final String term = matcher.group(1);   // Ex: Events.day
-            final String field = matcher.group(2);  // Ex: day
+            final String dimension = matcher.group(1);   // Ex: Events.day
+            final String granularity = matcher.group(2);  // Ex: day
+            final String dateRange = matcher.group(3);  // Ex: date range
 
-            return new TimeDimension(term, field);
+            return new TimeDimension(dimension, granularity, dateRange);
         } else {
             throw new IllegalArgumentException("The expression is not valid. This should be the format 'Term Field'.");
         }

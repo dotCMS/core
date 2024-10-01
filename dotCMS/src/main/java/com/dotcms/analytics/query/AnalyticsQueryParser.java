@@ -121,8 +121,8 @@ public class AnalyticsQueryParser {
     private Collection<CubeJSQuery.TimeDimension> parseTimeDimensions(final String timeDimensions) {
         final TimeDimensionParser.TimeDimension parsedTimeDimension = TimeDimensionParser.parseTimeDimension(timeDimensions);
         return Stream.of(
-                new CubeJSQuery.TimeDimension(parsedTimeDimension.getTerm(),
-                        parsedTimeDimension.getField())
+                new CubeJSQuery.TimeDimension(parsedTimeDimension.getDimension(),
+                        parsedTimeDimension.getGranularity())
         ).collect(Collectors.toList());
     }
 

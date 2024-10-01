@@ -381,10 +381,19 @@ public class CubeJSQuery {
     public static class TimeDimension {
         String dimension;
         String granularity;
+        String dateRange;
 
         public TimeDimension(String dimension, String granularity) {
             this.dimension = dimension;
             this.granularity = granularity;
+        }
+
+        public TimeDimension(final String dimension,
+                             final String granularity,
+                             final String dateRange) {
+            this.dimension = dimension;
+            this.granularity = granularity;
+            this.dateRange = dateRange;
         }
 
         public String getDimension() {
@@ -393,6 +402,10 @@ public class CubeJSQuery {
 
         public String getGranularity() {
             return granularity;
+        }
+
+        public String getDateRange() {
+            return dateRange;
         }
     }
 
