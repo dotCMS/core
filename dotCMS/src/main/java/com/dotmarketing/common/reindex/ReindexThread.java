@@ -101,10 +101,6 @@ public class ReindexThread {
     public static final int ELASTICSEARCH_BULK_ACTIONS =
             Config.getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS", 10);
 
-    // How often should the bulk request processor should flush its request - default 3 seconds
-    public static final int ELASTICSEARCH_BULK_FLUSH_INTERVAL =
-            Config.getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_FLUSH_INTERVAL_MS", 3000);
-
     // Setting this to number > 0 makes each bulk request asynchronous,
     // If set to 0 the bulk requests will be performed synchronously
     public static final int ELASTICSEARCH_CONCURRENT_REQUESTS =
