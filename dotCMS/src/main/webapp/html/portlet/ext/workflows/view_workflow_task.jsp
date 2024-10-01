@@ -412,11 +412,14 @@ public String getGravatar(String postedBy){
 								}
 		                %>
 		                    <tr <%=str_style %>>
-								<a href="<%= (fileAsset != null && fileAsset.getMap().get("fileLink") != null) ? fileAsset.getMap().get("fileLink") : file.getURI() %>" target="_blank">
-									<%= (fileAsset != null && fileAsset.getMap().get("fileLink") != null) ? fileAsset.getUnderlyingFileName() : file.getFileName() %>
-								</a>
 
 								<td>
+									<a href="<%= (fileAsset != null && fileAsset.getMap().get("fileLink") != null) ? fileAsset.getMap().get("fileLink") : file.getURI() %>" target="_blank">
+										<%= (fileAsset != null && fileAsset.getMap().get("fileLink") != null) ? fileAsset.getUnderlyingFileName() : file.getFileName() %>
+									</a>
+								</td>
+								<td>
+
 		                            <button dojoType="dijit.form.Button" type="button" class="dijitButtonDanger" style="float: right;" onClick="removeFile('<%= file.getInode() %>')"><%= LanguageUtil.get(pageContext, "remove") %></button>
 		                        </td>
 		                    </tr>

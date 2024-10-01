@@ -16,6 +16,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.business.FactoryLocator;
@@ -214,6 +215,12 @@ public class ImportStarterUtil {
                 }
 
                 doJSONFileImport(file, entity.type());
+
+                if (entity.fileName().startsWith(Contentlet.class.getCanonicalName())) {
+                    // content types and relationships are imported before sites
+                    // so we need to clear the host cache to avoid missed hosts references
+                    CacheLocator.getHostCache().clearCache();
+                }
 
                 if (Contentlet.class.getCanonicalName().equals(entity.fileName())){
                     updateContentletToNewDefaultLang();
