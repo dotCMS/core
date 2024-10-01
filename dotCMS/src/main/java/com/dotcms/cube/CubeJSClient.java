@@ -122,7 +122,7 @@ public class CubeJSClient {
     private Response<String> getStringResponse(final CircuitBreakerUrl cubeJSClient,
                                                final String cubeJsUrl,
                                                final String queryAsString) {
-        final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName());
+            final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName());
 
         Logger.debug(this, String.format("Getting results from CubeJs [%s] with query [%s]", cubeJsUrl, queryAsString));
         final Response<String> response = cubeJSClient.doResponse();
@@ -130,6 +130,10 @@ public class CubeJSClient {
         timeMetric.stop();
 
         if (!CircuitBreakerUrl.isWithin2xx(response.getStatusCode())) {
+
+            if (400 == response.getStatusCode()) {
+                throw new IllegalArgumentException(response.getResponse());
+            }
             throw new RuntimeException("CubeJS Server is not available");
         }
 

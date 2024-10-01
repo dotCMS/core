@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.analytics.content;
 
 import com.dotcms.analytics.content.ContentAnalyticsAPI;
 import com.dotcms.analytics.content.ReportResponse;
+import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
@@ -27,6 +28,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Resource class that exposes endpoints to query content analytics data.
@@ -127,7 +129,7 @@ public class ContentAnalyticsResource {
         Logger.debug(this, () -> "Querying content analytics data with the form: " + queryForm);
         final ReportResponse reportResponse =
                 this.contentAnalyticsAPI.runReport(queryForm.getQuery(), user);
-        return new ReportResponseEntityView(reportResponse);
+        return new ReportResponseEntityView(reportResponse.getResults().stream().map(ResultSetItem::getAll).collect(Collectors.toList()));
     }
 
     /**
@@ -184,7 +186,7 @@ public class ContentAnalyticsResource {
         Logger.debug(this,  ()->"Querying content analytics data with the cube query json: " + cubeJsQueryJson);
         final ReportResponse reportResponse =
                 this.contentAnalyticsAPI.runRawReport(cubeJsQueryJson, user);
-        return new ReportResponseEntityView(new ReportResponse(List.of()));
+        return new ReportResponseEntityView(reportResponse.getResults().stream().map(ResultSetItem::getAll).collect(Collectors.toList()));
     }
 
 }
