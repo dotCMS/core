@@ -188,7 +188,7 @@ public class AnalyticsToolTest {
     }
 
     /**
-     * Method to test: {@link AnalyticsTool#runRawReportFromJson(String)}
+     * Method to test: {@link AnalyticsTool#runRawReport(CubeJSQuery)}
      * Given Scenario: Sending a null json
      * ExpectedResult: Should throw {@link IllegalArgumentException}
      */
@@ -215,7 +215,7 @@ public class AnalyticsToolTest {
     }
 
     /**
-     * Method to test: {@link AnalyticsTool#runRawReportFromJson(String)}
+     * Method to test: {@link AnalyticsTool#runRawReport(CubeJSQuery)}
      * Given Scenario: Sending a good json
      * ExpectedResult: Should return not null ReportResponse
      */
@@ -235,7 +235,7 @@ public class AnalyticsToolTest {
         Mockito.when(viewContext.getRequest()).thenReturn(request);
         Mockito.when(request.getSession(false)).thenReturn(session);
         Mockito.when(userWebAPI.getLoggedInUser(request)).thenReturn(user);
-        Mockito.when(contentAnalyticsAPI.runRawReport(Mockito.any(), Mockito.eq(user))).thenReturn(new ReportResponse(List.of()));
+        Mockito.when(contentAnalyticsAPI.runRawReport(Mockito.any(CubeJSQuery.class), Mockito.eq(user))).thenReturn(new ReportResponse(List.of()));
 
         analyticsTool.init(viewContext);
         final CubeJSQuery.Builder builder = analyticsTool.createCubeJSQueryBuilder();
