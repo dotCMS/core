@@ -40,7 +40,7 @@ describe('DotEditContentStore', () => {
     let dotHttpErrorManagerService: SpyObject<DotHttpErrorManagerService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
 
-    let mockActivatedRouteParams: { [key: string]: any };
+    let mockActivatedRouteParams: { [key: string]: unknown };
     let router: SpyObject<Router>;
 
     let workflowActionsService: SpyObject<DotWorkflowsActionsService>;
