@@ -74,7 +74,7 @@ public class LoginTests extends BaseE2eTest {
     @Test
     public void test_loginSpanishLanguage() {
         loginPage.switchLanguage("español (España)");
-        assertThat(page.getByText("¡Bienvenido!")).isVisible();
+        assertThat(page.getByText("CAUSING TEST FAILURE")).isVisible();
     }
 
     /**
