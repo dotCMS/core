@@ -225,22 +225,34 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @Override
     public void registerProcessor(final String queueName, final JobProcessor processor) {
-        processors.put(queueName, processor);
+        final String queueNameLower = queueName.toLowerCase();
+        final JobProcessor jobProcessor = processors.get(queueNameLower);
+        if (null != jobProcessor) {
+            Logger.warn(this, String.format(
+                    "Job processor [%s] already registered for queue: [%s] is getting overridden.",
+                    jobProcessor.getClass().getName(), queueName));
+        }
+        processors.put(queueNameLower, processor);
+    }
+
+    @Override
+    public Map<String,JobProcessor> getQueueNames() {
+        return Map.copyOf(processors);
     }
 
     @WrapInTransaction
     @Override
     public String createJob(final String queueName, final Map<String, Object> parameters)
             throws JobProcessorNotFoundException, DotDataException {
-
-        if (!processors.containsKey(queueName)) {
+        final String queueNameLower = queueName.toLowerCase();
+        if (!processors.containsKey(queueNameLower)) {
             final var error = new JobProcessorNotFoundException(queueName);
             Logger.error(JobQueueManagerAPIImpl.class, error);
             throw error;
         }
 
         try {
-            String jobId = jobQueue.createJob(queueName, parameters);
+            String jobId = jobQueue.createJob(queueNameLower, parameters);
             eventProducer.getEvent(JobCreatedEvent.class).fire(
                     new JobCreatedEvent(jobId, queueName, LocalDateTime.now(), parameters)
             );
@@ -272,6 +284,29 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         }
     }
 
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize)
+            throws JobQueueDataException {
+        final String queueNameLower = queueName.toLowerCase();
+        try {
+            return jobQueue.getActiveJobs(queueNameLower, page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new JobQueueDataException("Error fetching active jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getFailedJobs(int page, int pageSize)
+            throws JobQueueDataException {
+        try {
+            return jobQueue.getFailedJobs(page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new JobQueueDataException("Error fetching active jobs", e);
+        }
+    }
+
     @WrapInTransaction
     @Override
     public void cancelJob(final String jobId) throws DotDataException {
@@ -284,8 +319,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         } catch (JobQueueDataException e) {
             throw new DotDataException("Error fetching job", e);
         }
-
-        final var processor = processors.get(job.queueName());
+        final String queueNameLower = job.queueName().toLowerCase();
+        final var processor = processors.get(queueNameLower);
         if (processor instanceof Cancellable) {
 
             try {

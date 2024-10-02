@@ -7,6 +7,7 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.queue.JobQueue;
+import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotmarketing.exception.DotDataException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -58,6 +59,12 @@ public interface JobQueueManagerAPI {
     void registerProcessor(String queueName, JobProcessor processor);
 
     /**
+     * Retrieves the job processors for all registered queues.
+     * @return A map of queue names to job processors
+     */
+    Map<String,JobProcessor> getQueueNames();
+
+    /**
      * Creates a new job in the specified queue.
      *
      * @param queueName  The name of the queue
@@ -87,6 +94,25 @@ public interface JobQueueManagerAPI {
      * @throws DotDataException if there's an error fetching the jobs
      */
     JobPaginatedResult getJobs(int page, int pageSize) throws DotDataException;
+
+    /**
+     * Retrieves a list of active jobs for a specific queue.
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of active jobs and pagination information.
+     * @throws JobQueueDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize) throws JobQueueDataException;
+
+    /**
+     * Retrieves a list of completed jobs for a specific queue within a date range.
+     * @param page     The page number
+     * @param pageSize The number of jobs per page
+     * @return A result object containing the list of completed jobs and pagination information.
+     * @throws JobQueueDataException
+     */
+    JobPaginatedResult getFailedJobs(int page, int pageSize) throws JobQueueDataException;
 
     /**
      * Cancels a job.
