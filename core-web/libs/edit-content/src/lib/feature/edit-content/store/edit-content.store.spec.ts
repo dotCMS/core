@@ -6,12 +6,9 @@ import {
 } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-
-import { MessageService } from 'primeng/api';
 
 import {
     DotContentTypeService,
@@ -43,16 +40,11 @@ describe('DotEditContentStore', () => {
     let dotHttpErrorManagerService: SpyObject<DotHttpErrorManagerService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
 
-    let mockActivatedRoute: { snapshot: { params?: any } };
     let mockActivatedRouteParams: { [key: string]: any };
-    let activatedRoute: SpyObject<ActivatedRoute>;
     let router: SpyObject<Router>;
 
     let workflowActionsService: SpyObject<DotWorkflowsActionsService>;
     let workflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
-
-    let location: Location;
-    let messageService: MessageService;
 
     const createService = createServiceFactory({
         service: DotEditContentStore,
@@ -64,7 +56,6 @@ describe('DotEditContentStore', () => {
             DotWorkflowsActionsService
         ],
         providers: [
-            // mockProvider(ActivatedRoute, mockActivatedRoute),
             {
                 provide: ActivatedRoute,
                 useValue: {
@@ -92,7 +83,6 @@ describe('DotEditContentStore', () => {
         workflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
         dotEditContentService = spectator.inject(DotEditContentService);
 
-        activatedRoute = spectator.inject(ActivatedRoute);
         router = spectator.inject(Router);
     });
 
@@ -140,10 +130,6 @@ describe('DotEditContentStore', () => {
     describe('initializeExistingContent', () => {
         const testInode = '123-test-inode';
         it('should initialize existing content successfully', () => {
-            mockActivatedRoute = {
-                snapshot: { params: { contentType: undefined, id: testInode } }
-            };
-
             const mockContentlet = {
                 inode: testInode,
                 contentType: 'testContentType'
