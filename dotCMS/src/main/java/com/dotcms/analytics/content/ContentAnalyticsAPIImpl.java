@@ -26,16 +26,15 @@ public class ContentAnalyticsAPIImpl implements ContentAnalyticsAPI {
 
     @Override
     public ReportResponse runReport(final AnalyticsQuery query, final User user) {
-
         Logger.debug(this, ()-> "Running the report for the query: " + query);
-        // note: should check any permissions for an user.
+        // TODO: We should check for specific user permissions
         return this.contentAnalyticsFactory.getReport(query, user);
     }
 
     @Override
-    public ReportResponse runRawReport(CubeJSQuery cubeJSQuery, User user) {
+    public ReportResponse runRawReport(final CubeJSQuery cubeJSQuery, final User user) {
         Logger.debug(this, ()-> "Running the report for the raw query: " + cubeJSQuery);
-        // note: should check any permissions for an user.
+        // TODO: We should check for specific user permissions
         return this.contentAnalyticsFactory.getRawReport(cubeJSQuery, user);
     }
 
