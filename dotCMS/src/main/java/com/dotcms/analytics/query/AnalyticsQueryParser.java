@@ -204,7 +204,6 @@ public class AnalyticsQueryParser {
      * @return The value or values of a token as an array of strings.
      */
     private String[] parseTokenValues(final String values) {
-        //final String[] valueArray = values.split("\\s*,\\s*");
         final String[] valueArray = values.split(",");
         return Arrays.stream(valueArray).map(
                 value -> value.trim().replaceAll(APOSTROPHE, BLANK))
