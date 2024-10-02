@@ -116,7 +116,7 @@ public class WebEventsCollectorServiceFactory {
                                     .collect(java.util.stream.Collectors.toList());
                         }));
             } catch (Exception e) {
-                Logger.debug(WebEventsCollectorServiceFactory.class, () -> "Error saving Analitycs Events:" + e.getMessage());
+                Logger.debug(WebEventsCollectorServiceFactory.class, () -> "Error saving Analytics Events:" + e.getMessage());
             }
         }
 

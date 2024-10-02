@@ -1362,16 +1362,19 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 	*/
 	enableShowOnEditing : function (){
 
-		dijit.byId('showOnEDITING').set('disabled', false);
+		if(dijit.byId('showOnEDITING') && dijit.byId('showOnEDITING') != undefined){
+			dijit.byId('showOnEDITING').set('disabled', false);
+		}
 	},
 
 	/**
 	* Disable the editing on show when
 	*/
     disableShowOnEditing : function (){
-
-		dijit.byId('showOnEDITING').set('checked', false);
-		dijit.byId('showOnEDITING').set('disabled', true);
+		if(dijit.byId('showOnEDITING') && dijit.byId('showOnEDITING') != undefined){
+			dijit.byId('showOnEDITING').set('checked', false);
+			dijit.byId('showOnEDITING').set('disabled', true);
+		}
 	},
     /**
      * Delete subaction from the system (using ajax) and table
@@ -1591,9 +1594,3 @@ dojo.ready(function() {
 	}
 
 });
-
-
-
-
-
-
