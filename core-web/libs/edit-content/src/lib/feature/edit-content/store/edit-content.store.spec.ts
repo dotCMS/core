@@ -1,199 +1,266 @@
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import {
+    createServiceFactory,
+    mockProvider,
+    SpectatorService,
+    SpyObject
+} from '@ngneat/spectator/jest';
+import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { ActivatedRoute } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { fakeAsync, tick } from '@angular/core/testing';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
-import { skip } from 'rxjs/operators';
-
 import {
-    DotMessageService,
+    DotContentTypeService,
+    DotFireActionOptions,
+    DotHttpErrorManagerService,
     DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { MockDotMessageService, mockWorkflowsActions } from '@dotcms/utils-testing';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotCMSContentType,
+    DotCMSWorkflowAction
+} from '@dotcms/dotcms-models';
+import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
-import { DotEditContentStoreOld } from './edit-content.store';
+import { DotEditContentStore } from './edit-content.store';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
-import { BINARY_FIELD_CONTENTLET, CONTENT_TYPE_MOCK } from '../../../utils/mocks';
-
-const messageServiceMock = new MockDotMessageService({
-    'dot.common.message.success': 'Success',
-    'edit.content.fire.action.success': 'Content published'
-});
+import { CONTENT_TYPE_MOCK } from '../../../utils/mocks';
 
 describe('DotEditContentStore', () => {
-    let spectator: SpectatorService<DotEditContentStoreOld>;
-    let dotWorkflowsActionsService: DotWorkflowsActionsService;
-    let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
+    let spectator: SpectatorService<InstanceType<typeof DotEditContentStore>>;
+    let store: InstanceType<typeof DotEditContentStore>;
+
+    let contentTypeService: SpyObject<DotContentTypeService>;
+
+    let dotHttpErrorManagerService: SpyObject<DotHttpErrorManagerService>;
+    let dotEditContentService: SpyObject<DotEditContentService>;
+
+    let mockActivatedRoute: { snapshot: { params?: any } };
+    let mockActivatedRouteParams: { [key: string]: any };
+    let activatedRoute: SpyObject<ActivatedRoute>;
+    let router: SpyObject<Router>;
+
+    let workflowActionsService: SpyObject<DotWorkflowsActionsService>;
+    let workflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
+
     let location: Location;
     let messageService: MessageService;
 
     const createService = createServiceFactory({
-        service: DotEditContentStoreOld,
-        imports: [HttpClientTestingModule],
+        service: DotEditContentStore,
+        mocks: [
+            DotWorkflowActionsFireService,
+            DotContentTypeService,
+            DotEditContentService,
+            DotHttpErrorManagerService,
+            DotWorkflowsActionsService
+        ],
         providers: [
-            Location,
-            MessageService,
-            {
-                provide: DotMessageService,
-                useValue: messageServiceMock
-            },
-            {
-                provide: DotWorkflowActionsFireService,
-                useValue: {
-                    fireTo: jest.fn().mockReturnValue(of(BINARY_FIELD_CONTENTLET))
-                }
-            },
-            {
-                provide: DotWorkflowsActionsService,
-                useValue: {
-                    getByInode: jest.fn().mockReturnValue(of(mockWorkflowsActions)),
-                    getDefaultActions: jest.fn().mockReturnValue(of(mockWorkflowsActions))
-                }
-            },
-            {
-                provide: DotEditContentService,
-                useValue: {
-                    getContentType: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK)),
-                    getContentById: jest.fn().mockReturnValue(of(BINARY_FIELD_CONTENTLET))
-                }
-            },
+            // mockProvider(ActivatedRoute, mockActivatedRoute),
             {
                 provide: ActivatedRoute,
-                useValue: { snapshot: { params: { contentType: undefined, id: '1' } } }
-            }
+                useValue: {
+                    get snapshot() {
+                        return { params: mockActivatedRouteParams };
+                    }
+                }
+            },
+
+            mockProvider(Router, {
+                navigate: jest.fn().mockReturnValue(Promise.resolve(true))
+            })
         ]
     });
 
     beforeEach(() => {
-        spectator = createService();
-        dotWorkflowsActionsService = spectator.inject(DotWorkflowsActionsService);
-        dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
-        messageService = spectator.inject(MessageService);
-        location = spectator.inject(Location);
+        mockActivatedRouteParams = {};
 
-        spectator.service.setState({
-            actions: mockWorkflowsActions,
-            contentType: CONTENT_TYPE_MOCK,
-            contentlet: BINARY_FIELD_CONTENTLET,
-            loading: false,
-            layout: {
-                showSidebar: true
-            }
-        });
+        spectator = createService();
+
+        store = spectator.service;
+        contentTypeService = spectator.inject(DotContentTypeService);
+        dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
+        workflowActionsService = spectator.inject(DotWorkflowsActionsService);
+        workflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
+        dotEditContentService = spectator.inject(DotEditContentService);
+
+        activatedRoute = spectator.inject(ActivatedRoute);
+        router = spectator.inject(Router);
+    });
+
+    afterEach(() => {
+        jest.resetAllMocks();
     });
 
     it('should create the store', () => {
         expect(spectator.service).toBeDefined();
     });
 
-    describe('updaters', () => {
-        it('should update the state', (done) => {
-            // Skip the initial value
-            spectator.service.vm$.pipe(skip(1)).subscribe((state) => {
-                expect(state).toEqual({
-                    actions: [],
-                    contentType: CONTENT_TYPE_MOCK,
-                    contentlet: BINARY_FIELD_CONTENTLET,
-                    loading: false,
-                    layout: {
-                        showSidebar: true
-                    }
-                });
-                done();
-            });
-            spectator.service.updateState({
-                actions: [],
-                contentType: CONTENT_TYPE_MOCK,
-                contentlet: BINARY_FIELD_CONTENTLET,
-                loading: false,
-                layout: {
-                    showSidebar: true
-                }
-            });
+    describe('initializeNewContent', () => {
+        it('should initialize new content successfully', () => {
+            const testContentType = 'testContentType';
+
+            contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            workflowActionsService.getDefaultActions.mockReturnValue(of(mockWorkflowsActions));
+
+            store.initializeNewContent(testContentType);
+
+            // use the proper contentType for get the data
+            expect(contentTypeService.getContentType).toHaveBeenCalledWith(testContentType);
+            expect(workflowActionsService.getDefaultActions).toHaveBeenCalledWith(testContentType);
+
+            expect(store.contentType()).toEqual(CONTENT_TYPE_MOCK);
+            expect(store.actions()).toEqual(mockWorkflowsActions);
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+            expect(store.error()).toBeNull();
         });
 
-        it('should update the contentlet and actions', (done) => {
-            const NEW_BINARY_FIELD_CONTENTLET = {
-                ...BINARY_FIELD_CONTENTLET,
-                title: 'new title'
-            };
+        it('should handle error when initializing new content', fakeAsync(() => {
+            const mockError = new HttpErrorResponse({ status: 404, statusText: 'Not Found' });
 
-            spectator.service.vm$.pipe(skip(1)).subscribe((state) => {
-                expect(state).toEqual({
-                    ...state,
-                    actions: [],
-                    contentlet: NEW_BINARY_FIELD_CONTENTLET
-                });
-                done();
-            });
-            spectator.service.updateContentletAndActions({
-                actions: [],
-                contentlet: NEW_BINARY_FIELD_CONTENTLET
-            });
-        });
+            contentTypeService.getContentType.mockReturnValue(throwError(() => mockError));
+            workflowActionsService.getDefaultActions.mockReturnValue(of(mockWorkflowsActions));
 
-        it('should update the sidebar state', (done) => {
-            spectator.service.updateSidebarState(false);
-            spectator.service.layout$.pipe().subscribe((state) => {
-                expect(state).toEqual({
-                    showSidebar: false
-                });
-                done();
-            });
-        });
+            store.initializeNewContent('testContentType');
+
+            expect(store.error()).toBe('Error initializing content');
+            expect(store.status()).toBe(ComponentStatus.ERROR);
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
+        }));
     });
 
-    describe('effects', () => {
-        it('should call fireWorkflowAction and update the state and url', (done) => {
-            const fireWorkflowActionSpy = jest.spyOn(dotWorkflowActionsFireService, 'fireTo');
-            const workflowSpy = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
-            const updateStateSpy = jest.spyOn(spectator.service, 'updateContentletAndActions');
-            const locationSpy = jest.spyOn(location, 'replaceState');
-            const spyMessage = jest.spyOn(messageService, 'add');
-
-            const mockParams = {
-                actionId: mockWorkflowsActions[0].id,
-                data: {
-                    contentlet: {
-                        title: 'new title',
-                        inode: '12345',
-                        contentType: BINARY_FIELD_CONTENTLET.contentType
-                    }
-                },
-                inode: BINARY_FIELD_CONTENTLET.inode
+    describe('initializeExistingContent', () => {
+        const testInode = '123-test-inode';
+        it('should initialize existing content successfully', () => {
+            mockActivatedRoute = {
+                snapshot: { params: { contentType: undefined, id: testInode } }
             };
 
-            spectator.service.fireWorkflowActionEffect(mockParams);
+            const mockContentlet = {
+                inode: testInode,
+                contentType: 'testContentType'
+            } as DotCMSContentlet;
 
-            spectator.service.vm$.subscribe(() => {
-                expect(fireWorkflowActionSpy).toHaveBeenCalledWith(mockParams);
-                expect(workflowSpy).toHaveBeenCalledWith(
-                    BINARY_FIELD_CONTENTLET.inode,
-                    DotRenderMode.EDITING
-                );
-                expect(updateStateSpy).toHaveBeenCalledWith({
-                    contentlet: BINARY_FIELD_CONTENTLET,
-                    actions: mockWorkflowsActions
-                });
-                expect(locationSpy).toHaveBeenCalledWith(
-                    `/content/${BINARY_FIELD_CONTENTLET.inode}`
-                );
+            const mockContentType = {
+                id: '1',
+                name: 'Test Content Type'
+            } as DotCMSContentType;
 
-                expect(spyMessage).toHaveBeenCalledWith({
-                    severity: 'success',
-                    summary: 'Success',
-                    detail: 'Content published'
-                });
+            const mockActions = [{ id: '1', name: 'Test Action' }] as DotCMSWorkflowAction[];
 
-                done();
+            dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
+            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
+            workflowActionsService.getByInode.mockReturnValue(of(mockActions));
+
+            store.initializeExistingContent(testInode);
+
+            expect(dotEditContentService.getContentById).toHaveBeenCalledWith(testInode);
+            expect(contentTypeService.getContentType).toHaveBeenCalledWith(
+                mockContentlet.contentType
+            );
+            expect(workflowActionsService.getByInode).toHaveBeenCalledWith(
+                testInode,
+                expect.anything()
+            );
+
+            expect(store.contentlet()).toEqual(mockContentlet);
+            expect(store.contentType()).toEqual(mockContentType);
+            expect(store.actions()).toEqual(mockActions);
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+            expect(store.error()).toBe('');
+        });
+
+        it('should handle error when initializing existing content', fakeAsync(() => {
+            const mockError = new HttpErrorResponse({ status: 404, statusText: 'Not Found' });
+
+            dotEditContentService.getContentById.mockReturnValue(throwError(() => mockError));
+
+            store.initializeExistingContent(testInode);
+            tick();
+
+            expect(dotEditContentService.getContentById).toHaveBeenCalledWith(testInode);
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
+            expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
+
+            expect(store.status()).toBe(ComponentStatus.ERROR);
+        }));
+    });
+
+    describe('fireWorkflowAction', () => {
+        const mockOptions: DotFireActionOptions<{ [key: string]: string | object }> = {
+            inode: '123',
+            actionId: 'publish'
+        };
+
+        it('should fire workflow action successfully', fakeAsync(() => {
+            const mockContentlet = { inode: '456', contentType: 'testType' } as DotCMSContentlet;
+            const mockActions = [{ id: '1', name: 'Test Action' }] as DotCMSWorkflowAction[];
+
+            workflowActionsFireService.fireTo.mockReturnValue(of(mockContentlet));
+            workflowActionsService.getByInode.mockReturnValue(of(mockActions));
+
+            store.fireWorkflowAction(mockOptions);
+            tick();
+
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+            expect(store.contentlet()).toEqual(mockContentlet);
+            expect(store.actions()).toEqual(mockActions);
+            expect(store.error()).toBeNull();
+
+            expect(workflowActionsFireService.fireTo).toHaveBeenCalledWith(mockOptions);
+            expect(workflowActionsService.getByInode).toHaveBeenCalledWith(
+                mockContentlet.inode,
+                DotRenderMode.EDITING
+            );
+            expect(router.navigate).toHaveBeenCalledWith(['/content', mockContentlet.inode], {
+                replaceUrl: true,
+                queryParamsHandling: 'preserve'
             });
+        }));
+
+        it('should handle error when firing workflow action', fakeAsync(() => {
+            const mockError = new HttpErrorResponse({
+                status: 500,
+                statusText: 'Internal Server Error'
+            });
+
+            workflowActionsFireService.fireTo.mockReturnValue(throwError(() => mockError));
+
+            store.fireWorkflowAction(mockOptions);
+            tick();
+
+            expect(store.status()).toBe(ComponentStatus.ERROR);
+            expect(store.error()).toBe('Error firing workflow action');
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
+        }));
+
+        it('should navigate to content list if contentlet has no inode', fakeAsync(() => {
+            const mockContentletWithoutInode = { contentType: 'testType' } as DotCMSContentlet;
+
+            workflowActionsFireService.fireTo.mockReturnValue(of(mockContentletWithoutInode));
+
+            store.fireWorkflowAction(mockOptions);
+            tick();
+
+            expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
+        }));
+    });
+
+    describe('toggleSidebar', () => {
+        it('should toggle sidebar state', () => {
+            expect(store.showSidebar()).toBe(true);
+            store.toggleSidebar();
+            expect(store.showSidebar()).toBe(false);
+            store.toggleSidebar();
+            expect(store.showSidebar()).toBe(true);
         });
     });
 });

@@ -53,6 +53,11 @@ const initialState: EditContentState = {
     error: ''
 };
 
+/**
+ * The DotEditContentStore is a state management store used in the DotCMS content editing application.
+ * It provides state, computed properties, methods, and hooks for managing the application state
+ * related to content editing and workflow actions.
+ */
 export const DotEditContentStore = signalStore(
     withState(initialState),
     withComputed((store) => ({
@@ -192,6 +197,10 @@ export const DotEditContentStore = signalStore(
                                     });
                                 },
                                 error: (error: HttpErrorResponse) => {
+                                    patchState(store, {
+                                        status: ComponentStatus.ERROR,
+                                        error: 'Error initializing content'
+                                    });
                                     dotHttpErrorManagerService.handle(error);
                                     router.navigate(['/c/content']);
                                 }
@@ -278,14 +287,18 @@ export const DotEditContentStore = signalStore(
     withHooks({
         onInit(store) {
             const activatedRoute = inject(ActivatedRoute);
-            const contentType = activatedRoute.snapshot.params['contentType'];
-            const inode = activatedRoute.snapshot.params['id'];
+            const params = activatedRoute.snapshot?.params;
 
-            // TODO: refactor this when we will use EditContent as sidebar
-            if (inode) {
-                store.initializeExistingContent(inode);
-            } else if (contentType) {
-                store.initializeNewContent(contentType);
+            if (params) {
+                const contentType = params['contentType'];
+                const inode = params['id'];
+
+                // TODO: refactor this when we will use EditContent as sidebar
+                if (inode) {
+                    store.initializeExistingContent(inode);
+                } else if (contentType) {
+                    store.initializeNewContent(contentType);
+                }
             }
 
             store.getPersistenceDataFromLocalStore();
