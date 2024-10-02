@@ -142,6 +142,115 @@ public class ContentAnalyticsFactoryTest {
         }
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link ContentAnalyticsFactory#getRawReport(String, User)}
+     *     </li>
+     *     <li><b>Given Scenario: </b>Run a report for a given query.</li>
+     *     <li><b>Expected Result: </b>The simulated results must adhere to the data specified in
+     *     the query. A mock HTTP Server is created to simulate the data request.</li>
+     * </ul>
+     *
+     * @throws DotDataException     Failed to create the CubeJS Client.
+     * @throws DotSecurityException Failed to create the CubeJS Client.
+     */
+    @Test
+    public void getContentAnalyticsReportRaw() throws DotDataException, DotSecurityException {
+        // ╔════════════════════════╗
+        // ║  Generating Test Data  ║
+        // ╚════════════════════════╝
+        final List<Map<String, String>> dataList = List.of(
+                Map.of(
+                        "request.count", "4",
+                        "request.pageId", "9c5f42da-31b1-4935-9df6-153f5de1bdf2",
+                        "request.pageTitle", "Blogs",
+                        "request.url", "/blog/"
+                ),
+                Map.of(
+                        "request.count", "3",
+                        "request.pageId", "44a076ad-affa-49d4-97b3-6caa3824e7e8",
+                        "request.pageTitle", "Destinations",
+                        "request.url", "/destinations/"
+                ),
+                Map.of(
+                        "request.count", "2",
+                        "request.pageId", "a9f30020-54ef-494e-92ed-645e757171c2",
+                        "request.pageTitle", "home",
+                        "request.url", "/"
+                )
+        );
+
+        // ╔══════════════════╗
+        // ║  Initialization  ║
+        // ╚══════════════════╝
+        final String cubeServerIp = "127.0.0.1";
+        final int cubeJsServerPort = 5000;
+        final MockHttpServer mockhttpServer = new MockHttpServer(cubeServerIp, cubeJsServerPort);
+        IPUtils.disabledIpPrivateSubnet(true);
+        final Map<String, List<Map<String, String>>> dataExpected = Map.of("data", dataList);
+
+        final String analyticsQuery = "{\n" +
+                "  \"order\": {\n" +
+                "    \"request.createdAt\": \"asc\"\n" +
+                "  },\n" +
+                "  \"dimensions\": [\n" +
+                "    \"request.requestId\"\n" +
+                "  ],\n" +
+                "  \"measures\": [\n" +
+                "    \"request.count\"\n" +
+                "  ],\n" +
+                "  \"timeDimensions\": [\n" +
+                "    {\n" +
+                "      \"dimension\": \"request.createdAt\",\n" +
+                "      \"granularity\": \"day\"\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+
+
+        final MockHttpServerContext mockHttpServerContext = new MockHttpServerContext.Builder()
+                .uri("/cubejs-api/v1/load")
+                .responseStatus(HttpURLConnection.HTTP_OK)
+                .responseBody(JsonUtil.getJsonStringFromObject(dataExpected))
+                .build();
+
+        mockhttpServer.addContext(mockHttpServerContext);
+        try {
+            mockhttpServer.start();
+            final CubeJSClient cubeClient = new CubeJSClient(
+                    String.format("http://%s:%s", cubeServerIp, cubeJsServerPort),
+                    getAccessToken());
+
+            final User systemUser = new User();
+            CubeJSClientFactory mockCubeJsClientFactory = Mockito.mock(CubeJSClientFactory.class);
+            Mockito.when(mockCubeJsClientFactory.create(systemUser)).thenReturn(cubeClient);
+            final ContentAnalyticsFactory contentAnalyticsFactory = new ContentAnalyticsFactoryImpl(new AnalyticsQueryParser(), mockCubeJsClientFactory);
+            final ReportResponse report = contentAnalyticsFactory.getRawReport(analyticsQuery, systemUser);
+
+            // ╔══════════════╗
+            // ║  Assertions  ║
+            // ╚══════════════╝
+            assertNotNull("The result list must never be empty", report.getResults());
+            assertEquals("There must be " + dataList.size() + " results in the list", dataList.size(), report.getResults().size());
+            int i = 0;
+            for (final ResultSetItem resultSetItem : report.getResults()) {
+                final Map<String, String> objectMap = dataList.get(i);
+                assertEquals("Value of request.count is not the expected one", objectMap.get("request.count"), resultSetItem.get("request.count").orElse(StringPool.BLANK));
+                assertEquals("Value of request.pageId is not the expected one", objectMap.get("request.pageId"), resultSetItem.get("request.pageId").orElse(StringPool.BLANK));
+                assertEquals("Value of request.pageTitle is not the expected one", objectMap.get("request.pageTitle"), resultSetItem.get("request.pageTitle").orElse(StringPool.BLANK));
+                assertEquals("Value of request.url is not the expected one", objectMap.get("request.url"), resultSetItem.get("request.url").orElse(StringPool.BLANK));
+                i++;
+            }
+        } finally {
+            // ╔═══════════╗
+            // ║  Cleanup  ║
+            // ╚═══════════╝
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
     private AccessToken getAccessToken() {
         return AnalyticsTestUtils.createAccessToken(
                 "a1b2c3d4e5f6",

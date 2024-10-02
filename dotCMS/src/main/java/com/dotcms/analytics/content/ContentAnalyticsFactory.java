@@ -30,4 +30,12 @@ public interface ContentAnalyticsFactory {
      */
     ReportResponse getRawReport(final CubeJSQuery query, final User user);
 
+    /**
+     * Runs the raw report based on the cube js json string query and user.
+     *
+     * @param cubeJsQueryJson the query to run the report.
+     * @param user the user to run the report.
+     * @return the report response.
+     */
+    ReportResponse getRawReport(String cubeJsQueryJson, User user);
 }
