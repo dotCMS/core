@@ -64,6 +64,21 @@ public class ContentAnalyticsFactoryImpl implements ContentAnalyticsFactory {
         }
     }
 
+    @Override
+    public ReportResponse getRawReport(final String cubeJsQueryJson, final User user) {
+
+        try {
+
+            Logger.debug(this, ()-> "Getting the report for the raw query: " + cubeJsQueryJson);
+            final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
+            return toReportResponse(cubeClient.send(cubeJsQueryJson));
+        } catch (DotDataException| DotSecurityException e) {
+
+            Logger.error(this, e.getMessage(), e);
+            throw new DotRuntimeException(e);
+        }
+    }
+
     private ReportResponse toReportResponse(final CubeJSResultSet cubeJSResultSet) {
 
         return new ReportResponse(StreamSupport.stream(cubeJSResultSet.spliterator(), false).collect(Collectors.toList()));

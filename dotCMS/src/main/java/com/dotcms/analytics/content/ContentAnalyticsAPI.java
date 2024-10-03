@@ -31,4 +31,11 @@ public interface ContentAnalyticsAPI {
      */
     ReportResponse runRawReport(CubeJSQuery cubeJSQuery, User user);
 
+    /**
+     * Runs a raw report based on a cubeJS json string query
+     * @param cubeJsQueryJson
+     * @param user
+     * @return ReportResponse
+     */
+    ReportResponse runRawReport(String cubeJsQueryJson, User user);
 }
