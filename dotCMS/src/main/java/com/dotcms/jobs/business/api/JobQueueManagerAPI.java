@@ -10,6 +10,7 @@ import com.dotcms.jobs.business.queue.JobQueue;
 import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotmarketing.exception.DotDataException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -137,6 +138,13 @@ public interface JobQueueManagerAPI {
      * @param retryStrategy The retry strategy to set
      */
     void setRetryStrategy(String queueName, RetryStrategy retryStrategy);
+
+    /**
+     * Retrieves the retry strategy for a specific queue.
+     * @param jobId The ID of the job
+     * @return The processor instance, or an empty optional if not found
+     */
+    Optional<JobProcessor> getInstance(final String jobId);
 
     /**
      * @return The CircuitBreaker instance

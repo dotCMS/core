@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,7 +49,7 @@ public class JobQueueManagerAPIIntegrationTest {
      */
     @BeforeAll
     static void setUp() throws Exception {
-
+        System.out.println("JobQueueManagerAPIIntegrationTest.setUp");
         // Initialize the test environment
         IntegrationTestInitService.getInstance().init();
 
@@ -63,15 +64,20 @@ public class JobQueueManagerAPIIntegrationTest {
      */
     @AfterAll
     static void cleanUp() throws Exception {
-
-        jobQueueManagerAPI.close();
+        System.out.println("JobQueueManagerAPIIntegrationTest.cleanUp");
+       if(null != jobQueueManagerAPI) {
+           jobQueueManagerAPI.close();
+       }
         clearJobs();
     }
 
     @BeforeEach
     void reset() {
+        System.out.println("JobQueueManagerAPIIntegrationTest.reset");
         // Reset circuit breaker
-        jobQueueManagerAPI.getCircuitBreaker().reset();
+        if(null != jobQueueManagerAPI) {
+            jobQueueManagerAPI.getCircuitBreaker().reset();
+        }
     }
 
     /**
@@ -81,9 +87,9 @@ public class JobQueueManagerAPIIntegrationTest {
      */
     @Test
     void test_CreateAndProcessJob() throws Exception {
-
+        System.out.println("JobQueueManagerAPIIntegrationTest.test_CreateAndProcessJob");
         // Register a test processor
-        jobQueueManagerAPI.registerProcessor("testQueue", new TestJobProcessor());
+        jobQueueManagerAPI.registerProcessor("testQueue", TestJobProcessor.class);
 
         // Start the JobQueueManagerAPI
         if (!jobQueueManagerAPI.isStarted()) {
@@ -126,8 +132,8 @@ public class JobQueueManagerAPIIntegrationTest {
      */
     @Test
     void test_FailingJob() throws Exception {
-
-        jobQueueManagerAPI.registerProcessor("failingQueue", new FailingJobProcessor());
+        System.out.println("JobQueueManagerAPIIntegrationTest.test_FailingJob");
+        jobQueueManagerAPI.registerProcessor("failingQueue", FailingJobProcessor.class);
         RetryStrategy contentImportRetryStrategy = new ExponentialBackoffRetryStrategy(
                 5000, 300000, 2.0, 0
         );
@@ -174,9 +180,8 @@ public class JobQueueManagerAPIIntegrationTest {
      */
     @Test
     void test_CancelJob() throws Exception {
-
-        CancellableJobProcessor processor = new CancellableJobProcessor();
-        jobQueueManagerAPI.registerProcessor("cancellableQueue", processor);
+        System.out.println("JobQueueManagerAPIIntegrationTest.test_CancelJob");
+        jobQueueManagerAPI.registerProcessor("cancellableQueue", CancellableJobProcessor.class);
 
         if (!jobQueueManagerAPI.isStarted()) {
             jobQueueManagerAPI.start();
@@ -184,7 +189,12 @@ public class JobQueueManagerAPIIntegrationTest {
         }
 
         Map<String, Object> parameters = new HashMap<>();
-        String jobId = jobQueueManagerAPI.createJob("cancellableQueue", parameters);
+        final String jobId = jobQueueManagerAPI.createJob("cancellableQueue", parameters);
+
+        //Get the instance of the job processor immediately after creating the job cuz once it gets cancelled, it will be removed from the map
+        final Optional<JobProcessor> instance = jobQueueManagerAPI.getInstance(jobId);
+        assertTrue(instance.isPresent(),()->"Should have been able to create an instance of the job processor");
+        final CancellableJobProcessor processor = (CancellableJobProcessor)instance.get();
 
         Awaitility.await().atMost(5, TimeUnit.SECONDS)
             .until(() -> {
@@ -212,6 +222,7 @@ public class JobQueueManagerAPIIntegrationTest {
                     Job job = jobQueueManagerAPI.getJob(jobId);
                     assertEquals(JobState.CANCELED, job.state(),
                             "Job should be in CANCELED state");
+
                     assertTrue(processor.wasCanceled(),
                             "Job processor should have been canceled");
                 });
@@ -226,10 +237,9 @@ public class JobQueueManagerAPIIntegrationTest {
      */
     @Test
     void test_JobRetry() throws Exception {
-
-        int maxRetries = 3;
-        RetryingJobProcessor processor = new RetryingJobProcessor(maxRetries);
-        jobQueueManagerAPI.registerProcessor("retryQueue", processor);
+        System.out.println("JobQueueManagerAPIIntegrationTest.test_JobRetry");
+        final int maxRetries = RetryingJobProcessor.MAX_RETRIES;
+        jobQueueManagerAPI.registerProcessor("retryQueue", RetryingJobProcessor.class);
 
         RetryStrategy retryStrategy = new ExponentialBackoffRetryStrategy(
                 100, 1000, 2.0, maxRetries
@@ -243,6 +253,9 @@ public class JobQueueManagerAPIIntegrationTest {
 
         Map<String, Object> parameters = new HashMap<>();
         String jobId = jobQueueManagerAPI.createJob("retryQueue", parameters);
+        final Optional<JobProcessor> instance = jobQueueManagerAPI.getInstance(jobId);
+        assertTrue(instance.isPresent(),()->"Should be able to create an instance of the job processor");
+        RetryingJobProcessor processor = (RetryingJobProcessor)instance.get();
 
         CountDownLatch latch = new CountDownLatch(1);
         jobQueueManagerAPI.watchJob(jobId, job -> {
@@ -274,10 +287,9 @@ public class JobQueueManagerAPIIntegrationTest {
      */
     @Test
     void test_JobWithProgressTracker() throws Exception {
-
+        System.out.println("JobQueueManagerAPIIntegrationTest.test_JobWithProgressTracker");
         // Register a processor that uses progress tracking
-        ProgressTrackingJobProcessor processor = new ProgressTrackingJobProcessor();
-        jobQueueManagerAPI.registerProcessor("progressQueue", processor);
+        jobQueueManagerAPI.registerProcessor("progressQueue", ProgressTrackingJobProcessor.class);
 
         // Start the JobQueueManagerAPI
         if (!jobQueueManagerAPI.isStarted()) {
@@ -336,11 +348,11 @@ public class JobQueueManagerAPIIntegrationTest {
      */
     @Test
     void test_CombinedScenarios() throws Exception {
-
+        System.out.println("JobQueueManagerAPIIntegrationTest.test_CombinedScenarios");
         // Register processors for different scenarios
-        jobQueueManagerAPI.registerProcessor("successQueue", new TestJobProcessor());
-        jobQueueManagerAPI.registerProcessor("failQueue", new FailingJobProcessor());
-        jobQueueManagerAPI.registerProcessor("cancelQueue", new CancellableJobProcessor());
+        jobQueueManagerAPI.registerProcessor("successQueue", TestJobProcessor.class);
+        jobQueueManagerAPI.registerProcessor("failQueue", FailingJobProcessor.class);
+        jobQueueManagerAPI.registerProcessor("cancelQueue", CancellableJobProcessor.class);
 
         // Set up retry strategy for failing jobs
         RetryStrategy retryStrategy = new ExponentialBackoffRetryStrategy(
@@ -424,7 +436,7 @@ public class JobQueueManagerAPIIntegrationTest {
                 });
     }
 
-    private static class ProgressTrackingJobProcessor implements JobProcessor {
+    static class ProgressTrackingJobProcessor implements JobProcessor {
         @Override
         public void process(Job job) {
             ProgressTracker tracker = job.progressTracker().orElseThrow(
@@ -445,22 +457,23 @@ public class JobQueueManagerAPIIntegrationTest {
         }
     }
 
-    private static class RetryingJobProcessor implements JobProcessor {
+    static class RetryingJobProcessor implements JobProcessor {
 
-        private final int maxRetries;
+        public static final int MAX_RETRIES = 3;
         private int attempts = 0;
 
-        public RetryingJobProcessor(int maxRetries) {
-            this.maxRetries = maxRetries;
+        public RetryingJobProcessor() {
+             // needed for instantiation purposes
         }
 
         @Override
         public void process(Job job) {
             attempts++;
-            if (attempts <= maxRetries) {
+            if (attempts <= MAX_RETRIES) {
                 throw new RuntimeException("Simulated failure, attempt " + attempts);
             }
             // If we've reached here, we've exceeded maxRetries and the job should succeed
+            System.out.println("Job succeeded after " + attempts + " attempts");
         }
 
         @Override
@@ -475,7 +488,7 @@ public class JobQueueManagerAPIIntegrationTest {
         }
     }
 
-    private static class FailingJobProcessor implements JobProcessor {
+    static class FailingJobProcessor implements JobProcessor {
 
         @Override
         public void process(Job job) {
@@ -488,7 +501,7 @@ public class JobQueueManagerAPIIntegrationTest {
         }
     }
 
-    private static class CancellableJobProcessor implements JobProcessor, Cancellable {
+    static class CancellableJobProcessor implements JobProcessor, Cancellable {
 
         private final AtomicBoolean canceled = new AtomicBoolean(false);
         private final AtomicBoolean wasCanceled = new AtomicBoolean(false);
@@ -519,7 +532,7 @@ public class JobQueueManagerAPIIntegrationTest {
         }
     }
 
-    private static class TestJobProcessor implements JobProcessor {
+    static class TestJobProcessor implements JobProcessor {
 
         @Override
         public void process(Job job) {

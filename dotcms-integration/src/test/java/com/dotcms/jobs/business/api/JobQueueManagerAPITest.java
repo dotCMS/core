@@ -93,7 +93,7 @@ public class JobQueueManagerAPITest {
                 1, 10
         );
 
-        jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
+        //jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
         jobQueueManagerAPI.setRetryStrategy("testQueue", mockRetryStrategy);
 
         var event = mock(Event.class);
@@ -912,7 +912,7 @@ public class JobQueueManagerAPITest {
                 1, 1000
         );
 
-        jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
+        //jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
 
         // Start the job queue
         jobQueueManagerAPI.start();
@@ -996,7 +996,7 @@ public class JobQueueManagerAPITest {
                 mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer,
                 1, 1000
         );
-        jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
+        //jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
 
         // Start the job queue
         jobQueueManagerAPI.start();
@@ -1059,7 +1059,7 @@ public class JobQueueManagerAPITest {
                 mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer,
                 1, 1000
         );
-        jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
+        //jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
 
         // Start the job queue
         jobQueueManagerAPI.start();
@@ -1119,7 +1119,7 @@ public class JobQueueManagerAPITest {
         TestJobProcessor mockCancellableProcessor = mock(TestJobProcessor.class);
 
         // Set up the job queue manager to return our mock cancellable processor
-        jobQueueManagerAPI.registerProcessor("testQueue", mockCancellableProcessor);
+        //jobQueueManagerAPI.registerProcessor("testQueue", mockCancellableProcessor);
 
         // Perform the cancellation
         jobQueueManagerAPI.cancelJob("job123");
@@ -1219,7 +1219,7 @@ public class JobQueueManagerAPITest {
                 .thenAnswer(invocation -> Collections.singletonList(mockJob));
 
         // Register the test processor
-        jobQueueManagerAPI.registerProcessor("testQueue", testJobProcessor);
+        //jobQueueManagerAPI.registerProcessor("testQueue", testJobProcessor);
 
         // Configure circuit breaker
         when(mockCircuitBreaker.allowRequest()).thenReturn(true);

@@ -14,6 +14,7 @@ import com.dotcms.jobs.business.api.events.JobStartedEvent;
 import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
+import com.dotcms.jobs.business.error.JobProcessorInstantiationException;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
@@ -38,6 +39,7 @@ import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -247,14 +249,20 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     public String createJob(final String queueName, final Map<String, Object> parameters)
             throws JobProcessorNotFoundException, DotDataException {
         final String queueNameLower = queueName.toLowerCase();
-        if (!processors.containsKey(queueNameLower)) {
+        final Class<? extends JobProcessor> clazz = processors.get(queueNameLower);
+        if (null == clazz) {
             final var error = new JobProcessorNotFoundException(queueName);
             Logger.error(JobQueueManagerAPIImpl.class, error);
             throw error;
         }
 
+        //first attempt instantiating the processor, cuz if we cant no use to create an entry in the db
+        final var processor = newInstanceOfProcessor(queueNameLower).orElseThrow();
+        // now that we know we can instantiate the processor, we can add it to the map of instances
+        // But first we need the job id
         try {
-            String jobId = jobQueue.createJob(queueNameLower, parameters);
+            final String jobId = jobQueue.createJob(queueNameLower, parameters);
+            addInstanceRef(jobId, processor);
             eventProducer.getEvent(JobCreatedEvent.class).fire(
                     new JobCreatedEvent(jobId, queueName, LocalDateTime.now(), parameters)
             );
@@ -361,6 +369,12 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @Override
     @VisibleForTesting
+    public Optional<JobProcessor> getInstance(final String jobId) {
+        return Optional.ofNullable(processorInstancesByJobId.get(jobId));
+    }
+
+    @Override
+    @VisibleForTesting
     public CircuitBreaker getCircuitBreaker() {
         return this.circuitBreaker;
     }
@@ -459,7 +473,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
             try {
 
-                boolean jobProcessed = processNextJob();
+                final boolean jobProcessed = processNextJob();
                 if (jobProcessed) {
                     emptyQueueCount = 0;
                 } else {
@@ -620,11 +634,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      */
     private void processJob(final Job job) throws DotDataException {
 
-        Class<? extends JobProcessor> processorClass = processors.get(job.queueName());
-        if (processorClass != null) {
-
-            final JobProcessor processor = newJobProcessorInstance(job,
-                    processorClass);
+        final JobProcessor processor = processorInstancesByJobId.get(job.id());
+        if (processor != null) {
 
             final ProgressTracker progressTracker = new DefaultProgressTracker();
             Job runningJob = job.markAsRunning().withProgressTracker(progressTracker);
@@ -669,8 +680,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 handleJobFailure(
                         runningJob, processor, e, e.getMessage(), "Job execution"
                 );
-            } finally {
-                processorInstancesByJobId.remove(job.id());
             }
         } else {
 
@@ -682,22 +691,40 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     }
 
     /**
-     * Instantiate a new JobProcessor instance for a specific job. and store the reference in a map.
-     * @param job
-     * @param processorClass
-     * @return
+     * Creates a new instance of a JobProcessor for a specific queue.
+     * @param queueName
+     * @return An optional containing the new JobProcessor instance, or an empty optional if the processor could not be created.
      */
-    private JobProcessor newJobProcessorInstance(final Job job, final Class<? extends JobProcessor> processorClass) {
+    Optional<JobProcessor> newInstanceOfProcessor(final String queueName) {
+        final var processorClass = processors.get(queueName);
+        if (processorClass != null) {
+            try {
+                return Optional.of(processorClass.getDeclaredConstructor().newInstance());
+            } catch (Exception e) {
+                Logger.error(this, "Error creating job processor", e);
+                throw new JobProcessorInstantiationException(processorClass,e);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Once we're sure a processor can be instantiated, we add it to the map of instances.
+     * @param jobId The ID of the job
+     * @param processor The processor to add
+     * @return The processor instance
+     */
+    private void addInstanceRef(final String jobId, final JobProcessor processor) {
         //Get an instance and put it in the map
-        return processorInstancesByJobId.computeIfAbsent(
-                job.id(), k -> {
-                    try {
-                        return processorClass.getDeclaredConstructor().newInstance();
-                    } catch (Exception e) {
-                        throw new DotRuntimeException("Error creating job processor", e);
-                    }
-                }
-        );
+        processorInstancesByJobId.putIfAbsent(jobId, processor);
+    }
+
+    /**
+     * Removes a processor instance from the map of instances.
+     * @param jobId The ID of the job
+     */
+    private void removeInstanceRef(final String jobId) {
+        processorInstancesByJobId.remove(jobId);
     }
 
     /**
