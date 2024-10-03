@@ -13,15 +13,23 @@ import io.vavr.Tuple2;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.liferay.util.StringPool.APOSTROPHE;
+import static com.liferay.util.StringPool.BLANK;
+
 /**
- * Parser for the analytics query, it can parse a json string to a {@link AnalyticsQuery} or a {@link CubeJSQuery}
+ * This class exposes a parser for the {@link AnalyticsQuery} class. It can parse a JSON string
+ * into a {@link AnalyticsQuery} object or a {@link CubeJSQuery} object. The Analytics Query
+ * exposes a more readable and simple syntax compared to the CubeJS query
+ *
  * @author jsanca
+ * @since Sep 19th, 2024
  */
 @ApplicationScoped
 public class AnalyticsQueryParser {
@@ -44,14 +52,14 @@ public class AnalyticsQueryParser {
     public AnalyticsQuery parseJsonToQuery(final String json) {
 
         if (Objects.isNull(json)) {
-            throw new IllegalArgumentException("Json can not be null");
+            throw new IllegalArgumentException("JSON cannot be null");
         }
         try {
 
-            Logger.debug(this, ()-> "Parsing json to query: " + json);
+            Logger.debug(this, ()-> "Parsing json query: " + json);
             return DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
                     .readValue(json, AnalyticsQuery.class);
-        } catch (JsonProcessingException e) {
+        } catch (final JsonProcessingException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotRuntimeException(e);
         }
@@ -80,18 +88,20 @@ public class AnalyticsQueryParser {
     }
 
     /**
-     * Parse an {@link AnalyticsQuery} to a {@link CubeJSQuery}
-     * @param query
-     * @return CubeJSQuery
+     * Parses an {@link AnalyticsQuery} object into a {@link CubeJSQuery} object, which represents
+     * the official CubeJS query.
+     *
+     * @param query The {@link AnalyticsQuery} object to be parsed.
+     *
+     * @return The {@link CubeJSQuery} object.
      */
     public CubeJSQuery parseQueryToCubeQuery(final AnalyticsQuery query) {
-
         if (Objects.isNull(query)) {
-            throw new IllegalArgumentException("Query can not be null");
+            throw new IllegalArgumentException("Query cannot be null");
         }
 
         final CubeJSQuery.Builder builder = new CubeJSQuery.Builder();
-        Logger.debug(this, ()-> "Parsing query to cube query: " + query);
+        Logger.debug(this, ()-> "Parsing query: " + query);
 
         if (UtilMethods.isSet(query.getDimensions())) {
             builder.dimensions(query.getDimensions());
@@ -136,6 +146,15 @@ public class AnalyticsQueryParser {
                 ).collect(Collectors.toList());
     }
 
+    /**
+     * Parses the value of the {@code filters} attribute of the {@link AnalyticsQuery} object. This
+     * filter can have several logical operators, and be able to compare a variable against multiple
+     * values.
+     *
+     * @param filters the value of the {@code filters} attribute.
+     *
+     * @return A collection of {@link Filter} objects.
+     */
     private Collection<Filter> parseFilters(final String filters) {
         final  Tuple2<List<FilterParser.Token>,List<FilterParser.LogicalOperator>> result =
                 FilterParser.parseFilterExpression(filters);
@@ -144,14 +163,13 @@ public class AnalyticsQueryParser {
         final List<SimpleFilter> simpleFilters = new ArrayList<>();
 
         for (final FilterParser.Token token : result._1) {
-
             simpleFilters.add(
                     new SimpleFilter(token.member,
-                            parseOperator(token.operator),
-                            new Object[]{token.values}));
+                    parseOperator(token.operator),
+                    this.parseTokenValues(token.values)));
         }
 
-        // if has operators
+        // Are there any operators?
         if (UtilMethods.isSet(result._2())) {
 
             FilterParser.LogicalOperator logicalOperator = result._2().get(0); // first one
@@ -177,6 +195,21 @@ public class AnalyticsQueryParser {
         return filterList;
     }
 
+    /**
+     * Takes the value of a token and parses its contents into an array of strings. A token can have
+     * both single and multiple values.
+     *
+     * @param values The value of the token.
+     *
+     * @return The value or values of a token as an array of strings.
+     */
+    private String[] parseTokenValues(final String values) {
+        final String[] valueArray = values.split(",");
+        return Arrays.stream(valueArray).map(
+                value -> value.trim().replaceAll(APOSTROPHE, BLANK))
+                .toArray(String[]::new);
+    }
+
     private SimpleFilter.Operator parseOperator(final String operator) {
         switch (operator) {
             case "=":
@@ -191,4 +224,5 @@ public class AnalyticsQueryParser {
                 throw new DotRuntimeException("Operator not supported: " + operator);
         }
     }
+
 }
