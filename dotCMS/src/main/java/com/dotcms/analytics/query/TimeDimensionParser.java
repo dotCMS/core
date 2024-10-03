@@ -30,12 +30,12 @@ public class TimeDimensionParser {
         private final String dateRange;
 
         public TimeDimension(final String dimension, final String granularity) {
-            this.dimension = dimension;
-            this.granularity = granularity;
-            this.dateRange = null;
+            this(dimension, granularity, null);
         }
 
-        public TimeDimension(final String dimension, final String granularity, final String dateRange) {
+        public TimeDimension(final String dimension,
+                             final String granularity,
+                             final String dateRange) {
             this.dimension = dimension;
             this.granularity = granularity;
             this.dateRange = dateRange;
