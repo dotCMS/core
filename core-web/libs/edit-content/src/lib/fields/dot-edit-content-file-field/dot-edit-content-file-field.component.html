@@ -36,6 +36,7 @@
             <div class="file-field__actions">
                 @if (store.allowURLImport()) {
                     <p-button
+                        (click)="showImportUrlDialog()"
                         [label]="'dot.file.field.action.import.from.url' | dm"
                         data-testId="action-import-from-url"
                         icon="pi pi-link"
@@ -87,10 +88,10 @@
             <dot-spinner data-testId="loading" />
         }
         @case ('preview') {
-            @if (store.previewFile()) {
+            @if (store.uploadedFile()) {
                 <dot-file-field-preview
                     (removeFile)="store.removeFile()"
-                    [previewFile]="store.previewFile()" />
+                    [previewFile]="store.uploadedFile()" />
             }
         }
     }

@@ -5,12 +5,17 @@ import {
     forwardRef,
     inject,
     input,
-    OnInit
+    OnInit,
+    OnDestroy
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
+import { filter } from 'rxjs/operators';
+
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
@@ -23,6 +28,7 @@ import {
 
 import { DotFileFieldPreviewComponent } from './components/dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from './components/dot-file-field-ui-message/dot-file-field-ui-message.component';
+import { DotFormImportUrlComponent } from './components/dot-form-import-url/dot-form-import-url.component';
 import { INPUT_TYPES } from './models';
 import { DotFileFieldUploadService } from './services/upload-file/upload-file.service';
 import { FileFieldStore } from './store/file-field.store';
@@ -38,11 +44,13 @@ import { getUiMessage } from './utils/messages';
         DotAIImagePromptComponent,
         DotSpinnerModule,
         DotFileFieldUiMessageComponent,
-        DotFileFieldPreviewComponent
+        DotFileFieldPreviewComponent,
+        DotFormImportUrlComponent
     ],
     providers: [
         DotFileFieldUploadService,
         FileFieldStore,
+        DialogService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -53,7 +61,7 @@ import { getUiMessage } from './utils/messages';
     styleUrls: ['./dot-edit-content-file-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentFileFieldComponent implements ControlValueAccessor, OnInit {
+export class DotEditContentFileFieldComponent implements ControlValueAccessor, OnInit, OnDestroy {
     /**
      * FileFieldStore
      *
@@ -66,6 +74,10 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
      * @memberof DotEditContentFileFieldComponent
      */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+
+    readonly #dialogService = inject(DialogService);
+    readonly #dotMessageService = inject(DotMessageService);
+    #dialogRef: DynamicDialogRef | null = null;
 
     private onChange: (value: string) => void;
     private onTouched: () => void;
@@ -148,7 +160,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
         }
 
         if (!validity.valid) {
-            this.handleFileDropError(validity);
+            this.#handleFileDropError(validity);
 
             return;
         }
@@ -186,9 +198,38 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
      *
      * @return {void}
      */
-    private handleFileDropError({ errorsType }: DropZoneFileValidity): void {
+    #handleFileDropError({ errorsType }: DropZoneFileValidity): void {
         const errorType = errorsType[0];
         const uiMessage = getUiMessage(errorType);
         this.store.setUIMessage(uiMessage);
+    }
+
+    showImportUrlDialog() {
+        const header = this.#dotMessageService.get('dot.file.field.dialog.import.from.url.header');
+
+        this.#dialogRef = this.#dialogService.open(DotFormImportUrlComponent, {
+            header,
+            appendTo: 'body',
+            closeOnEscape: false,
+            draggable: false,
+            keepInViewport: false,
+            maskStyleClass: 'p-dialog-mask-transparent',
+            modal: true,
+            resizable: false,
+            position: 'center',
+            data: {
+                inputType: this.$field().fieldType
+            }
+        });
+
+        this.#dialogRef.onClose.pipe(filter((file) => !!file)).subscribe((file) => {
+            this.store.setPreviewFile(file);
+        });
+    }
+
+    ngOnDestroy() {
+        if (this.#dialogRef) {
+            this.#dialogRef.close();
+        }
     }
 }

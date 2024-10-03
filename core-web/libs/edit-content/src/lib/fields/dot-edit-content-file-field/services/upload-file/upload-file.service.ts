@@ -1,28 +1,54 @@
-import { of } from 'rxjs';
+import { from, Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { map, switchMap } from 'rxjs/operators';
 
-import { DotUploadFileService } from '@dotcms/data-access';
+import { DotUploadFileService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
+import { UploadedFile, UPLOAD_TYPE } from '../../models';
 import { getFileMetadata, getFileVersion } from '../../utils';
 
 @Injectable()
 export class DotFileFieldUploadService {
     readonly #fileService = inject(DotUploadFileService);
+    readonly #tempFileService = inject(DotUploadService);
     readonly #contentService = inject(DotEditContentService);
     readonly #httpClient = inject(HttpClient);
 
+    uploadFile({
+        file,
+        uploadType
+    }: {
+        file: File | string;
+        uploadType: UPLOAD_TYPE;
+    }): Observable<UploadedFile> {
+        if (uploadType === 'temp') {
+            return from(this.#tempFileService.uploadFile({ file })).pipe(
+                map((tempFile) => ({ source: 'temp', file: tempFile }))
+            );
+        } else {
+            if (file instanceof File) {
+                return this.uploadDotAsset(file).pipe(
+                    map((file) => ({ source: 'contentlet', file }))
+                );
+            }
+
+            return from(this.#tempFileService.uploadFile({ file })).pipe(
+                switchMap((tempFile) => this.uploadDotAsset(tempFile.id)),
+                map((file) => ({ source: 'contentlet', file }))
+            );
+        }
+    }
     /**
      * Uploads a file and returns a contentlet with the file metadata and id.
      * @param file the file to be uploaded
      * @returns a contentlet with the file metadata and id
      */
-    uploadDotAsset(file: File) {
+    uploadDotAsset(file: File | string) {
         return this.#fileService
             .uploadDotAsset(file)
             .pipe(switchMap((contentlet) => this.#addContent(contentlet)));

@@ -7,16 +7,12 @@ import { computed, inject } from '@angular/core';
 
 import { filter, switchMap, tap } from 'rxjs/operators';
 
-import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
-
 import { INPUT_CONFIG } from '../dot-edit-content-file-field.const';
-import { INPUT_TYPES, FILE_STATUS, UIMessage, PreviewFile } from '../models';
+import { INPUT_TYPES, FILE_STATUS, UIMessage, UploadedFile } from '../models';
 import { DotFileFieldUploadService } from '../services/upload-file/upload-file.service';
 import { getUiMessage } from '../utils/messages';
 
 export interface FileFieldState {
-    contentlet: DotCMSContentlet | null;
-    tempFile: DotCMSTempFile | null;
     value: string;
     inputType: INPUT_TYPES | null;
     fileStatus: FILE_STATUS;
@@ -31,12 +27,10 @@ export interface FileFieldState {
     acceptedFiles: string[];
     maxFileSize: number | null;
     fieldVariable: string;
-    previewFile: PreviewFile | null;
+    uploadedFile: UploadedFile | null;
 }
 
 const initialState: FileFieldState = {
-    contentlet: null,
-    tempFile: null,
     value: '',
     inputType: null,
     fileStatus: 'init',
@@ -51,7 +45,7 @@ const initialState: FileFieldState = {
     acceptedFiles: [],
     maxFileSize: null,
     fieldVariable: '',
-    previewFile: null
+    uploadedFile: null
 };
 
 export const FileFieldStore = signalStore(
@@ -116,8 +110,7 @@ export const FileFieldStore = signalStore(
              */
             removeFile: () => {
                 patchState(store, {
-                    contentlet: null,
-                    tempFile: null,
+                    uploadedFile: null,
                     value: '',
                     fileStatus: 'init',
                     uiMessage: getUiMessage('DEFAULT')
@@ -130,6 +123,13 @@ export const FileFieldStore = signalStore(
             setDropZoneState: (state: boolean) => {
                 patchState(store, {
                     dropZoneActive: state
+                });
+            },
+            setPreviewFile: (file: UploadedFile) => {
+                patchState(store, {
+                    fileStatus: 'preview',
+                    uploadedFile: file,
+                    value: file.source === 'temp' ? file.file.id : file.file.identifier
                 });
             },
             /**
@@ -167,11 +167,9 @@ export const FileFieldStore = signalStore(
                             tapResponse({
                                 next: (file) => {
                                     patchState(store, {
-                                        tempFile: null,
-                                        contentlet: file,
                                         fileStatus: 'preview',
                                         value: file.identifier,
-                                        previewFile: { source: 'contentlet', file }
+                                        uploadedFile: { source: 'contentlet', file }
                                     });
                                 },
                                 error: () => {
@@ -196,11 +194,9 @@ export const FileFieldStore = signalStore(
                             tapResponse({
                                 next: (file) => {
                                     patchState(store, {
-                                        tempFile: null,
-                                        contentlet: file,
                                         fileStatus: 'preview',
                                         value: file.identifier,
-                                        previewFile: { source: 'contentlet', file }
+                                        uploadedFile: { source: 'contentlet', file }
                                     });
                                 },
                                 error: () => {
