@@ -56,13 +56,13 @@ public interface JobQueueManagerAPI {
      * @param queueName The name of the queue
      * @param processor The job processor to register
      */
-    void registerProcessor(String queueName, JobProcessor processor);
+    void registerProcessor(final String queueName, final Class<? extends JobProcessor> processor);
 
     /**
      * Retrieves the job processors for all registered queues.
      * @return A map of queue names to job processors
      */
-    Map<String,JobProcessor> getQueueNames();
+    Map<String,Class<? extends JobProcessor>> getQueueNames();
 
     /**
      * Creates a new job in the specified queue.

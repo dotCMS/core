@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.job;
 
 import com.dotcms.jobs.business.api.JobProcessorScanner;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
+import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.processor.JobProcessor;
@@ -10,6 +11,7 @@ import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -51,20 +53,37 @@ public class JobQueueHelper {
         final List<Class<? extends JobProcessor>> processors = scanner.discoverJobProcessors();
         processors.forEach(processor -> {
            try {
-               final Constructor<? extends JobProcessor> declaredConstructor = processor.getDeclaredConstructor();
-               final JobProcessor jobProcessor = declaredConstructor.newInstance();
+                if(!testInstantiation(processor)){
+                     return;
+                }
                //registering the processor with the jobQueueManagerAPI
                // lower case it to avoid case
                if(processor.isAnnotationPresent(Queue.class)){
                    final Queue queue = processor.getAnnotation(Queue.class);
-                   jobQueueManagerAPI.registerProcessor(queue.value(), jobProcessor);
+                   jobQueueManagerAPI.registerProcessor(queue.value(), processor);
                } else {
-                  jobQueueManagerAPI.registerProcessor(processor.getName(), jobProcessor);
+                   jobQueueManagerAPI.registerProcessor(processor.getName(), processor);
                }
            }catch (Exception e){
                Logger.error(this.getClass(), "Unable to register JobProcessor ", e);
            }
         });
+    }
+
+    /**
+     * Test if a processor can be instantiated
+     * @param processor The processor to tested
+     * @return true if the processor can be instantiated, false otherwise
+     */
+    private boolean testInstantiation(Class<? extends JobProcessor> processor)  {
+      try {
+          final Constructor<? extends JobProcessor> declaredConstructor = processor.getDeclaredConstructor();
+          declaredConstructor.newInstance();
+          return true;
+      } catch (Exception e) {
+          Logger.error(this.getClass(), String.format(" JobProcessor [%s] can not be instantiated and will be ignored.",processor.getName()), e);
+      }
+      return false;
     }
 
     @PreDestroy
@@ -98,7 +117,12 @@ public class JobQueueHelper {
 
         final HashMap <String, Object>in = new HashMap<>(form.getParams());
         handleUploadIfPresent(form, in, request);
-        return jobQueueManagerAPI.createJob(queueName, Map.copyOf(in));
+        try {
+            return jobQueueManagerAPI.createJob(queueName, Map.copyOf(in));
+        } catch (JobProcessorNotFoundException e) {
+            Logger.error(this.getClass(), "Error creating job", e);
+            throw new DoesNotExistException(e.getMessage());
+        }
     }
 
     /**
@@ -107,7 +131,7 @@ public class JobQueueHelper {
      * @return Job
      * @throws DotDataException if there's an error fetching the job
      */
-    Job getJob(String jobId) throws DotDataException{
+    Job getJob(String jobId) throws DotDataException {
         return jobQueueManagerAPI.getJob(jobId);
     }
 
@@ -116,8 +140,13 @@ public class JobQueueHelper {
      * @param jobId The ID of the job
      * @throws DotDataException if there's an error cancelling the job
      */
-    void cancelJob(String jobId) throws DotDataException{
-        jobQueueManagerAPI.cancelJob(jobId);
+    void cancelJob(String jobId) throws DotDataException {
+       try{
+           jobQueueManagerAPI.cancelJob(jobId);
+        } catch (JobProcessorNotFoundException e) {
+            Logger.error(this.getClass(), "Error cancelling job", e);
+            throw new DoesNotExistException(e.getMessage());
+        }
     }
 
     /**
@@ -125,7 +154,10 @@ public class JobQueueHelper {
      * @param jobId The ID of the job
      * @param watcher The watcher
      */
-    void watchJob(String jobId, Consumer<Job> watcher){
+    void watchJob(String jobId, Consumer<Job> watcher) throws DotDataException {
+        //Validate the job exists
+        jobQueueManagerAPI.getJob(jobId);
+        // if it does then watch it
         jobQueueManagerAPI.watchJob(jobId, watcher);
     }
 
@@ -136,8 +168,13 @@ public class JobQueueHelper {
      * @return JobPaginatedResult
      * @throws DotDataException if there's an error fetching the jobs
      */
-    JobPaginatedResult getJobs(int page, int pageSize) throws DotDataException{
-        return jobQueueManagerAPI.getJobs(page, pageSize);
+    JobPaginatedResult getJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getJobs(page, pageSize);
+        } catch (DotDataException e){
+            Logger.error(this.getClass(), "Error fetching jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
     }
 
     /**
@@ -147,9 +184,13 @@ public class JobQueueHelper {
      * @return JobPaginatedResult
      * @throws DotDataException if there's an error fetching the jobs
      */
-    JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize)
-            throws JobQueueDataException {
-        return jobQueueManagerAPI.getActiveJobs( queueName, page, pageSize);
+    JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getActiveJobs(queueName, page, pageSize);
+        } catch (JobQueueDataException e) {
+            Logger.error(this.getClass(), "Error fetching active jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
     }
 
     /**
@@ -159,9 +200,13 @@ public class JobQueueHelper {
      * @return A result object containing the list of completed jobs and pagination information.
      * @throws JobQueueDataException if there's an error fetching the jobs
      */
-    JobPaginatedResult getFailedJobs(int page, int pageSize)
-            throws JobQueueDataException {
-        return jobQueueManagerAPI.getFailedJobs(page, pageSize);
+    JobPaginatedResult getFailedJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getFailedJobs(page, pageSize);
+        } catch (JobQueueDataException e) {
+            Logger.error(this.getClass(), "Error fetching failed jobs", e);
+        }
+       return JobPaginatedResult.builder().build();
     }
 
     /**
@@ -174,9 +219,9 @@ public class JobQueueHelper {
 
     /**
      * if a file is uploaded, move it to temp location and update params
-     * @param form
-     * @param params
-     * @param request
+     * @param form The form
+     * @param params The params
+     * @param request The request
      */
     private void handleUploadIfPresent(final JobParams form, Map<String, Object> params, HttpServletRequest request) {
         final InputStream fileInputStream = form.getFileInputStream();
