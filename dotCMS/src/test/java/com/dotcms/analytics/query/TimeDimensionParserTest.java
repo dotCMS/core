@@ -1,5 +1,6 @@
 package com.dotcms.analytics.query;
 
+import com.dotcms.cube.CubeJSQuery;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -16,7 +17,7 @@ public class TimeDimensionParserTest {
      */
     @Test
     public void test_parseTimeDimension_dimension_plus_granularity_should_be_OK() throws Exception {
-        final TimeDimensionParser.TimeDimension result =
+        final CubeJSQuery.TimeDimension result =
                 TimeDimensionParser.parseTimeDimension("Events.day     day");
 
         Assert.assertNotNull(result);
@@ -32,7 +33,7 @@ public class TimeDimensionParserTest {
      */
     @Test
     public void test_parseTimeDimension_dimension_plus_granularity_and_dateRange_should_be_OK() throws Exception {
-        final TimeDimensionParser.TimeDimension result =
+        final CubeJSQuery.TimeDimension result =
                 TimeDimensionParser.parseTimeDimension("Events.day     day This Week");
 
         Assert.assertNotNull(result);
@@ -48,7 +49,7 @@ public class TimeDimensionParserTest {
      */
     @Test
     public void test_parseTimeDimension_dimension_plus_granularity_and_dateRange_yesterday_should_be_OK() throws Exception {
-        final TimeDimensionParser.TimeDimension result =
+        final CubeJSQuery.TimeDimension result =
                 TimeDimensionParser.parseTimeDimension("Events.day day yesterday");
 
         Assert.assertNotNull(result);
@@ -63,7 +64,7 @@ public class TimeDimensionParserTest {
      */
     @Test
     public void test_parseTimeDimension_dimension_plus_granularity_and_dateRange_last_7_days_should_be_OK() throws Exception {
-        final TimeDimensionParser.TimeDimension result =
+        final CubeJSQuery.TimeDimension result =
                 TimeDimensionParser.parseTimeDimension("Events.day day Last 7 days");
 
         Assert.assertNotNull(result);
