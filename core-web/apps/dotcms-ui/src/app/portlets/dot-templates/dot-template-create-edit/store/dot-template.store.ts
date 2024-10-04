@@ -1,4 +1,4 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore } from '@ngrx/component-store';
 import { Observable, of, zip } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -27,6 +27,7 @@ import {
 } from '@dotcms/data-access';
 import { DotContainerMap, DotLayout, DotTemplate } from '@dotcms/dotcms-models';
 import { isEqual } from '@dotcms/utils';
+import { tapResponse } from '@ngrx/operators';
 
 type DotTemplateType = 'design' | 'advanced';
 

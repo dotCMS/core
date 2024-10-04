@@ -1,4 +1,4 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore } from '@ngrx/component-store';
 import { from, Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -16,6 +16,7 @@ import {
     UiMessageI
 } from '../interfaces/index';
 import { getFieldVersion, getFileMetadata, getUiMessage } from '../utils/binary-field-utils';
+import { tapResponse } from '@ngrx/operators';
 
 export interface BinaryFieldState {
     contentlet: DotCMSContentlet;

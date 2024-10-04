@@ -18,7 +18,6 @@ import { MessageService } from 'primeng/api';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotCMSContentlet } from '@dotcms/angular';
 import {
     DotContentTypeService,
     DotFireActionOptions,
@@ -31,6 +30,7 @@ import {
 import {
     ComponentStatus,
     DotCMSContentType,
+    DotCMSContentlet,
     DotCMSWorkflowAction,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
