@@ -1,4 +1,4 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore } from '@ngrx/component-store';
 import { Observable, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -41,6 +41,8 @@ import {
     checkIfExperimentDescriptionIsSaving,
     processExperimentConfigProps
 } from '../../shared/dot-experiment.utils';
+
+import { tapResponse } from '@ngrx/operators';
 
 export interface DotExperimentsConfigurationState {
     experiment: DotExperiment;

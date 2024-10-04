@@ -1,4 +1,5 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { EMPTY, Observable, forkJoin } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';

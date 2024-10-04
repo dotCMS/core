@@ -1,4 +1,3 @@
-import { tapResponse } from '@ngrx/component-store';
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, pipe } from 'rxjs';
@@ -12,6 +11,7 @@ import { UVE_STATUS } from '../../../../shared/enums';
 import { PageContainer } from '../../../../shared/models';
 import { UVEState } from '../../../models';
 import { withClient } from '../../client/withClient';
+import { tapResponse } from '@ngrx/operators';
 
 /**
  * Add methods to save the page
