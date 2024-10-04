@@ -7,6 +7,12 @@ on:
         description: 'Pull Request branch'
         type: string
         required: true
+  workflow_dispatch:
+    inputs:
+      pr_branch:
+        description: 'Pull Request branch'
+        type: string
+        required: true
 
 jobs:
   add-issue-to-pr:
