@@ -1,4 +1,4 @@
-import { EMPTY, Observable, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router } from '@angular/router';
@@ -32,7 +32,8 @@ describe('EditPageGuard', () => {
                             .and.returnValue({
                                 extractedUrl: {
                                     queryParams: {
-                                        url: '/some-url'
+                                        url: '/some-url',
+                                        language_id: '1'
                                     }
                                 }
                             })
@@ -54,7 +55,7 @@ describe('EditPageGuard', () => {
         properties = TestBed.inject(DotPropertiesService) as jasmine.SpyObj<DotPropertiesService>;
     });
 
-    it('should return false when FEATURE_FLAG_NEW_EDIT_PAGE is true', async () => {
+    it('should return false when FEATURE_FLAG_NEW_EDIT_PAGE is true', (done) => {
         properties.getFeatureFlag.and.returnValue(of(true));
 
         emaAppConfigurationService.get.and.returnValue(
@@ -74,16 +75,15 @@ describe('EditPageGuard', () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any;
 
-        const result = await TestBed.runInInjectionContext(
+        TestBed.runInInjectionContext(
             () => editPageGuard(route, []) as Observable<boolean>
-        );
-
-        result.subscribe((canActivate) => {
+        ).subscribe((canActivate) => {
             expect(canActivate).toBe(false);
+            done();
         });
     });
 
-    it('should return false when have a EMA App configuration', async () => {
+    it('should return false when have a EMA App configuration', (done) => {
         properties.getFeatureFlag.and.returnValue(of(false));
         emaAppConfigurationService.get.and.returnValue(
             of({
@@ -103,29 +103,60 @@ describe('EditPageGuard', () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any;
 
-        const result = await TestBed.runInInjectionContext(
+        TestBed.runInInjectionContext(
             () => editPageGuard(route, []) as Observable<boolean>
-        );
-
-        result.subscribe((canActivate) => {
+        ).subscribe((canActivate) => {
             expect(canActivate).toBe(false);
+            done();
         });
     });
-    it('should return true when FEATURE_FLAG_NEW_EDIT_PAGE is false and there is no EMA config', async () => {
+    it('should return true when FEATURE_FLAG_NEW_EDIT_PAGE is false and there is no EMA config', (done) => {
         properties.getFeatureFlag.and.returnValue(of(false));
         const route: ActivatedRouteSnapshot = {
             queryParams: { url: '/some-url' }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any;
 
-        emaAppConfigurationService.get.and.returnValue(EMPTY);
+        emaAppConfigurationService.get.and.returnValue(of(null));
 
-        const result = await TestBed.runInInjectionContext(
+        TestBed.runInInjectionContext(
             () => editPageGuard(route, []) as Observable<boolean>
-        );
-        result.subscribe((canActivate) => {
+        ).subscribe((canActivate) => {
             expect(router.navigate).not.toHaveBeenCalled();
             expect(canActivate).toBe(true);
+            done();
+        });
+    });
+
+    it('should return false when there is no language_id', (done) => {
+        properties.getFeatureFlag.and.returnValue(of(false));
+        const route: ActivatedRouteSnapshot = {
+            queryParams: { url: '/some-url' }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+
+        emaAppConfigurationService.get.and.returnValue(of(null));
+
+        (router.getCurrentNavigation as jasmine.Spy).and.returnValue({
+            extractedUrl: {
+                queryParams: {
+                    url: '/some-url'
+                }
+            }
+        });
+
+        TestBed.runInInjectionContext(
+            () => editPageGuard(route, []) as Observable<boolean>
+        ).subscribe((canActivate) => {
+            expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
+                queryParams: {
+                    url: '/some-url',
+                    language_id: 1
+                },
+                replaceUrl: true
+            });
+            expect(canActivate).toBe(false);
+            done();
         });
     });
 });
