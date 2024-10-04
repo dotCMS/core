@@ -1,0 +1,77 @@
+name: Link Issue to PR
+
+on:
+  workflow_call:
+    inputs:
+      pr_branch:
+        description: 'Pull Request branch'
+        type: string
+        required: true
+
+jobs:
+  add-issue-to-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Extract issue number from branch name
+        id: extract_issue_number
+        run: |
+          branch_name="${{ inputs.pr_branch }}"
+          if [[ "$branch_name" =~ ^([0-9]+)- ]]; then
+            issue_number="${BASH_REMATCH[1]}"
+          elif [[ "$branch_name" =~ ^issue-([0-9]+)- ]]; then
+            issue_number="${BASH_REMATCH[1]}"
+          else
+            echo "Branch name doesn't match the expected pattern"
+            exit 1
+          fi
+          
+          echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
+
+      - name: Get existing issue comments
+        id: get_comments
+        run: |
+          comments=$(\
+            gh api \                                                                                                                                                      ✔  1h 48m 19s   13:47:50  
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              /repos/dotCMS/core/issues/${{ steps.extract_issue_number.outputs.issue_number }}/comments \
+          )
+          
+          echo "comments=$comments" >> "$GITHUB_OUTPUT"
+
+      - name: Check if PR comment exists
+        id: check_comment
+        run: |
+          pr_url="${{ github.event.pull_request.html_url }}"
+          existing_comment_id=""
+          pr_list="PRs:\n- $pr_url"
+          for comment in $(echo "${{ steps.get_comments.outputs.comments }}" | jq -c '.[]'); do
+            comment_body=$(echo "$comment" | jq -r '.body')
+            if [[ "$comment_body" == PRs:* ]]; then
+              existing_comment_id=$(echo "$comment" | jq -r '.id')
+              pr_list="${comment_body}\n- $pr_url"
+              break
+            fi
+          done
+          
+          echo "pr_list=$pr_list" >> "$GITHUB_OUTPUT"
+          echo "existing_comment_id=$existing_comment_id" >> "$GITHUB_OUTPUT"
+
+      - name: Update or create comment
+        if: steps.check_comment.outputs.existing_comment_id == ''
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ steps.extract_issue_number.outputs.issue_number }}
+          body: ${{ steps.check_comment.outputs.pr_list }}
+
+      - name: Update existing comment
+        if: steps.check_comment.outputs.existing_comment_id != ''
+        run: |
+          comment_id="${{ steps.check_comment.outputs.existing_comment_id }}"
+          pr_list="${{ steps.check_comment.outputs.pr_list }}"
+          curl -X PATCH \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"body\":\"$pr_list\"}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/comments/$comment_id"
