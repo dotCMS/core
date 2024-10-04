@@ -118,7 +118,7 @@ public class JobQueueHelper {
         final HashMap <String, Object>in = new HashMap<>(form.getParams());
         handleUploadIfPresent(form, in, request);
         try {
-            return jobQueueManagerAPI.createJob(queueName, Map.copyOf(in));
+            return jobQueueManagerAPI.createJob(queueName.toLowerCase(), Map.copyOf(in));
         } catch (JobProcessorNotFoundException e) {
             Logger.error(this.getClass(), "Error creating job", e);
             throw new DoesNotExistException(e.getMessage());
@@ -186,7 +186,7 @@ public class JobQueueHelper {
      */
     JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize) {
         try {
-            return jobQueueManagerAPI.getActiveJobs(queueName, page, pageSize);
+            return jobQueueManagerAPI.getActiveJobs(queueName.toLowerCase(), page, pageSize);
         } catch (JobQueueDataException e) {
             Logger.error(this.getClass(), "Error fetching active jobs", e);
         }

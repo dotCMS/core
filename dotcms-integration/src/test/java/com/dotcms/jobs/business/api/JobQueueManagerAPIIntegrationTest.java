@@ -30,13 +30,17 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Integration tests for the JobQueueManagerAPI.
  * These tests verify the functionality of the job queue system in a real environment,
  * including job creation, processing, cancellation, retrying, and progress tracking.
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class JobQueueManagerAPIIntegrationTest {
 
     private static JobQueueManagerAPI jobQueueManagerAPI;
@@ -49,7 +53,6 @@ public class JobQueueManagerAPIIntegrationTest {
      */
     @BeforeAll
     static void setUp() throws Exception {
-        System.out.println("JobQueueManagerAPIIntegrationTest.setUp");
         // Initialize the test environment
         IntegrationTestInitService.getInstance().init();
 
@@ -64,7 +67,6 @@ public class JobQueueManagerAPIIntegrationTest {
      */
     @AfterAll
     static void cleanUp() throws Exception {
-        System.out.println("JobQueueManagerAPIIntegrationTest.cleanUp");
        if(null != jobQueueManagerAPI) {
            jobQueueManagerAPI.close();
        }
@@ -73,7 +75,6 @@ public class JobQueueManagerAPIIntegrationTest {
 
     @BeforeEach
     void reset() {
-        System.out.println("JobQueueManagerAPIIntegrationTest.reset");
         // Reset circuit breaker
         if(null != jobQueueManagerAPI) {
             jobQueueManagerAPI.getCircuitBreaker().reset();
@@ -85,9 +86,9 @@ public class JobQueueManagerAPIIntegrationTest {
      * Given Scenario: A job is created and submitted to the queue
      * ExpectedResult: The job is successfully created, processed, and completed within the expected timeframe
      */
+    @Order(1)
     @Test
     void test_CreateAndProcessJob() throws Exception {
-        System.out.println("JobQueueManagerAPIIntegrationTest.test_CreateAndProcessJob");
         // Register a test processor
         jobQueueManagerAPI.registerProcessor("testQueue", TestJobProcessor.class);
 
@@ -126,13 +127,68 @@ public class JobQueueManagerAPIIntegrationTest {
     }
 
     /**
+     * Method to test: Job retry mechanism in JobQueueManagerAPI
+     * Given Scenario: A job is created that fails initially but succeeds after a certain number
+     * of retries
+     * ExpectedResult: The job is retried the configured number of times, eventually succeeds, and
+     * is marked as COMPLETED
+     * NOTE: I'm moving this test up as it is designed to pass only when a few retries are allowed
+     * otherwise it will fail because of the CircuitBreaker blocking too many retries in a short time
+     */
+    @Test
+    @Order(2)
+    void test_JobRetry() throws Exception {
+        final int maxRetries = RetryingJobProcessor.MAX_RETRIES;
+        jobQueueManagerAPI.registerProcessor("retryQueue", RetryingJobProcessor.class);
+
+        RetryStrategy retryStrategy = new ExponentialBackoffRetryStrategy(
+                100, 1000, 2.0, maxRetries
+        );
+        jobQueueManagerAPI.setRetryStrategy("retryQueue", retryStrategy);
+
+        if (!jobQueueManagerAPI.isStarted()) {
+            jobQueueManagerAPI.start();
+            jobQueueManagerAPI.awaitStart(5, TimeUnit.SECONDS);
+        }
+
+        Map<String, Object> parameters = new HashMap<>();
+        String jobId = jobQueueManagerAPI.createJob("retryQueue", parameters);
+        final Optional<JobProcessor> instance = jobQueueManagerAPI.getInstance(jobId);
+        assertTrue(instance.isPresent(),()->"Should be able to create an instance of the job processor");
+        RetryingJobProcessor processor = (RetryingJobProcessor)instance.get();
+
+        CountDownLatch latch = new CountDownLatch(1);
+        jobQueueManagerAPI.watchJob(jobId, job -> {
+            if (job.state() == JobState.COMPLETED) {
+                latch.countDown();
+            }
+        });
+
+        boolean processed = latch.await(30, TimeUnit.SECONDS);
+        assertTrue(processed, "Job should be processed within 30 seconds");
+
+        // Wait for job processing to complete
+        Awaitility.await().atMost(30, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> {
+                    Job job = jobQueueManagerAPI.getJob(jobId);
+                    assertEquals(JobState.COMPLETED, job.state(),
+                            "Job should be in COMPLETED state");
+                    assertEquals(maxRetries + 1, processor.getAttempts(),
+                            "Job should have been attempted " + maxRetries + " times");
+                });
+    }
+
+
+
+    /**
      * Method to test: Job failure handling in JobQueueManagerAPI
      * Given Scenario: A job is created that is designed to fail
      * ExpectedResult: The job fails, is marked as FAILED, and contains the expected error details
      */
     @Test
+    @Order(3)
     void test_FailingJob() throws Exception {
-        System.out.println("JobQueueManagerAPIIntegrationTest.test_FailingJob");
         jobQueueManagerAPI.registerProcessor("failingQueue", FailingJobProcessor.class);
         RetryStrategy contentImportRetryStrategy = new ExponentialBackoffRetryStrategy(
                 5000, 300000, 2.0, 0
@@ -179,8 +235,8 @@ public class JobQueueManagerAPIIntegrationTest {
      * processor acknowledges the cancellation
      */
     @Test
+    @Order(4)
     void test_CancelJob() throws Exception {
-        System.out.println("JobQueueManagerAPIIntegrationTest.test_CancelJob");
         jobQueueManagerAPI.registerProcessor("cancellableQueue", CancellableJobProcessor.class);
 
         if (!jobQueueManagerAPI.isStarted()) {
@@ -228,56 +284,7 @@ public class JobQueueManagerAPIIntegrationTest {
                 });
     }
 
-    /**
-     * Method to test: Job retry mechanism in JobQueueManagerAPI
-     * Given Scenario: A job is created that fails initially but succeeds after a certain number
-     * of retries
-     * ExpectedResult: The job is retried the configured number of times, eventually succeeds, and
-     * is marked as COMPLETED
-     */
-    @Test
-    void test_JobRetry() throws Exception {
-        System.out.println("JobQueueManagerAPIIntegrationTest.test_JobRetry");
-        final int maxRetries = RetryingJobProcessor.MAX_RETRIES;
-        jobQueueManagerAPI.registerProcessor("retryQueue", RetryingJobProcessor.class);
 
-        RetryStrategy retryStrategy = new ExponentialBackoffRetryStrategy(
-                100, 1000, 2.0, maxRetries
-        );
-        jobQueueManagerAPI.setRetryStrategy("retryQueue", retryStrategy);
-
-        if (!jobQueueManagerAPI.isStarted()) {
-            jobQueueManagerAPI.start();
-            jobQueueManagerAPI.awaitStart(5, TimeUnit.SECONDS);
-        }
-
-        Map<String, Object> parameters = new HashMap<>();
-        String jobId = jobQueueManagerAPI.createJob("retryQueue", parameters);
-        final Optional<JobProcessor> instance = jobQueueManagerAPI.getInstance(jobId);
-        assertTrue(instance.isPresent(),()->"Should be able to create an instance of the job processor");
-        RetryingJobProcessor processor = (RetryingJobProcessor)instance.get();
-
-        CountDownLatch latch = new CountDownLatch(1);
-        jobQueueManagerAPI.watchJob(jobId, job -> {
-            if (job.state() == JobState.COMPLETED) {
-                latch.countDown();
-            }
-        });
-
-        boolean processed = latch.await(30, TimeUnit.SECONDS);
-        assertTrue(processed, "Job should be processed within 30 seconds");
-
-        // Wait for job processing to complete
-        Awaitility.await().atMost(30, TimeUnit.SECONDS)
-                .pollInterval(100, TimeUnit.MILLISECONDS)
-                .untilAsserted(() -> {
-                    Job job = jobQueueManagerAPI.getJob(jobId);
-                    assertEquals(JobState.COMPLETED, job.state(),
-                            "Job should be in COMPLETED state");
-                    assertEquals(maxRetries + 1, processor.getAttempts(),
-                            "Job should have been attempted " + maxRetries + " times");
-                });
-    }
 
     /**
      * Method to test: Progress tracking functionality in JobQueueManagerAPI
@@ -286,8 +293,8 @@ public class JobQueueManagerAPIIntegrationTest {
      * with 100% progress
      */
     @Test
+    @Order(5)
     void test_JobWithProgressTracker() throws Exception {
-        System.out.println("JobQueueManagerAPIIntegrationTest.test_JobWithProgressTracker");
         // Register a processor that uses progress tracking
         jobQueueManagerAPI.registerProcessor("progressQueue", ProgressTrackingJobProcessor.class);
 
@@ -347,8 +354,8 @@ public class JobQueueManagerAPIIntegrationTest {
      * error details, cancellation status) are verified
      */
     @Test
+    @Order(6)
     void test_CombinedScenarios() throws Exception {
-        System.out.println("JobQueueManagerAPIIntegrationTest.test_CombinedScenarios");
         // Register processors for different scenarios
         jobQueueManagerAPI.registerProcessor("successQueue", TestJobProcessor.class);
         jobQueueManagerAPI.registerProcessor("failQueue", FailingJobProcessor.class);

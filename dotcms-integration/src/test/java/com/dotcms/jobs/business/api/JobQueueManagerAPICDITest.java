@@ -36,7 +36,7 @@ public class JobQueueManagerAPICDITest {
                             JobQueue.class, RetryStrategy.class, CircuitBreaker.class,
                             JobQueueProducer.class, JobQueueConfigProducer.class,
                             RetryStrategyProducer.class, RealTimeJobMonitor.class,
-                            EventProducer.class)
+                            EventProducer.class, JobProcessorFactory.class)
     );
 
     @Inject

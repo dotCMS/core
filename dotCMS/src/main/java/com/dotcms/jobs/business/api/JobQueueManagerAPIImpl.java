@@ -70,7 +70,7 @@ import javax.inject.Inject;
  *        jobQueueManagerAPI.setRetryStrategy("contentImport", contentImportRetryStrategy);
  *
  *        // Register job processors
- *        jobQueueManagerAPI.registerProcessor("contentImport", new ContentImportJobProcessor());
+ *        jobQueueManagerAPI.registerProcessor("contentImport", ContentImportJobProcessor.class);
  *
  *        // Start the job queue manager
  *        jobQueueManagerAPI.start();
@@ -113,6 +113,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     private final RealTimeJobMonitor realTimeJobMonitor;
     private final EventProducer eventProducer;
+    private final JobProcessorFactory jobProcessorFactory;
 
     /**
      * Constructs a new JobQueueManagerAPIImpl.
@@ -138,7 +139,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             CircuitBreaker circuitBreaker,
             RetryStrategy defaultRetryStrategy,
             RealTimeJobMonitor realTimeJobMonitor,
-            EventProducer eventProducer) {
+            EventProducer eventProducer,
+            JobProcessorFactory jobProcessorFactory) {
 
         this.jobQueue = jobQueue;
         this.threadPoolSize = jobQueueConfig.getThreadPoolSize();
@@ -157,6 +159,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         // Events
         this.realTimeJobMonitor = realTimeJobMonitor;
         this.eventProducer = eventProducer;
+        this.jobProcessorFactory = jobProcessorFactory;
     }
 
     @Override
@@ -229,14 +232,13 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @Override
     public void registerProcessor(final String queueName, final Class<? extends JobProcessor> processor) {
-        final String queueNameLower = queueName.toLowerCase();
-        final Class<? extends JobProcessor> jobProcessor = processors.get(queueNameLower);
+        final Class<? extends JobProcessor> jobProcessor = processors.get(queueName);
         if (null != jobProcessor) {
             Logger.warn(this, String.format(
                     "Job processor [%s] already registered for queue: [%s] is getting overridden.",
                     jobProcessor.getName(), queueName));
         }
-        processors.put(queueNameLower, processor);
+        processors.put(queueName, processor);
     }
 
     @Override
@@ -248,8 +250,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     @Override
     public String createJob(final String queueName, final Map<String, Object> parameters)
             throws JobProcessorNotFoundException, DotDataException {
-        final String queueNameLower = queueName.toLowerCase();
-        final Class<? extends JobProcessor> clazz = processors.get(queueNameLower);
+        final Class<? extends JobProcessor> clazz = processors.get(queueName);
         if (null == clazz) {
             final var error = new JobProcessorNotFoundException(queueName);
             Logger.error(JobQueueManagerAPIImpl.class, error);
@@ -257,11 +258,11 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         }
 
         //first attempt instantiating the processor, cuz if we cant no use to create an entry in the db
-        final var processor = newInstanceOfProcessor(queueNameLower).orElseThrow();
+        final var processor = newProcessorInstance(queueName);
         // now that we know we can instantiate the processor, we can add it to the map of instances
         // But first we need the job id
         try {
-            final String jobId = jobQueue.createJob(queueNameLower, parameters);
+            final String jobId = jobQueue.createJob(queueName, parameters);
             addInstanceRef(jobId, processor);
             eventProducer.getEvent(JobCreatedEvent.class).fire(
                     new JobCreatedEvent(jobId, queueName, LocalDateTime.now(), parameters)
@@ -298,9 +299,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     @Override
     public JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize)
             throws JobQueueDataException {
-        final String queueNameLower = queueName.toLowerCase();
         try {
-            return jobQueue.getActiveJobs(queueNameLower, page, pageSize);
+            return jobQueue.getActiveJobs(queueName, page, pageSize);
         } catch (JobQueueDataException e) {
             throw new JobQueueDataException("Error fetching active jobs", e);
         }
@@ -329,31 +329,28 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         } catch (JobQueueDataException e) {
             throw new DotDataException("Error fetching job", e);
         }
-        final var processor = processorInstancesByJobId.get(jobId);
-        if (processor instanceof Cancellable) {
 
-            try {
-
-                Logger.info(this, "Cancelling job " + jobId);
-
-                ((Cancellable) processor).cancel(job);
-                handleJobCancelling(job, processor);
-            } catch (Exception e) {
-                final var error = new DotDataException("Error cancelling job " + jobId, e);
-                Logger.error(JobQueueManagerAPIImpl.class, error);
-                throw error;
+        final Optional<JobProcessor> instance = getInstance(jobId);
+        if (instance.isPresent()) {
+            final var processor = instance.get();
+            if (processor instanceof Cancellable) {
+                try {
+                    Logger.info(this, "Cancelling job " + jobId);
+                    ((Cancellable) processor).cancel(job);
+                    handleJobCancelling(job, processor);
+                } catch (Exception e) {
+                    final var error = new DotDataException("Error cancelling job " + jobId, e);
+                    Logger.error(JobQueueManagerAPIImpl.class, error);
+                    throw error;
+                }
+            } else {
+               final var error = new DotDataException("Job " + jobId + " cannot be canceled");
+               Logger.error(JobQueueManagerAPIImpl.class, error);
+               throw error;
             }
         } else {
-
-            if (processor == null) {
-                final var error = new JobProcessorNotFoundException(job.queueName(), jobId);
-                Logger.error(JobQueueManagerAPIImpl.class, error);
-                throw error;
-            }
-
-            final var error = new DotDataException(jobId, "Job " + jobId + " cannot be canceled");
-            Logger.error(JobQueueManagerAPIImpl.class, error);
-            throw error;
+            Logger.error(this, "No processor found for job " + jobId);
+            throw new JobProcessorNotFoundException(job.queueName(), jobId);
         }
     }
 
@@ -634,8 +631,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      */
     private void processJob(final Job job) throws DotDataException {
 
-        final JobProcessor processor = processorInstancesByJobId.get(job.id());
-        if (processor != null) {
+        final Optional<JobProcessor> optional = getProcessorInstance(job);
+        if (optional.isPresent()) {
+            final JobProcessor processor = optional.get();
 
             final ProgressTracker progressTracker = new DefaultProgressTracker();
             Job runningJob = job.markAsRunning().withProgressTracker(progressTracker);
@@ -672,6 +670,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 } else {
                     handleJobCompletion(runningJob, processor);
                 }
+                //Free up resources
+                removeInstanceRef(runningJob.id());
             } catch (Exception e) {
 
                 Logger.error(this,
@@ -691,21 +691,35 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     }
 
     /**
-     * Creates a new instance of a JobProcessor for a specific queue.
-     * @param queueName
-     * @return An optional containing the new JobProcessor instance, or an empty optional if the processor could not be created.
+     * Get an instance of a processor for a job.
+     * If an instance already exists, it will be returned. otherwise a new instance will be created.
+     * @param job The job to get the processor for
+     * @return The processor instance
      */
-    Optional<JobProcessor> newInstanceOfProcessor(final String queueName) {
-        final var processorClass = processors.get(queueName);
-        if (processorClass != null) {
-            try {
-                return Optional.of(processorClass.getDeclaredConstructor().newInstance());
-            } catch (Exception e) {
-                Logger.error(this, "Error creating job processor", e);
-                throw new JobProcessorInstantiationException(processorClass,e);
-            }
+    private Optional<JobProcessor> getProcessorInstance(final Job job) {
+        try {
+            return Optional.of(processorInstancesByJobId.computeIfAbsent(job.id(),
+                    id -> newProcessorInstance(job.queueName()))
+            );
+        } catch (Exception e){
+          Logger.error(this, "Error getting processor instance", e);
         }
         return Optional.empty();
+    }
+
+
+    /**
+     * Creates a new instance of a JobProcessor for a specific queue.
+     * @param queueName The name of the queue
+     * @return An optional containing the new JobProcessor instance, or an empty optional if the processor could not be created.
+     */
+    private JobProcessor newProcessorInstance(final String queueName) {
+        final var processorClass = processors.get(queueName);
+        if (processorClass != null) {
+            return jobProcessorFactory.newInstance(processorClass);
+        } else {
+            throw new JobProcessorNotFoundException(queueName);
+        }
     }
 
     /**

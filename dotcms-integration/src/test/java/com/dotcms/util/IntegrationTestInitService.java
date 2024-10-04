@@ -2,6 +2,7 @@ package com.dotcms.util;
 
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.config.DotInitializationService;
+import com.dotcms.jobs.business.api.JobProcessorFactory;
 import com.dotcms.jobs.business.api.JobQueueConfig;
 import com.dotcms.jobs.business.api.JobQueueConfigProducer;
 import com.dotcms.jobs.business.api.JobQueueManagerAPIImpl;
@@ -70,6 +71,7 @@ public class IntegrationTestInitService {
                                 JobQueueConfigProducer.class,
                                 RetryStrategyProducer.class,
                                 RealTimeJobMonitor.class,
+                                JobProcessorFactory.class,
                                 EventProducer.class)
                         .initialize();
 
