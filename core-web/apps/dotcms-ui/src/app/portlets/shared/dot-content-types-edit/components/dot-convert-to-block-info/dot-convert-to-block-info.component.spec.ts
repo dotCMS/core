@@ -2,6 +2,8 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
+import { ButtonModule } from 'primeng/button';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -22,7 +24,7 @@ describe('DotConvertToBlockInfoComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotConvertToBlockInfoComponent],
-            imports: [DotMessagePipe],
+            imports: [DotMessagePipe, ButtonModule],
             providers: [
                 {
                     provide: DotMessageService,
