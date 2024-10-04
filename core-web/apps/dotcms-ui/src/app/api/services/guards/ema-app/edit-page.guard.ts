@@ -1,4 +1,4 @@
-import { combineLatest } from 'rxjs';
+import { combineLatest, of } from 'rxjs';
 
 import { inject } from '@angular/core';
 import { CanMatchFn, Router } from '@angular/router';
@@ -11,10 +11,24 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
 export const editPageGuard: CanMatchFn = () => {
     const properties = inject(DotPropertiesService);
     const emaConfiguration = inject(EmaAppConfigurationService);
-
     const router = inject(Router);
+    const DEFAULT_LANGUAGE_ID = 1;
 
-    const url = router.getCurrentNavigation().extractedUrl.queryParams['url'];
+    const queryParams = router.getCurrentNavigation().extractedUrl.queryParams;
+    const url = queryParams['url'];
+    const languageID = queryParams['language_id'];
+
+    if (!languageID) {
+        router.navigate([`/edit-page/content`], {
+            queryParams: {
+                ...queryParams,
+                language_id: DEFAULT_LANGUAGE_ID
+            },
+            replaceUrl: true
+        });
+
+        return of(false);
+    }
 
     return combineLatest([
         properties.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_NEW_EDIT_PAGE),
