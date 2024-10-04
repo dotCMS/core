@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.contentlet.business.exporter;
 
 import java.io.File;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Semaphore;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -30,9 +32,6 @@ public class ImageFilterExporter implements BinaryContentExporter {
     private final int allowedRequests = Config.getIntProperty("IMAGE_GENERATION_SIMULTANEOUS_REQUESTS", 10);
     
     private final Semaphore semaphore  = new Semaphore(allowedRequests);
-
-    private static final Set<String> VECTOR_EXTENSIONS = new HashSet<>(Arrays.asList("svg", "eps"));
-
 
     /*
      * (non-Javadoc)
