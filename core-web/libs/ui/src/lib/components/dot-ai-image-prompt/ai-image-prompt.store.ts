@@ -1,4 +1,5 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore } from '@ngrx/component-store';
+
 import { Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
@@ -14,6 +15,7 @@ import {
     DotGeneratedAIImage,
     PromptType
 } from '@dotcms/dotcms-models';
+import { tapResponse } from '@ngrx/operators';
 
 const DEFAULT_INPUT_PROMPT = PromptType.INPUT;
 

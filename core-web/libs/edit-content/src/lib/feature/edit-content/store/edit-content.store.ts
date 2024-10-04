@@ -1,4 +1,4 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore } from '@ngrx/component-store';
 import { Observable, forkJoin, of } from 'rxjs';
 
 import { Location } from '@angular/common';
@@ -17,6 +17,7 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentlet, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { tapResponse } from '@ngrx/operators';
 
 export const SIDEBAR_LOCAL_STORAGE_KEY = 'dot-edit-content-form-sidebar';
 
