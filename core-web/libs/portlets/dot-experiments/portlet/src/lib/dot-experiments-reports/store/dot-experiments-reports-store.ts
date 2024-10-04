@@ -48,7 +48,6 @@ import {
     orderVariants
 } from '../../shared/dot-experiment.utils';
 
-
 export interface DotExperimentsReportsState {
     experiment: DotExperiment | null;
     status: ComponentStatus;

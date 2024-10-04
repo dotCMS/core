@@ -43,7 +43,6 @@ import {
     processExperimentConfigProps
 } from '../../shared/dot-experiment.utils';
 
-
 export interface DotExperimentsConfigurationState {
     experiment: DotExperiment;
     status: ComponentStatus;
