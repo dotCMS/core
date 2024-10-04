@@ -37,7 +37,7 @@ outputs:
     value: ${{ steps.next_version.outputs.next_version }}
   published:
     description: 'SDK libs - Published'
-    value: ${{ steps.next_version.outputs.publish }}
+    value: ${{ steps.deployment_status.outputs.published }}
 runs:
   using: "composite"
   steps:
@@ -209,9 +209,15 @@ runs:
           cd $sdk && echo "$(pwd)"
           echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
           npm publish --access public --tag $NPM_TAG
-          npm dist-tag $NEXT_VERSION latest
+          npm dist-tag add @dotcms/${sdk}@${NEXT_VERSION} latest
           cd ..
         done
         echo "::endgroup::"
       shell: bash      
       
+    - name: 'Set output'
+      id: deployment_status
+      if: success()      
+      run: |
+        echo "published=true" >> $GITHUB_OUTPUT
+      shell: bash      

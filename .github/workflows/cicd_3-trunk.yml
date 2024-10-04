@@ -109,6 +109,7 @@ jobs:
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
       EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      NPM_ORG_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
   # Finalize job - aggregates results from previous jobs
