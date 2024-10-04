@@ -68,6 +68,42 @@ describe('DotWorkflowActionsFireService', () => {
         });
     });
 
+    it('should SAVE and return a new contentlet with FormData', (done) => {
+        const mockResult = {
+            name: 'test'
+        };
+
+        const file = new File(['hello'], 'hello.txt', { type: 'text/plain' });
+
+        const requestBody = {
+            contentlet: {
+                contentType: 'dotAsset',
+                file: file.name
+            }
+        };
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        spectator.service
+            .newContentlet('dotAsset', { file: file.name }, formData)
+            .subscribe((res) => {
+                expect(res).toEqual([mockResult]);
+                done();
+            });
+
+        const req = spectator.expectOne(
+            '/api/v1/workflow/actions/default/fire/NEW',
+            HttpMethod.PUT
+        );
+
+        expect(req.request.body.get('json')).toEqual(JSON.stringify(requestBody));
+
+        req.flush({
+            entity: [mockResult]
+        });
+    });
+
     it('should EDIT and return the updated contentlet', (done) => {
         const mockResult = {
             inode: '123'

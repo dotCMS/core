@@ -28,6 +28,7 @@ import { DotCMSAssetDialogCopyFields } from '@portlets/shared/dot-content-types-
 @Component({
     selector: 'dot-content-type-copy-dialog',
     templateUrl: './dot-content-type-copy-dialog.component.html',
+    styleUrls: ['./dot-content-type-copy-dialog.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewChecked {

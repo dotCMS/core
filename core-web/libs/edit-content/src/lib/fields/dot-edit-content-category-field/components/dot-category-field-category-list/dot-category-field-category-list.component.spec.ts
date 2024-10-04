@@ -2,6 +2,7 @@ import { expect } from '@jest/globals';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
     DotCategoryFieldCategoryListComponent,
@@ -13,7 +14,7 @@ import {
     CATEGORY_LIST_MOCK,
     CATEGORY_LIST_MOCK_TRANSFORMED_MATRIX,
     CATEGORY_MOCK_TRANSFORMED,
-    SELECTED_LIST_MOCK
+    MOCK_SELECTED_CATEGORIES_KEYS
 } from '../../mocks/category-field.mocks';
 import { DotCategoryFieldListSkeletonComponent } from '../dot-category-field-list-skeleton/dot-category-field-list-skeleton.component';
 
@@ -28,8 +29,8 @@ describe('DotCategoryFieldCategoryListComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         spectator.setInput('categories', CATEGORY_LIST_MOCK_TRANSFORMED_MATRIX);
-        spectator.setInput('selected', SELECTED_LIST_MOCK);
-        spectator.setInput('isLoading', false);
+        spectator.setInput('selected', MOCK_SELECTED_CATEGORIES_KEYS);
+        spectator.setInput('state', ComponentStatus.INIT);
         spectator.setInput('breadcrumbs', []);
 
         spectator.detectChanges();
@@ -80,8 +81,8 @@ describe('DotCategoryFieldCategoryListComponent', () => {
 
     it('should apply selected class to the correct item', () => {
         spectator.setInput('categories', [CATEGORY_MOCK_TRANSFORMED]);
-        spectator.setInput('selected', SELECTED_LIST_MOCK);
-        spectator.setInput('isLoading', false);
+        spectator.setInput('selected', MOCK_SELECTED_CATEGORIES_KEYS);
+        spectator.setInput('state', ComponentStatus.LOADED);
 
         spectator.detectChanges();
 
@@ -95,11 +96,9 @@ describe('DotCategoryFieldCategoryListComponent', () => {
         const minColumns = 4;
         const testCategories = Array(minColumns).fill(CATEGORY_LIST_MOCK_TRANSFORMED_MATRIX[0]);
 
-        // spectator = createComponent();
-
         spectator.setInput('categories', testCategories);
-        spectator.setInput('selected', SELECTED_LIST_MOCK);
-        spectator.setInput('isLoading', false);
+        spectator.setInput('selected', MOCK_SELECTED_CATEGORIES_KEYS);
+        spectator.setInput('state', ComponentStatus.LOADED);
 
         spectator.detectChanges();
 
@@ -108,8 +107,8 @@ describe('DotCategoryFieldCategoryListComponent', () => {
 
     it('should render the skeleton component if is loading', () => {
         spectator.setInput('categories', [CATEGORY_MOCK_TRANSFORMED]);
-        spectator.setInput('selected', SELECTED_LIST_MOCK);
-        spectator.setInput('isLoading', true);
+        spectator.setInput('selected', MOCK_SELECTED_CATEGORIES_KEYS);
+        spectator.setInput('state', ComponentStatus.LOADING);
 
         spectator.detectChanges();
 

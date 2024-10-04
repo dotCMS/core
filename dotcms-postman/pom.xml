@@ -23,8 +23,6 @@
         <docker.wm.volume>./src/test/resources</docker.wm.volume>
         <docker.wm.volume.internal>/home/wiremock</docker.wm.volume.internal>
         <testdata.dir>${project.build.directory}/testdata</testdata.dir>
-        <it.test.fork-folder.prefix>${project.build.directory}/testdata/fork-</it.test.fork-folder.prefix>
-        <it.test.fork-folder>${it.test.fork-folder.prefix}</it.test.fork-folder>
         <cleanup.before.tests>true</cleanup.before.tests>
         <postman.test.skip>true</postman.test.skip>
         <yarn.install.cmd>install --frozen-lockfile</yarn.install.cmd>
@@ -136,7 +134,6 @@
                                     <DOT_AI_IMAGE_API_URL>http://wm:8080/i</DOT_AI_IMAGE_API_URL>
                                     <DOT_AI_EMBEDDINGS_API_URL>http://wm:8080/e</DOT_AI_EMBEDDINGS_API_URL>
                                     <DOT_AI_MODELS_API_URL>http://wm:8080/m</DOT_AI_MODELS_API_URL>
-                                    <DOT_AI_DEBUG_LOGGER>true</DOT_AI_DEBUG_LOGGER>
                                 </env>
                                 <links combine.children="append">
                                     <link>wiremock:wm</link>

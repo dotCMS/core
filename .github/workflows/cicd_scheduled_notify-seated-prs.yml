@@ -1,0 +1,227 @@
+name: 'Report seated PRs'
+on:
+  schedule:
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+    inputs:
+      current_user:
+        description: 'Limit execution of this workflow to the current user'
+        type: string
+        required: false
+        default: U0125JCDSSE
+env:
+  PR_DAY_THRESHOLD: 3
+  DRAFT_PR_DAY_THRESHOLD: 2
+  REPO: core
+
+jobs:
+  resolve-seated-prs:
+    runs-on: ubuntu-22.04
+    outputs:
+      seated_prs: ${{ steps.fetch-seated-prs.outputs.seated_prs }}
+      members: ${{ steps.fetch-seated-prs.outputs.members }}
+      members_json: ${{ steps.fetch-seated-prs.outputs.members_json }}
+    steps:
+      - run: echo 'GitHub context'
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+      - name: Filter execution
+        id: filter-execution
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            const day = new Date().getDay();
+            console.log(new Date());
+            if (!'${{ inputs.current_user}}' && (day === 0 || day === 6)) {
+              console.log('It\'s (happy) weekend, not sending any notifications');
+              process.exit(0);
+            }
+            
+            core.setOutput('continue', 'true');
+      - id: fetch-seated-prs
+        name: Fetch Seated PRs
+        if: success() && steps.filter-execution.outputs.continue == 'true'
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          retries: 3
+          retry-exempt-status-codes: 400,401
+          script: |
+            const prDayThreshold = ${{ env.PR_DAY_THRESHOLD }};
+            const draftPrDayThreshold = ${{ env.DRAFT_PR_DAY_THRESHOLD }};
+            const now = new Date();
+            const seatedPrs = [];
+            const excludedUsers = ['dependabot[bot]']
+            
+            const fetchOpenPrs = async () => {
+              const opts = github.rest.pulls.list.endpoint.merge({
+                ...{
+                  owner: '${{ github.repository_owner }}',
+                  repo: '${{ env.REPO }}',
+                  per_page: 100
+                }
+              });
+            
+              return await github.paginate(opts);
+            };
+            
+            const dateFormat = (date) => {
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              return `${year}-${month}-${day}`;
+            }
+            
+            const nowFormat = dateFormat(now);
+            
+            const isPrSeated = (pr) => {
+              const createdAt = new Date(Date.parse(pr.created_at));
+              console.log(`Now: ${nowFormat} / PR [${pr.number}] created at: ${dateFormat(createdAt)}`);
+            
+              let weekdaysCount = 0;
+              for (let date = createdAt ; date <= now; date.setDate(date.getDate() + 1)) {
+                const dayOfWeek = date.getDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                  weekdaysCount++;
+                }
+              }
+
+              const threshold = pr.draft ? draftPrDayThreshold : prDayThreshold;
+              return weekdaysCount >= threshold;
+            };
+            
+            const addPr = (pr, login) => {
+              if (!isPrSeated(pr)) {
+                return;
+              }
+            
+              console.log(`Detected PR [${pr.number}] ([${pr.user.login}) has been seated enough`);
+            
+              let userPrs = seatedPrs.find(pr => pr.login === login);
+              if (!userPrs) {
+                userPrs = {
+                  login,
+                  prs: []
+                };
+                seatedPrs.push(userPrs);
+              }
+          
+              userPrs.prs.push({
+                pr_number: pr.number,
+                url: pr.html_url,
+                draft: pr.draft,
+                created_at: pr.created_at,
+                updated_at: pr.updated_at
+              });
+            };
+            
+            const handlePr = (pr) => {
+              const login = pr.user.login;
+              if (excludedUsers.includes(login)) {
+                return;
+              }
+            
+              addPr(pr, login);
+            };
+            
+            const prs = await fetchOpenPrs();
+            prs.forEach(pr => console.log(`[${pr.number}] -> [${pr.user.login}, ${dateFormat(new Date(Date.parse(pr.created_at)))}]`));
+            console.log(`PRs size: [${prs.length}]`);
+            
+            prs.forEach(handlePr);
+            const members = seatedPrs.map(pr => pr.login);
+            console.log(`Seated PRs size: [${seatedPrs.length}]`);
+            console.log(JSON.stringify(seatedPrs, null, 2));
+            console.log(`Users: ${JSON.stringify(members)}`);
+            
+            core.setOutput('seated_prs', JSON.stringify(seatedPrs));
+            core.setOutput('members', members.join(' '));
+            core.setOutput('members_json', JSON.stringify(members));
+
+  slack-channel-resolver:
+    name: Resolve Slack Channel
+    needs: resolve-seated-prs
+    if: success() && needs.resolve-seated-prs.outputs.members
+    uses: ./.github/workflows/utility_slack-channel-resolver.yml
+    with:
+      github_users: ${{ needs.resolve-seated-prs.outputs.members }}
+    secrets:
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  notify-seated-prs:
+    runs-on: ubuntu-22.04
+    needs: [resolve-seated-prs, slack-channel-resolver]
+    if: success()
+    name: Notifying team member ${{ matrix.member }}
+    strategy:
+      fail-fast: false
+      matrix:
+        member: ${{ fromJSON(needs.slack-channel-resolver.outputs.channel_ids) }}
+    steps:
+      - name: Build Message
+        id: build-message
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            const member = '${{ matrix.member }}';
+            const urlMapper = (pr) => `- ${pr.url}`;
+            const prDayThreshold = ${{ env.PR_DAY_THRESHOLD }};
+            const draftPrDayThreshold = ${{ env.DRAFT_PR_DAY_THRESHOLD }};
+            const seatedPrs = ${{ needs.resolve-seated-prs.outputs.seated_prs }}
+      
+            const mappings = ${{ needs.slack-channel-resolver.outputs.mappings_json }};
+            const members = ${{ needs.resolve-seated-prs.outputs.members_json }};
+            const channels = ${{ needs.slack-channel-resolver.outputs.channel_ids }};
+      
+            const foundMapping = mappings.find(mapping => mapping.slack_id === member)
+            if (!foundMapping) {
+              core.warning(`Slack user Id [${member}] cannot be found, exiting`);
+              process.exit(0);
+            }
+            core.setOutput('guthub_user', foundMapping.github_user);
+             
+            console.log(`Members: ${JSON.stringify(members, null, 2)}`);
+            console.log(`Channels: ${JSON.stringify(channels, null, 2)}`);
+            console.log(`Found mapping: ${JSON.stringify(foundMapping, null, 2)}`);
+            
+            const login = foundMapping.github_user;
+            const userPrs = seatedPrs.find(pr => pr.login === login);
+            const prs = userPrs.prs.filter(pr => !pr.draft).map(urlMapper);
+            const draftPrs = userPrs.prs.filter(pr => pr.draft).map(urlMapper);
+            const prStatement = `The following PRs have at least *${prDayThreshold}* days since created:
+            ${prs.join('\n')}`;
+            const draftPrStatement = `The following *draft* PRs have at least *${draftPrDayThreshold}* days since created:
+            ${draftPrs.join('\n')}`;
+            
+            let message = `:hurtrealbad: Attention dev *${login}*! You have PRs seated for a while.`;
+            if (prs.length > 0) {
+              message += `\n${prStatement}`
+            }
+            if (draftPrs.length > 0) {
+              message += `\n${draftPrStatement}`
+            }
+            
+            message += `\n\nYou can always check your PRs at: https://github.com/${{ github.repository_owner }}/${{ env.REPO }}/pulls/${login}`
+            core.setOutput('message', message);
+      - name: Notify member
+        if: success() && steps.build-message.outputs.message != ''
+        shell: bash
+        run: |
+          channel=${{ matrix.member }}
+          chat_url='https://slack.com/api/chat.postMessage'
+          
+          echo "Sending notification to [${{ steps.build-message.outputs.github_user }}] (${channel})"
+          
+          if [[ -z '${{ inputs.current_user }}' || "${channel}" == '${{ inputs.current_user }}' ]]; then
+            echo "Posting notification for [${channel}] to ${chat_url}"
+            curl -X POST \
+              -H "Content-type: application/json" \
+              -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
+              -d "{ \"channel\":\"${channel}\",\"text\":\"${{ steps.build-message.outputs.message }}\" }" \
+              -s \
+              ${chat_url}
+          fi

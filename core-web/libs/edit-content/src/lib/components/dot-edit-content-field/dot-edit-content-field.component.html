@@ -80,6 +80,7 @@
     @case (fieldTypes.WYSIWYG) {
         <dot-edit-content-wysiwyg-field
             [field]="field"
+            [contentlet]="contentlet"
             [attr.data-testId]="'field-' + field.variable" />
     }
     @case (fieldTypes.HOST_FOLDER) {
@@ -91,6 +92,18 @@
         <dot-edit-content-category-field
             [attr.data-testId]="'field-' + field.variable"
             [contentlet]="contentlet"
+            [field]="field" />
+    }
+    @case (fieldTypes.FILE) {
+        <dot-edit-content-file-field
+            [formControlName]="field.variable"
+            [attr.data-testId]="'field-' + field.variable"
+            [field]="field" />
+    }
+    @case (fieldTypes.IMAGE) {
+        <dot-edit-content-file-field
+            [formControlName]="field.variable"
+            [attr.data-testId]="'field-' + field.variable"
             [field]="field" />
     }
 }

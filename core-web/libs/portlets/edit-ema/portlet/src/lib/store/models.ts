@@ -27,12 +27,10 @@ export interface ShellProps {
         pageInfo: InfoPage;
     };
     items: NavigationBarItem[];
-    translateProps: TranslateProps;
     seoParams: DotPageToolUrlParams;
 }
 
 export interface TranslateProps {
     page: DotPage;
-    languageId: number;
-    languages: DotLanguage[];
+    currentLanguage: DotLanguage;
 }

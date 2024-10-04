@@ -1,0 +1,139 @@
+@let previewFile = $previewFile();
+@let metadata = $metadata();
+@let downloadLink = $downloadLink();
+
+<div class="preview-container" [class.preview-container--fade]="metadata?.editableAsText">
+    @if (metadata?.editableAsText) {
+        <div class="preview-code_container" data-testId="code-preview">
+            <code>{{ $content() }}</code>
+        </div>
+    } @else {
+        <div class="preview-image__container">
+            @if (previewFile.source === 'temp') {
+                <dot-temp-file-thumbnail
+                    [tempFile]="previewFile.file"
+                    [iconSize]="'48px'"
+                    data-testId="temp-file-thumbnail" />
+            } @else {
+                <dot-contentlet-thumbnail
+                    fieldVariable="asset"
+                    [iconSize]="'48px'"
+                    [contentlet]="previewFile.file"
+                    [playableVideo]="true"
+                    data-testId="contentlet-thumbnail" />
+            }
+        </div>
+        <div class="preview-metadata__container">
+            @if (metadata) {
+                <span data-testId="metadata-title" class="preview-metadata_header">
+                    {{ metadata.title }}
+                </span>
+                @if (metadata.width && metadata.height) {
+                    <div class="preview-metadata__info">
+                        <i class="pi pi-arrows-alt"></i>
+                        <span data-testId="metadata-dimensions">
+                            {{ metadata.width }} x {{ metadata.height }}
+                        </span>
+                    </div>
+                }
+                @if (metadata.fileSize) {
+                    <div class="preview-metadata__info">
+                        <i class="pi pi-file"></i>
+                        <span data-testId="metadata-file-size">
+                            {{ metadata.fileSize | dotFileSizeFormat }}
+                        </span>
+                    </div>
+                }
+            }
+        </div>
+    }
+
+    <!-- Actions -->
+    <div class="preview-resource-links__actions">
+        <p-button
+            (click)="toggleShowDialog()"
+            styleClass="p-button-rounded p-button-sm p-button-outlined"
+            data-testId="info-btn"
+            icon="pi pi-info" />
+
+        @if (downloadLink) {
+            <p-button
+                styleClass="p-button-rounded p-button-sm p-button-outlined"
+                data-testId="download-btn"
+                icon="pi pi-download"
+                (click)="downloadAsset(downloadLink)" />
+        }
+    </div>
+    <div class="preview-metadata__actions">
+        <p-button
+            (click)="removeFile.emit()"
+            [label]="'dot.common.remove' | dm"
+            styleClass="p-button-link p-button-sm"
+            data-testId="remove-button"
+            icon="pi pi-trash" />
+    </div>
+    <!-- Actions in small screens -->
+    <div class="preview-metadata__action--responsive">
+        <p-button
+            (click)="toggleShowDialog()"
+            styleClass="p-button-rounded"
+            data-testId="info-btn-responsive"
+            icon="pi pi-info" />
+        @if (downloadLink) {
+            <p-button
+                styleClass="p-button-rounded"
+                data-testId="download-btn-responsive"
+                icon="pi pi-download"
+                (click)="downloadAsset(downloadLink)" />
+        }
+        <p-button
+            (click)="removeFile.emit()"
+            styleClass="p-button-rounded "
+            data-testId="remove-button-responsive"
+            icon="pi pi-trash" />
+    </div>
+</div>
+
+<p-dialog
+    [(visible)]="$showDialog"
+    [closeOnEscape]="true"
+    [dismissableMask]="true"
+    [modal]="true"
+    [header]="metadata.title"
+    [appendTo]="'body'"
+    [style]="{ maxWidth: '582px', width: '100%' }">
+    <div class="file-info__item">
+        <span class="file-info__title">{{ 'Size' | dm }}:</span>
+        <div class="file-info__link">
+            @if (metadata.width && metadata.height) {
+                <div class="file-info__size" data-testId="file-resolution">
+                    <i class="pi pi-arrows-alt"></i>
+                    <span>{{ metadata.width }}px, {{ metadata.height }}px</span>
+                </div>
+            }
+            <div class="file-info__size">
+                <i class="pi pi-file"></i>
+                <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
+            </div>
+        </div>
+    </div>
+    @for (sourceLink of $resourceLinks(); track $index) {
+        <div [attr.data-testId]="'resource-link-' + sourceLink.key" class="file-info__item">
+            <span class="file-info__title">{{ sourceLink.key | dm }}:</span>
+            <div class="file-info__link">
+                <a [href]="sourceLink.value" target="_blank">
+                    {{ sourceLink.value || ('dot.file.field.no.link.found' | dm) }}
+                </a>
+                <dot-copy-button [copy]="sourceLink.value" />
+            </div>
+        </div>
+    }
+
+    <ng-template pTemplate="footer">
+        <p-button
+            (click)="$showDialog.set(false)"
+            [label]="'Cancel' | dm"
+            styleClass="p-button-outlined"
+            data-testId="dialog-cancel" />
+    </ng-template>
+</p-dialog>

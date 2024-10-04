@@ -16,7 +16,7 @@ inputs:
   ref:
     description: 'Branch to build from'
     required: false
-    default: 'master'
+    default: 'main'
   npm-token:
     description: 'NPM token'
     required: true
@@ -196,7 +196,6 @@ runs:
       shell: bash               
 
     - name: 'Publishing sdk into NPM registry'
-      if: ${{ steps.validate_version.outputs.publish == 'true' }}
       working-directory: ${{ github.workspace }}/core-web/libs/sdk/
       env:
         NEXT_VERSION: ${{ steps.next_version.outputs.next_version }}

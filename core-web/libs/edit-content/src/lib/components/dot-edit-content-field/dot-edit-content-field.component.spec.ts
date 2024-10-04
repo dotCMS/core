@@ -14,7 +14,8 @@ import {
     DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageDisplayService,
-    DotMessageService
+    DotMessageService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotKeyValueComponent } from '@dotcms/ui';
 
@@ -25,6 +26,8 @@ import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-cont
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
 import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
 import { DotEditContentCustomFieldComponent } from '../../fields/dot-edit-content-custom-field/dot-edit-content-custom-field.component';
+import { DotEditContentFileFieldComponent } from '../../fields/dot-edit-content-file-field/dot-edit-content-file-field.component';
+import { DotFileFieldUploadService } from '../../fields/dot-edit-content-file-field/services/upload-file/upload-file.service';
 import { DotEditContentHostFolderFieldComponent } from '../../fields/dot-edit-content-host-folder-field/dot-edit-content-host-folder-field.component';
 import { DotEditContentJsonFieldComponent } from '../../fields/dot-edit-content-json-field/dot-edit-content-json-field.component';
 import { DotEditContentKeyValueComponent } from '../../fields/dot-edit-content-key-value/dot-edit-content-key-value.component';
@@ -69,6 +72,24 @@ declare module '@tiptap/core' {
 const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTestBed> = {
     // We had to use unknown because components have different types.
     [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
+    [FIELD_TYPES.FILE]: {
+        component: DotEditContentFileFieldComponent,
+        providers: [
+            {
+                provide: DotFileFieldUploadService,
+                useValue: {}
+            }
+        ]
+    },
+    [FIELD_TYPES.IMAGE]: {
+        component: DotEditContentFileFieldComponent,
+        providers: [
+            {
+                provide: DotFileFieldUploadService,
+                useValue: {}
+            }
+        ]
+    },
     [FIELD_TYPES.TEXTAREA]: DotEditContentTextAreaComponent,
     [FIELD_TYPES.SELECT]: DotEditContentSelectFieldComponent,
     [FIELD_TYPES.RADIO]: DotEditContentRadioFieldComponent,
@@ -139,10 +160,26 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     },
     [FIELD_TYPES.WYSIWYG]: {
         component: DotEditContentWYSIWYGFieldComponent,
+        providers: [
+            {
+                provide: DotFileFieldUploadService,
+                useValue: {}
+            },
+            {
+                provide: DotWorkflowActionsFireService,
+                useValue: {}
+            }
+        ],
         declarations: [MockComponent(EditorComponent)]
     },
     [FIELD_TYPES.CATEGORY]: {
         component: DotEditContentCategoryFieldComponent
+    },
+    [FIELD_TYPES.CONSTANT]: {
+        component: null // this field is not being rendered for now.
+    },
+    [FIELD_TYPES.HIDDEN]: {
+        component: null // this field is not being rendered for now.
     }
 };
 
@@ -156,7 +193,11 @@ describe('FIELD_TYPES and FIELDS_MOCK', () => {
     });
 });
 
-describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fieldMock) => {
+const FIELDS_TO_BE_RENDER = FIELDS_MOCK.filter(
+    (field) => field.fieldType !== FIELD_TYPES.CONSTANT && field.fieldType !== FIELD_TYPES.HIDDEN
+);
+
+describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields', (fieldMock) => {
     const fieldTestBed = FIELD_TYPES_COMPONENTS[fieldMock.fieldType];
     let spectator: Spectator<DotEditContentFieldComponent>;
 

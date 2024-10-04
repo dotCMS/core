@@ -32,6 +32,7 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VanityUrlDataGen;
 import com.dotcms.datagen.VariantDataGen;
@@ -1112,10 +1113,9 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         try {
             APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
             throw new AssertionError("DotRuntimeException Expected");
-        }catch (DotRuntimeException e) {
-            final String expectedMessage = String.format("Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).\n"
-                    + "List of non valid fields\n"
-                    + "UNIQUE: %s/%s\n\n", uniqueTextField.variable(), uniqueTextField.name());
+        }catch (final DotRuntimeException e) {
+            final String expectedMessage = String.format("Contentlet with ID 'Unknown/New' [''] has invalid/missing field(s)."
+                    + " - Fields: [UNIQUE]: %s (%s)", uniqueTextField.name(), uniqueTextField.variable());
 
             assertEquals(expectedMessage, e.getMessage());
         }
@@ -1169,10 +1169,9 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         try {
             APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
             throw new AssertionError("DotRuntimeException Expected");
-        } catch (DotRuntimeException e) {
-            final String expectedMessage = String.format("Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).\n"
-                    + "List of non valid fields\n"
-                    + "UNIQUE: %s/%s\n\n", uniqueTextField.variable(), uniqueTextField.name());
+        } catch (final DotRuntimeException e) {
+            final String expectedMessage = String.format("Contentlet with ID 'Unknown/New' [''] has invalid/missing field(s)."
+                    + " - Fields: [UNIQUE]: %s (%s)", uniqueTextField.name(), uniqueTextField.variable());
 
             assertEquals(expectedMessage, e.getMessage());
         }
@@ -1285,10 +1284,9 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         try {
             APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
             throw new AssertionError("DotRuntimeException Expected");
-        } catch (DotRuntimeException e) {
-            final String expectedMessage = String.format("Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).\n"
-                    + "List of non valid fields\n"
-                    + "UNIQUE: %s/%s\n\n", uniqueTextField.variable(), uniqueTextField.name());
+        } catch (final DotRuntimeException e) {
+            final String expectedMessage = String.format("Contentlet with ID 'Unknown/New' [''] has invalid/missing field(s)."
+                    + " - Fields: [UNIQUE]: %s (%s)", uniqueTextField.name(), uniqueTextField.variable());
 
             assertEquals(expectedMessage, e.getMessage());
         }
@@ -1726,10 +1724,9 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         try {
             APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
             throw new AssertionError("DotRuntimeException Expected");
-        } catch (DotRuntimeException e) {
-            final String expectedMessage = String.format("Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).\n"
-                    + "List of non valid fields\n"
-                    + "UNIQUE: %s/%s\n\n", uniqueTextField.variable(), uniqueTextField.name());
+        } catch (final DotRuntimeException e) {
+            final String expectedMessage = String.format("Contentlet with ID 'Unknown/New' [''] has invalid/missing field(s)."
+                    + " - Fields: [UNIQUE]: %s (%s)", uniqueTextField.name(), uniqueTextField.variable());
 
             assertEquals(expectedMessage, e.getMessage());
         }
@@ -2840,6 +2837,50 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 .nextPersisted();
         final Contentlet respCont =  contentletAPI.copyContentlet(contentlet, user, false);
 
+        assertNotEquals(respCont.getIdentifier(), contentlet.getIdentifier());
+        assertEquals(respCont.getHost(), APILocator.systemHost().getIdentifier());
+    }
+
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#copyContentlet(Contentlet, User, boolean)}
+     * Given Scenario:
+     * Given an user with backend role that has permissions to publish, read and write contentlet (not edit permissions).
+     * Copying a contentlet with that user was throwing an error but copying the contentlet without the permissions previously established.
+     * ExpectedResult: Copy action should execute successfully with the correct permissions.
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void test_copy_contentlet_without_permissions() throws DotDataException, DotSecurityException {
+
+        final ContentletAPI contentletAPI1 = APILocator.getContentletAPIImpl();
+        final List<Field> fields = new ArrayList<>();
+        fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
+
+        final ContentType cType = createContentType("test");
+        final Contentlet contentlet = new ContentletDataGen(cType.id())
+                .host(APILocator.systemHost())
+                .nextPersisted();
+
+        // create backend role
+        final Role backendRole = TestUserUtils.getBackendRole();
+
+
+        // asign permissions on contentlet for backend role
+        addPermission(backendRole, contentlet, PermissionLevel.PUBLISH);
+        addPermission(backendRole, contentlet, PermissionLevel.READ);
+        addPermission(backendRole, contentlet, PermissionLevel.WRITE);
+        addPermission(backendRole, cType, PermissionLevel.WRITE);
+
+        final User userWithBackendRole = TestUserUtils.getBackendUser(APILocator.systemHost());
+
+        final Contentlet respCont =  contentletAPI1.copyContentlet(contentlet, userWithBackendRole, false);
+
+        //check that the copied contentlet has publish permissions for the user with backend role
+        APILocator.getPermissionAPI().checkPermission(respCont, PermissionLevel.PUBLISH, userWithBackendRole);
+
+        //check the copy
         assertNotEquals(respCont.getIdentifier(), contentlet.getIdentifier());
         assertEquals(respCont.getHost(), APILocator.systemHost().getIdentifier());
     }
