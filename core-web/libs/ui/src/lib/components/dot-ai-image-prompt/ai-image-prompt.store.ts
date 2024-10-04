@@ -16,7 +16,6 @@ import {
     PromptType
 } from '@dotcms/dotcms-models';
 
-
 const DEFAULT_INPUT_PROMPT = PromptType.INPUT;
 
 export interface DotAiImagePromptComponentState {
