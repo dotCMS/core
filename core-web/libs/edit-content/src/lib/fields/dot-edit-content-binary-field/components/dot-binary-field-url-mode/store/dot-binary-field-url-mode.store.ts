@@ -1,4 +1,5 @@
 import { ComponentStore } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { Observable, from } from 'rxjs';
 
 import { Injectable } from '@angular/core';
@@ -9,7 +10,6 @@ import { DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile, DotHttpErrorResponse } from '@dotcms/dotcms-models';
 
 import { DotBinaryFieldValidatorService } from '../../../service/dot-binary-field-validator/dot-binary-field-validator.service';
-import { tapResponse } from '@ngrx/operators';
 
 export interface DotBinaryFieldUrlModeState {
     tempFile: DotCMSTempFile;

@@ -1,4 +1,5 @@
 import { ComponentStore } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { ChartData } from 'chart.js';
 import { forkJoin, Observable, of } from 'rxjs';
 
@@ -47,7 +48,6 @@ import {
     orderVariants
 } from '../../shared/dot-experiment.utils';
 
-import { tapResponse } from '@ngrx/operators';
 
 export interface DotExperimentsReportsState {
     experiment: DotExperiment | null;

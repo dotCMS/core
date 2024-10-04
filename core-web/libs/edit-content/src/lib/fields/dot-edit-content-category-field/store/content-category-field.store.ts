@@ -1,3 +1,4 @@
+import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
@@ -31,7 +32,6 @@ import {
     getMenuItemsFromKeyParentPath,
     checkIfClickedIsLoaded
 } from '../utils/category-field.utils';
-import { tapResponse } from '@ngrx/operators';
 
 export type CategoryFieldState = {
     field: DotCMSContentTypeField;
