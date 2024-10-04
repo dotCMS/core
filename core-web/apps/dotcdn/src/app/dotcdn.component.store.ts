@@ -1,4 +1,5 @@
 import { ComponentStore } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
@@ -18,7 +19,6 @@ import {
     PurgeReturnData
 } from './app.models';
 import { DotCDNService } from './dotcdn.service';
-import { tapResponse } from '@ngrx/operators';
 
 @Injectable()
 export class DotCDNStore extends ComponentStore<DotCDNState> {
