@@ -5,8 +5,6 @@ import { inject, Injectable } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
-import { MOCK_STYLE_CLASSES_FILE } from '../../../utils/mocks';
-
 export const STYLE_CLASSES_FILE_URL = '/application/templates/classes.json';
 
 @Injectable()
@@ -16,7 +14,7 @@ export class JsonClassesService {
     getClasses(): Observable<string[]> {
         return this.#http.get<{ classes: string[] }>(STYLE_CLASSES_FILE_URL).pipe(
             map((res) => res.classes),
-            catchError(() => of(MOCK_STYLE_CLASSES_FILE.classes))
+            catchError(() => of([]))
         );
     }
 }
