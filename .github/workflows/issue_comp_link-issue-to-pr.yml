@@ -45,7 +45,7 @@ jobs:
         id: get_comments
         run: |
           comments=$(\
-            curl -L \                                                                                                                                                                                             ✔  23:30:37  
+            curl -L \ 
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
