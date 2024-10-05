@@ -15,7 +15,7 @@ on:
         required: true
 
 env:
-  GH_TOKEN: ${{ github.token }}
+  GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
 
 jobs:
   add-issue-to-pr:
@@ -45,7 +45,7 @@ jobs:
         id: get_comments
         run: |
           comments=$(\
-            curl -L \ 
+            curl -L \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
