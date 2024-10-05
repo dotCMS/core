@@ -48,7 +48,7 @@ jobs:
             gh api \ 
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
-              /repos/${{ github.repository }}/issues/${{ steps.extract_issue_number.outputs.issue_number }}/comments \
+              /repos/dotCMS/core/issues/${{ steps.extract_issue_number.outputs.issue_number }}/comments \
           )
           
           echo "comments=$comments" >> "$GITHUB_OUTPUT"
