@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -79,22 +80,18 @@ public class ConfigurationResource implements Serializable {
 		this.helper = ConfigurationHelper.INSTANCE;
 	}
 
-	/**
-	 * Retrieve the keys from dotcms Configuration (allowed on WHITE_LIST and are not restricted by the BLACK_LIST)
-	 * @param request
-	 * @param response
-	 * @param keysQuery
-	 * @return
-	 * @throws IOException
-	 */
 	@Path("/config")
 	@GET
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response getConfigVariables(@Context final HttpServletRequest request,
-											 @Context final HttpServletResponse response,
-											 @QueryParam("keys") final String keysQuery)
+			@Context final HttpServletResponse response,
+			@QueryParam("keys") final String keysQuery,
+			@QueryParam("contains") final String contains,
+			@QueryParam("caseSensitive") @DefaultValue("false") final boolean caseSensitive,
+			@QueryParam("startsWith") final String startsWith,
+			@QueryParam("endsWith") final String endsWith)
 			throws IOException {
 
 		new WebResource.InitBuilder(request, response)
@@ -103,16 +100,51 @@ public class ConfigurationResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init();
 
-		final String [] keys = StringUtils.splitByCommas(keysQuery);
-		final Map<String,Object> resultMap = new LinkedHashMap<>();
-		if (null != keys) {
+		final Map<String, Object> resultMap = new LinkedHashMap<>();
 
+		if (keysQuery != null && !keysQuery.isEmpty()) {
+			// Old behavior when keys parameter is provided
+			final String[] keys = StringUtils.splitByCommas(keysQuery);
 			for (final String key : keys) {
-
-				final String keyWithoutPrefix = this.removePrefix (key);
+				final String keyWithoutPrefix = this.removePrefix(key);
 				if (this.WHITE_LIST.contains(keyWithoutPrefix) && !this.isOnBlackList(keyWithoutPrefix)) {
-
 					resultMap.put(keyWithoutPrefix, recoveryFromConfig(key));
+				}
+			}
+		} else {
+			// New filtering behavior
+
+
+			Iterator<String> keys = Config.getKeys();
+
+			while (keys.hasNext()) {
+				String key = keys.next();
+				String compareKey = key;
+
+				if (!caseSensitive) {
+					compareKey = compareKey.toLowerCase();
+					compareKey = compareKey.replace('_', '.');
+				}
+
+				boolean matches = true;
+
+				if (contains != null) {
+					String filter = caseSensitive ? contains : contains.toLowerCase();
+					matches = compareKey.contains(filter);
+				}
+
+				if (startsWith != null) {
+					String start = caseSensitive ? startsWith : startsWith.toLowerCase();
+					matches &= compareKey.startsWith(start);
+				}
+
+				if (endsWith != null) {
+					String end = caseSensitive ? endsWith : endsWith.toLowerCase();
+					matches &= compareKey.endsWith(end);
+				}
+
+				if (matches && !isOnBlackList(key)) {
+					resultMap.put(key, Config.getStringProperty(key, ""));
 				}
 			}
 		}
