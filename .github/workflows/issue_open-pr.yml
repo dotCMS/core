@@ -10,3 +10,4 @@ jobs:
     uses: ./.github/workflows/issue_comp-link-issue-to-pr.yml
     with:
       pr_branch: ${{ github.head_ref }}
+      pr_url: ${{ github.event.pull_request.html_url }}
