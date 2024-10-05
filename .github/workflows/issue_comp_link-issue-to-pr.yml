@@ -74,6 +74,15 @@ jobs:
             fi
           done
           
+          
+          
+          
+          
+          
+          
+          
+          
+          
           echo "pr_list=$pr_list" >> "$GITHUB_OUTPUT"
           echo "existing_comment_id=$existing_comment_id" >> "$GITHUB_OUTPUT"
 
