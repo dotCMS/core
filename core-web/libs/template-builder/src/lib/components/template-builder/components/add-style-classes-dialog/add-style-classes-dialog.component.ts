@@ -52,12 +52,6 @@ export class AddStyleClassesDialogComponent implements OnInit {
      */
     $selectedClasses = signal<string[]>([]);
     /**
-     * Query to filter the classes
-     *
-     * @memberof AddStyleClassesDialogComponent
-     */
-    $query = signal<string | null>(null);
-    /**
      * Check if the JSON file has classes
      *
      * @memberof AddStyleClassesDialogComponent
