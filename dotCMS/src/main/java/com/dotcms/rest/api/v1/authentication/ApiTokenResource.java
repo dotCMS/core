@@ -103,7 +103,6 @@ public class ApiTokenResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
     @Operation(operationId = "getApiTokensByUserId",
             summary = "Retrieves API tokens based on a user ID",
             description = "Accepts a user identifier and returns a list of API tokens associated with that user.\n\n" +
@@ -169,7 +168,7 @@ public class ApiTokenResource implements Serializable {
             @QueryParam("showRevoked") @Parameter(
                     description = "Determines whether revoked tokens are shown. Defaults to `false` if omitted.",
                     schema = @Schema(type = "boolean")
-            )final boolean showRevoked) {
+            ) final boolean showRevoked) {
 
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, "users");
@@ -183,7 +182,6 @@ public class ApiTokenResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
     @Operation(operationId = "putRevokeTokenById",
             summary = "Revokes an API token",
             description = "Revokes a token by its identifier.\n\n Returned entity contains the " +
@@ -270,7 +268,6 @@ public class ApiTokenResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "deleteApiTokenById",
             summary = "Deletes an API token",
             description = "Deletes an API token by identifier. May be performed on either active, expired, or revoked.\n\n" +
@@ -361,7 +358,6 @@ public class ApiTokenResource implements Serializable {
      * @return Response
      */
     @POST
-    //@Path("/") testing before full deletion
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
@@ -703,7 +699,6 @@ public class ApiTokenResource implements Serializable {
     @Path("/{tokenId}/jwt")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(operationId = "getGetJwtFromApiToken",
             summary = "Generates a new JWT for an existing token",
@@ -742,7 +737,7 @@ public class ApiTokenResource implements Serializable {
                     required = true,
                     description = "Identifier of API token to receive a new JWT.",
                     schema = @Schema(type = "string")
-            )final String tokenId) {
+            ) final String tokenId) {
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, "users");
         final User user = initDataObject.getUser();
@@ -770,7 +765,6 @@ public class ApiTokenResource implements Serializable {
     @Path("/users/{userId}/revoke")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Hidden // This one doesn't seem to work; on 200 response, no token is revoked.
     @Operation(operationId = "putRevokeUserToken",
@@ -830,7 +824,6 @@ public class ApiTokenResource implements Serializable {
     @Path("/users/revoke")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Hidden // This one doesn't seem to work; revokes no tokens for any user.
     @Operation(operationId = "putRevokeAllUsersTokens",
