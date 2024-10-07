@@ -13,7 +13,7 @@ export class JsonClassesService {
 
     getClasses(): Observable<string[]> {
         return this.#http.get<{ classes: string[] }>(STYLE_CLASSES_FILE_URL).pipe(
-            map((res) => res.classes),
+            map((res) => res?.classes || []),
             catchError(() => of([]))
         );
     }
