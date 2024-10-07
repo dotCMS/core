@@ -17,7 +17,6 @@ import { DotMessagePipe, DotSelectItemDirective } from '@dotcms/ui';
 
 import { JsonClassesService } from './services/json-classes.service';
 
-
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
     standalone: true,
@@ -46,7 +45,7 @@ export class AddStyleClassesDialogComponent implements OnInit {
      * @memberof AddStyleClassesDialogComponent
      */
     readonly #dialogRef = inject(DynamicDialogRef);
-    readonly #dynamicDialogConfig = inject(DynamicDialogConfig<{selectedClasses: string[]}>);
+    readonly #dynamicDialogConfig = inject(DynamicDialogConfig<{ selectedClasses: string[] }>);
     /**
      * Selected classes to be added
      * @memberof AddStyleClassesDialogComponent
@@ -74,8 +73,6 @@ export class AddStyleClassesDialogComponent implements OnInit {
     $filteredSuggestions = signal<string[]>(this.$classes());
 
     $hasClasses = computed(() => this.$classes().length > 0);
-
-
 
     /**
      * Set the selected classes
