@@ -5,11 +5,10 @@
 <button
     *ngIf="currentField?.id; else learnMore"
     (click)="action.emit($event)"
+    [label]="'contenttypes.field.properties.wysiwyg.info.button' | dm"
     class="p-button-outlined p-button-sm"
     pButton
-    data-testId="button">
-    {{ 'contenttypes.field.properties.wysiwyg.info.button' | dm }}
-</button>
+    data-testId="button"></button>
 
 <ng-template #learnMore>
     <a
