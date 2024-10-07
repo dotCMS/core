@@ -199,5 +199,4 @@ describe('AddStyleClassesDialogComponent', () => {
             expect(list.textContent).toContain('no suggestions setup suggestions');
         });
     });
-
 });
