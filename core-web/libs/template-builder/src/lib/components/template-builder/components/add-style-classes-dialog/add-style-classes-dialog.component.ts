@@ -91,6 +91,10 @@ export class AddStyleClassesDialogComponent implements OnInit {
      * @memberof AddStyleClassesDialogComponent
      */
     filterClasses({ query }: AutoCompleteCompleteEvent): void {
+        /*
+            https://github.com/primefaces/primeng/blob/master/src/app/components/autocomplete/autocomplete.ts#L541
+            Sadly we need to pass suggestions all the time, even if they are empty because on the set is where the primeng remove the loading icon
+        */
         const classes = this.$classes();
         const filteredClasses = query ? classes.filter((item) => item.includes(query)) : classes;
         this.$filteredSuggestions.set([...filteredClasses]);
