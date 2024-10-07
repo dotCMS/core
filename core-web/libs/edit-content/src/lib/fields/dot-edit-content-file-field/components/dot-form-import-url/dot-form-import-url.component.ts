@@ -2,12 +2,14 @@ import { ChangeDetectionStrategy, Component, effect, inject, OnInit } from '@ang
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { DynamicDialogRef, DialogService } from 'primeng/dynamicdialog';
+import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotMessagePipe, DotFieldValidationMessageComponent } from '@dotcms/ui';
 
 import { FormImportUrlStore } from './store/form-import-url.store';
+
+import { INPUT_TYPE } from '../../../dot-edit-content-text-field/utils';
 
 @Component({
     selector: 'dot-form-import-url',
@@ -28,8 +30,7 @@ export class DotFormImportUrlComponent implements OnInit {
     readonly store = inject(FormImportUrlStore);
     readonly #formBuilder = inject(FormBuilder);
     readonly #dialogRef = inject(DynamicDialogRef);
-    readonly #dialogService = inject(DialogService);
-    readonly #instance = this.#dialogService.getInstance(this.#dialogRef);
+    readonly #dialogConfig = inject(DynamicDialogConfig<{ inputType: INPUT_TYPE }>);
 
     readonly form = this.#formBuilder.group({
         url: ['', [Validators.required, Validators.pattern(/^(ftp|http|https):\/\/[^ "]+$/)]]
@@ -62,7 +63,7 @@ export class DotFormImportUrlComponent implements OnInit {
      * If the input type is 'Binary', the upload type is set to 'temp', otherwise it's set to 'dotasset'.
      */
     ngOnInit(): void {
-        const uploadType = this.#instance?.data?.inputType === 'Binary' ? 'temp' : 'dotasset';
+        const uploadType = this.#dialogConfig?.data?.inputType === 'Binary' ? 'temp' : 'dotasset';
         this.store.setUploadType(uploadType);
     }
 

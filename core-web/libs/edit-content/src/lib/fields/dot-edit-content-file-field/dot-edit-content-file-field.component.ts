@@ -204,6 +204,17 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
         this.store.setUIMessage(uiMessage);
     }
 
+    /**
+     * Shows the import from URL dialog.
+     *
+     * Opens the dialog with the `DotFormImportUrlComponent` component
+     * and passes the field type as data to the component.
+     *
+     * When the dialog is closed, gets the uploaded file from the component
+     * and sets it as the preview file in the store.
+     *
+     * @return {void}
+     */
     showImportUrlDialog() {
         const header = this.#dotMessageService.get('dot.file.field.dialog.import.from.url.header');
 
@@ -227,6 +238,13 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
         });
     }
 
+    /**
+     * Cleanup method.
+     *
+     * Closes the dialog if it is still open when the component is destroyed.
+     *
+     * @return {void}
+     */
     ngOnDestroy() {
         if (this.#dialogRef) {
             this.#dialogRef.close();
