@@ -195,8 +195,15 @@ runs:
         echo "::endgroup::"
       shell: bash               
 
+    - name: 'Build SDK packages'
+      working-directory: ${{ github.workspace }}/core-web/
+      run: |
+        SDK_PROJECTS=npx nx show projects | grep '^sdk' | tr '\n' ',' | sed 's/,$/\n/'
+        npx nx run-many --target=build --projects=${SDK_PROJECTS} --configuration=production --skip-nx-cache
+      shell: bash
+
     - name: 'Publishing sdk into NPM registry'
-      working-directory: ${{ github.workspace }}/core-web/libs/sdk/
+      working-directory: ${{ github.workspace }}/core-web/dist/libs/sdk/
       env:
         NEXT_VERSION: ${{ steps.next_version.outputs.next_version }}
         NPM_AUTH_TOKEN: ${{ inputs.npm-token }}
@@ -213,11 +220,11 @@ runs:
           cd ..
         done
         echo "::endgroup::"
-      shell: bash      
-      
+      shell: bash
+
     - name: 'Set output'
       id: deployment_status
-      if: success()      
+      if: success()
       run: |
         echo "published=true" >> $GITHUB_OUTPUT
-      shell: bash      
+      shell: bash    
