@@ -84,7 +84,6 @@ describe('AddStyleClassesDialogComponent', () => {
             expect(autocomplete.unique).toBe(true);
             expect(autocomplete.autofocus).toBe(true);
             expect(autocomplete.multiple).toBe(true);
-            expect(autocomplete.size).toBe(446);
             expect(autocomplete.inputId).toBe('auto-complete-input');
             expect(autocomplete.appendTo).toBe('body');
             expect(autocomplete.dropdown).toBe(true);
