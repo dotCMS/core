@@ -1,38 +1,35 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
 
 import { JsonClassesService, STYLE_CLASSES_FILE_URL } from './json-classes.service';
 
+import { MOCK_STYLE_CLASSES_FILE } from '../../../utils/mocks';
+
 describe('JsonClassesService', () => {
-    let injector: TestBed;
-    let service: JsonClassesService;
-    let httpMock: HttpTestingController;
+  let spectator: SpectatorHttp<JsonClassesService>;
+  const createHttp = createHttpFactory(JsonClassesService);
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [JsonClassesService]
-        });
+  beforeEach(() => spectator = createHttp());
 
-        injector = getTestBed();
-        service = injector.inject(JsonClassesService);
-        httpMock = injector.inject(HttpTestingController);
-    });
+  it('should be requested to the expected URL', () => {
+    spectator.service.getClasses().subscribe();
+    spectator.expectOne(STYLE_CLASSES_FILE_URL, HttpMethod.GET);
+  });
 
-    afterEach(() => {
-        httpMock.verify();
-    });
+  it('should return all classes', () => {
+    spectator.service.getClasses().subscribe();
 
-    it('should return an Observable with classes', () => {
-        const expectedClasses = { classes: ['class1', 'class2', 'class3'] };
-        // httpClientSpy.get.and.returnValue(of(expectedClasses));
+    const req = spectator.expectOne(STYLE_CLASSES_FILE_URL, HttpMethod.GET);
+    expect(req.request.body).toEqual(MOCK_STYLE_CLASSES_FILE.classes);
 
-        service.getClasses().subscribe((classes) => {
-            expect(classes).toEqual(expectedClasses);
-        });
+    req.flush(MOCK_STYLE_CLASSES_FILE);
+  });
 
-        const req = httpMock.expectOne(STYLE_CLASSES_FILE_URL);
-        expect(req.request.method).toBe('GET');
-        req.flush(expectedClasses);
-    });
+  it('should return an empty array with a error', () => {
+    spectator.service.getClasses().subscribe();
+
+    const req = spectator.expectOne(STYLE_CLASSES_FILE_URL, HttpMethod.GET);
+    expect(req.request.body).toEqual([]);
+
+    req.flush('', { status: 404 });
+  });
 });
