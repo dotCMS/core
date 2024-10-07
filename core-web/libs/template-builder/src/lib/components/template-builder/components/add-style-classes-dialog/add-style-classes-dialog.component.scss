@@ -10,7 +10,7 @@
     justify-content: flex-end;
 }
 
-:host ::ng-deep p-autoComplete {
+:host ::ng-deep p-autocomplete {
     margin-bottom: $spacing-3;
     display: block;
     .p-autocomplete-dropdown.p-element.p-button {
