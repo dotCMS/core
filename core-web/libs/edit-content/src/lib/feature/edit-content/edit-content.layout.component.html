@@ -1,33 +1,33 @@
-@let formData = $store.formData();
-@let contentType = $store.contentType();
-@let variable = contentType.variable;
-@let contentlet = $store.contentlet();
-@let actionsByContentTypeOrContent = $store.actions();
-@let showSidebar = $store.showSidebar();
-@let isLoading = $store.isLoading();
-
-@if ($store.isEnabledNewContentEditor()) {
-    <p-messages
-        class="edit-content-layout__topBar"
-        styleClass="p-message-border-y"
-        severity="success"
-        data-testId="topBar">
-        <ng-template pTemplate>
-            <i class="pi pi-info-circle"></i>
-            <div>
-                <span [innerHTML]="('edit.content.layout.beta.message' | dm) + ' '"></span>
-                <a
-                    [routerLink]="'/content-types-angular/edit/' + variable"
-                    data-testId="content-type">
-                    {{ 'edit.content.layout.beta.message.switch' | dm }}
-                </a>
-                <span>{{ ' ' }}{{ 'edit.content.layout.beta.message.needed' | dm }}</span>
-            </div>
-        </ng-template>
-    </p-messages>
-}
 <!--Todo: handle Loading and Saving state-->
 @if ($store.isLoaded()) {
+    @let formData = $store.formData();
+    @let contentType = $store.contentType();
+    @let variable = contentType.variable;
+    @let contentlet = $store.contentlet();
+    @let actionsByContentTypeOrContent = $store.actions();
+    @let showSidebar = $store.showSidebar();
+    @let isLoading = $store.isLoading();
+
+    @if ($store.isEnabledNewContentEditor()) {
+        <p-messages
+            class="edit-content-layout__topBar"
+            styleClass="p-message-border-y"
+            severity="success"
+            data-testId="edit-content-layout__topBar">
+            <ng-template pTemplate>
+                <i class="pi pi-info-circle"></i>
+                <div>
+                    <span [innerHTML]="('edit.content.layout.beta.message' | dm) + ' '"></span>
+                    <a
+                        [routerLink]="'/content-types-angular/edit/' + variable"
+                        data-testId="content-type">
+                        {{ 'edit.content.layout.beta.message.switch' | dm }}
+                    </a>
+                    <span>{{ ' ' }}{{ 'edit.content.layout.beta.message.needed' | dm }}</span>
+                </div>
+            </ng-template>
+        </p-messages>
+    }
     <dot-edit-content-toolbar
         (actionFired)="
             fireWorkflowAction({
@@ -37,6 +37,7 @@
             })
         "
         [actions]="actionsByContentTypeOrContent"
+        data-testId="edit-content-layout__header"
         class="edit-content-layout__header">
         <button
             [class.hide]="showSidebar"
@@ -77,19 +78,25 @@
     <dot-edit-content-form
         (changeValue)="setFormValue($event)"
         [formData]="formData"
+        data-testId="edit-content-layout__body"
         class="edit-content-layout__body" />
 
-    <dot-edit-content-aside
-        [loading]="isLoading"
-        [contentlet]="contentlet"
-        [contentType]="contentType"
-        (toggle)="$store.toggleSidebar()"
-        class="edit-content-layout__sidebar" />
+    @if (showSidebar) {
+        @defer (when showSidebar) {
+            <dot-edit-content-aside
+                [loading]="isLoading"
+                [contentlet]="contentlet"
+                [contentType]="contentType"
+                (toggle)="$store.toggleSidebar()"
+                data-testId="edit-content-layout__sidebar"
+                class="edit-content-layout__sidebar" />
+        }
+    }
 }
 
 @if ($store.hasError()) {
     {{ 'edit.content.layout.no.content.to.show ' | dm }}
 }
 
-<p-toast></p-toast>
+<p-toast />
 <p-confirmDialog />

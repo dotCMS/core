@@ -37,20 +37,20 @@ import { getPersistSidebarState, setPersistSidebarState } from '../../../utils/f
 
 interface EditContentState {
     actions: DotCMSWorkflowAction[];
-    contentType: DotCMSContentType;
-    contentlet: DotCMSContentlet;
+    contentType: DotCMSContentType | null;
+    contentlet: DotCMSContentlet | null;
     status: ComponentStatus;
     showSidebar: boolean;
-    error?: string;
+    error: string | null;
 }
 
 const initialState: EditContentState = {
-    contentType: {} as DotCMSContentType,
-    contentlet: {} as DotCMSContentlet,
+    contentType: null,
+    contentlet: null,
     actions: [],
     status: ComponentStatus.INIT,
     showSidebar: false,
-    error: ''
+    error: null
 };
 
 /**
@@ -271,8 +271,9 @@ export const DotEditContentStore = signalStore(
              * and persists the sidebar's state to ensure consistency across sessions.
              */
             toggleSidebar: () => {
-                patchState(store, { showSidebar: !store.showSidebar() });
-                setPersistSidebarState(store.showSidebar() as unknown as string);
+                const newSidebarState = !store.showSidebar();
+                patchState(store, { showSidebar: newSidebarState });
+                setPersistSidebarState(newSidebarState.toString());
             },
 
             /**

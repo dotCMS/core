@@ -161,7 +161,7 @@ describe('DotEditContentStore', () => {
             expect(store.contentType()).toEqual(mockContentType);
             expect(store.actions()).toEqual(mockActions);
             expect(store.status()).toBe(ComponentStatus.LOADED);
-            expect(store.error()).toBe('');
+            expect(store.error()).toBe(null);
         });
 
         it('should handle error when initializing existing content', fakeAsync(() => {

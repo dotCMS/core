@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
@@ -16,6 +16,7 @@ import { DotEditContentStore } from './store/edit-content.store';
 import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
 import { DotEditContentToolbarComponent } from '../../components/dot-edit-content-toolbar/dot-edit-content-toolbar.component';
+import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 
 @Component({
@@ -33,9 +34,6 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         DotEditContentToolbarComponent,
         ConfirmDialogModule
     ],
-    templateUrl: './edit-content.layout.component.html',
-    styleUrls: ['./edit-content.layout.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         DotWorkflowsActionsService,
         DotWorkflowActionsFireService,
@@ -46,12 +44,15 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 
     host: {
         '[class.edit-content--with-sidebar]': '$store.showSidebar()'
-    }
+    },
+    templateUrl: './edit-content.layout.component.html',
+    styleUrls: ['./edit-content.layout.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditContentLayoutComponent {
-    $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+    readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
 
-    #formValue: Record<string, string>;
+    formValue = signal<Record<string, string>>({});
 
     /**
      * Set the form value to be saved.
@@ -60,7 +61,7 @@ export class EditContentLayoutComponent {
      * @memberof EditContentLayoutComponent
      */
     setFormValue(formValue: Record<string, string>) {
-        this.#formValue = formValue;
+        this.formValue.set(formValue);
     }
 
     /**
@@ -69,13 +70,13 @@ export class EditContentLayoutComponent {
      * @param {DotCMSWorkflowAction} action
      * @memberof EditContentLayoutComponent
      */
-    fireWorkflowAction({ actionId, inode, contentType }): void {
+    fireWorkflowAction({ actionId, inode, contentType }: DotWorkflowActionParams): void {
         this.$store.fireWorkflowAction({
             actionId,
             inode,
             data: {
                 contentlet: {
-                    ...this.#formValue,
+                    ...this.formValue(),
                     contentType
                 }
             }
