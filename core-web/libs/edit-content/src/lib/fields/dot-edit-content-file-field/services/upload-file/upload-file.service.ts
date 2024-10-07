@@ -19,6 +19,18 @@ export class DotFileFieldUploadService {
     readonly #contentService = inject(DotEditContentService);
     readonly #httpClient = inject(HttpClient);
 
+    /**
+     * Uploads a file or a string as a dotAsset contentlet.
+     *
+     * If a File is passed, it will be uploaded and the asset will be created
+     * with the file name as the contentlet name.
+     *
+     * If a string is passed, it will be used as the asset id.
+     *
+     * @param file The file to be uploaded or the asset id.
+     * @param uploadType The type of upload, can be 'temp' or 'contentlet'.
+     * @returns An observable that resolves to the created contentlet.
+     */
     uploadFile({
         file,
         uploadType

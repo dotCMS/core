@@ -25,8 +25,8 @@ import { FormImportUrlStore } from './store/form-import-url.store';
     providers: [FormImportUrlStore]
 })
 export class DotFormImportUrlComponent implements OnInit {
-    readonly #formBuilder = inject(FormBuilder);
     readonly store = inject(FormImportUrlStore);
+    readonly #formBuilder = inject(FormBuilder);
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #dialogService = inject(DialogService);
     readonly #instance = this.#dialogService.getInstance(this.#dialogRef);
@@ -35,6 +35,10 @@ export class DotFormImportUrlComponent implements OnInit {
         url: ['', [Validators.required, Validators.pattern(/^(ftp|http|https):\/\/[^ "]+$/)]]
     });
 
+    /**
+     * Listens to the `file` and `isDone` signals and closes the dialog once both are truthy.
+     * The `file` value is passed as the dialog result.
+     */
     constructor() {
         effect(
             () => {
@@ -51,11 +55,22 @@ export class DotFormImportUrlComponent implements OnInit {
         );
     }
 
+    /**
+     * Initializes the component by setting the upload type based on the input type
+     * of the parent dialog.
+     *
+     * If the input type is 'Binary', the upload type is set to 'temp', otherwise it's set to 'dotasset'.
+     */
     ngOnInit(): void {
         const uploadType = this.#instance?.data?.inputType === 'Binary' ? 'temp' : 'dotasset';
         this.store.setUploadType(uploadType);
     }
 
+    /**
+     * Submits the form, if it's valid, by calling the `uploadFileByUrl` method of the store.
+     *
+     * @return {void}
+     */
     onSubmit(): void {
         if (this.form.invalid) {
             return;
@@ -65,6 +80,11 @@ export class DotFormImportUrlComponent implements OnInit {
         this.store.uploadFileByUrl(url);
     }
 
+    /**
+     * Cancels the upload and closes the dialog.
+     *
+     * @return {void}
+     */
     cancelUpload(): void {
         this.#dialogRef.close();
     }
