@@ -43,6 +43,9 @@ public class JobParams {
 
     public Map getParams() throws JsonProcessingException {
         if (null == params) {
+            if (null == jsonParams){
+                throw new IllegalArgumentException("Job Params must be passed in json format.");
+            }
             params = new ObjectMapper().readValue(jsonParams, Map.class);
         }
         return params;
