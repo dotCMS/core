@@ -1,0 +1,12 @@
+name: PR opened
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  add-issue-to-pr:
+    name: Add Issue to PR
+    uses: ./.github/workflows/issue_comp-link-issue-to-pr.yml
+    with:
+      pr_branch: ${{ github.head_ref }}
