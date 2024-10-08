@@ -9,9 +9,8 @@ import { DotUploadFileService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
-import { checkMimeType } from '../../../dot-edit-content-host-folder-field/utils';
 import { UploadedFile, UPLOAD_TYPE } from '../../models';
-import { getFileMetadata, getFileVersion } from '../../utils';
+import { getFileMetadata, getFileVersion, checkMimeType } from '../../utils';
 
 @Injectable()
 export class DotFileFieldUploadService {
