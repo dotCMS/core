@@ -229,7 +229,8 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             resizable: false,
             position: 'center',
             data: {
-                inputType: this.$field().fieldType
+                inputType: this.$field().fieldType,
+                acceptedFiles: this.store.acceptedFiles(),
             }
         });
 

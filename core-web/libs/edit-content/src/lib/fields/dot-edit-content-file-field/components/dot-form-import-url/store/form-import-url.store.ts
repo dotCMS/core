@@ -52,7 +52,10 @@ export const FormImportUrlStore = signalStore(
                                 next: (file) => {
                                     patchState(store, { file, status: 'done' });
                                 },
-                                error: console.error
+                                error: (error) => {
+                                    console.error(error);
+                                    patchState(store, { status: 'error' });
+                                }
                             })
                         );
                 })
@@ -62,8 +65,8 @@ export const FormImportUrlStore = signalStore(
          * Set the upload type (contentlet or temp) for the file.
          * @param uploadType the type of upload to perform
          */
-        setUploadType: (uploadType: FormImportUrlState['uploadType']) => {
-            patchState(store, { uploadType });
+        initSetup: (data: Partial<FormImportUrlState>) => {
+            patchState(store, data);
         }
     }))
 );

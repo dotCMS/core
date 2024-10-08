@@ -30,7 +30,7 @@ export class DotFormImportUrlComponent implements OnInit {
     readonly store = inject(FormImportUrlStore);
     readonly #formBuilder = inject(FormBuilder);
     readonly #dialogRef = inject(DynamicDialogRef);
-    readonly #dialogConfig = inject(DynamicDialogConfig<{ inputType: INPUT_TYPE }>);
+    readonly #dialogConfig = inject(DynamicDialogConfig<{ inputType: INPUT_TYPE, acceptedFiles: string[] }>);
 
     readonly form = this.#formBuilder.group({
         url: ['', [Validators.required, DotValidators.url]]
@@ -72,8 +72,13 @@ export class DotFormImportUrlComponent implements OnInit {
      * If the input type is 'Binary', the upload type is set to 'temp', otherwise it's set to 'dotasset'.
      */
     ngOnInit(): void {
-        const uploadType = this.#dialogConfig?.data?.inputType === 'Binary' ? 'temp' : 'dotasset';
-        this.store.setUploadType(uploadType);
+        const data = this.#dialogConfig?.data;
+
+        console.log(data);
+        this.store.initSetup({
+            uploadType: data?.inputType === 'Binary' ? 'temp' : 'dotasset',
+            acceptedFiles: data?.acceptedFiles ?? []
+        });
     }
 
     /**
