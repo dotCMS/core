@@ -24,13 +24,9 @@ inputs:
     description: 'Package tag'
     required: false
     default: 'alpha'
-  node-version:
-    description: 'Node.js version'
-    required: false
-    default: '18.20.3'
   github-token:
     description: 'GitHub Token'
-    required: true
+    required: true    
 outputs:
   npm-package-version:
     description: 'SDK libs - NPM package version'
@@ -47,10 +43,17 @@ runs:
         ref: ${{ inputs.ref }}
         token: ${{ inputs.github-token }}
 
-    - name: 'Set up Node.js'
-      uses: actions/setup-node@v4
+    - name: 'Run Maven Job'
+      uses: ./.github/actions/core-cicd/maven-job
       with:
-        node-version: ${{ inputs.node-version }}
+        stage-name: 'Build'
+        maven-args: 'clean install -pl :dotcms-core-web -DskipTests -Ddocker.skip=true'
+        requires-node: true
+        cleanup-runner: true
+        generate-docker: false
+        generate-artifacts: true
+        version: '1.0.0-SNAPSHOT'
+        github-token: ${{ secrets.GITHUB_TOKEN }}        
 
     - name: 'Get current version from NPM'
       id: current_version
@@ -62,7 +65,7 @@ runs:
        echo "::endgroup::"
       shell: bash
 
-    - name: Calculate next version
+    - name: 'Calculate next version'
       id: next_version
       env:
        CURRENT_VERSION: ${{ steps.current_version.outputs.current_version }}
@@ -193,16 +196,7 @@ runs:
         echo "Examples:"
         print_packages "$EXAMPLES_PATH"
         echo "::endgroup::"
-      shell: bash
-
-    - name: 'Cache NPM'
-      id: cache-npm
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.npm
-        key: npm-${{ hashFiles('core-web/package-lock.json') }}
-        restore-keys: npm-      
+      shell: bash   
 
     - name: 'Install project'
       working-directory: ${{ github.workspace }}/core-web/
