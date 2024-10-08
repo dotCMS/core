@@ -30,7 +30,9 @@ export class DotFormImportUrlComponent implements OnInit {
     readonly store = inject(FormImportUrlStore);
     readonly #formBuilder = inject(FormBuilder);
     readonly #dialogRef = inject(DynamicDialogRef);
-    readonly #dialogConfig = inject(DynamicDialogConfig<{ inputType: INPUT_TYPE, acceptedFiles: string[] }>);
+    readonly #dialogConfig = inject(
+        DynamicDialogConfig<{ inputType: INPUT_TYPE; acceptedFiles: string[] }>
+    );
 
     readonly form = this.#formBuilder.group({
         url: ['', [Validators.required, DotValidators.url]]

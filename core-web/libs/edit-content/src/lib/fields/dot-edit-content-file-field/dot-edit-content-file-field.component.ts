@@ -233,16 +233,18 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             position: 'center',
             data: {
                 inputType: this.$field().fieldType,
-                acceptedFiles: this.store.acceptedFiles(),
+                acceptedFiles: this.store.acceptedFiles()
             }
         });
 
-        this.#dialogRef.onClose.pipe(
-            takeUntilDestroyed(this.#destroyRef),
-            filter((file) => !!file)
-        ).subscribe((file) => {
-            this.store.setPreviewFile(file);
-        });
+        this.#dialogRef.onClose
+            .pipe(
+                takeUntilDestroyed(this.#destroyRef),
+                filter((file) => !!file)
+            )
+            .subscribe((file) => {
+                this.store.setPreviewFile(file);
+            });
     }
 
     /**
