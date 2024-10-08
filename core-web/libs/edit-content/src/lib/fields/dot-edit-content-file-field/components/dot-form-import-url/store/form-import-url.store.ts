@@ -15,13 +15,15 @@ export interface FormImportUrlState {
     status: 'init' | 'uploading' | 'done' | 'error';
     error: string | null;
     uploadType: UPLOAD_TYPE;
+    acceptedFiles: string[];
 }
 
 const initialState: FormImportUrlState = {
     file: null,
     status: 'init',
     error: null,
-    uploadType: 'temp'
+    uploadType: 'temp',
+    acceptedFiles: []
 };
 
 export const FormImportUrlStore = signalStore(
@@ -42,11 +44,14 @@ export const FormImportUrlStore = signalStore(
                     return uploadService
                         .uploadFile({
                             file: fileUrl,
-                            uploadType: store.uploadType()
+                            uploadType: store.uploadType(),
+                            acceptedFiles: store.acceptedFiles()
                         })
                         .pipe(
                             tapResponse({
-                                next: (file) => patchState(store, { file, status: 'done' }),
+                                next: (file) => {
+                                    patchState(store, { file, status: 'done' });
+                                },
                                 error: console.error
                             })
                         );

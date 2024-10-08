@@ -3,12 +3,13 @@ import { from, Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { map, switchMap } from 'rxjs/operators';
+import { map, switchMap, tap } from 'rxjs/operators';
 
 import { DotUploadFileService, DotUploadService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
+import { checkMimeType } from '../../../dot-edit-content-host-folder-field/utils';
 import { UploadedFile, UPLOAD_TYPE } from '../../models';
 import { getFileMetadata, getFileVersion } from '../../utils';
 
@@ -33,27 +34,55 @@ export class DotFileFieldUploadService {
      */
     uploadFile({
         file,
-        uploadType
+        uploadType,
+        acceptedFiles
     }: {
         file: File | string;
         uploadType: UPLOAD_TYPE;
+        acceptedFiles: string[];
     }): Observable<UploadedFile> {
-        if (uploadType === 'temp') {
-            return from(this.#tempFileService.uploadFile({ file })).pipe(
-                map((tempFile) => ({ source: 'temp', file: tempFile }))
-            );
-        } else {
-            if (file instanceof File) {
-                return this.uploadDotAsset(file).pipe(
-                    map((file) => ({ source: 'contentlet', file }))
-                );
-            }
+        console.log('uploadFile');
+        console.log('file', file);
+        console.log('uploadType', uploadType);
+        console.log('acceptedFiles', acceptedFiles);
 
-            return from(this.#tempFileService.uploadFile({ file })).pipe(
-                switchMap((tempFile) => this.uploadDotAsset(tempFile.id)),
-                map((file) => ({ source: 'contentlet', file }))
+        if (uploadType === 'temp') {
+            return this.uploadTempFile(file, acceptedFiles).pipe(
+                map((file) => ({ source: 'temp', file }))
             );
         }
+
+        const uploadProcess =
+            file instanceof File
+                ? this.uploadDotAssetByFile(file, acceptedFiles)
+                : this.uploadDotAssetByUrl(file, acceptedFiles);
+
+        return uploadProcess.pipe(map((file) => ({ source: 'contentlet', file })));
+    }
+    uploadTempFile(file: File | string, acceptedFiles: string[]): Observable<DotCMSTempFile> {
+        return from(this.#tempFileService.uploadFile({ file })).pipe(
+            tap((tempFile) => {
+                if (!checkMimeType(tempFile, acceptedFiles)) {
+                    throw new Error('Invalid file type');
+                }
+            })
+        );
+    }
+
+    uploadDotAssetByFile(file: File, acceptedFiles: string[]): Observable<DotCMSContentlet> {
+        return this.uploadDotAsset(file).pipe(
+            tap((file) => {
+                if (!checkMimeType(file, acceptedFiles)) {
+                    throw new Error('Invalid file type');
+                }
+            })
+        );
+    }
+
+    uploadDotAssetByUrl(file: string, acceptedFiles: string[]): Observable<DotCMSContentlet> {
+        return this.uploadTempFile(file, acceptedFiles).pipe(
+            switchMap((tempFile) => this.uploadDotAsset(tempFile.id))
+        );
     }
     /**
      * Uploads a file and returns a contentlet with the file metadata and id.
