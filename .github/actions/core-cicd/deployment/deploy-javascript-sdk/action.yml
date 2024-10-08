@@ -47,13 +47,21 @@ runs:
       uses: ./.github/actions/core-cicd/maven-job
       with:
         stage-name: 'Build'
-        maven-args: 'clean install -pl :dotcms-core-web -DskipTests -Ddocker.skip=true'
+        maven-args: 'process-resources -pl :dotcms-core-web -am'
         requires-node: true
         cleanup-runner: true
         generate-docker: false
         generate-artifacts: false
         version: '1.0.0-SNAPSHOT'
-        github-token: ${{ secrets.GITHUB_TOKEN }}        
+        github-token: ${{ inputs.github-token }}
+
+    - name: 'Adding node and yarn to the PATH env'
+      run: |
+        echo "::group::Adding node and yarn to the PATH env"
+        ls -R ${{ github.workspace }}/installs
+        echo "PATH=$PATH:${{ github.workspace }}/installs/node/:${{ github.workspace }}/installs/node/yarn/dist/bin" >> $GITHUB_ENV
+        echo "::endgroup::"
+      shell: bash               
 
     - name: 'Get current version from NPM'
       id: current_version
