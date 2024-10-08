@@ -34,12 +34,10 @@ export function checkMimeType(
     }
 
     const mimeTypes = cleanMimeTypes(acceptedFiles);
-    console.log('file', file);
-    console.log('acceptedFiles', acceptedFiles);
-    console.log('mimeTypes', mimeTypes);
+    const mimeType = file.mimeType;
 
-    if (file.mimeType) {
-        return mimeTypes.includes(file.mimeType);
+    if (mimeType) {
+        return mimeTypes.some((type) => mimeType.includes(type));
     }
 
     return false;

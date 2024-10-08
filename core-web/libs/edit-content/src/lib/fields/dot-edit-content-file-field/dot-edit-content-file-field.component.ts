@@ -6,8 +6,10 @@ import {
     inject,
     input,
     OnInit,
-    OnDestroy
+    OnDestroy,
+    DestroyRef
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -77,6 +79,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
 
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #destroyRef = inject(DestroyRef);
     #dialogRef: DynamicDialogRef | null = null;
 
     private onChange: (value: string) => void;
@@ -234,7 +237,10 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             }
         });
 
-        this.#dialogRef.onClose.pipe(filter((file) => !!file)).subscribe((file) => {
+        this.#dialogRef.onClose.pipe(
+            takeUntilDestroyed(this.#destroyRef),
+            filter((file) => !!file)
+        ).subscribe((file) => {
             this.store.setPreviewFile(file);
         });
     }

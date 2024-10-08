@@ -74,7 +74,6 @@ export class DotFormImportUrlComponent implements OnInit {
     ngOnInit(): void {
         const data = this.#dialogConfig?.data;
 
-        console.log(data);
         this.store.initSetup({
             uploadType: data?.inputType === 'Binary' ? 'temp' : 'dotasset',
             acceptedFiles: data?.acceptedFiles ?? []

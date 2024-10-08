@@ -14,7 +14,7 @@
             @let error = store.error();
             @if (error) {
                 <small class="p-invalid" data-testId="error-msg">
-                    {{ error | dm }}
+                    {{ error | dm: [store.allowFiles()] }}
                 </small>
             } @else {
                 <dot-field-validation-message

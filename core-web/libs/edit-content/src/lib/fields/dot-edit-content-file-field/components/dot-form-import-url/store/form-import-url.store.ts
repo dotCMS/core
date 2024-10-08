@@ -30,7 +30,8 @@ export const FormImportUrlStore = signalStore(
     withState(initialState),
     withComputed((state) => ({
         isLoading: computed(() => state.status() === 'uploading'),
-        isDone: computed(() => state.status() === 'done')
+        isDone: computed(() => state.status() === 'done'),
+        allowFiles: computed(() => state.acceptedFiles().join(', ')),
     })),
     withMethods((store, uploadService = inject(DotFileFieldUploadService)) => ({
         /**
@@ -53,8 +54,16 @@ export const FormImportUrlStore = signalStore(
                                     patchState(store, { file, status: 'done' });
                                 },
                                 error: (error) => {
-                                    console.error(error);
-                                    patchState(store, { status: 'error' });
+                                    let errorMessage = '';
+
+                                    if (error instanceof Error && error.message === 'Invalid file type') {
+                                        errorMessage = 'dot.file.field.import.from.url.error.file.not.supported.message';    
+                                    }
+
+                                    patchState(store, {
+                                        error: errorMessage,
+                                        status: 'error'
+                                    });
                                 }
                             })
                         );
