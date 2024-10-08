@@ -5,7 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotMessagePipe, DotFieldValidationMessageComponent } from '@dotcms/ui';
+import { DotMessagePipe, DotFieldValidationMessageComponent, DotValidators } from '@dotcms/ui';
 
 import { FormImportUrlStore } from './store/form-import-url.store';
 
@@ -33,7 +33,7 @@ export class DotFormImportUrlComponent implements OnInit {
     readonly #dialogConfig = inject(DynamicDialogConfig<{ inputType: INPUT_TYPE }>);
 
     readonly form = this.#formBuilder.group({
-        url: ['', [Validators.required, Validators.pattern(/^(ftp|http|https):\/\/[^ "]+$/)]]
+        url: ['', [Validators.required, DotValidators.url]]
     });
 
     /**
@@ -54,6 +54,15 @@ export class DotFormImportUrlComponent implements OnInit {
                 allowSignalWrites: true
             }
         );
+
+        effect(() => {
+           const isLoading = this.store.isLoading();
+            if (isLoading) {
+                this.form.disable();
+            } else {
+                this.form.enable();
+            }
+        });
     }
 
     /**

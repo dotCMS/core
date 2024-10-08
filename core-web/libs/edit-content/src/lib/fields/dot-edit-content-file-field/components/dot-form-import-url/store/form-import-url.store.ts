@@ -31,6 +31,10 @@ export const FormImportUrlStore = signalStore(
         isDone: computed(() => state.status() === 'done')
     })),
     withMethods((store, uploadService = inject(DotFileFieldUploadService)) => ({
+        /**
+         * uploadFileByUrl - Uploads a file using its URL.
+         * @param {string} fileUrl - The URL of the file to be uploaded.
+         */
         uploadFileByUrl: rxMethod<string>(
             pipe(
                 tap(() => patchState(store, { status: 'uploading' })),
@@ -49,6 +53,10 @@ export const FormImportUrlStore = signalStore(
                 })
             )
         ),
+        /**
+         * Set the upload type (contentlet or temp) for the file.
+         * @param uploadType the type of upload to perform
+         */
         setUploadType: (uploadType: FormImportUrlState['uploadType']) => {
             patchState(store, { uploadType });
         }

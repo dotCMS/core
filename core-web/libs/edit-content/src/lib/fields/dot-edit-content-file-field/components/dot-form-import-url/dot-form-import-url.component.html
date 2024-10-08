@@ -13,14 +13,14 @@
         <div class="error-messsage__container">
             @let error = store.error();
             @if (error) {
+                <small class="p-invalid" data-testId="error-msg">
+                    {{ error | dm }}
+                </small>
+            } @else {
                 <dot-field-validation-message
                     [message]="'dot.file.field.action.import.from.url.error.message' | dm"
                     [field]="form.get('url')"
                     data-testId="error-message" />
-            } @else {
-                <small class="p-invalid" data-testId="error-msg">
-                    {{ error | dm }}
-                </small>
             }
         </div>
     </div>
@@ -32,7 +32,7 @@
             type="button"
             aria-label="Cancel button"
             data-testId="cancel-button" />
-        <div [style]="{ width: '6.85rem' }">
+        <div>
             @if (store.isLoading()) {
                 <p-button
                     [icon]="'pi pi-spin pi-spinner'"
