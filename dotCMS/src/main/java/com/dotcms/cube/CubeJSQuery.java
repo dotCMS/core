@@ -133,7 +133,7 @@ public class CubeJSQuery {
         if (timeDimensions.length > 0) {
             final Set<Map<String, Object>> correctedTimeDimensions = Arrays.stream(this.timeDimensions)
                     .map(timeDimension -> {
-                        final Map<String, Object> dataMap = new HashMap<>();
+                        final Map<String, Object> dataMap = new LinkedHashMap<>();
                         dataMap.put("dimension", timeDimension.getDimension());
                         dataMap.put("granularity", timeDimension.getGranularity());
                         if (UtilMethods.isSet(timeDimension.getDateRange())) {
