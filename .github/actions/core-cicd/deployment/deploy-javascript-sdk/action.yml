@@ -219,9 +219,7 @@ runs:
     - name: 'Build SDK packages'
       working-directory: ${{ github.workspace }}/core-web/
       run: |
-        SDK_PROJECTS=$(npx nx show projects | grep '^sdk' | tr '\n' ',' | sed 's/,$/\n/')
-        echo "SDK_PROJECTS: ${SDK_PROJECTS}"
-        npx nx run-many --target=build --projects=${SDK_PROJECTS} --configuration=production --skip-nx-cache
+        npx nx run-many --target=build --projects='sdk-*' --configuration=production --skip-nx-cache
       shell: bash
 
     - name: 'Publishing sdk into NPM registry'
