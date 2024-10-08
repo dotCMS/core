@@ -235,6 +235,8 @@ public class JobQueueHelper {
                 } catch (Exception e) {
                     Logger.error(this.getClass(), "Error saving temp file", e);
                 }
+        } else {
+            Logger.info(this.getClass(), "No file was uploaded.");
         }
     }
 

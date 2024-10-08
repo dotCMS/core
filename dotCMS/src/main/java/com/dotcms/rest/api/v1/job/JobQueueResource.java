@@ -197,6 +197,7 @@ public class JobQueueResource {
                         .data(String.class, "404")
                         .build();
                 eventOutput.write(event);
+                eventOutput.close();
             } catch (IOException e) {
                 Logger.error(this, "Error closing SSE connection", e);
             }

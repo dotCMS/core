@@ -85,7 +85,7 @@ public class LargeFileReader implements JobProcessor, Cancellable {
                         Logger.info(this.getClass(), line);
                         delay();
                     }
-                    final float progressPercentage = ((float) readCount / totalCount) * 100;
+                    final float progressPercentage = ((float) readCount / totalCount);
                     progressTracker.ifPresent(tracker -> tracker.updateProgress(progressPercentage));
                 }
 
