@@ -31,7 +31,7 @@ import {
 } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { FILTERED_TYPES } from '../../models/dot-edit-content-form.enum';
-import { EditContentPayload } from '../../models/dot-edit-content-form.interface';
+import { EditContentForm } from '../../models/dot-edit-content-form.interface';
 import { getFinalCastedValue, transformLayoutToTabs } from '../../utils/functions.util';
 import { DotEditContentAsideComponent } from '../dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
@@ -54,8 +54,10 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
 })
 export class DotEditContentFormComponent implements OnInit {
     @Input()
-    formData!: EditContentPayload;
+    formData!: EditContentForm;
+
     @Output() changeValue = new EventEmitter();
+
     form!: FormGroup;
     readonly fieldTypes = FIELD_TYPES;
     readonly filteredTypes = FILTERED_TYPES;
