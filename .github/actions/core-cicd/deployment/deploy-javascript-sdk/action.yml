@@ -51,7 +51,7 @@ runs:
         requires-node: true
         cleanup-runner: true
         generate-docker: false
-        generate-artifacts: true
+        generate-artifacts: false
         version: '1.0.0-SNAPSHOT'
         github-token: ${{ secrets.GITHUB_TOKEN }}        
 
