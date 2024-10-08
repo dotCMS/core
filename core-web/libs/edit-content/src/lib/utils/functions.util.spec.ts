@@ -3,11 +3,19 @@ import { describe, expect, it } from '@jest/globals';
 import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
 
 import * as functionsUtil from './functions.util';
-import { getFieldVariablesParsed, isValidJson, stringToJson, createPaths } from './functions.util';
+import {
+    getFieldVariablesParsed,
+    isValidJson,
+    stringToJson,
+    createPaths,
+    getPersistSidebarState,
+    setPersistSidebarState
+} from './functions.util';
 import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
 
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
+import { SIDEBAR_LOCAL_STORAGE_KEY } from '../models/dot-edit-content.constant';
 
 describe('Utils Functions', () => {
     const { castSingleSelectableValue, getSingleSelectableFieldOptions, getFinalCastedValue } =
@@ -540,7 +548,9 @@ describe('Utils Functions', () => {
 
         it('should return an empty object when the provided fieldVariables array is undefined', () => {
             const fieldVariables: DotCMSContentTypeFieldVariable[] | undefined = undefined;
-            const result = getFieldVariablesParsed(fieldVariables);
+            const result = getFieldVariablesParsed(
+                fieldVariables as unknown as DotCMSContentTypeFieldVariable[]
+            );
             expect(result).toEqual({});
         });
     });
@@ -589,6 +599,38 @@ describe('Utils Functions', () => {
             const path = '';
             const paths = createPaths(path);
             expect(paths).toStrictEqual([]);
+        });
+    });
+
+    describe('Sidebar State Persistence', () => {
+        beforeEach(() => {
+            localStorage.clear();
+        });
+
+        describe('getPersistSidebarState', () => {
+            it('should return true when localStorage is empty', () => {
+                expect(getPersistSidebarState()).toBe(true);
+            });
+
+            it('should return true when localStorage value is "true"', () => {
+                localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, 'true');
+                expect(getPersistSidebarState()).toBe(true);
+            });
+
+            it('should return false when localStorage value is "false"', () => {
+                localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, 'false');
+                expect(getPersistSidebarState()).toBe(false);
+            });
+        });
+
+        describe('setPersistSidebarState', () => {
+            it('should set the value in localStorage', () => {
+                setPersistSidebarState('true');
+                expect(localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY)).toBe('true');
+
+                setPersistSidebarState('false');
+                expect(localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY)).toBe('false');
+            });
         });
     });
 });

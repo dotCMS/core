@@ -325,7 +325,8 @@ import org.junit.runners.Suite.SuiteClasses;
         JobQueueManagerAPITest.class,
         ConfigUtilsTest.class,
         SimpleInjectionIT.class,
-        LegacyJSONObjectRenderTest.class
+        LegacyJSONObjectRenderTest.class,
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class
 })
 
 public class MainSuite2b {
