@@ -5,6 +5,7 @@ import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
+import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.Queue;
 import com.dotcms.jobs.business.queue.error.JobQueueDataException;
@@ -17,6 +18,7 @@ import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -154,9 +156,7 @@ public class JobQueueHelper {
      * @param jobId The ID of the job
      * @param watcher The watcher
      */
-    void watchJob(String jobId, Consumer<Job> watcher) throws DotDataException {
-        //Validate the job exists
-        jobQueueManagerAPI.getJob(jobId);
+    void watchJob(String jobId, Consumer<Job> watcher) {
         // if it does then watch it
         jobQueueManagerAPI.watchJob(jobId, watcher);
     }
@@ -237,4 +237,30 @@ public class JobQueueHelper {
                 }
         }
     }
+
+    /**
+     * Check if a job is NOT watchable
+     * @param job The job
+     * @return true if the job is watchable, false otherwise
+     */
+    public boolean isNotWatchable(Job job){
+        return JobState.PENDING != job.state() && JobState.RUNNING != job.state()
+                && JobState.CANCELLING != job.state();
+    }
+
+    /**
+     * Get the status info for a job
+     * @param job The job
+     * @return The status info
+     */
+    public Map<String, Object> getJobStatusInfo(Job job) {
+        final DateTimeFormatter isoFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+        return Map.of(
+                "startedAt", job.startedAt().map(isoFormatter::format).orElse("N/A"),
+                "finishedAt", job.completedAt().map(isoFormatter::format).orElse("N/A"),
+                "state", job.state(),
+                "progress", job.progress()
+        );
+    }
+
 }

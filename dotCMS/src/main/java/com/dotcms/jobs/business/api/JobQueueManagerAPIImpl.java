@@ -14,7 +14,6 @@ import com.dotcms.jobs.business.api.events.JobStartedEvent;
 import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
-import com.dotcms.jobs.business.error.JobProcessorInstantiationException;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
@@ -399,7 +398,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      */
     @CloseDBIfOpened
     private void pollJobUpdates() {
-
         try {
             final var watchedJobIds = realTimeJobMonitor.getWatchedJobIds();
             if (watchedJobIds.isEmpty()) {
@@ -412,9 +410,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             );
             realTimeJobMonitor.updateWatchers(updatedJobs);
             lastPollJobUpdateTime = currentPollTime;
-        } catch (JobQueueDataException e) {
-            Logger.error(this, "Error polling job updates: " + e.getMessage(), e);
-            throw new DotRuntimeException("Error polling job updates", e);
+        } catch (Exception e) {
+            Logger.error(this, "Error polling job updates: " + e.getMessage(), e);//
         }
     }
 

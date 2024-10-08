@@ -13,10 +13,17 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexReader;
 
+/**
+ * Scans the classpath for classes that implement the JobProcessor interface.
+ * This class uses Jandex to scan the classpath for classes that implement the JobProcessor interface.
+ */
 @ApplicationScoped
 public class JobProcessorScanner {
 
-
+    /**
+     * Discovers all classes that implement the JobProcessor interface.
+     * @return A list of classes that implement the JobProcessor interface.
+     */
     public List<Class<? extends JobProcessor>> discoverJobProcessors() {
         List<Class<? extends JobProcessor>> jobProcessors = new ArrayList<>();
         try {
@@ -42,6 +49,11 @@ public class JobProcessorScanner {
         return jobProcessors;
     }
 
+    /**
+     * Reads the Jandex index file.
+     * @return The Jandex index.
+     * @throws IOException If the Jandex index file cannot be read.
+     */
     private Index getJandexIndex() throws IOException {
         InputStream input = getClass().getClassLoader().getResourceAsStream("META-INF/jandex.idx");
         if (input == null) {

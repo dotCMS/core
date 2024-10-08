@@ -5,13 +5,14 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.NoCache;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import graphql.VisibleForTesting;
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -40,6 +41,7 @@ public class JobQueueResource {
         this(new WebResource(), CDIUtils.getBean(JobQueueHelper.class).orElseThrow(()->new IllegalStateException("JobQueueHelper Bean not found")));
     }
 
+    @VisibleForTesting
     public JobQueueResource(WebResource webResource, JobQueueHelper helper) {
         this.webResource = webResource;
         this.helper = helper;
@@ -169,41 +171,52 @@ public class JobQueueResource {
     @GET
     @Path("/{jobId}/monitor")
     @Produces(SseFeature.SERVER_SENT_EVENTS)
-    @NoCache
     public EventOutput monitorJob(@Context HttpServletRequest request, @PathParam("jobId") String jobId) {
-        final EventOutput eventOutput = new EventOutput();
+
         new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
                 .init();
+
+        Job job = null;
         try {
+            job = helper.getJob(jobId);
+        } catch (DotDataException | DoesNotExistException e) {
+            // ignore
+        }
 
-            helper.watchJob(jobId, job -> {
-                try {
-                    OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
-                    eventBuilder.name("job-update");
-                    eventBuilder.data(Job.class, job);
-                    eventOutput.write(eventBuilder.build());
-                } catch (IOException e) {
-                    Logger.error(this, "Error writing SSE event", e);
-                }
-            });
+        final EventOutput eventOutput = new EventOutput();
 
-            // Keep the connection open for a reasonable time (e.g., 5 minutes)
-            if (!eventOutput.isClosed()) {
-                Thread.sleep(TimeUnit.MINUTES.toMillis(5));
-            }
-        } catch (Exception e) {
-            Logger.error(this, "Error monitoring job", e);
-            Thread.currentThread().interrupt();
-        } finally {
+        if (job == null || helper.isNotWatchable(job)) {
             try {
-                eventOutput.close();
+                OutboundEvent event = new OutboundEvent.Builder()
+                        .mediaType(MediaType.TEXT_HTML_TYPE)
+                        .name("job-not-found")
+                        .data(String.class, "404")
+                        .build();
+                eventOutput.write(event);
             } catch (IOException e) {
                 Logger.error(this, "Error closing SSE connection", e);
             }
+        }  else {
+            // Callback for watching job updates and sending them to the client
+            helper.watchJob(job.id(), watched -> {
+                if (!eventOutput.isClosed()) {
+                    try {
+                        OutboundEvent event = new OutboundEvent.Builder()
+                                .mediaType(MediaType.APPLICATION_JSON_TYPE)
+                                .name("job-update")
+                                .data(Map.class, helper.getJobStatusInfo(watched))
+                                .build();
+                        eventOutput.write(event);
+                    } catch (IOException e) {
+                        Logger.error(this, "Error writing SSE event", e);
+                        throw new DotRuntimeException(e);
+                    }
+                }
+            });
         }
         return eventOutput;
     }
