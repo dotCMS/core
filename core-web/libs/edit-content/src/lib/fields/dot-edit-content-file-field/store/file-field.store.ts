@@ -125,6 +125,10 @@ export const FileFieldStore = signalStore(
                     dropZoneActive: state
                 });
             },
+            /**
+             * setPreviewFile is used to set previewFile
+             * @param file uploaded file
+             */
             setPreviewFile: (file: UploadedFile) => {
                 patchState(store, {
                     fileStatus: 'preview',
