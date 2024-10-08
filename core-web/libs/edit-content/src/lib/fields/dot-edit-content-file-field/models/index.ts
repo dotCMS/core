@@ -4,6 +4,8 @@ export type INPUT_TYPES = 'File' | 'Image' | 'Binary';
 
 export type FILE_STATUS = 'init' | 'uploading' | 'preview';
 
+export type UPLOAD_TYPE = 'temp' | 'dotasset';
+
 export interface UIMessage {
     message: string;
     severity: 'info' | 'error' | 'warning' | 'success';
@@ -20,7 +22,7 @@ export type MESSAGES_TYPES =
 
 export type UIMessagesMap = Record<MESSAGES_TYPES, UIMessage>;
 
-export type PreviewFile =
+export type UploadedFile =
     | {
           source: 'temp';
           file: DotCMSTempFile;

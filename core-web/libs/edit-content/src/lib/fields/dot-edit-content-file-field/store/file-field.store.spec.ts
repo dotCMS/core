@@ -6,7 +6,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { FileFieldStore } from './file-field.store';
 
-import { NEW_FILE_MOCK, TEMP_FILE_MOCK } from '../../../utils/mocks';
+import { NEW_FILE_MOCK } from '../../../utils/mocks';
 import { UIMessage } from '../models';
 import { DotFileFieldUploadService } from '../services/upload-file/upload-file.service';
 import { getUiMessage } from '../utils/messages';
@@ -100,18 +100,19 @@ describe('FileFieldStore', () => {
     describe('Method: removeFile', () => {
         it('should set the state properly when removeFile is called', () => {
             patchState(store, {
-                contentlet: NEW_FILE_MOCK.entity,
-                tempFile: TEMP_FILE_MOCK,
+                uploadedFile: {
+                    source: 'contentlet',
+                    file: NEW_FILE_MOCK.entity
+                },
                 value: 'some value',
                 fileStatus: 'preview',
                 uiMessage: getUiMessage('SERVER_ERROR')
             });
             store.removeFile();
-            expect(store.contentlet()).toBeNull();
-            expect(store.tempFile()).toBeNull();
             expect(store.value()).toBe('');
             expect(store.fileStatus()).toBe('init');
             expect(store.uiMessage()).toBe(getUiMessage('DEFAULT'));
+            expect(store.uploadedFile()).toBeNull();
         });
     });
 
@@ -190,11 +191,9 @@ describe('FileFieldStore', () => {
             Object.defineProperty(file, 'size', { value: 5000 });
 
             store.handleUploadFile(file);
-            expect(store.tempFile()).toBeNull();
             expect(store.value()).toBe(mockContentlet.identifier);
-            expect(store.contentlet()).toEqual(mockContentlet);
             expect(store.fileStatus()).toBe('preview');
-            expect(store.previewFile()).toEqual({
+            expect(store.uploadedFile()).toEqual({
                 source: 'contentlet',
                 file: mockContentlet
             });
@@ -226,12 +225,9 @@ describe('FileFieldStore', () => {
             service.getContentById.mockReturnValue(of(mockContentlet));
 
             store.getAssetData(mockContentlet.identifier);
-
-            expect(store.tempFile()).toBeNull();
             expect(store.value()).toBe(mockContentlet.identifier);
-            expect(store.contentlet()).toEqual(mockContentlet);
             expect(store.fileStatus()).toBe('preview');
-            expect(store.previewFile()).toEqual({
+            expect(store.uploadedFile()).toEqual({
                 source: 'contentlet',
                 file: mockContentlet
             });
