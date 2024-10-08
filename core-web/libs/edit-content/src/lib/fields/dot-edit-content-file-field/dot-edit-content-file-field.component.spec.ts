@@ -10,6 +10,8 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { ControlContainer } from '@angular/forms';
 
+import { DialogService } from 'primeng/dynamicdialog';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DotDropZoneComponent, DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
 
@@ -36,7 +38,7 @@ describe('DotEditContentFileFieldComponent', () => {
         component: DotEditContentFileFieldComponent,
         detectChanges: false,
         componentProviders: [FileFieldStore, mockProvider(DotFileFieldUploadService)],
-        providers: [provideHttpClient(), mockProvider(DotMessageService)],
+        providers: [provideHttpClient(), mockProvider(DotMessageService), DialogService],
         componentViewProviders: [
             { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
         ]
