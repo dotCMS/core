@@ -26,7 +26,7 @@ import {
     DotCopyButtonComponent
 } from '@dotcms/ui';
 
-import { DotPreviewResourceLink, PreviewFile } from '../../models';
+import { DotPreviewResourceLink, UploadedFile } from '../../models';
 import { getFileMetadata } from '../../utils';
 
 @Component({
@@ -53,7 +53,7 @@ export class DotFileFieldPreviewComponent implements OnInit {
      *
      * @memberof DotFileFieldPreviewComponent
      */
-    $previewFile = input.required<PreviewFile>({ alias: 'previewFile' });
+    $previewFile = input.required<UploadedFile>({ alias: 'previewFile' });
     /**
      * Remove file
      *

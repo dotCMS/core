@@ -1265,7 +1265,8 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             system: true
         }
     ],
-    nEntries: 0
+    nEntries: 0,
+    metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
 };
 
 export const MockResizeObserver = class {
