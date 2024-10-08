@@ -94,12 +94,12 @@ public class OpenAITranslationActionlet extends TranslationActionlet {
                 params.get(IGNORE_FIELDS).getValue(),
                 params.get(TRANSLATE_FIELDS).getValue());
 
-        if (translationKeyPrefix.isPresent()) {
-            sourceContentlet.getMap().put(TRANSLATION_KEY_PREFIX, translationKeyPrefix.get());
-        }
+        // our Translation Service interface does not have way to pass custom parameters so we add this value
+        // to the underlying content map
+        translationKeyPrefix.ifPresent(s -> sourceContentlet.getMap().put(TRANSLATION_KEY_PREFIX, s));
 
         List<com.dotmarketing.portlets.structure.model.Field> oldFields = new LegacyFieldTransformer(
-                new ArrayList(fields)).asOldFieldList();
+                new ArrayList<>(fields)).asOldFieldList();
 
         try {
             List<Contentlet> translatedContents = com.dotcms.ai.api.OpenAITranslationService.INSTANCE.get()
