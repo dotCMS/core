@@ -58,8 +58,9 @@ runs:
     - name: 'Adding node and yarn to the PATH env'
       run: |
         echo "::group::Adding node and yarn to the PATH env"
-        ls -R ${{ github.workspace }}/installs
-        echo "PATH=$PATH:${{ github.workspace }}/installs/node/:${{ github.workspace }}/installs/node/yarn/dist/bin" >> $GITHUB_ENV
+        BASE_PATH=${{ github.workspace }}/installs
+        ls -R $BASE_PATH
+        echo "PATH=$PATH:${BASE_PATH}/node/:${BASE_PATH}/node/yarn/dist/bin" >> $GITHUB_ENV
         echo "::endgroup::"
       shell: bash               
 
