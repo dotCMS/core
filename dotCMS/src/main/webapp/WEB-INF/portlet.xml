@@ -499,4 +499,16 @@
         <display-name>Locales</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
+
+    <portlet>
+        <portlet-name>locales</portlet-name>
+        <display-name>Locales</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
+    <portlet>
+        <portlet-name>content_analytics</portlet-name>
+        <display-name>Content Analytics</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
 </portlet-app>
