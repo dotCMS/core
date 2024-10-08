@@ -234,12 +234,14 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             }
         });
 
-        this.#dialogRef.onClose.pipe(
-            filter((file) => !!file),
-            takeUntilDestroyed()
-        ).subscribe((file) => {
-            this.store.setPreviewFile(file);
-        });
+        this.#dialogRef.onClose
+            .pipe(
+                filter((file) => !!file),
+                takeUntilDestroyed()
+            )
+            .subscribe((file) => {
+                this.store.setPreviewFile(file);
+            });
     }
 
     /**

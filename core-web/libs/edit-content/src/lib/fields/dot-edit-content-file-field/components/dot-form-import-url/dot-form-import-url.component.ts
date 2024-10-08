@@ -56,7 +56,7 @@ export class DotFormImportUrlComponent implements OnInit {
         );
 
         effect(() => {
-           const isLoading = this.store.isLoading();
+            const isLoading = this.store.isLoading();
             if (isLoading) {
                 this.form.disable();
             } else {
