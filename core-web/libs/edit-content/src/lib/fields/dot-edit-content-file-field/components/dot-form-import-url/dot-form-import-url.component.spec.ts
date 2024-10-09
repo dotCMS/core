@@ -1,6 +1,5 @@
 import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
-import { NEW_FILE_MOCK } from 'libs/edit-content/src/lib/utils/mocks';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -13,6 +12,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotFormImportUrlComponent } from './dot-form-import-url.component';
 import { FormImportUrlStore } from './store/form-import-url.store';
 
+import { NEW_FILE_MOCK } from '../../../../utils/mocks';
 import { UploadedFile } from '../../models';
 import { DotFileFieldUploadService } from '../../services/upload-file/upload-file.service';
 
