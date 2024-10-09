@@ -44,7 +44,7 @@ public class LargeFileReader implements JobProcessor, Cancellable {
 
         Optional<DotTempFile> tempFile = tempFile(params);
         if (tempFile.isEmpty()) {
-            Logger.error(this.getClass(), "Unable to retrieve the temporary. Quitting the job.");
+            Logger.error(this.getClass(), "Unable to retrieve the temporary file. Quitting the job.");
             throw new DotRuntimeException("Unable to retrieve the temporary file.");
         }
 
