@@ -286,7 +286,10 @@
 							"var jsonData = pm.response.json();",
 							"pm.test(\"Job cancelled successfully\", function () {",
 							"    pm.expect(jsonData.entity).to.equal('Job cancelled successfully');",
-							"});"
+							"});",
+							"",
+							"var jobId = pm.environment.get(\"jobId\");",
+							"pm.environment.set(\"cancelledJobId\",jobId);"
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -513,7 +516,105 @@
 						"fail"
 					]
 				},
-				"description": "Creates a new job in the specified queue."
+				"description": "Creates a new job in the specified queue (Create Failing Job)"
+			},
+			"response": []
+		},
+		{
+			"name": "Monitor Non Existing Job",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response contains job-not-found event and 404 data\", function () {",
+							"    const responseText = pm.response.text();",
+							"    pm.expect(responseText).to.include(\"event: job-not-found\");",
+							"    pm.expect(responseText).to.include(\"data: 404\");",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "text/event-stream"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs/nonExistingJob/monitor",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs",
+						"nonExistingJob",
+						"monitor"
+					]
+				},
+				"description": "Monitors a specific job using Server-Sent Events (SSE)."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Job Status Expect Cancel",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Check if status info is returned",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Response has status info\", function () {",
+							"    pm.expect(jsonData.entity).to.be.an('object');",
+							"    pm.expect(jsonData.entity).to.have.property('state');",
+							"    pm.expect(jsonData.entity).to.have.property('progress');    ",
+							"});",
+							"",
+							"pm.test(\"Job is RUNNING\", function () {",
+							"    var object = jsonData.entity;",
+							"    pm.expect(object.state).to.be.eql(\"CANCELED\"); ",
+							"    ",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs/{{cancelledJobId}}/status",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs",
+						"{{cancelledJobId}}",
+						"status"
+					]
+				},
+				"description": "Retrieves the status of a specific job. We expect to get one in status Canceled."
 			},
 			"response": []
 		},
@@ -594,12 +695,12 @@
 						}
 					]
 				},
-				"description": "Lists failed jobs with pagination."
+				"description": "Lists failed jobs."
 			},
 			"response": []
 		},
 		{
-			"name": "Monitor Non Existing Job",
+			"name": "List Jobs Expect Fail and Cancelled",
 			"event": [
 				{
 					"listen": "test",
@@ -609,12 +710,42 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"Response contains job-not-found event and 404 data\", function () {",
-							"    const responseText = pm.response.text();",
-							"    pm.expect(responseText).to.include(\"event: job-not-found\");",
-							"    pm.expect(responseText).to.include(\"data: 404\");",
+							"// Check if jobs are returned",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Response has jobs list\", function () {",
+							"    pm.expect(jsonData.entity).to.have.property('jobs');",
+							"    pm.expect(jsonData.entity.jobs).to.be.an('array');    ",
 							"});",
-							""
+							"",
+							"// Extract JSON",
+							"const jobs = pm.response.json().entity.jobs;",
+							"",
+							"// Validate is array",
+							"pm.expect(jobs).to.be.an('array');",
+							"",
+							"// Create flags for states FAILED y CANCELED",
+							"let hasFailedJob = false;",
+							"let hasCancelledJob = false;",
+							"",
+							"// Now iterate and try to find them",
+							"jobs.forEach(job => {",
+							"    if (job.state === \"FAILED\") {",
+							"        hasFailedJob = true;",
+							"    }",
+							"    if (job.state === \"CANCELED\") {",
+							"        hasCancelledJob = true;",
+							"    }",
+							"});",
+							"",
+							"// Verify there is one is state FAILED",
+							"pm.test(\"Job with FAILED status exists\", function () {",
+							"    pm.expect(hasFailedJob).to.be.true;",
+							"});",
+							"",
+							"// Verify there is one in state CANCELLED",
+							"pm.test(\"Job with CANCELLED status exists\", function () {",
+							"    pm.expect(hasCancelledJob).to.be.true;",
+							"});"
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -623,26 +754,31 @@
 			],
 			"request": {
 				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "text/event-stream"
-					}
-				],
+				"header": [],
 				"url": {
-					"raw": "{{baseUrl}}/api/v1/jobs/nonExistingJob/monitor",
+					"raw": "{{baseUrl}}/api/v1/jobs?page={{page}}&pageSize={{pageSize}}",
 					"host": [
 						"{{baseUrl}}"
 					],
 					"path": [
 						"api",
 						"v1",
-						"jobs",
-						"nonExistingJob",
-						"monitor"
+						"jobs"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "{{page}}",
+							"description": "Page number"
+						},
+						{
+							"key": "pageSize",
+							"value": "{{pageSize}}",
+							"description": "Number of items per page"
+						}
 					]
 				},
-				"description": "Monitors a specific job using Server-Sent Events (SSE)."
+				"description": "List Jobs Expect Fail and Cancelled."
 			},
 			"response": []
 		}
