@@ -106,6 +106,7 @@ public class JobQueueResource {
     @POST
     @Path("/{jobId}/cancel")
     @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response cancelJob(@Context HttpServletRequest request, @PathParam("jobId") String jobId)
             throws DotDataException {
             new WebResource.InitBuilder(webResource)
