@@ -2,23 +2,28 @@ package com.dotmarketing.startup.runonce;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.common.db.Params;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
+import org.jetbrains.annotations.NotNull;
+import org.postgresql.util.PGobject;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Array;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
@@ -107,12 +112,15 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
 
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
-        createUniqueFieldTable();
 
-        try {
-            populate();
-        } catch (SQLException e) {
-            throw new DotDataException(e);
+        if (forceRun()) {
+            createUniqueFieldTable();
+
+            try {
+                populate();
+            } catch (SQLException e) {
+                throw new DotDataException(e);
+            }
         }
     }
 
@@ -124,6 +132,8 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
      */
     private void populate() throws DotDataException, SQLException {
         final List<Map<String, Object>> uniqueFieldsValues = retrieveUniqueFieldsValues();
+
+        final List<Params> params = new ArrayList<>();
 
         for (final Map<String, Object> uniqueFieldsValue : uniqueFieldsValues) {
 
@@ -141,27 +151,31 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
                 "contentletsId", contentlets
             );
 
-            try {
-                insertUniqueFieldsRegister(hash, supportingValues);
-            } catch (DotDataException e) {
-                //ignore
-            }
+            Params notificationParams = new Params.Builder().add(hash, getJSONObject(supportingValues)).build();
+            params.add(notificationParams);
         }
 
+        insertUniqueFieldsRegister(params);
+    }
+
+    @NotNull
+    private static PGobject getJSONObject(Map<String, Object> supportingValues) {
+        final PGobject supportingValuesParam = new PGobject();
+        supportingValuesParam.setType("json");
+        Try.run(() -> supportingValuesParam.setValue(JsonUtil.getJsonAsString(supportingValues))).getOrElseThrow(
+                () -> new IllegalArgumentException("Invalid JSON"));
+        return supportingValuesParam;
     }
 
     /**
      * Inset a new register in the unique_field table.
      *
-     * @param hash
-     * @param supportingValues
+     * @param listOfParams
      * @throws DotDataException
      */
-    private void insertUniqueFieldsRegister(final String hash, final Map<String, Object> supportingValues) throws DotDataException {
-        new DotConnect().setSQL(INSERT_UNIQUE_FIELDS_QUERY)
-                .addParam(hash)
-                .addJSONParam(supportingValues)
-                .loadObjectResults();
+    private void insertUniqueFieldsRegister(final Collection<Params> listOfParams) throws DotDataException {
+
+        new DotConnect().executeBatch(INSERT_UNIQUE_FIELDS_QUERY, listOfParams);
     }
 
     /**

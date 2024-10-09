@@ -301,10 +301,4 @@ public class Task241007CreateUniqueFieldsTableTest {
         checkSupportingValues(result_2, contentType, uniqueField, contentlet_2);
 
     }
-
-    @Test
-    public void notExistField() {
-        throw new AssertException("Not implemented");
-    }
-
 }
