@@ -7,6 +7,8 @@ import { computed, inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
+import { DotHttpErrorResponse } from '@dotcms/dotcms-models';
+
 import { UploadedFile, UPLOAD_TYPE } from '../../../models';
 import { DotFileFieldUploadService } from '../../../services/upload-file/upload-file.service';
 
@@ -38,30 +40,34 @@ export const FormImportUrlStore = signalStore(
          * uploadFileByUrl - Uploads a file using its URL.
          * @param {string} fileUrl - The URL of the file to be uploaded.
          */
-        uploadFileByUrl: rxMethod<string>(
+        uploadFileByUrl: rxMethod<{
+            fileUrl: string;
+            abortSignal: AbortSignal;
+        }>(
             pipe(
                 tap(() => patchState(store, { status: 'uploading' })),
-                switchMap((fileUrl) => {
+                switchMap(({ fileUrl, abortSignal }) => {
                     return uploadService
                         .uploadFile({
                             file: fileUrl,
                             uploadType: store.uploadType(),
-                            acceptedFiles: store.acceptedFiles()
+                            acceptedFiles: store.acceptedFiles(),
+                            maxSize: null,
+                            abortSignal: abortSignal
                         })
                         .pipe(
                             tapResponse({
                                 next: (file) => {
                                     patchState(store, { file, status: 'done' });
                                 },
-                                error: (error) => {
-                                    let errorMessage = '';
+                                error: (error: DotHttpErrorResponse) => {
+                                    let errorMessage = error?.message || '';
 
-                                    if (
-                                        error instanceof Error &&
-                                        error.message === 'Invalid file type'
-                                    ) {
-                                        errorMessage =
-                                            'dot.file.field.import.from.url.error.file.not.supported.message';
+                                    if (error instanceof Error) {
+                                        if (errorMessage === 'Invalid file type') {
+                                            errorMessage =
+                                                'dot.file.field.import.from.url.error.file.not.supported.message';
+                                        }
                                     }
 
                                     patchState(store, {

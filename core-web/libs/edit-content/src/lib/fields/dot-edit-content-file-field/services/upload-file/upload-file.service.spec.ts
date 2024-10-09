@@ -9,7 +9,7 @@ import { of } from 'rxjs';
 
 import { DotUploadFileService, DotUploadService } from '@dotcms/data-access';
 
-import { DotFileFieldUploadService } from './upload-file.service';
+import { DotFileFieldUploadService, UploadFileProps } from './upload-file.service';
 
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
 import { NEW_FILE_MOCK, NEW_FILE_EDITABLE_MOCK, TEMP_FILE_MOCK } from '../../../../utils/mocks';
@@ -108,7 +108,9 @@ describe('DotFileFieldUploadService', () => {
 
             const file = new File([''], 'test.png', { type: 'image/png' });
             const uploadType = 'temp';
-            spectator.service.uploadFile({ file, uploadType }).subscribe((result) => {
+            const params: UploadFileProps = { file, uploadType, acceptedFiles: [], maxSize: '' }
+
+            spectator.service.uploadFile(params).subscribe((result) => {
                 expect(result.source).toBe('temp');
                 expect(result.file).toBe(TEMP_FILE_MOCK);
                 expect(tempFileService.uploadFile).toHaveBeenCalledTimes(1);
@@ -120,7 +122,9 @@ describe('DotFileFieldUploadService', () => {
 
             const file = new File([''], 'test.png', { type: 'image/png' });
             const uploadType = 'dotasset';
-            spectator.service.uploadFile({ file, uploadType }).subscribe((result) => {
+            const params: UploadFileProps = { file, uploadType, acceptedFiles: [], maxSize: '' }
+
+            spectator.service.uploadFile(params).subscribe((result) => {
                 expect(result.source).toBe('contentlet');
                 expect(result.file).toBe(NEW_FILE_MOCK.entity);
                 expect(dotUploadFileService.uploadDotAsset).toHaveBeenCalledTimes(1);
@@ -133,7 +137,9 @@ describe('DotFileFieldUploadService', () => {
 
             const file = 'file';
             const uploadType = 'dotasset';
-            spectator.service.uploadFile({ file, uploadType }).subscribe((result) => {
+            const params: UploadFileProps = { file, uploadType, acceptedFiles: [], maxSize: '' }
+
+            spectator.service.uploadFile(params).subscribe((result) => {
                 expect(result.source).toBe('contentlet');
                 expect(result.file).toBe(NEW_FILE_MOCK.entity);
                 expect(tempFileService.uploadFile).toHaveBeenCalledTimes(1);

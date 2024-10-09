@@ -144,7 +144,7 @@ describe('FileFieldStore', () => {
             Object.defineProperty(file, 'size', { value: 20000 });
 
             store.handleUploadFile(file);
-            expect(service.uploadDotAsset).not.toHaveBeenCalled();
+            expect(service.uploadFile).not.toHaveBeenCalled();
         });
 
         it('should set state properly with maxFileSize exceeded', () => {
@@ -165,7 +165,8 @@ describe('FileFieldStore', () => {
         });
 
         it('should call uploadService with maxFileSize not exceeded', () => {
-            service.uploadDotAsset.mockReturnValue(of(NEW_FILE_MOCK.entity));
+            const mockContentlet = NEW_FILE_MOCK.entity;
+            service.uploadFile.mockReturnValue(of({ source: 'contentlet', file: mockContentlet }));
 
             patchState(store, {
                 maxFileSize: 10000
@@ -175,13 +176,17 @@ describe('FileFieldStore', () => {
             Object.defineProperty(file, 'size', { value: 5000 });
 
             store.handleUploadFile(file);
-            expect(service.uploadDotAsset).toHaveBeenCalledWith(file);
+            expect(service.uploadFile).toHaveBeenCalledWith({
+                file,
+                acceptedFiles: [],
+                maxSize: '10000',
+                uploadType: "dotasset"
+            });
         });
 
         it('should set state properly with maxFileSize not exceeded', () => {
             const mockContentlet = NEW_FILE_MOCK.entity;
-
-            service.uploadDotAsset.mockReturnValue(of(mockContentlet));
+            service.uploadFile.mockReturnValue(of({ source: 'contentlet', file: mockContentlet }));
 
             patchState(store, {
                 maxFileSize: 10000
@@ -199,13 +204,18 @@ describe('FileFieldStore', () => {
             });
         });
 
-        it('should set state properly with an error calling uploadDotAsset', () => {
-            service.uploadDotAsset.mockReturnValue(throwError('error'));
+        it('should set state properly with an error calling uploadFile', () => {
+            service.uploadFile.mockReturnValue(throwError('error'));
 
             const file = new File([''], 'filename', { type: 'text/plain' });
             store.handleUploadFile(file);
 
-            expect(service.uploadDotAsset).toHaveBeenCalledWith(file);
+            expect(service.uploadFile).toHaveBeenCalledWith({
+                file,
+                uploadType: 'dotasset',
+                acceptedFiles: [],
+                maxSize: null
+            });
             expect(store.fileStatus()).toBe('init');
             expect(store.uiMessage()).toEqual(getUiMessage('SERVER_ERROR'));
         });

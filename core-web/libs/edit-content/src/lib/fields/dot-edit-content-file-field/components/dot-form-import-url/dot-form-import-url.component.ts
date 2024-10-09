@@ -33,6 +33,7 @@ export class DotFormImportUrlComponent implements OnInit {
     readonly #dialogConfig = inject(
         DynamicDialogConfig<{ inputType: INPUT_TYPE; acceptedFiles: string[] }>
     );
+    #abortController: AbortController | null = null;
 
     readonly form = this.#formBuilder.group({
         url: ['', [Validators.required, DotValidators.url]]
@@ -92,8 +93,13 @@ export class DotFormImportUrlComponent implements OnInit {
             return;
         }
 
+        this.#abortController = new AbortController();
+
         const { url } = this.form.getRawValue();
-        this.store.uploadFileByUrl(url);
+        this.store.uploadFileByUrl({
+            fileUrl: url,
+            abortSignal: this.#abortController.signal
+        });
     }
 
     /**
@@ -102,6 +108,10 @@ export class DotFormImportUrlComponent implements OnInit {
      * @return {void}
      */
     cancelUpload(): void {
+        if (this.#abortController) {
+            this.#abortController.abort();
+        }
+
         this.#dialogRef.close();
     }
 }

@@ -171,7 +171,8 @@ export const FileFieldStore = signalStore(
                             .uploadFile({
                                 file,
                                 uploadType: 'dotasset',
-                                acceptedFiles: store.acceptedFiles()
+                                acceptedFiles: store.acceptedFiles(),
+                                maxSize: store.maxFileSize() ? `${store.maxFileSize()}` : null
                             })
                             .pipe(
                                 tapResponse({

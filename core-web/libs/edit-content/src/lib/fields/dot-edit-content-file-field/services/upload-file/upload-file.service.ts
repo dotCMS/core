@@ -12,6 +12,14 @@ import { DotEditContentService } from '../../../../services/dot-edit-content.ser
 import { UploadedFile, UPLOAD_TYPE } from '../../models';
 import { getFileMetadata, getFileVersion, checkMimeType } from '../../utils';
 
+export type UploadFileProps = {
+    file: File | string;
+    uploadType: UPLOAD_TYPE;
+    acceptedFiles: string[];
+    maxSize: string | null;
+    abortSignal?: AbortSignal;
+};
+
 @Injectable()
 export class DotFileFieldUploadService {
     readonly #fileService = inject(DotUploadFileService);
@@ -31,17 +39,11 @@ export class DotFileFieldUploadService {
      * @param uploadType The type of upload, can be 'temp' or 'contentlet'.
      * @returns An observable that resolves to the created contentlet.
      */
-    uploadFile({
-        file,
-        uploadType,
-        acceptedFiles
-    }: {
-        file: File | string;
-        uploadType: UPLOAD_TYPE;
-        acceptedFiles: string[];
-    }): Observable<UploadedFile> {
+    uploadFile(params: UploadFileProps): Observable<UploadedFile> {
+        const { file, uploadType, acceptedFiles } = params;
+
         if (uploadType === 'temp') {
-            return this.uploadTempFile(file, acceptedFiles).pipe(
+            return this.uploadTempFile(file, acceptedFiles, params?.abortSignal).pipe(
                 map((file) => ({ source: 'temp', file }))
             );
         }
@@ -49,7 +51,7 @@ export class DotFileFieldUploadService {
         const uploadProcess =
             file instanceof File
                 ? this.uploadDotAssetByFile(file, acceptedFiles)
-                : this.uploadDotAssetByUrl(file, acceptedFiles);
+                : this.uploadDotAssetByUrl(file, acceptedFiles, params?.abortSignal);
 
         return uploadProcess.pipe(map((file) => ({ source: 'contentlet', file })));
     }
@@ -61,8 +63,12 @@ export class DotFileFieldUploadService {
      * @returns An observable that resolves to the uploaded temp file.
      * If the file type is not in the accepted types, it will throw an error.
      */
-    uploadTempFile(file: File | string, acceptedFiles: string[]): Observable<DotCMSTempFile> {
-        return from(this.#tempFileService.uploadFile({ file })).pipe(
+    uploadTempFile(
+        file: File | string,
+        acceptedFiles: string[],
+        signal?: AbortSignal
+    ): Observable<DotCMSTempFile> {
+        return from(this.#tempFileService.uploadFile({ file, signal })).pipe(
             tap((tempFile) => {
                 if (!checkMimeType(tempFile, acceptedFiles)) {
                     throw new Error('Invalid file type');
@@ -96,8 +102,12 @@ export class DotFileFieldUploadService {
      * @returns An observable that resolves to the created contentlet.
      * If the file type is not in the accepted types, it will throw an error.
      */
-    uploadDotAssetByUrl(file: string, acceptedFiles: string[]): Observable<DotCMSContentlet> {
-        return this.uploadTempFile(file, acceptedFiles).pipe(
+    uploadDotAssetByUrl(
+        file: string,
+        acceptedFiles: string[],
+        signal?: AbortSignal
+    ): Observable<DotCMSContentlet> {
+        return this.uploadTempFile(file, acceptedFiles, signal).pipe(
             switchMap((tempFile) => this.uploadDotAsset(tempFile.id))
         );
     }
