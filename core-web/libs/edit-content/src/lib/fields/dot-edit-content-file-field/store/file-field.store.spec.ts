@@ -180,7 +180,7 @@ describe('FileFieldStore', () => {
                 file,
                 acceptedFiles: [],
                 maxSize: '10000',
-                uploadType: "dotasset"
+                uploadType: 'dotasset'
             });
         });
 

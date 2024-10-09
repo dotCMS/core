@@ -108,7 +108,7 @@ describe('DotFileFieldUploadService', () => {
 
             const file = new File([''], 'test.png', { type: 'image/png' });
             const uploadType = 'temp';
-            const params: UploadFileProps = { file, uploadType, acceptedFiles: [], maxSize: '' }
+            const params: UploadFileProps = { file, uploadType, acceptedFiles: [], maxSize: '' };
 
             spectator.service.uploadFile(params).subscribe((result) => {
                 expect(result.source).toBe('temp');
@@ -122,7 +122,7 @@ describe('DotFileFieldUploadService', () => {
 
             const file = new File([''], 'test.png', { type: 'image/png' });
             const uploadType = 'dotasset';
-            const params: UploadFileProps = { file, uploadType, acceptedFiles: [], maxSize: '' }
+            const params: UploadFileProps = { file, uploadType, acceptedFiles: [], maxSize: '' };
 
             spectator.service.uploadFile(params).subscribe((result) => {
                 expect(result.source).toBe('contentlet');
@@ -137,7 +137,7 @@ describe('DotFileFieldUploadService', () => {
 
             const file = 'file';
             const uploadType = 'dotasset';
-            const params: UploadFileProps = { file, uploadType, acceptedFiles: [], maxSize: '' }
+            const params: UploadFileProps = { file, uploadType, acceptedFiles: [], maxSize: '' };
 
             spectator.service.uploadFile(params).subscribe((result) => {
                 expect(result.source).toBe('contentlet');
