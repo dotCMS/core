@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.business.APILocator;
@@ -58,8 +60,18 @@ public class WebsiteWebAPI implements ViewTool {
     public List<Folder> getSubFolders (String parentFolder, String hostId) {
         List<Folder> subFolders = new ArrayList<>();
 		try {
-			Folder folder = APILocator.getFolderAPI().findFolderByPath(parentFolder, hostId,APILocator.getUserAPI().getSystemUser(),false);
-			subFolders = APILocator.getFolderAPI().findSubFoldersTitleSort(folder, APILocator.getUserAPI().getSystemUser(),false);
+			if (StringPool.FORWARD_SLASH.equals(parentFolder)) {
+				final Host host = getHost(hostId);
+				if (!UtilMethods.isSet(hostId)) {
+					Logger.debug(this, () -> "Website getSubFolders Method : Host not found "
+						+ hostId);
+					return subFolders;
+				}
+				subFolders = APILocator.getFolderAPI().findSubFolders(host,APILocator.getUserAPI().getSystemUser(),false);
+			} else {
+				Folder folder = APILocator.getFolderAPI().findFolderByPath(parentFolder, hostId, APILocator.getUserAPI().getSystemUser(), false);
+				subFolders = APILocator.getFolderAPI().findSubFoldersTitleSort(folder, APILocator.getUserAPI().getSystemUser(), false);
+			}
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
 		} 
