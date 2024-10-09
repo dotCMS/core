@@ -348,7 +348,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "/Users/fabrizzioaraya/Downloads/odyssey.txt"
+							"src": "resources/JobQueue/odyssey.txt"
 						},
 						{
 							"key": "params",
@@ -492,7 +492,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "/Users/fabrizzioaraya/Downloads/odyssey.txt"
+							"src": "resources/JobQueue/odyssey.txt"
 						},
 						{
 							"key": "params",
