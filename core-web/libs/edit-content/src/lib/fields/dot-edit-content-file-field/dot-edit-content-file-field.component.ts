@@ -9,6 +9,7 @@ import {
     OnDestroy,
     DestroyRef
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -238,8 +239,8 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
 
         this.#dialogRef.onClose
             .pipe(
-                takeUntilDestroyed(this.#destroyRef),
-                filter((file) => !!file)
+                filter((file) => !!file),
+                takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((file) => {
                 this.store.setPreviewFile(file);
