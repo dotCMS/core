@@ -50,7 +50,9 @@ import org.junit.runners.Suite.SuiteClasses;
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 
-
+/**
+ * NOTE: LET'S AVOID ADDING MORE TESTS TO THIS SUITE, THIS ONE IS TAKING ALMOST TWICE THE TIME TO RUN THAN THE OTHERS
+ */
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         com.dotcms.rest.api.v1.workflow.WorkflowResourceResponseCodeIntegrationTest.class,

@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 
-import styles from './column.module.css';
+import styles from './Column.module.css';
 
 import { PageContext } from '../../contexts/PageContext';
 import { DotCMSPageContext } from '../../models';
