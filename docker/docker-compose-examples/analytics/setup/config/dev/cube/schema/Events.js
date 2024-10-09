@@ -182,7 +182,7 @@ cube('request', {
                CASE
                  WHEN MAX(CASE WHEN event_type = 'FILE_REQUEST' THEN 1 ELSE 0 END) = 1 THEN 'FILE'
                  WHEN MAX(CASE WHEN event_type = 'PAGE_REQUEST' THEN 1 ELSE 0 END) = 1 THEN 'PAGE'
-                 WHEN MAX(CASE WHEN event_type = 'VANITY_REQUEST' AND object_response != '200' THEN 1 ELSE 0 END) = 1 THEN 'VANITY'
+                 WHEN MAX(CASE WHEN event_type = 'VANITY_REQUEST' AND object_response != '200' THEN 1 ELSE 0 END) = 1 THEN 'VANITY_REDIRECT'
                  ELSE 'OTHER'
                END  AS what_am_i
         FROM events
