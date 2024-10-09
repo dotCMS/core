@@ -79,6 +79,7 @@ import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.asset.AssetPathResolverImplIntegrationTest;
 import com.dotcms.rest.api.v1.asset.WebAssetHelperIntegrationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
+import com.dotcms.rest.api.v1.job.JobQueueHelperIntegrationTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
@@ -323,6 +324,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240606AddVariableColumnToWorkflowTest.class,
         OpenAIContentPromptActionletTest.class,
         JobQueueManagerAPITest.class,
+        JobQueueHelperIntegrationTest.class,
         ConfigUtilsTest.class,
         SimpleInjectionIT.class,
         LegacyJSONObjectRenderTest.class,

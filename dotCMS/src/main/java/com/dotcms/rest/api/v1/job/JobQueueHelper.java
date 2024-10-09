@@ -16,6 +16,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.time.format.DateTimeFormatter;
@@ -104,6 +105,16 @@ public class JobQueueHelper {
     public JobQueueHelper(JobQueueManagerAPI jobQueueManagerAPI, JobProcessorScanner scanner) {
         this.jobQueueManagerAPI = jobQueueManagerAPI;
         this.scanner = scanner;
+    }
+
+    /**
+     * Registers a processor
+     * @param queueName The name of the queue
+     * @param processor Class of the processor
+     */
+    @VisibleForTesting
+    void registerProcessor(final String queueName, final Class<? extends JobProcessor> processor){
+        jobQueueManagerAPI.registerProcessor(queueName.toLowerCase(), processor);
     }
 
     /**
@@ -223,7 +234,7 @@ public class JobQueueHelper {
      * @param params The params
      * @param request The request
      */
-    private void handleUploadIfPresent(final JobParams form, Map<String, Object> params, HttpServletRequest request) {
+     void handleUploadIfPresent(final JobParams form, Map<String, Object> params, HttpServletRequest request) {
         final InputStream fileInputStream = form.getFileInputStream();
         final FormDataContentDisposition contentDisposition = form.getContentDisposition();
         if (null != fileInputStream && null != contentDisposition) {
