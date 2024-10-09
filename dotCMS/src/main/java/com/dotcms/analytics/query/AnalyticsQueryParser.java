@@ -129,11 +129,8 @@ public class AnalyticsQueryParser {
     }
 
     private Collection<CubeJSQuery.TimeDimension> parseTimeDimensions(final String timeDimensions) {
-        final TimeDimensionParser.TimeDimension parsedTimeDimension = TimeDimensionParser.parseTimeDimension(timeDimensions);
-        return Stream.of(
-                new CubeJSQuery.TimeDimension(parsedTimeDimension.getTerm(),
-                        parsedTimeDimension.getField())
-        ).collect(Collectors.toList());
+        final CubeJSQuery.TimeDimension parsedTimeDimension = TimeDimensionParser.parseTimeDimension(timeDimensions);
+        return Stream.of(parsedTimeDimension).collect(Collectors.toList());
     }
 
     private Collection<CubeJSQuery.OrderItem> parseOrders(final String orders) {
