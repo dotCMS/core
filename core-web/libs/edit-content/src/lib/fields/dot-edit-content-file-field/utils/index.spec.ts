@@ -46,7 +46,7 @@ describe('utils', () => {
 
         it('should return null if assetVersion is not present', () => {
             const contentlet: DotCMSContentlet = {
-                ...NEW_FILE_MOCK.entity,
+                ...NEW_FILE_MOCK.entity
             };
             delete contentlet.assetVersion;
 
