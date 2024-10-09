@@ -2,19 +2,16 @@ package com.dotmarketing.startup.runonce;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
 
-import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Array;
@@ -130,7 +127,7 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
 
         for (final Map<String, Object> uniqueFieldsValue : uniqueFieldsValues) {
 
-            final String hash = caculateHash(uniqueFieldsValue);
+            final String hash = calculateHash(uniqueFieldsValue);
             final List<String> contentlets = Arrays.stream(((String[]) ((Array) uniqueFieldsValue.get("contentlet_identifier"))
                     .getArray())).collect(Collectors.toList());
 
@@ -173,7 +170,7 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
      * @return
      * @throws DotDataException
      */
-    private static String caculateHash(final Map<String, Object> uniqueFieldsValue) throws DotDataException {
+    private static String calculateHash(final Map<String, Object> uniqueFieldsValue) throws DotDataException {
         final String contentTypeId = uniqueFieldsValue.get("content_type_id").toString();
         final String fieldVariableName = uniqueFieldsValue.get("field_var_name").toString();
 
