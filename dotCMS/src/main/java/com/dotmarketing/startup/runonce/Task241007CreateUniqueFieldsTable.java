@@ -33,7 +33,7 @@ import static com.dotcms.util.CollectionsUtils.list;
  *
  * <b>Table Structure</b>
  *
- * <cpde>
+ * <code>
  * CREATE TABLE unique_fields (
  *     unique_key_val VARCHAR(64) PRIMARY KEY,
  *     supporting_values JSONB
@@ -119,6 +119,12 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
         }
     }
 
+    /**
+     * Populate the unique_fields table with the Unique Fields values
+     *
+     * @throws DotDataException
+     * @throws SQLException
+     */
     private void populate() throws DotDataException, SQLException {
         final List<Map<String, Object>> uniqueFieldsValues = retrieveUniqueFieldsValues();
 
@@ -147,6 +153,13 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
 
     }
 
+    /**
+     * Inset a new register in the unique_field table.
+     *
+     * @param hash
+     * @param supportingValues
+     * @throws DotDataException
+     */
     private void insertUniqueFieldsRegister(final String hash, final Map<String, Object> supportingValues) throws DotDataException {
         new DotConnect().setSQL(INSERT_UNIQUE_FIELDS_QUERY)
                 .addParam(hash)
@@ -154,6 +167,12 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
                 .loadObjectResults();
     }
 
+    /**
+     * Calculate hash use as value for the 'unique_key_val' unique_fields table field.
+     * @param uniqueFieldsValue
+     * @return
+     * @throws DotDataException
+     */
     private static String caculateHash(final Map<String, Object> uniqueFieldsValue) throws DotDataException {
         final String contentTypeId = uniqueFieldsValue.get("content_type_id").toString();
         final String fieldVariableName = uniqueFieldsValue.get("field_var_name").toString();
@@ -183,10 +202,20 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
         }
     }
 
+    /**
+     * Create the unique_fields table
+     * @throws DotDataException
+     */
     private static void createUniqueFieldTable() throws DotDataException {
         new DotConnect().setSQL(CREATE_TABLE_QUERY).loadObjectResults();
     }
 
+    /**
+     * retrive the Unique Field value this data is later used to populate the unique_fields table
+     *
+     * @return
+     * @throws DotDataException
+     */
     private static List<Map<String, Object>> retrieveUniqueFieldsValues() throws DotDataException {
         return new DotConnect().setSQL(RETRIVE_UNIQUE_FIELD_VALUES_QUERY).loadObjectResults();
     }
