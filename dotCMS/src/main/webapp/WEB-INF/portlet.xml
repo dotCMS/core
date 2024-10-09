@@ -501,8 +501,8 @@
     </portlet>
 
     <portlet>
-        <portlet-name>content_analytics</portlet-name>
-        <display-name>Content Analytics</display-name>
+        <portlet-name>analytics_search</portlet-name>
+        <display-name>Analytics Search</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 </portlet-app>

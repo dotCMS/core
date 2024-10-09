@@ -42,8 +42,8 @@ public class SerializationHelperTest {
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("categories")));
             assertTrue("PortletList should contain 'dotai' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("dotai")));
-            assertTrue("PortletList should contain 'content_analytics' portlet",
-                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("content_analytics")));
+            assertTrue("PortletList should contain 'analytics_search' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("analytics_search")));
 
             // Check a specific portlet's details
             Optional<DotPortlet> categoriesPortlet = portletList.getPortlets().stream()

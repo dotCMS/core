@@ -1,9 +1,9 @@
 /* eslint-disable */
 export default {
-    displayName: 'dot-content-analytics',
+    displayName: 'dot-analytics-search',
     preset: '../../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-    coverageDirectory: '../../../../coverage/libs/portlets/dot-content-analytics/portlet',
+    coverageDirectory: '../../../../coverage/libs/portlets/dot-analytics-search/portlet',
     transform: {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',

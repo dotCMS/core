@@ -71,15 +71,13 @@ const PORTLETS_ANGULAR: Route[] = [
             import('@dotcms/portlets/dot-locales/portlet').then((m) => m.DotLocalesRoutes)
     },
     {
-        path: 'content-analytics',
-        canActivate: [MenuGuardService],
-        canActivateChild: [MenuGuardService],
+        path: 'analytics-search',
         data: {
             reuseRoute: false
         },
-        loadChildren: () =>
-            import('@dotcms/portlets/dot-content-analytics/portlet').then(
-                (m) => m.DotContentAnalyticsRoutes
+        loadComponent: () =>
+            import('@dotcms/portlets/dot-analytics-search/portlet').then(
+                (m) => m.DotAnalyticsSearchComponent
             )
     },
     {
