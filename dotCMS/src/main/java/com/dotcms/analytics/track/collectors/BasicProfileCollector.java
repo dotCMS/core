@@ -60,6 +60,13 @@ public class BasicProfileCollector implements Collector {
                 WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request));
 
         collectorPayloadBean.put("renderMode", PageMode.get(request).toString().replace("_MODE", ""));
+
+        //Include default vakue for other Bool fiedls in the Clickhouse table
+
+        collectorPayloadBean.put("comeFromVanityURL", false);
+        collectorPayloadBean.put("isexperimentpage", false);
+        collectorPayloadBean.put("istargetpage", false);
+
         return collectorPayloadBean;
     }
 
