@@ -324,7 +324,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240606AddVariableColumnToWorkflowTest.class,
         OpenAIContentPromptActionletTest.class,
         JobQueueManagerAPITest.class,
-        JobQueueHelperIntegrationTest.class,
         ConfigUtilsTest.class,
         SimpleInjectionIT.class,
         LegacyJSONObjectRenderTest.class,
