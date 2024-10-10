@@ -1,8 +1,7 @@
-import { Location } from '@angular/common';
+import { Location, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    computed,
     DestroyRef,
     inject,
     input,
@@ -55,7 +54,8 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         DotEditContentAsideComponent,
         TabViewModule,
         DotWorkflowActionsComponent,
-        TabViewInsertDirective
+        TabViewInsertDirective,
+        NgTemplateOutlet
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -91,40 +91,11 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #fb = inject(FormBuilder);
     readonly #dotMessageService = inject(DotMessageService);
 
-    /**
-     * Computed property that determines if the content type has multiple tabs.
-     *
-     * @returns {boolean} True if there are multiple tabs, false otherwise.
-     * @memberof DotEditContentFormComponent
-     */
-    $areMultipleTabs = computed(() => this.$tabs().length > 1);
-
     ngOnInit() {
         if (this.$formData()) {
             this.initilizeForm();
             this.setLayoutTabs();
         }
-    }
-
-    private createFormControl(field: DotCMSContentTypeField) {
-        const validators = this.getFieldValidators(field);
-        const initialValue = this.getInitialValue(field);
-
-        return this.#fb.control({ value: initialValue, disabled: field.readOnly }, validators);
-    }
-
-    private getFieldValidators(field: DotCMSContentTypeField) {
-        const validators = [];
-        if (field.required) validators.push(Validators.required);
-        if (field.regexCheck) validators.push(Validators.pattern(field.regexCheck));
-
-        return validators;
-    }
-
-    private getInitialValue(field: DotCMSContentTypeField) {
-        const contentlet = this.$store.contentlet();
-
-        return contentlet[field.variable] || null;
     }
 
     /**
