@@ -3,6 +3,7 @@ package com.dotcms.util;
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.config.DotInitializationService;
 import com.dotcms.jobs.business.api.JobProcessorFactory;
+import com.dotcms.jobs.business.api.JobProcessorScanner;
 import com.dotcms.jobs.business.api.JobQueueConfig;
 import com.dotcms.jobs.business.api.JobQueueConfigProducer;
 import com.dotcms.jobs.business.api.JobQueueManagerAPIImpl;
@@ -16,6 +17,7 @@ import com.dotcms.jobs.business.queue.JobQueueProducer;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
+import com.dotcms.rest.api.v1.job.JobQueueHelper;
 import com.dotcms.test.TestUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -72,7 +74,9 @@ public class IntegrationTestInitService {
                                 RetryStrategyProducer.class,
                                 RealTimeJobMonitor.class,
                                 JobProcessorFactory.class,
-                                EventProducer.class)
+                                EventProducer.class,
+                                JobProcessorScanner.class,
+                                JobQueueHelper.class)
                         .initialize();
 
                 System.setProperty(TestUtil.DOTCMS_INTEGRATION_TEST, TestUtil.DOTCMS_INTEGRATION_TEST);

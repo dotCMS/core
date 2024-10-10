@@ -5,10 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.dotcms.cdi.CDIUtils;
+import com.dotcms.TestBaseJunit5WeldInitiator;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.processor.JobProcessor;
-import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -19,11 +18,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -31,16 +30,10 @@ import org.junit.jupiter.api.Test;
  * Helper add functionality to consume JobQueueManagerAPI
  * Here we test those functionalities, methods that simply call the JobQueueManagerAPI are not tested
  */
-public class JobQueueHelperIntegrationTest {
+public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
 
-    static JobQueueHelper jobQueueHelper;
-
-    @BeforeAll
-    static void setUp() throws Exception {
-        // Initialize the test environment
-        IntegrationTestInitService.getInstance().init();
-        jobQueueHelper = CDIUtils.getBean(JobQueueHelper.class).orElseThrow(() -> new IllegalStateException("JobQueueHelper Bean not found"));
-    }
+    @Inject
+    JobQueueHelper jobQueueHelper;
 
     @Test
     void testEmptyParams(){
