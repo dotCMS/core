@@ -344,12 +344,28 @@ jobs:
     name: Generate SBOM
     runs-on: ubuntu-latest
     needs: [  prepare-release, build-push-image ]
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
+
       - uses: ./.github/actions/legacy-release/sbom-generator
+        id: sbom-generator
         with:
           dotcms_version: ${{ needs.prepare-release.outputs.release_version }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Download all build artifacts'
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ github.workspace }}/artifacts
+          pattern: ${{ steps.sbom-generator.outputs.sbom-artifact }}
+          
+      - name: Upload SBOM Asset
+        env:
+          GITHUB_TOKEN: ${{ github.token }}  
+        run: |
+          zip ./artifacts/${{ steps.sbom-generator.outputs.sbom-artifact }}.zip ./artifacts/${{ steps.sbom-generator.outputs.sbom-artifact }}.json
+          gh release upload "${{ needs.prepare-release.outputs.release_tag }}" "./artifacts/${{ steps.sbom-generator.outputs.sbom-artifact }}.zip"    
 
   finish-release:
     name: Finish Release
