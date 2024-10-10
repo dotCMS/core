@@ -15,6 +15,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.StringUtils;
 import graphql.AssertException;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -162,15 +163,7 @@ public class Task241007CreateUniqueFieldsTableTest {
     private static String getHash(ContentType contentType, Field uniqueField, Contentlet contentlet_1) throws NoSuchAlgorithmException {
         final String valueToHash_1 = contentType.id() + uniqueField.variable() + contentlet_1.getLanguageId() +
                 contentlet_1.get(uniqueField.variable());
-        final MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        final byte[] hashBytes = digest.digest(valueToHash_1.getBytes());
-
-        StringBuilder hexString = new StringBuilder();
-        for (byte b : hashBytes) {
-            hexString.append(String.format("%02x", b));
-        }
-
-        return hexString.toString();
+        return StringUtils.hashText(valueToHash_1);
     }
 
     private static String getHashIncludeSiteId(ContentType contentType, Field uniqueField, Contentlet contentlet)

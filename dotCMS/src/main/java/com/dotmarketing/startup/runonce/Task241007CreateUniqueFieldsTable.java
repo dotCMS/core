@@ -13,6 +13,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -202,19 +203,7 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
                 uniqueFieldsValue.get("field_value").toString() +
                 (uniqueForSite ? uniqueFieldsValue.get("host_id").toString() : StringPool.BLANK);
 
-        try {
-            final MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            final byte[] hashBytes = digest.digest(valueToHash_1.getBytes());
-
-            final StringBuilder hexString = new StringBuilder();
-            for (byte b : hashBytes) {
-                hexString.append(String.format("%02x", b));
-            }
-
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
+        return StringUtils.hashText(valueToHash_1);
     }
 
     /**
