@@ -326,7 +326,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ConfigUtilsTest.class,
         SimpleInjectionIT.class,
         LegacyJSONObjectRenderTest.class,
-        Task241013RemoveFullPathLcColumnFromIdentifierTest.class
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
+        Task241009CreatePostgresJobQueueTablesTest.class
 })
 
 public class MainSuite2b {
