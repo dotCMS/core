@@ -22,8 +22,6 @@ public class JobQueueProducer {
      *
      * @return A JobQueue instance
      */
-    @Produces
-    @ApplicationScoped
     public JobQueue produceJobQueue() {
 
         if (JOB_QUEUE_IMPLEMENTATION_TYPE.equals("postgres")) {

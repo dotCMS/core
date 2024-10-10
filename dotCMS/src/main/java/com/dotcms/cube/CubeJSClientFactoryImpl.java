@@ -4,19 +4,22 @@ import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
-import com.dotcms.analytics.model.AccessTokenFetchMode;
 import com.dotcms.exception.AnalyticsException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Default;
 
 /**
  * Factory to create {@link CubeJSClient} instances.
  *
  * @author vico
  */
+@Default
+@ApplicationScoped
 public class CubeJSClientFactoryImpl implements CubeJSClientFactory {
 
     private static AnalyticsHelper analyticsHelper = AnalyticsHelper.get();

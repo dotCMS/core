@@ -5,16 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
-import com.dotcms.jobs.business.api.events.EventProducer;
-import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
-import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ExponentialBackoffRetryStrategy;
-import com.dotcms.jobs.business.error.RetryStrategy;
-import com.dotcms.jobs.business.error.RetryStrategyProducer;
 import com.dotcms.jobs.business.queue.JobQueue;
-import com.dotcms.jobs.business.queue.JobQueueProducer;
 import javax.inject.Inject;
-import org.jboss.weld.bootstrap.api.helpers.RegistrySingletonProvider;
 import org.jboss.weld.junit5.WeldInitiator;
 import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.jboss.weld.junit5.WeldSetup;
@@ -29,15 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 public class JobQueueManagerAPICDITest {
 
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.of(
-            WeldInitiator.createWeld()
-                    .containerId(RegistrySingletonProvider.STATIC_INSTANCE)
-                    .beanClasses(JobQueueManagerAPIImpl.class, JobQueueConfig.class,
-                            JobQueue.class, RetryStrategy.class, CircuitBreaker.class,
-                            JobQueueProducer.class, JobQueueConfigProducer.class,
-                            RetryStrategyProducer.class, RealTimeJobMonitor.class,
-                            EventProducer.class)
-    );
+    public WeldInitiator weld = WeldInitiator.performDefaultDiscovery();
 
     @Inject
     private JobQueueManagerAPI jobQueueManagerAPI;
