@@ -6,7 +6,7 @@
     height: 100%;
 
     // Only set two columns if the palette is present
-    &:has(dot-edit-ema-palette) {
+    &:has(.sidepanel) {
         grid-template-columns: 1fr 15.5rem;
     }
 }

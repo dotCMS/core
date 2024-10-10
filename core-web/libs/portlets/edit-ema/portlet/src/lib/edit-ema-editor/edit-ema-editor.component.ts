@@ -90,6 +90,7 @@ import {
     getDragItemData,
     insertContentletInContainer
 } from '../utils';
+import { UveEditStyleFormComponent } from './components/uve-edit-style-form/uve-edit-style-form.component';
 
 @Component({
     selector: 'dot-edit-ema-editor',
@@ -112,7 +113,8 @@ import {
         EmaContentletToolsComponent,
         DotEmaBookmarksComponent,
         ProgressBarModule,
-        DotResultsSeoToolComponent
+        DotResultsSeoToolComponent,
+        UveEditStyleFormComponent
     ],
     providers: [
         DotCopyContentModalService,
@@ -624,6 +626,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.uveStore.savePage(pageContainers);
         }
     }
+
+    /**
+     * Handle edit styles for a contentlet
+     *
+     * @protected
+     * @param {ActionPayload} payload
+     * @memberof EditEmaEditorComponent
+     */
+    protected handleEditStyles(payload: ActionPayload): void {
+        this.uveStore.setStylesPanelOpen(payload.contentlet);
+    }
+
+    protected closeStylesPanel() {
+        this.uveStore.setStylesPanelOpen(null);
+    }
+
     /**
      * Delete contentlet
      *
@@ -789,6 +807,39 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.cd.detectChanges();
             }
         })[detail.name];
+    }
+
+    handleFormValueChange(value: any) {
+
+        const payload = this.uveStore.pageAPIResponse();
+
+        Object.keys(payload.containers).forEach((key) => {
+            const container = payload.containers[key];
+            const contentletsObj = container.contentlets;
+
+            Object.keys(contentletsObj).forEach((contentletKey) => {
+                const contentlets = contentletsObj[contentletKey];
+
+                contentlets.forEach((contentlet) => {
+                    if (contentlet.inode === value.inode) {
+                        contentlet['customStyles'] = value.customStyles;
+                    }
+                })
+            })
+        });
+        
+
+        // Send the updated payload to the iframe
+        this.iframe?.nativeElement?.contentWindow?.postMessage(
+            { name: NOTIFY_CUSTOMER.SET_PAGE_DATA, payload },
+            this.host
+        );
+
+        
+        // Save the updated contentlet
+        this.dotPageApiService.saveContentlet({ contentlet: value }).subscribe((c) => {
+            console.log('saved', c);
+        });
     }
 
     /**
@@ -967,6 +1018,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 this.uveStore.setClientConfiguration({ query, params });
                 this.uveStore.reload();
+            },
+            [CUSTOMER_ACTIONS.REGISTER_COMPONENTS]: (payload: any) => {
+                console.log('registerComponents:', payload);
+                this.uveStore.setCustomComponents(payload);
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
