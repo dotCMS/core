@@ -1,7 +1,8 @@
-import { Location, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     DestroyRef,
     inject,
     input,
@@ -27,6 +28,7 @@ import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
 import { resolutionValue } from './utils';
 
+import { Router } from '@angular/router';
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
 import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import {
@@ -60,9 +62,11 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentFormComponent implements OnInit {
-    readonly #location = inject(Location);
+    readonly #router = inject(Router);
     readonly $store = inject(DotEditContentStore);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #fb = inject(FormBuilder);
+    readonly #dotMessageService = inject(DotMessageService);
 
     $tabs = signal<DotCMSContentTypeLayoutTab[]>([]);
 
@@ -76,6 +80,15 @@ export class DotEditContentFormComponent implements OnInit {
     $formData = input.required<EditContentForm>({ alias: 'formData' });
 
     /**
+     * Computed signal that contains the type of the content type from $formData
+     */
+    $contentTypeName = computed(() => {
+        const { contentType } = this.$formData();
+
+        return contentType.name;
+    });
+
+    /**
      * Output event emitter that informs when the form has changed.
      * Emits an object of type Record<string, string> containing the updated form values.
      *
@@ -87,9 +100,6 @@ export class DotEditContentFormComponent implements OnInit {
 
     readonly fieldTypes = FIELD_TYPES;
     readonly filteredTypes = FILTERED_TYPES;
-
-    readonly #fb = inject(FormBuilder);
-    readonly #dotMessageService = inject(DotMessageService);
 
     ngOnInit() {
         if (this.$formData()) {
@@ -222,14 +232,17 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Navigates back to the previous page.
+     * Navigates back to the content listing page.
      *
-     * This method uses the Angular Location service to navigate
-     * to the previous page in the browser's history.
+     * This method uses the Angular Router service to navigate
+     * to the content listing page with a filter based on the current content type.
      *
      * @memberof DotEditContentFormComponent
      */
     goBack(): void {
-        this.#location.back();
+        const filter = this.$contentTypeName();
+        this.#router.navigate(['/c/content'], {
+            queryParams: { filter }
+        });
     }
 }
