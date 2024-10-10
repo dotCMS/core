@@ -557,6 +557,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
         addRewriteRule( rule );
     }
 
+
+
     /**
      * Register a WorkFlowActionlet service
      *
@@ -564,11 +566,12 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param actionlet
      */
     protected void registerActionlet ( BundleContext context, WorkFlowActionlet actionlet ) {
-
+        APILocator.getWorkflowAPI().registerBundleService();
         //Getting the service to register our Actionlet
+
         ServiceReference<?> serviceRefSelected = context.getServiceReference( WorkflowAPIOsgiService.class.getName() );
         if ( serviceRefSelected == null ) {
-            return;
+            throw new DotRuntimeException( "WorkflowAPIOsgiService not found!, unable to register actionlet" );
         }
 
 
