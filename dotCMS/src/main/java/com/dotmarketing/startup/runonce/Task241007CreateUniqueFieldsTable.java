@@ -142,13 +142,16 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
             final List<String> contentlets = Arrays.stream(((String[]) ((Array) uniqueFieldsValue.get("contentlet_identifier"))
                     .getArray())).collect(Collectors.toList());
 
+            final boolean uniqueForSite = isUniqueForSite(uniqueFieldsValue.get("content_type_id").toString(),
+                    uniqueFieldsValue.get("field_var_name").toString());
+
             final Map<String, Object> supportingValues = Map.of(
                  "contentTypeID", uniqueFieldsValue.get("content_type_id"),
                 "fieldVariableName", uniqueFieldsValue.get("field_var_name"),
                 "fieldValue", uniqueFieldsValue.get("field_value"),
                 "languageId", Long.parseLong(uniqueFieldsValue.get("language_id").toString()),
                 "hostId", uniqueFieldsValue.get("host_id"),
-                "uniquePerSite", false,
+                "uniquePerSite", uniqueForSite,
                 "contentletsId", contentlets
             );
 
@@ -193,10 +196,7 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
         final String contentTypeId = uniqueFieldsValue.get("content_type_id").toString();
         final String fieldVariableName = uniqueFieldsValue.get("field_var_name").toString();
 
-        final Field uniqueField = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(contentTypeId, fieldVariableName);
-
-        final boolean uniqueForSite = uniqueField.fieldVariableValue(ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
-                .map(Boolean::valueOf).orElse(false);
+        final boolean uniqueForSite = isUniqueForSite(contentTypeId, fieldVariableName);
 
         final String valueToHash_1 = contentTypeId + fieldVariableName +
                 uniqueFieldsValue.get("language_id").toString() +
@@ -204,6 +204,14 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
                 (uniqueForSite ? uniqueFieldsValue.get("host_id").toString() : StringPool.BLANK);
 
         return StringUtils.hashText(valueToHash_1);
+    }
+
+    private static boolean isUniqueForSite(String contentTypeId, String fieldVariableName) throws DotDataException {
+        final Field uniqueField = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(contentTypeId, fieldVariableName);
+
+        final boolean uniqueForSite = uniqueField.fieldVariableValue(ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
+                .map(Boolean::valueOf).orElse(false);
+        return uniqueForSite;
     }
 
     /**

@@ -1,6 +1,8 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -147,14 +149,19 @@ public class Task241007CreateUniqueFieldsTableTest {
         checkSupportingValues(result_2, contentType, uniqueField, contentlet_2);
     }
 
-    private static void checkSupportingValues(Map<String, Object> result_1, ContentType contentType, Field uniqueField, Contentlet... contentlets) throws IOException {
+    private static void checkSupportingValues(Map<String, Object> result_1, ContentType contentType,
+                                              Field uniqueField, Contentlet... contentlets) throws IOException {
+
+        final boolean uniqueForSite = uniqueField.fieldVariableValue(ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
+                .map(Boolean::valueOf).orElse(false);
+
         final Map<String, Object> supportingValues_1 = JsonUtil.getJsonFromString(result_1.get("supporting_values").toString());
         assertEquals(contentType.id(), supportingValues_1.get("contentTypeID"));
         assertEquals(uniqueField.variable(), supportingValues_1.get("fieldVariableName"));
         assertEquals(contentlets[0].get(uniqueField.variable()), supportingValues_1.get("fieldValue"));
         assertEquals(contentlets[0].getLanguageId(), Long.parseLong(supportingValues_1.get("languageId").toString()));
         assertEquals(contentlets[0].getHost(), supportingValues_1.get("hostId"));
-        assertEquals(false, supportingValues_1.get("uniquePerSite"));
+        assertEquals(uniqueForSite, supportingValues_1.get("uniquePerSite"));
         assertEquals(contentlets.length, ((List) supportingValues_1.get("contentletsId")).size());
         assertEquals(Arrays.stream(contentlets).map(Contentlet::getIdentifier).sorted().collect(Collectors.toList()),
                 ((List<String>) supportingValues_1.get("contentletsId")).stream().sorted().collect(Collectors.toList()));
@@ -294,7 +301,8 @@ public class Task241007CreateUniqueFieldsTableTest {
     @Test
     public void populateWithUniquePerSiteEnabled() throws DotDataException, NoSuchAlgorithmException, IOException {
         final Field titleField = new FieldDataGen().type(TextField.class).name("title").next();
-        final Field uniqueField = new FieldDataGen().type(TextField.class).name("unique").unique(true).next();
+        Field uniqueField = new FieldDataGen().type(TextField.class).name("unique").unique(true).next();
+        final String uniqueFieldVariable = uniqueField.variable();
 
         final ContentType contentType = new ContentTypeDataGen().field(titleField).field(uniqueField).nextPersisted();
 
@@ -302,11 +310,13 @@ public class Task241007CreateUniqueFieldsTableTest {
                 .key(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
                 .value("true")
                 .field(contentType.fields().stream()
-                        .filter(field -> field.variable().equals(uniqueField.variable()))
+                        .filter(field -> field.variable().equals(uniqueFieldVariable))
                         .limit(1)
                         .findFirst()
                         .orElseThrow())
                 .nextPersisted();
+
+        uniqueField = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(contentType.id(), uniqueField.variable());
 
         final Contentlet contentlet_1 = new ContentletDataGen(contentType)
                 .setProperty(titleField.variable(), "Title_1_" + System.currentTimeMillis())
@@ -347,4 +357,6 @@ public class Task241007CreateUniqueFieldsTableTest {
         checkSupportingValues(result_2, contentType, uniqueField, contentlet_2);
 
     }
+
+
 }
