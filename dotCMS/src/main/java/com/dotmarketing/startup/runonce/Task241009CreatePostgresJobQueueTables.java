@@ -1,9 +1,14 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
+import com.dotmarketing.util.Logger;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 /**
  * Upgrade task to create the necessary tables and indexes for the Postgres Job Queue
@@ -26,13 +31,32 @@ public class Task241009CreatePostgresJobQueueTables implements StartupTask {
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
 
-        // Create the job queue tables
-        createJobQueueTable();
-        createJobTable();
-        createJobHistoryTable();
+        final Connection connection = DbConnectionFactory.getConnection();
+        final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
 
-        // Create the indexes
-        createIndexes();
+        try {
+
+            // job_queue table
+            if (!databaseMetaData.tableExists(connection, "job_queue")) {
+                createJobQueueTable();
+                createJobQueueTableIndexes();
+            }
+
+            // job table
+            if (!databaseMetaData.tableExists(connection, "job")) {
+                createJobTable();
+                createJobTableIndexes();
+            }
+
+            // job_history table
+            if (!databaseMetaData.tableExists(connection, "job_history")) {
+                createJobHistoryTable();
+                createJobHistoryTableIndexes();
+            }
+        } catch (SQLException e) {
+            Logger.error("Error creating job queue tables", e);
+            throw new DotRuntimeException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -50,6 +74,22 @@ public class Task241009CreatePostgresJobQueueTables implements StartupTask {
                             "priority INTEGER DEFAULT 0, " +
                             "created_at timestamptz NOT NULL)"
             );
+        } catch (Exception ex) {
+            throw new DotDataException(ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Creates the necessary indexes for the job_queue table.
+     *
+     * @throws DotDataException if an error occurs while creating the indexes.
+     */
+    private void createJobQueueTableIndexes() throws DotDataException {
+        try {
+            new DotConnect().executeStatement(
+                    "CREATE INDEX idx_job_queue_status ON job_queue (state)");
+            new DotConnect().executeStatement(
+                    "CREATE INDEX idx_job_queue_priority_created_at ON job_queue (priority DESC, created_at ASC)");
         } catch (Exception ex) {
             throw new DotDataException(ex.getMessage(), ex);
         }
@@ -83,6 +123,25 @@ public class Task241009CreatePostgresJobQueueTables implements StartupTask {
     }
 
     /**
+     * Creates the necessary indexes for the job table.
+     *
+     * @throws DotDataException if an error occurs while creating the indexes.
+     */
+    private void createJobTableIndexes() throws DotDataException {
+        try {
+            new DotConnect().executeStatement(
+                    "CREATE INDEX idx_job_parameters ON job USING GIN (parameters)");
+            new DotConnect().executeStatement(
+                    "CREATE INDEX idx_job_result ON job USING GIN (result)");
+            new DotConnect().executeStatement("CREATE INDEX idx_job_status ON job (state)");
+            new DotConnect().executeStatement(
+                    "CREATE INDEX idx_job_created_at ON job (created_at)");
+        } catch (Exception ex) {
+            throw new DotDataException(ex.getMessage(), ex);
+        }
+    }
+
+    /**
      * Creates the job_history table.
      *
      * @throws DotDataException if an error occurs while creating the table.
@@ -105,23 +164,12 @@ public class Task241009CreatePostgresJobQueueTables implements StartupTask {
     }
 
     /**
-     * Creates the necessary indexes for the job queue tables.
+     * Creates the necessary indexes for the job_history table.
      *
      * @throws DotDataException if an error occurs while creating the indexes.
      */
-    private void createIndexes() throws DotDataException {
+    private void createJobHistoryTableIndexes() throws DotDataException {
         try {
-            new DotConnect().executeStatement(
-                    "CREATE INDEX idx_job_queue_status ON job_queue (state)");
-            new DotConnect().executeStatement(
-                    "CREATE INDEX idx_job_queue_priority_created_at ON job_queue (priority DESC, created_at ASC)");
-            new DotConnect().executeStatement(
-                    "CREATE INDEX idx_job_parameters ON job USING GIN (parameters)");
-            new DotConnect().executeStatement(
-                    "CREATE INDEX idx_job_result ON job USING GIN (result)");
-            new DotConnect().executeStatement("CREATE INDEX idx_job_status ON job (state)");
-            new DotConnect().executeStatement(
-                    "CREATE INDEX idx_job_created_at ON job (created_at)");
             new DotConnect().executeStatement(
                     "CREATE INDEX idx_job_history_job_id ON job_history (job_id)");
             new DotConnect().executeStatement(
