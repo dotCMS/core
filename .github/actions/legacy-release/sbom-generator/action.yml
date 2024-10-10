@@ -4,9 +4,6 @@ inputs:
   dotcms_version:
     description: 'The dotCMS version (vYY.MM.DD)'
     required: true
-  dotcms_package:
-    description: 'The dotCMS product (core, cli, etc.)'
-    required: true
   github_token:
     description: 'GitHub token for pushing changes'
     required: true
@@ -18,7 +15,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Checkout core-test-results repository
+    - name: Checkout core repository
       uses: actions/checkout@v4
       with:
         repository: dotCMS/core
@@ -49,13 +46,13 @@ runs:
     - name: Rename SBOM file with dotCMS version
       shell: bash
       run: |
-        mv core/sbom-cyclonedx.json core/sbom-dotcms-${{ inputs.dotcms_package }}-${{ env.DOTCMS_VERSION }}.json
+        mv core/sbom-cyclonedx.json core/sbom-dotcms-${{ env.DOTCMS_VERSION }}.json
 
     - name: Upload SBOM to GitHub
       uses: actions/upload-artifact@v4
       with:
-        name: sbom-dotcms-${{ inputs.dotcms_package }}-${{ env.DOTCMS_VERSION }}
-        path: core/sbom-dotcms-${{ inputs.dotcms_package }}-${{ env.DOTCMS_VERSION }}.json
+        name: sbom-dotcms-${{ env.DOTCMS_VERSION }}
+        path: core/sbom-dotcms-${{ env.DOTCMS_VERSION }}.json
 
     - name: Set SBOM artifact
       shell: bash
@@ -64,4 +61,4 @@ runs:
         PACKAGE: ${{ inputs.dotcms_package }}
         VERSION: ${{ env.DOTCMS_VERSION }}
       run: |
-        echo "artifact=sbom-dotcms-${PACKAGE}-${VERSION}" >> $GITHUB_OUTPUT
+        echo "artifact=sbom-dotcms-${VERSION}" >> $GITHUB_OUTPUT
