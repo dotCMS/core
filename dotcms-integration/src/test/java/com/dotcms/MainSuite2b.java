@@ -177,6 +177,7 @@ import com.dotmarketing.startup.runonce.Task240112AddMetadataColumnToStructureTa
 import com.dotmarketing.startup.runonce.Task240513UpdateContentTypesSystemFieldTest;
 import com.dotmarketing.startup.runonce.Task240530AddDotAIPortletToLayoutTest;
 import com.dotmarketing.startup.runonce.Task240606AddVariableColumnToWorkflowTest;
+import com.dotmarketing.startup.runonce.Task241009CreatePostgresJobQueueTablesTest;
 import com.dotmarketing.startup.runonce.Task241013RemoveFullPathLcColumnFromIdentifierTest;
 import com.dotmarketing.util.ConfigUtilsTest;
 import com.dotmarketing.util.ITConfigTest;
