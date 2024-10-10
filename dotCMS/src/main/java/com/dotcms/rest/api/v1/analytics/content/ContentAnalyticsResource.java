@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.analytics.content;
 
 import com.dotcms.analytics.content.ContentAnalyticsAPI;
 import com.dotcms.analytics.content.ReportResponse;
+import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
@@ -26,6 +27,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Resource class that exposes endpoints to query content analytics data.
@@ -126,7 +129,64 @@ public class ContentAnalyticsResource {
         Logger.debug(this, () -> "Querying content analytics data with the form: " + queryForm);
         final ReportResponse reportResponse =
                 this.contentAnalyticsAPI.runReport(queryForm.getQuery(), user);
-        return new ReportResponseEntityView(reportResponse);
+        return new ReportResponseEntityView(reportResponse.getResults().stream().map(ResultSetItem::getAll).collect(Collectors.toList()));
+    }
+
+    /**
+     * Query Content Analytics data.
+     *
+     * @param request   the HTTP request.
+     * @param response  the HTTP response.
+     * @param queryForm the query form.
+     * @return the report response entity view.
+     */
+    @Operation(
+            operationId = "postContentAnalyticsQuery",
+            summary = "Retrieve Content Analytics data",
+            description = "Returns information of specific dotCMS objects whose health and engagement data is tracked.",
+            tags = {"Content Analytics"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Content Analytics data being queried",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {
+                                            @ExampleObject(
+                                                    value = "{\n" +
+                                                            "    \"dimensions\": [\n" +
+                                                            "        \"Events.experiment\",\n" +
+                                                            "        \"Events.variant\"\n" +
+                                                            "    ]\n" +
+                                                            "}"
+                                            )
+                                    }
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad Request"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
+    @POST
+    @Path("/_query/cube")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ReportResponseEntityView queryCubeJs(@Context final HttpServletRequest request,
+                                          @Context final HttpServletResponse response,
+                                          final String cubeJsQueryJson) {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final User user = initDataObject.getUser();
+        DotPreconditions.checkNotNull(cubeJsQueryJson, IllegalArgumentException.class, "The 'query' JSON data cannot be null");
+        Logger.debug(this,  ()->"Querying content analytics data with the cube query json: " + cubeJsQueryJson);
+        final ReportResponse reportResponse =
+                this.contentAnalyticsAPI.runRawReport(cubeJsQueryJson, user);
+        return new ReportResponseEntityView(reportResponse.getResults().stream().map(ResultSetItem::getAll).collect(Collectors.toList()));
     }
 
 }

@@ -193,8 +193,8 @@ jobs:
       fail-fast: false
       matrix:
         suites:
-          - { name: "JVM E2E Suite", pathName: "jvme2etestsuite", maven_args: '-Dit.test=E2eTestSuite -Dci=true -pl :dotcms-e2e-java' }
-          - { name: "Node.js E2E Suite", pathName: "nodee2etestsuite", maven_args: '-De2e.test.env=ci -pl :dotcms-e2e-node' }
+          - { name: "JVM E2E Suite", pathName: "jvme2etestsuite", maven_args: '-Dci=true -Dit.test=E2eTestSuite -De2e.test.forkCount=1 -pl :dotcms-e2e-java' }
+          - { name: "Node E2E Suite", pathName: "nodee2etestsuite", maven_args: '-De2e.test.env=ci -pl :dotcms-e2e-node' }
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

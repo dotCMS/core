@@ -15,7 +15,7 @@ jobs:
       # This is how we instruct the cli to create the workspace if it does not exist
       DOT_CREATE_WORKSPACE: ${{ vars.DOT_CREATE_WORKSPACE || 'true' }}
       # This is the CLI version to use, but we can always override this value
-      DOT_CLI_JAR_DOWNLOAD_URL: ${{ vars.DOT_CLI_JAR_DOWNLOAD_URL || 'https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/dotcms-cli/1.0.0-SNAPSHOT/dotcms-cli-1.0.0-20231002.205953-1.jar' }}
+      DOT_CLI_JAR_DOWNLOAD_URL: ${{ vars.DOT_CLI_JAR_DOWNLOAD_URL || 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/dotcms-cli/24.10.02/dotcms-cli-24.10.02-runner.jar' }}
       # In case we want to force the download of the CLI jar
       DOT_FORCE_DOWNLOAD: ${{ vars.DOT_FORCE_DOWNLOAD || 'false' }}
     steps:

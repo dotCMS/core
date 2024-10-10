@@ -10,9 +10,9 @@ import com.dotcms.graphql.GraphqlCacheWebInterceptor;
 import com.dotcms.jitsu.EventLogWebInterceptor;
 import com.dotcms.prerender.PreRenderSEOWebInterceptor;
 import com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptor;
-import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.variant.business.web.CurrentVariantWebInterceptor;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
 
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
@@ -27,6 +27,9 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
     @Override
     public void init(final FilterConfig config) throws ServletException {
 
+        if (!Config.isSystemTableConfigSourceInit()) {
+            Config.initSystemTableConfigSource();
+        }
         this.addInterceptors(config);
         super.init(config);
     } // init.

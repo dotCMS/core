@@ -10,7 +10,7 @@ import { DotContentAsideInformationComponent } from './components/dot-content-as
 import { DotContentAsideWorkflowComponent } from './components/dot-content-aside-workflow/dot-content-aside-workflow.component';
 import { DotEditContentAsideComponent } from './dot-edit-content-aside.component';
 
-import { CONTENT_FORM_DATA_MOCK } from '../../utils/mocks';
+import { CONTENT_FORM_DATA_MOCK, MockResizeObserver } from '../../utils/mocks';
 
 describe('DotEditContentAsideComponent', () => {
     let spectator: Spectator<DotEditContentAsideComponent>;
@@ -35,6 +35,9 @@ describe('DotEditContentAsideComponent', () => {
                 })
             }
         ]
+    });
+    beforeAll(() => {
+        window.ResizeObserver = MockResizeObserver;
     });
 
     beforeEach(() => {

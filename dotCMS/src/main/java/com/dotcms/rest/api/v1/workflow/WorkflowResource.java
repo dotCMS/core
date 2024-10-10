@@ -335,7 +335,7 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(operationId = "getWorkflowActionlets", summary = "Find all workflow actionlets",
-            description = "Returns a list of all workflow actionlets, a.k.a. [workflow sub-actions]" +
+            description = "Returns a list of all workflow actionlets — a.k.a. [workflow sub-actions]" +
                             "(https://www.dotcms.com/docs/latest/workflow-sub-actions). " +
                           "The returned list is complete and does not use pagination.",
             tags = {"Workflow"},
@@ -380,13 +380,47 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(operationId = "getWorkflowActionletsByActionId", summary = "Find workflow actionlets by workflow action",
-            description = "Returns a list of the workflow actionlets, a.k.a. [workflow sub-actions](https://www.dotcms." +
-                            "com/docs/latest/workflow-sub-actions), associated with a specified workflow action.",
+            description = "Returns a list of the workflow actionlets — a.k.a. [workflow sub-actions](https://www.dotcms." +
+                            "com/docs/latest/workflow-sub-actions) — associated with a specified workflow action.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Workflow actionlets returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityWorkflowActionClassesView.class)
+                                    schema = @Schema(implementation = ResponseEntityWorkflowActionClassesView.class),
+                                    examples = @ExampleObject(
+                                            value = "{\n" +
+                                                    "  \"entity\": [\n" +
+                                                    "    {\n" +
+                                                    "      \"actionId\": \"string\",\n" +
+                                                    "      \"actionlet\": {\n" +
+                                                    "        \"actionClass\": \"string\",\n" +
+                                                    "        \"howTo\": \"string\",\n" +
+                                                    "        \"localizedHowto\": \"string\",\n" +
+                                                    "        \"localizedName\": \"string\",\n" +
+                                                    "        \"name\": \"string\",\n" +
+                                                    "        \"nextStep\": null,\n" +
+                                                    "        \"parameters\": [\n" +
+                                                    "          {\n" +
+                                                    "            \"displayName\": \"string\",\n" +
+                                                    "            \"key\": \"string\",\n" +
+                                                    "            \"defaultValue\": \"string\",\n" +
+                                                    "            \"required\": true\n" +
+                                                    "          }\n" +
+                                                    "        ]\n" +
+                                                    "      },\n" +
+                                                    "      \"clazz\": \"string\",\n" +
+                                                    "      \"id\": \"string\",\n" +
+                                                    "      \"name\": \"string\",\n" +
+                                                    "      \"order\": 0\n" +
+                                                    "    }\n" +
+                                                    "  ],\n" +
+                                                    "  \"errors\": [],\n" +
+                                                    "  \"i18nMessagesMap\": {},\n" +
+                                                    "  \"messages\": [],\n" +
+                                                    "  \"pagination\": null,\n" +
+                                                    "  \"permissions\": []\n" +
+                                                    "}"
+                                    )
                             )
                     ),
                     @ApiResponse(responseCode = "401", description = "Invalid User"),
@@ -398,8 +432,7 @@ public class WorkflowResource {
     public final Response findActionletsByAction(@Context final HttpServletRequest request,
                                                  @PathParam("actionId") @Parameter(
                                                          required = true,
-                                                         description = "Identifier of workflow action to examine for " +
-                                                                       "actionlets.\n\n" +
+                                                         description = "Identifier of workflow action to examine for actionlets.\n\n" +
                                                                        "Example value: `b9d89c80-3d88-4311-8365-187323c96436` " +
                                                                        "(Default system workflow \"Publish\" action)",
                                                          schema = @Schema(type = "string")
@@ -1649,7 +1682,8 @@ public class WorkflowResource {
                                                                                                         "(https://www.dotcms.com/docs/latest/managing-workflows#ActionShow) the " +
                                                                                                         "action is visible. States must be specified uppercase, such as `NEW` or " +
                                                                                                         "`LOCKED`. There is no single state for ALL; each state must be listed. |\n" +
-                                                                              "| `actionNextStep` | String | The identifier of the step to enter after performing the action. |\n" +
+                                                                              "| `actionNextStep` | String | The identifier of the step to enter after performing the action; " +
+                                                                                                            "`currentstep` is also a valid value. |\n" +
                                                                               "| `actionNextAssign` | String | A user identifier or role key (such as `CMS Anonymous`) to serve as the " +
                                                                                                         " default entry in the assignment dropdown. |\n" +
                                                                               "| `actionCondition` | String | [Custom Velocity code](https://www.dotcms.com/docs/latest/managing-workflows#" +
@@ -1723,24 +1757,19 @@ public class WorkflowResource {
                                        ) final String actionId,
                                        @RequestBody(
                                                description = "Body consists of a JSON object containing " +
-                                                       "a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
-                                                       "form. This includes the following properties:\n\n" +
+                                                       "the same form data as used above in `POST /v1/workflow/actions`. However, " +
+                                                       "this endpoint uses the form's properties differently, as noted below:\n\n" +
                                                        "| Property | Type | Description |\n" +
                                                        "|-|-|-|\n" +
-                                                       "| `actionId` | String | The identifier of the workflow action to be updated. " +
-                                                       "If left blank, a new workflow action will be created. |\n" +
                                                        "| `schemeId` | String | The [workflow scheme](https://www.dotcms.com/docs/latest" +
                                                        "/managing-workflows#Schemes) under which the action will be created. |\n" +
-                                                       "| `stepId` | String |  The [workflow step](https://www.dotcms.com/docs/latest" +
-                                                       "/managing-workflows#Steps) with which to associate the action. |\n" +
                                                        "| `actionName` | String | The name of the workflow action. Multiple actions of the " +
                                                        "same name can coexist with different identifiers.  |\n" +
                                                        "| `whoCanUse` | List of Strings | A list of identifiers representing [users]" +
                                                        "(https://www.dotcms.com/docs/latest/user-management), " +
                                                        "[role keys](https://www.dotcms.com/docs/latest/adding-roles), " +
                                                        "or [other user categories](https://www.dotcms.com" +
-                                                       "                             /docs/latest/managing-workflows#ActionWho)  " +
-                                                       "allowed to use this action. This list can be empty. |\n" +
+                                                       "/docs/latest/managing-workflows#ActionWho) allowed to use this action. This list can be empty. |\n" +
                                                        "| `actionIcon` | String | The icon to associate with the action. Example: `workflowIcon`.  |\n" +
                                                        "| `actionCommentable` | Boolean | Whether this action supports comments.  |\n" +
                                                        /* "| `requiresCheckout` | Boolean |   |\n" + // This is a deprecated, unnecessary, and broadly unused property. */
@@ -1748,14 +1777,17 @@ public class WorkflowResource {
                                                        "(https://www.dotcms.com/docs/latest/managing-workflows#ActionShow) the " +
                                                        "action is visible. States must be specified uppercase, such as `NEW` or " +
                                                        "`LOCKED`. There is no single state for ALL; each state must be listed. |\n" +
-                                                       "| `actionNextStep` | String | The identifier of the step to enter after performing the action. |\n" +
+                                                       "| `actionNextStep` | String | The identifier of the step to enter after performing the action; " +
+                                                                                    "`currentstep` is also a valid value. |\n" +
                                                        "| `actionNextAssign` | String | A user identifier or role key (such as `CMS Anonymous`) to serve as the " +
                                                        " default entry in the assignment dropdown. |\n" +
                                                        "| `actionCondition` | String | [Custom Velocity code](https://www.dotcms.com/docs/latest/managing-workflows#" +
                                                        "ActionAssign) to be executed along with the action. |\n" +
                                                        "| `actionAssignable` | Boolean | Whether this action can be assigned.  |\n" +
                                                        "| `actionRoleHierarchyForAssign` | Boolean | If true, non-administrators cannot assign tasks to administrators.  |\n" +
-                                                       "| `metadata` | Object | Additional metadata to include in the action definition. |\n\n",
+                                                       "| `metadata` | Object | Optional. Additional metadata to include in the action definition. |\n" +
+                                                       "| `actionId` | String | Omit; not used in this endpoint. |\n" +
+                                                       "| `stepId` | String | Omit; not used in this endpoint. |\n\n",
                                                required = true,
                                                content = @Content(schema = @Schema(implementation = WorkflowActionForm.class))
                                        ) final WorkflowActionForm workflowActionForm) {
@@ -1892,7 +1924,7 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes({MediaType.APPLICATION_JSON})
     @Operation(operationId = "postAddActionletToActionById", summary = "Adds an actionlet to a workflow action",
-            description = "Adds an actionlet — also known as a [workflow sub-action]" +
+            description = "Adds an actionlet — a.k.a. a [workflow sub-action]" +
                     "(https://www.dotcms.com/docs/latest/workflow-sub-actions) — to a [workflow action]" +
                     "(https://www.dotcms.com/docs/latest/managing-workflows#Actions).\n\n" +
                     "Returns \"Ok\" on success.",
@@ -2164,7 +2196,7 @@ public class WorkflowResource {
             description = "Removes an [actionlet](https://www.dotcms.com/docs/latest/workflow-sub-actions), or sub-action, " +
                     "from a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions). This deletes " +
                     "only the actionlet's binding to the action utilizing it, and leaves the actionlet category intact.\n\n" +
-                    "To find the identifier, you can call `GET /workflow/actions/{actionId}/actionlets`." +
+                    "To find the identifier, you can call `GET /workflow/actions/{actionId}/actionlets`.\n\n" +
                     "Returns \"Ok\" on success.\n\n",
             tags = {"Workflow"},
             responses = {
@@ -2322,7 +2354,7 @@ public class WorkflowResource {
                                                                                 "with `0` being the first. |\n" +
                                                      "| `stepName` | String | The name of the workflow step. |\n" +
                                                      "| `enableEscalation` | Boolean | Determines whether a step is capable of automatic escalation " +
-                                                                                    "to the next step.\n\n(Read more about [schedule-enabled workflows]" +
+                                                                                    "to the next step. (Read more about [schedule-enabled workflows]" +
                                                                                     "(https://www.dotcms.com/docs/latest/schedule-enabled-workflow).) |\n" +
                                                      "| `escalationAction` | String | The identifier of the workflow action to execute on automatic escalation. |\n" +
                                                      "| `escalationTime` | String | The time, in seconds, before the workflow automatically escalates. |\n" +
@@ -2386,12 +2418,12 @@ public class WorkflowResource {
                                                                             "/latest/managing-workflows#Schemes) to which the step will be added. |\n" +
                                                   "| `stepName` | String | The name of the workflow step. |\n" +
                                                   "| `enableEscalation` | Boolean | Determines whether a step is capable of automatic escalation " +
-                                                  "to the next step.\n\n(Read more about [schedule-enabled workflows]" +
-                                                  "(https://www.dotcms.com/docs/latest/schedule-enabled-workflow).) |\n" +
+                                                                            "to the next step. (Read more about [schedule-enabled workflows]" +
+                                                                            "(https://www.dotcms.com/docs/latest/schedule-enabled-workflow).) |\n" +
                                                   "| `escalationAction` | String | The identifier of the workflow action to execute on automatic escalation. |\n" +
                                                   "| `escalationTime` | String | The time, in seconds, before the workflow automatically escalates. |\n" +
                                                   "| `stepResolved` | Boolean | If true, any content which enters this workflow step will be considered resolved.\n" +
-                                                  "Content in a resolved step will not appear in the workflow queues of any users.\n |\n\n",
+                                                                            "Content in a resolved step will not appear in the workflow queues of any users.\n |\n\n",
                                           required = true,
                                           content = @Content(
                                                   schema = @Schema(implementation = WorkflowStepAddForm.class)
@@ -2477,7 +2509,7 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Operation(operationId = "putFireActionByNameMultipart", summary = "Fire action by name (multipart form) \uD83D\uDEA7",
-            description = "(**Construction notice:** Still awaiting request body documentation. Coming soon!)\n\n" +
+            description = "(**Construction notice:** Still needs request body documentation. Coming soon!)\n\n" +
                     "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
                     "specified by name, on a target contentlet. Uses a multipart form to transmit its data.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
@@ -3114,16 +3146,67 @@ public class WorkflowResource {
     //@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces("application/octet-stream")
-    @Operation(operationId = "postFireSystemActionByNameMulti", summary = "Fire system action by name over multiple contentlets \uD83D\uDEA7",
-            description = "(**Construction notice:** This endpoint currently cannot succeed on calls through the playground, " +
-                    "though curl and other methods work fine.)\n\n" +
-                    "Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
-                    "by name on multiple target contentlets.",
+    @Operation(operationId = "postFireSystemActionByNameMulti", summary = "Fire system action by name over multiple contentlets",
+            description = "Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
+                    "by name on multiple target contentlets.\n\nReturns a list of resultant contentlet maps, each with an additional  " +
+            "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
+            "services that handle automatically assigning workflow schemes to content with none.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                            content = @Content(mediaType = "application/octet-stream",
+                                    schema = @Schema(implementation = ResponseEntityView.class),
+                                    examples = @ExampleObject(value = "{\n" +
+                                            "  \"entity\": {\n" +
+                                            "    \"results\": [\n" +
+                                            "      {\n" +
+                                            "        \"c2701eced2b59f0bbd55b3d9667878ce\": {\n" +
+                                            "          \"AUTO_ASSIGN_WORKFLOW\": false,\n" +
+                                            "          \"archived\": false,\n" +
+                                            "          \"baseType\": \"string\",\n" +
+                                            "          \"body\": \"string\",\n" +
+                                            "          \"body_raw\": \"string\",\n" +
+                                            "          \"contentType\": \"string\",\n" +
+                                            "          \"creationDate\": 1725051866540,\n" +
+                                            "          \"folder\": \"string\",\n" +
+                                            "          \"hasLiveVersion\": false,\n" +
+                                            "          \"hasTitleImage\": false,\n" +
+                                            "          \"host\": \"string\",\n" +
+                                            "          \"hostName\": \"string\",\n" +
+                                            "          \"identifier\": \"c2701eced2b59f0bbd55b3d9667878ce\",\n" +
+                                            "          \"inode\": \"string\",\n" +
+                                            "          \"languageId\": 1,\n" +
+                                            "          \"live\": false,\n" +
+                                            "          \"locked\": false,\n" +
+                                            "          \"modDate\": 1727438483022,\n" +
+                                            "          \"modUser\": \"string\",\n" +
+                                            "          \"modUserName\": \"string\",\n" +
+                                            "          \"owner\": \"string\",\n" +
+                                            "          \"ownerName\": \"string\",\n" +
+                                            "          \"publishDate\": 1727438483051,\n" +
+                                            "          \"publishUser\": \"string\",\n" +
+                                            "          \"publishUserName\": \"string\",\n" +
+                                            "          \"sortOrder\": 0,\n" +
+                                            "          \"stInode\": \"string\",\n" +
+                                            "          \"title\": \"string\",\n" +
+                                            "          \"titleImage\": \"string\",\n" +
+                                            "          \"url\": \"string\",\n" +
+                                            "          \"working\": false\n" +
+                                            "        }\n" +
+                                            "      }\n" +
+                                            "    ],\n" +
+                                            "    \"summary\": {\n" +
+                                            "      \"affected\": 1,\n" +
+                                            "      \"failCount\": 0,\n" +
+                                            "      \"successCount\": 1,\n" +
+                                            "      \"time\": 45\n" +
+                                            "    }\n" +
+                                            "  },\n" +
+                                            "  \"errors\": [],\n" +
+                                            "  \"i18nMessagesMap\": {},\n" +
+                                            "  \"messages\": [],\n" +
+                                            "  \"permissions\": []\n" +
+                                            "}")
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -3196,7 +3279,16 @@ public class WorkflowResource {
                                                                                                 "[the Wikipedia entry listing tz database time zones]" +
                                                                                                 "(https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). |\n\n",
                                                             content = @Content(
-                                                                    schema = @Schema(implementation = FireMultipleActionForm.class)
+                                                                    schema = @Schema(implementation = FireMultipleActionForm.class),
+                                                                    examples = @ExampleObject(value = "{\n" +
+                                                                            "  \"contentlet\": [\n" +
+                                                                            "    {\n" +
+                                                                            "      \"identifier\": \"d684c0a9abeeeceea8b9a7e32fc272ae\"\n" +
+                                                                            "    },\n" +
+                                                                            "    { \"identifier\": \"c2701eced2b59f0bbd55b3d9667878ce\" }\n" +
+                                                                            "  ],\n" +
+                                                                            "  \"comments\": \"test comment\"\n" +
+                                                                            "}")
                                                             )
                                                     ) final FireMultipleActionForm fireActionForm) throws DotDataException, DotSecurityException {
 
@@ -3347,19 +3439,70 @@ public class WorkflowResource {
     //@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Produces("application/octet-stream")
     @Consumes({MediaType.APPLICATION_JSON})
-    @Operation(operationId = "patchFireMergeSystemAction", summary = "Modify specific fields on multiple contentlets \uD83D\uDEA7",
-            description = "(**Construction notice:** This endpoint currently cannot succeed on calls through the playground, " +
-                    "though curl and other methods work fine.)\n\n" +
-                    "Assigns values to the specified fields across multiple [contentlets](https://www.dotcms.com" +
+    @Operation(operationId = "patchFireMergeSystemAction", summary = "Modify specific fields on multiple contentlets",
+            description = "Assigns values to the specified fields across multiple [contentlets](https://www.dotcms.com" +
                     "/docs/latest/content#Contentlets) simultaneously.\n\n" +
                     "Can use a [Lucene query](https://www.dotcms.com/docs/latest/content-search-syntax#Lucene) in its " +
                     "body to select all resulting content items.\n\n" +
-                    "Returns a set of JSON objects.",
+                    "Returns a list of resultant contentlet maps, each with an additional  " +
+                    "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
+                    "services that handle automatically assigning workflow schemes to content with none.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Contentlet(s) modified successfully",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntitySystemActionWorkflowActionMappings.class)
+                            content = @Content(mediaType = "application/octet-stream",
+                                    schema = @Schema(implementation = ResponseEntityView.class),
+                                    examples = @ExampleObject(value = "{\n" +
+                                            "  \"entity\": {\n" +
+                                            "    \"results\": [\n" +
+                                            "      {\n" +
+                                            "        \"c2701eced2b59f0bbd55b3d9667878ce\": {\n" +
+                                            "          \"AUTO_ASSIGN_WORKFLOW\": false,\n" +
+                                            "          \"archived\": false,\n" +
+                                            "          \"baseType\": \"string\",\n" +
+                                            "          \"body\": \"string\",\n" +
+                                            "          \"body_raw\": \"string\",\n" +
+                                            "          \"contentType\": \"string\",\n" +
+                                            "          \"creationDate\": 1725051866540,\n" +
+                                            "          \"folder\": \"string\",\n" +
+                                            "          \"hasLiveVersion\": false,\n" +
+                                            "          \"hasTitleImage\": false,\n" +
+                                            "          \"host\": \"string\",\n" +
+                                            "          \"hostName\": \"string\",\n" +
+                                            "          \"identifier\": \"c2701eced2b59f0bbd55b3d9667878ce\",\n" +
+                                            "          \"inode\": \"string\",\n" +
+                                            "          \"languageId\": 1,\n" +
+                                            "          \"live\": false,\n" +
+                                            "          \"locked\": false,\n" +
+                                            "          \"modDate\": 1727438483022,\n" +
+                                            "          \"modUser\": \"string\",\n" +
+                                            "          \"modUserName\": \"string\",\n" +
+                                            "          \"owner\": \"string\",\n" +
+                                            "          \"ownerName\": \"string\",\n" +
+                                            "          \"publishDate\": 1727438483051,\n" +
+                                            "          \"publishUser\": \"string\",\n" +
+                                            "          \"publishUserName\": \"string\",\n" +
+                                            "          \"sortOrder\": 0,\n" +
+                                            "          \"stInode\": \"string\",\n" +
+                                            "          \"title\": \"string\",\n" +
+                                            "          \"titleImage\": \"string\",\n" +
+                                            "          \"url\": \"string\",\n" +
+                                            "          \"working\": false\n" +
+                                            "        }\n" +
+                                            "      }\n" +
+                                            "    ],\n" +
+                                            "    \"summary\": {\n" +
+                                            "      \"affected\": 1,\n" +
+                                            "      \"failCount\": 0,\n" +
+                                            "      \"successCount\": 1,\n" +
+                                            "      \"time\": 45\n" +
+                                            "    }\n" +
+                                            "  },\n" +
+                                            "  \"errors\": [],\n" +
+                                            "  \"i18nMessagesMap\": {},\n" +
+                                            "  \"messages\": [],\n" +
+                                            "  \"permissions\": []\n" +
+                                            "}")
                             )
                     ),
                     @ApiResponse(responseCode = "401", description = "Invalid User"),
@@ -3462,7 +3605,14 @@ public class WorkflowResource {
                                                                                              "[the Wikipedia entry listing tz database time zones]" +
                                                                                              "(https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). |\n\n",
                                                          content = @Content(
-                                                                 schema = @Schema(implementation = FireActionForm.class)
+                                                                 schema = @Schema(implementation = FireActionForm.class),
+                                                                 examples = @ExampleObject(value = "{\n" +
+                                                                         "    \"comments\":\"Publish an existing Generic content\",\n" +
+                                                                         "    \"query\":\"+contentType:webPageContent AND title:testcontent\",\n" +
+                                                                         "    \"contentlet\": {\n" +
+                                                                         "        \"title\":\"TestContentNowWithCaps\"\n" +
+                                                                         "    }\n" +
+                                                                         "}")
                                                          )
                                                  ) final FireActionForm fireActionForm) throws DotDataException, DotSecurityException {
 
@@ -3756,7 +3906,7 @@ public class WorkflowResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(operationId = "putFireActionByIdMultipart", summary = "Fire action by ID (multipart form) \uD83D\uDEA7",
-            description = "(**Construction notice:** Still awaiting request body documentation. Coming soon!)\n\n" +
+            description = "(**Construction notice:** Still needs request body documentation. Coming soon!)\n\n" +
                     "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
                     "specified by identifier, on a target contentlet. Uses a multipart form to transmit its data.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
@@ -3906,7 +4056,7 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Operation(operationId = "putFireActionByIdMultipart", summary = "Fire action by ID (multipart form) \uD83D\uDEA7",
-            description = "(**Construction notice:** Still awaiting request body documentation. Coming soon!)\n\n" +
+            description = "(**Construction notice:** Still needs request body documentation. Coming soon!)\n\n" +
                     "Fires a default [system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
                     "on target contentlet. Uses a multipart form to transmit its data.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
@@ -5228,7 +5378,7 @@ public class WorkflowResource {
     public final Response saveScheme(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response,
                                      @RequestBody(
-                                             description = "The request body consists of the following three properties:" +
+                                             description = "The request body consists of the following three properties:\n\n" +
                                                      "| Property | Type | Description |\n" +
                                                      "|-|-|-|\n" +
                                                      "| `schemeName` | String | The workflow scheme's name. |\n" +
@@ -5291,7 +5441,7 @@ public class WorkflowResource {
                                                schema = @Schema(type = "string")
                                        ) final String schemeId,
                                        @RequestBody(
-                                               description = "The request body consists of the following three properties:" +
+                                               description = "The request body consists of the following three properties:\n\n" +
                                                        "| Property | Type | Description |\n" +
                                                        "|-|-|-|\n" +
                                                        "| `schemeName` | String | The workflow scheme's name. |\n" +
