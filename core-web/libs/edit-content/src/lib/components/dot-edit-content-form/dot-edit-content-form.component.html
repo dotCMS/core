@@ -23,7 +23,7 @@
             }
         </p-tabView>
 
-        <ng-template #tabTemplate let-tab="tab">
+        <ng-template #tabTemplate let-tab="tab" pTemplate="content">
             <div class="dot-edit-content-form__layout">
                 @for (row of tab.layout; track row) {
                     <div class="dot-edit-content-form__layout-row" data-testId="row">
