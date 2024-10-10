@@ -1,3 +1,4 @@
+import { animate, style, transition, trigger } from '@angular/animations';
 import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -17,6 +18,7 @@ import {
     ValidatorFn,
     Validators
 } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { TabViewModule } from 'primeng/tabview';
@@ -27,8 +29,6 @@ import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
 import { resolutionValue } from './utils';
 
-import { animate, style, transition, trigger } from '@angular/animations';
-import { Router } from '@angular/router';
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
 import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import {
@@ -206,20 +206,28 @@ export class DotEditContentFormComponent implements OnInit {
      * @returns {Record<string, string>} The processed form value
      * @memberof DotEditContentFormComponent
      */
-    private processFormValue(value: Record<string, any>): Record<string, string> {
+    private processFormValue(
+        value: Record<string, string | string[] | Date | null | undefined>
+    ): Record<string, string> {
         return Object.fromEntries(
             this.$formData().contentType.fields.map(({ variable, fieldType }) => {
                 let fieldValue = value[variable];
 
-                if (FLATTENED_FIELD_TYPES.includes(fieldType as FIELD_TYPES)) {
-                    fieldValue = fieldValue?.join(',');
-                } else if (CALENDAR_FIELD_TYPES.includes(fieldType as FIELD_TYPES)) {
+                if (
+                    Array.isArray(fieldValue) &&
+                    FLATTENED_FIELD_TYPES.includes(fieldType as FIELD_TYPES)
+                ) {
+                    fieldValue = fieldValue.join(',');
+                } else if (
+                    fieldValue instanceof Date &&
+                    CALENDAR_FIELD_TYPES.includes(fieldType as FIELD_TYPES)
+                ) {
                     fieldValue = fieldValue
-                        ?.toISOString()
-                        .replace(/T|\.\d{3}Z/g, (match: string) => (match === 'T' ? ' ' : ''));
+                        .toISOString()
+                        .replace(/T|\.\d{3}Z/g, (match) => (match === 'T' ? ' ' : ''));
                 }
 
-                return [variable, fieldValue];
+                return [variable, fieldValue?.toString() ?? ''];
             })
         );
     }
@@ -271,14 +279,19 @@ export class DotEditContentFormComponent implements OnInit {
      * @returns {any} The initial value for the field, or null if no value could be resolved.
      * @memberof DotEditContentFormComponent
      */
-    private getInitialFieldValue(field: DotCMSContentTypeField, contentlet: DotCMSContentlet): any {
+    private getInitialFieldValue(
+        field: DotCMSContentTypeField,
+        contentlet: DotCMSContentlet
+    ): unknown {
         const resolutionFn = resolutionValue[field.fieldType as FIELD_TYPES];
         if (!resolutionFn) {
             console.warn(`No resolution function found for field type: ${field.fieldType}`);
+
             return null;
         }
 
         const value = resolutionFn(contentlet, field);
+
         return getFinalCastedValue(value, field) ?? null;
     }
 
