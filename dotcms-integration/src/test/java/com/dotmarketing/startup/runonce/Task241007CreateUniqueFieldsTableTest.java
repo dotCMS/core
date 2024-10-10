@@ -240,6 +240,59 @@ public class Task241007CreateUniqueFieldsTableTest {
         checkSupportingValues(uniqueValuesResult.get(0), contentType, uniqueField, contentlet_1, contentlet_2);
     }
 
+
+    /**
+     * Method to test: {@link Task241007CreateUniqueFieldsTable#executeUpgrade()}
+     * When: Run the method and already exists Contentlet with duplicated values for not unique fields
+     * Should: do nothing really
+     */
+    @Test
+    public void populateWhenExistsDuplicatedValuesButNotUniqueField() throws DotDataException, NoSuchAlgorithmException, IOException, DotSecurityException {
+        final Field titleField = new FieldDataGen().type(TextField.class).name("title").next();
+        final Field uniqueField = new FieldDataGen().type(TextField.class).name("unique").next();
+
+        final ContentType contentType = new ContentTypeDataGen().field(titleField).field(uniqueField).nextPersisted();
+        final String uniqueValue = "Unique_" + System.currentTimeMillis();
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "Title_1_" + System.currentTimeMillis())
+                .setProperty(uniqueField.variable(), uniqueValue)
+                .nextPersisted();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "Title_2_" + System.currentTimeMillis())
+                .setProperty(uniqueField.variable(), uniqueValue)
+                .nextPersisted();
+
+        final ImmutableTextField uniqueFieldUpdated = ImmutableTextField.builder()
+                .from(uniqueField)
+                .contentTypeId(contentType.id())
+                .build();
+
+        APILocator.getContentTypeFieldAPI().save(uniqueFieldUpdated, APILocator.systemUser());
+
+        final Task241007CreateUniqueFieldsTable task241007CreateUniqueFieldsTable = new Task241007CreateUniqueFieldsTable();
+
+        assertTrue(task241007CreateUniqueFieldsTable.forceRun());
+        task241007CreateUniqueFieldsTable.executeUpgrade();
+        assertFalse(task241007CreateUniqueFieldsTable.forceRun());
+
+        final List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * from unique_fields").loadObjectResults();
+
+        if (!results.isEmpty()) {
+            final String valueToHash_1 = getHash(contentType, uniqueField, contentlet_1);
+
+            final List<Map<String, Object>> uniqueValuesResult = results.stream()
+                    .filter(result -> result.get("unique_key_val").equals(valueToHash_1))
+                    .collect(Collectors.toList());
+
+            assertTrue(uniqueValuesResult.isEmpty());
+        } else {
+            assertTrue(true);
+        }
+        assertFalse(results.isEmpty());
+    }
+
     /**
      * Method to test: {@link Task241007CreateUniqueFieldsTable#executeUpgrade()}
      * When: Run the method and already exists Contentlet with Unique field and uniquePerSite enabled

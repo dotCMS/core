@@ -90,31 +90,13 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
                 " INNER JOIN structure ON structure.inode = contentlet.structure_inode" +
                 " INNER JOIN field ON structure.inode = field.structure_inode" +
                 " INNER JOIN identifier ON contentlet.identifier = identifier.id" +
-            " WHERE jsonb_extract_path_text(contentlet_as_json->'fields', field.velocity_var_name) IS NOT NULL" +
+            " WHERE jsonb_extract_path_text(contentlet_as_json->'fields', field.velocity_var_name) IS NOT NULL AND " +
+            " field.unique_ = true " +
             " GROUP BY structure.inode," +
                     " field.velocity_var_name ," +
                     " contentlet.language_id," +
                     " identifier.host_inode," +
                     " jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->> 'value'";
-
-    private static final String TESTING_QUERY = "SELECT structure.inode AS content_type_id," +
-            " field.velocity_var_name AS field_var_name," +
-            " contentlet.language_id AS language_id," +
-            " identifier.host_inode AS host_id," +
-            " jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->> 'value' AS field_value," +
-            " ARRAY_AGG(contentlet.identifier) AS contentlet_identifier" +
-            " FROM contentlet" +
-            " INNER JOIN structure ON structure.inode = contentlet.structure_inode" +
-            " INNER JOIN field ON structure.inode = field.structure_inode" +
-            " INNER JOIN identifier ON contentlet.identifier = identifier.id" +
-            " WHERE jsonb_extract_path_text(contentlet_as_json->'fields', field.velocity_var_name) IS NOT NULL AND" +
-            " jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->> 'value' = 'test.jpg'" +
-            " GROUP BY structure.inode," +
-            " field.velocity_var_name ," +
-            " contentlet.language_id," +
-            " identifier.host_inode," +
-            " jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->> 'value'";
-
     private static final String INSERT_UNIQUE_FIELDS_QUERY = "INSERT INTO unique_fields(unique_key_val, supporting_values) VALUES(?, ?)";
 
     @Override
@@ -174,10 +156,9 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
         }
 
         try {
-
             insertUniqueFieldsRegister(params);
         } catch (DotDataException e) {
-            throw new DotRuntimeException(new DotConnect().setSQL(TESTING_QUERY).loadObjectResults().toString());
+            throw new DotRuntimeException(e);
         }
     }
 
