@@ -1,4 +1,3 @@
-import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -15,7 +14,6 @@ import { DotEditContentStore } from './store/edit-content.store';
 
 import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
-import { DotEditContentToolbarComponent } from '../../components/dot-edit-content-toolbar/dot-edit-content-toolbar.component';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 
@@ -23,7 +21,6 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
     selector: 'dot-edit-content-form-layout',
     standalone: true,
     imports: [
-        AsyncPipe,
         DotMessagePipe,
         ButtonModule,
         ToastModule,
@@ -31,7 +28,6 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         RouterLink,
         DotEditContentFormComponent,
         DotEditContentAsideComponent,
-        DotEditContentToolbarComponent,
         ConfirmDialogModule
     ],
     providers: [
