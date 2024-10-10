@@ -1,7 +1,7 @@
 @let contentType = $store.contentType();
 @let variable = contentType.variable;
 @let contentlet = $store.contentlet();
-@let tabs = $tabs();
+@let tabs = $formData().tabs;
 
 <!-- TODO: Handle the error, no form -->
 @if (form) {
@@ -17,7 +17,7 @@
                 [dotTabViewAppend]="appendContent"></ng-template>
             <!-- Generations of panels  -->
             @for (tab of tabs; track tab) {
-                <p-tabPanel [header]="tab.title">
+                <p-tabPanel [header]="tab.title" [@fadeIn]>
                     <ng-container *ngTemplateOutlet="tabTemplate; context: { tab: tab }" />
                 </p-tabPanel>
             }
@@ -30,13 +30,11 @@
                         @for (column of row.columns; track column) {
                             <div class="dot-edit-content-form__layout-column" data-testId="column">
                                 @for (field of column.fields; track field) {
-                                    @if (!isFilteredType(field)) {
-                                        <dot-edit-content-field
-                                            [contentType]="variable"
-                                            [contentlet]="contentlet"
-                                            [field]="field"
-                                            data-testId="field" />
-                                    }
+                                    <dot-edit-content-field
+                                        [contentType]="variable"
+                                        [contentlet]="contentlet"
+                                        [field]="field"
+                                        data-testId="field" />
                                 }
                             </div>
                         }

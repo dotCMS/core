@@ -16,6 +16,7 @@ import {
     FIELD_TYPES
 } from '../models/dot-edit-content-field.enum';
 import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
+import { FILTERED_TYPES } from '../models/dot-edit-content-form.enum';
 import { SIDEBAR_LOCAL_STORAGE_KEY } from '../models/dot-edit-content.constant';
 
 // This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
@@ -247,4 +248,19 @@ export const getPersistSidebarState = (): boolean => {
  */
 export const setPersistSidebarState = (value: string) => {
     localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, value);
+};
+
+/**
+ * Checks if a given content type field is of a filtered type.
+ *
+ * This function determines whether the provided DotCMSContentTypeField's fieldType
+ * is included in the FILTERED_TYPES enum. It's used to identify fields that require
+ * special handling or filtering in the content management system.
+ *
+ * @param {DotCMSContentTypeField} field - The content type field to check.
+ * @returns {boolean} True if the field's type is in FILTERED_TYPES, false otherwise.
+ */
+
+export const isFilteredType = (field: DotCMSContentTypeField): boolean => {
+    return Object.values(FILTERED_TYPES).includes(field.fieldType as FILTERED_TYPES);
 };
