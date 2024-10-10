@@ -351,15 +351,12 @@ public class TaskLocatorUtil {
 		.add(Task241009CreatePostgresJobQueueTables.class)
 		.add(Task241013RemoveFullPathLcColumnFromIdentifier.class)
 		.add(Task241014AddTemplateValueOnContentletIndex.class)
+		.add(Task241009ReplaceLanguagesWithLocalesPortlet.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
-    final static private Comparator<Class<?>> classNameComparator = new Comparator<Class<?>>() {
-        public int compare(Class<?> o1, Class<?> o2) {
-            return o1.getName().compareTo(o2.getName());
-        }
-    };
+    private static final Comparator<Class<?>> classNameComparator = Comparator.comparing(Class::getName);
 
 	/**
 	 * Returns list of tasks that are run <b>every time</b> that dotCMS starts
