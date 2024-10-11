@@ -4,6 +4,9 @@ import com.dotmarketing.exception.DotDataException;
 
 import java.util.Map;
 
+/**
+ * This Factory allow you to interact with the unique_fields table
+ */
 public interface UniqueFieldFactory {
 
     /**

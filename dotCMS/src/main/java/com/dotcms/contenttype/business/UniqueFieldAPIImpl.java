@@ -2,13 +2,15 @@ package com.dotcms.contenttype.business;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Default implementation of {@link UniqueFieldAPI}
+ */
 public class UniqueFieldAPIImpl implements UniqueFieldAPI {
 
     private final UniqueFieldFactory uniqueFieldFactory;

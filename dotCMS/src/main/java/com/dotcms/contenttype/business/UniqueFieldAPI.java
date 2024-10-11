@@ -2,9 +2,9 @@ package com.dotcms.contenttype.business;
 
 import com.dotmarketing.exception.DotDataException;
 
-import java.util.Collections;
-import java.util.Map;
-
+/**
+ * This API allow you to interact with the unique_fields table
+ */
 public interface UniqueFieldAPI {
 
     /**

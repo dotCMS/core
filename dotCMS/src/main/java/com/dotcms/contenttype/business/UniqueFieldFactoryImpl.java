@@ -5,6 +5,9 @@ import com.dotmarketing.exception.DotDataException;
 
 import java.util.Map;
 
+/**
+ * Default implementation of {@link UniqueFieldFactory}
+ */
 public class UniqueFieldFactoryImpl implements UniqueFieldFactory {
 
     private final static String INSERT_SQL = "INSERT INTO unique_fields (unique_key_val, supporting_values) VALUES (?, ?)";

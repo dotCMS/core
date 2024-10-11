@@ -14,6 +14,9 @@ import com.liferay.util.StringPool;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Represent the criteria used to determine if a value is unique or not
+ */
 public class UniqueFieldCriteria {
     private final ContentType contentType;
     private final Field field;
@@ -29,18 +32,29 @@ public class UniqueFieldCriteria {
         this.site = builder.site;
     }
 
+    /**
+     * Return a Map with the values in this Unique Field Criteria
+     * @return
+     */
     public Map<String, Object> toMap(){
         return Map.of(
             "contentTypeID", Objects.requireNonNull(contentType.id()),
             "fieldVariableName", Objects.requireNonNull(field.variable()),
-            "fieldValue", value.toString(),
+            "" +
+                    "", value.toString(),
             "languageId", language.getId(),
             "hostId", site.getIdentifier(),
             "uniquePerSite", isUniqueForSite(contentType.id(), field.variable())
         );
     }
 
-
+    /**
+     * return true if the uniquePerSite Field Variable is set to true.
+     *
+     * @param contentTypeId
+     * @param fieldVariableName
+     * @return
+     */
     private static boolean isUniqueForSite(String contentTypeId, String fieldVariableName)  {
         try {
             final Field uniqueField = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(contentTypeId, fieldVariableName);
@@ -52,6 +66,17 @@ public class UniqueFieldCriteria {
         }
     }
 
+    /**
+     * Return a hash calculated as follow:
+     *
+     * - If the uniquePerSite Field Variable is set to true then concat the:
+     * Content Type' id + Field Variable Name + Language's Id + Field Value
+     *
+     * - If the uniquePerSite Field Variable is set to false then concat the:
+     * Content Type' id + Field Variable Name + Language's Id + Field Value + Site's id
+     *
+     * @return
+     */
     public String hash(){
         return StringUtils.hashText(contentType.id() + field.variable() + language.getId() + value +
                 ((isUniqueForSite(contentType.id(), field.variable())) ? site.getIdentifier() : StringPool.BLANK));
