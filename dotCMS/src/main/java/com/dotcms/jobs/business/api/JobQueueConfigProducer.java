@@ -1,9 +1,8 @@
 package com.dotcms.jobs.business.api;
 
 import com.dotmarketing.util.Config;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
 /**
  * This class is responsible for producing the configuration for the Job Queue system. It is
  * application-scoped, meaning a single instance is created for the entire application.

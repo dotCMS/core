@@ -3,7 +3,7 @@ package com.dotcms.jobs.business.api;
 import com.dotcms.jobs.business.error.JobProcessorInstantiationException;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotmarketing.util.Logger;
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class JobProcessorFactory {

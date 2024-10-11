@@ -1,9 +1,9 @@
 package com.dotcms.jobs.business.api.events;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
+import jakarta.enterprise.inject.spi.BeanManager;
 import java.lang.annotation.Annotation;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Event;
-import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 
 /**

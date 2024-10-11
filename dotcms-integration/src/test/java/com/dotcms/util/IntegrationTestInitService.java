@@ -13,7 +13,6 @@ import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.error.RetryStrategyProducer;
 import com.dotcms.jobs.business.queue.JobQueue;
-import com.dotcms.jobs.business.queue.JobQueueProducer;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
@@ -69,7 +68,6 @@ public class IntegrationTestInitService {
                                 JobQueue.class,
                                 RetryStrategy.class,
                                 CircuitBreaker.class,
-                                JobQueueProducer.class,
                                 JobQueueConfigProducer.class,
                                 RetryStrategyProducer.class,
                                 RealTimeJobMonitor.class,

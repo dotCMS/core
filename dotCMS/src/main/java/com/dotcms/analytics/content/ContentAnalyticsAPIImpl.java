@@ -5,7 +5,7 @@ import com.dotcms.cube.CubeJSQuery;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 /**

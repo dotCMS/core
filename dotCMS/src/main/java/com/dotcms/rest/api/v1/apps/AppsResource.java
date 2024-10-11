@@ -18,6 +18,7 @@ import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BeanParam;
@@ -41,6 +42,9 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
  */
 @Path("/v1/apps")
 public class AppsResource {
+
+    @Inject
+    SayHelloBean sayHelloBean;
 
     private final WebResource webResource;
     private AppsHelper helper;
@@ -74,6 +78,7 @@ public class AppsResource {
                                             @Context final HttpServletResponse response,
                                             @QueryParam("filter") final String filter
     ) {
+        sayHelloBean.sayHello();
         try {
             final InitDataObject initData =
                     new WebResource.InitBuilder(webResource)

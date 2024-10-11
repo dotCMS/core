@@ -1,8 +1,8 @@
 package com.dotcms.jobs.business.error;
 
 import com.dotmarketing.util.Config;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
 
 /**
  * This class is responsible for producing the default RetryStrategy used in the application. It is

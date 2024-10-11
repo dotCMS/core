@@ -2,12 +2,12 @@ package com.dotcms.jobs.business.api;
 
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotmarketing.util.Logger;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import javax.enterprise.context.ApplicationScoped;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.Index;
