@@ -1,187 +1,144 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { Observable, of } from 'rxjs';
+import { tapResponse } from '@ngrx/operators';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { pipe } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { computed, inject } from '@angular/core';
 
-import { switchMap, withLatestFrom } from 'rxjs/operators';
+import { switchMap, tap } from 'rxjs/operators';
 
 import { DotAiService } from '@dotcms/data-access';
 import {
-    ComponentStatus,
     AIImagePrompt,
-    DotAIImageContent,
+    ComponentStatus,
     DotAIImageOrientation,
     DotGeneratedAIImage,
     PromptType
 } from '@dotcms/dotcms-models';
 
-const DEFAULT_INPUT_PROMPT = PromptType.INPUT;
-
-export interface DotAiImagePromptComponentState {
-    editorContent: string | null;
+export interface AiImagePromptdState {
+    context: string | null;
     images: DotGeneratedAIImage[];
     status: ComponentStatus;
     galleryActiveIndex: number;
     formValue: AIImagePrompt;
+    error: string | null;
 }
 
-export interface VmAiImagePrompt {
-    status: ComponentStatus;
-    images: DotGeneratedAIImage[];
-    galleryActiveIndex: number;
-    isLoading: boolean;
-    formValue: AIImagePrompt;
-    hasEditorContent: boolean;
-}
-
-const initialState: DotAiImagePromptComponentState = {
+const initialState: AiImagePromptdState = {
     status: ComponentStatus.INIT,
     images: [],
-    editorContent: null,
+    context: null,
     galleryActiveIndex: 0,
+    error: null,
     formValue: {
         text: '',
-        type: DEFAULT_INPUT_PROMPT,
+        type: PromptType.INPUT,
         size: DotAIImageOrientation.HORIZONTAL
     }
 };
 
-@Injectable({ providedIn: 'root' })
-export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptComponentState> {
-    //Selectors
-    readonly isLoading$ = this.select(
-        this.state$,
-        ({ status }) => status === ComponentStatus.LOADING
-    );
+export const DotAiImagePromptdStore = signalStore(
+    withState(initialState),
+    withComputed(({ status, context, images, galleryActiveIndex }) => ({
+        isLoading: computed(() => {
+            const currentStatus = status();
 
-    //Updaters
+            return currentStatus === ComponentStatus.LOADING;
+        }),
+        hasContext: computed(() => {
+            const currentContext = context();
 
-    readonly showDialog = this.updater((state, editorContent: string) => {
+            return !!currentContext;
+        }),
+        currentImage: computed(() => {
+            const currentImages = images();
+            const currentGalleryActiveIndex = galleryActiveIndex();
+
+            return currentImages[currentGalleryActiveIndex];
+        }),
+        hasImages: computed(() => {
+            const currentImages = images();
+
+            return currentImages.length > 0;
+        }),
+        currentImageHasError: computed(() => {
+            const currentImages = images();
+            const currentGalleryActiveIndex = galleryActiveIndex();
+
+            const currentImage = currentImages[currentGalleryActiveIndex];
+
+            return currentImage?.error;
+        })
+    })),
+    withMethods((store) => {
+        const dotAiService = inject(DotAiService);
+
         return {
-            ...state,
-            showDialog: true,
-            selectedPromptType: DEFAULT_INPUT_PROMPT,
-            editorContent
-        };
-    });
+            setGalleryActiveIndex: (galleryActiveIndex: number) => {
+                patchState(store, { galleryActiveIndex });
+            },
+            setContext: (context: string) => {
+                patchState(store, { context });
+            },
+            setFormValue: (formValue: AIImagePrompt) => {
+                patchState(store, { formValue });
+            },
+            generateImage: rxMethod<void>(
+                pipe(
+                    tap(() => {
+                        patchState(store, { status: ComponentStatus.LOADING });
+                    }),
+                    switchMap(() => {
+                        const images = store.images();
+                        const galleryActiveIndex = store.galleryActiveIndex();
+                        const formValue = store.formValue();
+                        const context = store.context();
 
-    readonly cleanError = this.updater((state) => ({
-        ...state,
-        error: ''
-    }));
+                        const isImageWithError = !!images[galleryActiveIndex]?.error;
+                        const imagesArray = [...images];
+                        const cleanPrompt = formValue.text?.trim() ?? '';
+                        const finalPrompt =
+                            formValue.type === PromptType.AUTO && context
+                                ? `illustrate the following content: ${context}`
+                                : cleanPrompt;
 
-    readonly setFormValue = this.updater(
-        (state: DotAiImagePromptComponentState, formValue: AIImagePrompt) => ({
-            ...state,
-            formValue
-        })
-    );
+                        return dotAiService
+                            .generateAndPublishImage(finalPrompt, formValue.size)
+                            .pipe(
+                                tapResponse(
+                                    (response) => {
+                                        const newImage: DotGeneratedAIImage = {
+                                            request: formValue,
+                                            response: response,
+                                            error: null
+                                        };
 
-    readonly setGalleryActiveIndex = this.updater(
-        (state: DotAiImagePromptComponentState, galleryActiveIndex: number) => ({
-            ...state,
-            galleryActiveIndex
-        })
-    );
+                                        if (isImageWithError) {
+                                            imagesArray[galleryActiveIndex] = newImage;
+                                        } else {
+                                            imagesArray.push(newImage);
+                                        }
 
-    readonly hideDialog = this.updater(() => ({
-        ...initialState
-    }));
-
-    readonly vm$: Observable<VmAiImagePrompt> = this.select(
-        this.state$,
-        this.isLoading$,
-        ({ status, images, galleryActiveIndex, formValue, editorContent }, isLoading) => ({
-            status,
-            images,
-            galleryActiveIndex,
-            formValue,
-            isLoading,
-            hasEditorContent: !!editorContent
-        })
-    );
-
-    // Effects
-
-    /**
-     * The `generateImage` variable is a function that generates an image based on a given prompt.
-     *
-     * @param {Observable<string>} prompt$ - An observable representing the prompt.
-     * @returns {Observable} - An observable that emits the generated image.
-     */
-    readonly generateImage = this.effect((trigger$: Observable<void>) => {
-        return trigger$.pipe(
-            withLatestFrom(this.state$),
-            switchMap(([_, { editorContent, formValue, images, galleryActiveIndex }]) => {
-                const isImageWithError = !!images[galleryActiveIndex]?.error;
-                const imagesArray = [...images];
-                const cleanPrompt = formValue.text?.trim() ?? '';
-                const finalPrompt =
-                    formValue.type === PromptType.AUTO && editorContent
-                        ? `illustrate the following content: ${editorContent}`
-                        : cleanPrompt;
-
-                this.patchState({
-                    status: ComponentStatus.LOADING
-                });
-
-                return this.dotAiService.generateAndPublishImage(finalPrompt, formValue.size).pipe(
-                    tapResponse(
-                        (response) => {
-                            this.updateImageState(
-                                response,
-                                formValue,
-                                isImageWithError,
-                                imagesArray,
-                                galleryActiveIndex
+                                        patchState(store, {
+                                            status: ComponentStatus.IDLE,
+                                            images: imagesArray,
+                                            galleryActiveIndex: isImageWithError
+                                                ? galleryActiveIndex
+                                                : imagesArray.length - 1
+                                        });
+                                    },
+                                    (error: string) => {
+                                        patchState(store, {
+                                            status: ComponentStatus.ERROR,
+                                            error: error
+                                        });
+                                    }
+                                )
                             );
-                        },
-                        (error: string) => {
-                            this.updateImageState(
-                                null,
-                                formValue,
-                                isImageWithError,
-                                imagesArray,
-                                galleryActiveIndex,
-                                error
-                            );
-
-                            return of(null);
-                        }
-                    )
-                );
-            })
-        );
-    });
-
-    private updateImageState(
-        response: DotAIImageContent,
-        formValue: AIImagePrompt,
-        isImageWithError: boolean,
-        imagesArray: DotGeneratedAIImage[],
-        galleryActiveIndex: number,
-        error?: string
-    ) {
-        const newImage: DotGeneratedAIImage = {
-            request: formValue,
-            response: response,
-            error: error
+                    })
+                )
+            )
         };
-
-        if (isImageWithError) {
-            imagesArray[galleryActiveIndex] = newImage;
-        } else {
-            imagesArray.push(newImage);
-        }
-
-        this.patchState({
-            status: ComponentStatus.IDLE,
-            images: imagesArray,
-            galleryActiveIndex: isImageWithError ? galleryActiveIndex : imagesArray.length - 1
-        });
-    }
-
-    constructor(private dotAiService: DotAiService) {
-        super(initialState);
-    }
-}
+    })
+);

@@ -1,5 +1,3 @@
-import { Observable } from 'rxjs';
-
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormGroupDirective } from '@angular/forms';
@@ -11,10 +9,9 @@ import { DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotGeneratedAIImage } from '@dotcms/dotcms-models';
 
 import { DotMessagePipe } from './../../dot-message/dot-message.pipe';
-import { DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
+import { DotAiImagePromptdStore } from './ai-image-prompt.store';
 import { AiImagePromptFormComponent } from './components/ai-image-prompt-form/ai-image-prompt-form.component';
 import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gallery/ai-image-prompt-gallery.component';
 
@@ -32,22 +29,20 @@ import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gall
         AiImagePromptFormComponent,
         AiImagePromptGalleryComponent
     ],
-    providers: [FormGroupDirective, ConfirmationService],
+    providers: [FormGroupDirective, ConfirmationService, DotAiImagePromptdStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAIImagePromptComponent implements OnInit {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #confirmationService = inject(ConfirmationService);
-    readonly store = inject(DotAiImagePromptStore);
+    readonly store = inject(DotAiImagePromptdStore);
 
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #dialogConfig = inject(DynamicDialogConfig<{ context: string }>);
 
-    protected readonly vm$: Observable<VmAiImagePrompt> = this.store.vm$;
-
     ngOnInit(): void {
         const context = this.#dialogConfig?.data?.context || '';
-        this.store.showDialog(context);
+        this.store.setContext(context);
     }
 
     closeDialog(): void {
@@ -64,7 +59,8 @@ export class DotAIImagePromptComponent implements OnInit {
         });
     }
 
-    selectedImage(image: DotGeneratedAIImage): void {
-        this.#dialogRef.close(image);
+    insertImage(): void {
+        const currentImage = this.store.currentImage();
+        this.#dialogRef.close(currentImage);
     }
 }
