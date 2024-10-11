@@ -7,8 +7,10 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.queue.JobQueue;
+import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotmarketing.exception.DotDataException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -55,7 +57,13 @@ public interface JobQueueManagerAPI {
      * @param queueName The name of the queue
      * @param processor The job processor to register
      */
-    void registerProcessor(String queueName, JobProcessor processor);
+    void registerProcessor(final String queueName, final Class<? extends JobProcessor> processor);
+
+    /**
+     * Retrieves the job processors for all registered queues.
+     * @return A map of queue names to job processors
+     */
+    Map<String,Class<? extends JobProcessor>> getQueueNames();
 
     /**
      * Creates a new job in the specified queue.
@@ -89,6 +97,25 @@ public interface JobQueueManagerAPI {
     JobPaginatedResult getJobs(int page, int pageSize) throws DotDataException;
 
     /**
+     * Retrieves a list of active jobs for a specific queue.
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of active jobs and pagination information.
+     * @throws JobQueueDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize) throws JobQueueDataException;
+
+    /**
+     * Retrieves a list of completed jobs for a specific queue within a date range.
+     * @param page     The page number
+     * @param pageSize The number of jobs per page
+     * @return A result object containing the list of completed jobs and pagination information.
+     * @throws JobQueueDataException
+     */
+    JobPaginatedResult getFailedJobs(int page, int pageSize) throws JobQueueDataException;
+
+    /**
      * Cancels a job.
      *
      * @param jobId The ID of the job to cancel
@@ -111,6 +138,13 @@ public interface JobQueueManagerAPI {
      * @param retryStrategy The retry strategy to set
      */
     void setRetryStrategy(String queueName, RetryStrategy retryStrategy);
+
+    /**
+     * Retrieves the retry strategy for a specific queue.
+     * @param jobId The ID of the job
+     * @return The processor instance, or an empty optional if not found
+     */
+    Optional<JobProcessor> getInstance(final String jobId);
 
     /**
      * @return The CircuitBreaker instance
