@@ -31,7 +31,6 @@ import { DotEditContentStore } from './store/edit-content.store';
 
 import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
-import { DotEditContentToolbarComponent } from '../../components/dot-edit-content-toolbar/dot-edit-content-toolbar.component';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import * as utils from '../../utils/functions.util';
@@ -51,8 +50,7 @@ describe('EditContentLayoutComponent', () => {
 
             MockModule(MessagesModule),
             MockComponent(DotEditContentFormComponent),
-            MockComponent(DotEditContentAsideComponent),
-            MockComponent(DotEditContentToolbarComponent)
+            MockComponent(DotEditContentAsideComponent)
         ],
         componentProviders: [
             DotEditContentStore, // Usign the real DotEditContentStore
@@ -126,7 +124,6 @@ describe('EditContentLayoutComponent', () => {
             expect(store.showSidebar()).toBe(true);
 
             expect(spectator.query(byTestId('edit-content-layout__topBar'))).toBeTruthy();
-            expect(spectator.query(byTestId('edit-content-layout__header'))).toBeTruthy();
             expect(spectator.query(byTestId('edit-content-layout__body'))).toBeTruthy();
             expect(spectator.query(byTestId('edit-content-layout__sidebar'))).toBeTruthy();
 
@@ -149,35 +146,6 @@ describe('EditContentLayoutComponent', () => {
             expect(store.isEnabledNewContentEditor()).toBe(false);
             expect(spectator.query(byTestId('edit-content-layout__topBar'))).toBeNull();
         });
-    });
-
-    describe('Sidebar', () => {
-        it('should toggle sidebar visibility when toggle button is clicked', fakeAsync(() => {
-            // Setup
-            dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
-            workflowActionsService.getDefaultActions.mockReturnValue(of(mockWorkflowsActions));
-            store.initializeNewContent('contentTypeName');
-            spectator.detectChanges();
-            tick(); // Wait for the defer to load
-
-            expect(spectator.query(byTestId('edit-content-layout__sidebar'))).toBeTruthy();
-            expect(spectator.element).toHaveClass('edit-content--with-sidebar');
-
-            // hide sidebar
-            const sidebarToggle = spectator.query(byTestId('sidebar-toggle'));
-            spectator.click(sidebarToggle);
-            tick(); // Wait for the defer to load
-
-            expect(spectator.query(byTestId('edit-content-layout__sidebar'))).toBeNull();
-            expect(spectator.element).not.toHaveClass('edit-content--with-sidebar');
-
-            // show sidebar again
-            spectator.click(sidebarToggle);
-            tick(); // Wait for the defer to load
-
-            expect(spectator.query(byTestId('edit-content-layout__sidebar'))).toBeTruthy();
-            expect(spectator.element).toHaveClass('edit-content--with-sidebar');
-        }));
     });
 
     describe('fireWorkflowAction', () => {
