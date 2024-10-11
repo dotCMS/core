@@ -167,23 +167,33 @@ export const FileFieldStore = signalStore(
                         return true;
                     }),
                     switchMap((file) => {
-                        return uploadService.uploadDotAsset(file).pipe(
-                            tapResponse({
-                                next: (file) => {
-                                    patchState(store, {
-                                        fileStatus: 'preview',
-                                        value: file.identifier,
-                                        uploadedFile: { source: 'contentlet', file }
-                                    });
-                                },
-                                error: () => {
-                                    patchState(store, {
-                                        fileStatus: 'init',
-                                        uiMessage: getUiMessage('SERVER_ERROR')
-                                    });
-                                }
+                        return uploadService
+                            .uploadFile({
+                                file,
+                                uploadType: 'dotasset',
+                                acceptedFiles: store.acceptedFiles(),
+                                maxSize: store.maxFileSize() ? `${store.maxFileSize()}` : null
                             })
-                        );
+                            .pipe(
+                                tapResponse({
+                                    next: (uploadedFile) => {
+                                        patchState(store, {
+                                            fileStatus: 'preview',
+                                            value:
+                                                uploadedFile.source === 'temp'
+                                                    ? uploadedFile.file.id
+                                                    : uploadedFile.file.identifier,
+                                            uploadedFile
+                                        });
+                                    },
+                                    error: () => {
+                                        patchState(store, {
+                                            fileStatus: 'init',
+                                            uiMessage: getUiMessage('SERVER_ERROR')
+                                        });
+                                    }
+                                })
+                            );
                     })
                 )
             ),
