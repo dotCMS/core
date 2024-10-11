@@ -1269,23 +1269,14 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
     metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
 };
 
-export const MockResizeObserver = class {
-    constructor() {
-        //
-    }
-
-    observe() {
-        //
-    }
-
-    unobserve() {
-        //
-    }
-
-    disconnect() {
-        //
-    }
-};
+/**
+ * Mock for ResizeObserver
+ */
+export class MockResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+}
 
 export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
     {
