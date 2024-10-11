@@ -185,6 +185,7 @@ import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.UtilMethodsITest;
 import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
+import com.dotmarketing.startup.runonce.Task241007CreateUniqueFieldsTableTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -193,6 +194,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        Task241007CreateUniqueFieldsTableTest.class,
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
