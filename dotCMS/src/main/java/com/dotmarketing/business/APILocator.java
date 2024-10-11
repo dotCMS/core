@@ -30,18 +30,7 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.business.ContentTypeDestroyAPI;
-import com.dotcms.contenttype.business.ContentTypeDestroyAPIImpl;
-import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPI;
-import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPIImpl;
-import com.dotcms.contenttype.business.DotAssetAPI;
-import com.dotcms.contenttype.business.DotAssetAPIImpl;
-import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.business.FieldAPIImpl;
-import com.dotcms.contenttype.business.StoryBlockAPI;
-import com.dotcms.contenttype.business.StoryBlockAPIImpl;
+import com.dotcms.contenttype.business.*;
 import com.dotcms.device.DeviceAPI;
 import com.dotcms.device.DeviceAPIImpl;
 import com.dotcms.dotpubsub.DotPubSubProvider;
@@ -1194,6 +1183,15 @@ public class APILocator extends Locator<APIIndex> {
 	}
 
 	/**
+	 * Returns a singleton instance of the {@link UniqueFieldAPIImpl} class.
+	 *
+	 * @return The {@link UniqueFieldAPI} instance.
+	 */
+	public static UniqueFieldAPI getUniqueFieldAPI() {
+		return (UniqueFieldAPI) getInstance(APIIndex.UNIQUE_FIELD_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1350,7 +1348,8 @@ enum APIIndex
 	SYSTEM_API,
 	ACHECKER_API,
 	CONTENT_ANALYTICS_API,
-	JOB_QUEUE_MANAGER_API;
+	JOB_QUEUE_MANAGER_API,
+	UNIQUE_FIELD_API;
 
 	Object create() {
 		switch(this) {
@@ -1445,6 +1444,7 @@ enum APIIndex
 			case ACHECKER_API: return new ACheckerAPIImpl();
 			case CONTENT_ANALYTICS_API: CDIUtils.getBean(ContentAnalyticsAPI.class).orElseThrow(() -> new DotRuntimeException("Content Analytics API not found"));
 			case JOB_QUEUE_MANAGER_API: return CDIUtils.getBean(JobQueueManagerAPI.class).orElseThrow(() -> new DotRuntimeException("JobQueueManagerAPI not found"));
+			case UNIQUE_FIELD_API: return new UniqueFieldAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
