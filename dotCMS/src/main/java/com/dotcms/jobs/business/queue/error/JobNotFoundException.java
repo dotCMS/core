@@ -11,7 +11,7 @@ public class JobNotFoundException extends JobQueueException {
      *
      * @param jobId the ID of the job that was not found
      */
-    public JobNotFoundException(String jobId) {
+    public JobNotFoundException(final String jobId) {
         super("Job with id: " + jobId + " not found");
     }
 
