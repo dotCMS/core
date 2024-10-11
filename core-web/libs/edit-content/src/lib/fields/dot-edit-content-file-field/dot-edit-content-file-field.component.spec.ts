@@ -124,7 +124,9 @@ describe('DotEditContentFileFieldComponent', () => {
         describe('fileDropped event', () => {
             it('should call to handleUploadFile when and proper file', () => {
                 const mockContentlet = NEW_FILE_MOCK.entity;
-                uploadService.uploadDotAsset.mockReturnValue(of(mockContentlet));
+                uploadService.uploadFile.mockReturnValue(
+                    of({ source: 'contentlet', file: mockContentlet })
+                );
 
                 const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
 
@@ -148,7 +150,9 @@ describe('DotEditContentFileFieldComponent', () => {
 
             it('should not call to handleUploadFile when a null file', () => {
                 const mockContentlet = NEW_FILE_MOCK.entity;
-                uploadService.uploadDotAsset.mockReturnValue(of(mockContentlet));
+                uploadService.uploadFile.mockReturnValue(
+                    of({ source: 'contentlet', file: mockContentlet })
+                );
 
                 const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
 
@@ -171,7 +175,9 @@ describe('DotEditContentFileFieldComponent', () => {
 
             it('should set a proper error message with a invalid file', () => {
                 const mockContentlet = NEW_FILE_MOCK.entity;
-                uploadService.uploadDotAsset.mockReturnValue(of(mockContentlet));
+                uploadService.uploadFile.mockReturnValue(
+                    of({ source: 'contentlet', file: mockContentlet })
+                );
 
                 const spySetUIMessage = jest.spyOn(store, 'setUIMessage');
 
@@ -194,9 +200,11 @@ describe('DotEditContentFileFieldComponent', () => {
         });
 
         describe('fileSelected event', () => {
-            it('should call to fileSelected with proper file', () => {
+            it('should call to handleUploadFile with proper file', () => {
                 const mockContentlet = NEW_FILE_MOCK.entity;
-                uploadService.uploadDotAsset.mockReturnValue(of(mockContentlet));
+                uploadService.uploadFile.mockReturnValue(
+                    of({ source: 'contentlet', file: mockContentlet })
+                );
 
                 const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
 
@@ -207,9 +215,11 @@ describe('DotEditContentFileFieldComponent', () => {
                 expect(spyHandleUploadFile).toHaveBeenCalledWith(file);
             });
 
-            it('should not call to fileSelected when a null file', () => {
+            it('should not call to handleUploadFile when a null file', () => {
                 const mockContentlet = NEW_FILE_MOCK.entity;
-                uploadService.uploadDotAsset.mockReturnValue(of(mockContentlet));
+                uploadService.uploadFile.mockReturnValue(
+                    of({ source: 'contentlet', file: mockContentlet })
+                );
 
                 const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
                 spectator.component.fileSelected([] as unknown as FileList);
