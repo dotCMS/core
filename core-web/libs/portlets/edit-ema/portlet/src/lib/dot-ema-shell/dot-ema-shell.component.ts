@@ -166,23 +166,69 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             }
 
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
-                // Maybe this can be out of the switch but we should evaluate it if it's needed
-                // This can be undefined
-                const url = event.detail.payload?.htmlPageReferer?.split('?')[0].replace('/', '');
-
-                if (url && this.uveStore.params().url !== url) {
-                    this.navigate({
-                        url
-                    });
-
-                    return;
-                }
-
-                this.uveStore.reload();
-
+                this.handleSavePageEvent(event);
                 break;
             }
         }
+    }
+
+    /**
+     * Handles the save page event triggered from the dialog.
+     *
+     * @param {CustomEvent} event - The event object containing details about the save action.
+     * @return {void}
+     */
+    private handleSavePageEvent(event: CustomEvent): void {
+        const url = this.extractUrl(event);
+        const targetUrl = this.getTargetUrl(url);
+
+        if (this.shouldNavigate(targetUrl)) {
+            // Navigate to the new URL if it's different from the current one
+            this.navigate({ url: targetUrl });
+
+            return;
+        }
+
+        this.uveStore.reload();
+    }
+    /**
+     * Extracts the URL from the event payload.
+     *
+     * @param {CustomEvent} event - The event object containing the payload with the URL.
+     * @return {string | undefined} - The extracted URL or undefined if not found.
+     */
+    private extractUrl(event: CustomEvent): string | undefined {
+        // Remove leading slash and extract URL without query parameters
+        return event.detail.payload?.htmlPageReferer?.split('?')[0].replace('/', '');
+    }
+
+    /**
+     * Determines the target URL for navigation.
+     *
+     * If `urlContentMap` is present and contains a `URL_MAP_FOR_CONTENT`, it will be used.
+     * Otherwise, it falls back to the URL extracted from the event.
+     *
+     * @param {string | undefined} url - The URL extracted from the event.
+     * @returns {string | undefined} - The final target URL for navigation, or undefined if none.
+     */
+    private getTargetUrl(url: string | undefined): string | undefined {
+        const urlContentMap = this.uveStore.pageAPIResponse().urlContentMap;
+
+        // Return URL from content map or fallback to the provided URL
+        return urlContentMap?.URL_MAP_FOR_CONTENT || url;
+    }
+
+    /**
+     * Determines whether navigation to a new URL is necessary.
+     *
+     * @param {string | undefined} targetUrl - The target URL for navigation.
+     * @returns {boolean} - True if the current URL differs from the target URL and navigation is required.
+     */
+    private shouldNavigate(targetUrl: string | undefined): boolean {
+        const currentUrl = this.uveStore.params().url;
+
+        // Navigate if the target URL is defined and different from the current URL
+        return targetUrl !== undefined && currentUrl !== targetUrl;
     }
 
     /**
