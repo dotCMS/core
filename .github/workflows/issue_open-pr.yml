@@ -7,6 +7,6 @@ on:
 jobs:
   add-issue-to-pr:
     name: Add Issue to PR
-    uses: ./.github/workflows/issue_comp-link-issue-to-pr.yml
+    uses: ./.github/workflows/issue_comp_link-issue-to-pr.yml
     with:
       pr_branch: ${{ github.head_ref }}
