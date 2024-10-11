@@ -130,6 +130,7 @@ import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.UtilMethodsITest;
 import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
+import com.dotmarketing.startup.runonce.Task241007CreateUniqueFieldsTableTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
