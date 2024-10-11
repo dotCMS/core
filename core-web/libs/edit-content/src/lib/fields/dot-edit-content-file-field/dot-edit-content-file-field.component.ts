@@ -15,10 +15,10 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { filter } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotGeneratedAIImage } from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
     DotMessagePipe,
@@ -31,7 +31,7 @@ import {
 import { DotFileFieldPreviewComponent } from './components/dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from './components/dot-file-field-ui-message/dot-file-field-ui-message.component';
 import { DotFormImportUrlComponent } from './components/dot-form-import-url/dot-form-import-url.component';
-import { INPUT_TYPES } from './models';
+import { INPUT_TYPES, UploadedFile } from './models';
 import { DotFileFieldUploadService } from './services/upload-file/upload-file.service';
 import { FileFieldStore } from './store/file-field.store';
 import { getUiMessage } from './utils/messages';
@@ -242,9 +242,41 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
                 filter((file) => !!file),
                 takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe((file) => {
+            .subscribe((file: UploadedFile) => {
                 this.store.setPreviewFile(file);
             });
+    }
+
+    showAIImagePromptDialog() {
+        this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
+            header: 'AI Image Prompt',
+            appendTo: 'body',
+            closeOnEscape: false,
+            draggable: false,
+            keepInViewport: false,
+            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            resizable: false,
+            modal: true,
+            width: '90%',
+            style: { 'max-width': '1040px' },
+        });
+        
+        this.#dialogRef.onClose
+        .pipe(
+            filter((selectedImage: DotGeneratedAIImage) => !!selectedImage),
+            map((selectedImage) => {
+                const previewFile: UploadedFile = {
+                    source: 'contentlet',
+                    file: selectedImage.response.contentlet,
+                };
+                
+                return previewFile;
+            }),
+            takeUntilDestroyed(this.#destroyRef)
+        )
+        .subscribe((file) => {
+            this.store.setPreviewFile(file);
+        });
     }
 
     /**

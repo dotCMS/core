@@ -6,6 +6,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { DynamicDialogModule } from 'primeng/dynamicdialog';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { PaginatorModule } from 'primeng/paginator';
 
@@ -57,6 +58,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         ReactiveFormsModule,
         SharedModule,
         PrimengModule,
+        DynamicDialogModule,
         AssetFormModule,
         DotFieldRequiredDirective,
         UploadPlaceholderComponent,
@@ -66,7 +68,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DialogModule,
         InputTextareaModule,
         PaginatorModule,
-        DotSpinnerModule
+        DotSpinnerModule,
     ],
     declarations: [
         EditorDirective,

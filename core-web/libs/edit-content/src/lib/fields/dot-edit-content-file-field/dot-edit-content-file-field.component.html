@@ -58,6 +58,7 @@
                 }
                 @if (store.allowGenerateImg()) {
                     <p-button
+                        (click)="showAIImagePromptDialog()"
                         tooltipPosition="bottom"
                         data-testId="action-generate-with-ai"
                         [label]="'dot.file.field.action.generate.with.dotai' | dm"

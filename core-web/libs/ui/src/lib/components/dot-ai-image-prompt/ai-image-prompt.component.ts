@@ -1,15 +1,17 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormGroupDirective } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotGeneratedAIImage } from '@dotcms/dotcms-models';
 
 import { DotMessagePipe } from './../../dot-message/dot-message.pipe';
 import { DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
@@ -33,12 +35,20 @@ import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gall
     providers: [FormGroupDirective, ConfirmationService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotAIImagePromptComponent {
+export class DotAIImagePromptComponent implements OnInit {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #confirmationService = inject(ConfirmationService);
-    store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
+    readonly store = inject(DotAiImagePromptStore);
+
+    readonly #dialogRef = inject(DynamicDialogRef);
+    readonly #dialogConfig = inject(DynamicDialogConfig<{ context: string }>);
 
     protected readonly vm$: Observable<VmAiImagePrompt> = this.store.vm$;
+
+    ngOnInit(): void {
+        const context = this.#dialogConfig?.data?.context || '';
+        this.store.showDialog(context);
+    }
 
     closeDialog(): void {
         this.#confirmationService.confirm({
@@ -49,8 +59,12 @@ export class DotAIImagePromptComponent {
             acceptLabel: this.#dotMessageService.get('Discard'),
             rejectLabel: this.#dotMessageService.get('Cancel'),
             accept: () => {
-                this.store.hideDialog();
+                this.#dialogRef.close();
             }
         });
+    }
+
+    selectedImage(image: DotGeneratedAIImage): void {
+        this.#dialogRef.close(image);
     }
 }

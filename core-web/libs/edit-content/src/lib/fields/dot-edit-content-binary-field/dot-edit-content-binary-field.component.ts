@@ -8,7 +8,7 @@ import {
     ChangeDetectorRef,
     Component,
     computed,
-    effect,
+    DestroyRef,
     ElementRef,
     EventEmitter,
     forwardRef,
@@ -21,11 +21,12 @@ import {
     Signal,
     ViewChild
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -47,8 +48,7 @@ import {
     DropZoneErrorType,
     DropZoneFileEvent,
     DropZoneFileValidity,
-    DotAIImagePromptComponent,
-    DotAiImagePromptStore
+    DotAIImagePromptComponent
 } from '@dotcms/ui';
 
 import { DotBinaryFieldEditorComponent } from './components/dot-binary-field-editor/dot-binary-field-editor.component';
@@ -93,20 +93,20 @@ type SystemOptionsType = {
         DotBinaryFieldUrlModeComponent,
         DotBinaryFieldPreviewComponent,
         DotAIImagePromptComponent,
-        TooltipModule
+        TooltipModule,
     ],
     providers: [
+        DialogService,
         DotBinaryFieldEditImageService,
         DotBinaryFieldStore,
         DotLicenseService,
         DotBinaryFieldValidatorService,
-        DotAiImagePromptStore,
         DotAiService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotEditContentBinaryFieldComponent)
-        }
+        },
     ],
     templateUrl: './dot-edit-content-binary-field.component.html',
     styleUrls: ['./dot-edit-content-binary-field.component.scss'],
@@ -116,12 +116,13 @@ export class DotEditContentBinaryFieldComponent
     implements OnInit, AfterViewInit, OnDestroy, ControlValueAccessor
 {
     readonly #dotBinaryFieldStore = inject(DotBinaryFieldStore);
-    readonly #dotAiImageStore = inject(DotAiImagePromptStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotBinaryFieldEditImageService = inject(DotBinaryFieldEditImageService);
     readonly #dotBinaryFieldValidatorService = inject(DotBinaryFieldValidatorService);
     readonly #cd = inject(ChangeDetectorRef);
     readonly #dotAiService = inject(DotAiService);
+    readonly #dialogService = inject(DialogService);
+    readonly #destroyRef = inject(DestroyRef);
 
     $isAIPluginInstalled = toSignal(this.#dotAiService.checkPluginInstallation(), {
         initialValue: false
@@ -157,6 +158,7 @@ export class DotEditContentBinaryFieldComponent
     readonly BinaryFieldStatus = BinaryFieldStatus;
     readonly BinaryFieldMode = BinaryFieldMode;
     readonly vm$ = this.#dotBinaryFieldStore.vm$;
+    #dialogRef: DynamicDialogRef | null = null;
     dialogOpen = false;
     customMonacoOptions: Signal<MonacoEditorConstructionOptions> = computed(() => {
         const field = this.$field();
@@ -175,40 +177,8 @@ export class DotEditContentBinaryFieldComponent
         allowGenerateImg: false
     });
 
-    isOpenDialog$ = this.#dotAiImageStore.isOpenDialog$;
-    $isOpenDialog = toSignal(this.isOpenDialog$);
-
-    selectedImage$ = this.#dotAiImageStore.selectedImage$;
-    $selectedImage = toSignal(this.selectedImage$);
-
     constructor() {
         this.#dotMessageService.init();
-
-        effect(
-            () => {
-                const isOpenDialog = this.$isOpenDialog();
-                if (isOpenDialog === false) {
-                    this.closeDialog();
-                }
-            },
-            {
-                allowSignalWrites: true
-            }
-        );
-
-        effect(
-            () => {
-                const selectedImage = this.$selectedImage();
-                if (selectedImage) {
-                    const tempFile = this.parseToTempFile(selectedImage);
-                    this.#dotAiImageStore.hideDialog();
-                    this.#dotBinaryFieldStore.setTempFile(tempFile);
-                }
-            },
-            {
-                allowSignalWrites: true
-            }
-        );
     }
 
     get maxFileSize(): number {
@@ -282,6 +252,7 @@ export class DotEditContentBinaryFieldComponent
 
     ngOnDestroy() {
         this.#dotBinaryFieldEditImageService.removeListener();
+        this.#dialogRef?.close();
     }
 
     /**
@@ -292,12 +263,37 @@ export class DotEditContentBinaryFieldComponent
      */
     openDialog(mode: BinaryFieldMode) {
         if (mode === BinaryFieldMode.AI) {
-            this.#dotAiImageStore.showDialog('');
+            this.openAIImagePrompt();
         } else {
             this.dialogOpen = true;
         }
 
         this.#dotBinaryFieldStore.setMode(mode);
+    }
+
+    openAIImagePrompt() {
+        this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
+            header: 'AI Image Prompt',
+            appendTo: 'body',
+            closeOnEscape: false,
+            draggable: false,
+            keepInViewport: false,
+            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            resizable: false,
+            modal: true,
+            width: '90%',
+            style: { 'max-width': '1040px' },
+        });
+        
+        this.#dialogRef.onClose
+        .pipe(
+            filter((selectedImage: DotGeneratedAIImage) => !!selectedImage),
+            takeUntilDestroyed(this.#destroyRef)
+        )
+        .subscribe((selectedImage: DotGeneratedAIImage) => {
+            const tempFile = this.parseToTempFile(selectedImage);
+            this.#dotBinaryFieldStore.setTempFile(tempFile);
+        });        
     }
 
     /**
@@ -307,6 +303,7 @@ export class DotEditContentBinaryFieldComponent
      */
     closeDialog() {
         this.dialogOpen = false;
+        this.#dialogRef?.close();
         this.#dotBinaryFieldStore.setMode(BinaryFieldMode.DROPZONE);
     }
 

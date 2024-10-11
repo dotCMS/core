@@ -16,6 +16,8 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
+import { DialogService } from 'primeng/dynamicdialog';
+
 import { debounceTime, map, take, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor, JSONContent } from '@tiptap/core';
@@ -75,11 +77,12 @@ import {
     templateUrl: './dot-block-editor.component.html',
     styleUrls: ['./dot-block-editor.component.scss'],
     providers: [
+        DialogService,
         {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotBlockEditorComponent),
             multi: true
-        }
+        },
     ]
 })
 export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
@@ -117,6 +120,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private readonly cd = inject(ChangeDetectorRef);
     private readonly dotPropertiesService = inject(DotPropertiesService);
     private isAIPluginInstalled$: Observable<boolean>;
+    readonly #dialogService = inject(DialogService);
 
     constructor(
         private readonly viewContainerRef: ViewContainerRef,
@@ -458,7 +462,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         if (isAIPluginInstalled) {
             extensions.push(
                 AIContentPromptExtension(this.viewContainerRef),
-                AIImagePromptExtension(this.viewContainerRef)
+                AIImagePromptExtension(this.#dialogService)
             );
         }
 

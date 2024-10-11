@@ -18,17 +18,14 @@ import {
 const DEFAULT_INPUT_PROMPT = PromptType.INPUT;
 
 export interface DotAiImagePromptComponentState {
-    showDialog: boolean;
     editorContent: string | null;
     images: DotGeneratedAIImage[];
     status: ComponentStatus;
-    selectedImage: DotGeneratedAIImage | null;
     galleryActiveIndex: number;
     formValue: AIImagePrompt;
 }
 
 export interface VmAiImagePrompt {
-    showDialog: boolean;
     status: ComponentStatus;
     images: DotGeneratedAIImage[];
     galleryActiveIndex: number;
@@ -38,11 +35,9 @@ export interface VmAiImagePrompt {
 }
 
 const initialState: DotAiImagePromptComponentState = {
-    showDialog: false,
     status: ComponentStatus.INIT,
     images: [],
     editorContent: null,
-    selectedImage: null,
     galleryActiveIndex: 0,
     formValue: {
         text: '',
@@ -54,13 +49,10 @@ const initialState: DotAiImagePromptComponentState = {
 @Injectable({ providedIn: 'root' })
 export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptComponentState> {
     //Selectors
-    readonly isOpenDialog$ = this.select(this.state$, ({ showDialog }) => showDialog);
     readonly isLoading$ = this.select(
         this.state$,
         ({ status }) => status === ComponentStatus.LOADING
     );
-
-    readonly selectedImage$ = this.select(this.state$, ({ selectedImage }) => selectedImage);
 
     //Updaters
 
@@ -85,13 +77,6 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         })
     );
 
-    readonly setSelectedImage = this.updater(
-        (state: DotAiImagePromptComponentState, selectedImage: DotGeneratedAIImage) => ({
-            ...state,
-            selectedImage
-        })
-    );
-
     readonly setGalleryActiveIndex = this.updater(
         (state: DotAiImagePromptComponentState, galleryActiveIndex: number) => ({
             ...state,
@@ -107,10 +92,9 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         this.state$,
         this.isLoading$,
         (
-            { showDialog, status, images, galleryActiveIndex, formValue, editorContent },
+            {  status, images, galleryActiveIndex, formValue, editorContent },
             isLoading
         ) => ({
-            showDialog,
             status,
             images,
             galleryActiveIndex,
