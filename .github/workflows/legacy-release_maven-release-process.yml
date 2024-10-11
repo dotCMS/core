@@ -364,8 +364,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}  
         run: |
-          zip ./artifacts/${{ steps.sbom-generator.outputs.sbom-artifact }}.zip ./artifacts/${{ steps.sbom-generator.outputs.sbom-artifact }}.json
-          gh release upload "${{ needs.prepare-release.outputs.release_tag }}" "./artifacts/${{ steps.sbom-generator.outputs.sbom-artifact }}.zip"    
+          echo "::group::Upload SBOM Asset"
+          ARTIFACT_NAME=${{ steps.sbom-generator.outputs.sbom-artifact }}
+          SBOM="./artifacts/${ARTIFACT_NAME}/${ARTIFACT_NAME}.json"
+          
+          if [ -f "${SBOM}" ]; then
+            echo "SBOM: ${SBOM}"
+            cat "${SBOM}"
+            
+            zip "${ARTIFACT_NAME}.zip" "${SBOM}"
+            gh release upload "${{ needs.prepare-release.outputs.release_tag }}" "${ARTIFACT_NAME}.zip"
+          else
+            echo "SBOM artifact not found."
+          fi
+          echo "::endgroup::"   
 
   finish-release:
     name: Finish Release
