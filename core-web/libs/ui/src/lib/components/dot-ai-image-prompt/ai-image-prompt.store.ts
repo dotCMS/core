@@ -91,10 +91,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
     readonly vm$: Observable<VmAiImagePrompt> = this.select(
         this.state$,
         this.isLoading$,
-        (
-            {  status, images, galleryActiveIndex, formValue, editorContent },
-            isLoading
-        ) => ({
+        ({ status, images, galleryActiveIndex, formValue, editorContent }, isLoading) => ({
             status,
             images,
             galleryActiveIndex,

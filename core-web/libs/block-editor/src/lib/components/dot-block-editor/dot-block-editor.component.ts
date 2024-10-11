@@ -82,7 +82,7 @@ import {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotBlockEditorComponent),
             multi: true
-        },
+        }
     ]
 })
 export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {

@@ -258,25 +258,25 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             resizable: false,
             modal: true,
             width: '90%',
-            style: { 'max-width': '1040px' },
+            style: { 'max-width': '1040px' }
         });
-        
+
         this.#dialogRef.onClose
-        .pipe(
-            filter((selectedImage: DotGeneratedAIImage) => !!selectedImage),
-            map((selectedImage) => {
-                const previewFile: UploadedFile = {
-                    source: 'contentlet',
-                    file: selectedImage.response.contentlet,
-                };
-                
-                return previewFile;
-            }),
-            takeUntilDestroyed(this.#destroyRef)
-        )
-        .subscribe((file) => {
-            this.store.setPreviewFile(file);
-        });
+            .pipe(
+                filter((selectedImage: DotGeneratedAIImage) => !!selectedImage),
+                map((selectedImage) => {
+                    const previewFile: UploadedFile = {
+                        source: 'contentlet',
+                        file: selectedImage.response.contentlet
+                    };
+
+                    return previewFile;
+                }),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((file) => {
+                this.store.setPreviewFile(file);
+            });
     }
 
     /**

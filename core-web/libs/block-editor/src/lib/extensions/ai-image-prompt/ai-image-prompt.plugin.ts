@@ -52,7 +52,6 @@ export class AIImagePromptView {
      * @param {AIImagePromptViewProps} props - The properties for the component.
      */
     constructor(props: AIImagePromptViewProps) {
-
         const { editor, view, pluginKey, dialogService } = props;
 
         this.editor = editor;
@@ -83,16 +82,16 @@ export class AIImagePromptView {
                 style: { 'max-width': '1040px' },
                 data: { context }
             });
-            
-            this.#dialogRef.onClose
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((selectedImage: DotGeneratedAIImage) => {
-                if (selectedImage) {
-                    this.editor.chain().insertImage(selectedImage.response.contentlet).run();
-                }
 
-                this.editor.commands.closeImagePrompt();
-            })
+            this.#dialogRef.onClose
+                .pipe(takeUntil(this.destroy$))
+                .subscribe((selectedImage: DotGeneratedAIImage) => {
+                    if (selectedImage) {
+                        this.editor.chain().insertImage(selectedImage.response.contentlet).run();
+                    }
+
+                    this.editor.commands.closeImagePrompt();
+                });
         }
     }
 

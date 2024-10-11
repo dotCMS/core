@@ -93,7 +93,7 @@ type SystemOptionsType = {
         DotBinaryFieldUrlModeComponent,
         DotBinaryFieldPreviewComponent,
         DotAIImagePromptComponent,
-        TooltipModule,
+        TooltipModule
     ],
     providers: [
         DialogService,
@@ -106,7 +106,7 @@ type SystemOptionsType = {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotEditContentBinaryFieldComponent)
-        },
+        }
     ],
     templateUrl: './dot-edit-content-binary-field.component.html',
     styleUrls: ['./dot-edit-content-binary-field.component.scss'],
@@ -282,18 +282,18 @@ export class DotEditContentBinaryFieldComponent
             resizable: false,
             modal: true,
             width: '90%',
-            style: { 'max-width': '1040px' },
+            style: { 'max-width': '1040px' }
         });
-        
+
         this.#dialogRef.onClose
-        .pipe(
-            filter((selectedImage: DotGeneratedAIImage) => !!selectedImage),
-            takeUntilDestroyed(this.#destroyRef)
-        )
-        .subscribe((selectedImage: DotGeneratedAIImage) => {
-            const tempFile = this.parseToTempFile(selectedImage);
-            this.#dotBinaryFieldStore.setTempFile(tempFile);
-        });        
+            .pipe(
+                filter((selectedImage: DotGeneratedAIImage) => !!selectedImage),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((selectedImage: DotGeneratedAIImage) => {
+                const tempFile = this.parseToTempFile(selectedImage);
+                this.#dotBinaryFieldStore.setTempFile(tempFile);
+            });
     }
 
     /**

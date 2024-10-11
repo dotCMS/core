@@ -68,7 +68,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DialogModule,
         InputTextareaModule,
         PaginatorModule,
-        DotSpinnerModule,
+        DotSpinnerModule
     ],
     declarations: [
         EditorDirective,
