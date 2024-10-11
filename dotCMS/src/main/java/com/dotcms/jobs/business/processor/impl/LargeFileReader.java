@@ -129,7 +129,6 @@ public class LargeFileReader implements JobProcessor, Cancellable {
     Optional<Integer> maxLinesParam(Map<String, Object> params) {
         final Object maxLinesRaw = params.get("maxLines");
         if (!(maxLinesRaw instanceof String)) {
-            Logger.error(this.getClass(), "Parameter 'maxLinesRaw' is required and must be a string.");
             return Optional.empty();
         }
 
