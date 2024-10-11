@@ -253,10 +253,21 @@ export class EditEmaToolbarComponent {
         });
     }
 
+    /**
+     * Determines whether navigation to a new page is necessary based on URL and language changes.
+     *
+     * @param {Params} params - The incoming parameters, including a new URL and language ID.
+     * @returns {boolean} - True if navigation to a new page is needed.
+     */
     private shouldNavigateToNewPage(params: Params): boolean {
         const { url: newUrl, language_id: newLanguageId } = params;
-        const { url, language_id } = this.uveStore.params();
+        const { url: currentUrl, language_id: currentLanguageId } = this.uveStore.params();
 
-        return !compareUrlPaths(newUrl, url) || newLanguageId != language_id;
+        // Determine the target URL, prioritizing the content map URL if available
+        const urlContentMap = this.uveStore.pageAPIResponse().urlContentMap;
+        const targetUrl = urlContentMap?.URL_MAP_FOR_CONTENT || newUrl;
+
+        // Return true if the URL paths are different or the language has changed
+        return !compareUrlPaths(currentUrl, targetUrl) || newLanguageId != currentLanguageId;
     }
 }
