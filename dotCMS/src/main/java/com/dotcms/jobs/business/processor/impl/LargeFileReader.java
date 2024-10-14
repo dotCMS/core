@@ -56,7 +56,8 @@ public class LargeFileReader implements JobProcessor, Cancellable {
      */
     private void doReadLargeFile(DotTempFile dotTempFile, int nLines, int maxLines ,final Job job) {
         final Long totalCount = countLines(dotTempFile);
-        if (totalCount == null) {
+        if (totalCount == null || totalCount == 0 ) {
+            Logger.error(this.getClass(), "No lines in the file or unable to count lines: " + dotTempFile.file.getName());
             return;
         }
         Logger.info(this.getClass(), "Total lines in the file: " + totalCount);
