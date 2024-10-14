@@ -37,6 +37,7 @@ import { WINDOW } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction, DotPage } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { compareUrlPaths } from '../utils';
 
 @Component({
     selector: 'dot-ema-shell',
@@ -179,7 +180,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @return {void}
      */
     private handleSavePageEvent(event: CustomEvent): void {
-        const url = this.extractUrl(event);
+        const url = this.extractPageRefererUrl(event);
         const targetUrl = this.getTargetUrl(url);
 
         if (this.shouldNavigate(targetUrl)) {
@@ -192,14 +193,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.uveStore.reload();
     }
     /**
-     * Extracts the URL from the event payload.
+     * Extracts the htmlPageReferer url from the event payload.
      *
      * @param {CustomEvent} event - The event object containing the payload with the URL.
      * @return {string | undefined} - The extracted URL or undefined if not found.
      */
-    private extractUrl(event: CustomEvent): string | undefined {
-        // Remove leading slash and extract URL without query parameters
-        return event.detail.payload?.htmlPageReferer?.split('?')[0].replace('/', '');
+    private extractPageRefererUrl(event: CustomEvent): string | undefined {
+        return event.detail.payload?.htmlPageReferer;
     }
 
     /**
@@ -228,7 +228,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const currentUrl = this.uveStore.params().url;
 
         // Navigate if the target URL is defined and different from the current URL
-        return targetUrl !== undefined && currentUrl !== targetUrl;
+        return targetUrl !== undefined && !compareUrlPaths(targetUrl, currentUrl);
     }
 
     /**
