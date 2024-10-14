@@ -8,6 +8,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.StringUtils;
 import net.bytebuddy.utility.RandomString;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -19,6 +20,19 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.*;
 
 public class UniqueFieldFactoryImplTest {
+
+    @BeforeClass
+    //TODO: Remove this when the whole change is done
+    public static void init (){
+        try {
+            new DotConnect().setSQL("CREATE TABLE IF NOT EXISTS unique_fields (" +
+                    "unique_key_val VARCHAR(64) PRIMARY KEY," +
+                    "supporting_values JSONB" +
+                    " )").loadObjectResults();
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * Method to test: {@link UniqueFieldFactoryImpl#insert(String, Map)}

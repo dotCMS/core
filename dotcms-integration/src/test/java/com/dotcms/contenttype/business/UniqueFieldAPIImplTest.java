@@ -33,6 +33,16 @@ public class UniqueFieldAPIImplTest {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+
+        //TODO: Remove this when the whole change is done
+        try {
+            new DotConnect().setSQL("CREATE TABLE IF NOT EXISTS unique_fields (" +
+                    "unique_key_val VARCHAR(64) PRIMARY KEY," +
+                    "supporting_values JSONB" +
+                    " )").loadObjectResults();
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
