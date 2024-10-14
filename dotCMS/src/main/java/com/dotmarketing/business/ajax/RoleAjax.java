@@ -628,7 +628,8 @@ public class RoleAjax {
 		final List<Map<String, Object>> listOfPortletsInfo = new ArrayList<>();
 		final Collection<Portlet> portlets = this.portletAPI.findAllPortlets();
 		for (final Portlet portlet : portlets) {
-			if (LANGUAGES.name().equalsIgnoreCase(portlet.getPortletId()) && HIDE_OLD_LANGUAGES_PORTLET.get()) {
+			if (LANGUAGES.name().equalsIgnoreCase(portlet.getPortletId())
+					&& Boolean.TRUE.equals(HIDE_OLD_LANGUAGES_PORTLET.get())) {
 				continue;
 			}
 			if (this.portletAPI.canAddPortletToLayout(portlet)) {
@@ -640,7 +641,7 @@ public class RoleAjax {
 				));
 			}
 		}
-		listOfPortletsInfo.sort(Comparator.comparing(o -> (((String) o.get("title"))).toLowerCase()));
+		listOfPortletsInfo.sort(Comparator.comparing(o -> ((String) o.get("title")).toLowerCase()));
 		return listOfPortletsInfo;
 	}
 
