@@ -1,7 +1,6 @@
 import { MonacoEditorConstructionOptions, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
@@ -87,7 +86,6 @@ type SystemOptionsType = {
         DotMessagePipe,
         DotBinaryFieldUiMessageComponent,
         DotSpinnerModule,
-        HttpClientModule,
         DotBinaryFieldEditorComponent,
         InputTextModule,
         DotBinaryFieldUrlModeComponent,
@@ -271,6 +269,16 @@ export class DotEditContentBinaryFieldComponent
         this.#dotBinaryFieldStore.setMode(mode);
     }
 
+    /**
+     * Opens a dialog for AI Image Prompt using the DotAIImagePromptComponent.
+     * The dialog has various configurations such as header, appendTo, closeOnEscape, draggable,
+     * keepInViewport, maskStyleClass, resizable, modal, width, and style.
+     *
+     * When the dialog is closed, it filters the selected image and if an image is selected,
+     * it parses the image to a temporary file and sets it in the dotBinaryFieldStore.
+     *
+     * @private
+     */
     openAIImagePrompt() {
         this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
             header: 'AI Image Prompt',

@@ -11,9 +11,9 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotMessagePipe } from './../../dot-message/dot-message.pipe';
-import { DotAiImagePromptdStore } from './ai-image-prompt.store';
 import { AiImagePromptFormComponent } from './components/ai-image-prompt-form/ai-image-prompt-form.component';
 import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gallery/ai-image-prompt-gallery.component';
+import { DotAiImagePromptStore } from './store/ai-image-prompt.store';
 
 @Component({
     selector: 'dot-ai-image-prompt',
@@ -29,13 +29,13 @@ import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gall
         AiImagePromptFormComponent,
         AiImagePromptGalleryComponent
     ],
-    providers: [FormGroupDirective, ConfirmationService, DotAiImagePromptdStore],
+    providers: [FormGroupDirective, ConfirmationService, DotAiImagePromptStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAIImagePromptComponent implements OnInit {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #confirmationService = inject(ConfirmationService);
-    readonly store = inject(DotAiImagePromptdStore);
+    readonly store = inject(DotAiImagePromptStore);
 
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #dialogConfig = inject(DynamicDialogConfig<{ context: string }>);

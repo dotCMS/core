@@ -38,7 +38,7 @@ const initialState: AiImagePromptdState = {
     }
 };
 
-export const DotAiImagePromptdStore = signalStore(
+export const DotAiImagePromptStore = signalStore(
     withState(initialState),
     withComputed(({ status, context, images, galleryActiveIndex }) => ({
         isLoading: computed(() => {
