@@ -7,17 +7,19 @@ import {
     input,
     OnInit,
     OnDestroy,
-    DestroyRef
+    DestroyRef,
+    computed
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { filter, map } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotGeneratedAIImage } from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
@@ -47,7 +49,8 @@ import { getUiMessage } from './utils/messages';
         DotSpinnerModule,
         DotFileFieldUiMessageComponent,
         DotFileFieldPreviewComponent,
-        DotFormImportUrlComponent
+        DotFormImportUrlComponent,
+        TooltipModule
     ],
     providers: [
         DotFileFieldUploadService,
@@ -64,12 +67,12 @@ import { getUiMessage } from './utils/messages';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentFileFieldComponent implements ControlValueAccessor, OnInit, OnDestroy {
-    /**
-     * FileFieldStore
-     *
-     * @memberof DotEditContentFileFieldComponent
-     */
     readonly store = inject(FileFieldStore);
+    readonly #dialogService = inject(DialogService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #destroyRef = inject(DestroyRef);
+    readonly #dotAiService = inject(DotAiService);
+    #dialogRef: DynamicDialogRef | null = null;
     /**
      * DotCMS Content Type Field
      *
@@ -77,10 +80,17 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
      */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
-    readonly #dialogService = inject(DialogService);
-    readonly #dotMessageService = inject(DotMessageService);
-    readonly #destroyRef = inject(DestroyRef);
-    #dialogRef: DynamicDialogRef | null = null;
+    $isAIPluginInstalled = toSignal(this.#dotAiService.checkPluginInstallation(), {
+        initialValue: false
+    });
+    $tooltipTextAIBtn = computed(() => {
+        const isAIPluginInstalled = this.$isAIPluginInstalled();
+        if (!isAIPluginInstalled) {
+            return this.#dotMessageService.get('dot.file.field.action.generate.with.tooltip');
+        }
+
+        return null;
+    });
 
     private onChange: (value: string) => void;
     private onTouched: () => void;
@@ -109,7 +119,8 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
 
         this.store.initLoad({
             fieldVariable: field.variable,
-            inputType: field.fieldType as INPUT_TYPES
+            inputType: field.fieldType as INPUT_TYPES,
+            isAIPluginInstalled: this.$isAIPluginInstalled()
         });
     }
 
