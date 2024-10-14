@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.FactoryLocator;
@@ -33,6 +34,7 @@ public class UniqueFieldAPIImpl implements UniqueFieldAPI {
      * @throws DotDataException
      */
     @Override
+    @WrapInTransaction
     public void insert(final UniqueFieldCriteria uniqueFieldCriteria, final String contentletId)
             throws UniqueFieldValueDupliacatedException, DotDataException {
 

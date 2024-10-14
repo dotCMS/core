@@ -40,8 +40,7 @@ public class UniqueFieldCriteria {
         return Map.of(
             "contentTypeID", Objects.requireNonNull(contentType.id()),
             "fieldVariableName", Objects.requireNonNull(field.variable()),
-            "" +
-                    "", value.toString(),
+            "fieldValue", value.toString(),
             "languageId", language.getId(),
             "hostId", site.getIdentifier(),
             "uniquePerSite", isUniqueForSite(contentType.id(), field.variable())
