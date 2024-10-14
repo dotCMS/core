@@ -12,7 +12,7 @@ import { ControlContainer } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import { DotDropZoneComponent, DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
 
 import { DotFileFieldPreviewComponent } from './components/dot-file-field-preview/dot-file-field-preview.component';
@@ -38,7 +38,14 @@ describe('DotEditContentFileFieldComponent', () => {
         component: DotEditContentFileFieldComponent,
         detectChanges: false,
         componentProviders: [FileFieldStore, mockProvider(DotFileFieldUploadService)],
-        providers: [provideHttpClient(), mockProvider(DotMessageService), DialogService],
+        providers: [
+            provideHttpClient(),
+            mockProvider(DialogService),
+            mockProvider(DotMessageService),
+            mockProvider(DotAiService, {
+                checkPluginInstallation: jest.fn().mockReturnValue(of(true))
+            })
+        ],
         componentViewProviders: [
             { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
         ]
