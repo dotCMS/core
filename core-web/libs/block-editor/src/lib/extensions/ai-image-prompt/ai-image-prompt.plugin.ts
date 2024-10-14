@@ -55,13 +55,14 @@ export class AIImagePromptView {
      * @param {AIImagePromptViewProps} props - The properties for the component.
      */
     constructor(props: AIImagePromptViewProps) {
-        const { editor, view, pluginKey, dialogService } = props;
+        const { editor, view, pluginKey, dialogService, dotMessageService } = props;
 
         this.editor = editor;
         this.view = view;
 
         this.pluginKey = pluginKey;
         this.#dialogService = dialogService;
+        this.#dotMessageService = dotMessageService;
     }
 
     update(view: EditorView, prevState: EditorState) {
