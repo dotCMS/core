@@ -24,9 +24,7 @@ import com.dotcms.content.business.json.ContentletJsonAPITest;
 import com.dotcms.content.business.json.LegacyJSONObjectRenderTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
-import com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest;
-import com.dotcms.contenttype.business.ContentTypeInitializerTest;
-import com.dotcms.contenttype.business.StoryBlockAPITest;
+import com.dotcms.contenttype.business.*;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
@@ -385,7 +383,9 @@ import org.junit.runners.Suite.SuiteClasses;
         SimpleInjectionIT.class,
         LegacyJSONObjectRenderTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
-        Task241009CreatePostgresJobQueueTablesTest.class
+        Task241009CreatePostgresJobQueueTablesTest.class,
+        UniqueFieldFactoryImplTest.class,
+        UniqueFieldAPIImplTest.class
 })
 
 public class MainSuite2b {
