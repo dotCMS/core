@@ -119,8 +119,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
 
         this.store.initLoad({
             fieldVariable: field.variable,
-            inputType: field.fieldType as INPUT_TYPES,
-            isAIPluginInstalled: this.$isAIPluginInstalled()
+            inputType: field.fieldType as INPUT_TYPES
         });
     }
 
@@ -259,8 +258,10 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
     }
 
     showAIImagePromptDialog() {
+        const header = this.#dotMessageService.get('dot.file.field.action.generate.dialog-title');
+
         this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
-            header: 'AI Image Prompt',
+            header,
             appendTo: 'body',
             closeOnEscape: false,
             draggable: false,

@@ -58,7 +58,7 @@
                 }
                 @if (store.allowGenerateImg()) {
                     <p-button
-                        [disabled]="!store.isAIPluginInstalled()"
+                        [disabled]="!$isAIPluginInstalled()"
                         tooltipPosition="bottom"
                         [pTooltip]="$tooltipTextAIBtn()"
                         (click)="showAIImagePromptDialog()"

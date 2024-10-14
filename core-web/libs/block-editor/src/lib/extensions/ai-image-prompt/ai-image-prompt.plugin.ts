@@ -10,6 +10,7 @@ import { takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotGeneratedAIImage } from '@dotcms/dotcms-models';
 import { DotAIImagePromptComponent } from '@dotcms/ui';
 
@@ -19,6 +20,7 @@ interface AIImagePromptProps {
     pluginKey: PluginKey;
     editor: Editor;
     dialogService: DialogService;
+    dotMessageService: DotMessageService;
 }
 
 interface PluginState {
@@ -45,6 +47,7 @@ export class AIImagePromptView {
     private destroy$ = new Subject<boolean>();
 
     #dialogService: DialogService | null = null;
+    #dotMessageService: DotMessageService | null = null;
     #dialogRef: DynamicDialogRef | null = null;
 
     /**
@@ -69,8 +72,12 @@ export class AIImagePromptView {
         if (next.aIImagePromptOpen && prev.aIImagePromptOpen === false) {
             const context = this.editor.getText();
 
+            const header = this.#dotMessageService.get(
+                'block-editor.extension.ai-image.dialog-title'
+            );
+
             this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
-                header: 'AI Image Prompt',
+                header,
                 appendTo: 'body',
                 closeOnEscape: false,
                 draggable: false,

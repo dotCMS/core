@@ -4,6 +4,8 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { Extension } from '@tiptap/core';
 
+import { DotMessageService } from '@dotcms/data-access';
+
 import { aiImagePromptPlugin } from './ai-image-prompt.plugin';
 
 export interface AIImagePromptOptions {
@@ -26,7 +28,10 @@ export const AI_IMAGE_PROMPT_PLUGIN_KEY = new PluginKey('aiImagePrompt-form');
 
 export const AI_IMAGE_PROMPT_EXTENSION_NAME = 'aiImagePrompt';
 
-export const AIImagePromptExtension = (dialogService: DialogService) => {
+export const AIImagePromptExtension = (
+    dialogService: DialogService,
+    dotMessageService: DotMessageService
+) => {
     return Extension.create<AIImagePromptOptions>({
         name: AI_IMAGE_PROMPT_EXTENSION_NAME,
 
@@ -73,7 +78,8 @@ export const AIImagePromptExtension = (dialogService: DialogService) => {
                 aiImagePromptPlugin({
                     pluginKey: this.options.pluginKey,
                     editor: this.editor,
-                    dialogService: dialogService
+                    dialogService: dialogService,
+                    dotMessageService: dotMessageService
                 })
             ];
         }

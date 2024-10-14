@@ -280,8 +280,10 @@ export class DotEditContentBinaryFieldComponent
      * @private
      */
     openAIImagePrompt() {
+        const header = this.#dotMessageService.get('dot.binary.field.action.generate.dialog-title');
+
         this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
-            header: 'AI Image Prompt',
+            header,
             appendTo: 'body',
             closeOnEscape: false,
             draggable: false,

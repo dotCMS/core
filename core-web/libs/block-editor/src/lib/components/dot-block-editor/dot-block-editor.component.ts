@@ -33,7 +33,7 @@ import { Underline } from '@tiptap/extension-underline';
 import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { DotPropertiesService, DotAiService } from '@dotcms/data-access';
+import { DotPropertiesService, DotAiService, DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
@@ -121,6 +121,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private readonly dotPropertiesService = inject(DotPropertiesService);
     private isAIPluginInstalled$: Observable<boolean>;
     readonly #dialogService = inject(DialogService);
+    readonly #dotMessageService = inject(DotMessageService);
 
     constructor(
         private readonly viewContainerRef: ViewContainerRef,
@@ -462,7 +463,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         if (isAIPluginInstalled) {
             extensions.push(
                 AIContentPromptExtension(this.viewContainerRef),
-                AIImagePromptExtension(this.#dialogService)
+                AIImagePromptExtension(this.#dialogService, this.#dotMessageService)
             );
         }
 
