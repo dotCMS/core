@@ -7,7 +7,6 @@ import com.dotcms.datagen.*;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -25,7 +24,7 @@ import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQ
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class UniqueFieldAPIHelperTest {
+public class UniqueFieldUtilTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -43,7 +42,7 @@ public class UniqueFieldAPIHelperTest {
     }
 
     /**
-     * Method to test: {@link UniqueFieldAPIHelper#insert(UniqueFieldCriteria, String)}
+     * Method to test: {@link UniqueFieldUtil#insert(UniqueFieldCriteria, String)}
      * When: Called the method with the right parameters
      * Should: Insert a register in the unique_fields table
      */
@@ -68,14 +67,14 @@ public class UniqueFieldAPIHelperTest {
                 .host(site)
                 .next();
 
-        final UniqueFieldAPIHelper uniqueFieldAPIHelper = new UniqueFieldAPIHelper();
+        final UniqueFieldUtil uniqueFieldAPIHelper = new UniqueFieldUtil();
         uniqueFieldAPIHelper.insert(uniqueFieldCriteria, contentlet.getIdentifier());
 
         validateAfterInsert(uniqueFieldCriteria, contentlet);
     }
 
     /**
-     * Method to test: {@link UniqueFieldAPIHelper#insert(UniqueFieldCriteria, String)}
+     * Method to test: {@link UniqueFieldUtil#insert(UniqueFieldCriteria, String)}
      * When: Called the method with a 'unique_key_val' duplicated
      * Should: Throw a {@link UniqueFieldValueDupliacatedException}
      */
@@ -100,7 +99,7 @@ public class UniqueFieldAPIHelperTest {
                 .host(site)
                 .next();
 
-        final UniqueFieldAPIHelper uniqueFieldAPIHelper = new UniqueFieldAPIHelper();
+        final UniqueFieldUtil uniqueFieldAPIHelper = new UniqueFieldUtil();
         uniqueFieldAPIHelper.insert(uniqueFieldCriteria, contentlet.getIdentifier());
 
         final String hash = StringUtils.hashText(contentType.id() + uniqueField.variable() + language.getId() + value);
@@ -122,7 +121,7 @@ public class UniqueFieldAPIHelperTest {
     }
 
     /**
-     * Method to test: {@link UniqueFieldAPIHelper#insert(UniqueFieldCriteria, String)}
+     * Method to test: {@link UniqueFieldUtil#insert(UniqueFieldCriteria, String)}
      * When: Called the method with a field with uniquePerSite set to true
      * Should: Allow insert the same values in different Host
      */
@@ -159,7 +158,7 @@ public class UniqueFieldAPIHelperTest {
                 .host(site)
                 .next();
 
-        final UniqueFieldAPIHelper uniqueFieldAPIHelper = new UniqueFieldAPIHelper();
+        final UniqueFieldUtil uniqueFieldAPIHelper = new UniqueFieldUtil();
         uniqueFieldAPIHelper.insert(uniqueFieldCriteria_1, contentlet_1.getIdentifier());
 
         final UniqueFieldCriteria uniqueFieldCriteria_2 = new UniqueFieldCriteria.Builder()
@@ -201,7 +200,7 @@ public class UniqueFieldAPIHelperTest {
     }
 
     /**
-     * Method to test: {@link UniqueFieldAPIHelper#insert(UniqueFieldCriteria, String)}
+     * Method to test: {@link UniqueFieldUtil#insert(UniqueFieldCriteria, String)}
      * When: Called the method with a Not Unique Field
      * Should: thrown an {@link IllegalArgumentException}
      */
@@ -227,7 +226,7 @@ public class UniqueFieldAPIHelperTest {
                 .next();
 
         try {
-            final UniqueFieldAPIHelper uniqueFieldAPIHelper = new UniqueFieldAPIHelper();
+            final UniqueFieldUtil uniqueFieldAPIHelper = new UniqueFieldUtil();
             uniqueFieldAPIHelper.insert(uniqueFieldCriteria, contentlet.getIdentifier());
             throw new AssertionError("IllegalArgumentExceptionΩ Expected");
         } catch (IllegalArgumentException e) {
@@ -265,7 +264,7 @@ public class UniqueFieldAPIHelperTest {
     }
 
     /**
-     * Method to test: {@link UniqueFieldAPIHelper#insert(UniqueFieldCriteria, String)}
+     * Method to test: {@link UniqueFieldUtil#insert(UniqueFieldCriteria, String)}
      * When: Called the method twice with different Content Type
      * Should: Insert a register in the unique_fields table
      */
@@ -290,7 +289,7 @@ public class UniqueFieldAPIHelperTest {
                 .host(site)
                 .next();
 
-        final UniqueFieldAPIHelper uniqueFieldAPIHelper = new UniqueFieldAPIHelper();
+        final UniqueFieldUtil uniqueFieldAPIHelper = new UniqueFieldUtil();
         uniqueFieldAPIHelper.insert(uniqueFieldCriteria_1, contentlet_1.getIdentifier());
         validateAfterInsert(uniqueFieldCriteria_1, contentlet_1);
 
@@ -315,7 +314,7 @@ public class UniqueFieldAPIHelperTest {
     }
 
     /**
-     * Method to test: {@link UniqueFieldAPIHelper#insert(UniqueFieldCriteria, String)}
+     * Method to test: {@link UniqueFieldUtil#insert(UniqueFieldCriteria, String)}
      * When: Called the method twice with different Field
      * Should: Insert a register in the unique_fields table
      */
@@ -345,7 +344,7 @@ public class UniqueFieldAPIHelperTest {
                 .setSite(site)
                 .build();
 
-        final UniqueFieldAPIHelper uniqueFieldAPIHelper = new UniqueFieldAPIHelper();
+        final UniqueFieldUtil uniqueFieldAPIHelper = new UniqueFieldUtil();
         uniqueFieldAPIHelper.insert(uniqueFieldCriteria_1, contentlet.getIdentifier());
 
         final UniqueFieldCriteria uniqueFieldCriteria_2 = new UniqueFieldCriteria.Builder()
@@ -363,7 +362,7 @@ public class UniqueFieldAPIHelperTest {
     }
 
     /**
-     * Method to test: {@link UniqueFieldAPIHelper#insert(UniqueFieldCriteria, String)}
+     * Method to test: {@link UniqueFieldUtil#insert(UniqueFieldCriteria, String)}
      * When: Called the method twice with different Value
      * Should: Insert a register in the unique_fields table
      */
@@ -391,7 +390,7 @@ public class UniqueFieldAPIHelperTest {
                 .setSite(site)
                 .build();
 
-        final UniqueFieldAPIHelper uniqueFieldAPIHelper = new UniqueFieldAPIHelper();
+        final UniqueFieldUtil uniqueFieldAPIHelper = new UniqueFieldUtil();
         uniqueFieldAPIHelper.insert(uniqueFieldCriteria_1, contentlet.getIdentifier());
 
         final UniqueFieldCriteria uniqueFieldCriteria_2 = new UniqueFieldCriteria.Builder()
@@ -409,7 +408,7 @@ public class UniqueFieldAPIHelperTest {
     }
 
     /**
-     * Method to test: {@link UniqueFieldAPIHelper#insert(UniqueFieldCriteria, String)}
+     * Method to test: {@link UniqueFieldUtil#insert(UniqueFieldCriteria, String)}
      * When: Called the method twice with different Language
      * Should: Insert a register in the unique_fields table
      */
@@ -438,9 +437,9 @@ public class UniqueFieldAPIHelperTest {
                 .setSite(site)
                 .build();
 
-        final UniqueFieldAPIHelper uniqueFieldAPIHelper = new UniqueFieldAPIHelper();
+        final UniqueFieldUtil uniqueFieldAPIHelper = new UniqueFieldUtil();
         uniqueFieldAPIHelper.insert(uniqueFieldCriteria_1, contentlet.getIdentifier());
-        
+
         final UniqueFieldCriteria uniqueFieldCriteria_2 = new UniqueFieldCriteria.Builder()
                 .setContentType(contentType)
                 .setField(field)

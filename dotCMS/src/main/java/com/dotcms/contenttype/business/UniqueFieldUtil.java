@@ -5,6 +5,7 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,15 +13,15 @@ import java.util.Map;
 /**
  * This Helper allow you to interact with the unique_fields table
  */
-public class UniqueFieldAPIHelper {
+class UniqueFieldUtil {
 
     private final UniqueFieldFactory uniqueFieldFactory;
 
-    public UniqueFieldAPIHelper(){
+    public UniqueFieldUtil(){
         this(FactoryLocator.getUniqueFieldFactory());
     }
 
-    public UniqueFieldAPIHelper(final UniqueFieldFactory uniqueFieldFactory) {
+    public UniqueFieldUtil(final UniqueFieldFactory uniqueFieldFactory) {
         this.uniqueFieldFactory = uniqueFieldFactory;
     }
 
@@ -34,11 +35,14 @@ public class UniqueFieldAPIHelper {
      * @throws UniqueFieldValueDupliacatedException when the Value is duplicated
      * @throws DotDataException when a DotDataException is throws
      */
+    @WrapInTransaction
     public void insert(final UniqueFieldCriteria uniqueFieldCriteria, final String contentletId)
             throws UniqueFieldValueDupliacatedException, DotDataException {
 
         if (!uniqueFieldCriteria.field().unique()) {
-            throw new IllegalArgumentException(String.format("The Field %s is not unique", uniqueFieldCriteria.field().variable()));
+            final String message = String.format("The Field %s is not unique", uniqueFieldCriteria.field().variable());
+            Logger.debug(UniqueFieldUtil.class, message);
+            throw new IllegalArgumentException(message);
         }
 
         final boolean uniqueForSite = uniqueFieldCriteria.field().fieldVariableValue(ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
@@ -49,6 +53,7 @@ public class UniqueFieldAPIHelper {
         supportingValues.put("uniquePerSite", uniqueForSite);
 
         try {
+            Logger.debug(UniqueFieldUtil.class, "Including value in the unique_fields table");
             uniqueFieldFactory.insert(uniqueFieldCriteria.hash(), supportingValues);
         } catch (DotDataException e) {
 
@@ -57,6 +62,7 @@ public class UniqueFieldAPIHelper {
                         uniqueFieldCriteria.value(), uniqueFieldCriteria.field().variable(),
                         uniqueFieldCriteria.contentType().variable());
 
+                Logger.error(UniqueFieldUtil.class, duplicatedValueMessage);
                 throw new UniqueFieldValueDupliacatedException(duplicatedValueMessage);
             }
         }
