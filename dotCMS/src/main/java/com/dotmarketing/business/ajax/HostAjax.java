@@ -123,7 +123,8 @@ public class HostAjax {
     public Map<String, Object> findHostsPaginated(final String filter, final boolean showArchived, int offset, int count) throws DotDataException, DotSecurityException, PortalException, SystemException {
 		final User user = this.getLoggedInUser();
 		final boolean respectFrontend = !this.userWebAPI.isLoggedToBackend(this.getHttpRequest());
-		final List<Host> sitesFromDb = this.hostAPI.findAllFromDB(user, false, respectFrontend);
+		final List<Host> sitesFromDb = this.hostAPI.findAllFromDB(user,
+				false, true, respectFrontend);
 		final List<Field> fields = FieldsCache.getFieldsByStructureVariableName(Host.HOST_VELOCITY_VAR_NAME);
         final List<Field> searchableFields = fields.stream().filter(field -> field.isListed() && field
                 .getFieldType().startsWith("text")).collect(Collectors.toList());
