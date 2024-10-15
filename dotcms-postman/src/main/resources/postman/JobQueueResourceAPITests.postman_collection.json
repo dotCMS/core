@@ -783,21 +783,6 @@
 			"response": []
 		}
 	],
-	"auth": {
-		"type": "basic",
-		"basic": [
-			{
-				"key": "password",
-				"value": "admin",
-				"type": "string"
-			},
-			{
-				"key": "username",
-				"value": "admin@dotCMS.com",
-				"type": "string"
-			}
-		]
-	},
 	"event": [
 		{
 			"listen": "prerequest",
