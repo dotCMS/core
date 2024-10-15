@@ -902,6 +902,7 @@ public class WorkflowResource {
                                 eventBuilder.name("failure");
                                 eventBuilder.data(Map.class,
                                         Map.of("failure", inode));
+                                eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
                                 final OutboundEvent event = eventBuilder.build();
                                 try {
                                     eventOutput.write(event);
