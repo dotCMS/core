@@ -354,8 +354,6 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
      * @return {void}
      */
     ngOnDestroy() {
-        if (this.#dialogRef) {
-            this.#dialogRef.close();
-        }
+        this.#dialogRef?.close();
     }
 }
