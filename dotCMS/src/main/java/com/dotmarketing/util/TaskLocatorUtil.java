@@ -351,7 +351,7 @@ public class TaskLocatorUtil {
 		.add(Task241009CreatePostgresJobQueueTables.class)
 		.add(Task241013RemoveFullPathLcColumnFromIdentifier.class)
 		.add(Task241014AddTemplateValueOnContentletIndex.class)
-		.add(Task241009ReplaceLanguagesWithLocalesPortlet.class)
+		.add(Task241015ReplaceLanguagesWithLocalesPortlet.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}

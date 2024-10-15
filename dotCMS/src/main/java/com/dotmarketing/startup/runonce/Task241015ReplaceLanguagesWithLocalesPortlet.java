@@ -13,21 +13,35 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Adds the dotAI portlet to all layouts which have API Playground portlet too, if it does not already exists.
+ * Adds the dotAI portlet to all layouts which have API Playground portlet too, if it does not already exist.
  * @author vico
  */
-public class Task241009ReplaceLanguagesWithLocalesPortlet implements StartupTask {
+public class Task241015ReplaceLanguagesWithLocalesPortlet implements StartupTask {
 
-    private static final String LANGUAGES_PORTLET_ID = "languages";
-    private static final String LOCALES_PORTLET_ID = "locales";
-    private static final String WORKFLOW_PORTLET_ID = "workflow-schemes";
+    public static final String LANGUAGES_PORTLET_ID = "languages";
+    public static final String LOCALES_PORTLET_ID = "locales";
+    public static final String WORKFLOW_PORTLET_ID = "workflow-schemes";
 
+    /**
+     * Determines if the task should be forced to run.
+     *
+     * @return true if no locales portlet is found in any layout, false otherwise.
+     */
     @Override
     public boolean forceRun() {
         // if no locales found then  flag it as true
         return getLayoutPortletsByPortletId(LOCALES_PORTLET_ID).isEmpty();
     }
 
+    /**
+     * Executes the upgrade task.
+     * Adds the locales portlet to layouts containing the languages portlet or the workflow portlet.
+     * Replaces the languages portlet with the locales portlet.
+     * Clears the layout cache.
+     *
+     * @throws DotDataException if there is an error accessing the database.
+     * @throws DotRuntimeException if there is a runtime error during execution.
+     */
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         final List<Map<String, Object>> languagesLayoutPortlets = getLayoutPortletsByPortletId(LANGUAGES_PORTLET_ID);
@@ -38,7 +52,7 @@ public class Task241009ReplaceLanguagesWithLocalesPortlet implements StartupTask
                 final Map<String, Object> row = workflowLayoutPortlets.get(0);
                 final String layoutId = (String) row.get("layout_id");
                 final int portletOrder = Optional.ofNullable((Integer) row.get("portlet_order")).orElse(0) + 1;
-                insertLocale(layoutId, portletOrder);
+                insertLocalesPortlet(layoutId, portletOrder);
             }
         } else {
             languagesLayoutPortlets.forEach(this::replaceLanguage);
@@ -49,32 +63,20 @@ public class Task241009ReplaceLanguagesWithLocalesPortlet implements StartupTask
 
     private void replaceLanguage(final Map<String, Object> row) {
         final String layoutId = (String) row.get("layout_id");
-        final int count = Try.of(
-                        () -> new DotConnect()
-                                .setSQL("SELECT COUNT(portlet_id) AS count" +
-                                        " FROM cms_layouts_portlets" +
-                                        " WHERE layout_id = ? AND portlet_id = ?")
-                                .addParam(layoutId)
-                                .getInt("count"))
-                .getOrElse(0);
-        if (count == 0) {
-            final int portletOrder = Optional.ofNullable((Integer) row.get("portlet_order")).orElse(1);
-            insertLocale(layoutId, portletOrder);
+        final int portletOrder = Optional.ofNullable((Integer) row.get("portlet_order")).orElse(1);
+        insertLocalesPortlet(layoutId, portletOrder);
 
-            final String id = (String) row.get("id");
-            deleteLanguage(id);
-        }
+        final String id = (String) row.get("id");
+        deleteLanguagesPortlet(id);
     }
 
-    private void deleteLanguage(final String id) {
+    private void deleteLanguagesPortlet(final String id) {
         Try.run(() -> new DotConnect()
-                        .setSQL("DELETE FROM cms_layouts_portlets WHERE id = ?")
-                        .addParam(id)
-                        .loadResult())
+                        .executeStatement(String.format("DELETE FROM cms_layouts_portlets WHERE id = '%s'", id)))
                 .getOrElseThrow(ex -> new RuntimeException(ex));
     }
 
-    private static void insertLocale(final String layoutId, final int portletOrder) {
+    private static void insertLocalesPortlet(final String layoutId, final int portletOrder) {
         Try.run(() -> new DotConnect()
                         .setSQL("INSERT INTO cms_layouts_portlets(id, layout_id, portlet_id, portlet_order)" +
                                 " VALUES (?, ?, ?, ?)")
@@ -89,7 +91,7 @@ public class Task241009ReplaceLanguagesWithLocalesPortlet implements StartupTask
     private List<Map<String, Object>> getLayoutPortletsByPortletId(final String portletId) {
         return Try.of(
                         () -> new DotConnect()
-                                .setSQL("SELECT layout_id FROM cms_layouts_portlets WHERE portlet_id = ?")
+                                .setSQL("SELECT * FROM cms_layouts_portlets WHERE portlet_id = ?")
                                 .addParam(portletId)
                                 .loadObjectResults())
                 .getOrElse(List.of());
