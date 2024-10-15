@@ -68,10 +68,32 @@ import { getUiMessage } from './utils/messages';
 })
 export class DotEditContentFileFieldComponent implements ControlValueAccessor, OnInit, OnDestroy {
     readonly store = inject(FileFieldStore);
+    /**
+     * A readonly private field that holds an instance of the DialogService.
+     * This service is injected using Angular's dependency injection mechanism.
+     * It is used to manage dialog interactions within the component.
+     */
     readonly #dialogService = inject(DialogService);
+    /**
+     * A readonly private field that injects the DotMessageService.
+     * This service is used for handling message-related functionalities within the component.
+     */
     readonly #dotMessageService = inject(DotMessageService);
+    /**
+     * A readonly private field that holds a reference to the `DestroyRef` service.
+     * This service is injected into the component to manage the destruction lifecycle.
+     */
     readonly #destroyRef = inject(DestroyRef);
+    /**
+     * A readonly private field that injects the `DotAiService` service.
+     * This service is used to provide AI-related functionalities within the component.
+     */
     readonly #dotAiService = inject(DotAiService);
+    /**
+     * Reference to the dynamic dialog. It can be null if no dialog is currently open.
+     *
+     * @type {DynamicDialogRef | null}
+     */
     #dialogRef: DynamicDialogRef | null = null;
     /**
      * DotCMS Content Type Field
