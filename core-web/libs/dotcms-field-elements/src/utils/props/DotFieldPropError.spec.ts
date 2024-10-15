@@ -14,7 +14,7 @@ describe('DotFieldPropError', () => {
     }" of type "${typeof propInfo.value}" supplied to "${propInfo.field.type}" with the name "${
         propInfo.field.name
     }", expected "TEST".
-Doc Reference: https://github.com/dotCMS/core-web/blob/master/projects/dotcms-field-elements/src/components/${
+Doc Reference: https://github.com/dotCMS/core-web/blob/main/projects/dotcms-field-elements/src/components/${
         propInfo.field.type
     }/readme.md`;
 

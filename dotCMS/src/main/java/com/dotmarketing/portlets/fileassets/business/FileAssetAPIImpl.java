@@ -344,7 +344,8 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 			if	(request != null) {
-				final String fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, APILocator.systemUser(), fileAsset, "fileAsset");
+				final String fileLink = new ResourceLink.ResourceLinkBuilder().build(request, APILocator.systemUser(), fileAsset, FileAssetAPI.BINARY_FIELD).getConfiguredImageURL();
+
 
 				fileAsset.getMap().put("fileLink", fileLink);
 			}
@@ -479,7 +480,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		String path = "";
 
 		path = java.io.File.separator + _inode.charAt(0)
-				+ java.io.File.separator + _inode.charAt(1) + java.io.File.separator + _inode + java.io.File.separator + "fileAsset" + java.io.File.separator+ fileName;
+				+ java.io.File.separator + _inode.charAt(1) + java.io.File.separator + _inode + java.io.File.separator + FileAssetAPI.BINARY_FIELD + java.io.File.separator+ fileName;
 
 		return path;
 
@@ -620,7 +621,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         final String fullFileName = UtilMethods.isSet(ext) ? fileName + "." + ext : fileName;
         final String path = ((!UtilMethods.isSet(realPath)) ? assetPath : realPath)
                 + inode.charAt(0) + java.io.File.separator + inode.charAt(1)
-                + java.io.File.separator + inode+ java.io.File.separator + "fileAsset" + java.io.File.separator + fullFileName;
+                + java.io.File.separator + inode+ java.io.File.separator + FileAssetAPI.BINARY_FIELD + java.io.File.separator + fullFileName;
 
         if (!UtilMethods.isSet(realPath)) {
             return FileUtil.getRealPath(path);
@@ -680,7 +681,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
         path = ((!UtilMethods.isSet(realPath)) ? assetPath : realPath)
                 + _inode.charAt(0) + java.io.File.separator + _inode.charAt(1)
-                + java.io.File.separator + _inode+ java.io.File.separator + "fileAsset" + java.io.File.separator;
+                + java.io.File.separator + _inode+ java.io.File.separator + FileAssetAPI.BINARY_FIELD + java.io.File.separator;
 
         if (!UtilMethods.isSet(realPath))
             return FileUtil.getRealPath(path);

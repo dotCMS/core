@@ -1,39 +1,22 @@
 package com.dotcms.jobs.business.api;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
-import com.dotcms.jobs.business.error.CircuitBreaker;
+import com.dotcms.TestBaseJunit5WeldInitiator;
 import com.dotcms.jobs.business.error.ExponentialBackoffRetryStrategy;
-import com.dotcms.jobs.business.error.RetryStrategy;
-import com.dotcms.jobs.business.error.RetryStrategyProducer;
 import com.dotcms.jobs.business.queue.JobQueue;
-import com.dotcms.jobs.business.queue.JobQueueProducer;
 import javax.inject.Inject;
-import org.jboss.weld.bootstrap.api.helpers.RegistrySingletonProvider;
-import org.jboss.weld.junit5.WeldInitiator;
-import org.jboss.weld.junit5.WeldJunit5Extension;
-import org.jboss.weld.junit5.WeldSetup;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Test class for verifying the CDI (Contexts and Dependency Injection) functionality of the
  * JobQueueManagerAPI implementation.
  */
-@ExtendWith(WeldJunit5Extension.class)
-public class JobQueueManagerAPICDITest {
 
-    @WeldSetup
-    public WeldInitiator weld = WeldInitiator.of(
-            WeldInitiator.createWeld()
-                    .containerId(RegistrySingletonProvider.STATIC_INSTANCE)
-                    .beanClasses(JobQueueManagerAPIImpl.class, JobQueueConfig.class,
-                            JobQueue.class, RetryStrategy.class, CircuitBreaker.class,
-                            JobQueueProducer.class, JobQueueConfigProducer.class,
-                            RetryStrategyProducer.class)
-    );
+public class JobQueueManagerAPICDITest extends TestBaseJunit5WeldInitiator {
 
     @Inject
     private JobQueueManagerAPI jobQueueManagerAPI;
@@ -65,7 +48,7 @@ public class JobQueueManagerAPICDITest {
     @Test
     void test_CDIInjection() {
         assertNotNull(jobQueueManagerAPI, "JobQueueManagerAPI should be injected");
-        Assertions.assertInstanceOf(JobQueueManagerAPIImpl.class, jobQueueManagerAPI,
+        assertInstanceOf(JobQueueManagerAPIImpl.class, jobQueueManagerAPI,
                 "JobQueueManagerAPI should be an instance of JobQueueManagerAPIImpl");
     }
 
@@ -77,17 +60,18 @@ public class JobQueueManagerAPICDITest {
     @Test
     void test_JobQueueManagerAPIFields() {
 
-        // There are not JobQueue implementations yet
-        //Assertions.assertNotNull(impl.getJobQueue(), "JobQueue should be injected");
+        assertNotNull(jobQueueManagerAPI.getJobQueue(), "JobQueue should be injected");
+        assertInstanceOf(JobQueue.class, jobQueueManagerAPI.getJobQueue(),
+                "Injected object should implement JobQueue interface");
 
         assertNotNull(jobQueueManagerAPI.getCircuitBreaker(),
                 "CircuitBreaker should be injected");
         assertNotNull(jobQueueManagerAPI.getDefaultRetryStrategy(),
                 "Retry strategy should be injected");
 
-        Assertions.assertEquals(10, jobQueueManagerAPI.getThreadPoolSize(),
+        assertEquals(10, jobQueueManagerAPI.getThreadPoolSize(),
                 "ThreadPoolSize should be greater than 0");
-        Assertions.assertInstanceOf(ExponentialBackoffRetryStrategy.class,
+        assertInstanceOf(ExponentialBackoffRetryStrategy.class,
                 jobQueueManagerAPI.getDefaultRetryStrategy(),
                 "Retry strategy should be an instance of ExponentialBackoffRetryStrategy");
     }

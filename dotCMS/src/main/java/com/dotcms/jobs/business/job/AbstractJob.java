@@ -1,5 +1,7 @@
 package com.dotcms.jobs.business.job;
 
+import com.dotcms.jobs.business.processor.ProgressTracker;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.LocalDateTime;
@@ -19,33 +21,36 @@ import org.immutables.value.Value.Default;
 @JsonDeserialize(as = Job.class)
 public interface AbstractJob {
 
+    String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS";
+
     String id();
 
     String queueName();
 
     JobState state();
 
+    Optional<String> executionNode();
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DATE_PATTERN)
     Optional<LocalDateTime> createdAt();
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DATE_PATTERN)
+    Optional<LocalDateTime> startedAt();
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DATE_PATTERN)
     Optional<LocalDateTime> updatedAt();
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DATE_PATTERN)
     Optional<LocalDateTime> completedAt();
 
     Optional<JobResult> result();
 
     Map<String, Object> parameters();
 
-    Optional<Throwable> lastException();
-
-    Optional<com.dotcms.jobs.business.error.ErrorDetail> errorDetail();
+    Optional<ProgressTracker> progressTracker();
 
     @Default
     default int retryCount() {
-        return 0;
-    }
-
-    @Default
-    default long lastRetryTimestamp() {
         return 0;
     }
 
@@ -62,22 +67,35 @@ public interface AbstractJob {
     default Job incrementRetry() {
         return Job.builder().from(this)
                 .retryCount(retryCount() + 1)
-                .lastRetryTimestamp(System.currentTimeMillis())
                 .build();
     }
 
     /**
-     * Creates a new Job marked as failed with the given error detail.
+     * Creates a new Job marked as failed with the result details.
      *
-     * @param errorDetail The error detail to set.
+     * @param result The result details of the failed job.
      * @return A new Job instance marked as failed.
      */
-    default Job markAsFailed(com.dotcms.jobs.business.error.ErrorDetail errorDetail) {
+    default Job markAsFailed(final JobResult result) {
         return Job.builder().from(this)
                 .state(JobState.FAILED)
-                .result(JobResult.ERROR)
-                .errorDetail(errorDetail)
-                .lastException(errorDetail.exception())
+                .result(result)
+                .completedAt(Optional.of(LocalDateTime.now()))
+                .updatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * Creates a new Job marked as running.
+     *
+     * @return A new Job instance marked as running.
+     */
+    default Job markAsRunning() {
+        return Job.builder().from(this)
+                .state(JobState.RUNNING)
+                .result(Optional.empty())
+                .startedAt(this.startedAt().orElse(LocalDateTime.now()))
+                .updatedAt(LocalDateTime.now())
                 .build();
     }
 
@@ -87,7 +105,7 @@ public interface AbstractJob {
      * @param newState The new state to set.
      * @return A new Job instance with the updated state.
      */
-    default Job withState(JobState newState) {
+    default Job withState(final JobState newState) {
         return Job.builder().from(this)
                 .state(newState)
                 .updatedAt(LocalDateTime.now())
@@ -97,14 +115,34 @@ public interface AbstractJob {
     /**
      * Creates a new Job marked as completed.
      *
+     * @param result The result details of the completed job.
+     *
      * @return A new Job instance marked as completed.
      */
-    default Job markAsCompleted() {
+    default Job markAsCompleted(final JobResult result) {
+
         return Job.builder().from(this)
                 .state(JobState.COMPLETED)
-                .result(JobResult.SUCCESS)
                 .completedAt(Optional.of(LocalDateTime.now()))
                 .updatedAt(LocalDateTime.now())
+                .result(result != null ? Optional.of(result) : Optional.empty())
+                .build();
+    }
+
+    /**
+     * Creates a new Job marked as canceled.
+     *
+     * @param result The result details of the canceled job.
+     *
+     * @return A new Job instance marked as canceled.
+     */
+    default Job markAsCanceled(final JobResult result) {
+
+        return Job.builder().from(this)
+                .state(JobState.CANCELED)
+                .completedAt(Optional.of(LocalDateTime.now()))
+                .updatedAt(LocalDateTime.now())
+                .result(result != null ? Optional.of(result) : Optional.empty())
                 .build();
     }
 

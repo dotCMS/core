@@ -96,7 +96,7 @@ jobs:
           stage-name: "Initial Artifact Build"
           maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true -Dgithub.event.name=${{ github.event_name }}"
           generate-artifacts: true
-          require-master: ${{ inputs.version == '1.0.0-SNAPSHOT' }}
+          require-main: ${{ inputs.version == '1.0.0-SNAPSHOT' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cleanup-runner: true
           version: ${{ inputs.version }}

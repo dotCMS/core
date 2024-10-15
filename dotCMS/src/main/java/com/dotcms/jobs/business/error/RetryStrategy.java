@@ -14,10 +14,10 @@ public interface RetryStrategy {
      * caused the failure.
      *
      * @param job       The job that failed and is being considered for retry.
-     * @param exception The exception that caused the job to fail.
+     * @param exceptionClass The class of the exception that caused the failure.
      * @return true if the job should be retried, false otherwise.
      */
-    boolean shouldRetry(Job job, Throwable exception);
+    boolean shouldRetry(Job job, Class<? extends Throwable> exceptionClass);
 
     /**
      * Calculates the delay before the next retry attempt for a given job.
@@ -37,17 +37,17 @@ public interface RetryStrategy {
     /**
      * Determines whether a given exception is retryable according to this strategy.
      *
-     * @param exception The exception to check.
+     * @param exceptionClass The class of the exception to check.
      * @return true if the exception is retryable, false otherwise.
      */
-    boolean isRetryableException(Throwable exception);
+    boolean isRetryableException(Class<? extends Throwable> exceptionClass);
 
     /**
      * Adds an exception class to the set of retryable exceptions.
      *
      * @param exceptionClass The exception class to be considered retryable.
      */
-    void addRetryableException(final Class<? extends Throwable> exceptionClass);
+    void addRetryableException(Class<? extends Throwable> exceptionClass);
 
     /**
      * Returns an unmodifiable set of the currently registered retryable exceptions.

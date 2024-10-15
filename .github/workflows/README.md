@@ -120,26 +120,26 @@ A typical PR goes through the following steps:
 5. **Finalize**: Aggregate results from all previous steps.
 6. **Reporting**: Generate a comprehensive report of the PR check process.
 
-## Specific configurations for each top level workflow getting code to trunk (master) branch
+## Specific configurations for each top level workflow getting code to trunk (main) branch
 
 | Workflow            | Trigger                                                                            | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 |---------------------|------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `1-pr.yml`          | Push of a PR to github                                                             | * Should not use secrets as it is run on code that has not been reviewed <br/> * post-workflow-report.yml is run as a separate triggered workflow so it can have access to the secrets it needs <br/> * For speed it does not run tests that should not be impacted by changes in the PR. Filters defined in .github/filters.yaml                                                                                                                                                                                                  |
-| `2.merge-queue.yml` | PR passed its checks and was added to the merge queue                              | * We force run all tests to catch flakey issues or incorrect filters. <br/> * Merge group checks include all the code of PRs ahead of it in the queue.  If successful after merge the master branch will have the same commit id that will end up as the HEAD of master. <br/> failures in the merge queue should be monitored closely for flakey tests or misconfiguration failures here can slow the process for other developers trying to merge                                                                                |
-| `3-trunk.yml`       | Runs on code that was pushed to trunk (master)                                     | * As we already built and tested the same commit in the merge queue we can take advantage of that and use the build artifacts from that workflow to skip these steps <br/> We currently build native cli artifacts in this phase due to the work required we do not want to run on every PR.  <br/> We run snapshot deployments here to github (trunk) deployments, snapshot artifactory etc.                                                                                                                                      |
-| `4-nightly.yml'     | Runs on a nightly schedule and will run on the latest commit on master at the time | * Another chance to capture flakey build issues <br/> We can add longer running tests here that would be impractical to run on every PR merged <br/> Provides a more stable image to compare behavior from previous days <br/> This currently runs using the default 1.0.0-SNAPSHOT image but with release changes this end up with a dated version on a nightly branch.  The workflow triggered from the nightly cron will version and promote the code and a separate nightly workflow will build, test, deploy from that branch |
+| `2.merge-queue.yml` | PR passed its checks and was added to the merge queue                              | * We force run all tests to catch flakey issues or incorrect filters. <br/> * Merge group checks include all the code of PRs ahead of it in the queue.  If successful after merge the main branch will have the same commit id that will end up as the HEAD of main. <br/> failures in the merge queue should be monitored closely for flakey tests or misconfiguration failures here can slow the process for other developers trying to merge                                                                                |
+| `3-trunk.yml`       | Runs on code that was pushed to trunk (main)                                     | * As we already built and tested the same commit in the merge queue we can take advantage of that and use the build artifacts from that workflow to skip these steps <br/> We currently build native cli artifacts in this phase due to the work required we do not want to run on every PR.  <br/> We run snapshot deployments here to github (trunk) deployments, snapshot artifactory etc.                                                                                                                                      |
+| `4-nightly.yml'     | Runs on a nightly schedule and will run on the latest commit on main at the time | * Another chance to capture flakey build issues <br/> We can add longer running tests here that would be impractical to run on every PR merged <br/> Provides a more stable image to compare behavior from previous days <br/> This currently runs using the default 1.0.0-SNAPSHOT image but with release changes this end up with a dated version on a nightly branch.  The workflow triggered from the nightly cron will version and promote the code and a separate nightly workflow will build, test, deploy from that branch |
 
 ## Further verification and promotion phases up to Release
 **In Progress**
 
-The aim is to have the master branch be in a releasable state.  Our preceding steps and validations to get a PR into the master branch should be the primary gates to prevent an unreleasable bad commit.
+The aim is to have the main branch be in a releasable state.  Our preceding steps and validations to get a PR into the main branch should be the primary gates to prevent an unreleasable bad commit.
 
-It is also key to the smooth development process also that issues are not introduced into the master branch that could cause failures when developers merge it into their own branches.
+It is also key to the smooth development process also that issues are not introduced into the main branch that could cause failures when developers merge it into their own branches.
 
-We still need go go through some further validations though before we can approve a specific commit on the master branch as acceptable for release. Some of these tests both automatic and manual can take some time
-so we do not want to block the development process while these are being run.  We will have a separate branch (release) or branches (test?,rc?,release)that will be used to promote the code from the master branch up to a release branch. Each step will provide a higher level of confidence.
+We still need go go through some further validations though before we can approve a specific commit on the main branch as acceptable for release. Some of these tests both automatic and manual can take some time
+so we do not want to block the development process while these are being run.  We will have a separate branch (release) or branches (test?,rc?,release)that will be used to promote the code from the main branch up to a release branch. Each step will provide a higher level of confidence.
 
-We will not make manual changes to these branches, the only changes from the core commit on master that will be made are to set the version for the build.  This should be as minimal as possible and currently for maven can be done by adding just one file .mvn/maven.properties.
+We will not make manual changes to these branches, the only changes from the core commit on main that will be made are to set the version for the build.  This should be as minimal as possible and currently for maven can be done by adding just one file .mvn/maven.properties.
 The more changes to the code are made the more opportunity that there is a change that impacts behavior that was not already tested in the previous steps.
 
 We can make the promotion process a manual action and can also make use of Github deploymnents and environments to specify required reviewers before promotion is done
@@ -157,14 +157,14 @@ Before Nightly run                       After Nightly Promote Step
              
 nightly:    PR1A                             PR1A--PR2B--PR3B--PR4B
              |                                |     |     |     |
-master:   --PR1---PR2---PR3---PR4     run: --PR1---PR2---PR3---PR4
+main:   --PR1---PR2---PR3---PR4     run: --PR1---PR2---PR3---PR4
 ```
-The commits into nightly are not the exact same commit sha as the parent on master
+The commits into nightly are not the exact same commit sha as the parent on main
 The change between the two is determanistic and repreducable.  We only add a ./mvn/maven.config containing the release version to embed and build with by default
-We also provide the original SHA to link back to the source commit on master.  
+We also provide the original SHA to link back to the source commit on main.  
 
-The exact same process can be used with a manual step to select when to sync up master to a test or release candidate branch
-We do not pick and choose individual PRS to sync up,  by default we would pull all the commits up to and including the HEAD commit on master There may 
+The exact same process can be used with a manual step to select when to sync up main to a test or release candidate branch
+We do not pick and choose individual PRS to sync up,  by default we would pull all the commits up to and including the HEAD commit on main There may 
 be a reason to select a previous commit but must always be a commit between what is already merged and the HEAD and will contain all the commits and changes inbetween. 
 The only difference will be the change in release number assigned to the commits which will help us with change logs.
 
@@ -180,12 +180,12 @@ release         PR1a--PR2b--PR3b--PR4b--PR5b--PR6b
                  |x    |     |    |     |     |x
 rc              PR1A--PR2B--PR3B--PR4B--PR5C--PR6C--PR7D
                  |x    |     |     |x    |     |x    |x
-master    run: --PR1---PR2---PR3---PR4---PR5---PR6---PR7---PR8
+main    run: --PR1---PR2---PR3---PR4---PR5---PR6---PR7---PR8
 
 1. PR1 promoted to Release Candidate and RC testing occurs on PR1A  rc-A
 2. PR1A tested and approved for release with new release version.   Release A
-    In the meantime PR2 and PR3 have been added to master and have no impact on RC branch 
-3. PR4 promoted to RC as version B and PR4B tested while PR5 is added to master. RC-B PR2B,PR3B,PR4B included
+    In the meantime PR2 and PR3 have been added to main and have no impact on RC branch 
+3. PR4 promoted to RC as version B and PR4B tested while PR5 is added to main. RC-B PR2B,PR3B,PR4B included
 4. PR4B is not approved for release, PR6 adds a fix is promoted to RC as version C
 5. PR6C is approved for release and promoted to release.
 ```

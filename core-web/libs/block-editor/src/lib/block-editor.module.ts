@@ -15,7 +15,8 @@ import {
     DotMessageService,
     DotPropertiesService,
     DotUploadFileService,
-    DotAiService
+    DotAiService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
@@ -90,6 +91,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotPropertiesService,
         DotContentSearchService,
         DotLanguagesService,
+        DotWorkflowActionsFireService,
         {
             provide: APP_INITIALIZER,
             useFactory: initTranslations,

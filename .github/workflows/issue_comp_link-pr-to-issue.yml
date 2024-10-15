@@ -1,4 +1,3 @@
-# action.yml
 name: 'Link Pull Request to Issue'
 on:
   workflow_call:

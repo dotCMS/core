@@ -6,14 +6,19 @@
         "topBar topBar"
         "header sidebar"
         "body sidebar";
-    grid-template-columns: 1fr 21.875rem;
+    grid-template-columns: 1fr 0;
     grid-template-rows: auto auto 1fr;
     padding-bottom: 0;
     height: 100%;
     width: 100%;
+    transition: grid-template-columns $basic-speed ease-in-out;
+
+    &.edit-content--with-sidebar {
+        grid-template-columns: 1fr 21.875rem;
+    }
 }
 
-.topBar {
+.edit-content-layout__topBar {
     grid-area: topBar;
 
     .pi {
@@ -22,14 +27,33 @@
     }
 }
 
-.header {
+.edit-content-layout__header {
     grid-area: header;
 }
 
-.body {
+.edit-content-layout__body {
     grid-area: body;
 }
 
-.sidebar {
+.edit-content-layout__sidebar {
     grid-area: sidebar;
+}
+
+.edit-content-layout__sidebar--btn {
+    rect {
+        stroke: $color-palette-primary;
+    }
+
+    path {
+        fill: $color-palette-primary;
+    }
+    transition: all $basic-speed ease-in-out;
+
+    &.hide {
+        width: 0;
+        min-width: 0;
+        height: 0;
+        padding: 0;
+        visibility: hidden;
+    }
 }

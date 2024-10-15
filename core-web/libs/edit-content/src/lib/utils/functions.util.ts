@@ -16,6 +16,7 @@ import {
     FIELD_TYPES
 } from '../models/dot-edit-content-field.enum';
 import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
+import { SIDEBAR_LOCAL_STORAGE_KEY } from '../models/dot-edit-content.constant';
 
 // This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
 export const castSingleSelectableValue = (
@@ -47,11 +48,23 @@ export const getSingleSelectableFieldOptions = (
 ): { label: string; value: DotEditContentFieldSingleSelectableDataTypes }[] => {
     const lines = (options?.split('\r\n') ?? []).filter((line) => line.trim() !== '');
 
-    return lines?.map((line) => {
-        const [label, value = label] = line.split('|').map((value) => value.trim());
+    return lines
+        .map((line) => {
+            const [label, value = label] = line.split('|').map((value) => value.trim());
 
-        return { label, value: castSingleSelectableValue(value, dataType) };
-    });
+            const castedValue = castSingleSelectableValue(value, dataType);
+            if (castedValue === null) {
+                return null;
+            }
+
+            return { label, value: castedValue };
+        })
+        .filter(
+            (
+                item
+            ): item is { label: string; value: DotEditContentFieldSingleSelectableDataTypes } =>
+                item !== null
+        );
 };
 
 // This function is used to cast the value to a correct type for the Angular Form
@@ -86,13 +99,6 @@ export const transformLayoutToTabs = (
     firstTabTitle: string,
     layout: DotCMSContentTypeLayoutRow[]
 ): DotCMSContentTypeLayoutTab[] => {
-    const initialTab = [
-        {
-            title: firstTabTitle,
-            layout: []
-        }
-    ];
-
     // Reduce the layout into tabs
     const tabs = layout.reduce((acc, row) => {
         const { clazz, name } = row.divider || {};
@@ -104,13 +110,19 @@ export const transformLayoutToTabs = (
                 title: name,
                 layout: []
             });
-        } else {
+        } else if (lastTabIndex >= 0) {
             // Otherwise, add the row to the layout of the last tab
             acc[lastTabIndex].layout.push(row);
+        } else {
+            // If there's no tab yet, create the initial tab
+            acc.push({
+                title: firstTabTitle,
+                layout: [row]
+            });
         }
 
         return acc;
-    }, initialTab);
+    }, [] as DotCMSContentTypeLayoutTab[]);
 
     return tabs;
 };
@@ -152,12 +164,12 @@ export const getFieldVariablesParsed = <T extends Record<string, string | boolea
     fieldVariables.forEach(({ key, value }) => {
         // If the value is a boolean string, convert it to a boolean
         if (value === 'true' || value === 'false') {
-            result[key] = value === 'true';
+            (result as Record<string, string | boolean>)[key] = value === 'true';
 
             return;
         }
 
-        result[key] = value;
+        (result as Record<string, string | boolean>)[key] = value;
     });
 
     return result as T;
@@ -208,5 +220,31 @@ export const createPaths = (path: string): string[] => {
         array.push(path);
 
         return array;
-    }, []);
+    }, [] as string[]);
+};
+
+/**
+ * Retrieves the sidebar state from the local storage.
+ *
+ * This function accesses the local storage using a predefined key `SIDEBAR_LOCAL_STORAGE_KEY`
+ * and returns the parsed state of the sidebar. If the value in local storage is 'true',
+ * it returns `true`; otherwise, it returns `false`. If there is no value stored under
+ * the key, it defaults to returning `true`.
+ *
+ * @returns {boolean} The state of the sidebar, either `true` (opened) or `false` (closed).
+ */
+export const getPersistSidebarState = (): boolean => {
+    const localStorageData = localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY);
+
+    return localStorageData ? localStorageData === 'true' : true;
+};
+
+/**
+ * Function to persist the state of the sidebar in local storage.
+ *
+ * @param {string} value - The state of the sidebar to persist.
+ *                         Typically a string representing whether the sidebar is open or closed.
+ */
+export const setPersistSidebarState = (value: string) => {
+    localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, value);
 };
