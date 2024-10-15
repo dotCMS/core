@@ -196,6 +196,8 @@
         <docker.skip.clean.after>false</docker.skip.clean.after>
         <debug.suspend.flag>n</debug.suspend.flag>
         <debug.port>5005</debug.port>
+        <docker.glowroot.enabled>false</docker.glowroot.enabled>
+
         <!-- Default debug port -->
         <debug.args.default>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${debug.suspend.flag},address=*:${debug.port}</debug.args.default>
         <debug.args/>
@@ -206,6 +208,7 @@
         <environment.properties.folder>${maven.multiModuleProjectDirectory}/environments</environment.properties.folder>
         <environment.properties.defaults>${environment.properties.folder}/environment.properties</environment.properties.defaults>
         <spotless.skip>true</spotless.skip>
+        <glowroot.version>0.14.2</glowroot.version>
     </properties>
 
     <build>
@@ -1569,6 +1572,40 @@
                                 <phase>process-resources</phase>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>glowroot</id>
+            <activation>
+                <property>
+                    <name>docker.glowroot.enabled</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <ports combine.children="append">
+                                            <port>glowroot.port:4000</port>
+                                        </ports>
+                                        <env>
+                                            <GLOWROOT_ENABLED>true</GLOWROOT_ENABLED>
+                                            <GLOWROOT_WEB_UI_ENABLED>true</GLOWROOT_WEB_UI_ENABLED>
+                                        </env>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
