@@ -67,6 +67,10 @@ import { getUiMessage } from './utils/messages';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentFileFieldComponent implements ControlValueAccessor, OnInit, OnDestroy {
+    /**
+     * A readonly instance of the FileFieldStore injected into the component.
+     * This store is used to manage the state and actions related to the file field.
+     */
     readonly store = inject(FileFieldStore);
     /**
      * A readonly private field that holds an instance of the DialogService.
