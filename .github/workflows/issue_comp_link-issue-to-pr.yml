@@ -76,7 +76,7 @@ jobs:
             const prUrl = '${{ inputs.pr_url }}';
             let prList = `PRs:\n- ${prUrl}`;
             let existingCommentId = '';
-            const comments = JSON.parse('${{ steps.get_comments.outputs.comments }}'.replace('\n', '\\n'));
+            const comments = JSON.parse(${{ toJSON(steps.get_comments.outputs.comments) }});
             
             for(comment of comments) {
               const commentBody = comment.body;
@@ -109,5 +109,5 @@ jobs:
               owner: '${{ github.repository_owner }}',
               repo: '${{ github.event.repository.name }}',
               comment_id: ${{ steps.check_comment.outputs.existing_comment_id }},
-              body: `${prs.join('\n')}`,
+              body: prs.join('\n')
             });
