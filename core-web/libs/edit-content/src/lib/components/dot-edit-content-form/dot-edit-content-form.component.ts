@@ -23,7 +23,6 @@ import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
@@ -37,55 +36,37 @@ import {
     FLATTENED_FIELD_TYPES
 } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
-import { FILTERED_TYPES } from '../../models/dot-edit-content-form.enum';
-import { EditContentForm } from '../../models/dot-edit-content-form.interface';
+import { DotFormData } from '../../models/dot-edit-content-form.interface';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
-import {
-    getFinalCastedValue,
-    isFilteredType,
-    transformLayoutToTabs
-} from '../../utils/functions.util';
+import { getFinalCastedValue, isFilteredType } from '../../utils/functions.util';
 import { DotEditContentAsideComponent } from '../dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
 /**
- * Transforms the form data by filtering out specific field types and organizing the content into tabs.
+ * DotEditContentFormComponent
  *
- * @param {EditContentForm} formData - The original form data to be transformed.
- * @param {DotMessageService} dotMessageService - Service used for internationalization.
- * @returns {EditContentForm} The transformed form data with filtered fields and organized tabs.
+ * This component is responsible for rendering and managing the form for editing content in DotCMS.
+ * It provides a dynamic form based on the content type structure and handles form submission,
+ * validation, and interaction with workflow actions.
+ *
+ * Features:
+ * - Dynamic form generation based on content type fields
+ * - Real-time form value updates
+ * - Custom field type handling (e.g., calendar fields, flattened fields)
+ * - Integration with DotCMS workflow actions
+ * - Form validation including required fields and regex patterns
+ * - Navigation back to content listing
+ *
+ * @example
+ * <dot-edit-content-form
+ *   [formData]="contentTypeAndContentlet"
+ *   (changeValue)="onFormValueChange($event)">
+ * </dot-edit-content-form>
+ *
+ * @export
+ * @class DotEditContentFormComponent
+ * @implements {OnInit}
  */
-
-const transformFormDataFn = (
-    formData: EditContentForm,
-    dotMessageService: DotMessageService
-): EditContentForm => {
-    if (!formData) {
-        return { tabs: [] } as EditContentForm;
-    }
-
-    const tabs = transformLayoutToTabs(
-        dotMessageService.get('Content'),
-        formData.contentType.layout
-    );
-
-    const filteredTabs = tabs.map((tab) => ({
-        ...tab,
-        layout: tab.layout.map((row) => ({
-            ...row,
-            columns: row.columns.map((column) => ({
-                ...column,
-                fields: column.fields.filter((field) => !isFilteredType(field))
-            }))
-        }))
-    }));
-
-    return {
-        ...formData,
-        tabs: filteredTabs
-    };
-};
-
 @Component({
     selector: 'dot-edit-content-form',
     standalone: true,
@@ -117,19 +98,8 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #router = inject(Router);
     readonly #destroyRef = inject(DestroyRef);
     readonly #fb = inject(FormBuilder);
-    readonly #dotMessageService = inject(DotMessageService);
 
-    /**
-     * This property is required and expects an object of type EditContentForm.
-     * It is used to populate the form with initial data and structure.
-     *
-     * @type {EditContentForm}
-     * @memberof DotEditContentFormComponent
-     */
-    $formData = input.required<EditContentForm, EditContentForm>({
-        alias: 'formData',
-        transform: (value) => transformFormDataFn(value, this.#dotMessageService)
-    });
+    formData = input<DotFormData | null>(null);
 
     /**
      * Output event emitter that informs when the form has changed.
@@ -139,22 +109,26 @@ export class DotEditContentFormComponent implements OnInit {
      */
     changeValue = output<Record<string, string>>();
 
-    /**
-     * Computed signal that contains the type of the content type from $formData
-     */
-    $contentTypeName = computed(() => {
-        const { contentType } = this.$formData();
-
-        return contentType.name;
+    $filteredFields = computed(() => {
+        const contentType = this.formData().contentType;
+        if (!contentType || !contentType.fields) {
+            return [];
+        }
+        return contentType.fields.filter((field) => isFilteredType(field));
     });
 
+    /**
+     * FormGroup instance that contains the form controls for the fields in the content type
+     *
+     * @type {FormGroup}
+     * @memberof DotEditContentFormComponent
+     */
     form!: FormGroup;
 
-    readonly fieldTypes = FIELD_TYPES;
-    readonly filteredTypes = FILTERED_TYPES;
+    $hasSingleTab = computed(() => this.formData().tabs.length === 1);
 
-    ngOnInit() {
-        if (this.$formData()) {
+    ngOnInit(): void {
+        if (this.formData()) {
             this.initializeForm();
             this.initializeFormListenter();
         }
@@ -183,7 +157,7 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     onFormChange(value) {
-        this.$formData().contentType.fields.forEach(({ variable, fieldType }) => {
+        this.$filteredFields().forEach(({ variable, fieldType }) => {
             if (FLATTENED_FIELD_TYPES.includes(fieldType as FIELD_TYPES)) {
                 value[variable] = value[variable]?.join(',');
             }
@@ -210,7 +184,7 @@ export class DotEditContentFormComponent implements OnInit {
         value: Record<string, string | string[] | Date | null | undefined>
     ): Record<string, string> {
         return Object.fromEntries(
-            this.$formData().contentType.fields.map(({ variable, fieldType }) => {
+            this.$filteredFields().map(({ variable, fieldType }) => {
                 let fieldValue = value[variable];
 
                 if (
@@ -241,7 +215,7 @@ export class DotEditContentFormComponent implements OnInit {
      */
     private initializeForm() {
         this.form = this.#fb.group({});
-        this.$formData().contentType.fields.forEach((field) => {
+        this.formData().contentType.fields.forEach((field) => {
             if (!isFilteredType(field)) {
                 const control = this.createFormControl(field);
                 this.form.addControl(field.variable, control);
@@ -259,7 +233,7 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     private createFormControl(field: DotCMSContentTypeField) {
-        const initialValue = this.getInitialFieldValue(field, this.$formData().contentlet);
+        const initialValue = this.getInitialFieldValue(field, this.formData().contentlet);
         const validators = this.getFieldValidators(field);
 
         return this.#fb.control({ value: initialValue, disabled: field.readOnly }, { validators });
@@ -281,7 +255,7 @@ export class DotEditContentFormComponent implements OnInit {
      */
     private getInitialFieldValue(
         field: DotCMSContentTypeField,
-        contentlet: DotCMSContentlet
+        contentlet: DotCMSContentlet | null
     ): unknown {
         const resolutionFn = resolutionValue[field.fieldType as FIELD_TYPES];
         if (!resolutionFn) {
@@ -356,7 +330,7 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     goBack(): void {
-        const filter = this.$contentTypeName();
+        const filter = this.formData().contentType.name;
         this.#router.navigate([CONTENT_SEARCH_ROUTE], {
             queryParams: { filter }
         });
