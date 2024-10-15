@@ -734,24 +734,12 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			throws DotDataException, DotSecurityException {
 
 		final DotConnect dotConnect = new DotConnect();
-
-		if (DbConnectionFactory.isMsSql()) {
-			dotConnect.setSQL("SELECT identifier,inode,language_id, variant_id as variant "
-					+ "FROM contentlet "
-					+ "WHERE JSON_VALUE(contentlet_as_json, '$.fields.template.value') = ?");
-		} else {
-			dotConnect.setSQL("SELECT identifier,inode,language_id,variant_id as variant "
-					+ "FROM contentlet "
-					+ "WHERE contentlet_as_json->'fields'->'template'->>'value' =  ?");
-		}
-
+		dotConnect.setSQL(templateSQL.GET_PAGES_BY_TEMPLATE_ID);
 		dotConnect.addParam(templateId);
 
 		return ((List<Map<String, String>>) dotConnect.loadResults()).stream()
 				.map(mapEntry -> new HTMLPageVersion.Builder().identifier(mapEntry.get("identifier"))
-						.inode(mapEntry.get(CONTENTKET_INODE_TABLE_FIELD))
 						.variantName(mapEntry.get("variant"))
-						.languageId(Long.parseLong(mapEntry.get("language_id")))
 						.build()
 				)
 				.collect(Collectors.toList());

@@ -55,4 +55,7 @@ public class TemplateSQL {
 
     public static final String UPDATE_LOCKED_BY = "update " + Type.TEMPLATE.getVersionTableName() + " set locked_by=? where locked_by  = ?";
 
+    public static final String GET_PAGES_BY_TEMPLATE_ID = " SELECT c.identifier, c.variant_id as variant FROM contentlet c WHERE EXISTS " +
+            "(SELECT 1 FROM structure s WHERE s.inode = c.structure_inode AND s.structuretype = '5') AND c.contentlet_as_json->'fields'->'template'->>'value' = ? ";
+
 }
