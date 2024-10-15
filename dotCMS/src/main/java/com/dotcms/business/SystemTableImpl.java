@@ -1,5 +1,6 @@
 package com.dotcms.business;
 
+import com.dotcms.config.DotInitializer;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.db.HibernateUtil;
@@ -24,6 +25,12 @@ class SystemTableImpl implements SystemTable {
     public SystemTableImpl() {
 
         this.systemTableFactory = FactoryLocator.getSystemTableFactory();
+        this.initIfNeeded();
+    }
+
+    @WrapInTransaction
+    public void initIfNeeded() {
+        this.systemTableFactory.initIfNeeded();
     }
 
     @Override

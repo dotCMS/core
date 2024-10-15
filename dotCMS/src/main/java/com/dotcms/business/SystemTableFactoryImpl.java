@@ -4,6 +4,9 @@ import com.dotmarketing.business.CachableSupport;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.startup.runonce.Task230707CreateSystemTable;
+import com.dotmarketing.util.Logger;
+import io.vavr.control.Try;
 
 import java.util.Map;
 import java.util.Objects;
@@ -113,5 +116,14 @@ public class SystemTableFactoryImpl  implements SystemTableFactory, CacheableEag
     @Override
     public void clearCache() {
         CacheableEagerFactory.super.clearCache();
+    }
+
+    @Override
+    public void initIfNeeded() {
+
+        Try.run(()->new DotConnect().executeStatement("CREATE TABLE if not exists system_table ("
+                + "key varchar(511) primary key,"
+                + "value text not null"
+                + ")"));
     }
 } // E:O:F:SystemTableFactoryImpl
