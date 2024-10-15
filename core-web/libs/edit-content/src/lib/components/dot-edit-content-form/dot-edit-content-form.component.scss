@@ -95,5 +95,11 @@
             gap: $spacing-3;
             overflow: visible;
         }
+
+        &.dot-edit-content-tabview--single-tab {
+            .p-tabview-nav li:first-child {
+                display: none;
+            }
+        }
     }
 }
