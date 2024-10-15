@@ -250,7 +250,9 @@ public class StartupTasksExecutor {
                     }
 
                     if (!firstTimeStart && task.forceRun()) {
-                        HibernateUtil.startTransaction();
+                        if(!TaskLocatorUtil.getStartupRunOnceTaskClassesNoTransaction().contains(c)){
+                            HibernateUtil.startTransaction();
+                        }
                         Logger.info(this, "Running Upgrade Tasks: " + name);
                         task.executeUpgrade();
 
@@ -262,7 +264,9 @@ public class StartupTasksExecutor {
                         .addParam(new Date())
                         .loadResult();
                     Logger.info(this, "Database upgraded to version: " + taskId);
-                    HibernateUtil.closeAndCommitTransaction();
+                    if(!TaskLocatorUtil.getStartupRunOnceTaskClassesNoTransaction().contains(c)){
+                        HibernateUtil.closeAndCommitTransaction();
+                    }
                     Config.DB_VERSION = taskId;
                 }
             } catch (Exception e) {

@@ -413,4 +413,10 @@ public class TaskLocatorUtil {
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
+	public static List<Class<?>> getStartupRunOnceTaskClassesNoTransaction() {
+		final List<Class<?>> ret = new ArrayList<>();
+		ret.add(Task241014AddTemplateValueOnContentletIndex.class);
+		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
+	}
+
 }
