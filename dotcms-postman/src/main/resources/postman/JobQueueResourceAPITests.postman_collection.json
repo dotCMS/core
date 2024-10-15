@@ -1,0 +1,850 @@
+{
+	"info": {
+		"_postman_id": "3b8039cc-b927-45f0-a199-04c71e8d8fcf",
+		"name": "JobQueueResource API Tests",
+		"description": "Postman collection for testing the JobQueueResource API endpoints.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "10041132"
+	},
+	"item": [
+		{
+			"name": "List Jobs",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Check if jobs are returned",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Response has jobs list\", function () {",
+							"    pm.expect(jsonData.entity).to.have.property('jobs');",
+							"    pm.expect(jsonData.entity.jobs).to.be.an('array');",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs?page={{page}}&pageSize={{pageSize}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "{{page}}",
+							"description": "Page number"
+						},
+						{
+							"key": "pageSize",
+							"value": "{{pageSize}}",
+							"description": "Number of items per page"
+						}
+					]
+				},
+				"description": "Lists all jobs with pagination."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Queues",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Check if queues are returned",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Response has queues array\", function () {",
+							"    pm.expect(jsonData.entity).to.be.an('array');",
+							"});",
+							"",
+							"pm.test(\"Response has a demo queue in it\", function () {",
+							"    pm.expect(jsonData.entity).to.include.members(['demo', 'fail']);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs/queues",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs",
+						"queues"
+					]
+				},
+				"description": "Retrieves a list of available queue names."
+			},
+			"response": []
+		},
+		{
+			"name": "Create Job No Params Expect Bad Request",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "multipart/form-data"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": []
+						},
+						{
+							"key": "params",
+							"value": "",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs/{{queueName}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs",
+						"{{queueName}}"
+					]
+				},
+				"description": "Creates a new job in the specified queue."
+			},
+			"response": []
+		},
+		{
+			"name": "Create Job Expect Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.expect(jsonData.entity).to.be.a('String');",
+							"// Save jobId to environment variable",
+							"pm.environment.set(\"jobId\", jsonData.entity);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "multipart/form-data"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "resources/JobQueue/odyssey.txt"
+						},
+						{
+							"key": "params",
+							"value": "{\n   \"nLines\":\"1\"\n}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs/{{queueName}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs",
+						"{{queueName}}"
+					]
+				},
+				"description": "Creates a new job in the specified queue."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Job Status",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Check if status info is returned",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Response has status info\", function () {",
+							"    pm.expect(jsonData.entity).to.be.an('object');",
+							"    pm.expect(jsonData.entity).to.have.property('state');",
+							"    pm.expect(jsonData.entity).to.have.property('progress');    ",
+							"});",
+							"",
+							"pm.test(\"Job is RUNNING\", function () {",
+							"    var object = jsonData.entity;",
+							"    pm.expect(object.state).to.be.oneOf([\"RUNNING\", \"PENDING\"]); ",
+							"    ",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs/{{jobId}}/status",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs",
+						"{{jobId}}",
+						"status"
+					]
+				},
+				"description": "Retrieves the status of a specific job."
+			},
+			"response": []
+		},
+		{
+			"name": "Cancel Job",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Check if cancellation message is returned",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Job cancelled successfully\", function () {",
+							"    pm.expect(jsonData.entity).to.equal('Job cancelled successfully');",
+							"});",
+							"",
+							"var jobId = pm.environment.get(\"jobId\");",
+							"pm.environment.set(\"cancelledJobId\",jobId);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs/{{jobId}}/cancel",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs",
+						"{{jobId}}",
+						"cancel"
+					]
+				},
+				"description": "Cancels a specific job."
+			},
+			"response": []
+		},
+		{
+			"name": "Create Second Job Expect Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.expect(jsonData.entity).to.be.a('String');",
+							"// Save jobId to environment variable",
+							"pm.environment.set(\"jobId\", jsonData.entity);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "multipart/form-data"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "resources/JobQueue/odyssey.txt"
+						},
+						{
+							"key": "params",
+							"value": "{\n   \"nLines\":\"1\"\n}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs/{{queueName}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs",
+						"{{queueName}}"
+					]
+				},
+				"description": "Creates a new job in the specified queue."
+			},
+			"response": []
+		},
+		{
+			"name": "Active Jobs",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Check if active jobs are returned",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Response has active jobs list\", function () {",
+							"    pm.expect(jsonData.entity).to.have.property('jobs');",
+							"    pm.expect(jsonData.entity.jobs).to.be.an('array');",
+							"});",
+							"",
+							"var jobsArray = jsonData.entity.jobs;",
+							"",
+							"pm.test(\"jobsArray contains objects\", function () {",
+							"    pm.expect(jobsArray[0]).to.be.an('object');",
+							"});",
+							"",
+							"var jobId = pm.environment.get(\"jobId\");",
+							"pm.test(\"jobId is present in the response\", function () {",
+							"    var jobFound = jobsArray.some(function(job) {",
+							"        return job.id === jobId;",
+							"    });",
+							"    pm.expect(jobFound).to.be.true;",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs/{{queueName}}/active?page={{page}}&pageSize={{pageSize}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs",
+						"{{queueName}}",
+						"active"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "{{page}}",
+							"description": "Page number"
+						},
+						{
+							"key": "pageSize",
+							"value": "{{pageSize}}",
+							"description": "Number of items per page"
+						}
+					]
+				},
+				"description": "Lists active jobs for a specific queue with pagination."
+			},
+			"response": []
+		},
+		{
+			"name": "Create Failing Job",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.expect(jsonData.entity).to.be.a('String');",
+							"// Save jobId to environment variable",
+							"pm.environment.set(\"failingJobId\", jsonData.entity);",
+							"",
+							"function delay(milliseconds) {",
+							"    var start = new Date().getTime();",
+							"    var end = start;",
+							"    while (end - start < milliseconds) {",
+							"        end = new Date().getTime();        ",
+							"    }",
+							"}",
+							"",
+							"delay(8000); ",
+							"",
+							"//And now lets wait for a show while ",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "multipart/form-data"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "resources/JobQueue/odyssey.txt"
+						},
+						{
+							"key": "params",
+							"value": "{\n   \"nLines\":\"1\"\n}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs/fail",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs",
+						"fail"
+					]
+				},
+				"description": "Creates a new job in the specified queue (Create Failing Job)"
+			},
+			"response": []
+		},
+		{
+			"name": "Monitor Non Existing Job",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response contains job-not-found event and 404 data\", function () {",
+							"    const responseText = pm.response.text();",
+							"    pm.expect(responseText).to.include(\"event: job-not-found\");",
+							"    pm.expect(responseText).to.include(\"data: 404\");",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "text/event-stream"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs/nonExistingJob/monitor",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs",
+						"nonExistingJob",
+						"monitor"
+					]
+				},
+				"description": "Monitors a specific job using Server-Sent Events (SSE)."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Job Status Expect Cancel",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Check if status info is returned",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Response has status info\", function () {",
+							"    pm.expect(jsonData.entity).to.be.an('object');",
+							"    pm.expect(jsonData.entity).to.have.property('state');",
+							"    pm.expect(jsonData.entity).to.have.property('progress');    ",
+							"});",
+							"",
+							"pm.test(\"Job is RUNNING\", function () {",
+							"    var object = jsonData.entity;",
+							"    pm.expect(object.state).to.be.eql(\"CANCELED\"); ",
+							"    ",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs/{{cancelledJobId}}/status",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs",
+						"{{cancelledJobId}}",
+						"status"
+					]
+				},
+				"description": "Retrieves the status of a specific job. We expect to get one in status Canceled."
+			},
+			"response": []
+		},
+		{
+			"name": "Failed Jobs",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Check if failed jobs are returned",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Response has failed jobs list\", function () {",
+							"    pm.expect(jsonData.entity).to.have.property('jobs');",
+							"    pm.expect(jsonData.entity.jobs).to.be.an('array');",
+							"    pm.expect(jsonData.entity.jobs[0]).to.be.an('object');    ",
+							"});",
+							"",
+							"var failingJobId = pm.environment.get(\"failingJobId\");  ",
+							"pm.test(\"Response has failed matching objects\", function () {    ",
+							"    var jobs = jsonData.entity.jobs;",
+							"    var failingJobId = pm.environment.get(\"failingJobId\");",
+							"    ",
+							"    // Filter ",
+							"    var matchingJobs = jobs.filter(function(job) {",
+							"        return job.id === failingJobId;",
+							"    });",
+							"    ",
+							"    // Verify",
+							"    pm.expect(matchingJobs.length).to.be.above(0);",
+							"    ",
+							"    // Assert",
+							"    matchingJobs.forEach(function(job) {",
+							"        pm.expect(job.id).to.equal(failingJobId);",
+							"        pm.expect(job.queueName).to.equal('fail');",
+							"        pm.expect(job.result).to.have.property('errorDetail');",
+							"        pm.expect(job.result.errorDetail).to.have.property('exceptionClass');",
+							"        pm.expect(job.result.errorDetail).to.have.property('message');",
+							"        pm.expect(job.result.errorDetail).to.have.property('stackTrace');",
+							"        pm.expect(job.result.errorDetail).to.have.property('timestamp');",
+							"    });",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs/failed?page={{page}}&pageSize={{pageSize}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs",
+						"failed"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "{{page}}",
+							"description": "Page number"
+						},
+						{
+							"key": "pageSize",
+							"value": "{{pageSize}}",
+							"description": "Number of items per page"
+						}
+					]
+				},
+				"description": "Lists failed jobs."
+			},
+			"response": []
+		},
+		{
+			"name": "List Jobs Expect Fail and Cancelled",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Check if jobs are returned",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Response has jobs list\", function () {",
+							"    pm.expect(jsonData.entity).to.have.property('jobs');",
+							"    pm.expect(jsonData.entity.jobs).to.be.an('array');    ",
+							"});",
+							"",
+							"// Extract JSON",
+							"const jobs = pm.response.json().entity.jobs;",
+							"",
+							"// Validate is array",
+							"pm.expect(jobs).to.be.an('array');",
+							"",
+							"// Create flags for states FAILED y CANCELED",
+							"let hasFailedJob = false;",
+							"let hasCancelledJob = false;",
+							"",
+							"// Now iterate and try to find them",
+							"jobs.forEach(job => {",
+							"    if (job.state === \"FAILED\") {",
+							"        hasFailedJob = true;",
+							"    }",
+							"    if (job.state === \"CANCELED\") {",
+							"        hasCancelledJob = true;",
+							"    }",
+							"});",
+							"",
+							"// Verify there is one is state FAILED",
+							"pm.test(\"Job with FAILED status exists\", function () {",
+							"    pm.expect(hasFailedJob).to.be.true;",
+							"});",
+							"",
+							"// Verify there is one in state CANCELLED",
+							"pm.test(\"Job with CANCELLED status exists\", function () {",
+							"    pm.expect(hasCancelledJob).to.be.true;",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs?page={{page}}&pageSize={{pageSize}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "{{page}}",
+							"description": "Page number"
+						},
+						{
+							"key": "pageSize",
+							"value": "{{pageSize}}",
+							"description": "Number of items per page"
+						}
+					]
+				},
+				"description": "List Jobs Expect Fail and Cancelled."
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "password",
+				"value": "admin",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "admin@dotCMS.com",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "queueName",
+			"value": "demo",
+			"type": "string"
+		},
+		{
+			"key": "jobId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "page",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "pageSize",
+			"value": "20",
+			"type": "string"
+		}
+	]
+}

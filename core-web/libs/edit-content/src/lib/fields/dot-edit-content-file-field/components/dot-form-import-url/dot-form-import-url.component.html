@@ -14,7 +14,7 @@
             @let error = store.error();
             @if (error) {
                 <small class="p-invalid" data-testId="error-msg">
-                    {{ error | dm }}
+                    {{ error | dm: [store.allowFiles()] }}
                 </small>
             } @else {
                 <dot-field-validation-message
@@ -32,7 +32,7 @@
             type="button"
             aria-label="Cancel button"
             data-testId="cancel-button" />
-        <div>
+        <div class="w-7rem">
             @if (store.isLoading()) {
                 <p-button
                     [icon]="'pi pi-spin pi-spinner'"
