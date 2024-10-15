@@ -41,7 +41,8 @@ import java.util.stream.Collectors;
 
 public class TemplateFactoryImpl implements TemplateFactory {
 
-	public static final String CONTENTKET_INODE_TABLE_FIELD = "inode";
+	public static final String CONTENTLET_INODE_TABLE_FIELD = "inode";
+	private static final String FILTER_STRING = "filter";
 	private static TemplateCache templateCache = CacheLocator.getTemplateCache();
 	private static TemplateSQL templateSQL = TemplateSQL.getInstance();
 
@@ -91,7 +92,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	@SuppressWarnings("unchecked")
 	public List<Template> findTemplatesUserCanUse(final User user, final String hostId, final String query, final boolean searchHost , final int offset, final int limit) throws DotDataException, DotSecurityException {
 		return findTemplates(user, false,
-				UtilMethods.isSet(query) ? Map.of("filter", query.toLowerCase())
+				UtilMethods.isSet(query) ? Map.of(FILTER_STRING, query.toLowerCase())
 						: null, hostId, null, null, null, offset, limit, "title");
 	}
 
@@ -266,7 +267,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			dc.setSQL(query.toString());
 
 			if(params!=null && params.size()>0){
-				final String filter = "%"+params.get("filter").toString().toLowerCase()+"%";
+				final String filter = "%"+params.get(FILTER_STRING).toString().toLowerCase()+"%";
 				dc.addParam(filter);
 				dc.addParam(filter);
 				dc.addParam(filter);
@@ -274,7 +275,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 			// adding the templates from the site browser
 			toReturn.addAll(this.findFolderAssetTemplate(user, hostId, orderBy,
-					includeArchived, params != null ? params.get("filter").toString(): null));
+					includeArchived, params != null ? params.get(FILTER_STRING).toString(): null));
 
 			if(countLimit > 0 && toReturn.size() < countLimit + offset) {//If haven't reach the amount of templates requested
 				while (!done) {
@@ -287,7 +288,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 					//Search by inode
 					if (resultList.isEmpty()) {
 						final Template templateInode =
-								params != null ? find(params.get("filter").toString()) : null;
+								params != null ? find(params.get(FILTER_STRING).toString()) : null;
 						resultList =
 								templateInode != null ? List.of(templateInode)
 										: Collections.emptyList();
@@ -608,7 +609,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			dc.loadResult();
 
 			for(HashMap<String, String> ident:templates){
-				String inode = ident.get("inode");
+				String inode = ident.get(CONTENTLET_INODE_TABLE_FIELD);
 				Template template = find(inode);
 				deleteFromCache(template);
 				new TemplateLoader().invalidate(template);
@@ -640,7 +641,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		final List<Map<String,Object>> results=dc.loadObjectResults();
 		final List<Template> templateAllVersions = new ArrayList<>();
 		for(Map<String,Object> result : results) {
-			final Template template = find(result.get("inode").toString());
+			final Template template = find(result.get(CONTENTLET_INODE_TABLE_FIELD).toString());
 			templateAllVersions.add(template);
 		}
 		return templateAllVersions;
@@ -829,14 +830,14 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		}
 
 		final DotConnect dc = new DotConnect().setSQL(sqlQuery.toString());
-		parameters.forEach(param -> dc.addParam(param));
+		parameters.forEach(dc::addParam);
 
 		try {
 			final List<Map<String,String>> inodesMapList =  dc.loadResults();
 
 			final List<String> inodes = new ArrayList<>();
 			for (final Map<String, String> versionInfoMap : inodesMapList) {
-				inodes.add(versionInfoMap.get("inode"));
+				inodes.add(versionInfoMap.get(CONTENTLET_INODE_TABLE_FIELD));
 			}
 
 			final List<Contentlet> contentletList  = APILocator.getContentletAPI().findContentlets(inodes);
@@ -945,6 +946,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 			if (UtilMethods.isSet(orderByParam)) {
 				switch (orderByParam.toLowerCase()) {
+					default:
 					case "title asc":
 						templates.sort(Comparator.comparing(Template::getTitle));
 						break;
