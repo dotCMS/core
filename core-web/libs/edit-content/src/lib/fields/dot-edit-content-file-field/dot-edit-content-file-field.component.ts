@@ -80,9 +80,26 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
      */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
+    /**
+     * Signal indicating whether the AI plugin is installed.
+     *
+     * This signal is initialized with a boolean value indicating the installation status
+     * of the AI plugin. It uses the `checkPluginInstallation` method from the `#dotAiService`
+     * to determine the initial state.
+     *
+     * @type {boolean}
+     * @default false
+     */
     $isAIPluginInstalled = toSignal(this.#dotAiService.checkPluginInstallation(), {
         initialValue: false
     });
+    /**
+     * Computed property that returns the tooltip text for the AI button.
+     * If the AI plugin is not installed, it retrieves the tooltip message from the dotMessageService.
+     * Otherwise, it returns null.
+     *
+     * @returns {string | null} The tooltip text for the AI button or null if the AI plugin is installed.
+     */
     $tooltipTextAIBtn = computed(() => {
         const isAIPluginInstalled = this.$isAIPluginInstalled();
         if (!isAIPluginInstalled) {
@@ -257,6 +274,18 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             });
     }
 
+    /**
+     * Opens a dialog for generating AI images using the `DotAIImagePromptComponent`.
+     *
+     * The dialog is configured with specific properties such as header, appendTo,
+     * closeOnEscape, draggable, keepInViewport, maskStyleClass, resizable, modal,
+     * width, and style.
+     *
+     * When the dialog is closed, it filters the selected image, maps it to an
+     * `UploadedFile` object, and sets it as the preview file in the store.
+     *
+     * @private
+     */
     showAIImagePromptDialog() {
         const header = this.#dotMessageService.get('dot.file.field.action.generate.dialog-title');
 
