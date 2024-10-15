@@ -348,8 +348,9 @@ public class TaskLocatorUtil {
 		.add(Task240513UpdateContentTypesSystemField.class)
 		.add(Task240530AddDotAIPortletToLayout.class)
 		.add(Task240606AddVariableColumnToWorkflow.class)
-		.add(Task241013RemoveFullPathLcColumnFromIdentifier.class)
 		.add(Task241009CreatePostgresJobQueueTables.class)
+		.add(Task241013RemoveFullPathLcColumnFromIdentifier.class)
+		.add(Task241014AddTemplateValueOnContentletIndex.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
