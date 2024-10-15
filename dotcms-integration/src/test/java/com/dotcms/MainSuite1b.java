@@ -78,7 +78,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.analytics.metrics.QueryParameterValuesTransformerTest.class,
         QuartzUtilsTest.class,
         DotConnectTest.class,
-        com.dotcms.contenttype.model.field.layout.FieldUtilTest.class
+        com.dotcms.contenttype.model.field.layout.FieldUtilTest.class,
+        com.dotmarketing.portlets.contentlet.business.HostAPITest.class,
 })
 
 public class MainSuite1b {
