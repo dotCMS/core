@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.analytics.content.ContentAnalyticsFactory;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.util.CollectionsUtils;
@@ -7,12 +8,15 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * This Helper allow you to interact with the unique_fields table
  */
+@ApplicationScoped
 class UniqueFieldUtil {
 
     private final UniqueFieldFactory uniqueFieldFactory;
@@ -21,10 +25,10 @@ class UniqueFieldUtil {
         this(FactoryLocator.getUniqueFieldFactory());
     }
 
+    @Inject
     public UniqueFieldUtil(final UniqueFieldFactory uniqueFieldFactory) {
         this.uniqueFieldFactory = uniqueFieldFactory;
     }
-
 
     /**
      * Insert a new unique field value, if the value is duplicated then a {@link java.sql.SQLException} is thrown.

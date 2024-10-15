@@ -3,11 +3,13 @@ package com.dotcms.contenttype.business;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.util.Map;
 
 /**
  * Default implementation of {@link UniqueFieldFactory}
  */
+@ApplicationScoped
 public class UniqueFieldFactoryImpl implements UniqueFieldFactory {
 
     private final static String INSERT_SQL = "INSERT INTO unique_fields (unique_key_val, supporting_values) VALUES (?, ?)";
