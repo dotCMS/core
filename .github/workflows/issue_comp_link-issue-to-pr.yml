@@ -7,6 +7,15 @@ on:
         description: 'Pull Request branch'
         type: string
         required: true
+      pr_url:
+        description: 'Pull Request URL'
+        type: string
+        required: true
+    secrets:
+      CI_MACHINE_TOKEN:
+        description: 'CI machine token'
+        required: true
+
   workflow_dispatch:
     inputs:
       pr_branch:
@@ -80,6 +89,8 @@ jobs:
             
             core.setOutput('pr_list', prList);
             core.setOutput('existing_comment_id', existingCommentId);
+            console.log(`pr_list: [${prList}]`);
+            console.log(`existing_comment_id: [${existingCommentId}]`);
 
       - name: Update or create comment
         if: steps.check_comment.outputs.existing_comment_id == ''
@@ -98,5 +109,5 @@ jobs:
               owner: '${{ github.repository_owner }}',
               repo: '${{ github.event.repository.name }}',
               comment_id: ${{ steps.check_comment.outputs.existing_comment_id }},
-              body: prs.join('\n'),
+              body: `${prs.join('\n')}`,
             });
