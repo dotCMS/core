@@ -1183,15 +1183,6 @@ public class APILocator extends Locator<APIIndex> {
 	}
 
 	/**
-	 * Returns a singleton instance of the {@link UniqueFieldAPIImpl} class.
-	 *
-	 * @return The {@link UniqueFieldAPI} instance.
-	 */
-	public static UniqueFieldAPI getUniqueFieldAPI() {
-		return (UniqueFieldAPI) getInstance(APIIndex.UNIQUE_FIELD_API);
-	}
-
-	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1348,8 +1339,7 @@ enum APIIndex
 	SYSTEM_API,
 	ACHECKER_API,
 	CONTENT_ANALYTICS_API,
-	JOB_QUEUE_MANAGER_API,
-	UNIQUE_FIELD_API;
+	JOB_QUEUE_MANAGER_API;
 
 	Object create() {
 		switch(this) {
@@ -1444,7 +1434,6 @@ enum APIIndex
 			case ACHECKER_API: return new ACheckerAPIImpl();
 			case CONTENT_ANALYTICS_API: CDIUtils.getBean(ContentAnalyticsAPI.class).orElseThrow(() -> new DotRuntimeException("Content Analytics API not found"));
 			case JOB_QUEUE_MANAGER_API: return CDIUtils.getBean(JobQueueManagerAPI.class).orElseThrow(() -> new DotRuntimeException("JobQueueManagerAPI not found"));
-			case UNIQUE_FIELD_API: return new UniqueFieldAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
