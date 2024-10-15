@@ -177,6 +177,70 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
     containers: mockDotContainers()
 };
 
+export const URL_CONTENT_MAP_MOCK = {
+    contentType: 'Blog',
+    identifier: '123',
+    inode: '1234',
+    title: 'hello world',
+    baseType: 'CONTENT',
+    folder: 'SYSTEM_FOLDER',
+    host: '123',
+    languageId: 1,
+    live: true,
+    modDate: '1722992210315',
+    modUser: 'dotcms.org.1',
+    owner: 'dotcms.org.1',
+    url: '/content.ec123',
+    working: true,
+    archived: false,
+    hasTitleImage: true,
+    hostName: 'demo.dotcms.com',
+    locked: false,
+    modUserName: 'Admin User',
+    sortOrder: 0,
+    stInode: '799f176a-d32e-4844-a07c-1b5fcd107578',
+    titleImage: 'image',
+    URL_MAP_FOR_CONTENT: '/test-url'
+};
+
+export const PAGE_RESPONSE_URL_CONTENT_MAP = {
+    page: {
+        pageURI: 'test-url',
+        title: 'Test Page',
+        identifier: '123',
+        inode: '123-i',
+        canEdit: true,
+        canRead: true,
+        rendered: '<html><body><h1>Hello, World!</h1></body></html>',
+        contentType: 'htmlpageasset',
+        canLock: true,
+        locked: false,
+        lockedBy: '',
+        lockedByName: '',
+        live: true,
+        liveInode: '1234',
+        stInode: '12345'
+    },
+    viewAs: {
+        language: {
+            id: 1,
+            language: 'English',
+            countryCode: 'US',
+            languageCode: '1',
+            country: 'United States'
+        },
+
+        persona: {
+            ...DEFAULT_PERSONA
+        }
+    },
+    site: mockSites[0],
+    layout: mockDotLayout(),
+    template: mockDotTemplate(),
+    containers: mockDotContainers(),
+    urlContentMap: URL_CONTENT_MAP_MOCK
+};
+
 export const MOCK_RESPONSE_VTL: DotPageApiResponse = {
     page: {
         pageURI: 'test-url',
@@ -385,13 +449,6 @@ export const EDIT_ACTION_PAYLOAD_MOCK: ActionPayload = {
     },
     pageId: 'test',
     position: 'before'
-};
-
-export const URL_CONTENT_MAP_MOCK = {
-    contentType: 'Blog',
-    identifier: '123',
-    inode: '1234',
-    title: 'hello world'
 };
 
 export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
