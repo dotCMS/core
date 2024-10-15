@@ -15,7 +15,6 @@
         <palantirJavaFormat.version>2.29.0</palantirJavaFormat.version>
         <src.dir>${project.basedir}/src/main/java</src.dir>
         <test.src.dir>${project.basedir}/src/test/java</test.src.dir>
-        <glowroot.version>0.14.1</glowroot.version>
         <version.cargo.plugin>1.10.6</version.cargo.plugin>
         <assembly-directory>${basedir}/target/dist</assembly-directory>
         <docker.skip.build>${docker.skip}</docker.skip.build>
@@ -26,6 +25,7 @@
         <tomcat-dist-folder>dotserver/tomcat-${tomcat.version}</tomcat-dist-folder>
         <tomcat-lib-folder>${assembly-directory}/${tomcat-dist-folder}/lib</tomcat-lib-folder>
         <tomcat-log4j-lib-folder>${assembly-directory}/${tomcat-dist-folder}/log4j2/lib</tomcat-log4j-lib-folder>
+        <tomcat-glowroot-parent-folder>${assembly-directory}/${tomcat-dist-folder}</tomcat-glowroot-parent-folder>
         <session-manager-lib-folder>${tomcat-lib-folder}</session-manager-lib-folder>
         <tomcat9-overrides>${project.basedir}/src/main/resources/container/tomcat9</tomcat9-overrides>
         <exploded-webapp-dir>${assembly-directory}/${tomcat-dist-folder}/webapps/ROOT</exploded-webapp-dir>
@@ -1269,15 +1269,6 @@
             <scope>test</scope>
         </dependency>
 
-
-        <!--
-                <dependency>
-                    <groupId>org.glowroot</groupId>
-                    <artifactId>glowroot-agent</artifactId>
-                </dependency>
-        -->
-
-
         <!-- Test Dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -1511,6 +1502,17 @@
                         </goals>
                         <configuration>
                             <artifactItems>
+                              <artifactItem>
+                                    <groupId>org.glowroot</groupId>
+                                    <artifactId>glowroot-agent</artifactId>
+                                    <classifier>dist</classifier>
+                                    <type>zip</type>
+                                    <version>${glowroot.version}</version>
+                                    <overWrite>true</overWrite>
+                                    <!-- the inner "glowroot" folder gets created under this -->
+                                    <outputDirectory>${tomcat-glowroot-parent-folder}</outputDirectory>
+                                </artifactItem>
+
                                 <artifactItem>
                                     <groupId>com.dotcms</groupId>
                                     <artifactId>dotcms-core-web</artifactId>
@@ -1976,6 +1978,10 @@
                                 <configuration>
                                     <type>standalone</type>
                                     <configfiles>
+                                        <configfile>
+                                            <file>${tomcat9-overrides}/glowroot/local-web/admin.json</file>
+                                            <todir>glowroot/local-web</todir>
+                                        </configfile>
                                         <configfile>
                                             <file>${tomcat9-overrides}/bin/build.conf</file>
                                             <todir>bin</todir>
