@@ -90,7 +90,7 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
         Logger.debug(UpdateContainersPathsJob.class, () -> "Finished UpdateContainersPathsJob");
     }
 
-    private void cleanCache(final List<Map<String, Object>> templates, final Host host) throws DotDataException {
+    private void cleanCache(final List<Map<String, Object>> templates, final Host host) throws DotDataException, DotSecurityException {
         APILocator.getHostAPI().updateCache(host);
 
         for (final Map<String, Object> template : templates) {
