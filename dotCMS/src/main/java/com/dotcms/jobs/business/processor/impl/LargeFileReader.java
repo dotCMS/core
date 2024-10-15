@@ -17,7 +17,6 @@ import java.io.FileReader;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * This class reads a large file and prints the content to the log.
@@ -26,6 +25,8 @@ import org.jetbrains.annotations.Nullable;
 @Queue("demo")
 public class LargeFileReader implements JobProcessor, Cancellable {
 
+    public static final int LOG_EVERY_LINES = 1;
+    public static final int DEFAULT_MAX_LINES = 2000;
     private boolean working = true;
 
     @Override
@@ -35,23 +36,17 @@ public class LargeFileReader implements JobProcessor, Cancellable {
         Logger.info(this.getClass(), "Processing job: " + job.id());
         Map<String, Object> params = job.parameters();
 
-        final Optional<Integer> linesParam = linesParam(params);
-        if (linesParam.isEmpty()) {
-            Logger.error(this.getClass(),
-                    "Unable to retrieve the number of lines to read. Quitting the job.");
-            throw new DotRuntimeException("Unable to retrieve the temporary file.");
-        }
-
         Optional<DotTempFile> tempFile = tempFile(params);
         if (tempFile.isEmpty()) {
             Logger.error(this.getClass(), "Unable to retrieve the temporary file. Quitting the job.");
             throw new DotRuntimeException("Unable to retrieve the temporary file.");
         }
 
-        final int nLines = linesParam.get();
+        final int nLines = linesParam(params).orElse(LOG_EVERY_LINES);
+        final int maxLines = maxLinesParam(params).orElse(DEFAULT_MAX_LINES);
         final DotTempFile dotTempFile = tempFile.get();
 
-        doReadLargeFile(dotTempFile, nLines, job);
+        doReadLargeFile(dotTempFile, nLines, maxLines, job);
     }
 
     /**
@@ -59,9 +54,10 @@ public class LargeFileReader implements JobProcessor, Cancellable {
      * @param dotTempFile temporary file
      * @param nLines number of lines to read and print
      */
-    private void doReadLargeFile(DotTempFile dotTempFile, int nLines, final Job job) {
+    private void doReadLargeFile(DotTempFile dotTempFile, int nLines, int maxLines ,final Job job) {
         final Long totalCount = countLines(dotTempFile);
-        if (totalCount == null) {
+        if (totalCount == null || totalCount == 0 ) {
+            Logger.error(this.getClass(), "No lines in the file or unable to count lines: " + dotTempFile.file.getName());
             return;
         }
         Logger.info(this.getClass(), "Total lines in the file: " + totalCount);
@@ -82,11 +78,15 @@ public class LargeFileReader implements JobProcessor, Cancellable {
                     // Print the line when the counter reaches nLines
                     if (lineCount == nLines) {
                         lineCount = 0; // Reset the counter
-                        Logger.info(this.getClass(), line);
+                        Logger.debug(this.getClass(), line);
                         delay();
                     }
                     final float progressPercentage = ((float) readCount / totalCount);
                     progressTracker.ifPresent(tracker -> tracker.updateProgress(progressPercentage));
+                    if (readCount >= maxLines) {
+                        Logger.info(this.getClass(), "Max lines reached. Stopping the job.");
+                        break;
+                    }
                 }
 
                 Logger.info(this.getClass(), "Reading completed. Total lines read: " + readCount);
@@ -96,17 +96,20 @@ public class LargeFileReader implements JobProcessor, Cancellable {
             }
     }
 
-    private @Nullable Long countLines(DotTempFile dotTempFile) {
+    /**
+     * Count the number of lines in the file
+     * @param dotTempFile temporary file
+     * @return the number of lines in the file
+     */
+    private Long countLines(DotTempFile dotTempFile) {
         long totalCount = 0;
         try (BufferedReader reader = new BufferedReader(new FileReader(dotTempFile.file))) {
             totalCount = reader.lines().count();
             if (totalCount == 0) {
                 Logger.info(this.getClass(), "No lines in the file: " + dotTempFile.file.getName());
-                return null;
             }
         } catch (Exception e) {
             Logger.error(this.getClass(), "Unexpected error during processing: " + e.getMessage());
-            return null;
         }
         return totalCount;
     }
@@ -116,6 +119,35 @@ public class LargeFileReader implements JobProcessor, Cancellable {
             Thread.sleep(1000);
             return null;
         }).onFailure(e->Logger.error(this.getClass(), "Error during delay", e));
+    }
+
+    /**
+     * Retrieve the maximum number of lines to read from the parameters
+     *
+     * @param params input parameters
+     * @return the maximum number of lines to read
+     */
+    Optional<Integer> maxLinesParam(Map<String, Object> params) {
+        final Object maxLinesRaw = params.get("maxLines");
+        if (!(maxLinesRaw instanceof String)) {
+            return Optional.empty();
+        }
+
+        int maxLines;
+        try {
+            maxLines = Integer.parseInt((String) maxLinesRaw);
+        } catch (NumberFormatException e) {
+            Logger.error(this.getClass(), "Parameter 'maxLines' must be a valid integer.", e);
+            return Optional.empty();
+        }
+
+        // Validate required parameters
+        if (maxLines <= 0) {
+            Logger.error(this.getClass(), "Parameters 'maxLines' is required.");
+            return Optional.empty();
+        }
+
+        return Optional.of(maxLines);
     }
 
     /**
@@ -142,7 +174,7 @@ public class LargeFileReader implements JobProcessor, Cancellable {
 
         // Validate required parameters
         if (nLines <= 0) {
-            Logger.error(this.getClass(), "Parameters 'tempFileId' are required.");
+            Logger.error(this.getClass(), "Parameters 'nLines' is required.");
             return Optional.empty();
         }
 
