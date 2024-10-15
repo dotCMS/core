@@ -22,17 +22,11 @@ import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.
 import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.ACTION_ORDER;
 import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.STEP_ID;
 import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.getInstance;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -58,12 +52,9 @@ import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.CategoryDataGen;
-import com.dotcms.datagen.RoleDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.datagen.TestWorkflowUtils;
-import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -79,38 +70,31 @@ import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.workflow.form.BulkActionForm;
-import com.dotcms.workflow.form.FireActionForm;
-import com.dotcms.workflow.form.FireBulkActionsForm;
-import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepForm;
-import com.dotcms.workflow.form.WorkflowSchemeForm;
-import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
-import com.dotcms.workflow.form.WorkflowStepUpdateForm;
+import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.common.reindex.ReindexThread;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetPermissionsActionlet;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
@@ -147,6 +131,8 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
+import com.liferay.portal.util.PortalUtil;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.RandomStringUtils;
@@ -155,6 +141,7 @@ import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.sse.EventOutput;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -177,6 +164,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     private static Role systemRole;
 
     static private WorkflowScheme testScheme;
+
+    private static WebResource webResource;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -201,7 +190,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         when(user.getFullName()).thenReturn(ADMIN_NAME);
         when(user.getLocale()).thenReturn(Locale.getDefault());
         when(user.isBackendUser()).thenReturn(true);
-        final WebResource webResource = mock(WebResource.class);
+        webResource = mock(WebResource.class);
         final InitDataObject dataObject = mock(InitDataObject.class);
         when(dataObject.getUser()).thenReturn(user);
         when(webResource
@@ -2419,6 +2408,167 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         }
     }
 
+    /**
+     * Method to test: {@link WorkflowResource#fireBulkActions(HttpServletRequest, AsyncResponse, FireBulkActionsForm)}
+     * Given Scenario: Fire reset permissions to several contentlets with edit permissions permission and without it.
+     * ExpectedResult: The reset of the permissions should be done successfully to the correct contentlets, and fail when it should
+     *
+     */
+    @Test
+    public void Test_Fire_Reset_Permissions_Action_For_Contentlet_Id() throws Exception {
+
+        ReindexThread.pause();
+
+        ContentType cType = createContentType("test");
+
+
+        Contentlet contentlet = new ContentletDataGen(cType.id())
+                .host(APILocator.systemHost())
+                .nextPersisted();
+        Contentlet contentlet2 = new ContentletDataGen(cType.id())
+                .host(APILocator.systemHost())
+                .nextPersisted();
+        Contentlet contentlet3 = new ContentletDataGen(cType.id())
+                .host(APILocator.systemHost())
+                .nextPersisted();
+
+
+        Role limitedUserRole = TestUserUtils.getBackendRole();
+
+        //we add to two of the contentlets only read permissions, this way we will check some fails
+        addPermission(limitedUserRole, contentlet, PermissionLevel.READ);
+        addPermission(limitedUserRole, contentlet2, PermissionLevel.READ);
+
+        //add to one of the contentlets edit permissions, this should be the success
+        addPermission(limitedUserRole, contentlet3, PermissionLevel.READ);
+        addPermission(limitedUserRole, contentlet3, PermissionLevel.EDIT);
+        addPermission(limitedUserRole, contentlet3, PermissionLevel.PUBLISH);
+        addPermission(limitedUserRole, contentlet3, PermissionLevel.EDIT_PERMISSIONS);
+
+        final User userWithBackendRole = TestUserUtils.getBackendUser(APILocator.systemHost());
+
+        final InitDataObject freshDataObject = mock(InitDataObject.class);
+
+
+        when(freshDataObject.getUser()).thenReturn(userWithBackendRole);
+        when(webResource
+                .init(nullable(String.class), any(HttpServletRequest.class),
+                        any(HttpServletResponse.class), anyBoolean(),
+                        nullable(String.class))).thenReturn(freshDataObject);
+
+
+
+        final long time = System.currentTimeMillis();
+        final String workflowSchemeName = "WorkflowSchemeTestResetPermissions_" + time;
+        final String workflowScheme3Step1Name = "WorkflowSchemeResetPermissionsStep1_" + time;
+        final String workflowScheme3Step1ActionResetPermissions = "Reset" + time;
+        final WorkflowScheme workflowScheme = addWorkflowScheme(workflowSchemeName);
+
+        final Set<String> schemes = new HashSet<>();
+        schemes.add(workflowScheme.getId());
+        workflowAPI.saveSchemeIdsForContentType(cType, schemes);
+
+        final WorkflowStep workflowSchemeStep = addWorkflowStep(workflowScheme3Step1Name, 1, false, false,
+                workflowScheme.getId());
+
+        /* Generate actions */
+        final WorkflowAction workflowSchemeResetPermissionAction = addWorkflowAction(workflowScheme3Step1ActionResetPermissions, 1,
+                workflowSchemeStep.getId(), workflowSchemeStep.getId(), limitedUserRole,
+                workflowScheme.getId());
+
+
+        final WorkflowActionClass resetPermissionsClass = addSubActionClass("Reset Permissions", workflowSchemeResetPermissionAction.getId(), ResetPermissionsActionlet.class, 0);
+
+
+        final List<WorkflowActionClassParameter> params = new ArrayList<>();
+        final WorkflowActionClassParameter pathParam = new WorkflowActionClassParameter();
+        pathParam.setActionClassId(resetPermissionsClass.getId());
+        pathParam.setKey(MoveContentActionlet.PATH_KEY);
+        pathParam.setValue("//default/application");
+        params.add(pathParam);
+        workflowAPI.saveWorkflowActionClassParameters(params, adminUser);
+
+        List<WorkflowStep> steps = workflowAPI.findSteps(workflowScheme);
+        assertNotNull(steps);
+        assertEquals(1, steps.size());
+
+        //check available actions for admin user
+        List<WorkflowAction> actions = workflowAPI.findActions(steps, adminUser);
+        assertNotNull(actions);
+        assertEquals(1, actions.size());
+
+        actions = workflowAPI.findActions(steps, adminUser, null);
+        assertNotNull(actions);
+        assertEquals(1, actions.size());
+
+
+        //------
+
+        List<Contentlet> contentlets = new ArrayList<>();
+
+        contentlets.add(contentlet);
+        contentlets.add(contentlet2);
+        contentlets.add(contentlet3);
+
+
+        for (Contentlet c : contentlets) {
+            workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(c,
+                    APILocator.systemUser());
+            c.setIndexPolicy(IndexPolicy.FORCE);
+            APILocator.getContentletIndexAPI().addContentToIndex(c);
+        }
+
+        List<String> inodes = contentlets.stream().map(Contentlet::getInode).collect(Collectors.toList());
+
+
+        final HttpServletRequest request1 = mock(HttpServletRequest.class);
+        final FireBulkActionsForm actionsForm1 = new FireBulkActionsForm(null,
+                inodes, workflowSchemeResetPermissionAction.getId(), new AdditionalParamsBean(null, null, null));
+
+        final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
+
+                final Response response = (Response) arg;
+                final int code = response.getStatus();
+                assertEquals(Status.OK.getStatusCode(), code);
+                final ResponseEntityView fireEntityView = ResponseEntityView.class
+                        .cast(response.getEntity());
+
+                final BulkActionsResultView bulkActionsResultView = BulkActionsResultView.class
+                        .cast(fireEntityView.getEntity());
+                assertNotNull(bulkActionsResultView);
+
+                assertEquals(1, bulkActionsResultView.getSuccessCount().intValue());
+                assertEquals(2, bulkActionsResultView.getFails().size());
+                assertEquals(0, bulkActionsResultView.getSkippedCount().intValue());
+
+                indexNeedsToCatchup();
+
+
+            return true;
+        }, o -> true);
+
+        workflowResource.fireBulkActions(request1, asyncResponse, actionsForm1);
+
+
+        ReindexThread.unpause();
+
+        List<Contentlet> contentletsAfter = APILocator.getContentletAPIImpl().findContentletsByIdentifiers(contentlets.stream()
+               .map(Contentlet::getIdentifier)
+              .toArray(String[]::new), false, 1L, adminUser, false);
+
+
+        //first, check that the two first contentlets still have the read permission (because it should not have been reset)
+        APILocator.getPermissionAPI().checkPermission(contentletsAfter.get(1), PermissionLevel.READ, userWithBackendRole);
+        APILocator.getPermissionAPI().checkPermission(contentletsAfter.get(0), PermissionLevel.READ, userWithBackendRole);
+
+        //then the check on the last contentlet, it should throw the exception because the permissions should have been reset
+        assertThrows(DotSecurityException.class, () -> {
+            APILocator.getPermissionAPI().checkPermission(contentletsAfter.get(2), PermissionLevel.READ, userWithBackendRole);
+        });
+
+    }
+
+
     private ContentType createCategoryFieldContentType(final String parentCategoryInode)
             throws Exception {
         ContentType contentType;
@@ -2605,4 +2755,161 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         return request;
     }
+
+
+    protected static WorkflowScheme addWorkflowScheme(final String schemeName)
+            throws DotDataException, DotSecurityException {
+        WorkflowScheme scheme = null;
+        try {
+            scheme = new WorkflowScheme();
+            scheme.setName(schemeName);
+            scheme.setDescription("testing workflows " + schemeName);
+            scheme.setCreationDate(new Date());
+            workflowAPI.saveScheme(scheme, APILocator.systemUser());
+        } catch (AlreadyExistException e) {
+            //scheme already exist
+        }
+        return scheme;
+    }
+
+    /**
+     * Create a new Workflow Step
+     *
+     * @param name Name of the step
+     * @param order step order
+     * @param resolved Is resolved
+     * @param enableEscalation Allows Escalations
+     * @param schemeId Scheme Id
+     * @return The created step
+     */
+    protected static WorkflowStep addWorkflowStep(final String name, final int order,
+                                                  final boolean resolved,
+                                                  final boolean enableEscalation, final String schemeId)
+            throws DotDataException, DotSecurityException {
+        WorkflowStep step = null;
+        try {
+            step = new WorkflowStep();
+            step.setCreationDate(new Date());
+            step.setEnableEscalation(enableEscalation);
+            step.setMyOrder(order);
+            step.setName(name);
+            step.setResolved(resolved);
+            step.setSchemeId(schemeId);
+            workflowAPI.saveStep(step, systemUser);
+        } catch (AlreadyExistException e) {
+            //scheme already exist
+        }
+        return step;
+    }
+
+    protected static WorkflowAction addWorkflowAction(final String name, final int order,
+                                                      final String nextStep, final String stepId, final Role whoCanUse,
+                                                      final String schemeId)
+            throws DotDataException {
+        return addWorkflowAction(name, order, nextStep, stepId, whoCanUse, schemeId, new HashMap<>());
+    }
+
+    /**
+     * Add a workflowAction
+     *
+     * @param name Name of the action
+     * @param order Order
+     * @param nextStep next step
+     * @param requiresCheckout is checkout required
+     * @param stepId Current step id
+     * @param whoCanUse Role permissions
+     * @return A workflowAction
+     */
+    protected static WorkflowAction addWorkflowAction(final String name, final int order,
+                                                      final String nextStep, final String stepId, final Role whoCanUse,
+                                                      final String schemeId, final Map<String, Object> metadata)
+            throws DotDataException {
+
+        WorkflowAction action = null;
+        try {
+            action = new WorkflowAction();
+            action.setName(name);
+            action.setSchemeId(schemeId);
+            action.setOwner(whoCanUse.getId());
+            action.setOrder(order);
+            action.setNextStep(nextStep);
+            action.setRequiresCheckout(false);
+            action.setStepId(stepId);
+            action.setNextAssign(whoCanUse.getId());
+            action.setCommentable(true);
+            action.setAssignable(false);
+            action.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.NEW,
+                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.ARCHIVED, WorkflowState.EDITING);
+            action.setMetadata(metadata);
+            workflowAPI.saveAction(action,
+                    Arrays.asList(new Permission[]{
+                            new Permission(action.getId(),
+                                    whoCanUse.getId(),
+                                    PermissionAPI.PERMISSION_USE)}),
+                    APILocator.systemUser());
+
+            workflowAPI.saveAction(action.getId(), stepId, APILocator.systemUser());
+        } catch (AlreadyExistException e) {
+            //scheme already exist
+        }
+        return action;
+    }
+
+    /**
+     * Add a subaction
+     *
+     * @param name name of the subaction
+     * @param actionId Action id where the subaction should be associated
+     * @param actionClassToUse The subaction classs to use
+     * @param order Order of executions
+     */
+    protected static WorkflowActionClass addSubActionClass(final String name, final String actionId,
+                                                           final Class actionClassToUse, final int order)
+            throws DotDataException, DotSecurityException {
+        WorkflowActionClass actionClass = null;
+        try {
+            actionClass = new WorkflowActionClass();
+            actionClass.setActionId(actionId);
+            actionClass.setClazz(actionClassToUse.getCanonicalName());
+            actionClass.setName(name);
+            actionClass.setOrder(order);
+            workflowAPI.saveActionClass(actionClass, APILocator.systemUser());
+        } catch (AlreadyExistException e) {
+            //scheme already exist
+        }
+        return actionClass;
+    }
+    private void addPermission(
+            final Role role,
+            final Permissionable contentType,
+            final PermissionLevel permissionLevel)
+
+            throws DotDataException, DotSecurityException {
+
+        APILocator.getPermissionAPI().save(
+                getPermission(role, contentType, permissionLevel.getType()),
+                contentType, APILocator.systemUser(), false);
+    }
+
+
+    private Permission getPermission(
+            final Role role,
+            final Permissionable permissionable,
+            final int permissionPublish) {
+
+        final Permission publishPermission = new Permission();
+        publishPermission.setInode(permissionable.getPermissionId());
+        publishPermission.setRoleId(role.getId());
+        publishPermission.setPermission(permissionPublish);
+        return publishPermission;
+    }
+
+    private ContentType createContentType(final String name) throws DotSecurityException, DotDataException {
+        return contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                        FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
+                .owner(systemUser.getUserId()).build());
+    }
+
 }
+
+

@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -30,13 +31,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -55,17 +50,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.*;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -119,13 +104,7 @@ import static com.dotmarketing.portlets.workflows.model.WorkflowState.NEW;
 import static com.dotmarketing.portlets.workflows.model.WorkflowState.PUBLISHED;
 import static com.dotmarketing.portlets.workflows.model.WorkflowState.UNLOCKED;
 import static com.dotmarketing.portlets.workflows.model.WorkflowState.UNPUBLISHED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * Test the workflowAPI
@@ -4896,6 +4875,123 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         }
 
+    }
+
+    /**
+     * Method to test: {@link WorkflowAPI#fireContentWorkflow(Contentlet, ContentletDependencies)}
+     * Given Scenario: Reset permissions to a contentlet from workflow action
+     * ExpectedResult: The reset of the permissions should be done successfully when firing workflow action
+     *
+     */
+    @Test
+    public void test_reset_permissions_subaction() throws DotDataException, DotSecurityException {
+
+        ContentType cType = createContentType("test");
+
+
+         Contentlet contentlet = new ContentletDataGen(cType.id())
+                .host(APILocator.systemHost())
+                .nextPersisted();
+
+
+        Role limitedUserRole = TestUserUtils.getBackendRole();
+
+        addPermission(limitedUserRole, contentlet, PermissionLevel.READ);
+
+        final User userWithBackendRole = TestUserUtils.getBackendUser(APILocator.systemHost());
+
+
+        final long time = System.currentTimeMillis();
+        final String workflowSchemeName = "WorkflowSchemeTestResetPermissions_" + time;
+        final String workflowScheme3Step1Name = "WorkflowSchemeResetPermissionsStep1_" + time;
+        final String workflowScheme3Step1ActionResetPermissions = "Reset" + time;
+        final WorkflowScheme workflowScheme = addWorkflowScheme(workflowSchemeName);
+
+        final Set<String> schemes = new HashSet<>();
+        schemes.add(workflowScheme.getId());
+        workflowAPI.saveSchemeIdsForContentType(cType, schemes);
+
+        final WorkflowStep workflowSchemeStep = addWorkflowStep(workflowScheme3Step1Name, 1, false, false,
+                workflowScheme.getId());
+
+        /* Generate actions */
+        final WorkflowAction workflowSchemeResetPermissionAction = addWorkflowAction(workflowScheme3Step1ActionResetPermissions, 1,
+                workflowSchemeStep.getId(), workflowSchemeStep.getId(), contributor,
+                workflowScheme.getId());
+
+
+        final WorkflowActionClass resetPermissionsClass = addSubActionClass("Reset Permissions", workflowSchemeResetPermissionAction.getId(), ResetPermissionsActionlet.class, 0);
+
+
+        final List<WorkflowActionClassParameter> params = new ArrayList<>();
+        final WorkflowActionClassParameter pathParam = new WorkflowActionClassParameter();
+        pathParam.setActionClassId(resetPermissionsClass.getId());
+        pathParam.setKey(MoveContentActionlet.PATH_KEY);
+        pathParam.setValue("//default/application");
+        params.add(pathParam);
+        workflowAPI.saveWorkflowActionClassParameters(params, user);
+
+        List<WorkflowStep> steps = workflowAPI.findSteps(workflowScheme);
+        assertNotNull(steps);
+        assertEquals(1, steps.size());
+
+        //check available actions for admin user
+        List<WorkflowAction> actions = workflowAPI.findActions(steps, user);
+        assertNotNull(actions);
+        assertEquals(1, actions.size());
+
+        actions = workflowAPI.findActions(steps, user, null);
+        assertNotNull(actions);
+        assertEquals(1, actions.size());
+
+        final ContentletRelationships contentletRelationships = APILocator.getContentletAPI()
+                .getAllRelationships(contentlet);
+
+
+        //Reset permissions
+        contentlet = fireWorkflowAction(contentlet, contentletRelationships, workflowSchemeResetPermissionAction,
+                StringPool.BLANK, StringPool.BLANK, user);
+
+
+        Contentlet finalContentlet = contentlet;
+
+        //check after the workflow action is fired, at this moment the user should no longer have permissions on the contentlet
+        assertThrows(DotSecurityException.class, () -> {
+            APILocator.getPermissionAPI().checkPermission(finalContentlet, PermissionLevel.READ, userWithBackendRole);
+        });
+
+
+    }
+
+    private void addPermission(
+            final Role role,
+            final Permissionable contentType,
+            final PermissionLevel permissionLevel)
+
+            throws DotDataException, DotSecurityException {
+
+        APILocator.getPermissionAPI().save(
+                getPermission(role, contentType, permissionLevel.getType()),
+                contentType, APILocator.systemUser(), false);
+    }
+
+
+    private Permission getPermission(
+            final Role role,
+            final Permissionable permissionable,
+            final int permissionPublish) {
+
+        final Permission publishPermission = new Permission();
+        publishPermission.setInode(permissionable.getPermissionId());
+        publishPermission.setRoleId(role.getId());
+        publishPermission.setPermission(permissionPublish);
+        return publishPermission;
+    }
+
+    private ContentType createContentType(final String name) throws DotSecurityException, DotDataException {
+        return contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                        FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
+                .owner(user.getUserId()).build());
     }
 
 }
