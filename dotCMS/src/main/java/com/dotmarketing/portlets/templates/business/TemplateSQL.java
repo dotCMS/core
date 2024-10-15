@@ -4,7 +4,17 @@ import com.dotmarketing.beans.Inode.Type;
 
 public class TemplateSQL {
 
-    public static TemplateSQL getInstance(){ return new TemplateSQL(); }
+    private static TemplateSQL instance;
+
+    private TemplateSQL(){
+    }
+    public static TemplateSQL getInstance() {
+        if (instance == null) {
+            instance = new TemplateSQL();
+        }
+
+        return instance;
+    }
 
     public static final String FIND_TEMPLATES_BY_HOST_INODE =
             "select template.*, template_identifier.*  from " + Type.TEMPLATE.getTableName() + " template, inode template_1_, " +
