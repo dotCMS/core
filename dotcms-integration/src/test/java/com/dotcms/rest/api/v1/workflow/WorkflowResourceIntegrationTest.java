@@ -2435,6 +2435,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         Role limitedUserRole = TestUserUtils.getBackendRole();
 
+        final int originalSizePermissions = APILocator.getPermissionAPI().getPermissions(contentlet3).size();
+
         //we add to two of the contentlets only read permissions, this way we will check some fails
         addPermission(limitedUserRole, contentlet, PermissionLevel.READ);
         addPermission(limitedUserRole, contentlet2, PermissionLevel.READ);
@@ -2444,6 +2446,12 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         addPermission(limitedUserRole, contentlet3, PermissionLevel.EDIT);
         addPermission(limitedUserRole, contentlet3, PermissionLevel.PUBLISH);
         addPermission(limitedUserRole, contentlet3, PermissionLevel.EDIT_PERMISSIONS);
+
+        //Since we're setting permissions individually, should be only 1 permission
+        Assert.assertEquals(1, APILocator.getPermissionAPI().getPermissions(contentlet).size());
+        Assert.assertEquals(1, APILocator.getPermissionAPI().getPermissions(contentlet2).size());
+        Assert.assertEquals(4, APILocator.getPermissionAPI().getPermissions(contentlet3).size());
+
 
         final User userWithBackendRole = TestUserUtils.getBackendUser(APILocator.systemHost());
 
@@ -2536,19 +2544,12 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         ReindexThread.unpause();
 
-        List<Contentlet> contentletsAfter = APILocator.getContentletAPIImpl().findContentletsByIdentifiers(contentlets.stream()
-               .map(Contentlet::getIdentifier)
-              .toArray(String[]::new), false, 1L, adminUser, false);
 
-
-        //first, check that the two first contentlets still have the read permission (because it should not have been reset)
-        APILocator.getPermissionAPI().checkPermission(contentletsAfter.get(1), PermissionLevel.READ, userWithBackendRole);
-        APILocator.getPermissionAPI().checkPermission(contentletsAfter.get(0), PermissionLevel.READ, userWithBackendRole);
-
-        //then the check on the last contentlet, it should throw the exception because the permissions should have been reset
-        assertThrows(DotSecurityException.class, () -> {
-            APILocator.getPermissionAPI().checkPermission(contentletsAfter.get(2), PermissionLevel.READ, userWithBackendRole);
-        });
+        //first we check the contentlets that should have failed, they should have the same permissions
+        Assert.assertEquals(1, APILocator.getPermissionAPI().getPermissions(contentlet).size());
+        Assert.assertEquals(1, APILocator.getPermissionAPI().getPermissions(contentlet2).size());
+        //and last we check the contentlet that should have been successful, it should have the original size of permissions
+        Assert.assertEquals(originalSizePermissions, APILocator.getPermissionAPI().getPermissions(contentlet3).size());
 
     }
 

@@ -4893,12 +4893,15 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 .host(APILocator.systemHost())
                 .nextPersisted();
 
+        //Get original size permissions
+        final int originalSizePermissions = APILocator.getPermissionAPI().getPermissions(contentlet).size();
 
         Role limitedUserRole = TestUserUtils.getBackendRole();
 
         addPermission(limitedUserRole, contentlet, PermissionLevel.READ);
 
-        final User userWithBackendRole = TestUserUtils.getBackendUser(APILocator.systemHost());
+        //Since we're setting permissions individually, should be only 1 permission
+        Assert.assertEquals(1, APILocator.getPermissionAPI().getPermissions(contentlet).size());
 
 
         final long time = System.currentTimeMillis();
@@ -4940,19 +4943,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
         final ContentletRelationships contentletRelationships = APILocator.getContentletAPI()
                 .getAllRelationships(contentlet);
 
-
         //Reset permissions
         contentlet = fireWorkflowAction(contentlet, contentletRelationships, workflowSchemeResetPermissionAction,
                 StringPool.BLANK, StringPool.BLANK, user);
 
 
-        Contentlet finalContentlet = contentlet;
-
-        //check after the workflow action is fired, at this moment the user should no longer have permissions on the contentlet
-        assertThrows(DotSecurityException.class, () -> {
-            APILocator.getPermissionAPI().checkPermission(finalContentlet, PermissionLevel.READ, userWithBackendRole);
-        });
-
+        //After reset permissions, the permissions should be back to their original size
+        Assert.assertEquals(originalSizePermissions, APILocator.getPermissionAPI().getPermissions(contentlet).size());
 
     }
 
