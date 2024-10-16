@@ -24,7 +24,7 @@ public class Task230707CreateSystemTable implements StartupTask {
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
 
-        Try.of(()->new DotConnect().executeStatement("CREATE TABLE system_table ("
+        Try.of(()->new DotConnect().executeStatement("CREATE TABLE if not exists system_table ("
                 + "key varchar(511) primary key,"
                 + "value text not null"
                 + ")")).getOrElseThrow(e-> new DotDataException(e.getMessage(), e));

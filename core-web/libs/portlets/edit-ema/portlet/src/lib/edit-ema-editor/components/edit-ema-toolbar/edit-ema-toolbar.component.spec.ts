@@ -39,7 +39,9 @@ import { DEFAULT_PERSONA } from '../../../shared/consts';
 import {
     HEADLESS_BASE_QUERY_PARAMS,
     MOCK_RESPONSE_HEADLESS,
+    MOCK_RESPONSE_VTL,
     PAGE_RESPONSE_BY_LANGUAGE_ID,
+    PAGE_RESPONSE_URL_CONTENT_MAP,
     URL_CONTENT_MAP_MOCK
 } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
@@ -179,7 +181,9 @@ describe('EditEmaToolbarComponent', () => {
                         }),
                         setDevice: jest.fn(),
                         setSocialMedia: jest.fn(),
-                        params: signal(params)
+                        params: signal(params),
+                        pageAPIResponse: signal(MOCK_RESPONSE_VTL),
+                        reload: jest.fn()
                     })
                 ]
             });
@@ -445,6 +449,21 @@ describe('EditEmaToolbarComponent', () => {
                     },
                     queryParamsHandling: 'merge'
                 });
+            });
+
+            it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', () => {
+                jest.spyOn(store, 'pageAPIResponse').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP);
+
+                spectator.triggerEventHandler(DotEditEmaWorkflowActionsComponent, 'newPage', {
+                    pageURI: '/test-url',
+                    url: '/test-url',
+                    languageId: 1
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } as any);
+
+                spectator.detectChanges();
+                expect(store.reload).toHaveBeenCalled();
+                expect(router.navigate).not.toHaveBeenCalled();
             });
         });
 

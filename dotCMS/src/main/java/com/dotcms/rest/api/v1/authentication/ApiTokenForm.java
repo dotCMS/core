@@ -5,14 +5,16 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
+import io.swagger.v3.oas.annotations.Hidden;
 
 @JsonDeserialize(builder = ApiTokenForm.Builder.class)
 public class ApiTokenForm  {
 
 
     public final String userId;
-
+    @Hidden
     public final String tokenId;
+    @Hidden
     public final boolean showRevoked;
     public final int expirationSeconds;
     public final String network;

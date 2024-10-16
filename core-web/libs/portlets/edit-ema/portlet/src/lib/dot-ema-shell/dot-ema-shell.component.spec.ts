@@ -54,7 +54,11 @@ import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.s
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
-import { PAGE_RESPONSE_BY_LANGUAGE_ID, PAYLOAD_MOCK } from '../shared/mocks';
+import {
+    PAGE_RESPONSE_BY_LANGUAGE_ID,
+    PAGE_RESPONSE_URL_CONTENT_MAP,
+    PAYLOAD_MOCK
+} from '../shared/mocks';
 import { UVEStore } from '../store/dot-uve.store';
 
 describe('DotEmaShellComponent', () => {
@@ -961,7 +965,7 @@ describe('DotEmaShellComponent', () => {
 
                 expect(navigate).toHaveBeenCalledWith([], {
                     queryParams: {
-                        url: 'my-awesome-page'
+                        url: '/my-awesome-page'
                     },
                     queryParamsHandling: 'merge'
                 });
@@ -999,6 +1003,40 @@ describe('DotEmaShellComponent', () => {
                 spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
 
                 expect(reloadSpy).toHaveBeenCalled();
+            });
+
+            it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', () => {
+                const reloadSpy = jest.spyOn(store, 'reload');
+                // Mocking the uveStore to return a urlContentMap with the same URL as the current one
+                jest.spyOn(store, 'pageAPIResponse').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP);
+                jest.spyOn(store, 'params').mockReturnValue({
+                    url: '/test-url',
+                    language_id: '1',
+                    'com.dotmarketing.persona.id': '1'
+                });
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                            payload: {
+                                htmlPageReferer: '/test-url'
+                            }
+                        }
+                    }),
+                    payload: PAYLOAD_MOCK,
+                    form: {
+                        status: FormStatus.SAVED,
+                        isTranslation: false
+                    }
+                });
+
+                spectator.detectChanges();
+
+                expect(reloadSpy).toHaveBeenCalled();
+                expect(router.navigate).not.toHaveBeenCalled();
             });
         });
     });

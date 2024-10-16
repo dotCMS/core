@@ -1,7 +1,7 @@
 import { Meta, moduleMetadata, StoryObj, applicationConfig } from '@storybook/angular';
 import { of } from 'rxjs';
 
-import { HttpClient, provideHttpClient } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -47,17 +47,16 @@ const meta: Meta<AddStyleClassesDialogComponent> = {
                     }
                 },
                 {
-                    provide: HttpClient,
-                    useValue: {
-                        get: (_: string) => of(MOCK_STYLE_CLASSES_FILE)
-                    }
-                },
-                {
                     provide: DotMessageService,
                     useValue: DOT_MESSAGE_SERVICE_TB_MOCK
                 },
                 DynamicDialogRef,
-                JsonClassesService
+                {
+                    provide: JsonClassesService,
+                    useValue: {
+                        getClasses: () => of(MOCK_STYLE_CLASSES_FILE.classes)
+                    }
+                }
             ]
         })
     ]

@@ -109,6 +109,16 @@
     background-color: transparent;
     -webkit-backdrop-filter: blur($blur-md);
     backdrop-filter: blur($blur-md);
+    padding: 0;
+    align-items: center;
+}
+
+.p-dialog-mask.p-dialog-mask-transparent-ai.p-component-overlay {
+    background-color: transparent;
+    -webkit-backdrop-filter: blur($blur-md);
+    backdrop-filter: blur($blur-md);
+    padding: 0;
+    align-items: center;
 }
 
 .p-dialog-mask.p-dialog-mask-transparent-nested.p-component-overlay {
