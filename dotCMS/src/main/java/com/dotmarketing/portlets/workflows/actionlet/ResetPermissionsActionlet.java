@@ -20,7 +20,7 @@ import java.util.Map;
 
 /**
  * This Actionlet allows the user to reset the permissions of a contentlet
- * The user may have edit permissions to fire this action.
+ * The user must have edit permissions to fire this action.
  */
 public class ResetPermissionsActionlet extends WorkFlowActionlet{
     @Override
