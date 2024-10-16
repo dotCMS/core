@@ -35,13 +35,13 @@ class UniqueFieldAPIImpl implements UniqueFieldAPI {
      * @param uniqueFieldCriteria
      * @param contentletId
      *
-     * @throws UniqueFieldValueDupliacatedException when the Value is duplicated
+     * @throws UniqueFieldValueDuplicatedException when the Value is duplicated
      * @throws DotDataException when a DotDataException is throws
      */
     @WrapInTransaction
     @Override
     public void insert(final UniqueFieldCriteria uniqueFieldCriteria, final String contentletId)
-            throws UniqueFieldValueDupliacatedException, DotDataException {
+            throws UniqueFieldValueDuplicatedException, DotDataException {
 
         if (!uniqueFieldCriteria.field().unique()) {
             final String message = String.format("The Field %s is not unique", uniqueFieldCriteria.field().variable());
@@ -67,7 +67,7 @@ class UniqueFieldAPIImpl implements UniqueFieldAPI {
                         uniqueFieldCriteria.contentType().variable());
 
                 Logger.error(UniqueFieldAPIImpl.class, duplicatedValueMessage);
-                throw new UniqueFieldValueDupliacatedException(duplicatedValueMessage);
+                throw new UniqueFieldValueDuplicatedException(duplicatedValueMessage);
             }
         }
     }

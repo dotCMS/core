@@ -47,7 +47,7 @@ public class UniqueFieldAPITest {
      * Should: Insert a register in the unique_fields table
      */
     @Test
-    public void insert() throws DotDataException, UniqueFieldValueDupliacatedException {
+    public void insert() throws DotDataException, UniqueFieldValueDuplicatedException {
         final Field field = new FieldDataGen().type(TextField.class).unique(true).next();
         final ContentType contentType = new ContentTypeDataGen().field(field).nextPersisted();
         final Object value =  new RandomString().nextString();
@@ -76,10 +76,10 @@ public class UniqueFieldAPITest {
     /**
      * Method to test: {@link UniqueFieldAPIImpl#insert(UniqueFieldCriteria, String)}
      * When: Called the method with a 'unique_key_val' duplicated
-     * Should: Throw a {@link UniqueFieldValueDupliacatedException}
+     * Should: Throw a {@link UniqueFieldValueDuplicatedException}
      */
     @Test
-    public void tryToInsertDuplicated() throws DotDataException, UniqueFieldValueDupliacatedException {
+    public void tryToInsertDuplicated() throws DotDataException, UniqueFieldValueDuplicatedException {
         final Field uniqueField = new FieldDataGen().type(TextField.class).unique(true).next();
         final ContentType contentType = new ContentTypeDataGen().field(uniqueField).nextPersisted();
         final Object value =  "UniqueValue" + System.currentTimeMillis();
@@ -110,7 +110,7 @@ public class UniqueFieldAPITest {
         try {
             uniqueFieldAPIHelper.insert(uniqueFieldCriteria, contentlet.getIdentifier());
             throw new AssertionError("UniqueFieldValueDupliacatedException expected");
-        } catch (UniqueFieldValueDupliacatedException e) {
+        } catch (UniqueFieldValueDuplicatedException e) {
 
             final int countAfter = Integer.parseInt(new DotConnect()
                     .setSQL("SELECT COUNT(*) as count FROM unique_fields WHERE unique_key_val = ?")
@@ -126,7 +126,7 @@ public class UniqueFieldAPITest {
      * Should: Allow insert the same values in different Host
      */
     @Test
-    public void insertWithUniquePerSiteSetToTrue() throws DotDataException, UniqueFieldValueDupliacatedException {
+    public void insertWithUniquePerSiteSetToTrue() throws DotDataException, UniqueFieldValueDuplicatedException {
         final Field uniqueField = new FieldDataGen().type(TextField.class).unique(true).next();
         final ContentType contentType = new ContentTypeDataGen().field(uniqueField).nextPersisted();
         final Language language = new LanguageDataGen().nextPersisted();
@@ -205,7 +205,7 @@ public class UniqueFieldAPITest {
      * Should: thrown an {@link IllegalArgumentException}
      */
     @Test
-    public void insertNotUniqueField() throws DotDataException, UniqueFieldValueDupliacatedException {
+    public void insertNotUniqueField() throws DotDataException, UniqueFieldValueDuplicatedException {
         final Field notUniqueField = new FieldDataGen().type(TextField.class).next();
         final ContentType contentType = new ContentTypeDataGen().field(notUniqueField).nextPersisted();
         final Object value =  "UniqueValue" + System.currentTimeMillis();
@@ -269,7 +269,7 @@ public class UniqueFieldAPITest {
      * Should: Insert a register in the unique_fields table
      */
     @Test
-    public void insertWithDifferentContentType() throws DotDataException, UniqueFieldValueDupliacatedException {
+    public void insertWithDifferentContentType() throws DotDataException, UniqueFieldValueDuplicatedException {
         final Field field_1 = new FieldDataGen().type(TextField.class).velocityVarName("unique").unique(true).next();
         final ContentType contentType_1 = new ContentTypeDataGen().field(field_1).nextPersisted();
         final Object value =  "UniqueValue" + System.currentTimeMillis();
@@ -319,7 +319,7 @@ public class UniqueFieldAPITest {
      * Should: Insert a register in the unique_fields table
      */
     @Test
-    public void insertWithDifferentField() throws DotDataException, UniqueFieldValueDupliacatedException {
+    public void insertWithDifferentField() throws DotDataException, UniqueFieldValueDuplicatedException {
         final Field field_1 = new FieldDataGen().type(TextField.class).unique(true)
                 .velocityVarName("field1" + System.currentTimeMillis()).next();
         final Field field_2 = new FieldDataGen().type(TextField.class).unique(true)
@@ -367,7 +367,7 @@ public class UniqueFieldAPITest {
      * Should: Insert a register in the unique_fields table
      */
     @Test
-    public void insertWithDifferentValue() throws DotDataException, UniqueFieldValueDupliacatedException {
+    public void insertWithDifferentValue() throws DotDataException, UniqueFieldValueDuplicatedException {
         final Field field = new FieldDataGen().type(TextField.class).unique(true)
                 .velocityVarName("field1" + System.currentTimeMillis()).next();
         final ContentType contentType = new ContentTypeDataGen().field(field).nextPersisted();
@@ -413,7 +413,7 @@ public class UniqueFieldAPITest {
      * Should: Insert a register in the unique_fields table
      */
     @Test
-    public void insertWithDifferentLanguage() throws DotDataException, UniqueFieldValueDupliacatedException {
+    public void insertWithDifferentLanguage() throws DotDataException, UniqueFieldValueDuplicatedException {
         final Field field = new FieldDataGen().type(TextField.class).unique(true)
                 .velocityVarName("field1" + System.currentTimeMillis()).next();
         final ContentType contentType = new ContentTypeDataGen().field(field).nextPersisted();

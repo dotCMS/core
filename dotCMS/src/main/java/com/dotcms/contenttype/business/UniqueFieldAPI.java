@@ -13,9 +13,9 @@ public interface UniqueFieldAPI {
      * @param uniqueFieldCriteria
      * @param contentletId
      *
-     * @throws UniqueFieldValueDupliacatedException when the Value is duplicated
+     * @throws UniqueFieldValueDuplicatedException when the Value is duplicated
      * @throws DotDataException when a DotDataException is throws
      */
     void insert(final UniqueFieldCriteria uniqueFieldCriteria, final String contentletId)
-            throws UniqueFieldValueDupliacatedException, DotDataException;
+            throws UniqueFieldValueDuplicatedException, DotDataException;
 }
