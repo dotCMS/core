@@ -180,6 +180,7 @@ import com.dotmarketing.startup.runonce.Task240606AddVariableColumnToWorkflowTes
 import com.dotmarketing.startup.runonce.Task241007CreateUniqueFieldsTableTest;
 import com.dotmarketing.startup.runonce.Task241009CreatePostgresJobQueueTablesTest;
 import com.dotmarketing.startup.runonce.Task241013RemoveFullPathLcColumnFromIdentifierTest;
+import com.dotmarketing.startup.runonce.Task241015ReplaceLanguagesWithLocalesPortletTest;
 import com.dotmarketing.startup.runonce.Task241016AddCustomLanguageVariablesPortletToLayoutTest;
 import com.dotmarketing.util.ConfigUtilsTest;
 import com.dotmarketing.util.ITConfigTest;
@@ -388,6 +389,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241009CreatePostgresJobQueueTablesTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
+        Task241015ReplaceLanguagesWithLocalesPortletTest.class,
         Task241016AddCustomLanguageVariablesPortletToLayoutTest.class
 })
 
