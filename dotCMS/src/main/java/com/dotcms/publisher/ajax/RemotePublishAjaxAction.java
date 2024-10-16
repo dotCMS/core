@@ -199,8 +199,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
             String _contentFilterDate = request.getParameter( "remoteFilterDate" );
             String _iWantTo = request.getParameter( "iWantTo" );
             String whoToSendTmp = request.getParameter( "whoToSend" );
-            String forcePushStr = request.getParameter( "forcePush" );
-            boolean forcePush = (forcePushStr!=null && forcePushStr.equals("true"));
+            final String filterKey = Config.getStringProperty("PP_FILTER_KEY","Intelligent.yml");
+            final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault("forcePush",false);
             List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
             List<Environment> envsToSendTo = new ArrayList<Environment>();
 
@@ -944,12 +944,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
             String _contentPushExpireTime = request.getParameter( "remotePublishExpireTime" );
             String _iWantTo = request.getParameter( "iWantTo" );
             String whoToSendTmp = request.getParameter( "whoToSend" );
-            String forcePushTmp = request.getParameter( "forcePush" );
-            
-            Boolean forcePush = false;
-            if(UtilMethods.isSet(forcePushTmp)){
-                forcePush = Boolean.valueOf(forcePushTmp);
-            }
+            final String filterKey = Config.getStringProperty("PP_FILTER_KEY","Intelligent.yml");
+            final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault("forcePush",false);
             
             List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
             List<Environment> envsToSendTo = new ArrayList<Environment>();

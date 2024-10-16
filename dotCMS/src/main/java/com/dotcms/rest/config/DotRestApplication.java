@@ -150,6 +150,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(VTLResource.class);
 					REST_CLASSES.add(ContentVersionResource.class);
 					REST_CLASSES.add(FileAssetsResource.class);
+					REST_CLASSES.add(PushPublishFilterResource.class)
 				}
 			}
 		}

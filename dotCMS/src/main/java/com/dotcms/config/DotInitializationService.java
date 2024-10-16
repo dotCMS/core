@@ -108,7 +108,8 @@ public class DotInitializationService implements Serializable {
                 new SystemEventProcessorFactoryInitializer(),
                 new PayloadVerifierFactoryInitializer(),
                 new LocalSystemEventSubscribersInitializer(),
-                new ExceptionHandlersInitializer());
+                new ExceptionHandlersInitializer()),
+                new PushPublishFiltersInitializer());
     } // getInternalInitializers.
 
     private Set<DotInitializer> getServiceLoaderInitializers() {
