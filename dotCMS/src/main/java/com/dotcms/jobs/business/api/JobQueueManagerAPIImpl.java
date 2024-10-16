@@ -33,6 +33,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
@@ -48,7 +49,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 /**

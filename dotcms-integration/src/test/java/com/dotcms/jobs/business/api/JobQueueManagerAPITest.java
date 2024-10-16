@@ -58,7 +58,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import javax.enterprise.event.Event;
+import jakarta.enterprise.event.Event;
 import org.awaitility.Awaitility;
 import org.junit.Before;
 import org.junit.Test;

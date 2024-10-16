@@ -3,8 +3,8 @@ package com.dotcms.jobs.business.error;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
+import jakarta.enterprise.context.ApplicationScoped;
 import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 /**
