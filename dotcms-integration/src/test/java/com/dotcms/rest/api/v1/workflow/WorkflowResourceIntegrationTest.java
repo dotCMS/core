@@ -142,6 +142,7 @@ import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.sse.EventOutput;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -164,8 +165,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     private static Role systemRole;
 
     static private WorkflowScheme testScheme;
-
-    private static WebResource webResource;
+    
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -190,7 +190,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         when(user.getFullName()).thenReturn(ADMIN_NAME);
         when(user.getLocale()).thenReturn(Locale.getDefault());
         when(user.isBackendUser()).thenReturn(true);
-        webResource = mock(WebResource.class);
+        final WebResource webResource = mock(WebResource.class);
         final InitDataObject dataObject = mock(InitDataObject.class);
         when(dataObject.getUser()).thenReturn(user);
         when(webResource
@@ -2447,15 +2447,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         final User userWithBackendRole = TestUserUtils.getBackendUser(APILocator.systemHost());
 
-        final InitDataObject freshDataObject = mock(InitDataObject.class);
-
-        when(freshDataObject.getUser()).thenReturn(userWithBackendRole);
-        when(webResource
-                .init(nullable(String.class), any(HttpServletRequest.class),
-                        any(HttpServletResponse.class), anyBoolean(),
-                        nullable(String.class))).thenReturn(freshDataObject);
-
-
+        WorkflowResource myWorkflowResource = mockWorkflowResourceToResetPermissionsAction(userWithBackendRole);
 
         final long time = System.currentTimeMillis();
         final String workflowSchemeName = "WorkflowSchemeTestResetPermissions_" + time;
@@ -2539,7 +2531,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             return true;
         }, o -> true);
 
-        workflowResource.fireBulkActions(request1, asyncResponse, actionsForm1);
+        myWorkflowResource.fireBulkActions(request1, asyncResponse, actionsForm1);
 
 
         ReindexThread.unpause();
@@ -2558,8 +2550,31 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             APILocator.getPermissionAPI().checkPermission(contentletsAfter.get(2), PermissionLevel.READ, userWithBackendRole);
         });
 
-        reset(webResource);
-        prepare();
+    }
+
+    private static WorkflowResource mockWorkflowResourceToResetPermissionsAction(User userWithBackendRole) {
+        final ContentHelper contentHelper = ContentHelper.getInstance();
+        final SystemActionApiFireCommandFactory systemActionApiFireCommandFactory =
+                SystemActionApiFireCommandFactory.getInstance();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final WorkflowImportExportUtil workflowImportExportUtil = getInstance();
+        final WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI,
+                contentletAPI, permissionAPI,
+                workflowImportExportUtil);
+        final InitDataObject freshDataObject = mock(InitDataObject.class);
+        final WebResource freshWebResource = mock(WebResource.class);
+        final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
+        when(freshDataObject.getUser()).thenReturn(userWithBackendRole);
+        when(freshWebResource
+                .init(nullable(String.class), any(HttpServletRequest.class),
+                        any(HttpServletResponse.class), anyBoolean(),
+                        nullable(String.class))).thenReturn(freshDataObject);
+
+        WorkflowResource myWorkflowResource = new WorkflowResource(workflowHelper, contentHelper, workflowAPI,
+                contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil,
+                new MultiPartUtils(), freshWebResource,
+                systemActionApiFireCommandFactory);
+        return myWorkflowResource;
     }
 
 
