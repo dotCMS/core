@@ -1,5 +1,6 @@
 package com.dotcms.business;
 
+import com.dotcms.config.DotInitializer;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;
@@ -28,6 +29,12 @@ class SystemTableImpl implements SystemTable {
     public SystemTableImpl() {
 
         this.systemTableFactory = FactoryLocator.getSystemTableFactory();
+        this.initIfNeeded();
+    }
+
+    @WrapInTransaction
+    public void initIfNeeded() {
+        this.systemTableFactory.initIfNeeded();
     }
 
     @Override

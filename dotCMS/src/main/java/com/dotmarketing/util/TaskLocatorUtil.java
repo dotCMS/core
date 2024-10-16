@@ -348,8 +348,9 @@ public class TaskLocatorUtil {
 		.add(Task240513UpdateContentTypesSystemField.class)
 		.add(Task240530AddDotAIPortletToLayout.class)
 		.add(Task240606AddVariableColumnToWorkflow.class)
-		.add(Task241013RemoveFullPathLcColumnFromIdentifier.class)
 		.add(Task241009CreatePostgresJobQueueTables.class)
+		.add(Task241013RemoveFullPathLcColumnFromIdentifier.class)
+		.add(Task241014AddTemplateValueOnContentletIndex.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
@@ -409,6 +410,16 @@ public class TaskLocatorUtil {
 				.add(Task230320FixMissingContentletAsJSON.class)
 				.add(Task240306MigrateLegacyLanguageVariables.class)
 				.build();
+		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
+	}
+
+	/**
+	 * List of tasks that are need to run without transaction. It can be all kind: Run-Once, Run-Always, Data, Backported, etc
+	 * @return The list of tasks
+	 */
+	public static List<Class<?>> getTaskClassesNoTransaction() {
+		final List<Class<?>> ret = new ArrayList<>();
+		ret.add(Task241014AddTemplateValueOnContentletIndex.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

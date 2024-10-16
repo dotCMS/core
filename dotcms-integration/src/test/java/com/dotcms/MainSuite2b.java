@@ -385,7 +385,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241009CreatePostgresJobQueueTablesTest.class,
         UniqueFieldFactoryImplTest.class,
-        UniqueFieldAPITest.class
+        UniqueFieldAPITest.class,
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class
 })
 
 public class MainSuite2b {

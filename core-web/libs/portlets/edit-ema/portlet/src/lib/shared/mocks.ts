@@ -177,6 +177,32 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
     containers: mockDotContainers()
 };
 
+export const URL_CONTENT_MAP_MOCK = {
+    contentType: 'Blog',
+    identifier: '123',
+    inode: '1234',
+    title: 'hello world',
+    baseType: 'CONTENT',
+    folder: 'SYSTEM_FOLDER',
+    host: '123',
+    languageId: 1,
+    live: true,
+    modDate: '1722992210315',
+    modUser: 'dotcms.org.1',
+    owner: 'dotcms.org.1',
+    url: '/content.ec123',
+    working: true,
+    archived: false,
+    hasTitleImage: true,
+    hostName: 'demo.dotcms.com',
+    locked: false,
+    modUserName: 'Admin User',
+    sortOrder: 0,
+    stInode: '799f176a-d32e-4844-a07c-1b5fcd107578',
+    titleImage: 'image',
+    URL_MAP_FOR_CONTENT: '/test-url'
+};
+
 export const MOCK_RESPONSE_VTL: DotPageApiResponse = {
     page: {
         pageURI: 'test-url',
@@ -212,6 +238,11 @@ export const MOCK_RESPONSE_VTL: DotPageApiResponse = {
     layout: mockDotLayout(),
     template: mockDotTemplate(),
     containers: mockDotContainers()
+};
+
+export const PAGE_RESPONSE_URL_CONTENT_MAP = {
+    ...MOCK_RESPONSE_VTL,
+    urlContentMap: URL_CONTENT_MAP_MOCK
 };
 
 export const dotPageContainerStructureMock: DotPageContainerStructure = {
@@ -385,13 +416,6 @@ export const EDIT_ACTION_PAYLOAD_MOCK: ActionPayload = {
     },
     pageId: 'test',
     position: 'before'
-};
-
-export const URL_CONTENT_MAP_MOCK = {
-    contentType: 'Blog',
-    identifier: '123',
-    inode: '1234',
-    title: 'hello world'
 };
 
 export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
