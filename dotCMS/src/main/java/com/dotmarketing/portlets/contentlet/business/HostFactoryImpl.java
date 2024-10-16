@@ -58,6 +58,8 @@ import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 
 /**
@@ -816,7 +818,7 @@ public class HostFactoryImpl implements HostFactory {
         }
         defaultHost = new Host(APILocator.getContentletAPI().find(workingInode, APILocator.systemUser(), false));
         this.siteCache.add(defaultHost);
-        if (UtilMethods.isSet(liveInode) && !workingInode.equals(liveInode)) {
+        if (UtilMethods.isSet(liveInode) && !StringUtils.equals(workingInode,liveInode)) {
             final Host liveDefaultHost = new Host(APILocator.getContentletAPI().find(
                     liveInode, APILocator.systemUser(), false));
             this.siteCache.add(liveDefaultHost);
