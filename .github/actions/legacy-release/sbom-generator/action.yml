@@ -1,0 +1,64 @@
+name: 'DotCMS SBOM Generator'
+description: 'Generates SBOM for a specified version of dotCMS'
+inputs:
+  dotcms_version:
+    description: 'The dotCMS version (vYY.MM.DD)'
+    required: true
+  github_token:
+    description: 'GitHub token for pushing changes'
+    required: true
+outputs:
+  sbom-artifact:
+    description: 'SBOM artifact'
+    value: ${{ steps.sbom-artifact.outputs.artifact }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout core repository
+      uses: actions/checkout@v4
+      with:
+        repository: dotCMS/core
+        token: ${{ inputs.github_token }}
+        path: core
+
+    - name: Set dotCMS version
+      shell: bash
+      run: |
+        formatted_tag=$(echo "${{ inputs.dotcms_version }}" | sed -e 's/^dotcms-cli-//' -e 's/^v//')
+        echo "DOTCMS_VERSION=$formatted_tag" >> $GITHUB_ENV
+
+    - name: Pull and run dotCMS Docker image
+      shell: bash
+      run: |
+        docker pull dotcms/dotcms:${{ env.DOTCMS_VERSION }}
+        docker run -d -p 8082:8082 dotcms/dotcms:${{ env.DOTCMS_VERSION }}
+
+    - name: Install pipx
+      shell: bash
+      run: pip install pipx
+
+    - name: Scan Docker Image with Syft
+      shell: bash
+      run: |
+        pipx run anchore_syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-json > core/sbom-cyclonedx.json
+
+    - name: Rename SBOM file with dotCMS version
+      shell: bash
+      run: |
+        mv core/sbom-cyclonedx.json core/sbom-dotcms-${{ env.DOTCMS_VERSION }}.json
+
+    - name: Upload SBOM to GitHub
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom-dotcms-${{ env.DOTCMS_VERSION }}
+        path: core/sbom-dotcms-${{ env.DOTCMS_VERSION }}.json
+
+    - name: Set SBOM artifact
+      shell: bash
+      id: sbom-artifact
+      env:
+        PACKAGE: ${{ inputs.dotcms_package }}
+        VERSION: ${{ env.DOTCMS_VERSION }}
+      run: |
+        echo "artifact=sbom-dotcms-${VERSION}" >> $GITHUB_OUTPUT

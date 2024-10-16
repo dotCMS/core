@@ -9723,7 +9723,7 @@ a.category_higlighted, a.tag_higlighted {
   text-overflow: clip;
   white-space: nowrap;
   font-family: Monaco, Menlo, sans-serif;
-  font-size: 0.625rem;
+  font-size: 0.75rem;
 }
 
 .aceTextTemplate,
@@ -11268,3 +11268,5 @@ td {
   padding: 0;
   height: calc(100vh - 3rem - 20px - 1rem - 0.5rem - 20px - 61px - 1rem);
 }
+
+/*# sourceMappingURL=dotcms.css.map */

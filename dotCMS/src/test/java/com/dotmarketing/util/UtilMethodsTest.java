@@ -12,6 +12,7 @@ import com.dotcms.UnitTestBase;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Unit test for {@link UtilMethods}
@@ -234,6 +235,39 @@ public class UtilMethodsTest extends UnitTestBase {
 
 		when(user.getUserId()).thenReturn("userId");
 		assertEquals("userId", UtilMethods.extractUserIdOrNull(user));
+	}
+
+	final static String[] rasterImagesExtensions = new String[]{"webp", "png", "gif", "jpg"};
+	final static String[] vectorImagesExtensions = new String[]{"svg", "eps", "ai", "dxf"};
+
+	/**
+	 * Given vector image extensions (SVG or EPS),
+	 * When checking if are vector images,
+	 * Then the method should return true for all vector extensions.
+	 */
+	@Test
+	public void testIsVectorImageWithVectorExtensions() {
+		// Given
+		// When & Then
+		for (String vectorExtension : vectorImagesExtensions) {
+			Assertions.assertTrue(UtilMethods.isVectorImage(vectorExtension),
+					"Expected transformation to be skipped for vector extension: " + vectorExtension);
+		}
+	}
+
+	/**
+	 * Given raster image extensions (JPG, PNG, etc.),
+	 * When checking if are vector images,
+	 * Then the method should return false for all raster extensions.
+	 */
+	@Test
+	public void testIsVectorImageWithRasterExtensions() {
+		// Given
+		// When & Then
+		for (String rasterExtension : rasterImagesExtensions) {
+			Assertions.assertFalse(UtilMethods.isVectorImage(rasterExtension),
+					"Expected transformation not to be skipped for raster extension: " + rasterExtension);
+		}
 	}
 
 }

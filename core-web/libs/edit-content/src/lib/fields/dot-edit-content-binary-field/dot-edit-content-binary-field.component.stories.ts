@@ -1,9 +1,9 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { moduleMetadata, StoryObj, Meta } from '@storybook/angular';
+import { moduleMetadata, StoryObj, Meta, applicationConfig } from '@storybook/angular';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
@@ -32,9 +32,11 @@ const meta: Meta<DotEditContentBinaryFieldComponent> = {
     title: 'Library / Edit Content / Binary Field',
     component: DotEditContentBinaryFieldComponent,
     decorators: [
+        applicationConfig({
+            providers: [provideHttpClient(), DotMessageService]
+        }),
         moduleMetadata({
             imports: [
-                HttpClientModule,
                 BrowserAnimationsModule,
                 CommonModule,
                 ButtonModule,

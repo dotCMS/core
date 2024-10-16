@@ -1,7 +1,7 @@
 import { expect, it } from '@jest/globals';
 import { createFakeEvent } from '@ngneat/spectator';
 import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -68,7 +68,7 @@ describe('AddStyleClassesDialogComponent', () => {
                         }
                     }),
                     mockProvider(JsonClassesService, {
-                        getClasses: jest.fn().mockReturnValue(of({ classes: ['class1', 'class2'] }))
+                        getClasses: jest.fn().mockReturnValue(of(['class1', 'class2']))
                     })
                 ]
             });
@@ -84,7 +84,6 @@ describe('AddStyleClassesDialogComponent', () => {
             expect(autocomplete.unique).toBe(true);
             expect(autocomplete.autofocus).toBe(true);
             expect(autocomplete.multiple).toBe(true);
-            expect(autocomplete.size).toBe(446);
             expect(autocomplete.inputId).toBe('auto-complete-input');
             expect(autocomplete.appendTo).toBe('body');
             expect(autocomplete.dropdown).toBe(true);
@@ -170,7 +169,7 @@ describe('AddStyleClassesDialogComponent', () => {
                         provide: JsonClassesService,
                         useValue: {
                             getClasses() {
-                                return of({ classes: [] });
+                                return of([]);
                             }
                         }
                     }
@@ -198,97 +197,6 @@ describe('AddStyleClassesDialogComponent', () => {
             const list = spectator.query(byTestId('list'));
 
             expect(list.textContent).toContain('no suggestions setup suggestions');
-        });
-    });
-
-    describe('bad format json', () => {
-        beforeEach(() => {
-            spectator = createComponent({
-                providers: [
-                    ...providers,
-                    {
-                        provide: DynamicDialogConfig,
-                        useValue: {
-                            data: {
-                                selectedClasses: []
-                            }
-                        }
-                    },
-                    {
-                        provide: JsonClassesService,
-                        useValue: {
-                            getClasses() {
-                                return of({ badFormat: ['class1'] });
-                            }
-                        }
-                    }
-                ]
-            });
-
-            jsonClassesService = spectator.inject(JsonClassesService, true);
-            dialogRef = spectator.inject(DynamicDialogRef);
-            autocomplete = spectator.query(AutoComplete);
-        });
-
-        it('should set dropdown to false in autocomplete', () => {
-            spectator.detectChanges();
-            expect(autocomplete.dropdown).toBe(false);
-        });
-
-        it('should set component.classes empty', () => {
-            spectator.detectChanges();
-
-            expect(spectator.component.$classes()).toEqual([]);
-        });
-
-        it('should have multiples help message', () => {
-            spectator.detectChanges();
-            const list = spectator.query(byTestId('list'));
-
-            expect(list.textContent).toContain('no suggestions setup suggestions');
-        });
-    });
-
-    describe('error', () => {
-        beforeEach(() => {
-            spectator = createComponent({
-                providers: [
-                    ...providers,
-                    {
-                        provide: DynamicDialogConfig,
-                        useValue: {
-                            data: {
-                                selectedClasses: []
-                            }
-                        }
-                    },
-                    {
-                        provide: JsonClassesService,
-                        useValue: {
-                            getClasses() {
-                                return throwError(
-                                    new Error('An error occurred while fetching classes')
-                                );
-                            }
-                        }
-                    }
-                ]
-            });
-
-            jsonClassesService = spectator.inject(JsonClassesService, true);
-            dialogRef = spectator.inject(DynamicDialogRef);
-            autocomplete = spectator.query(AutoComplete);
-        });
-
-        it('should set dropdown to false in autocomplete', () => {
-            spectator.detectChanges();
-            expect(autocomplete.dropdown).toBe(false);
-        });
-
-        it('should set component.classes empty', () => {
-            spectator.detectChanges();
-
-            expect(spectator.component.$classes()).toEqual([]);
         });
     });
 });

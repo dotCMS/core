@@ -4,21 +4,23 @@ import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
 import { Instance, Props } from 'tippy.js';
 
-import { ComponentRef } from '@angular/core';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { filter, skip, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
-import { DotAIImagePromptComponent, DotAiImagePromptStore } from '@dotcms/ui';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotGeneratedAIImage } from '@dotcms/dotcms-models';
+import { DotAIImagePromptComponent } from '@dotcms/ui';
 
 import { AI_IMAGE_PROMPT_PLUGIN_KEY } from './ai-image-prompt.extension';
 
 interface AIImagePromptProps {
     pluginKey: PluginKey;
     editor: Editor;
-    element: HTMLElement;
-    component: ComponentRef<DotAIImagePromptComponent>;
+    dialogService: DialogService;
+    dotMessageService: DotMessageService;
 }
 
 interface PluginState {
@@ -34,8 +36,6 @@ export class AIImagePromptView {
 
     public node: Node;
 
-    public element: HTMLElement;
-
     public view: EditorView;
 
     public tippy: Instance | undefined;
@@ -44,58 +44,25 @@ export class AIImagePromptView {
 
     public pluginKey: PluginKey;
 
-    public component: ComponentRef<DotAIImagePromptComponent>;
-
     private destroy$ = new Subject<boolean>();
 
-    private store: DotAiImagePromptStore;
+    #dialogService: DialogService | null = null;
+    #dotMessageService: DotMessageService | null = null;
+    #dialogRef: DynamicDialogRef | null = null;
 
     /**
      * Creates a new instance of the AIImagePromptView class.
      * @param {AIImagePromptViewProps} props - The properties for the component.
      */
     constructor(props: AIImagePromptViewProps) {
-        const { editor, element, view, pluginKey, component } = props;
+        const { editor, view, pluginKey, dialogService, dotMessageService } = props;
 
         this.editor = editor;
-        this.element = element;
         this.view = view;
 
-        this.element.remove();
         this.pluginKey = pluginKey;
-        this.component = component;
-
-        this.store = this.component.injector.get(DotAiImagePromptStore);
-
-        /**
-         * Subscription fired by the store when the dialog change of the state
-         * Handle the manual close of the dialog (esc, click outside, x button)
-         */
-        this.store.isOpenDialog$
-            .pipe(
-                skip(1),
-                filter((value) => value === false),
-                takeUntil(this.destroy$)
-            )
-            .subscribe(() => {
-                this.editor.commands.closeImagePrompt();
-            });
-
-        /**
-         * Subscription fired by the store when image is seleted
-         * from the gallery to be inserted it into the editor
-         */
-        this.store.selectedImage$
-            .pipe(
-                filter((selectedImage) => !!selectedImage),
-                takeUntil(this.destroy$)
-            )
-            .subscribe((selectedImage) => {
-                this.editor.chain().insertImage(selectedImage.response.contentlet).run();
-                // A new image is being inserted
-                this.store.hideDialog();
-                this.editor.chain().closeImagePrompt().run();
-            });
+        this.#dialogService = dialogService;
+        this.#dotMessageService = dotMessageService;
     }
 
     update(view: EditorView, prevState: EditorState) {
@@ -104,15 +71,42 @@ export class AIImagePromptView {
 
         // show the dialog
         if (next.aIImagePromptOpen && prev.aIImagePromptOpen === false) {
-            this.store.showDialog(this.editor.getText());
-        }
+            const context = this.editor.getText();
 
-        // hide the dialog handled by isOpenDialog$ subscription
+            const header = this.#dotMessageService.get(
+                'block-editor.extension.ai-image.dialog-title'
+            );
+
+            this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
+                header,
+                appendTo: 'body',
+                closeOnEscape: false,
+                draggable: false,
+                keepInViewport: false,
+                maskStyleClass: 'p-dialog-mask-transparent-ai',
+                resizable: false,
+                modal: true,
+                width: '90%',
+                style: { 'max-width': '1040px' },
+                data: { context }
+            });
+
+            this.#dialogRef.onClose
+                .pipe(takeUntil(this.destroy$))
+                .subscribe((selectedImage: DotGeneratedAIImage) => {
+                    if (selectedImage) {
+                        this.editor.chain().insertImage(selectedImage.response.contentlet).run();
+                    }
+
+                    this.editor.commands.closeImagePrompt();
+                });
+        }
     }
 
     destroy() {
         this.destroy$.next(true);
         this.destroy$.complete();
+        this.#dialogRef?.close();
     }
 }
 

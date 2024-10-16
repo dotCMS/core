@@ -1,5 +1,9 @@
 package com.dotcms.jobs.business.error;
 
+
+
+import com.dotcms.jobs.business.job.AbstractJob;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.LocalDateTime;
@@ -44,6 +48,7 @@ public interface AbstractErrorDetail {
      *
      * @return A LocalDateTime representing when the error was recorded.
      */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = AbstractJob.DATE_PATTERN)
     LocalDateTime timestamp();
 
     /**
