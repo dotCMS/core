@@ -2515,7 +2515,7 @@ create table experiment (
 CREATE INDEX idx_exp_pageid ON experiment (page_id);
 
 -- system table for general purposes and configuration
-create table system_table (
+create table  if not exists system_table (
      key varchar(511) primary key,
      value text not null
 );
