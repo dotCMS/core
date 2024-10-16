@@ -124,7 +124,7 @@ public class AuthenticationResource implements Serializable {
                     @ApiResponse(responseCode = "500", description = "Unexpected error")
                 }
             )
-    public final Response authentication(
+    public Response authentication(
                                    @Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
                                    @RequestBody(description = "This method takes a user's credentials and language preferences to authenticate them.\n\n" +
@@ -230,7 +230,7 @@ public class AuthenticationResource implements Serializable {
                     @ApiResponse(responseCode = "404", description = "User not found")
                 })
     @Path("logInUser")
-    public final Response getLoginUser(@Context final HttpServletRequest request){
+    public Response getLoginUser(@Context final HttpServletRequest request){
         Response res = null;
 
         try {
