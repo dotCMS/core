@@ -307,3 +307,4 @@ This maintenance release includes the following code fixes:
 232. https://github.com/dotCMS/core/issues/29938 : Many to One Relationship Not Maintained When Copied to New Host #29938
 233. Upgraded Java-base to 11.0.16-amzn-fat
 234. XML/Xstream changes for PP Issues
+235. https://github.com/dotCMS/core/issues/30156 : Create Notifications for LTS already EOL or upcoming EOL #30156
