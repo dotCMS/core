@@ -47,15 +47,14 @@ public class ResetPermissionsActionlet extends WorkFlowActionlet{
         try {
 
             User user = processor.getUser();
-            boolean respectFrontendRoles = user.isBackendUser();
 
             PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-            Permissionable asset = PermissionAjax.retrievePermissionable(processor.getContentlet().getIdentifier(), processor.getContentlet().getLanguageId(), user, respectFrontendRoles);
             PermissionBitAPIImpl api = (PermissionBitAPIImpl) APILocator.getPermissionAPI();
-            if (!api.doesUserHavePermission(asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
-                if (!api.checkIfContentletTypeHasEditPermissions(asset, user)) {
+            Permissionable asset = processor.getContentlet();
+            if (!user.isAdmin() && !api.doesUserHavePermission(asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user) &&
+                    !api.checkIfContentletTypeHasEditPermissions(asset, user)) {
+
                     throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + asset.getPermissionId());
-                }
             }
             permissionAPI.removePermissions(asset);
         } catch ( Exception e) {

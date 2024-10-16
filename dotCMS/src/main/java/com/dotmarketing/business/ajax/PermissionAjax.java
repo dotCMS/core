@@ -350,7 +350,7 @@ public class PermissionAjax {
 	}
 
 	@CloseDBIfOpened
-	public static Permissionable retrievePermissionable (String assetId, Long language, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	private Permissionable retrievePermissionable (String assetId, Long language, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		
 		HostAPI hostAPI = APILocator.getHostAPI();
 		Permissionable perm = null;
