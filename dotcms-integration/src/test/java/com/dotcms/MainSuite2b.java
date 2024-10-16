@@ -178,6 +178,7 @@ import com.dotmarketing.startup.runonce.Task240513UpdateContentTypesSystemFieldT
 import com.dotmarketing.startup.runonce.Task240530AddDotAIPortletToLayoutTest;
 import com.dotmarketing.startup.runonce.Task240606AddVariableColumnToWorkflowTest;
 import com.dotmarketing.startup.runonce.Task241009CreatePostgresJobQueueTablesTest;
+import com.dotmarketing.startup.runonce.Task241015ReplaceLanguagesWithLocalesPortletTest;
 import com.dotmarketing.startup.runonce.Task241013RemoveFullPathLcColumnFromIdentifierTest;
 import com.dotmarketing.util.ConfigUtilsTest;
 import com.dotmarketing.util.ITConfigTest;
@@ -386,7 +387,8 @@ import org.junit.runners.Suite.SuiteClasses;
         LegacyJSONObjectRenderTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241009CreatePostgresJobQueueTablesTest.class,
-        Task241013RemoveFullPathLcColumnFromIdentifierTest.class
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
+        Task241015ReplaceLanguagesWithLocalesPortletTest.class
 })
 
 public class MainSuite2b {
