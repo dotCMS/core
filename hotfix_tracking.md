@@ -305,3 +305,5 @@ This maintenance release includes the following code fixes:
 
 231. https://github.com/dotCMS/core/issues/29535 : Investigate and Resolve Session Already Invalidated Issue for PATCH API Call with Bearer Token #29535
 232. https://github.com/dotCMS/core/issues/29938 : Many to One Relationship Not Maintained When Copied to New Host #29938
+233. Upgraded Java-base to 11.0.16-amzn-fat
+234. XML/Xstream changes for PP Issues

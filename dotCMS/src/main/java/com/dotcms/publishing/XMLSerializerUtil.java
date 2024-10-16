@@ -29,6 +29,7 @@ public class XMLSerializerUtil {
 
     private XMLSerializerUtil(){
         xmlSerializer = new XStream(new DomDriver(StandardCharsets.UTF_8.name()));
+        xmlSerializer.autodetectAnnotations(true);
     }
 
     public XStream getXmlSerializer() {

@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import com.thoughtworks.xstream.annotations.XStreamOmitField;
 import io.vavr.control.Try;
 import java.util.concurrent.ExecutionException;
 
@@ -59,6 +60,7 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	private List<PublishingEndPoint> endpoints;
 	private boolean downloading = false;
+	@XStreamOmitField
 	private DependencyProcessor dependencyProcessor;
 	private BundleAssets bundleAssets = new BundleAssets();
 	private Set<String> excludes = new HashSet<>();
