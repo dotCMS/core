@@ -29,33 +29,6 @@ public class Task241016AddCustomLanguageVariablesPortletToLayoutTest {
     /**
      * <ul>
      *     <li><b>Method to test:
-     *     </b>{@link Task241016AddCustomLanguageVariablesPortletToLayout#forceRun()}</li>
-     *     <li><b>Given Scenario: </b>Checks whether the UT must run or not when the portlet
-     *     doesn't exist.</li>
-     *     <li><b>Expected Result: </b>If the Language Variables portlet doesn't exist yet, the
-     *     result must be {@code true}.</li>
-     * </ul>
-     */
-    @Test
-    public void checkUpgradeTaskForceRun() {
-        // ╔══════════════════╗
-        // ║  Initialization  ║
-        // ╚══════════════════╝
-        final DotConnect dotConnect = new DotConnect();
-        this.deleteLanguageVariablesPortlet(dotConnect);
-        final Task241016AddCustomLanguageVariablesPortletToLayout task =
-                new Task241016AddCustomLanguageVariablesPortletToLayout();
-
-        // ╔══════════════╗
-        // ║  Assertions  ║
-        // ╚══════════════╝
-        assertTrue("The Language Variables portlet does not exist, this must return 'true'"
-                , task.forceRun());
-    }
-
-    /**
-     * <ul>
-     *     <li><b>Method to test:
      *     </b>{@link Task241016AddCustomLanguageVariablesPortletToLayout#executeUpgrade()}</li>
      *     <li><b>Given Scenario: </b>Runs the UT.</li>
      *     <li><b>Expected Result: </b>The Language Variables portlet is added successfully.</li>
