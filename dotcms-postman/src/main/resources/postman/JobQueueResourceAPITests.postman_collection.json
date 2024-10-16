@@ -784,16 +784,11 @@
 		}
 	],
 	"auth": {
-		"type": "basic",
-		"basic": [
+		"type": "bearer",
+		"bearer": [
 			{
-				"key": "password",
-				"value": "admin",
-				"type": "string"
-			},
-			{
-				"key": "username",
-				"value": "admin@dotCMS.com",
+				"key": "token",
+				"value": "{{jwt}}",
 				"type": "string"
 			}
 		]
