@@ -4920,16 +4920,9 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 workflowScheme.getId());
 
 
-        final WorkflowActionClass resetPermissionsClass = addSubActionClass("Reset Permissions", workflowSchemeResetPermissionAction.getId(), ResetPermissionsActionlet.class, 0);
+        addSubActionClass("Reset Permissions", workflowSchemeResetPermissionAction.getId(), ResetPermissionsActionlet.class, 0);
 
 
-        final List<WorkflowActionClassParameter> params = new ArrayList<>();
-        final WorkflowActionClassParameter pathParam = new WorkflowActionClassParameter();
-        pathParam.setActionClassId(resetPermissionsClass.getId());
-        pathParam.setKey(MoveContentActionlet.PATH_KEY);
-        pathParam.setValue("//default/application");
-        params.add(pathParam);
-        workflowAPI.saveWorkflowActionClassParameters(params, user);
 
         List<WorkflowStep> steps = workflowAPI.findSteps(workflowScheme);
         assertNotNull(steps);

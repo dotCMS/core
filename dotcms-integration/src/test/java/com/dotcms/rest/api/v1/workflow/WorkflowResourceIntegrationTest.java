@@ -2449,7 +2449,6 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         final InitDataObject freshDataObject = mock(InitDataObject.class);
 
-
         when(freshDataObject.getUser()).thenReturn(userWithBackendRole);
         when(webResource
                 .init(nullable(String.class), any(HttpServletRequest.class),
@@ -2477,16 +2476,9 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 workflowScheme.getId());
 
 
-        final WorkflowActionClass resetPermissionsClass = addSubActionClass("Reset Permissions", workflowSchemeResetPermissionAction.getId(), ResetPermissionsActionlet.class, 0);
+        addSubActionClass("Reset Permissions", workflowSchemeResetPermissionAction.getId(), ResetPermissionsActionlet.class, 0);
 
 
-        final List<WorkflowActionClassParameter> params = new ArrayList<>();
-        final WorkflowActionClassParameter pathParam = new WorkflowActionClassParameter();
-        pathParam.setActionClassId(resetPermissionsClass.getId());
-        pathParam.setKey(MoveContentActionlet.PATH_KEY);
-        pathParam.setValue("//default/application");
-        params.add(pathParam);
-        workflowAPI.saveWorkflowActionClassParameters(params, adminUser);
 
         List<WorkflowStep> steps = workflowAPI.findSteps(workflowScheme);
         assertNotNull(steps);
@@ -2566,6 +2558,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             APILocator.getPermissionAPI().checkPermission(contentletsAfter.get(2), PermissionLevel.READ, userWithBackendRole);
         });
 
+        reset(webResource);
+        prepare();
     }
 
 
