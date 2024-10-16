@@ -17,6 +17,11 @@ import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
 
+
+/**
+ * This Actionlet allows the user to reset the permissions of a contentlet
+ * The user may have edit permissions to fire this action.
+ */
 public class ResetPermissionsActionlet extends WorkFlowActionlet{
     @Override
     public List<WorkflowActionletParameter> getParameters() {
@@ -33,6 +38,9 @@ public class ResetPermissionsActionlet extends WorkFlowActionlet{
         return "This actionlet will reset permissions of the selected contentlets. It does not require any parameters.";
     }
 
+    /*
+    * This method will reset the permissions of the contentlet after checking that the user has edit permissions to modify it.
+    * */
     @Override
     public void executeAction(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
