@@ -1,5 +1,11 @@
 package com.dotcms.publishing;
 
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.model.User;
+
+import java.util.List;
+
 public interface PublisherAPI {
 
     /**

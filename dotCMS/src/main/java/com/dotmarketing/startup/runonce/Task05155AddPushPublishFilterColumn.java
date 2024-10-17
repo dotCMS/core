@@ -41,11 +41,6 @@ public class Task05155AddPushPublishFilterColumn extends AbstractJDBCStartupTask
 
     @Override
     public boolean forceRun() {
-        try {
-            return !new DotDatabaseMetaData().getColumnNames(DbConnectionFactory.getConnection(), "publishing_bundle").contains("filter_key");
-        } catch (SQLException e) {
-            Logger.error(this, e.getMessage(),e);
-            return false;
-        }
+            return true;
     }
 }

@@ -29,6 +29,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -38,6 +40,7 @@ import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Validator;
+import io.vavr.control.Try;
 
 /**
  * <a href="User.java.html"><b><i>View Source</i></b></a>
@@ -295,6 +298,22 @@ public class User extends UserModel implements Recipient {
         this.modificationDate = modificationDate;
         setModified(true);
     }
+
+	public boolean isAnonymousUser(){
+		return UserAPI.CMS_ANON_USER_ID.equals(this.getUserId());
+	}
+
+	public boolean isAdmin() {
+
+		return Try.of(() -> {
+			if (isAnonymousUser()) {
+				return false;
+			}
+			return (APILocator.getRoleAPI().doesUserHaveRole(this, APILocator.getRoleAPI().loadCMSAdminRole()));
+
+		}).getOrElse(false);
+
+	}
 
     public Map<String, Object> toMap() throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         Map<String, Object> map = new HashMap<String, Object>();

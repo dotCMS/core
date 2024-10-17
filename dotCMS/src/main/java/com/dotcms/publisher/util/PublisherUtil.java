@@ -93,15 +93,16 @@ public class PublisherUtil {
 	}
 
 	public static Bundle getBundleByMap(Map<String, Object> row){
-		Bundle b = new Bundle();
-		b.setId(row.get("id").toString());
-		b.setName(row.get("name").toString());
-		b.setPublishDate((Date)row.get("publish_date"));
-		b.setExpireDate((Date)row.get("expire_date"));
-		b.setOwner(UtilMethods.isSet(row.get("owner"))?row.get("owner").toString():"");
-		b.setForcePush(UtilMethods.isSet(row.get("force_push")) && DbConnectionFactory
+		final Bundle bundle = new Bundle();
+		bundle.setId(row.get("id").toString());
+		bundle.setName(row.get("name").toString());
+		bundle.setPublishDate((Date)row.get("publish_date"));
+		bundle.setExpireDate((Date)row.get("expire_date"));
+		bundle.setOwner(UtilMethods.isSet(row.get("owner"))?row.get("owner").toString():"");
+		bundle.setForcePush(UtilMethods.isSet(row.get("force_push")) && DbConnectionFactory
 				.isDBTrue(row.get("force_push").toString()));
-		return b;
+		bundle.setFilterKey(UtilMethods.isSet(row.get("filter_key")) ? row.get("filter_key").toString() : "");
+		return bundle;
 	}
 
 	public static PushedAsset getPushedAssetByMap(Map<String, Object> row){

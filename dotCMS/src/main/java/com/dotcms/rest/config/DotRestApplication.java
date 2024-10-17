@@ -28,6 +28,7 @@ import com.dotcms.rest.api.v1.page.NavResource;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
 import com.dotcms.rest.api.v1.portlet.PortletResource;
+import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResource;
 import com.dotcms.rest.api.v1.relationships.RelationshipsResource;
 import com.dotcms.rest.api.v1.site.SiteResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.RuleResource;
@@ -150,7 +151,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(VTLResource.class);
 					REST_CLASSES.add(ContentVersionResource.class);
 					REST_CLASSES.add(FileAssetsResource.class);
-					REST_CLASSES.add(PushPublishFilterResource.class)
+					REST_CLASSES.add(PushPublishFilterResource.class);
 				}
 			}
 		}

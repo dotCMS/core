@@ -1,5 +1,7 @@
 package com.dotcms.publisher.bundle.bean;
 
+import com.dotmarketing.util.Config;
+
 import java.util.Date;
 
 public class Bundle {

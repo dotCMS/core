@@ -1,6 +1,10 @@
 package com.dotcms.rest.api.v1.pushpublish;
 
 import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.repackage.com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
+import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -14,13 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
+import com.dotcms.repackage.javax.ws.rs.*;
 
 /**
  * This Resource is for the push publishing filters
@@ -48,13 +46,8 @@ public class PushPublishFilterResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getFilters(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response) throws DotDataException {
-        final InitDataObject initData =
-                new WebResource.InitBuilder(webResource)
-                        .requiredBackendUser(true)
-                        .requiredFrontendUser(false)
-                        .requestAndResponse(request, response)
-                        .rejectWhenNoUser(true)
-                        .init();
+
+        final InitDataObject initData = this.webResource.init(null, false, request, true, null);
         final User user = initData.getUser();
 
         final List<FilterDescriptor> list = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(user);
