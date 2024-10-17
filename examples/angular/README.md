@@ -6,12 +6,13 @@ This example project demonstrates how to build manageable dotCMS pages headlessl
 
 - [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
-  - [Obtaining the Example Code](#downloading-the-example)
+  - [Obtaining the Example Code](#obtaining-the-example-code)
   - [Configuration](#configuration)
 - [Running the Application](#running-the-application)
 - [Project Structure](#project-structure)
-- [Key Features](#handling-vanity-urls)
+- [Key Features](#key-features)
   - [Handling Vanity URLs](#handling-vanity-urls)
+  - [Universal Visual Editor](#universal-visual-editor)
 - [Troubleshooting](#troubleshooting)
 - [Further Resources](#further-resources)
 
@@ -27,7 +28,7 @@ Before you begin, ensure you have the following:
 
 ## Getting Started
 
-### Downloading the example
+### Obtaining the Example Code
 
 You can get the code in two ways:
 
@@ -43,7 +44,8 @@ You can get the code in two ways:
    git sparse-checkout set --no-cone examples/angular
    git checkout
    ```
-   The example files will be in the `examples/angular` folder.
+
+The example files will be in the `examples/angular` folder.
 
 ### Configuration
 
@@ -63,7 +65,7 @@ To configure the Angular app to use your dotCMS instance:
    };
    ```
 
-   ⚠️ **Security Note**: Ensure that the `authToken` used here has [read-only permissions](https://www.dotcms.com/docs/latest/user-permissions#FrontEndBackEnd) to minimize security risks in client-side applications.
+⚠️ **Security Note**: Ensure that the `authToken` used here has [read-only permissions](https://www.dotcms.com/docs/latest/user-permissions#FrontEndBackEnd) to minimize security risks in client-side applications.
 
 ## Running the Application
 
@@ -103,7 +105,16 @@ Note: When accessing `localhost:4200/about`, ensure that the `/about` page exist
   - `contentlets-wrapper/`: Component for displaying lists of Contentlets
     - `contentlet/`: Component for rendering individual Contentlets
 
-## Universal Visual Editor
+## Key Features
+
+### Handling Vanity URLs
+
+This example demonstrates how to integrate dotCMS Vanity URLs with Angular routing. Vanity URLs in dotCMS provide alternative paths to internal or external URLs, enhancing site maintenance and SEO.
+
+For implementation details, refer to the [`DotCMSPagesComponent`](./src/app/pages/components/dotcms-pages/dotcms-pages.component.ts) in the example code, which handles routing and Vanity URL redirection.
+
+### Universal Visual Editor
+
 To enable the Universal Visual Editor in dotCMS, follow these steps:
 
 1. In your dotCMS instance, navigate to the "Apps" page
@@ -127,21 +138,100 @@ To enable the Universal Visual Editor in dotCMS, follow these steps:
 
 If you want more information about the UVE, please refer to the [dotCMS UVE Documentation](https://dotcms.com/docs/latest/universal-visual-editor-uve).
 
-## Key Features
-### Handling Vanity URLs
-
-This example demonstrates how to integrate dotCMS Vanity URLs with Angular routing. Vanity URLs in dotCMS provide alternative paths to internal or external URLs, enhancing site maintenance and SEO.
-
-For implementation details, refer to the [`DotCMSPagesComponent`](./src/app/pages/components/dotcms-pages/dotcms-pages.component.ts) in the example code, which handles routing and Vanity URL redirection.
-
 ## Troubleshooting
 
-If you encounter issues:
+If you encounter issues while setting up or running the dotCMS Angular example, here are some common problems and their solutions:
 
-1. Verify that your dotCMS instance is accessible and the AUTH token is valid
-2. Check the browser console for any error messages
-3. Ensure all dependencies are correctly installed (`npm install`)
-4. Verify that the required pages and content exist in your dotCMS instance
+<details>
+<summary><strong>Authentication errors (401 Unauthorized)</strong></summary>
+
+This often occurs when the environment variables are not set correctly.
+
+**Solution:** 
+- Double-check that you've updated the `authToken` in `src/environments/environment.development.ts` with a valid token.
+- Ensure the token has the necessary permissions (at least read access) for the content you're trying to fetch.
+- Verify that the token hasn't expired. If it has, generate a new one in the dotCMS UI.
+</details>
+
+<details>
+<summary><strong>Connection issues</strong></summary>
+
+If you're having trouble connecting to the dotCMS instance:
+
+**Solution:**
+- Verify that the `dotcmsUrl` in `src/environments/environment.development.ts` is correct.
+- Check if you can access the dotCMS instance directly through a web browser.
+- If using `https://demo.dotcms.com`, remember it restarts every 24 hours. You might need to wait or try again later.
+- Ensure your network allows connections to the dotCMS instance (check firewalls, VPNs, etc.).
+</details>
+
+<details>
+<summary><strong>Missing pages or content</strong></summary>
+
+If you're getting 404 errors for pages that should exist:
+
+**Solution:**
+- Ensure the page exists in your dotCMS instance. For example, if you're trying to access `/about`, make sure an "about" page exists in dotCMS.
+- Check if the content types used in the example match those in your dotCMS instance.
+- Verify that the content has been published and is not in draft status.
+</details>
+
+<details>
+<summary><strong>Outdated dependencies or version conflicts</strong></summary>
+
+If you're experiencing unexpected behavior or errors related to dependencies:
+
+**Solution:** Perform a clean reinstall of all dependencies by running:
+```bash
+rm -rf node_modules && rm package-lock.json && npm install
+```
+This command will:
+1. Remove the `node_modules` directory
+2. Delete the `package-lock.json` file
+3. Perform a fresh install of all dependencies
+
+After this, restart your development server:
+```bash
+ng serve
+```
+</details>
+
+<details>
+<summary><strong>Build errors or stale cache</strong></summary>
+
+If you're experiencing build errors or changes aren't reflected in the running application:
+
+**Solution:** Clear the Angular build cache and rebuild the project:
+```bash
+ng cache clean
+ng build --configuration=development
+ng serve
+```
+This sequence of commands will:
+1. Clear the Angular build cache
+2. Rebuild the project with development configuration
+3. Start the development server
+
+This is recommended when:
+- You've made significant changes to your project configuration
+- You're experiencing unexplainable build errors
+- Your changes aren't reflected in the running application despite saving and restarting the dev server
+- You've recently updated Angular or other critical dependencies
+</details>
+
+<details>
+<summary><strong>Universal Visual Editor (UVE) not working</strong></summary>
+
+If the Universal Visual Editor is not functioning as expected:
+
+**Solution:**
+- Ensure you've correctly configured the UVE in your dotCMS instance as described in the [Universal Visual Editor](#universal-visual-editor) section.
+- Verify that your Angular application is running on `http://localhost:4200` (or update the UVE configuration if using a different port).
+- Check that you're accessing the dotCMS edit mode from the correct URL.
+- Clear your browser cache and try again.
+</details>
+
+If you continue to experience issues after trying these solutions, please check the [dotCMS documentation](https://dotcms.com/docs/) or reach out to the dotCMS community for further assistance.
 
 ## Further Resources
 
