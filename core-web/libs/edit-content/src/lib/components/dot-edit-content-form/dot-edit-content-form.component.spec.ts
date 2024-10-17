@@ -5,6 +5,12 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
+
+import { Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+
+import { TabPanel, TabView } from 'primeng/tabview';
 
 import {
     DotContentTypeService,
@@ -14,15 +20,11 @@ import {
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
+import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
-import { Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { DotWorkflowActionsComponent } from '@dotcms/ui';
-import { TabPanel, TabView } from 'primeng/tabview';
-import { of } from 'rxjs';
 import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import { CONTENT_SEARCH_ROUTE } from '../../models/dot-edit-content-field.constant';
 import { DotEditContentService } from '../../services/dot-edit-content.service';

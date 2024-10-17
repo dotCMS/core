@@ -37,7 +37,7 @@ import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
 
 describe('EditContentLayoutComponent', () => {
     let spectator: Spectator<EditContentLayoutComponent>;
-    let component: EditContentLayoutComponent;
+
     let store: SpyObject<InstanceType<typeof DotEditContentStore>>;
     let dotContentTypeService: SpyObject<DotContentTypeService>;
     let workflowActionsService: SpyObject<DotWorkflowsActionsService>;
@@ -87,7 +87,6 @@ describe('EditContentLayoutComponent', () => {
             detectChanges: false
         });
 
-        component = spectator.component;
         spectator.detectChanges();
 
         store = spectator.inject(DotEditContentStore, true);

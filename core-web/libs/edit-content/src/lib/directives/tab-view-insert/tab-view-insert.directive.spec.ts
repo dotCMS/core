@@ -1,9 +1,13 @@
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
 import { Component } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
 import { TabViewModule } from 'primeng/tabview';
-import { MockResizeObserver } from '../../utils/mocks';
+
 import { TabViewInsertDirective } from './tab-view-insert.directive';
+
+import { MockResizeObserver } from '../../utils/mocks';
 
 // Mock component
 @Component({
@@ -39,9 +43,8 @@ describe('TabViewInsertDirective', () => {
         window.ResizeObserver = MockResizeObserver;
         spectator = createComponent();
     });
-
     afterEach(() => {
-        delete (window as any).ResizeObserver;
+        delete window.ResizeObserver;
     });
 
     it('should prepend content', fakeAsync(() => {
