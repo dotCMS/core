@@ -112,6 +112,7 @@ import static org.junit.Assert.*;
 public class WorkflowAPITest extends IntegrationTestBase {
 
     private static User user;
+    private static User adminUser;
     private static Host defaultHost;
     protected static ContentTypeAPIImpl contentTypeAPI;
     protected static FieldAPI fieldAPI;
@@ -327,6 +328,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         //Setting the test user
         user = APILocator.getUserAPI().getSystemUser();
+        adminUser = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", user, false);
         defaultHost = hostAPI.findDefaultHost(user, false);
         contentTypeAPI = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
         fieldAPI = APILocator.getContentTypeFieldAPI();
@@ -4962,7 +4964,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         APILocator.getPermissionAPI().save(
                 getPermission(role, contentType, permissionLevel.getType()),
-                contentType, APILocator.systemUser(), false);
+                contentType, adminUser, false);
     }
 
 

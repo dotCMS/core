@@ -2898,7 +2898,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         APILocator.getPermissionAPI().save(
                 getPermission(role, contentType, permissionLevel.getType()),
-                contentType, APILocator.systemUser(), false);
+                contentType, adminUser, false);
     }
 
 
