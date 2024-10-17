@@ -277,7 +277,7 @@ public class ContentHandler implements IHandler {
         File workingOn=null;
         Contentlet content = null;
 		ContentWrapper wrapper = null;
-		final Collection<File> contents = contentsIn.stream().filter(File::isDirectory).collect(Collectors.toList());
+		final Collection<File> contents = contentsIn.stream().filter(File::isFile).collect(Collectors.toList());
     	try{
 	        final XStream xstream = XStreamHandler.newXStreamInstance();
 			final Set<Pair<String,Long>> pushedIdsToIgnore = new HashSet<>();
