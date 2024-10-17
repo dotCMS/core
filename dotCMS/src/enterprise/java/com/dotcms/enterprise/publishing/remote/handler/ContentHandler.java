@@ -219,7 +219,7 @@ public class ContentHandler implements IHandler {
 		List<File> contents = isHost?FileUtil.listFilesRecursively(bundleFolder, new HostBundler().getFileFilter()):
 				FileUtil.listFilesRecursively(bundleFolder, new ContentBundler().getFileFilter());
 		Collections.sort(contents);
-		contents = contents.stream().filter(f->f.isFile()).collect(Collectors.toList());
+		contents = contents.stream().filter(File::isFile).collect(Collectors.toList());
 		handleContents(contents, bundleFolder, isHost);
 		HandlerUtil.setExistingContent(config.getId(), existingContentMap);
 
@@ -326,7 +326,8 @@ public class ContentHandler implements IHandler {
 				// if a host does not exist on target, skip content
 				if(ignoreContent(content)){
 					Contentlet finalContent = content;
-					Logger.warn(this.getClass(), "Ignoring contentlet:" + content.getIdentifier() + " | " + Try.of(()->finalContent.getTitle()).getOrElse("unknown")  + " . Unable to find referenced host id:" + content.getHost());
+					Logger.warn(this.getClass(), "Ignoring contentlet:" + content.getIdentifier() + " | " + Try.of(
+                            finalContent::getTitle).getOrElse("unknown")  + " . Unable to find referenced host id:" + content.getHost());
 					continue;
 				}
 

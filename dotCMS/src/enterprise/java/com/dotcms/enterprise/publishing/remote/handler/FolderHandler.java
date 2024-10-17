@@ -183,7 +183,7 @@ public class FolderHandler implements IHandler {
 					continue;
 				}
 
-	        	folderName = Try.of(()-> folder.getPath()).getOrNull();
+	        	folderName = Try.of(folder::getPath).getOrNull();
 	        	folderId = folderWrapper.getFolderId();
 	        	host = folderWrapper.getHost();
 
@@ -195,8 +195,8 @@ public class FolderHandler implements IHandler {
 	        	//Check Host if exists otherwise create
 	        	Host localHost = APILocator.getHostAPI().find(host.getIdentifier(), systemUser, false);
 				if(UtilMethods.isEmpty(()->localHost.getIdentifier())){
-					Logger.warn(this.getClass(), "Unable to publish folder:" + folderName + ". Unable to find referenced host id:" + folder.getHostId());
-					Logger.warn(this.getClass(), "Make sure the host exists with the id:" + folder.getHostId() + " before pushing the folder or run the integrity checker before pushing.");
+					Logger.warn(FolderHandler.class, "Unable to publish folder:" + folderName + ". Unable to find referenced host id:" + folder.getHostId());
+					Logger.warn(FolderHandler.class, "Make sure the host exists with the id:" + folder.getHostId() + " before pushing the folder or run the integrity checker before pushing.");
 					continue;
 
 				}
@@ -333,7 +333,7 @@ public class FolderHandler implements IHandler {
             final String errorMsg = String.format("An error occurred when processing Folder in '%s': %s", workingOn,
                     e.getMessage());
             Logger.error(this.getClass(), errorMsg);
-			Logger.error(this, "-- Local Folder: " + (UtilMethods.isSet(temp) ? temp.toString() : "- object is null -"));
+			Logger.error(this, "-- Local Folder: " + (UtilMethods.isSet(temp) ? temp : "- object is null -"));
 			if(UtilMethods.isSet(temp) && UtilMethods.isSet(folderName)) {
 			    Logger.error(this, "-- folderName:" + folderName);
 			}
