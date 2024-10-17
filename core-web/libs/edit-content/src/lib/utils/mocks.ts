@@ -1095,6 +1095,7 @@ export const CONTENT_FORM_DATA_MOCK: DotFormData = {
     },
     tabs: []
 };
+
 export const TABS_MOCK = [
     {
         title: 'Content',
@@ -1276,9 +1277,15 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
  * Mock for ResizeObserver
  */
 export class MockResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+    observe() {
+        //
+    }
+    unobserve() {
+        //
+    }
+    disconnect() {
+        //
+    }
 }
 
 export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [

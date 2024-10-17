@@ -645,7 +645,6 @@ describe('Utils Functions', () => {
     describe('isFilteredType', () => {
         it('should correctly identify filtered and non-filtered field types', () => {
             const allFields = MOCK_CONTENTTYPE_2_TABS.fields;
-            const formControlFieldTypes = MOCK_FORM_CONTROL_FIELDS.map((field) => field.fieldType);
             const nonFormControlFieldTypes = Object.values(NON_FORM_CONTROL_FIELD_TYPES);
 
             // Verify that none of the form control fields are filtered types

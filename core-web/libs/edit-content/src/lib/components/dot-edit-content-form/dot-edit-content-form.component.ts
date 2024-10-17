@@ -107,6 +107,7 @@ export class DotEditContentFormComponent implements OnInit {
         if (!contentType || !contentType.fields) {
             return [];
         }
+
         return contentType.fields.filter((field) => isFilteredType(field));
     });
 
