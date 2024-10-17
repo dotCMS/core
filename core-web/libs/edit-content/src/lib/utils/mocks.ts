@@ -2489,3 +2489,109 @@ export const MOCK_CONTENTTYPE_2_TABS: DotCMSContentType = {
     ],
     nEntries: 0
 };
+
+/**
+ * Fields allowed to be used in form controls from the MOCK_CONTENTTYPE_2_TABS Content Type.
+ * 
+ * This array contains a subset of fields from MOCK_CONTENTTYPE_2_TABS that are suitable
+ * for form controls. It excludes fields of types defined in NON_FORM_CONTROL_FIELD_TYPES,
+ * such as Row, Column, Tab_divider, Constant-Field, and Hidden-Field.
+
+ * 
+ * @see MOCK_CONTENTTYPE_2_TABS
+ * @see NON_FORM_CONTROL_FIELD_TYPES
+ */
+export const MOCK_FORM_CONTROL_FIELDS: DotCMSContentTypeField[] = [
+    {
+        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+        contentTypeId: '196c8d303e265143806ad19356406ae3',
+        dataType: 'TEXT',
+        fieldType: 'Text',
+        fieldTypeLabel: 'Text',
+        fieldVariables: [],
+        fixed: false,
+        forceIncludeInApi: false,
+        iDate: 1729012281000,
+        id: '69b2ccbb36a0efc135db107eb882d74e',
+        indexed: false,
+        listed: false,
+        modDate: 1729012362000,
+        name: 'text1',
+        readOnly: false,
+        required: true,
+        searchable: false,
+        sortOrder: 2,
+        unique: false,
+        variable: 'text1'
+    },
+    {
+        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+        contentTypeId: '196c8d303e265143806ad19356406ae3',
+        dataType: 'TEXT',
+        fieldType: 'Text',
+        fieldTypeLabel: 'Text',
+        fieldVariables: [],
+        fixed: false,
+        forceIncludeInApi: false,
+        hint: 'text2 hint',
+        iDate: 1729012287000,
+        id: '4fb628337f5e27ff96ff6ad320d7952b',
+        indexed: false,
+        listed: false,
+        modDate: 1729012373000,
+        name: 'text2',
+        readOnly: false,
+        required: false,
+        searchable: false,
+        sortOrder: 3,
+        unique: false,
+        variable: 'text2'
+    },
+
+    {
+        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+        contentTypeId: '196c8d303e265143806ad19356406ae3',
+        dataType: 'TEXT',
+        defaultValue: 'default value',
+        fieldType: 'Text',
+        fieldTypeLabel: 'Text',
+        fieldVariables: [],
+        fixed: false,
+        forceIncludeInApi: false,
+        iDate: 1729012357000,
+        id: 'b2d546ae37278b9bb717078be5522a1e',
+        indexed: false,
+        listed: false,
+        modDate: 1729023673000,
+        name: 'text3',
+        readOnly: false,
+        required: false,
+        searchable: false,
+        sortOrder: 5,
+        unique: false,
+        variable: 'text3'
+    },
+
+    {
+        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+        contentTypeId: '196c8d303e265143806ad19356406ae3',
+        dataType: 'TEXT',
+        fieldType: 'Text',
+        fieldTypeLabel: 'Text',
+        fieldVariables: [],
+        fixed: false,
+        forceIncludeInApi: false,
+        iDate: 1729025973000,
+        id: '883619ed3cea50a1ed4cdd76366a4b3c',
+        indexed: false,
+        listed: false,
+        modDate: 1729025973000,
+        name: 'Text 1',
+        readOnly: false,
+        required: false,
+        searchable: false,
+        sortOrder: 9,
+        unique: false,
+        variable: 'text11'
+    }
+];

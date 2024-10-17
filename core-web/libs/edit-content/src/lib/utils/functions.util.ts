@@ -17,7 +17,7 @@ import {
     FIELD_TYPES
 } from '../models/dot-edit-content-field.enum';
 import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
-import { FILTERED_TYPES } from '../models/dot-edit-content-form.enum';
+import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 import { Tab } from '../models/dot-edit-content-form.interface';
 import { SIDEBAR_LOCAL_STORAGE_KEY } from '../models/dot-edit-content.constant';
 
@@ -264,7 +264,9 @@ export const setPersistSidebarState = (value: string) => {
  */
 
 export const isFilteredType = (field: DotCMSContentTypeField): boolean => {
-    return Object.values(FILTERED_TYPES).includes(field.fieldType as FILTERED_TYPES);
+    return Object.values(NON_FORM_CONTROL_FIELD_TYPES).includes(
+        field.fieldType as NON_FORM_CONTROL_FIELD_TYPES
+    );
 };
 
 /**

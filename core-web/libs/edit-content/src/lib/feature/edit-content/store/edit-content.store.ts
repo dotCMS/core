@@ -1,6 +1,5 @@
 import { tapResponse } from '@ngrx/component-store';
 import {
-    getState,
     patchState,
     signalStore,
     withComputed,
@@ -12,7 +11,7 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { computed, effect, inject } from '@angular/core';
+import { computed, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { switchMap, tap } from 'rxjs/operators';
@@ -314,10 +313,6 @@ export const DotEditContentStore = signalStore(
             }
 
             store.getPersistenceDataFromLocalStore();
-
-            effect(() => {
-                console.info('state', getState(store));
-            });
         }
     })
 );
