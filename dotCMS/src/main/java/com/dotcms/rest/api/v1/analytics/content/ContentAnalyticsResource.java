@@ -13,6 +13,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,6 +32,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -49,7 +51,7 @@ import java.util.stream.Collectors;
         description = "Endpoints that exposes information related to how dotCMS content is accessed and interacted with by users.")
 public class ContentAnalyticsResource {
 
-    private static final UserCustomDefinedRequestMatcher USER_CUSTOM_DEFINED_REQUEST_MATCHER =  new UserCustomDefinedRequestMatcher()
+    private static final UserCustomDefinedRequestMatcher USER_CUSTOM_DEFINED_REQUEST_MATCHER =  new UserCustomDefinedRequestMatcher();
 
     private final WebResource webResource;
     private final ContentAnalyticsAPI contentAnalyticsAPI;
@@ -207,7 +209,7 @@ public class ContentAnalyticsResource {
     @Operation(
             operationId = "fireUserCustomEvent",
             summary = "Fire an user custom event.",
-            description = "receives a custom event paylod and fires the event to the collectors",
+            description = "receives a custom event payload and fires the event to the collectors",
             tags = {"Content Analytics"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "If the event was created successfully",
@@ -240,7 +242,9 @@ public class ContentAnalyticsResource {
                 .init();
 
         DotPreconditions.checkNotNull(userEventPayload, IllegalArgumentException.class, "The 'userEventPayload' JSON cannot be null");
+        DotPreconditions.checkNotNull(userEventPayload.get("event_type"), IllegalArgumentException.class, "The 'event_type' field is required");
         Logger.debug(this,  ()->"Creating an user custom event with the payload: " + userEventPayload);
+        request.setAttribute("requestId", UUIDUtil.uuid());
         WebEventsCollectorServiceFactory.getInstance().getWebEventsCollectorService().fireCollectorsAndEmitEvent(request, response, USER_CUSTOM_DEFINED_REQUEST_MATCHER, userEventPayload);
         return new ResponseEntityStringView("User event created successfully");
     }
