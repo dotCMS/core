@@ -1,6 +1,5 @@
 <!--Todo: handle Loading and Saving state-->
 @if ($store.isLoaded()) {
-    @let formData = $store.formData();
     @let contentType = $store.contentType();
     @let variable = contentType.variable;
     @let contentlet = $store.contentlet();
@@ -29,8 +28,6 @@
     }
 
     <dot-edit-content-form
-        (changeValue)="setFormValue($event)"
-        [formData]="formData"
         data-testId="edit-content-layout__body"
         class="edit-content-layout__body" />
 

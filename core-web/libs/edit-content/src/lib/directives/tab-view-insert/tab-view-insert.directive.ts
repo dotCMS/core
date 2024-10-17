@@ -59,19 +59,19 @@ export class TabViewInsertDirective implements AfterViewInit {
         const viewRef = this.#viewContainer.createEmbeddedView(template);
         viewRef.detectChanges();
 
+        const wrapper = this.#renderer.createElement('div');
+        const testId = isPrepend ? 'tabview-prepend-content' : 'tabview-append-content';
+        this.#renderer.setAttribute(wrapper, 'data-testid', testId);
+        this.#renderer.addClass(wrapper, testId);
+
         viewRef.rootNodes.forEach((node) => {
-            if (isPrepend) {
-                this.#renderer.insertBefore(tabViewNavContent, node, tabViewNavContent.firstChild);
-            } else {
-                this.#renderer.appendChild(tabViewNavContent, node);
-            }
+            this.#renderer.appendChild(wrapper, node);
         });
 
-        if (viewRef.rootNodes.length > 0) {
-            this.#renderer.addClass(
-                viewRef.rootNodes[0],
-                isPrepend ? 'tabview-prepend-content' : 'tabview-append-content'
-            );
+        if (isPrepend) {
+            this.#renderer.insertBefore(tabViewNavContent, wrapper, tabViewNavContent.firstChild);
+        } else {
+            this.#renderer.appendChild(tabViewNavContent, wrapper);
         }
     }
 }

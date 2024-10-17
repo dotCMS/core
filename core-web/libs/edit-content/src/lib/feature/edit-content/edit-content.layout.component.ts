@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
@@ -14,7 +14,6 @@ import { DotEditContentStore } from './store/edit-content.store';
 
 import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
-import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 
 @Component({
@@ -47,35 +46,4 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 })
 export class EditContentLayoutComponent {
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
-
-    formValue = signal<Record<string, string>>({});
-
-    /**
-     * Set the form value to be saved.
-     *
-     * @param {Record<string, string>} formValue - An object containing the key-value pairs of the contentlet to be saved.
-     * @memberof EditContentLayoutComponent
-     */
-    setFormValue(formValue: Record<string, string>) {
-        this.formValue.set(formValue);
-    }
-
-    /**
-     * Fire the workflow action.
-     *
-     * @param {DotCMSWorkflowAction} action
-     * @memberof EditContentLayoutComponent
-     */
-    fireWorkflowAction({ actionId, inode, contentType }: DotWorkflowActionParams): void {
-        this.$store.fireWorkflowAction({
-            actionId,
-            inode,
-            data: {
-                contentlet: {
-                    ...this.formValue(),
-                    contentType
-                }
-            }
-        });
-    }
 }

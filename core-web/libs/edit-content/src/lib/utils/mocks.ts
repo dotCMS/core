@@ -13,13 +13,14 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
     DotCMSTempFile,
+    DotCMSWorkflowAction,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { WYSIWYG_MOCK } from '../fields/dot-edit-content-wysiwyg-field/mocks/dot-edit-content-wysiwyg-field.mock';
 import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
-import { EditContentPayload } from '../models/dot-edit-content-form.interface';
+import { DotFormData } from '../models/dot-edit-content-form.interface';
 import {
     CustomTreeNode,
     TreeNodeItem
@@ -1052,8 +1053,7 @@ export const LAYOUT_FIELDS_VALUES_MOCK = {
 const metadata = {};
 metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = false;
 
-export const CONTENT_FORM_DATA_MOCK: EditContentPayload = {
-    actions: [],
+export const CONTENT_FORM_DATA_MOCK: DotFormData = {
     contentType: {
         metadata,
         layout: LAYOUT_MOCK,
@@ -1093,11 +1093,14 @@ export const CONTENT_FORM_DATA_MOCK: EditContentPayload = {
         contentTypeIcon: 'event_note',
         variant: 'DEFAULT'
     },
-    loading: false,
-    layout: {
-        showSidebar: true
-    }
+    tabs: []
 };
+export const TABS_MOCK = [
+    {
+        title: 'Content',
+        layout: CONTENT_FORM_DATA_MOCK.contentType.layout
+    }
+];
 
 /* CONTENT TYPE MOCKS */
 
@@ -1529,4 +1532,960 @@ export const TEMP_FILE_MOCK: DotCMSTempFile = {
     referenceUrl: '/dA/temp_1e8021f973/tmp/enterprise-angular.pdf',
     thumbnailUrl:
         '/contentAsset/image/temp_1e8021f973/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/enterprise-angular.pdf'
+};
+
+// ContentType 1 tab, with 1 row and 2 columns
+// 1st column has 1 text field required and 1 text field with hint
+// 2nd column has 1 text field with default value
+// +---------------------------------------------------+
+// |                   Row                             |
+// +-------------------+-------------------------------+
+// |      Column 1     |       Column 2                |
+// +-------------------+-------------------------------+
+// | Text1 (required)  |                               |
+// |                   |                               |
+// | Text2 (with hint) |        Text3                  |
+// |                   |        (with default value)   |
+// +-------------------+-------------------------------+
+
+export const MOCK_CONTENTTYPE_1_TAB: DotCMSContentType = {
+    baseType: 'CONTENT',
+    clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+    defaultType: false,
+    fields: [
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'SYSTEM',
+            fieldContentTypeProperties: [],
+            fieldType: 'Row',
+            fieldTypeLabel: 'Row',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729012258000,
+            id: '5f992a3eb0d9b92fec736475c4bfb183',
+            indexed: false,
+            listed: false,
+            modDate: 1729012263000,
+            name: 'fields-0',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 0,
+            unique: false,
+            variable: 'fields0'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'SYSTEM',
+            fieldContentTypeProperties: [],
+            fieldType: 'Column',
+            fieldTypeLabel: 'Column',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729012258000,
+            id: 'b0b0c33b9abf64ecccf51f7900b9af19',
+            indexed: false,
+            listed: false,
+            modDate: 1729012263000,
+            name: 'fields-1',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 1,
+            unique: false,
+            variable: 'fields1'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'TEXT',
+            fieldType: 'Text',
+            fieldTypeLabel: 'Text',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729012281000,
+            id: '69b2ccbb36a0efc135db107eb882d74e',
+            indexed: false,
+            listed: false,
+            modDate: 1729012362000,
+            name: 'text1',
+            readOnly: false,
+            required: true,
+            searchable: false,
+            sortOrder: 2,
+            unique: false,
+            variable: 'text1'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'TEXT',
+            fieldType: 'Text',
+            fieldTypeLabel: 'Text',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            hint: 'text2 hint',
+            iDate: 1729012287000,
+            id: '4fb628337f5e27ff96ff6ad320d7952b',
+            indexed: false,
+            listed: false,
+            modDate: 1729012373000,
+            name: 'text2',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 3,
+            unique: false,
+            variable: 'text2'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'SYSTEM',
+            fieldContentTypeProperties: [],
+            fieldType: 'Column',
+            fieldTypeLabel: 'Column',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729012263000,
+            id: '683e570c1fe299628ea10639f354c725',
+            indexed: false,
+            listed: false,
+            modDate: 1729012287000,
+            name: 'fields-2',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 4,
+            unique: false,
+            variable: 'fields2'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'TEXT',
+            defaultValue: 'default value',
+            fieldType: 'Text',
+            fieldTypeLabel: 'Text',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729012357000,
+            id: 'b2d546ae37278b9bb717078be5522a1e',
+            indexed: false,
+            listed: false,
+            modDate: 1729012357000,
+            name: 'text3',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 5,
+            unique: false,
+            variable: 'text3'
+        }
+    ],
+    fixed: false,
+    folder: 'SYSTEM_FOLDER',
+    host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+    iDate: 1729012258000,
+    icon: 'event_note',
+    id: '196c8d303e265143806ad19356406ae3',
+    layout: [
+        {
+            divider: {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                contentTypeId: '196c8d303e265143806ad19356406ae3',
+                dataType: 'SYSTEM',
+                fieldContentTypeProperties: [],
+                fieldType: 'Row',
+                fieldTypeLabel: 'Row',
+                fieldVariables: [],
+                fixed: false,
+                forceIncludeInApi: false,
+                iDate: 1729012258000,
+                id: '5f992a3eb0d9b92fec736475c4bfb183',
+                indexed: false,
+                listed: false,
+                modDate: 1729012263000,
+                name: 'fields-0',
+                readOnly: false,
+                required: false,
+                searchable: false,
+                sortOrder: 0,
+                unique: false,
+                variable: 'fields0'
+            },
+            columns: [
+                {
+                    columnDivider: {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                        contentTypeId: '196c8d303e265143806ad19356406ae3',
+                        dataType: 'SYSTEM',
+                        fieldContentTypeProperties: [],
+                        fieldType: 'Column',
+                        fieldTypeLabel: 'Column',
+                        fieldVariables: [],
+                        fixed: false,
+                        forceIncludeInApi: false,
+                        iDate: 1729012258000,
+                        id: 'b0b0c33b9abf64ecccf51f7900b9af19',
+                        indexed: false,
+                        listed: false,
+                        modDate: 1729012263000,
+                        name: 'fields-1',
+                        readOnly: false,
+                        required: false,
+                        searchable: false,
+                        sortOrder: 1,
+                        unique: false,
+                        variable: 'fields1'
+                    },
+                    fields: [
+                        {
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                            contentTypeId: '196c8d303e265143806ad19356406ae3',
+                            dataType: 'TEXT',
+                            fieldType: 'Text',
+                            fieldTypeLabel: 'Text',
+                            fieldVariables: [],
+                            fixed: false,
+                            forceIncludeInApi: false,
+                            iDate: 1729012281000,
+                            id: '69b2ccbb36a0efc135db107eb882d74e',
+                            indexed: false,
+                            listed: false,
+                            modDate: 1729012362000,
+                            name: 'text1',
+                            readOnly: false,
+                            required: true,
+                            searchable: false,
+                            sortOrder: 2,
+                            unique: false,
+                            variable: 'text1'
+                        },
+                        {
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                            contentTypeId: '196c8d303e265143806ad19356406ae3',
+                            dataType: 'TEXT',
+                            fieldType: 'Text',
+                            fieldTypeLabel: 'Text',
+                            fieldVariables: [],
+                            fixed: false,
+                            forceIncludeInApi: false,
+                            hint: 'text2 hint',
+                            iDate: 1729012287000,
+                            id: '4fb628337f5e27ff96ff6ad320d7952b',
+                            indexed: false,
+                            listed: false,
+                            modDate: 1729012373000,
+                            name: 'text2',
+                            readOnly: false,
+                            required: false,
+                            searchable: false,
+                            sortOrder: 3,
+                            unique: false,
+                            variable: 'text2'
+                        }
+                    ]
+                },
+                {
+                    columnDivider: {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                        contentTypeId: '196c8d303e265143806ad19356406ae3',
+                        dataType: 'SYSTEM',
+                        fieldContentTypeProperties: [],
+                        fieldType: 'Column',
+                        fieldTypeLabel: 'Column',
+                        fieldVariables: [],
+                        fixed: false,
+                        forceIncludeInApi: false,
+                        iDate: 1729012263000,
+                        id: '683e570c1fe299628ea10639f354c725',
+                        indexed: false,
+                        listed: false,
+                        modDate: 1729012287000,
+                        name: 'fields-2',
+                        readOnly: false,
+                        required: false,
+                        searchable: false,
+                        sortOrder: 4,
+                        unique: false,
+                        variable: 'fields2'
+                    },
+                    fields: [
+                        {
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                            contentTypeId: '196c8d303e265143806ad19356406ae3',
+                            dataType: 'TEXT',
+                            fieldType: 'Text',
+                            fieldTypeLabel: 'Text',
+                            fieldVariables: [],
+                            fixed: false,
+                            forceIncludeInApi: false,
+                            iDate: 1729012357000,
+                            id: 'b2d546ae37278b9bb717078be5522a1e',
+                            indexed: false,
+                            listed: false,
+                            modDate: 1729012357000,
+                            name: 'text3',
+                            readOnly: false,
+                            required: false,
+                            searchable: false,
+                            sortOrder: 5,
+                            unique: false,
+                            variable: 'text3'
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    metadata: {
+        CONTENT_EDITOR2_ENABLED: false
+    },
+    modDate: 1729012373000,
+    multilingualable: false,
+    name: 'test Mock',
+    system: false,
+    systemActionMappings: {},
+    variable: 'TestMock',
+    versionable: true,
+    workflows: [
+        {
+            archived: false,
+            creationDate: new Date(1729012304196),
+            defaultScheme: false,
+            description: '',
+            entryActionId: null,
+            id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+            mandatory: false,
+            modDate: new Date(1728492941334),
+            name: 'System Workflow',
+            system: true
+        }
+    ],
+    nEntries: 0
+};
+
+// Mock of actions of a new ContentType
+export const MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB: DotCMSWorkflowAction[] = [
+    {
+        assignable: false,
+        commentable: false,
+        condition: '',
+        icon: 'workflowIcon',
+        id: 'ceca71a0-deee-4999-bd47-b01baa1bcfc8',
+        metadata: null,
+        name: 'Save',
+        nextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
+        nextStep: 'ee24a4cb-2d15-4c98-b1bd-6327126451f3',
+        nextStepCurrentStep: false,
+        order: 0,
+        owner: null,
+        roleHierarchyForAssign: false,
+        schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+        showOn: ['NEW', 'EDITING', 'LOCKED', 'PUBLISHED', 'UNPUBLISHED'],
+        actionInputs: []
+    },
+    {
+        actionInputs: [],
+        assignable: false,
+        commentable: false,
+        condition: '',
+        icon: 'workflowIcon',
+        id: 'b9d89c80-3d88-4311-8365-187323c96436',
+        metadata: null,
+        name: 'Publish',
+        nextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
+        nextStep: 'dc3c9cd0-8467-404b-bf95-cb7df3fbc293',
+        nextStepCurrentStep: false,
+        order: 0,
+        owner: null,
+        roleHierarchyForAssign: false,
+        schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+        showOn: ['LISTING', 'UNLOCKED', 'NEW', 'EDITING', 'LOCKED', 'PUBLISHED', 'UNPUBLISHED']
+    }
+];
+
+// AKA contentlet
+// Contain the values saved from a specific contenttype
+export const MOCK_CONTENTLET_1_TAB: DotCMSContentlet = {
+    archived: false,
+    baseType: 'CONTENT',
+    contentType: 'TestMock',
+    creationDate: '1729016573151',
+    folder: 'SYSTEM_FOLDER',
+    hasLiveVersion: true,
+    hasTitleImage: false,
+    host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+    hostName: 'demo.dotcms.com',
+    identifier: '2978bb3b66e372b1ffffa9376f33c37b',
+    inode: 'cc120e84-ae80-49d8-9473-36d183d0c1c9',
+    languageId: 1,
+    live: true,
+    locked: false,
+    modDate: '1729024086645',
+    modUser: 'dotcms.org.1',
+    modUserName: 'Admin User',
+    owner: 'dotcms.org.1',
+    ownerName: 'Admin User',
+    publishDate: '1729024086674',
+    publishUser: 'dotcms.org.1',
+    publishUserName: 'Admin User',
+    sortOrder: 0,
+    stInode: '196c8d303e265143806ad19356406ae3',
+    // Start content of the form
+    text1: 'content text 1',
+    text2: 'content text 2',
+    text3: 'default value modified',
+    text11: 'Tab 2 input content', // input in the second tab
+    // end content of the form
+    title: '2978bb3b66e372b1ffffa9376f33c37b',
+    titleImage: 'TITLE_IMAGE_NOT_FOUND',
+    url: '/content.7af6259d-51b0-4c49-9e08-67cbc74100d6',
+    working: true
+};
+
+// ContentType with 2 tabs
+// Tab 1: 1 row and 2 columns
+// 1st column has 1 text field required and 1 text field with hint
+// 2nd column has 1 text field with default value
+// Tab 2: 1 row with 1 column containing 1 text field
+// +---------------------------------------------------+
+// |  Tab 1                |  Tab 2                    |
+// +---------------------------------------------------+
+// |        Row            |        Row                |
+// +----------+------------+---------------------------+
+// | Column 1 | Column 2   |      Column 1             |
+// +----------+------------+---------------------------+
+// | Text1    |            |                           |
+// |(required)|            |                           |
+// |          |   Text3    |       Text1               |
+// | Text2    |  (default  |                           |
+// | (hint)   |   value)   |                           |
+// +----------+------------+---------------------------+
+export const MOCK_CONTENTTYPE_2_TABS: DotCMSContentType = {
+    baseType: 'CONTENT',
+    clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+    defaultType: false,
+    fields: [
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'SYSTEM',
+            fieldContentTypeProperties: [],
+            fieldType: 'Row',
+            fieldTypeLabel: 'Row',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729012258000,
+            id: '5f992a3eb0d9b92fec736475c4bfb183',
+            indexed: false,
+            listed: false,
+            modDate: 1729012263000,
+            name: 'fields-0',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 0,
+            unique: false,
+            variable: 'fields0'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'SYSTEM',
+            fieldContentTypeProperties: [],
+            fieldType: 'Column',
+            fieldTypeLabel: 'Column',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729012258000,
+            id: 'b0b0c33b9abf64ecccf51f7900b9af19',
+            indexed: false,
+            listed: false,
+            modDate: 1729012263000,
+            name: 'fields-1',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 1,
+            unique: false,
+            variable: 'fields1'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'TEXT',
+            fieldType: 'Text',
+            fieldTypeLabel: 'Text',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729012281000,
+            id: '69b2ccbb36a0efc135db107eb882d74e',
+            indexed: false,
+            listed: false,
+            modDate: 1729012362000,
+            name: 'text1',
+            readOnly: false,
+            required: true,
+            searchable: false,
+            sortOrder: 2,
+            unique: false,
+            variable: 'text1'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'TEXT',
+            fieldType: 'Text',
+            fieldTypeLabel: 'Text',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            hint: 'text2 hint',
+            iDate: 1729012287000,
+            id: '4fb628337f5e27ff96ff6ad320d7952b',
+            indexed: false,
+            listed: false,
+            modDate: 1729012373000,
+            name: 'text2',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 3,
+            unique: false,
+            variable: 'text2'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'SYSTEM',
+            fieldContentTypeProperties: [],
+            fieldType: 'Column',
+            fieldTypeLabel: 'Column',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729012263000,
+            id: '683e570c1fe299628ea10639f354c725',
+            indexed: false,
+            listed: false,
+            modDate: 1729012287000,
+            name: 'fields-2',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 4,
+            unique: false,
+            variable: 'fields2'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'TEXT',
+            defaultValue: 'default value',
+            fieldType: 'Text',
+            fieldTypeLabel: 'Text',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729012357000,
+            id: 'b2d546ae37278b9bb717078be5522a1e',
+            indexed: false,
+            listed: false,
+            modDate: 1729023673000,
+            name: 'text3',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 5,
+            unique: false,
+            variable: 'text3'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'SYSTEM',
+            fieldType: 'Tab_divider',
+            fieldTypeLabel: 'Tab Divider',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729025952000,
+            id: '263d6fa59a75fe9fc33ca929903c34fe',
+            indexed: false,
+            listed: false,
+            modDate: 1729025952000,
+            name: 'New Tab',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 6,
+            unique: false,
+            variable: 'newTab'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'SYSTEM',
+            fieldContentTypeProperties: [],
+            fieldType: 'Row',
+            fieldTypeLabel: 'Row',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729025973000,
+            id: 'b699c53c74fedd58e866627a09a1f3b7',
+            indexed: false,
+            listed: false,
+            modDate: 1729025973000,
+            name: 'fields-3',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 7,
+            unique: false,
+            variable: 'fields3'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'SYSTEM',
+            fieldContentTypeProperties: [],
+            fieldType: 'Column',
+            fieldTypeLabel: 'Column',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729025973000,
+            id: '76c04624b88dbb58207a4a40bbac4bca',
+            indexed: false,
+            listed: false,
+            modDate: 1729025973000,
+            name: 'fields-4',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 8,
+            unique: false,
+            variable: 'fields4'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'TEXT',
+            fieldType: 'Text',
+            fieldTypeLabel: 'Text',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729025973000,
+            id: '883619ed3cea50a1ed4cdd76366a4b3c',
+            indexed: false,
+            listed: false,
+            modDate: 1729025973000,
+            name: 'Text 1',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 9,
+            unique: false,
+            variable: 'text11'
+        }
+    ],
+    fixed: false,
+    folder: 'SYSTEM_FOLDER',
+
+    host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+    iDate: 1729012258000,
+    icon: 'event_note',
+    id: '196c8d303e265143806ad19356406ae3',
+    layout: [
+        {
+            divider: {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                contentTypeId: '196c8d303e265143806ad19356406ae3',
+                dataType: 'SYSTEM',
+                fieldContentTypeProperties: [],
+                fieldType: 'Row',
+                fieldTypeLabel: 'Row',
+                fieldVariables: [],
+                fixed: false,
+                forceIncludeInApi: false,
+                iDate: 1729012258000,
+                id: '5f992a3eb0d9b92fec736475c4bfb183',
+                indexed: false,
+                listed: false,
+                modDate: 1729012263000,
+                name: 'fields-0',
+                readOnly: false,
+                required: false,
+                searchable: false,
+                sortOrder: 0,
+                unique: false,
+                variable: 'fields0'
+            },
+            columns: [
+                {
+                    columnDivider: {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                        contentTypeId: '196c8d303e265143806ad19356406ae3',
+                        dataType: 'SYSTEM',
+                        fieldContentTypeProperties: [],
+                        fieldType: 'Column',
+                        fieldTypeLabel: 'Column',
+                        fieldVariables: [],
+                        fixed: false,
+                        forceIncludeInApi: false,
+                        iDate: 1729012258000,
+                        id: 'b0b0c33b9abf64ecccf51f7900b9af19',
+                        indexed: false,
+                        listed: false,
+                        modDate: 1729012263000,
+                        name: 'fields-1',
+                        readOnly: false,
+                        required: false,
+                        searchable: false,
+                        sortOrder: 1,
+                        unique: false,
+                        variable: 'fields1'
+                    },
+                    fields: [
+                        {
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                            contentTypeId: '196c8d303e265143806ad19356406ae3',
+                            dataType: 'TEXT',
+                            fieldType: 'Text',
+                            fieldTypeLabel: 'Text',
+                            fieldVariables: [],
+                            fixed: false,
+                            forceIncludeInApi: false,
+                            iDate: 1729012281000,
+                            id: '69b2ccbb36a0efc135db107eb882d74e',
+                            indexed: false,
+                            listed: false,
+                            modDate: 1729012362000,
+                            name: 'text1',
+                            readOnly: false,
+                            required: true,
+                            searchable: false,
+                            sortOrder: 2,
+                            unique: false,
+                            variable: 'text1'
+                        },
+                        {
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                            contentTypeId: '196c8d303e265143806ad19356406ae3',
+                            dataType: 'TEXT',
+                            fieldType: 'Text',
+                            fieldTypeLabel: 'Text',
+                            fieldVariables: [],
+                            fixed: false,
+                            forceIncludeInApi: false,
+                            hint: 'text2 hint',
+                            iDate: 1729012287000,
+                            id: '4fb628337f5e27ff96ff6ad320d7952b',
+                            indexed: false,
+                            listed: false,
+                            modDate: 1729012373000,
+                            name: 'text2',
+                            readOnly: false,
+                            required: false,
+                            searchable: false,
+                            sortOrder: 3,
+                            unique: false,
+                            variable: 'text2'
+                        }
+                    ]
+                },
+                {
+                    columnDivider: {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                        contentTypeId: '196c8d303e265143806ad19356406ae3',
+                        dataType: 'SYSTEM',
+                        fieldContentTypeProperties: [],
+                        fieldType: 'Column',
+                        fieldTypeLabel: 'Column',
+                        fieldVariables: [],
+                        fixed: false,
+                        forceIncludeInApi: false,
+                        iDate: 1729012263000,
+                        id: '683e570c1fe299628ea10639f354c725',
+                        indexed: false,
+                        listed: false,
+                        modDate: 1729012287000,
+                        name: 'fields-2',
+                        readOnly: false,
+                        required: false,
+                        searchable: false,
+                        sortOrder: 4,
+                        unique: false,
+                        variable: 'fields2'
+                    },
+                    fields: [
+                        {
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                            contentTypeId: '196c8d303e265143806ad19356406ae3',
+                            dataType: 'TEXT',
+                            defaultValue: 'default value',
+                            fieldType: 'Text',
+                            fieldTypeLabel: 'Text',
+                            fieldVariables: [],
+                            fixed: false,
+                            forceIncludeInApi: false,
+                            iDate: 1729012357000,
+                            id: 'b2d546ae37278b9bb717078be5522a1e',
+                            indexed: false,
+                            listed: false,
+                            modDate: 1729023673000,
+                            name: 'text3',
+                            readOnly: false,
+                            required: false,
+                            searchable: false,
+                            sortOrder: 5,
+                            unique: false,
+                            variable: 'text3'
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            divider: {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                contentTypeId: '196c8d303e265143806ad19356406ae3',
+                dataType: 'SYSTEM',
+                fieldType: 'Tab_divider',
+                fieldTypeLabel: 'Tab Divider',
+                fieldVariables: [],
+                fixed: false,
+                forceIncludeInApi: false,
+                iDate: 1729025952000,
+                id: '263d6fa59a75fe9fc33ca929903c34fe',
+                indexed: false,
+                listed: false,
+                modDate: 1729025952000,
+                name: 'New Tab',
+                readOnly: false,
+                required: false,
+                searchable: false,
+                sortOrder: 6,
+                unique: false,
+                variable: 'newTab'
+            },
+            columns: []
+        },
+        {
+            divider: {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                contentTypeId: '196c8d303e265143806ad19356406ae3',
+                dataType: 'SYSTEM',
+                fieldContentTypeProperties: [],
+                fieldType: 'Row',
+                fieldTypeLabel: 'Row',
+                fieldVariables: [],
+                fixed: false,
+                forceIncludeInApi: false,
+                iDate: 1729025973000,
+                id: 'b699c53c74fedd58e866627a09a1f3b7',
+                indexed: false,
+                listed: false,
+                modDate: 1729025973000,
+                name: 'fields-3',
+                readOnly: false,
+                required: false,
+                searchable: false,
+                sortOrder: 7,
+                unique: false,
+                variable: 'fields3'
+            },
+            columns: [
+                {
+                    columnDivider: {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                        contentTypeId: '196c8d303e265143806ad19356406ae3',
+                        dataType: 'SYSTEM',
+                        fieldContentTypeProperties: [],
+                        fieldType: 'Column',
+                        fieldTypeLabel: 'Column',
+                        fieldVariables: [],
+                        fixed: false,
+                        forceIncludeInApi: false,
+                        iDate: 1729025973000,
+                        id: '76c04624b88dbb58207a4a40bbac4bca',
+                        indexed: false,
+                        listed: false,
+                        modDate: 1729025973000,
+                        name: 'fields-4',
+                        readOnly: false,
+                        required: false,
+                        searchable: false,
+                        sortOrder: 8,
+                        unique: false,
+                        variable: 'fields4'
+                    },
+                    fields: [
+                        {
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                            contentTypeId: '196c8d303e265143806ad19356406ae3',
+                            dataType: 'TEXT',
+                            fieldType: 'Text',
+                            fieldTypeLabel: 'Text',
+                            fieldVariables: [],
+                            fixed: false,
+                            forceIncludeInApi: false,
+                            iDate: 1729025973000,
+                            id: '883619ed3cea50a1ed4cdd76366a4b3c',
+                            indexed: false,
+                            listed: false,
+                            modDate: 1729025973000,
+                            name: 'Text 1',
+                            readOnly: false,
+                            required: false,
+                            searchable: false,
+                            sortOrder: 9,
+                            unique: false,
+                            variable: 'text11'
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    metadata: {
+        CONTENT_EDITOR2_ENABLED: true
+    },
+    modDate: 1729025973000,
+    multilingualable: false,
+    name: 'test Mock',
+    system: false,
+    systemActionMappings: {},
+    variable: 'TestMock',
+    versionable: true,
+    workflows: [
+        {
+            archived: false,
+            creationDate: new Date(1729012842268),
+            defaultScheme: false,
+            description: '',
+            entryActionId: null,
+            id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+            mandatory: false,
+            modDate: new Date(1728492941334),
+            name: 'System Workflow',
+            system: true
+        }
+    ],
+    nEntries: 0
 };

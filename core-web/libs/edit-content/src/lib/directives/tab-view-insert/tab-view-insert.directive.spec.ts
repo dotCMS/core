@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { fakeAsync, tick } from '@angular/core/testing';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { TabViewModule } from 'primeng/tabview';
 import { MockResizeObserver } from '../../utils/mocks';
 import { TabViewInsertDirective } from './tab-view-insert.directive';
@@ -43,28 +44,37 @@ describe('TabViewInsertDirective', () => {
         delete (window as any).ResizeObserver;
     });
 
-    it('should prepend content', () => {
+    it('should prepend content', fakeAsync(() => {
         spectator.detectChanges();
-        const prependContent = spectator.query('[data-testid="prepend-content"]');
+        tick();
+        const prependContent = spectator.query(byTestId('prepend-content'));
         expect(prependContent).toHaveText('Prepend Content');
-    });
+    }));
 
     it('should append content', () => {
         spectator.detectChanges();
-        const appendContent = spectator.query('[data-testid="append-content"]');
+        const appendContent = spectator.query(byTestId('append-content'));
         expect(appendContent).toHaveText('Append Content');
     });
 
-    it('should position prepend content before tabs', () => {
+    it('should position content blocks correctly within .p-tabview-nav-content', () => {
         const tabViewNavContent = spectator.query('.p-tabview-nav-content');
-        const prependContent = spectator.query('[data-testid="prepend-content"]');
-        expect(tabViewNavContent?.firstChild).toBe(prependContent);
-        expect(prependContent?.previousElementSibling).toBeNull();
+        const prependContent = spectator.query(byTestId('tabview-prepend-content'));
+        const appendContent = spectator.query(byTestId('tabview-append-content'));
+        const tabsUl = spectator.query('.p-tabview-nav');
+
+        expect(tabViewNavContent?.children.length).toBe(3);
+        expect(tabViewNavContent?.children[0]).toBe(prependContent);
+        expect(tabViewNavContent?.children[1]).toBe(tabsUl);
+        expect(tabViewNavContent?.children[2]).toBe(appendContent);
     });
 
-    it('should position append content after tabs', () => {
+    it('should have prepend content as the first child and append content as the last child', () => {
         const tabViewNavContent = spectator.query('.p-tabview-nav-content');
-        const appendContent = spectator.query('[data-testid="append-content"]');
-        expect(tabViewNavContent?.lastChild).toBe(appendContent);
+        const prependContent = spectator.query(byTestId('tabview-prepend-content'));
+        const appendContent = spectator.query(byTestId('tabview-append-content'));
+
+        expect(tabViewNavContent?.firstElementChild).toBe(prependContent);
+        expect(tabViewNavContent?.lastElementChild).toBe(appendContent);
     });
 });

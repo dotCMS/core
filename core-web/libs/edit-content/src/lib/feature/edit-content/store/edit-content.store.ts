@@ -1,5 +1,6 @@
 import { tapResponse } from '@ngrx/component-store';
 import {
+    getState,
     patchState,
     signalStore,
     withComputed,
@@ -11,7 +12,7 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { computed, inject } from '@angular/core';
+import { computed, effect, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { switchMap, tap } from 'rxjs/operators';
@@ -33,7 +34,11 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
-import { getPersistSidebarState, setPersistSidebarState } from '../../../utils/functions.util';
+import {
+    getPersistSidebarState,
+    setPersistSidebarState,
+    transformFormDataFn
+} from '../../../utils/functions.util';
 
 interface EditContentState {
     actions: DotCMSWorkflowAction[];
@@ -113,7 +118,13 @@ export const DotEditContentStore = signalStore(
                 contentlet: store.contentlet(),
                 contentType: store.contentType()
             };
-        })
+        }),
+
+        /**
+         * Computed property that transforms the layout of the current content type
+         * into tabs and returns them.
+         */
+        tabs: computed(() => transformFormDataFn(store.contentType()))
     })),
     withMethods(
         (
@@ -303,6 +314,10 @@ export const DotEditContentStore = signalStore(
             }
 
             store.getPersistenceDataFromLocalStore();
+
+            effect(() => {
+                console.info('state', getState(store));
+            });
         }
     })
 );
