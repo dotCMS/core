@@ -73,13 +73,11 @@ public class AIProxiedClient {
      * @return the AI response
      */
     public <T extends Serializable> AIResponse sendToAI(final AIRequest<T> request, final OutputStream output) {
-        final OutputStream finalOutput = Optional.ofNullable(output).orElseGet(ByteArrayOutputStream::new);
-
-        strategy.applyStrategy(client, responseEvaluator, request, finalOutput);
+        final OutputStream resultOutput = strategy.applyStrategy(client, responseEvaluator, request, output);
 
         return Optional.ofNullable(output)
                 .map(out -> AIResponse.EMPTY)
-                .orElseGet(() -> AIResponse.builder().withResponse(finalOutput.toString()).build());
+                .orElseGet(() -> AIResponse.builder().withResponse(resultOutput.toString()).build());
     }
 
 }
