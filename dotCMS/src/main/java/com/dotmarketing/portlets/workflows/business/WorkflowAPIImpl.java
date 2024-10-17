@@ -72,6 +72,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.LargeMessageActionlet;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
+import com.dotmarketing.portlets.workflows.actionlet.AnalyticsFireUserEventActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.AsyncEmailActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.BatchAction;
@@ -289,7 +290,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				DotEmbeddingsActionlet.class,
 				OpenAIContentPromptActionlet.class,
 				OpenAIGenerateImageActionlet.class,
-				OpenAIAutoTagActionlet.class
+				OpenAIAutoTagActionlet.class,
+				AnalyticsFireUserEventActionlet.class
 		));
 
 		refreshWorkFlowActionletMap();

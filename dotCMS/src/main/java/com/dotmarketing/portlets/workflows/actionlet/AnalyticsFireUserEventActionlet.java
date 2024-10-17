@@ -81,13 +81,19 @@ public class AnalyticsFireUserEventActionlet extends WorkFlowActionlet {
 
             request.setAttribute("requestId", Objects.nonNull(request.getAttribute("requestId")) ?
                     request.getAttribute("requestId") : UUIDUtil.uuid());
+            final HashMap<String, String> objectDetail = new HashMap<>();
             final Map<String, Serializable> userEventPayload = new HashMap<>();
+
             userEventPayload.put("id", Objects.nonNull(objectId) ? objectId : identifier);
+
+            objectDetail.put("id", identifier);
+            objectDetail.put("object_content_type_var_name", Objects.nonNull(objectType) ? objectType : "CONTENT");
+            userEventPayload.put("object", objectDetail);
             userEventPayload.put("event_type", eventType);
-            // todo: I am not sure about the object type, I will add it as a custom field
             webEventsCollectorService.fireCollectorsAndEmitEvent(request, response, USER_CUSTOM_DEFINED_REQUEST_MATCHER, userEventPayload);
         } else {
             Logger.warn(this, "The request or response is null, can't send the event for the contentlet: " + identifier);
+            // todo: here we need more info to populate what the collectors used to populate from the request
         }
     }
 
