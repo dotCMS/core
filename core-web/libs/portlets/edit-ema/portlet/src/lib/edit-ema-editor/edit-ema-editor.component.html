@@ -41,6 +41,7 @@
                     (edit)="handleEditContentlet($event)"
                     (editVTL)="handleEditVTL($event)"
                     (delete)="deleteContentlet($event)"
+                    (editStyles)="handleEditStyles($event)"
                     (addWidget)="dialog.addWidget($event)"
                     (addForm)="dialog.addForm($event)"
                     (addContent)="dialog.addContentlet($event)"
@@ -58,13 +59,24 @@
         </div>
     </div>
 }
-@if ($editorProps().palette; as palette) {
-    <dot-edit-ema-palette
-        [languageId]="palette.languageId"
-        [containers]="palette.containers"
-        [variantId]="palette.variantId"
-        data-testId="palette" />
+
+@if (!!$editorProps().componentToStyle) {
+    <div class="sidepanel">
+        <dot-uve-edit-style-form (formValueChange)="handleFormValueChange($event)" [contentlet]="$editorProps().componentToStyle" />
+    </div>
+} @else {
+    @if ($editorProps().palette; as palette) {
+        <dot-edit-ema-palette
+            class="sidepanel"
+            [languageId]="palette.languageId"
+            [containers]="palette.containers"
+            [variantId]="palette.variantId"
+            data-testId="palette" />
+    }
 }
+
+
+
 @if ($editorProps().showDialogs) {
     <dot-edit-ema-dialog
         (action)="onCustomEvent($event)"
