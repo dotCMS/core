@@ -41,7 +41,6 @@ public class AIResponse {
             return this;
         }
 
-
         public AIResponse build() {
             return new AIResponse(this);
         }
