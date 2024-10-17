@@ -1,4 +1,5 @@
 import {
+    DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
     DotCMSContentTypeLayoutRow,
@@ -17,6 +18,7 @@ import {
 } from '../models/dot-edit-content-field.enum';
 import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
 import { FILTERED_TYPES } from '../models/dot-edit-content-form.enum';
+import { Tab } from '../models/dot-edit-content-form.interface';
 import { SIDEBAR_LOCAL_STORAGE_KEY } from '../models/dot-edit-content.constant';
 
 // This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
@@ -263,4 +265,29 @@ export const setPersistSidebarState = (value: string) => {
 
 export const isFilteredType = (field: DotCMSContentTypeField): boolean => {
     return Object.values(FILTERED_TYPES).includes(field.fieldType as FILTERED_TYPES);
+};
+
+/**
+ * Transforms the form data by filtering out specific field types and organizing the content into tabs.
+ *
+ * @param formData - The original form data to be transformed.
+ * @returns The transformed form data with filtered fields and organized tabs.
+ */
+export const transformFormDataFn = (contentType: DotCMSContentType): Tab[] => {
+    if (!contentType) {
+        return [];
+    }
+
+    const tabs = transformLayoutToTabs('Content', contentType.layout);
+
+    return tabs.map((tab) => ({
+        ...tab,
+        layout: tab.layout.map((row) => ({
+            ...row,
+            columns: row.columns.map((column) => ({
+                ...column,
+                fields: column.fields.filter((field) => !isFilteredType(field))
+            }))
+        }))
+    }));
 };
