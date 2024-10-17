@@ -194,7 +194,12 @@ public class FolderHandler implements IHandler {
 
 	        	//Check Host if exists otherwise create
 	        	Host localHost = APILocator.getHostAPI().find(host.getIdentifier(), systemUser, false);
+				if(UtilMethods.isEmpty(()->localHost.getIdentifier())){
+					Logger.warn(this.getClass(), "Unable to publish folder:" + folderName + ". Unable to find referenced host id:" + folder.getHostId());
+					Logger.warn(this.getClass(), "Make sure the host exists with the id:" + folder.getHostId() + " before pushing the folder or run the integrity checker before pushing.");
+					continue;
 
+				}
 	        	temp = fAPI.findFolderByPath(folderId.getPath(), localHost, systemUser, false);
 	        	if(folderWrapper.getOperation().equals(PushPublisherConfig.Operation.UNPUBLISH)) {
 	        		String folderIden = temp.getIdentifier();
