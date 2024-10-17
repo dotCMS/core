@@ -26,6 +26,7 @@ public class BasicProfileCollector implements Collector {
     public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
                                         final CollectorPayloadBean collectorPayloadBean) {
 
+        // todo: add the user id
         final String requestId = (String)collectorContextMap.get("requestId");
         final Long time = (Long)collectorContextMap.get("time");
         final String clusterId   = (String)collectorContextMap.get("cluster");
