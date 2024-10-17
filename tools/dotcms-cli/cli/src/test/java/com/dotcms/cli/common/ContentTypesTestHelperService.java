@@ -63,9 +63,6 @@ public class ContentTypesTestHelperService {
 
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
 
-        final long identifier = System.currentTimeMillis();
-        final String varName = "var_" + identifier;
-
         final ImmutableSimpleContentType contentType = buildContentType(
                 null, null, detailPage, urlMapPattern
         );
@@ -74,7 +71,12 @@ public class ContentTypesTestHelperService {
                 from(contentType).build();
         contentTypeAPI.createContentTypes(List.of(saveRequest));
 
-        return varName;
+        // Make sure the content type is created, and we are giving the server some time to process
+        findContentType(contentType.variable()).orElseThrow(() -> new RuntimeException(
+                "Content type not found after creation: " + contentType.variable()
+        ));
+
+        return contentType.variable();
     }
 
     /**

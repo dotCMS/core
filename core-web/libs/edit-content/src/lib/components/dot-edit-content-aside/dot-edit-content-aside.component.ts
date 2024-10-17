@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentAsideInformationComponent } from './components/dot-content-aside-information/dot-content-aside-information.component';
@@ -38,12 +38,7 @@ export class DotEditContentAsideComponent {
     $loading = input.required<boolean>({ alias: 'loading' });
 
     /**
-     * A variable to control the collapsed state
-     */
-    $collapsed = input.required<boolean>({ alias: 'collapsed' });
-
-    /**
      * A variable to control the toggle state
      */
-    $toggle = output<boolean>({ alias: 'toggle' });
+    $toggle = output<void>({ alias: 'toggle' });
 }

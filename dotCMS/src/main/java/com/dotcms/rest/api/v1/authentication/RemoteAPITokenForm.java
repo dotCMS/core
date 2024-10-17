@@ -8,33 +8,33 @@ import java.util.Map;
 @JsonDeserialize(builder = RemoteAPITokenForm.Builder.class)
 public class RemoteAPITokenForm {
     private TokenInfo token;
-    private RemoteHostInfo remoteHostInfo;
-    private AuthInfo authInfo;
+    private RemoteHostInfo remote;
+    private AuthInfo auth;
 
     private RemoteAPITokenForm(Builder builder) {
         this.token = builder.getToken();
-        this.remoteHostInfo = builder.getRemoteHostInfo();
-        this.authInfo = builder.getAuthInfo();
+        this.remote = builder.getRemote();
+        this.auth = builder.getAuth();
     }
 
     public String host(){
-        return remoteHostInfo.host;
+        return remote.host;
     }
 
     public String protocol(){
-        return remoteHostInfo.protocol;
+        return remote.protocol;
     }
 
     public int port(){
-        return remoteHostInfo.port;
+        return remote.port;
     }
 
     public String login(){
-        return authInfo.login;
+        return auth.login;
     }
 
     public String password(){
-        return authInfo.password;
+        return auth.password;
     }
 
     public Map<String, Object> getTokenInfo(){
@@ -64,11 +64,11 @@ public class RemoteAPITokenForm {
             return token;
         }
 
-        public RemoteAPITokenForm.RemoteHostInfo getRemoteHostInfo() {
+        public RemoteHostInfo getRemote() {
             return remote;
         }
 
-        public RemoteAPITokenForm.AuthInfo getAuthInfo() {
+        public AuthInfo getAuth() {
             return auth;
         }
     }

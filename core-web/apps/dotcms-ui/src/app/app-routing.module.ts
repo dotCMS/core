@@ -71,6 +71,16 @@ const PORTLETS_ANGULAR: Route[] = [
             import('@dotcms/portlets/dot-locales/portlet').then((m) => m.DotLocalesRoutes)
     },
     {
+        path: 'analytics-search',
+        data: {
+            reuseRoute: false
+        },
+        loadComponent: () =>
+            import('@dotcms/portlets/dot-analytics-search/portlet').then(
+                (m) => m.DotAnalyticsSearchComponent
+            )
+    },
+    {
         path: 'forms',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],

@@ -7,27 +7,33 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { DotUploadFileService } from '@dotcms/data-access';
+import { DotUploadFileService, DotUploadService } from '@dotcms/data-access';
 
-import { DotFileFieldUploadService } from './upload-file.service';
+import { DotFileFieldUploadService, UploadFileProps } from './upload-file.service';
 
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
-import { NEW_FILE_MOCK, NEW_FILE_EDITABLE_MOCK } from '../../../../utils/mocks';
+import { NEW_FILE_MOCK, NEW_FILE_EDITABLE_MOCK, TEMP_FILE_MOCK } from '../../../../utils/mocks';
 
 describe('DotFileFieldUploadService', () => {
     let spectator: SpectatorHttp<DotFileFieldUploadService>;
     let dotUploadFileService: SpyObject<DotUploadFileService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
+    let tempFileService: SpyObject<DotUploadService>;
 
     const createHttp = createHttpFactory({
         service: DotFileFieldUploadService,
-        providers: [mockProvider(DotUploadFileService), mockProvider(DotEditContentService)]
+        providers: [
+            mockProvider(DotUploadFileService),
+            mockProvider(DotEditContentService),
+            mockProvider(DotUploadService)
+        ]
     });
 
     beforeEach(() => {
         spectator = createHttp();
         dotUploadFileService = spectator.inject(DotUploadFileService);
         dotEditContentService = spectator.inject(DotEditContentService);
+        tempFileService = spectator.inject(DotUploadService);
     });
 
     it('should be created', () => {
@@ -93,6 +99,53 @@ describe('DotFileFieldUploadService', () => {
             req.flush('my content');
 
             expect(dotEditContentService.getContentById).toHaveBeenCalled();
+        });
+    });
+
+    describe('uploadFile', () => {
+        it('should upload a file with temp upload type', () => {
+            tempFileService.uploadFile.mockResolvedValue(TEMP_FILE_MOCK);
+
+            const file = new File([''], 'test.png', { type: 'image/png' });
+            const uploadType = 'temp';
+            const params: UploadFileProps = { file, uploadType, acceptedFiles: [], maxSize: '' };
+
+            spectator.service.uploadFile(params).subscribe((result) => {
+                expect(result.source).toBe('temp');
+                expect(result.file).toBe(TEMP_FILE_MOCK);
+                expect(tempFileService.uploadFile).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        it('should upload a file with contentlet upload type', () => {
+            dotUploadFileService.uploadDotAsset.mockReturnValue(of(NEW_FILE_MOCK.entity));
+
+            const file = new File([''], 'test.png', { type: 'image/png' });
+            const uploadType = 'dotasset';
+            const params: UploadFileProps = { file, uploadType, acceptedFiles: [], maxSize: '' };
+
+            spectator.service.uploadFile(params).subscribe((result) => {
+                expect(result.source).toBe('contentlet');
+                expect(result.file).toBe(NEW_FILE_MOCK.entity);
+                expect(dotUploadFileService.uploadDotAsset).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        it('should upload a file with contentlet upload type', () => {
+            dotUploadFileService.uploadDotAsset.mockReturnValue(of(NEW_FILE_MOCK.entity));
+            tempFileService.uploadFile.mockResolvedValue(TEMP_FILE_MOCK);
+
+            const file = 'file';
+            const uploadType = 'dotasset';
+            const params: UploadFileProps = { file, uploadType, acceptedFiles: [], maxSize: '' };
+
+            spectator.service.uploadFile(params).subscribe((result) => {
+                expect(result.source).toBe('contentlet');
+                expect(result.file).toBe(NEW_FILE_MOCK.entity);
+                expect(tempFileService.uploadFile).toHaveBeenCalledTimes(1);
+                expect(dotUploadFileService.uploadDotAsset).toHaveBeenCalledTimes(1);
+                expect(dotUploadFileService.uploadDotAsset).toHaveBeenCalledWith(TEMP_FILE_MOCK.id);
+            });
         });
     });
 });

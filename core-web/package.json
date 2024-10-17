@@ -260,7 +260,6 @@
         "tslint-angular": "^3.0.3",
         "typedoc": "^0.25.4",
         "typescript": "5.4.5",
-        "verdaccio": "^5.0.4",
         "vite": "~5.0.0",
         "vite-plugin-dts": "~2.3.0",
         "webpack": "^5.64.0",

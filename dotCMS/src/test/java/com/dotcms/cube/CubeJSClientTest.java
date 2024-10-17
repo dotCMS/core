@@ -157,14 +157,16 @@ public class CubeJSClientTest {
                     getAccessToken());
 
             try {
-                cubeClient.send(null);
+                CubeJSQuery query = null;
+                cubeClient.send(query);
                 throw new AssertionError("IllegalArgumentException Expected");
             }  catch (IllegalArgumentException e) {
                 mockhttpServer.mustNeverCalled("/cubejs-api/v1/load");
             }
 
             try {
-                cubeClient.send(null);
+                CubeJSQuery query = null;
+                cubeClient.send(query);
                 throw new AssertionError("IllegalArgumentException Expected");
             }  catch (IllegalArgumentException e) {
                 mockhttpServer.mustNeverCalled("/cubejs-api/v1/load");

@@ -13,7 +13,11 @@ export const DotEditContentRoutes: Route[] = [
                 title: 'Create Content',
                 component: EditContentLayoutComponent
             },
-            { path: ':id', title: 'Edit Content', component: EditContentLayoutComponent }
+            {
+                path: ':id',
+                title: 'Edit Content',
+                component: EditContentLayoutComponent
+            }
         ]
     }
 ];

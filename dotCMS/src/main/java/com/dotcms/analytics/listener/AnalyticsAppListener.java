@@ -8,6 +8,7 @@ import com.dotcms.analytics.model.AnalyticsAppProperty;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.exception.AnalyticsException;
 import com.dotcms.security.apps.AbstractProperty;
@@ -22,9 +23,11 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -99,6 +102,7 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
                             Logger.error(
                                 this,
                                 String.format("Cannot process event for app update due to: %s", e.getMessage()), e);
+                            notifyErrorToTheUser(e, event);
                         }
                     });
             });
@@ -110,6 +114,17 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
         if (appHasEnvVars) {
             pushEnvVarOverrideNotAllowedMessage();
         }
+    }
+
+    private void notifyErrorToTheUser(final AnalyticsException e, final AppSecretSavedEvent event) {
+
+        final SystemMessage systemMessage = new SystemMessageBuilder()
+                .setMessage(String.format("Cannot do the app update due to: %s", e.getMessage()))
+                .setSeverity(MessageSeverity.ERROR)
+                .setLife(DateUtil.TEN_SECOND_MILLIS)
+                .create();
+
+        SystemMessageEventUtil.getInstance().pushMessage(systemMessage, Collections.singletonList(event.getUserId()));
     }
 
     /**
