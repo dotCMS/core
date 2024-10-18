@@ -81,4 +81,16 @@ describe('DotLocalesListComponent', () => {
 
         expect(spectator.query('.p-tag-success')).toHaveText('Default');
     });
+
+    it('should open AddEditDialog with locale id when row is clicked', () => {
+        spectator.detectChanges();
+
+        jest.spyOn(spectator.component.store, 'openAddEditDialog');
+
+        const row = spectator.query(byTestId('locale-row'));
+
+        spectator.click(row);
+
+        expect(spectator.component.store.openAddEditDialog).toHaveBeenCalled();
+    });
 });
