@@ -158,7 +158,7 @@ public class HostFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link HostFactoryImpl#bySiteName(String)}
+     * Method to test: {@link HostFactory#bySiteName(String, boolean)}
      * Given Scenario: get host by name for a non-existing host
      * ExpectedResult: host cache should return 404 for not existing host by name
      */
@@ -185,8 +185,8 @@ public class HostFactoryImplTest extends IntegrationTestBase {
 
         // Check 404 after deletion of test host
         final HostCache hostCache = new HostCacheImpl();
-        final Host nonExistingHost = hostFactory.bySiteName(hostName);
-        final Host cached404Host = hostCache.getByName(hostName);
+        final Host nonExistingHost = hostFactory.bySiteName(hostName, false);
+        final Host cached404Host = hostCache.getByName(hostName, false);
 
         assertNull(nonExistingHost);
         assertNotNull(cached404Host);
