@@ -102,14 +102,15 @@ export class DotEditContentFormComponent implements OnInit {
      */
     changeValue = output<Record<string, string>>();
 
-    $filteredFields = computed(() => {
-        const contentType = this.$store.contentType();
-        if (!contentType || !contentType.fields) {
-            return [];
-        }
-
-        return contentType.fields.filter((field) => isFilteredType(field));
-    });
+    /**
+     * Computed property that retrieves the filtered fields from the store.
+     *
+     * @type {ComputedSignal<DotCMSContentTypeField[]>}
+     * @memberof DotEditContentFormComponent
+     */
+    $filteredFields = computed(
+        () => this.$store.contentType()?.fields?.filter(isFilteredType) ?? []
+    );
 
     /**
      * FormGroup instance that contains the form controls for the fields in the content type
