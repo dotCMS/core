@@ -2,7 +2,14 @@ const el = element.innerHTML;
 
 function bad1(userInput) {
 // ruleid: insecure-document-method
-  el.innerHTML = '<div>' + userInput + '</div>';
+  const { JSDOM } = require('jsdom');
+
+  function bad1(userInput) {
+    const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
+    const safeElement = dom.window.document.createElement('div');
+    safeElement.textContent = userInput;
+    el.appendChild(safeElement);
+  }
 }
 
 function bad2(userInput) {
