@@ -7,7 +7,19 @@ function bad1(userInput) {
 
 function bad2(userInput) {
 // ruleid: insecure-document-method
-  document.body.outerHTML = userInput;
+  // Import jsdom at the top of your file
+  const { JSDOM } = require('jsdom');
+
+  function bad2(userInput) {
+    // Create a new JSDOM instance
+    const dom = new JSDOM('<!DOCTYPE html><body></body>');
+    const document = dom.window.document;
+
+    // Safely set the content by creating a new element and setting its text content
+    const newElement = document.createElement('div');
+    newElement.textContent = userInput;
+    document.body.appendChild(newElement);
+  }
 }
 
 function bad3(userInput) {
