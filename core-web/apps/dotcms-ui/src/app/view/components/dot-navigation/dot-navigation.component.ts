@@ -27,10 +27,10 @@ export class DotNavigationComponent {
 
     /**
      * Signal representing the menu items from the DotNavigationService.
-     * 
+     *
      * This signal is synchronized with the `items$` observable from the `DotNavigationService`.
      * The `requireSync` option ensures that the signal is updated synchronously with the observable.
-     * 
+     *
      * @type {Signal<MenuItem[]>}
      */
     $menu = toSignal(this.#dotNavigationService.items$, {
@@ -39,11 +39,11 @@ export class DotNavigationComponent {
 
     /**
      * Signal indicating whether the navigation is collapsed.
-     * 
-     * This signal is synchronized with the `collapsed$` observable from the 
-     * `DotNavigationService`. It ensures that the state of the navigation 
+     *
+     * This signal is synchronized with the `collapsed$` observable from the
+     * `DotNavigationService`. It ensures that the state of the navigation
      * (collapsed or expanded) is kept in sync with the service.
-     * 
+     *
      * @type {Signal<boolean>}
      */
     $isCollapsed = toSignal(this.#dotNavigationService.collapsed$, {
