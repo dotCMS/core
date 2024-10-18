@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
 
-import { Component, HostBinding, HostListener, OnInit } from '@angular/core';
+import { Component, HostBinding, HostListener, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
@@ -13,20 +14,22 @@ import { DotNavigationService } from './services/dot-navigation.service';
     styleUrls: ['./dot-navigation.component.scss'],
     templateUrl: 'dot-navigation.component.html'
 })
-export class DotNavigationComponent implements OnInit {
+export class DotNavigationComponent {
+    readonly #dotNavigationService = inject(DotNavigationService);
+    readonly #iframeOverlayService = inject(IframeOverlayService);
+
+    $menu = toSignal(this.#dotNavigationService.items$, {
+        requireSync: true
+    });
+
+    $isCollapsed = toSignal(this.#dotNavigationService.collapsed$, {
+        requireSync: true
+    });
+
     menu$: Observable<DotMenu[]>;
 
     @HostBinding('style.overflow-y') get overFlow() {
-        return this.dotNavigationService.collapsed$.getValue() ? '' : 'auto';
-    }
-
-    constructor(
-        public dotNavigationService: DotNavigationService,
-        public iframeOverlayService: IframeOverlayService
-    ) {}
-
-    ngOnInit() {
-        this.menu$ = this.dotNavigationService.items$;
+        return this.#dotNavigationService.collapsed$.getValue() ? '' : 'auto';
     }
 
     /**
@@ -40,8 +43,8 @@ export class DotNavigationComponent implements OnInit {
         $event.originalEvent.stopPropagation();
 
         if (!$event.originalEvent.ctrlKey && !$event.originalEvent.metaKey) {
-            this.dotNavigationService.reloadCurrentPortlet($event.data.id);
-            this.iframeOverlayService.hide();
+            this.#dotNavigationService.reloadCurrentPortlet($event.data.id);
+            this.#iframeOverlayService.hide();
         }
     }
 
@@ -53,10 +56,10 @@ export class DotNavigationComponent implements OnInit {
      * @memberof DotNavigationComponent
      */
     onMenuClick(event: { originalEvent: MouseEvent; data: DotMenu }): void {
-        if (this.dotNavigationService.collapsed$.getValue()) {
-            this.dotNavigationService.goTo(event.data.menuItems[0].menuLink);
+        if (this.#dotNavigationService.collapsed$.getValue()) {
+            this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
         } else {
-            this.dotNavigationService.setOpen(event.data.id);
+            this.#dotNavigationService.setOpen(event.data.id);
         }
     }
 
@@ -67,8 +70,8 @@ export class DotNavigationComponent implements OnInit {
      */
     @HostListener('document:click')
     handleDocumentClick(): void {
-        if (this.dotNavigationService.collapsed$.getValue()) {
-            this.dotNavigationService.closeAllSections();
+        if (this.#dotNavigationService.collapsed$.getValue()) {
+            this.#dotNavigationService.closeAllSections();
         }
     }
 }
