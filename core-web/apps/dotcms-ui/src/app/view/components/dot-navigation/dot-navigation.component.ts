@@ -51,7 +51,7 @@ export class DotNavigationComponent {
     });
 
     @HostBinding('style.overflow-y') get overFlow() {
-        return this.#dotNavigationService.collapsed$.getValue() ? '' : 'auto';
+        return this.$isCollapsed() ? '' : 'auto';
     }
 
     /**
@@ -78,7 +78,7 @@ export class DotNavigationComponent {
      * @memberof DotNavigationComponent
      */
     onMenuClick(event: { originalEvent: MouseEvent; data: DotMenu }): void {
-        if (this.#dotNavigationService.collapsed$.getValue()) {
+        if (this.$isCollapsed()) {
             this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
         } else {
             this.#dotNavigationService.setOpen(event.data.id);
@@ -92,7 +92,7 @@ export class DotNavigationComponent {
      */
     @HostListener('document:click')
     handleDocumentClick(): void {
-        if (this.#dotNavigationService.collapsed$.getValue()) {
+        if (this.$isCollapsed()) {
             this.#dotNavigationService.closeAllSections();
         }
     }
