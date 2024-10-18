@@ -1,1 +1,25 @@
-<p>dot-analytics-search works!</p>
+<section class="content-analytics__query">
+    <div class="content-analytics__header">
+        <h4>{{ 'analytics.search.query' | dm }}</h4>
+        <div class="content-analytics__actions">
+            <button
+                pButton
+                (click)="handleRequest()"
+                [label]="'analytics.search.run.query' | dm"
+                icon="pi pi-arrow-right"
+                iconPos="right"
+                data-testId="run-query"></button>
+        </div>
+    </div>
+    <ngx-monaco-editor
+        [(ngModel)]="queryEditor"
+        [options]="ANALYTICS_MONACO_EDITOR_OPTIONS"></ngx-monaco-editor>
+</section>
+<section class="content-analytics__results">
+    <div class="content-analytics__header">
+        <h4>{{ 'analytics.search.results' | dm }}</h4>
+    </div>
+    <ngx-monaco-editor
+        [ngModel]="results()"
+        [options]="ANALYTICS__RESULTS_MONACO_EDITOR_OPTIONS"></ngx-monaco-editor>
+</section>
