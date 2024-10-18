@@ -54,6 +54,7 @@ export class EmaContentletToolsComponent implements OnChanges {
     @Output() edit = new EventEmitter<ActionPayload>();
     @Output() editVTL = new EventEmitter<VTLFile>();
     @Output() delete = new EventEmitter<ActionPayload>();
+    @Output() editStyles = new EventEmitter<ActionPayload>();
 
     #dotMessageService = inject(DotMessageService);
     ACTIONS_CONTAINER_WIDTH = INITIAL_ACTIONS_CONTAINER_WIDTH; // Now is dynamic based on the page type (Headless - VTL)
