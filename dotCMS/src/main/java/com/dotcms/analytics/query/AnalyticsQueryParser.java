@@ -44,7 +44,7 @@ public class AnalyticsQueryParser {
      * 	"limit":100,
      * 	"offset":1,
      * 	"timeDimensions":"Events.day day",
-     * 	"orders":"Events.day ASC"
+     * 	"order":"Events.day ASC"
      * }
      * @param json
      * @return AnalyticsQuery
@@ -75,7 +75,7 @@ public class AnalyticsQueryParser {
      * 	"limit":100,
      * 	"offset":1,
      * 	"timeDimensions":"Events.day day",
-     * 	"orders":"Events.day ASC"
+     * 	"order":"Events.day ASC"
      * }
      * @param json
      * @return CubeJSQuery
@@ -117,8 +117,8 @@ public class AnalyticsQueryParser {
 
         builder.limit(query.getLimit()).offset(query.getOffset());
 
-        if (UtilMethods.isSet(query.getOrders())) {
-            builder.orders(parseOrders(query.getOrders()));
+        if (UtilMethods.isSet(query.getOrder())) {
+            builder.orders(parseOrders(query.getOrder()));
         }
 
         if (UtilMethods.isSet(query.getTimeDimensions())) {

@@ -25,7 +25,7 @@ public class AnalyticsQueryParserTest {
      * 	"limit":100,
      * 	"offset":1,
      * 	"timeDimensions":"Events.day day",
-     * 	"orders":"Events.day ASC"
+     * 	"order":"Events.day ASC"
      * }
      *
      * 1) parseJsonToQuery should return a valid query based on the parsed
@@ -114,7 +114,7 @@ public class AnalyticsQueryParserTest {
                 "\t\"limit\":100,\n" +
                 "\t\"offset\":1,\n" +
                 "\t\"timeDimensions\":\"Events.day day\",\n" +
-                "\t\"orders\":\"Events.day ASC\"\n" +
+                "\t\"order\":\"Events.day ASC\"\n" +
                 "}");
         Assert.assertNotNull("Query can not be null", query);
         Assert.assertTrue("Dimensions should have Events.experiment:", query.getDimensions().contains("Events.experiment"));
@@ -130,7 +130,7 @@ public class AnalyticsQueryParserTest {
 
         Assert.assertEquals("Time dimensions is wrong", "Events.day day", query.getTimeDimensions());
 
-        Assert.assertEquals("Orders is wrong", "Events.day ASC", query.getOrders());
+        Assert.assertEquals("Orders is wrong", "Events.day ASC", query.getOrder());
         return query;
     }
 
@@ -143,7 +143,7 @@ public class AnalyticsQueryParserTest {
      * 	"limit":100,
      * 	"offset":1,
      * 	"timeDimensions":Events.day day",
-     * 	"orders":"Events.day ASC"
+     * 	"order":"Events.day ASC"
      * }
      *
      * should throw an DotRuntimeException
@@ -161,7 +161,7 @@ public class AnalyticsQueryParserTest {
                         "\t\"limit\":100,\n" +
                         "\t\"offset\":1,\n" +
                         "\t\"timeDimensions\":Events.day day\",\n" +
-                        "\t\"orders\":\"Events.day ASC\"\n" +
+                        "\t\"order\":\"Events.day ASC\"\n" +
                         "}");
 
     }
@@ -175,7 +175,7 @@ public class AnalyticsQueryParserTest {
      * 	"limit":100,
      * 	"offset":1,
      * 	"timeDimensions":"Events.day day",
-     * 	"orders":"Events.day XXX"
+     * 	"order":"Events.day XXX"
      * }
      *
      * should throw an DotRuntimeException
@@ -193,7 +193,7 @@ public class AnalyticsQueryParserTest {
                         "\t\"limit\":100,\n" +
                         "\t\"offset\":1,\n" +
                         "\t\"timeDimensions\":\"Events.day day\",\n" +
-                        "\t\"orders\":\"Events.day XXX\"\n" +
+                        "\t\"order\":\"Events.day XXX\"\n" +
                         "}");
 
     }
