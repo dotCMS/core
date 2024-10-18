@@ -923,15 +923,15 @@ public class BundleResource {
                 response.setContentType("text/html; charset=utf-8");
                 PublishAuditStatus previousStatus = PublishAuditAPI
                         .getInstance().updateAuditTable(endpointId, endpointId, bundleFolder);
+                DotConcurrentFactory.getInstance().getSubmitter().submit(()-> {
+                    final PublisherConfig config = !previousStatus.getStatus().equals(Status.PUBLISHING_BUNDLE) ?
+                            new PushPublisherJob().processBundle(bundleName, previousStatus) : null;
 
-                final PublisherConfig config = !previousStatus.getStatus().equals(Status.PUBLISHING_BUNDLE)?
-                        new PushPublisherJob().processBundle(bundleName, previousStatus): null;
-
-                final String finalStatus = config != null ?
-                        config.getPublishAuditStatus().getStatus().name():
-                        Status.RECEIVED_BUNDLE.name();
-
-                return Response.ok(ImmutableMap.of("bundleName", bundleName, "status", finalStatus))
+                    final String finalStatus = config != null ?
+                            config.getPublishAuditStatus().getStatus().name() :
+                            Status.RECEIVED_BUNDLE.name();
+                });
+                return Response.ok(ImmutableMap.of("bundleName", bundleName, "status", Status.RECEIVED_BUNDLE.name()))
                         .build();
             } catch (IOException e) {
                 Logger.error(this, "Unable to import Bundle", e);
@@ -943,6 +943,7 @@ public class BundleResource {
         return Response.ok().build();
     } // uploadBundleSync.
 
+    @Path("/async")
     @POST
     @JSONP
     @NoCache
