@@ -1,4 +1,4 @@
-import { createPipeFactory, SpectatorPipe } from '@ngneat/spectator';
+import { createPipeFactory, SpectatorPipe } from '@ngneat/spectator/jest';
 
 import { TruncatePathPipe } from './truncate-path.pipe';
 

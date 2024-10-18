@@ -2,6 +2,7 @@ package com.dotcms.jobs.business.job;
 
 import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.LocalDateTime;
@@ -47,6 +48,7 @@ public interface AbstractJob {
 
     Map<String, Object> parameters();
 
+    @JsonIgnore
     Optional<ProgressTracker> progressTracker();
 
     @Default
