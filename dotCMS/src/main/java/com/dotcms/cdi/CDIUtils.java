@@ -2,7 +2,7 @@ package com.dotcms.cdi;
 
 import com.dotmarketing.util.Logger;
 import java.util.Optional;
-import javax.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.CDI;
 
 /**
  * Utility class to get beans from CDI container

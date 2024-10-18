@@ -11,7 +11,6 @@ import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.error.RetryStrategyProducer;
 import com.dotcms.jobs.business.queue.JobQueue;
-import com.dotcms.jobs.business.queue.JobQueueProducer;
 import com.dotcms.rest.api.v1.job.JobQueueHelper;
 import org.jboss.weld.bootstrap.api.helpers.RegistrySingletonProvider;
 import org.jboss.weld.junit5.WeldInitiator;
@@ -29,7 +28,7 @@ public class TestBaseJunit5WeldInitiator {
                     .containerId(RegistrySingletonProvider.STATIC_INSTANCE)
                     .beanClasses(JobQueueManagerAPIImpl.class, JobQueueConfig.class,
                             JobQueue.class, RetryStrategy.class, CircuitBreaker.class,
-                            JobQueueProducer.class, JobQueueConfigProducer.class,
+                            JobQueueConfigProducer.class,
                             RetryStrategyProducer.class, RealTimeJobMonitor.class,
                             EventProducer.class, JobProcessorFactory.class, JobQueueHelper.class,
                             JobProcessorScanner.class

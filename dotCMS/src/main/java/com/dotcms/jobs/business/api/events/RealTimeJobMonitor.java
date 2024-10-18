@@ -1,14 +1,14 @@
 package com.dotcms.jobs.business.api.events;
 
 import com.dotcms.jobs.business.job.Job;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
 
 /**
  * Manages real-time monitoring of jobs in the system. This class handles registration of job
