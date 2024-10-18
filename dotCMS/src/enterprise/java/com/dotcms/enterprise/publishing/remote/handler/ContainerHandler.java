@@ -63,6 +63,7 @@ import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -85,6 +86,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * This handler class is part of the Push Publishing mechanism that deals with Container-related information inside a
@@ -177,7 +179,7 @@ public class ContainerHandler implements IHandler {
         Host localHost = APILocator.getHostAPI().find(containerId.getHostId(), systemUser, false);
         if(UtilMethods.isEmpty(()->localHost.getIdentifier())){
           final Container finalContainer = container;
-          Logger.warn(this.getClass(), "Failed to publish container id:" + container.getIdentifier() + ", title:" + Try.of(()->finalContainer.getTitle()).getOrElse("unknown") + ". Unable to find referenced host id:" + containerId.getHostId());
+          Logger.warn(this.getClass(), "Ignoring container on non-existing host.  Id:" + container.getIdentifier() + ", title:" + Try.of(()->finalContainer.getTitle()).getOrElse("unknown") + ". Unable to find referenced host id:" + containerId.getHostId());
           continue;
         }
 
@@ -193,8 +195,8 @@ public class ContainerHandler implements IHandler {
         } else {
           // save if it doesn't exists
           final Container existing = containerAPI.find(container.getInode(), systemUser, false);
-          if (existing == null || !InodeUtils.isSet(existing.getIdentifier())) {
-            container= containerAPI.save(container, containerWrapper.getCsList(), localHost, systemUser, false);
+          if (UtilMethods.isEmpty(()->existing.getIdentifier())) {
+            containerAPI.save(container, containerWrapper.getCsList(), localHost, systemUser, false);
             PushPublishLogger.log(getClass(), PushPublishHandler.CONTAINER, PushPublishAction.PUBLISH_CREATE, container.getIdentifier(),
                 container.getInode(), container.getName(), config.getId());
           } else {
@@ -210,7 +212,19 @@ public class ContainerHandler implements IHandler {
 
         if (!unpublish) {
           final VersionInfo info = containerWrapper.getCvi();
-          info.setWorkingInode(container.getInode());
+          if(!Objects.equals(info.getWorkingInode(), info.getLiveInode())){
+            boolean workingNotExists = new DotConnect()
+                    .setSQL("select inode from dot_containers where inode=?")
+                    .addParam(info.getWorkingInode())
+                    .loadResults()
+                    .isEmpty();
+            if(workingNotExists){
+              info.setWorkingInode(container.getInode());
+            }
+          }
+
+
+          //info.setWorkingInode(container.getInode());
           if (info.isLocked() && info.getLockedBy() != null) {
             final User user = Try.of(()-> APILocator.getUserAPI().loadUserById(info.getLockedBy())).getOrElse(systemUser);
             info.setLockedBy(user.getUserId());
