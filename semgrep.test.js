@@ -24,4 +24,5 @@ function ok1() {
 
 function ok2() {
 // ok: insecure-document-method
-  documen
+  document.write("<div>it's ok</div>");
+}
