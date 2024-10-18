@@ -56,14 +56,15 @@ public class CompletionsResource {
     public final Response summarizeFromContent(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response,
                                                final CompletionsForm formIn) {
+        final CompletionsForm resolvedForm = resolveForm(request, response, formIn);
         return getResponse(
                 request,
                 response,
                 formIn,
-                () -> APILocator.getDotAIAPI().getCompletionsAPI().summarize(formIn),
+                () -> APILocator.getDotAIAPI().getCompletionsAPI().summarize(resolvedForm),
                 output -> APILocator.getDotAIAPI()
                         .getCompletionsAPI()
-                        .summarizeStream(formIn, new LineReadingOutputStream(output)));
+                        .summarizeStream(resolvedForm, new LineReadingOutputStream(output)));
     }
 
     /**
@@ -81,14 +82,15 @@ public class CompletionsResource {
     public final Response rawPrompt(@Context final HttpServletRequest request,
                                     @Context final HttpServletResponse response,
                                     final CompletionsForm formIn) {
+        final CompletionsForm resolvedForm = resolveForm(request, response, formIn);
         return getResponse(
                 request,
                 response,
                 formIn,
-                () -> APILocator.getDotAIAPI().getCompletionsAPI().raw(formIn),
+                () -> APILocator.getDotAIAPI().getCompletionsAPI().raw(resolvedForm),
                 output -> APILocator.getDotAIAPI()
                         .getCompletionsAPI()
-                        .rawStream(formIn, new LineReadingOutputStream(output)));
+                        .rawStream(resolvedForm, new LineReadingOutputStream(output)));
     }
 
     /**
@@ -180,6 +182,7 @@ public class CompletionsResource {
 
         final JSONObject jsonResponse = noStream.get();
         jsonResponse.put(AiKeys.TOTAL_TIME, System.currentTimeMillis() - startTime + "ms");
+
         return Response.ok(jsonResponse.toString(), MediaType.APPLICATION_JSON).build();
     }
 

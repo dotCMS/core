@@ -57,21 +57,24 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
      * @param request the AI request to be processed
      * @param output the output stream to which the response will be written
      * @throws DotAIAllModelsExhaustedException if all models are exhausted and no successful response is obtained
+     * @return result output stream
      */
     @Override
-    public void applyStrategy(final AIClient client,
-                              final AIResponseEvaluator handler,
-                              final AIRequest<? extends Serializable> request,
-                              final OutputStream output) {
+    public OutputStream applyStrategy(final AIClient client,
+                                      final AIResponseEvaluator handler,
+                                      final AIRequest<? extends Serializable> request,
+                                      final OutputStream output) {
         final JSONObjectAIRequest jsonRequest = AIClient.useRequestOrThrow(request);
         final Tuple2<AIModel, Model> modelTuple = resolveModel(jsonRequest);
 
         final AIResponseData firstAttempt = sendAttempt(client, handler, jsonRequest, output, modelTuple);
         if (firstAttempt.isSuccess()) {
-            return;
+            return output;
         }
 
         runFallbacks(client, handler, jsonRequest, output, modelTuple);
+
+        return output;
     }
 
     private static Tuple2<AIModel, Model> resolveModel(final JSONObjectAIRequest request) {
@@ -96,11 +99,7 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
     }
 
     private static boolean isSameAsFirst(final Model firstAttempt, final Model model) {
-        if (firstAttempt.equals(model)) {
-            return true;
-        }
-
-        return false;
+        return firstAttempt.equals(model);
     }
 
     private static boolean isOperational(final Model model) {
@@ -114,18 +113,32 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
         return true;
     }
 
-    private static AIResponseData doSend(final AIClient client, final AIRequest<? extends Serializable> request) {
-        final ByteArrayOutputStream output = new ByteArrayOutputStream();
+    private static boolean isStream(final JSONObjectAIRequest request) {
+        return request.getPayload().optBoolean(AiKeys.STREAM, false);
+    }
+
+    private static AIResponseData doSend(final AIClient client,
+                                         final JSONObjectAIRequest request,
+                                         final OutputStream incoming) {
+        final OutputStream output = Optional.ofNullable(incoming).orElseGet(ByteArrayOutputStream::new);
         client.sendRequest(request, output);
 
         final AIResponseData responseData = new AIResponseData();
         responseData.setResponse(output.toString());
-        IOUtils.closeQuietly(output);
+        if (!isStream(request)) {
+            IOUtils.closeQuietly(output);
+        }
 
         return responseData;
     }
 
-    private static void redirectOutput(final OutputStream output, final String response) {
+    private static void redirectOutput(final JSONObjectAIRequest request,
+                                       final OutputStream output,
+                                       final String response) {
+        if (isStream(request)) {
+            return;
+        }
+
         try (final InputStream input = new ByteArrayInputStream(response.getBytes(StandardCharsets.UTF_8))) {
             IOUtils.copy(input, output);
         } catch (IOException e) {
@@ -133,12 +146,12 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
         }
     }
 
-    private static void notifyFailure(final AIModel aiModel, final AIRequest<? extends Serializable> request) {
+    private static void notifyFailure(final AIModel aiModel, final JSONObjectAIRequest request) {
         AIAppValidator.get().validateModelsUsage(aiModel, request.getUserId());
     }
 
     private static void handleFailure(final Tuple2<AIModel, Model> modelTuple,
-                                      final AIRequest<? extends Serializable> request,
+                                      final JSONObjectAIRequest request,
                                       final AIResponseData responseData) {
         final AIModel aiModel = modelTuple._1;
         final Model model = modelTuple._2;
@@ -177,7 +190,7 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
                                               final Tuple2<AIModel, Model> modelTuple) {
 
         final AIResponseData responseData = Try
-                .of(() -> doSend(client, request))
+                .of(() -> doSend(client, request, output))
                 .getOrElseGet(exception -> fromException(evaluator, exception));
 
         if (!responseData.isSuccess()) {
@@ -200,7 +213,7 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
             AppConfig.debugLogger(
                     AIModelFallbackStrategy.class,
                     () -> String.format("Model [%s] succeeded. No need to fallback.", modelTuple._2.getName()));
-            redirectOutput(output, responseData.getResponse());
+            redirectOutput(request, output, responseData.getResponse());
         } else {
             logFailure(modelTuple, responseData);
 

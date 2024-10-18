@@ -23,7 +23,10 @@ import java.io.Serializable;
  */
 public interface AIClientStrategy {
 
-    AIClientStrategy NOOP = (client, handler, request, output) -> AIResponse.builder().build();
+    AIClientStrategy NOOP = (client, handler, request, output) -> {
+        AIResponse.builder().build();
+        return null;
+    };
 
     /**
      * Applies the strategy to the given AI client request and handles the response.
@@ -32,10 +35,11 @@ public interface AIClientStrategy {
      * @param handler the response evaluator to handle the response
      * @param request the AI request to be processed
      * @param output the output stream to which the response will be written
+     * @return result output stream
      */
-    void applyStrategy(AIClient client,
-                       AIResponseEvaluator handler,
-                       AIRequest<? extends Serializable> request,
-                       OutputStream output);
+    OutputStream applyStrategy(AIClient client,
+                               AIResponseEvaluator handler,
+                               AIRequest<? extends Serializable> request,
+                               OutputStream output);
 
 }
