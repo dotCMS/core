@@ -1,6 +1,18 @@
-import { MonacoEditorComponent, MonacoEditorConstructionOptions, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+import {
+    MonacoEditorComponent,
+    MonacoEditorConstructionOptions,
+    MonacoEditorModule
+} from '@materia-ui/ngx-monaco-editor';
 
-import { ChangeDetectionStrategy, Component, effect, inject, input, output, viewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    effect,
+    inject,
+    input,
+    output,
+    viewChild
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -24,14 +36,14 @@ import { UploadedFile } from '../../models';
         DotFieldValidationMessageComponent,
         ButtonModule,
         InputTextModule,
-        MonacoEditorModule,
+        MonacoEditorModule
     ],
     templateUrl: './dot-form-file-editor.component.html',
     styleUrls: ['./dot-form-file-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [FormFileEditorStore]
 })
-export class DotFormFileEditorComponent{
+export class DotFormFileEditorComponent {
     readonly store = inject(FormFileEditorStore);
     readonly #formBuilder = inject(FormBuilder);
     readonly #dotMessageService = inject(DotMessageService);
@@ -44,7 +56,7 @@ export class DotFormFileEditorComponent{
         name: ['', [Validators.required, Validators.pattern(/^[^.]+\.[^.]+$/)]],
         content: ['']
     });
-    
+
     $fileName = input.required<string>({ alias: 'fileName' });
     $fileContent = input.required<string>({ alias: 'fileContent' });
     $allowFileNameEdit = input(false, { alias: 'allowFileNameEdit' });
@@ -56,7 +68,6 @@ export class DotFormFileEditorComponent{
     $editorRef = viewChild.required(MonacoEditorComponent);
 
     constructor() {
-
         effect(() => {
             const name = this.$fileName();
             const content = this.$fileContent();
@@ -104,12 +115,12 @@ export class DotFormFileEditorComponent{
     #disableEditor() {
         this.form.disable();
         const editor = this.$editorRef().editor;
-        editor.updateOptions({readOnly: true});
+        editor.updateOptions({ readOnly: true });
     }
 
     #enableEditor() {
         this.form.enable();
         const editor = this.$editorRef().editor;
-        editor.updateOptions({readOnly: true});
+        editor.updateOptions({ readOnly: true });
     }
 }

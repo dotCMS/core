@@ -1,4 +1,4 @@
-import { MonacoEditorConstructionOptions } from "@materia-ui/ngx-monaco-editor";
+import { MonacoEditorConstructionOptions } from '@materia-ui/ngx-monaco-editor';
 
 export const DEFAULT_FILE_TYPE = 'text';
 

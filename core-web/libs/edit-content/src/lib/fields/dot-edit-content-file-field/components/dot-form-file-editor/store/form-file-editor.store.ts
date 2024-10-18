@@ -1,5 +1,5 @@
 import { MonacoEditorConstructionOptions } from '@materia-ui/ngx-monaco-editor';
-import { patchState, signalStore,  withComputed,  withMethods,  withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 
 import { computed } from '@angular/core';
 
@@ -44,12 +44,12 @@ export const FormFileEditorStore = signalStore(
                 ...monacoOptions,
                 language: language
             };
-        }),
+        })
     })),
     withMethods((store) => {
         return {
             setFile(file: FileInfo) {
-                patchState(store, {file})
+                patchState(store, { file });
             },
             setMonacoOptions(monacoOptions: Partial<MonacoEditorConstructionOptions>) {
                 const prevState = store.monacoOptions();
@@ -76,6 +76,6 @@ export const FormFileEditorStore = signalStore(
 
                 // implementation
             }
-        }
+        };
     })
 );

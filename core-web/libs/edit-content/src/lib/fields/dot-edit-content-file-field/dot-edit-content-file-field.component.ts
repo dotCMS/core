@@ -363,13 +363,9 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             style: { 'max-width': '1040px' }
         });
 
-        this.#dialogRef.onClose
-            .pipe(
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe((file) => {
-                console.log('file', file);
-            });
+        this.#dialogRef.onClose.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((file) => {
+            console.log('file', file);
+        });
     }
 
     /**
