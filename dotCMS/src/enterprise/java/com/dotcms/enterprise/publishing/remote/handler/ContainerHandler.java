@@ -72,6 +72,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.PushPublishLogger.PushPublishAction;
 import com.dotmarketing.util.PushPublishLogger.PushPublishHandler;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
@@ -174,6 +175,14 @@ public class ContainerHandler implements IHandler {
         unpublish = containerWrapper.getOperation().equals(Operation.UNPUBLISH);
 
         Host localHost = APILocator.getHostAPI().find(containerId.getHostId(), systemUser, false);
+        if(UtilMethods.isEmpty(()->localHost.getIdentifier())){
+          final Container finalContainer = container;
+          Logger.warn(this.getClass(), "Failed to publish container id:" + container.getIdentifier() + ", title:" + Try.of(()->finalContainer.getTitle()).getOrElse("unknown") + ". Unable to find referenced host id:" + containerId.getHostId());
+          continue;
+        }
+
+
+
 
         if (containerWrapper.getOperation().equals(PushPublisherConfig.Operation.UNPUBLISH)) {
           String containerIden = container.getIdentifier();
@@ -185,11 +194,11 @@ public class ContainerHandler implements IHandler {
           // save if it doesn't exists
           final Container existing = containerAPI.find(container.getInode(), systemUser, false);
           if (existing == null || !InodeUtils.isSet(existing.getIdentifier())) {
-            containerAPI.save(container, containerWrapper.getCsList(), localHost, systemUser, false);
+            container= containerAPI.save(container, containerWrapper.getCsList(), localHost, systemUser, false);
             PushPublishLogger.log(getClass(), PushPublishHandler.CONTAINER, PushPublishAction.PUBLISH_CREATE, container.getIdentifier(),
                 container.getInode(), container.getName(), config.getId());
           } else {
-            containerAPI.save(existing, containerWrapper.getCsList(), localHost, systemUser, false);
+            container= containerAPI.save(existing, containerWrapper.getCsList(), localHost, systemUser, false);
             PushPublishLogger.log(getClass(), PushPublishHandler.CONTAINER, PushPublishAction.PUBLISH_UPDATE, container.getIdentifier(),
                 container.getInode(), container.getName(), config.getId());
           }
@@ -201,6 +210,7 @@ public class ContainerHandler implements IHandler {
 
         if (!unpublish) {
           final VersionInfo info = containerWrapper.getCvi();
+          info.setWorkingInode(container.getInode());
           if (info.isLocked() && info.getLockedBy() != null) {
             final User user = Try.of(()-> APILocator.getUserAPI().loadUserById(info.getLockedBy())).getOrElse(systemUser);
             info.setLockedBy(user.getUserId());
