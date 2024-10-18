@@ -4,26 +4,26 @@ import { of } from 'rxjs';
 import { DotAiService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { AiContentPromptState, AiContentPromptStore } from './ai-content-prompt.store';
+import { initialState, AiContentPromptStore } from './ai-content-prompt.store';
 
 describe('AiContentPromptStore', () => {
     let spectator: SpectatorService<AiContentPromptStore>;
     let store: AiContentPromptStore;
     let dotAiService: SpyObject<DotAiService>;
 
-    const createStoreService = createServiceFactory({
+    const createService = createServiceFactory({
         service: AiContentPromptStore,
         mocks: [DotAiService]
     });
 
     beforeEach(() => {
-        spectator = createStoreService();
+        spectator = createService();
         store = spectator.service;
         dotAiService = spectator.inject(DotAiService);
     });
 
     it('should set open state', (done) => {
-        spectator.service.setStatus(ComponentStatus.INIT);
+        store.setStatus(ComponentStatus.INIT);
         store.state$.subscribe((state) => {
             expect(state.status).toBe(ComponentStatus.INIT);
             done();
@@ -31,33 +31,28 @@ describe('AiContentPromptStore', () => {
     });
 
     it('should showDialog and set the initial state', (done) => {
-        const initialState: AiContentPromptState = {
-            prompt: '',
-            generatedContent: [],
-            selectedContent: '',
-            activeIndex: null,
-            status: ComponentStatus.INIT,
-            showDialog: false,
-            submitLabel: 'block-editor.extension.ai-image.generate'
-        };
-
-        //dirty state
-        spectator.service.patchState({
+        store.patchState({
             prompt: 'test prompt',
             selectedContent: 'test selected content'
         });
 
-        spectator.service.showDialog();
+        store.showDialog();
+
         store.state$.subscribe((state) => {
-            expect(state.showDialog).toEqual(true);
-            expect(state).toEqual(initialState);
+            expect(JSON.stringify(state)).toBe(
+                JSON.stringify({
+                    ...initialState,
+                    generatedContent: [],
+                    showDialog: true
+                })
+            );
             done();
         });
     });
 
     it('should hideDialog', (done) => {
-        spectator.service.patchState({ showDialog: true });
-        spectator.service.hideDialog();
+        store.patchState({ showDialog: true });
+        store.hideDialog();
         store.state$.subscribe((state) => {
             expect(state.showDialog).toEqual(false);
             done();
@@ -65,7 +60,7 @@ describe('AiContentPromptStore', () => {
     });
 
     it('should handle subscription on selected Content', (done) => {
-        spectator.service.patchState({ selectedContent: 'test selected content' });
+        store.patchState({ selectedContent: 'test selected content' });
 
         store.selectedContent$.subscribe((selectedContent) => {
             expect(selectedContent).toBe('test selected content');
@@ -81,12 +76,14 @@ describe('AiContentPromptStore', () => {
         dotAiService.generateContent.mockReturnValue(of(content));
 
         // Trigger the effect
-        spectator.service.generateContent(of(prompt));
+        store.generateContent(of(prompt));
 
         // Check if state is updated correctly
         store.state$.subscribe((state) => {
             expect(state.status).toBe(ComponentStatus.IDLE);
-            expect(state.generatedContent).toBe([{ content, prompt }]);
+            expect(state.generatedContent[0].content).toBe(content);
+            expect(state.generatedContent[0].prompt).toBe(prompt);
+
             done();
         });
     });

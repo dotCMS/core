@@ -24,7 +24,7 @@ export interface AiContentPromptState {
     submitLabel: string;
 }
 
-const initialState: AiContentPromptState = {
+export const initialState: AiContentPromptState = {
     prompt: '',
     generatedContent: [],
     selectedContent: '',
