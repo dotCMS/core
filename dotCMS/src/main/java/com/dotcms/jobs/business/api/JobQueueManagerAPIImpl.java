@@ -15,6 +15,7 @@ import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
+import com.dotcms.jobs.business.error.RetryPolicyProcessor;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
@@ -106,6 +107,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private ExecutorService executorService;
     private final Map<String, RetryStrategy> retryStrategies;
     private final RetryStrategy defaultRetryStrategy;
+    private final RetryPolicyProcessor retryPolicyProcessor;
 
     private final ScheduledExecutorService pollJobUpdatesScheduler;
     private LocalDateTime lastPollJobUpdateTime = LocalDateTime.now();
@@ -144,7 +146,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             RetryStrategy defaultRetryStrategy,
             RealTimeJobMonitor realTimeJobMonitor,
             EventProducer eventProducer,
-            JobProcessorFactory jobProcessorFactory) {
+            JobProcessorFactory jobProcessorFactory,
+            RetryPolicyProcessor retryPolicyProcessor) {
 
         this.jobQueue = jobQueue;
         this.threadPoolSize = jobQueueConfig.getThreadPoolSize();
@@ -153,6 +156,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         this.retryStrategies = new ConcurrentHashMap<>();
         this.defaultRetryStrategy = defaultRetryStrategy;
         this.circuitBreaker = circuitBreaker;
+        this.jobProcessorFactory = jobProcessorFactory;
+        this.retryPolicyProcessor = retryPolicyProcessor;
 
         this.pollJobUpdatesScheduler = Executors.newSingleThreadScheduledExecutor();
         pollJobUpdatesScheduler.scheduleAtFixedRate(
@@ -163,7 +168,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         // Events
         this.realTimeJobMonitor = realTimeJobMonitor;
         this.eventProducer = eventProducer;
-        this.jobProcessorFactory = jobProcessorFactory;
     }
 
     @Override
@@ -243,6 +247,12 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                     jobProcessor.getName(), queueName));
         }
         processors.put(queueName, processor);
+
+        // Process the retry policy for the processor
+        RetryStrategy retryStrategy = retryPolicyProcessor.processRetryPolicy(processor);
+        if (retryStrategy != null) {
+            setRetryStrategy(queueName, retryStrategy);
+        }
     }
 
     @Override
@@ -682,15 +692,14 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                         "Error processing job " + runningJob.id() + ": " + e.getMessage(), e
                 );
                 handleJobFailure(
-                        runningJob, processor, e, e.getMessage(), "Job execution"
+                        runningJob, processor, e, "Job execution"
                 );
             }
         } else {
 
             Logger.error(this, "No processor found for queue: " + job.queueName());
             handleJobFailure(job, null, new JobProcessorNotFoundException(job.queueName()),
-                    "No processor found for queue", "Processor selection"
-            );
+                    "Processor selection");
         }
     }
 
@@ -811,6 +820,29 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         updateJobStatus(canceledJob);
         eventProducer.getEvent(JobCanceledEvent.class).fire(
                 new JobCanceledEvent(canceledJob, LocalDateTime.now())
+        );
+    }
+
+    /**
+     * Handles the failure of a job
+     *
+     * @param job             The job that failed.
+     * @param processor       The processor that handled the job.
+     * @param exception       The exception that caused the failure.
+     * @param processingStage The stage of processing where the failure occurred.
+     */
+    @WrapInTransaction
+    private void handleJobFailure(final Job job, final JobProcessor processor,
+            final Exception exception, final String processingStage) throws DotDataException {
+
+        var jobFailureException = exception;
+        if (exception.getCause() != null) {
+            jobFailureException = (Exception) exception.getCause();
+        }
+
+        handleJobFailure(
+                job, processor, jobFailureException, jobFailureException.getMessage(),
+                processingStage
         );
     }
 

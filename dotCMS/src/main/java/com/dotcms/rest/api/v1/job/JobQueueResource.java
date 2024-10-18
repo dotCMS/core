@@ -26,7 +26,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.glassfish.jersey.media.sse.SseFeature;
@@ -52,18 +51,18 @@ public class JobQueueResource {
     @Path("/{queueName}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createJob(
+    public ResponseEntityView<String> createJob(
             @Context HttpServletRequest request,
             @PathParam("queueName") String queueName,
             @BeanParam JobParams form) throws JsonProcessingException, DotDataException {
-           new WebResource.InitBuilder(webResource)
+        final var initDataObject = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
                 .init();
-            final String jobId = helper.createJob(queueName, form, request);
-            return Response.ok(new ResponseEntityView<>(jobId)).build();
+        final String jobId = helper.createJob(queueName, form, initDataObject.getUser(), request);
+        return new ResponseEntityView<>(jobId);
     }
 
     @GET
@@ -100,16 +99,16 @@ public class JobQueueResource {
     @Path("/{jobId}/cancel")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.WILDCARD)
-    public ResponseEntityView<String> cancelJob(@Context HttpServletRequest request, @PathParam("jobId") String jobId)
-            throws DotDataException {
-            new WebResource.InitBuilder(webResource)
+    public ResponseEntityView<String> cancelJob(@Context HttpServletRequest request,
+            @PathParam("jobId") String jobId) throws DotDataException {
+        new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
                 .init();
-            helper.cancelJob(jobId);
-            return new ResponseEntityView<>("Job cancelled successfully");
+        helper.cancelJob(jobId);
+        return new ResponseEntityView<>("Cancellation request successfully sent to job " + jobId);
     }
 
     @GET

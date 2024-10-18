@@ -12,11 +12,13 @@ import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.time.format.DateTimeFormatter;
@@ -119,19 +121,30 @@ public class JobQueueHelper {
 
     /**
      * creates a job
-     * @param queueName
-     * @param form
-     * @return jobId
-     * @throws JsonProcessingException
-     * @throws DotDataException
+     * @param queueName The name of the queue
+     * @param form The request form with the job parameters
+     * @param user The user requesting to create the job
+     * @param request The request object
+     * @return jobId The ID of the created job
+     * @throws JsonProcessingException If there is an error processing the request form parameters
+     * @throws DotDataException If there is an error creating the job
      */
-    String createJob(String queueName, JobParams form, HttpServletRequest request)
-            throws JsonProcessingException, DotDataException {
+    String createJob(final String queueName, final JobParams form, final User user,
+            final HttpServletRequest request) throws JsonProcessingException, DotDataException {
 
         final HashMap <String, Object>in = new HashMap<>(form.getParams());
         handleUploadIfPresent(form, in, request);
+
+        // Get the current host and include it in the job params
+        final var currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        in.put("siteName", currentHost.getHostname());
+        in.put("siteIdentifier", currentHost.getIdentifier());
+
+        // Including the user id in the job params
+        in.put("userId", user.getUserId());
+
         try {
-            return jobQueueManagerAPI.createJob(queueName.toLowerCase(), Map.copyOf(in));
+            return jobQueueManagerAPI.createJob(queueName, Map.copyOf(in));
         } catch (JobProcessorNotFoundException e) {
             Logger.error(this.getClass(), "Error creating job", e);
             throw new DoesNotExistException(e.getMessage());

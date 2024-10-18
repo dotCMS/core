@@ -38,7 +38,9 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
     @Test
     void testEmptyParams(){
         assertThrows(IllegalArgumentException.class, () -> {
-            jobQueueHelper.createJob("any", new JobParams(), mock(HttpServletRequest.class));
+            jobQueueHelper.createJob(
+                    "any", new JobParams(), mock(User.class), mock(HttpServletRequest.class)
+            );
         });
     }
 
@@ -47,7 +49,9 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
         final JobParams jobParams = new JobParams();
         jobParams.setJsonParams("{}");
         assertThrows(DoesNotExistException.class, () -> {
-            jobQueueHelper.createJob("nonExisting", jobParams, mock(HttpServletRequest.class));
+            jobQueueHelper.createJob(
+                    "nonExisting", jobParams, mock(User.class), mock(HttpServletRequest.class)
+            );
         });
     }
 
@@ -82,8 +86,9 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
         final JobParams jobParams = new JobParams();
         jobParams.setJsonParams("{}");
 
-        final String jobId = jobQueueHelper.createJob("demoQueue", jobParams,
-                mock(HttpServletRequest.class));
+        final String jobId = jobQueueHelper.createJob(
+                "demoQueue", jobParams, mock(User.class), mock(HttpServletRequest.class)
+        );
 
         Assertions.assertNotNull(jobId);
         final Job job = jobQueueHelper.getJob(jobId);
@@ -103,8 +108,9 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
         jobQueueHelper.registerProcessor("testQueue", DemoJobProcessor.class);
         final JobParams jobParams = new JobParams();
         jobParams.setJsonParams("{}");
-        final String jobId = jobQueueHelper.createJob("testQueue", jobParams,
-                mock(HttpServletRequest.class));
+        final String jobId = jobQueueHelper.createJob(
+                "testQueue", jobParams, mock(User.class), mock(HttpServletRequest.class)
+        );
         Assertions.assertNotNull(jobId);
         final Job job = jobQueueHelper.getJob(jobId);
         assertFalse(jobQueueHelper.isNotWatchable(job));
@@ -122,8 +128,9 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
         jobQueueHelper.registerProcessor("testQueue", DemoJobProcessor.class);
         final JobParams jobParams = new JobParams();
         jobParams.setJsonParams("{}");
-        final String jobId = jobQueueHelper.createJob("testQueue", jobParams,
-                mock(HttpServletRequest.class));
+        final String jobId = jobQueueHelper.createJob(
+                "testQueue", jobParams, mock(User.class), mock(HttpServletRequest.class)
+        );
         Assertions.assertNotNull(jobId);
         final Job job = jobQueueHelper.getJob(jobId);
         final Map<String, Object> info = jobQueueHelper.getJobStatusInfo(job);
