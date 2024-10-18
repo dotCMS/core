@@ -63,9 +63,7 @@
         editor = ace.edit('esEditor');
         editor.setTheme("ace/theme/tomorrow_night");
         editor.getSession().setMode("ace/mode/velocity");
-        editor.setOptions({
-            fontSize: "14px"
-          });
+        editor.setOptions();
         
         let myLocal = window.localStorage.getItem('velocityPlayground'); 
         myLocal = (myLocal) ? JSON.parse(myLocal) : {};
