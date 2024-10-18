@@ -13,7 +13,16 @@ function bad2(userInput) {
 function bad3(userInput) {
   const name = '<div>' + userInput + '</div>';
 // ruleid: insecure-document-method
-  document.write(name);
+  // Import DOMPurify to sanitize user input
+  const DOMPurify = require('dompurify');
+
+  function bad3(userInput) {
+    // Sanitize the user input to prevent XSS
+    const sanitizedInput = DOMPurify.sanitize('<div>' + userInput + '</div>');
+
+    // Use document.write with sanitized input
+    document.write(sanitizedInput);
+  }
 }
 
 function ok1() {
