@@ -20,6 +20,7 @@
 
 .edit-content-layout__topBar {
     grid-area: topBar;
+    padding: $spacing-0 $spacing-1;
 
     .pi {
         font-size: $font-size-lmd;
@@ -37,23 +38,4 @@
 
 .edit-content-layout__sidebar {
     grid-area: sidebar;
-}
-
-.edit-content-layout__sidebar--btn {
-    rect {
-        stroke: $color-palette-primary;
-    }
-
-    path {
-        fill: $color-palette-primary;
-    }
-    transition: all $basic-speed ease-in-out;
-
-    &.hide {
-        width: 0;
-        min-width: 0;
-        height: 0;
-        padding: 0;
-        visibility: hidden;
-    }
 }

@@ -60,6 +60,7 @@ export interface DotCMSContentTypeField {
     values?: string;
     variable: string;
     forceIncludeInApi?: boolean;
+    fieldContentTypeProperties?: string[];
     metadata?: { [key: string]: string | number | boolean };
 }
 
