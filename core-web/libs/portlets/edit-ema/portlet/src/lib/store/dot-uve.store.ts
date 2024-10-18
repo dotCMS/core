@@ -26,6 +26,7 @@ const initialState: UVEState = {
 };
 
 export const UVEStore = signalStore(
+    { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
     withComputed(
         ({
