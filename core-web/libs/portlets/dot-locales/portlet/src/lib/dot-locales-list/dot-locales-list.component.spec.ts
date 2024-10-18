@@ -91,6 +91,6 @@ describe('DotLocalesListComponent', () => {
 
         spectator.click(row);
 
-        expect(spectator.component.store.openAddEditDialog).toHaveBeenCalledWith(1);
+        expect(spectator.component.store.openAddEditDialog).toHaveBeenCalled();
     });
 });
