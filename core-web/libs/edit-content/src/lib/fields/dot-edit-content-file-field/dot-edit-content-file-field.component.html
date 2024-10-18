@@ -51,6 +51,7 @@
                 }
                 @if (store.allowCreateFile()) {
                     <p-button
+                        (click)="showFileEditorDialog()"
                         [label]="'dot.file.field.action.create.new.file' | dm"
                         data-testId="action-new-file"
                         icon="pi pi-code"

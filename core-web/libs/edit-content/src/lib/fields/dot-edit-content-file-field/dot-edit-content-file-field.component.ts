@@ -32,6 +32,7 @@ import {
 
 import { DotFileFieldPreviewComponent } from './components/dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from './components/dot-file-field-ui-message/dot-file-field-ui-message.component';
+import { DotFormFileEditorComponent } from './components/dot-form-file-editor/dot-form-file-editor.component';
 import { DotFormImportUrlComponent } from './components/dot-form-import-url/dot-form-import-url.component';
 import { INPUT_TYPES, UploadedFile } from './models';
 import { DotFileFieldUploadService } from './services/upload-file/upload-file.service';
@@ -343,6 +344,31 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             )
             .subscribe((file) => {
                 this.store.setPreviewFile(file);
+            });
+    }
+
+    showFileEditorDialog() {
+        const header = this.#dotMessageService.get('dot.file.field.dialog.create.new.file.header');
+
+        this.#dialogRef = this.#dialogService.open(DotFormFileEditorComponent, {
+            header,
+            appendTo: 'body',
+            closeOnEscape: false,
+            draggable: false,
+            keepInViewport: false,
+            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            resizable: false,
+            modal: true,
+            width: '90%',
+            style: { 'max-width': '1040px' }
+        });
+
+        this.#dialogRef.onClose
+            .pipe(
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((file) => {
+                console.log('file', file);
             });
     }
 

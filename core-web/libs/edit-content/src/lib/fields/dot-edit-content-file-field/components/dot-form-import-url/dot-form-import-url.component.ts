@@ -35,7 +35,7 @@ export class DotFormImportUrlComponent implements OnInit {
     );
     #abortController: AbortController | null = null;
 
-    readonly form = this.#formBuilder.group({
+    readonly form = this.#formBuilder.nonNullable.group({
         url: ['', [Validators.required, DotValidators.url]]
     });
 
