@@ -35,7 +35,7 @@ public class AnalyticsFireUserEventActionlet extends WorkFlowActionlet {
 
     private final WebEventsCollectorService webEventsCollectorService;
 
-    private static final UserCustomDefinedRequestMatcher USER_CUSTOM_DEFINED_REQUEST_MATCHER =  new UserCustomDefinedRequestMatcher();
+    public static final UserCustomDefinedRequestMatcher USER_CUSTOM_DEFINED_REQUEST_MATCHER =  new UserCustomDefinedRequestMatcher();
 
     public AnalyticsFireUserEventActionlet() {
         this(WebEventsCollectorServiceFactory.getInstance().getWebEventsCollectorService());
