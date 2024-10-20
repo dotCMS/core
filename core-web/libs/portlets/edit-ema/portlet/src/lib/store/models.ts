@@ -18,6 +18,7 @@ export interface UVEState {
     isTraditionalPage: boolean;
     canEditPage: boolean;
     pageIsLocked: boolean;
+    customComponents: any;
 }
 
 export interface ShellProps {
