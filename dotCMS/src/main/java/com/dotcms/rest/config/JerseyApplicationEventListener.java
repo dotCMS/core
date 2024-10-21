@@ -3,7 +3,7 @@ package com.dotcms.rest.config;
 import com.dotmarketing.util.Logger;
 import java.util.Objects;
 import java.util.Set;
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ext.Provider;
 import org.glassfish.jersey.server.monitoring.ApplicationEvent;
 import org.glassfish.jersey.server.monitoring.ApplicationEvent.Type;

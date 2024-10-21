@@ -2,7 +2,7 @@ package com.dotcms.rest.config;
 
 import com.dotmarketing.util.Logger;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ext.Provider;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.spi.AbstractContainerLifecycleListener;
