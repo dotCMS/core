@@ -285,15 +285,6 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (ContentAnalyticsFactory) getInstance(FactoryIndex.CONTENT_ANALYTICS_FACTORY);
     }
 
-    /**
-     * Returns the Factory object that handles operations related to unique_fields Validation
-     *
-     * @return An instance of the {@link HostFactory} object.
-     */
-    public static UniqueFieldFactory getUniqueFieldFactory() {
-        return (UniqueFieldFactory) getInstance(FactoryIndex.UNIQUE_FIELD_FACTORY);
-    }
-
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -419,7 +410,6 @@ enum FactoryIndex
             case CUBEJS_CLIENT_FACTORY: return new CubeJSClientFactoryImpl();
             case LANGUAGE_VARIABLE_FACTORY: return new LanguageVariableFactoryImpl();
             case CONTENT_ANALYTICS_FACTORY: CDIUtils.getBean(ContentAnalyticsFactory.class).orElseThrow(() -> new DotRuntimeException("ContentAnalyticsFactory not found"));
-            case UNIQUE_FIELD_FACTORY: return new UniqueFieldFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}
