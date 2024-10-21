@@ -1,4 +1,21 @@
+import { client } from "@/utils/dotcmsClient";
+import { useEffect, useState } from "react";
+
 export function SimpleWidget({ title }) {
+    const [destination, setDestination] = useState([]);
+
+    useEffect(() => {
+        client.content
+            .getCollection("Destination")
+            .limit(10)
+            .then((response) => {
+                setDestination(response.contentlets);
+            })
+            .catch((error) => {
+                console.error(`Error fetching Destinations`, error);
+            });
+    }, []);
+
     return (
         <div className="relative z-10 p-6 -mt-24 w-full bg-white rounded-lg shadow-lg lg:mx-auto lg:max-w-5xl">
             <h2 className="mb-6 text-3xl font-bold text-gray-800">{title}</h2>
@@ -7,16 +24,11 @@ export function SimpleWidget({ title }) {
                     <label htmlFor="destination" className="block mb-1 text-sm font-medium text-gray-700">Destination</label>
                     <div className="relative">
                         <select id="destination" className="py-2 pr-10 pl-3 w-full text-base bg-white rounded-md border border-gray-300 appearance-none focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option>Colorado & The Rockies</option>
-                            <option>Yellowstone National Park</option>
-                            <option>California Coast</option>
-                            <option>New York City</option>
-                            <option>Florida Keys</option>
-                            <option>Grand Canyon</option>
-                            <option>Hawaii Islands</option>
-                            <option>Alaska Wilderness</option>
-                            <option>New Orleans</option>
-                            <option>Washington D.C.</option>
+                            {destination.map((destination) => (
+                                <option key={destination.identifier} value={destination.identifier}>
+                                    {destination.title}
+                                </option>
+                            ))}
                         </select>
                         <div className="flex absolute inset-y-0 right-0 items-center px-2 text-gray-700 pointer-events-none">
                             <svg className="w-5 h-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
