@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator';
 
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { NavigationEnd } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
+import { NavigationEnd, provideRouter } from '@angular/router';
 
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -86,6 +86,73 @@ class FakeNavigationService {
     closeAllSections() {}
 }
 
+fdescribe('DotNavigationComponent spectator', () => {
+    let spectator: Spectator<DotNavigationComponent>;
+    let service: SpyObject<DotNavigationService>;
+
+    const createComponent = createComponentFactory({
+        component: DotNavigationComponent,
+        entryComponents: [DotSubNavComponent, DotNavItemComponent],
+        imports: [
+            DotNavIconModule,
+            DotIconModule,
+            BrowserAnimationsModule,
+            TooltipModule,
+            DotRandomIconPipeModule
+        ],
+        providers: [
+            provideRouter([]),
+            DotMenuService,
+            IframeOverlayService,
+            {
+                provide: DotNavigationService,
+                useClass: FakeNavigationService
+            },
+            {
+                provide: LoginService,
+                useClass: LoginServiceMock
+            }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent({
+            detectChanges: false
+        });
+
+        service = spectator.inject(DotNavigationService, true);
+    });
+
+    it('should have all menus closed', () => {
+        spectator.detectChanges();
+        const items = spectator.queryAll('.dot-nav__list-item');
+
+        items.forEach((item) => {
+            expect(item.classList.contains('dot-nav__list-item--active')).toBe(false);
+        });
+    });
+
+    it('should have dot-nav-item print correctly', () => {
+        spectator.detectChanges();
+
+        const items = spectator.queryAll(DotNavItemComponent);
+
+        expect(items.length).toBe(2);
+        expect(items[0].data).toEqual(dotMenuMock());
+        expect(items[1].data).toEqual(dotMenuMock1());
+    });
+
+    it('should close on document click', () => {
+        spyOn(service, 'collapsed$').and.returnValue(of(true));
+        const closeAllSectionsSpy = spyOn(service, 'closeAllSections');
+
+        spectator.detectChanges();
+
+        spectator.dispatchMouseEvent(spectator.element, 'click');
+        expect(closeAllSectionsSpy).toHaveBeenCalledTimes(1);
+    });
+});
+
 describe('DotNavigationComponent', () => {
     let fixture: ComponentFixture<DotNavigationComponent>;
     let de: DebugElement;
@@ -99,12 +166,12 @@ describe('DotNavigationComponent', () => {
             imports: [
                 DotNavIconModule,
                 DotIconModule,
-                RouterTestingModule,
                 BrowserAnimationsModule,
                 TooltipModule,
                 DotRandomIconPipeModule
             ],
             providers: [
+                provideRouter([]),
                 DotMenuService,
                 IframeOverlayService,
                 {
@@ -129,29 +196,6 @@ describe('DotNavigationComponent', () => {
 
         fixture.detectChanges();
         navItem = de.query(By.css('dot-nav-item'));
-    });
-
-    it('should have all menus closed', () => {
-        const items: DebugElement[] = de.queryAll(By.css('.dot-nav__list-item'));
-
-        items.forEach((item: DebugElement) => {
-            expect(item.nativeElement.classList.contains('dot-nav__list-item--active')).toBe(false);
-        });
-    });
-
-    it('should have dot-nav-item print correctly', () => {
-        const items: DebugElement[] = de.queryAll(By.css('dot-nav-item'));
-        expect(items.length).toBe(2);
-        expect(items[0].componentInstance.data).toEqual(dotMenuMock());
-        expect(items[1].componentInstance.data).toEqual(dotMenuMock1());
-    });
-
-    it('should close on document click', () => {
-        const collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(true);
-        spyOnProperty(dotNavigationService, 'collapsed$', 'get').and.returnValue(collapsed$);
-        spyOn(dotNavigationService, 'closeAllSections');
-        document.dispatchEvent(new MouseEvent('click'));
-        expect(dotNavigationService.closeAllSections).toHaveBeenCalledTimes(1);
     });
 
     describe('itemClick event', () => {
@@ -197,10 +241,7 @@ describe('DotNavigationComponent', () => {
     describe('menuClick event ', () => {
         describe('collapsed', () => {
             beforeEach(() => {
-                const collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(true);
-                spyOnProperty(dotNavigationService, 'collapsed$', 'get').and.returnValue(
-                    collapsed$
-                );
+                spyOn(dotNavigationService, 'collapsed$').and.returnValue(of(true));
                 navItem.triggerEventHandler('menuClick', {
                     originalEvent: {},
                     data: dotMenuMock()
@@ -219,10 +260,7 @@ describe('DotNavigationComponent', () => {
 
         describe('expanded', () => {
             beforeEach(() => {
-                const collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(false);
-                spyOnProperty(dotNavigationService, 'collapsed$', 'get').and.returnValue(
-                    collapsed$
-                );
+                spyOnProperty(dotNavigationService, 'collapsed$').and.returnValue(of(false));
                 navItem.triggerEventHandler('menuClick', {
                     originalEvent: {},
                     data: dotMenuMock()

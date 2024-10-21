@@ -51,6 +51,8 @@ export class DotNavigationComponent {
     });
 
     @HostBinding('style.overflow-y') get overFlow() {
+        console.log('this.$isCollapsed()', this.$isCollapsed());
+
         return this.$isCollapsed() ? '' : 'auto';
     }
 
