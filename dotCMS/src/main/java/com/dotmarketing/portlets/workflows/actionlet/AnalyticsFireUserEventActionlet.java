@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
+import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,8 +39,11 @@ public class AnalyticsFireUserEventActionlet extends WorkFlowActionlet {
     public static final String OBJECT_CONTENT_TYPE_VAR_NAME = "object_content_type_var_name";
     public static final String OBJECT = "object";
     public static final String EVENT_TYPE1 = "event_type";
+    public static final String EVENT_TYPE_DISPLAY = "Event type";
+    public static final String OBJECT_TYPE_DISPLAY = "Object type";
+    public static final String OBJECT_ID_DISPLAY = "Object ID";
 
-    private transient final WebEventsCollectorService webEventsCollectorService;
+    private final transient WebEventsCollectorService webEventsCollectorService;
 
     public static final UserCustomDefinedRequestMatcher USER_CUSTOM_DEFINED_REQUEST_MATCHER =  new UserCustomDefinedRequestMatcher();
 
@@ -52,13 +56,13 @@ public class AnalyticsFireUserEventActionlet extends WorkFlowActionlet {
 
     @Override
     public List<WorkflowActionletParameter> getParameters() {
-        List<WorkflowActionletParameter> params = new ArrayList<>();
+        List<WorkflowActionletParameter> workflowActionletParameters = new ArrayList<>();
 
-        params.add(new WorkflowActionletParameter(EVENT_TYPE, "Event type", "", true));
-        params.add(new WorkflowActionletParameter(OBJECT_TYPE, "Object type", "", false));
-        params.add(new WorkflowActionletParameter(OBJECT_ID, "Object ID", "", false));
+        workflowActionletParameters.add(new WorkflowActionletParameter(EVENT_TYPE, EVENT_TYPE_DISPLAY, StringPool.BLANK, true));
+        workflowActionletParameters.add(new WorkflowActionletParameter(OBJECT_TYPE, OBJECT_TYPE_DISPLAY,  StringPool.BLANK, false));
+        workflowActionletParameters.add(new WorkflowActionletParameter(OBJECT_ID, OBJECT_ID_DISPLAY,  StringPool.BLANK, false));
 
-        return params;
+        return workflowActionletParameters;
     }
 
     @Override
