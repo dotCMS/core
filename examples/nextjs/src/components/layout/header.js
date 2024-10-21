@@ -1,14 +1,27 @@
-import Link from 'next/link';
+import Link from "next/link";
+import Image from "next/image";
 
 function Header({ children }) {
     return (
-        <header className="flex items-center justify-between p-4 bg-purple-500">
-            <div className="flex items-center">
-                <h2 className="text-3xl font-bold text-white">
-                    <Link href="/">TravelLux in NextJS</Link>
-                </h2>
+        <header className="bg-purple-800">
+            <div className="container">
+                <div className="flex justify-between items-center p-4">
+                    <Link
+                        href="/"
+                        className="flex gap-2 items-center text-3xl font-bold text-white"
+                    >
+                        <Image
+                            className="invert"
+                            src="/local/nextjs.svg"
+                            alt="TravelLux"
+                            width={50}
+                            height={50}
+                        />
+                        TravelLux
+                    </Link>
+                    {children}
+                </div>
             </div>
-            {children}
         </header>
     );
 }

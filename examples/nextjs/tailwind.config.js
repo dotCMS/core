@@ -6,13 +6,11 @@ module.exports = {
         './src/lib/**/*.{js,ts,jsx,tsx,mdx}',
         './src/app/**/*.{js,ts,jsx,tsx,mdx}'
     ],
+    safelist: ['container', 'space-y-4'],
     theme: {
-        extend: {
-            backgroundImage: {
-                'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-                'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))'
-            }
-        }
+        container: {
+            center: true,
+        },
     },
     plugins: [
         require('@tailwindcss/typography'),

@@ -18,8 +18,7 @@ import { CustomNoComponent } from "./content-types/empty";
 
 import { usePageAsset } from "../hooks/usePageAsset";
 import BlogWithBlockEditor from "./content-types/blog";
-import { DotCmsClient } from "@dotcms/client";
-
+import { SimpleWidget } from "./content-types/SimpleWidget";
 /**
  * Configure experiment settings below. If you are not using experiments,
  * you can ignore or remove the experiment-related code and imports.
@@ -41,6 +40,7 @@ const componentsMap = {
     CallToAction: CallToAction,
     CustomNoComponent: CustomNoComponent,
     BlockEditorItem: BlogWithBlockEditor,
+    SimpleWidget: SimpleWidget,
 };
 
 export function MyPage({ pageAsset, nav }) {
@@ -63,14 +63,14 @@ export function MyPage({ pageAsset, nav }) {
     pageAsset = usePageAsset(pageAsset);
 
     return (
-        <div className="flex flex-col gap-6 min-h-screen bg-lime-50">
+        <div className="min-h-screen bg-lime-50">
             {pageAsset.layout.header && (
                 <Header>
                     <Navigation items={nav} />
                 </Header>
             )}
 
-            <main className="flex flex-col gap-8 m-auto">
+            <main>
                 <DotLayoutComponent
                     pageContext={{
                         components: componentsMap,

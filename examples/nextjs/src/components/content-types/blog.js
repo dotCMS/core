@@ -26,7 +26,6 @@ function BlogWithBlockEditor({blockEditorItem}){
             'paragraph': CustomParagraph 
         }} 
         style={{ backgroundColor: 'lightblue', padding: '10px', fontSize: '40px' }} 
-        className="blocks"
     />
 }
 export default BlogWithBlockEditor;

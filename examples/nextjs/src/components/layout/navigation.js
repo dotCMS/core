@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 
 function Navigation({ items, className }) {
   const searchParams = useSearchParams();
+  // Add usePathname hook to get the current path
+  const pathname = usePathname();
 
   return (
     <nav className={className}>
@@ -11,8 +13,10 @@ function Navigation({ items, className }) {
           <Link
             href={{
               pathname: '/',
-              query: Object.fromEntries(searchParams.entries()) // We need to maintain the query params on the navigation, this way next loads the page with the same query params
-            }}>
+              query: Object.fromEntries(searchParams.entries())
+            }}
+            // Add active class if the current path is home
+            className={pathname === '/' ? 'font-bold' : ''}>
             Home
           </Link>
         </li>
@@ -21,9 +25,11 @@ function Navigation({ items, className }) {
             <Link
               href={{
                 pathname: item.href,
-                query: Object.fromEntries(searchParams.entries()) // We need to maintain the query params on the navigation, this way next loads the page with the same query params
+                query: Object.fromEntries(searchParams.entries())
               }}
-              target={item.target}>
+              target={item.target}
+              // Add active class if the current path matches the item's href
+              className={pathname === item.href ? 'font-bold' : ''}>
               {item.title}
             </Link>
           </li>
