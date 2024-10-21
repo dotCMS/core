@@ -41,6 +41,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.FileUtil;
@@ -652,6 +653,13 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * @throws IOException         If fails reading the given File content or sending back to the user a response
      */
     public void uploadBundle ( HttpServletRequest request, HttpServletResponse response ) throws FileUploadException, IOException{
+
+        if(!Config.getBooleanProperty("ENABLE_OLD_BUNDLE_UPLOAD_ENDPOINT", false)){
+            response.getWriter().println("Endpoint disabled, POST your bundle to: /api/bundle/sync or set DOT_ENABLE_OLD_BUNDLE_UPLOAD_ENDPOINT=true to use this old endpoint.");
+        }
+
+
+
 
     	try {
 			if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("publishing-queue", getUser())){
