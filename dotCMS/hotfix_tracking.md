@@ -71,3 +71,6 @@ This maintenance release includes the following code fixes:
 65. https://github.com/dotCMS/core/issues/29668 : Spike: PP bundles not being processed by Receiver #29668
 66. https://github.com/dotCMS/core/issues/29719 : relax ES checks in /api/v1/probes/startup #29719
 67. https://github.com/dotCMS/core/issues/30083 : Startup timeouts due to indexer concurrency issues #30083
+68. https://github.com/dotCMS/core/issues/30237 : Error adding new content when no lang param is send #30237
+69. https://github.com/dotCMS/core/issues/28735 : Locked page error text wrapping incorrectly #28735
+70. https://github.com/dotCMS/core/issues/28855 : When page is locked, hover text still says "Lock Page" #28855
