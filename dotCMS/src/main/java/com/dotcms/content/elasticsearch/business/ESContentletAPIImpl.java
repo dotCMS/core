@@ -12,11 +12,9 @@ import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.business.field.FieldHandlerStrategyFactory;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
-import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.content.elasticsearch.util.PaginationUtil;
-import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
-import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
-import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.*;
+import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -236,6 +234,8 @@ import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PER
  */
 public class ESContentletAPIImpl implements ContentletAPI {
 
+    private static Lazy<Boolean> ENABLED_UNIQUE_FIELDS_DATA_BASE_VALIDATION = Lazy.of(() ->
+            Config.getBooleanProperty("ENABLED_UNIQUE_FIELDS_DATA_BASE_VALIDATION", false));
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT = "Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
     private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
@@ -277,6 +277,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final BaseTypeToContentTypeStrategyResolver baseTypeToContentTypeStrategyResolver =
             BaseTypeToContentTypeStrategyResolver.getInstance();
 
+
     public enum QueryType {
         search, suggest, moreLike, Facets
     }
@@ -285,6 +286,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private static final Supplier<String> ND_SUPPLIER = () -> "N/D";
     private final ElasticReadOnlyCommand elasticReadOnlyCommand;
+
+    public static boolean getEnabledUniqueFieldsDataBaseValidation() {
+        return ENABLED_UNIQUE_FIELDS_DATA_BASE_VALIDATION.get();
+    }
+
+    public static void  setEnabledUniqueFieldsDataBaseValidation(final boolean newValue) {
+        ENABLED_UNIQUE_FIELDS_DATA_BASE_VALIDATION = Lazy.of(() -> newValue);
+    }
 
     /**
      * Default class constructor.
@@ -310,7 +319,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public ESContentletAPIImpl() {
         this(ElasticReadOnlyCommand.getInstance());
     }
-
 
     @Override
     public SearchResponse esSearchRaw(String esQuery, boolean live, User user,
@@ -5516,6 +5524,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet = contentFactory.save(contentlet);
             }
 
+           if (hasUniqueField(contentType)) {
+               UniqueFieldValidationStrategyResolver.INSTANCE.get().afterSaved(contentlet, isNewContent);
+           }
+
+
             contentlet.setIndexPolicy(indexPolicy);
             contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
 
@@ -5643,6 +5656,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
+    }
+
+    private static boolean hasUniqueField(ContentType contentType) {
+        return contentType.fields().stream().anyMatch(field -> field.unique());
     }
 
     private boolean shouldRemoveOldHostCache(Contentlet contentlet, String oldHostId) {
@@ -7632,98 +7649,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // validate unique
             if (field.isUnique()) {
-                final boolean isDataTypeNumber =
-                        field.getDataType().contains(DataTypes.INTEGER.toString())
-                                || field.getDataType().contains(DataTypes.FLOAT.toString());
+
                 try {
-                    final StringBuilder buffy = new StringBuilder(UUIDGenerator.generateUuid());
-                    buffy.append(" +structureInode:" + contentlet.getContentTypeId());
-                    if (UtilMethods.isSet(contentlet.getIdentifier())) {
-                        buffy.append(" -(identifier:" + contentlet.getIdentifier() + ")");
-                    }
-
-                    buffy.append(" +languageId:" + contentlet.getLanguageId());
-
-                    if (getUniquePerSiteConfig(field)) {
-                        if (!UtilMethods.isSet(contentlet.getHost())) {
-                            populateHost(contentlet);
-                        }
-
-                        buffy.append(" +conHost:" + contentlet.getHost());
-                    }
-
-                    buffy.append(" +").append(contentlet.getContentType().variable())
-                            .append(StringPool.PERIOD)
-                            .append(field.getVelocityVarName()).append(ESUtils.SHA_256)
-                            .append(StringPool.COLON)
-                            .append(ESUtils.sha256(contentlet.getContentType().variable()
-                                            + StringPool.PERIOD + field.getVelocityVarName(), fieldValue,
-                                    contentlet.getLanguageId()));
-
-                    final List<ContentletSearch> contentlets = new ArrayList<>();
-                    try {
-                        contentlets.addAll(
-                                searchIndex(buffy.toString() + " +working:true", -1, 0, "inode",
-                                        APILocator.getUserAPI().getSystemUser(), false));
-                        contentlets.addAll(
-                                searchIndex(buffy.toString() + " +live:true", -1, 0, "inode",
-                                        APILocator.getUserAPI().getSystemUser(), false));
-                    } catch (final Exception e) {
-                        final String errorMsg =
-                                "Unique field [" + field.getVelocityVarName() + "] with value '" +
-                                        fieldValue + "' could not be validated: " + e.getMessage();
-                        Logger.warn(this, errorMsg, e);
-                        throw new DotContentletValidationException(errorMsg, e);
-                    }
-                    int size = contentlets.size();
-                    if (size > 0 && !hasError) {
-                        boolean unique = true;
-                        for (final ContentletSearch contentletSearch : contentlets) {
-                            final Contentlet uniqueContent = contentFactory.find(
-                                    contentletSearch.getInode());
-                            if (null == uniqueContent) {
-                                final String errorMsg = String.format(
-                                        "Unique field [%s] could not be validated, as " +
-                                                "unique content Inode '%s' was not found. ES Index might need to be reindexed.",
-                                        field.getVelocityVarName(), contentletSearch.getInode());
-                                Logger.warn(this, errorMsg);
-                                throw new DotContentletValidationException(errorMsg);
-                            }
-                            final Map<String, Object> uniqueContentMap = uniqueContent.getMap();
-                            final Object obj = uniqueContentMap.get(field.getVelocityVarName());
-                            if ((isDataTypeNumber && Objects.equals(fieldValue, obj)) ||
-                                    (!isDataTypeNumber && ((String) obj).equalsIgnoreCase(
-                                            ((String) fieldValue)))) {
-                                unique = false;
-                                break;
-                            }
-
-                        }
-                        if (!unique) {
-                            if (UtilMethods.isSet(contentlet.getIdentifier())) {
-                                Iterator<ContentletSearch> contentletsIter = contentlets.iterator();
-                                while (contentletsIter.hasNext()) {
-                                    ContentletSearch cont = contentletsIter.next();
-                                    if (!contentlet.getIdentifier()
-                                            .equalsIgnoreCase(cont.getIdentifier())) {
-                                        cve.addUniqueField(field);
-                                        hasError = true;
-                                        Logger.warn(this,
-                                                getUniqueFieldErrorMessage(field, fieldValue,
-                                                        cont));
-                                        break;
-                                    }
-                                }
-                            } else {
-                                cve.addUniqueField(field);
-                                hasError = true;
-                                Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue,
-                                        contentlets.get(0)));
-                                break;
-                            }
-                        }
-                    }
-                } catch (final DotDataException | DotSecurityException e) {
+                    UniqueFieldValidationStrategyResolver.INSTANCE.get().validate(contentlet,
+                            LegacyFieldTransformer.from(field));
+                } catch (UniqueFieldValueDuplicatedException e) {
+                    cve.addUniqueField(field);
+                    hasError = true;
+                    Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue,
+                            UtilMethods.isSet(e.getContentlets()) ? e.getContentlets().get(0) : "UnKnow"));
+                } catch (DotDataException | DotSecurityException e) {
                     Logger.warn(this, "Unable to get contentlets for Content Type: "
                             + contentlet.getContentType().name(), e);
                 }
@@ -7799,11 +7734,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private String getUniqueFieldErrorMessage(final Field field, final Object fieldValue,
-            final ContentletSearch contentletSearch) {
+            final String contentletID) {
 
         return String.format(
                 "Value of Field [%s] must be unique. Contents having the same value (%s): %s",
-                field.getVelocityVarName(), fieldValue, contentletSearch.getIdentifier());
+                field.getVelocityVarName(), fieldValue, contentletID);
     }
 
     private boolean getUniquePerSiteConfig(final Field field) {

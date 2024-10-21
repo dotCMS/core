@@ -41,9 +41,9 @@ import java.util.stream.Collectors;
 
 public class TemplateFactoryImpl implements TemplateFactory {
 
-	public static final String CONTENTKET_INODE_TABLE_FIELD = "inode";
+	public static final String CONTENTLET_INODE_TABLE_FIELD = "inode";
+	private static final String FILTER_STRING = "filter";
 	private static TemplateCache templateCache = CacheLocator.getTemplateCache();
-	private static TemplateSQL templateSQL = TemplateSQL.getInstance();
 
 	@SuppressWarnings("unchecked")
 
@@ -53,7 +53,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 		if(template==null){
 			final List<Map<String, Object>> templateResults = new DotConnect()
-					.setSQL(templateSQL.FIND_BY_INODE)
+					.setSQL(TemplateSQL.FIND_BY_INODE)
 					.addParam(inode)
 					.loadObjectResults();
 			if (templateResults.isEmpty()) {
@@ -76,8 +76,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			throws DotDataException {
 		final DotConnect dc = new DotConnect();
 		final String query = !includeArchived ?
-				templateSQL.FIND_TEMPLATES_BY_HOST_INODE + " and vi.deleted = "
-						+ DbConnectionFactory.getDBFalse() : templateSQL.FIND_TEMPLATES_BY_HOST_INODE;
+				TemplateSQL.FIND_TEMPLATES_BY_HOST_INODE + " and vi.deleted = "
+						+ DbConnectionFactory.getDBFalse() : TemplateSQL.FIND_TEMPLATES_BY_HOST_INODE;
 		dc.setSQL(query);
 		dc.addParam(parentHost.getIdentifier());
 
@@ -91,7 +91,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	@SuppressWarnings("unchecked")
 	public List<Template> findTemplatesUserCanUse(final User user, final String hostId, final String query, final boolean searchHost , final int offset, final int limit) throws DotDataException, DotSecurityException {
 		return findTemplates(user, false,
-				UtilMethods.isSet(query) ? Map.of("filter", query.toLowerCase())
+				UtilMethods.isSet(query) ? Map.of(FILTER_STRING, query.toLowerCase())
 						: null, hostId, null, null, null, offset, limit, "title");
 	}
 
@@ -135,7 +135,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	private void insertInodeInDB(final Template template) throws DotDataException{
 		DotConnect dc = new DotConnect();
-		dc.setSQL(templateSQL.INSERT_INODE);
+		dc.setSQL(TemplateSQL.INSERT_INODE);
 		dc.addParam(template.getInode());
 		dc.addParam(template.getiDate());
 		dc.addParam(template.getOwner());
@@ -144,7 +144,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	private void insertTemplateInDB(final Template template) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(templateSQL.INSERT_TEMPLATE);
+		dc.setSQL(TemplateSQL.INSERT_TEMPLATE);
 		dc.addParam(template.getInode());
 		dc.addParam(template.isShowOnMenu());
 		dc.addParam(template.getTitle());
@@ -177,7 +177,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	@SuppressWarnings("unchecked")
 	public Template findWorkingTemplateByName(String name, Host host) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(templateSQL.FIND_WORKING_TEMPLATE_BY_HOST_INODE_AND_TITLE);
+		dc.setSQL(TemplateSQL.FIND_WORKING_TEMPLATE_BY_HOST_INODE_AND_TITLE);
 		dc.addParam(host.getIdentifier());
 		dc.addParam(name);
 		try{
@@ -266,7 +266,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			dc.setSQL(query.toString());
 
 			if(params!=null && params.size()>0){
-				final String filter = "%"+params.get("filter").toString().toLowerCase()+"%";
+				final String filter = "%"+params.get(FILTER_STRING).toString().toLowerCase()+"%";
 				dc.addParam(filter);
 				dc.addParam(filter);
 				dc.addParam(filter);
@@ -274,7 +274,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 			// adding the templates from the site browser
 			toReturn.addAll(this.findFolderAssetTemplate(user, hostId, orderBy,
-					includeArchived, params != null ? params.get("filter").toString(): null));
+					includeArchived, params != null ? params.get(FILTER_STRING).toString(): null));
 
 			if(countLimit > 0 && toReturn.size() < countLimit + offset) {//If haven't reach the amount of templates requested
 				while (!done) {
@@ -287,7 +287,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 					//Search by inode
 					if (resultList.isEmpty()) {
 						final Template templateInode =
-								params != null ? find(params.get("filter").toString()) : null;
+								params != null ? find(params.get(FILTER_STRING).toString()) : null;
 						resultList =
 								templateInode != null ? List.of(templateInode)
 										: Collections.emptyList();
@@ -549,7 +549,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	private void updateInodeInDB(final Template template) throws DotDataException{
 		DotConnect dc = new DotConnect();
-		dc.setSQL(templateSQL.UPDATE_INODE);
+		dc.setSQL(TemplateSQL.UPDATE_INODE);
 		dc.addParam(template.getiDate());
 		dc.addParam(template.getOwner());
 		dc.addParam(template.getInode());
@@ -558,7 +558,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	private void updateTemplateInDB(final Template template) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(templateSQL.UPDATE_TEMPLATE);
+		dc.setSQL(TemplateSQL.UPDATE_TEMPLATE);
 		dc.addParam(template.isShowOnMenu());
 		dc.addParam(template.getTitle());
 		dc.addParam(template.getModDate());
@@ -593,22 +593,22 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		DotConnect dc = new DotConnect();
 
 		try {
-			dc.setSQL(templateSQL.FIND_TEMPLATES_BY_MOD_USER);
+			dc.setSQL(TemplateSQL.FIND_TEMPLATES_BY_MOD_USER);
 			dc.addParam(userId);
 			List<HashMap<String, String>> templates = dc.loadResults();
 
-			dc.setSQL(templateSQL.UPDATE_MOD_USER_BY_MOD_USER);
+			dc.setSQL(TemplateSQL.UPDATE_MOD_USER_BY_MOD_USER);
 			dc.addParam(replacementUserId);
 			dc.addParam(userId);
 			dc.loadResult();
 
-			dc.setSQL(templateSQL.UPDATE_LOCKED_BY);
+			dc.setSQL(TemplateSQL.UPDATE_LOCKED_BY);
 			dc.addParam(replacementUserId);
 			dc.addParam(userId);
 			dc.loadResult();
 
 			for(HashMap<String, String> ident:templates){
-				String inode = ident.get("inode");
+				String inode = ident.get(CONTENTLET_INODE_TABLE_FIELD);
 				Template template = find(inode);
 				deleteFromCache(template);
 				new TemplateLoader().invalidate(template);
@@ -629,10 +629,10 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		final StringBuffer query = new StringBuffer();
 
 		if(bringOldVersions) {
-			query.append(templateSQL.FIND_ALL_VERSIONS_BY_IDENTIFIER);
+			query.append(TemplateSQL.FIND_ALL_VERSIONS_BY_IDENTIFIER);
 
 		} else {//This only brings the inode of the working and live version
-			query.append(templateSQL.FIND_WORKING_LIVE_VERSION_BY_IDENTIFIER);
+			query.append(TemplateSQL.FIND_WORKING_LIVE_VERSION_BY_IDENTIFIER);
 		}
 
 		dc.setSQL(query.toString());
@@ -640,7 +640,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		final List<Map<String,Object>> results=dc.loadObjectResults();
 		final List<Template> templateAllVersions = new ArrayList<>();
 		for(Map<String,Object> result : results) {
-			final Template template = find(result.get("inode").toString());
+			final Template template = find(result.get(CONTENTLET_INODE_TABLE_FIELD).toString());
 			templateAllVersions.add(template);
 		}
 		return templateAllVersions;
@@ -653,21 +653,21 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	private void deleteInodeInDB(final String inode) throws DotDataException{
 		DotConnect dc = new DotConnect();
-		dc.setSQL(templateSQL.DELETE_INODE);
+		dc.setSQL(TemplateSQL.DELETE_INODE);
 		dc.addParam(inode);
 		dc.loadResult();
 	}
 
 	private void deleteTemplateInDB(final String inode) throws DotDataException{
 		DotConnect dc = new DotConnect();
-		dc.setSQL(templateSQL.DELETE_TEMPLATE_BY_INODE);
+		dc.setSQL(TemplateSQL.DELETE_TEMPLATE_BY_INODE);
 		dc.addParam(inode);
 		dc.loadResult();
 	}
 
 	public List<Template> findTemplatesByContainerInode(final String containerInode) throws DotDataException{
 		DotConnect dc = new DotConnect();
-		dc.setSQL(templateSQL.FIND_TEMPLATES_BY_CONTAINER_INODE);
+		dc.setSQL(TemplateSQL.FIND_TEMPLATES_BY_CONTAINER_INODE);
 		dc.addParam(containerInode);
 		return TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
 	}
@@ -734,24 +734,12 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			throws DotDataException, DotSecurityException {
 
 		final DotConnect dotConnect = new DotConnect();
-
-		if (DbConnectionFactory.isMsSql()) {
-			dotConnect.setSQL("SELECT identifier,inode,language_id, variant_id as variant "
-					+ "FROM contentlet "
-					+ "WHERE JSON_VALUE(contentlet_as_json, '$.fields.template.value') = ?");
-		} else {
-			dotConnect.setSQL("SELECT identifier,inode,language_id,variant_id as variant "
-					+ "FROM contentlet "
-					+ "WHERE contentlet_as_json->'fields'->'template'->>'value' =  ?");
-		}
-
+		dotConnect.setSQL(TemplateSQL.GET_PAGES_BY_TEMPLATE_ID);
 		dotConnect.addParam(templateId);
 
 		return ((List<Map<String, String>>) dotConnect.loadResults()).stream()
 				.map(mapEntry -> new HTMLPageVersion.Builder().identifier(mapEntry.get("identifier"))
-						.inode(mapEntry.get(CONTENTKET_INODE_TABLE_FIELD))
 						.variantName(mapEntry.get("variant"))
-						.languageId(Long.parseLong(mapEntry.get("language_id")))
 						.build()
 				)
 				.collect(Collectors.toList());
@@ -841,14 +829,14 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		}
 
 		final DotConnect dc = new DotConnect().setSQL(sqlQuery.toString());
-		parameters.forEach(param -> dc.addParam(param));
+		parameters.forEach(dc::addParam);
 
 		try {
 			final List<Map<String,String>> inodesMapList =  dc.loadResults();
 
 			final List<String> inodes = new ArrayList<>();
 			for (final Map<String, String> versionInfoMap : inodesMapList) {
-				inodes.add(versionInfoMap.get("inode"));
+				inodes.add(versionInfoMap.get(CONTENTLET_INODE_TABLE_FIELD));
 			}
 
 			final List<Contentlet> contentletList  = APILocator.getContentletAPI().findContentlets(inodes);
@@ -957,6 +945,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 			if (UtilMethods.isSet(orderByParam)) {
 				switch (orderByParam.toLowerCase()) {
+					default:
 					case "title asc":
 						templates.sort(Comparator.comparing(Template::getTitle));
 						break;

@@ -114,6 +114,11 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private final EventProducer eventProducer;
     private final JobProcessorFactory jobProcessorFactory;
 
+    // Cap to prevent overflow
+    private static final int MAX_EMPTY_QUEUE_COUNT = 30;
+    // Arbitrary threshold to reset
+    private static final int EMPTY_QUEUE_RESET_THRESHOLD = Integer.MAX_VALUE - 1000;
+
     /**
      * Constructs a new JobQueueManagerAPIImpl.
      * This constructor initializes the job queue manager with all necessary dependencies and configurations.
@@ -473,9 +478,11 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 } else {
                     // If no jobs were found, wait for a short time before checking again
                     // Implement exponential backoff when queue is repeatedly empty
-                    long sleepTime = Math.min(1000 * (long) Math.pow(2, emptyQueueCount), 30000);
+                    long sleepTime = calculateBackoffTime(emptyQueueCount, MAX_EMPTY_QUEUE_COUNT);
                     Thread.sleep(sleepTime);
-                    emptyQueueCount++;
+                    emptyQueueCount = incrementAndResetEmptyQueueCount(
+                            emptyQueueCount, MAX_EMPTY_QUEUE_COUNT, EMPTY_QUEUE_RESET_THRESHOLD
+                    );
                 }
             } catch (InterruptedException e) {
                 Logger.error(this, "Job processing thread interrupted: " + e.getMessage(), e);
@@ -963,6 +970,37 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         }
 
         return progress;
+    }
+
+    /**
+     * Calculates the backoff time based on the number of empty queue counts.
+     *
+     * @param emptyQueueCount    the current count of empty queue checks
+     * @param maxEmptyQueueCount the maximum count of empty queue checks
+     * @return the calculated backoff time in milliseconds, the result is capped at 30,000
+     * milliseconds (30 seconds) to prevent excessively long sleep times.
+     */
+    @VisibleForTesting
+    public long calculateBackoffTime(int emptyQueueCount, int maxEmptyQueueCount) {
+        emptyQueueCount = Math.min(emptyQueueCount, maxEmptyQueueCount);
+        return Math.min(1000L * (1L << emptyQueueCount), 30000L);
+    }
+
+    /**
+     * Increments the empty queue count and resets it if it exceeds the reset threshold.
+     *
+     * @param emptyQueueCount    the current count of empty queue checks
+     * @param maxEmptyQueueCount the maximum count of empty queue checks
+     * @param resetThreshold     the threshold at which the empty queue count should be reset
+     * @return the updated empty queue count
+     */
+    private int incrementAndResetEmptyQueueCount(
+            int emptyQueueCount, int maxEmptyQueueCount, int resetThreshold) {
+        emptyQueueCount++;
+        if (emptyQueueCount > resetThreshold) {
+            emptyQueueCount = maxEmptyQueueCount; // Reset to max to avoid wrap around
+        }
+        return emptyQueueCount;
     }
 
     /**

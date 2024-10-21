@@ -386,8 +386,14 @@ import org.junit.runners.Suite.SuiteClasses;
         LegacyJSONObjectRenderTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241009CreatePostgresJobQueueTablesTest.class,
+<<<<<<< HEAD
         UniqueFieldDataBaseUtilTest.class,
         ExtraTableUniqueFieldValidationStrategyTest.class
+=======
+        UniqueFieldFactoryImplTest.class,
+        UniqueFieldAPITest.class,
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class
+>>>>>>> abb53a6ea5c9e56353bf8745baf5b0cec90e79eb
 })
 
 public class MainSuite2b {

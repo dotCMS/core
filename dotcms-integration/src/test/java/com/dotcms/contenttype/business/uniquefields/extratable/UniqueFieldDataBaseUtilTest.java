@@ -1,8 +1,7 @@
-package com.dotcms.contenttype.business;
+package com.dotcms.contenttype.business.uniquefields.extratable;
 
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.JsonUtil;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -12,14 +11,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
-public class UniqueFieldFactoryImplTest {
+public class UniqueFieldDataBaseUtilTest {
 
     @BeforeClass
     //TODO: Remove this when the whole change is done
@@ -35,7 +33,7 @@ public class UniqueFieldFactoryImplTest {
     }
 
     /**
-     * Method to test: {@link UniqueFieldFactoryImpl#insert(String, Map)}
+     * Method to test: {@link UniqueFieldDataBaseUtil#insert(String, Map)}
      * When: Called the method with the right parameters
      * Should: Insert a register in the unique_fields table
      */
@@ -55,7 +53,7 @@ public class UniqueFieldFactoryImplTest {
                 "contentletsId", CollectionsUtils.list( randomStringGenerator.nextString() )
         );
 
-        FactoryLocator.getUniqueFieldFactory().insert(hash, supportingValues);
+        UniqueFieldDataBaseUtil.INSTANCE.insert(hash, supportingValues);
 
         final List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE unique_key_val = ?")
                 .addParam(hash).loadObjectResults();
@@ -71,7 +69,7 @@ public class UniqueFieldFactoryImplTest {
     }
 
     /**
-     * Method to test: {@link UniqueFieldFactoryImpl#insert(String, Map)}
+     * Method to test: {@link UniqueFieldDataBaseUtil#insert(String, Map)}
      * When: Called the method with a 'unique_key_val' duplicated
      * Should: Throw a {@link java.sql.SQLException}
      */
@@ -91,7 +89,7 @@ public class UniqueFieldFactoryImplTest {
                 "contentletsId", "['" + randomStringGenerator.nextString() + "']"
         );
 
-        FactoryLocator.getUniqueFieldFactory().insert(hash, supportingValues_1);
+        UniqueFieldDataBaseUtil.INSTANCE.insert(hash, supportingValues_1);
 
         final Map<String, Object> supportingValues_2 = Map.of(
                 "contentTypeID", randomStringGenerator.nextString(),
@@ -104,7 +102,7 @@ public class UniqueFieldFactoryImplTest {
         );
 
         try {
-            FactoryLocator.getUniqueFieldFactory().insert(hash, supportingValues_2);
+            UniqueFieldDataBaseUtil.INSTANCE.insert(hash, supportingValues_2);
 
             throw new AssertionError("Exception expected");
         } catch (DotDataException e) {

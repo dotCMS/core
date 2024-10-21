@@ -1291,6 +1291,26 @@ public class JobQueueManagerAPITest {
     }
 
     /**
+     * Method to test: calculateBackoffTime in JobQueueManagerAPI
+     * Given Scenario: Various empty queue counts and maximum empty queue count
+     * ExpectedResult: Correct backoff times are calculated
+     */
+    @Test
+    public void test_calculateBackoffTime() {
+
+        JobQueueManagerAPIImpl jobQueueManager = (JobQueueManagerAPIImpl) jobQueueManagerAPI;
+
+        assertEquals(1000L, jobQueueManager.calculateBackoffTime(0, 30));
+        assertEquals(2000L, jobQueueManager.calculateBackoffTime(1, 30));
+        assertEquals(4000L, jobQueueManager.calculateBackoffTime(2, 30));
+        assertEquals(8000L, jobQueueManager.calculateBackoffTime(3, 30));
+        assertEquals(16000L, jobQueueManager.calculateBackoffTime(4, 30));
+        assertEquals(30000L, jobQueueManager.calculateBackoffTime(5, 30));
+        assertEquals(30000L, jobQueueManager.calculateBackoffTime(6, 30));
+        assertEquals(30000L, jobQueueManager.calculateBackoffTime(30, 30));
+    }
+
+    /**
      * Creates a new instance of the JobQueueManagerAPI with the provided configurations.
      *
      * @param jobQueue                           The job queue to be managed.
