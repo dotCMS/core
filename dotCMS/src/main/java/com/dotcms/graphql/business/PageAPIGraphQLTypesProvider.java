@@ -92,7 +92,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
         // Page type
         final Map<String, TypeFetcher> pageFields = new HashMap<>(ContentFields.getContentFields());
-        pageFields.put("__icon__", new TypeFetcher(GraphQLString));
+        pageFields.put("icon", new TypeFetcher(GraphQLString));
         pageFields.put("cachettl", new TypeFetcher(GraphQLString));
         pageFields.put("canEdit", new TypeFetcher(GraphQLBoolean));
         pageFields.put("canLock", new TypeFetcher(GraphQLBoolean));
