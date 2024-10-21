@@ -161,3 +161,4 @@ This maintenance release includes the following code fixes:
 154. https://github.com/dotCMS/core/issues/29719 : relax ES checks in /api/v1/probes/startup #29719
 155. https://github.com/dotCMS/core/issues/30083 : Startup timeouts due to indexer concurrency issues #30083
 156. https://github.com/dotCMS/core/issues/28576 : GraphQL __icon__ field violates GraphQL introspection convention prohibiting __ prefixes #28576
+157. https://github.com/dotCMS/core/issues/28855 : When page is locked, hover text still says "Lock Page" #28855

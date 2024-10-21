@@ -29,6 +29,8 @@
         [pTooltip]="
             pageState.state.lockedByAnotherUser && pageState.page.canEdit
                 ? ('editpage.toolbar.page.locked.by.user' | dm : [pageState.page.lockedByName])
+                : pageState.state.locked!
+                ? ('message.htmlpage.unlock.page' | dm)
                 : ('lock.clipboard' | dm)
         "
         tooltipPosition="bottom"
