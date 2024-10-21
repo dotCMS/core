@@ -3443,32 +3443,32 @@
     replace-in-file "6.2.0"
     tslib "^2.6.2"
 
-"@ngrx/component-store@17.0.1":
-  version "17.0.1"
-  resolved "https://registry.yarnpkg.com/@ngrx/component-store/-/component-store-17.0.1.tgz#de84dab7c3595329378ca46b2b82595d6406e87e"
-  integrity sha512-6A7IXzZHAdFadcCILbljNQzrVMwOlx1opdCV/91h3S3ttY7HrPuatyZJyjau8dSf1ANjnAm1kcoof8lZfwhaHg==
+"@ngrx/component-store@^18.0.2":
+  version "18.0.2"
+  resolved "https://registry.npmjs.org/@ngrx/component-store/-/component-store-18.0.2.tgz#fcbdc27439267cdcb6f1fbdb89a495d353c8d1ad"
+  integrity sha512-IB7ZKFqjDt4duQbfYqXxAOKf9Si9O1HFodqbNCSgi7gnovK/frf/H429a+lYOyItPcpno3ECom6/1k8pE8fWlg==
   dependencies:
-    "@ngrx/operators" "17.0.0-beta.0"
+    "@ngrx/operators" "18.0.1"
     tslib "^2.0.0"
 
-"@ngrx/operators@17.0.0-beta.0":
-  version "17.0.0-beta.0"
-  resolved "https://registry.yarnpkg.com/@ngrx/operators/-/operators-17.0.0-beta.0.tgz#030486f3a610fa919d2b155aad3bc7b4c708550d"
-  integrity sha512-EbO8AONuQ6zo2v/mPyBOi4y0CTAp1x4Z+bx7ZF+Pd8BL5ma53BTCL1TmzaeK5zPUe0yApudLk9/ZbHXPnVox5A==
+"@ngrx/operators@18.0.1":
+  version "18.0.1"
+  resolved "https://registry.npmjs.org/@ngrx/operators/-/operators-18.0.1.tgz#fd127dce1bccb27824b77149fbb4f8b56d2ad8a9"
+  integrity sha512-M+QMrHNKgcuiLaRGZxJ4aQi5/OCRfKC4+T/63dsHyLFZ53/FFpF6a/ytSO1Q+tzOplZ5o99S+i8FVaZqNQ3LmQ==
   dependencies:
     tslib "^2.3.0"
 
-"@ngrx/operators@^17.2.0":
-  version "17.2.0"
-  resolved "https://registry.yarnpkg.com/@ngrx/operators/-/operators-17.2.0.tgz#aa449cbd8565b50353715c568ba38488d4495069"
-  integrity sha512-W7SrGK4VQSJlCtMrkxNChVBDgJGSCdZ4yLBi80xoE9CmhTMMhu9J+8BbDDhZ+PPbTHylKJobkwHq+tJ8mkf4eQ==
+"@ngrx/operators@^18.0.2":
+  version "18.0.2"
+  resolved "https://registry.npmjs.org/@ngrx/operators/-/operators-18.0.2.tgz#d56532ed750901418ad6e55c0719bfb11a55fa27"
+  integrity sha512-4dyNkVKBw9ZqECMJu6bT2t21p3ANaMC+ZkcfiBfv5OUEFtB9HhN5uCem9tcgYeNBK8XQFA7/1tzd1T3KaiBY8A==
   dependencies:
     tslib "^2.3.0"
 
-"@ngrx/signals@^17.2.0":
-  version "17.2.0"
-  resolved "https://registry.yarnpkg.com/@ngrx/signals/-/signals-17.2.0.tgz#30d2e75cf3786111356115bf3cdb10e81517ac23"
-  integrity sha512-tkkxifeOVPOhpTqbHyK1WOx4qz49HLR/h0vhaa/MRGRIZoOR/6gR4KB3hbC8FD3FdnuNqOgOZ2lGsTfWPB/6BQ==
+"@ngrx/signals@^18.0.2":
+  version "18.0.2"
+  resolved "https://registry.npmjs.org/@ngrx/signals/-/signals-18.0.2.tgz#9684da0f3ba6db656c281b0d71dc5e15e5d78098"
+  integrity sha512-FXmcY2cmkbhZtg9k8Ntq69SyelGmmb6fWtdButH4T8GGFH0o3f1FZTR829j4ynphy8SzuDhD/pzrnpWcV481oQ==
   dependencies:
     tslib "^2.3.0"
 
@@ -13598,10 +13598,10 @@ jest-pnp-resolver@^1.2.2:
   resolved "https://registry.yarnpkg.com/jest-pnp-resolver/-/jest-pnp-resolver-1.2.3.tgz#930b1546164d4ad5937d5540e711d4d38d4cad2e"
   integrity sha512-+3NpwQEnRoIBtx4fyhblQDPgJI0H1IEIkX7ShLUjPGA7TtUTvI1oiKi3SR4oBR0hQhQR80l4WAe5RrXBwWMA8w==
 
-jest-preset-angular@14.0.4:
-  version "14.0.4"
-  resolved "https://registry.yarnpkg.com/jest-preset-angular/-/jest-preset-angular-14.0.4.tgz#4745033c58c86ad3d8dd16450d67563703285bd5"
-  integrity sha512-O4WhVRdfiN9TtJMbJbuVJxD3zn6fyOF2Pqvu12fvEVR6FxCN1S1POfR2nU1fRdP+rQZv7iiW+ttxsy+qkE8iCw==
+jest-preset-angular@14.2.4:
+  version "14.2.4"
+  resolved "https://registry.npmjs.org/jest-preset-angular/-/jest-preset-angular-14.2.4.tgz#bb932b4a73f0204a20a4bf8d477224f57918a1a3"
+  integrity sha512-xyhkaiBdn3keBgxxkcbqZu/my3ADU9NcDrz6DaMuGRaxz/bf6ZC1qxZ1eQuz5V1WuA3/rD64VA3Kke8P6E9qNg==
   dependencies:
     bs-logger "^0.2.6"
     esbuild-wasm ">=0.15.13"
