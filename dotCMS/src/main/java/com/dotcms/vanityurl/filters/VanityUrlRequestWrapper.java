@@ -3,6 +3,7 @@ package com.dotcms.vanityurl.filters;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
 
+import com.dotcms.repackage.org.nfunk.jep.function.Str;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -36,12 +37,20 @@ public class VanityUrlRequestWrapper extends HttpServletRequestWrapper {
         super(request);
 
         final boolean vanityHasQueryString = UtilMethods.isSet(vanityUrlResult.getQueryString());
-        
-        this.newQueryString = vanityHasQueryString && UtilMethods.isSet(request.getQueryString())
-                        ? request.getQueryString() + "&" + vanityUrlResult.getQueryString()
-                        : vanityHasQueryString 
-                            ? vanityUrlResult.getQueryString()
-                            : request.getQueryString();
+
+        String queryParams = request.getQueryString();
+        final Map<String, String> vanityParams = convertURLParamsStringToMap(vanityUrlResult.getQueryString());
+        final Map<String, String> requestParams = convertURLParamsStringToMap(request.getQueryString());
+        if(vanityHasQueryString){
+            for(final String key : vanityParams.keySet()){
+                //add to the request.getQueryString() the vanity parameters that are not already present, the key and value must not be the same
+                if(!requestParams.containsKey(key) || !requestParams.get(key).equals(vanityParams.get(key))){
+                    queryParams += "&" + key + "=" + vanityParams.get(key);
+                }
+            }
+        }
+        this.newQueryString = queryParams;
+
 
 
         // we create a new map here because it merges the 
@@ -62,6 +71,32 @@ public class VanityUrlRequestWrapper extends HttpServletRequestWrapper {
         this.setAttribute(CMS_FILTER_URI_OVERRIDE, vanityUrlResult.getRewrite());
         this.setAttribute(CMS_FILTER_QUERY_STRING_OVERRIDE, this.newQueryString);
 
+    }
+
+    /**
+     * Converts a URL parameters string to a map of key-value pairs
+     * @param input URL parameters string
+     * @return Map of key-value pairs
+     */
+    private Map<String, String> convertURLParamsStringToMap(final String input) {
+        final Map<String, String> map = new HashMap<>();
+
+        if(UtilMethods.isSet(input)) {
+            // Split the input string by '&' to get key-value pairs
+            final String[] pairs = input.split("&");
+
+            for (final String pair : pairs) {
+                // Split each pair by '=' to get the key and value
+                final String[] keyValue = pair.split("=");
+                if (keyValue.length == 2) {
+                    map.put(keyValue[0], keyValue[1]);
+                } else if (keyValue.length == 1) {
+                    map.put(keyValue[0], ""); // Handle case where there is a key with no value
+                }
+            }
+        }
+
+        return map;
     }
 
     @Override
