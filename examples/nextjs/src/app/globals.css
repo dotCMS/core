@@ -15,3 +15,9 @@
 .full-width .container {
     @apply max-w-none;
 }
+
+.full-height,
+.full-height [data-dot-object="container"] {
+    @apply grid gap-4 h-full;
+    grid-template-rows: repeat(auto-fit, minmax(0, 1fr));
+}

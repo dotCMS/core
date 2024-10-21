@@ -19,6 +19,7 @@ import { CustomNoComponent } from "./content-types/empty";
 import { usePageAsset } from "../hooks/usePageAsset";
 import BlogWithBlockEditor from "./content-types/blog";
 import { SimpleWidget } from "./content-types/SimpleWidget";
+import { Video } from "./content-types/Video";
 /**
  * Configure experiment settings below. If you are not using experiments,
  * you can ignore or remove the experiment-related code and imports.
@@ -41,6 +42,7 @@ const componentsMap = {
     CustomNoComponent: CustomNoComponent,
     BlockEditorItem: BlogWithBlockEditor,
     SimpleWidget: SimpleWidget,
+    Video: Video
 };
 
 export function MyPage({ pageAsset, nav }) {
