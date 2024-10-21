@@ -160,3 +160,4 @@ This maintenance release includes the following code fixes:
 153. https://github.com/dotCMS/core/issues/29668 : Spike: PP bundles not being processed by Receiver #29668
 154. https://github.com/dotCMS/core/issues/29719 : relax ES checks in /api/v1/probes/startup #29719
 155. https://github.com/dotCMS/core/issues/30083 : Startup timeouts due to indexer concurrency issues #30083
+156. https://github.com/dotCMS/core/issues/28576 : GraphQL __icon__ field violates GraphQL introspection convention prohibiting __ prefixes #28576
