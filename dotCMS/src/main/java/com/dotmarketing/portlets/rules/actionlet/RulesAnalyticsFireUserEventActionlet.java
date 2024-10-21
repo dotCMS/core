@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.rules.actionlet;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorService;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceFactory;
 import com.dotcms.analytics.track.matchers.UserCustomDefinedRequestMatcher;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
@@ -17,7 +16,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * This actionlet allows to fire an user event to the analytics backend.
