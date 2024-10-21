@@ -3,9 +3,7 @@ package com.dotcms.vanityurl.filters;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
 
-import com.dotcms.repackage.org.nfunk.jep.function.Str;
 import com.dotcms.vanityurl.model.VanityUrlResult;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import java.nio.charset.StandardCharsets;
@@ -38,18 +36,21 @@ public class VanityUrlRequestWrapper extends HttpServletRequestWrapper {
 
         final boolean vanityHasQueryString = UtilMethods.isSet(vanityUrlResult.getQueryString());
 
-        String queryParams = request.getQueryString();
+        final StringBuilder params = new StringBuilder();
+        params.append(request.getQueryString());
         final Map<String, String> vanityParams = convertURLParamsStringToMap(vanityUrlResult.getQueryString());
         final Map<String, String> requestParams = convertURLParamsStringToMap(request.getQueryString());
         if(vanityHasQueryString){
-            for(final String key : vanityParams.keySet()){
+            for (final Map.Entry<String,String> entry : vanityParams.entrySet()) {
+                final String key = entry.getKey();
+                final String value = entry.getValue();
                 //add to the request.getQueryString() the vanity parameters that are not already present, the key and value must not be the same
-                if(!requestParams.containsKey(key) || !requestParams.get(key).equals(vanityParams.get(key))){
-                    queryParams += "&" + key + "=" + vanityParams.get(key);
+                if(!requestParams.containsKey(key) || !requestParams.get(key).equals(value)){
+                    params.append("&" + key + "=" + value);
                 }
             }
         }
-        this.newQueryString = queryParams;
+        this.newQueryString = params.toString();
 
 
 
