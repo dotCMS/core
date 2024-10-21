@@ -1,6 +1,6 @@
 export function SimpleWidget({ title }) {
     return (
-        <div className="p-6 w-full bg-white rounded-lg shadow-lg">
+        <div className="relative z-10 p-6 -mt-24 w-full bg-white rounded-lg shadow-lg lg:mx-auto lg:max-w-5xl">
             <h2 className="mb-6 text-3xl font-bold text-gray-800">{title}</h2>
             <form className="flex flex-wrap gap-4 items-end">
                 <div className="flex-grow min-w-[200px]">
