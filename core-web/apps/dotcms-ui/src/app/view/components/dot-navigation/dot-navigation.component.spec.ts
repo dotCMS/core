@@ -20,7 +20,7 @@ import { DotNavigationComponent } from './dot-navigation.component';
 import { DotNavigationService } from './services/dot-navigation.service';
 import { dotMenuMock, dotMenuMock1 } from './services/dot-navigation.service.spec';
 
-fdescribe('DotNavigationComponent collapsed', () => {
+describe('DotNavigationComponent collapsed', () => {
     let spectator: Spectator<DotNavigationComponent>;
     let navigationService: SpyObject<DotNavigationService>;
     let iframeOverlayService: SpyObject<IframeOverlayService>;
@@ -149,7 +149,7 @@ fdescribe('DotNavigationComponent collapsed', () => {
     });
 });
 
-fdescribe('DotNavigationComponent expanded', () => {
+describe('DotNavigationComponent expanded', () => {
     let spectator: Spectator<DotNavigationComponent>;
     let navigationService: SpyObject<DotNavigationService>;
     let iframeOverlayService: SpyObject<IframeOverlayService>;
@@ -250,6 +250,12 @@ fdescribe('DotNavigationComponent expanded', () => {
 
             expect(stopPropSpy).toHaveBeenCalled();
             expect(navigationService.reloadCurrentPortlet).not.toHaveBeenCalled();
+        });
+
+        it('should have scroll', () => {
+            spectator.detectChanges();
+
+            expect(spectator.debugElement.styles.cssText).toEqual('overflow-y: auto;');
         });
     });
 });
