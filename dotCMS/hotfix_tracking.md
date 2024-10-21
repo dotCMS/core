@@ -162,3 +162,4 @@ This maintenance release includes the following code fixes:
 155. https://github.com/dotCMS/core/issues/30083 : Startup timeouts due to indexer concurrency issues #30083
 156. https://github.com/dotCMS/core/issues/28576 : GraphQL __icon__ field violates GraphQL introspection convention prohibiting __ prefixes #28576
 157. https://github.com/dotCMS/core/issues/28855 : When page is locked, hover text still says "Lock Page" #28855
+158. https://github.com/dotCMS/core/issues/28735 : Locked page error text wrapping incorrectly #28735
