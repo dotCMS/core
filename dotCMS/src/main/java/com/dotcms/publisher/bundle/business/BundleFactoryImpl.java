@@ -28,6 +28,7 @@ public class BundleFactoryImpl extends BundleFactory {
 		dc.addParam(bundle.getExpireDate());
 		dc.addParam(bundle.getOwner());
 		dc.addParam(bundle.isForcePush());
+		dc.addParam(bundle.getFilterKey());
 		dc.loadResult();
 	}
 
@@ -163,6 +164,7 @@ public class BundleFactoryImpl extends BundleFactory {
 		dc.addParam(bundle.getPublishDate());
 		dc.addParam(bundle.getExpireDate());
 		dc.addParam(bundle.isForcePush());
+		dc.addParam(bundle.getFilterKey());
 		dc.addParam(bundle.getId());
 
 		dc.loadResult();

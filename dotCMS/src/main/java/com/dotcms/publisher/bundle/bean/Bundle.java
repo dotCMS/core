@@ -1,5 +1,7 @@
 package com.dotcms.publisher.bundle.bean;
 
+import com.dotmarketing.util.Config;
+
 import java.util.Date;
 
 public class Bundle {
@@ -10,6 +12,7 @@ public class Bundle {
 	private String owner;
 	private Integer operation;
 	private boolean forcePush;
+	private String filterKey;
 
 	public Bundle() {}
 
@@ -26,6 +29,7 @@ public class Bundle {
 		this.expireDate = expireDate;
 		this.owner = owner;
 		this.forcePush = forcePush;
+		this.filterKey = Config.getStringProperty("PP_FILTER_KEY","Intelligent.yml");
 	}
 
 	public String getId() {
@@ -73,6 +77,13 @@ public class Bundle {
 
 	public void setForcePush(boolean forcePush) {
 		this.forcePush = forcePush;
+	}
+
+	public String getFilterKey() {
+		return filterKey;
+	}
+	public void setFilterKey(final String filterKey) {
+		this.filterKey = filterKey;
 	}
 
 }
