@@ -9,6 +9,8 @@ import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.display.TextInput;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.WebKeys;
+import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -16,12 +18,13 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * This actionlet allows to fire an user event to the analytics backend.
  * @author jsanca
  */
-public class RulesAnalyticsFireUserEventActionlet extends RuleActionlet<RulesAnalyticsFireUserEventActionlet.Instance> {
+public class RuleAnalyticsFireUserEventActionlet extends RuleActionlet<RuleAnalyticsFireUserEventActionlet.Instance> {
 
     public static final UserCustomDefinedRequestMatcher USER_CUSTOM_DEFINED_REQUEST_MATCHER =  new UserCustomDefinedRequestMatcher();
     private transient final WebEventsCollectorService webEventsCollectorService;
@@ -37,11 +40,11 @@ public class RulesAnalyticsFireUserEventActionlet extends RuleActionlet<RulesAna
     public static final String OBJECT = "object";
     public static final String EVENT_TYPE1 = "event_type";
 
-    public RulesAnalyticsFireUserEventActionlet() {
+    public RuleAnalyticsFireUserEventActionlet() {
         this(WebEventsCollectorServiceFactory.getInstance().getWebEventsCollectorService());
     }
 
-    public RulesAnalyticsFireUserEventActionlet(final WebEventsCollectorService webEventsCollectorService) {
+    public RuleAnalyticsFireUserEventActionlet(final WebEventsCollectorService webEventsCollectorService) {
         super("api.system.ruleengine.actionlet.analytics_user_event",
                 new ParameterDefinition<>(0, EVENT_TYPE, new TextInput<>(new TextType().required())),
                 new ParameterDefinition<>(1, OBJECT_TYPE, new TextInput<>(new TextType())),
@@ -78,7 +81,8 @@ public class RulesAnalyticsFireUserEventActionlet extends RuleActionlet<RulesAna
     }
 
     private String getRuleId(HttpServletRequest request, HttpServletResponse response) {
-        return null;
+
+        return Optional.of(request.getAttribute(WebKeys.RULES_ENGINE_PARAM_CURRENT_RULE_ID)).orElseGet(()-> StringPool.UNKNOWN).toString();
     }
 
     public class Instance implements RuleComponentInstance {
