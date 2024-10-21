@@ -69,7 +69,7 @@ public class AppContextInitResource implements Serializable {
 	@AccessControlAllowOrigin
 	@InitRequestRequired
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public final Response list(@Context final HttpServletRequest request) {
+	public Response list(@Context final HttpServletRequest request) {
 		try {
 			final Object configData = this.helper.getConfigurationData(request);
 			// Return all configuration parameters in one response
