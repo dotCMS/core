@@ -32,8 +32,14 @@ public class AnalyticsFireUserEventActionlet extends WorkFlowActionlet {
     public static final String EVENT_TYPE = "eventType";
     public static final String OBJECT_TYPE = "objectType";
     public static final String OBJECT_ID = "objectId";
+    public static final String REQUEST_ID = "requestId";
+    public static final String CONTENT = "CONTENT";
+    public static final String ID = "id";
+    public static final String OBJECT_CONTENT_TYPE_VAR_NAME = "object_content_type_var_name";
+    public static final String OBJECT = "object";
+    public static final String EVENT_TYPE1 = "event_type";
 
-    private final WebEventsCollectorService webEventsCollectorService;
+    private transient final WebEventsCollectorService webEventsCollectorService;
 
     public static final UserCustomDefinedRequestMatcher USER_CUSTOM_DEFINED_REQUEST_MATCHER =  new UserCustomDefinedRequestMatcher();
 
@@ -79,23 +85,36 @@ public class AnalyticsFireUserEventActionlet extends WorkFlowActionlet {
         final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
         if (Objects.nonNull(request) && Objects.nonNull(response)) {
 
-            request.setAttribute("requestId", Objects.nonNull(request.getAttribute("requestId")) ?
-                    request.getAttribute("requestId") : UUIDUtil.uuid());
+            request.setAttribute(REQUEST_ID, Objects.nonNull(request.getAttribute(REQUEST_ID)) ?
+                    request.getAttribute(REQUEST_ID) : UUIDUtil.uuid());
             final HashMap<String, String> objectDetail = new HashMap<>();
             final Map<String, Serializable> userEventPayload = new HashMap<>();
 
-            userEventPayload.put("id", Objects.nonNull(objectId) ? objectId : identifier);
+            userEventPayload.put(ID, Objects.nonNull(objectId) ? objectId : identifier);
 
-            objectDetail.put("id", identifier);
-            objectDetail.put("object_content_type_var_name", Objects.nonNull(objectType) ? objectType : "CONTENT");
-            userEventPayload.put("object", objectDetail);
-            userEventPayload.put("event_type", eventType);
+            objectDetail.put(ID, identifier);
+            objectDetail.put(OBJECT_CONTENT_TYPE_VAR_NAME, Objects.nonNull(objectType) ? objectType : CONTENT);
+            userEventPayload.put(OBJECT, objectDetail);
+            userEventPayload.put(EVENT_TYPE1, eventType);
             webEventsCollectorService.fireCollectorsAndEmitEvent(request, response, USER_CUSTOM_DEFINED_REQUEST_MATCHER, userEventPayload);
         } else {
             Logger.warn(this, "The request or response is null, can't send the event for the contentlet: " + identifier);
-            // todo: here we need more info to populate what the collectors used to populate from the request
+            // note: here we need more info to populate what the collectors used to populate from the request
+            // but we need the ui details in order to get the extra information
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        AnalyticsFireUserEventActionlet that = (AnalyticsFireUserEventActionlet) o;
+        return Objects.equals(webEventsCollectorService, that.webEventsCollectorService);
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(webEventsCollectorService);
+    }
 }
