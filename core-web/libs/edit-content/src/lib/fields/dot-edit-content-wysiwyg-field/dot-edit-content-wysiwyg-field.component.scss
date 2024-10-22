@@ -27,6 +27,7 @@
         top: 50%;
         transform: translateY(-50%);
         pointer-events: none;
+        color: $color-palette-primary-500;
     }
 
     ::ng-deep {

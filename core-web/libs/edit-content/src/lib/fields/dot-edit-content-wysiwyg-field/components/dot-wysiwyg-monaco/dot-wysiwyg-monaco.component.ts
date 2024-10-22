@@ -73,33 +73,6 @@ export class DotWysiwygMonacoComponent implements OnDestroy, OnInit {
     #ngZone: NgZone = inject(NgZone);
     #destroyRef = inject(DestroyRef);
 
-    ngOnInit() {
-        this.#monacoLoaderService.isMonacoLoaded$
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((isLoaded) => {
-                if (isLoaded) {
-                    this.registerVelocityLanguage();
-                }
-            });
-    }
-    private registerVelocityLanguage() {
-        this.#ngZone.runOutsideAngular(() => {
-            const windowWithMonaco = window as WindowWithMonaco;
-            if (windowWithMonaco.monaco) {
-                windowWithMonaco.monaco.languages.register({
-                    id: AvailableLanguageMonaco.Velocity
-                });
-                windowWithMonaco.monaco.languages.setMonarchTokensProvider(
-                    AvailableLanguageMonaco.Velocity,
-                    dotVelocityLanguageDefinition
-                );
-                console.warn('Velocity language registered successfully');
-            } else {
-                console.warn('Monaco is not available globally');
-            }
-        });
-    }
-
     /**
      * Holds a reference to the MonacoEditorComponent.
      */
@@ -143,32 +116,29 @@ export class DotWysiwygMonacoComponent implements OnDestroy, OnInit {
         };
     });
 
+    /**
+     * A signal that holds the current language of the Monaco editor.
+     * It starts with the default language, which is 'plaintext'.
+     */
     $language = signal<string>(DEFAULT_MONACO_LANGUAGE);
 
-    private readonly languageDetectors = {
-        [AvailableLanguageMonaco.Velocity]: isVelocity,
-        [AvailableLanguageMonaco.Javascript]: isJavascript,
-        [AvailableLanguageMonaco.Html]: isHtml,
-        [AvailableLanguageMonaco.Markdown]: isMarkdown
-    };
-
     /**
-     * Detects the language of the content in the Monaco editor and sets the appropriate language.
+     * A disposable reference that manages the lifecycle of content change listeners.
+     * It starts as null and can be assigned a disposable object that will be used
+     * to clean up event listeners or other resources related to content changes.
+     *
+     * @type {monaco.IDisposable | null}
      */
-    private detectLanguage() {
-        const content = this.#editor.getValue().trim();
+    #contentChangeDisposable: monaco.IDisposable | null = null;
 
-        if (!content) {
-            this.setLanguage(AvailableLanguageMonaco.PlainText);
-
-            return;
-        }
-
-        const detectedLanguage = Object.entries(this.languageDetectors).find(([, detector]) =>
-            detector(content)
-        )?.[0] as AvailableLanguageMonaco;
-
-        this.setLanguage(detectedLanguage || AvailableLanguageMonaco.PlainText);
+    ngOnInit() {
+        this.#monacoLoaderService.isMonacoLoaded$
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((isLoaded) => {
+                if (isLoaded) {
+                    this.registerVelocityLanguage();
+                }
+            });
     }
 
     /**
@@ -192,15 +162,6 @@ export class DotWysiwygMonacoComponent implements OnDestroy, OnInit {
     }
 
     /**
-     * A disposable reference that manages the lifecycle of content change listeners.
-     * It starts as null and can be assigned a disposable object that will be used
-     * to clean up event listeners or other resources related to content changes.
-     *
-     * @type {monaco.IDisposable | null}
-     */
-    #contentChangeDisposable: monaco.IDisposable | null = null;
-
-    /**
      * Initializes the editor by setting up the editor reference,
      * processing the editor content, and setting up a listener for content changes.
      *
@@ -211,19 +172,6 @@ export class DotWysiwygMonacoComponent implements OnDestroy, OnInit {
 
         this.processEditorContent();
         this.setupContentChangeListener();
-    }
-
-    private processEditorContent() {
-        if (this.#editor) {
-            const currentContent = this.#editor.getValue();
-
-            const processedContent = this.removeWysiwygComment(currentContent);
-            if (currentContent !== processedContent) {
-                this.#editor.setValue(processedContent);
-            }
-
-            this.detectLanguage();
-        }
     }
 
     ngOnDestroy() {
@@ -242,6 +190,19 @@ export class DotWysiwygMonacoComponent implements OnDestroy, OnInit {
             }
         } catch (error) {
             console.error('Error during Monaco Editor cleanup:', error);
+        }
+    }
+
+    private processEditorContent() {
+        if (this.#editor) {
+            const currentContent = this.#editor.getValue();
+
+            const processedContent = this.removeWysiwygComment(currentContent);
+            if (currentContent !== processedContent) {
+                this.#editor.setValue(processedContent);
+            }
+
+            this.detectLanguage();
         }
     }
 
@@ -280,5 +241,52 @@ export class DotWysiwygMonacoComponent implements OnDestroy, OnInit {
      */
     private setLanguage(language: string) {
         this.$language.set(language);
+    }
+
+    /**
+     * Registers the Velocity language for the Monaco editor.
+     */
+    private registerVelocityLanguage() {
+        this.#ngZone.runOutsideAngular(() => {
+            const windowWithMonaco = window as WindowWithMonaco;
+            if (windowWithMonaco.monaco) {
+                windowWithMonaco.monaco.languages.register({
+                    id: AvailableLanguageMonaco.Velocity
+                });
+                windowWithMonaco.monaco.languages.setMonarchTokensProvider(
+                    AvailableLanguageMonaco.Velocity,
+                    dotVelocityLanguageDefinition
+                );
+                console.warn('Velocity language registered successfully');
+            } else {
+                console.warn('Monaco is not available globally');
+            }
+        });
+    }
+
+    private readonly languageDetectors = {
+        [AvailableLanguageMonaco.Velocity]: isVelocity,
+        [AvailableLanguageMonaco.Javascript]: isJavascript,
+        [AvailableLanguageMonaco.Html]: isHtml,
+        [AvailableLanguageMonaco.Markdown]: isMarkdown
+    };
+
+    /**
+     * Detects the language of the content in the Monaco editor and sets the appropriate language.
+     */
+    private detectLanguage() {
+        const content = this.#editor.getValue().trim();
+
+        if (!content) {
+            this.setLanguage(AvailableLanguageMonaco.PlainText);
+
+            return;
+        }
+
+        const detectedLanguage = Object.entries(this.languageDetectors).find(([, detector]) =>
+            detector(content)
+        )?.[0] as AvailableLanguageMonaco;
+
+        this.setLanguage(detectedLanguage || AvailableLanguageMonaco.PlainText);
     }
 }
