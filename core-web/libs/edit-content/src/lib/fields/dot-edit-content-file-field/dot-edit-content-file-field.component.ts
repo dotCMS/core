@@ -136,18 +136,16 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
         return '';
     });
 
-    private onChange: (value: string) => void;
-    private onTouched: () => void;
+    private onChange: ((value: string) => void) | null = null;
+    private onTouched: (() => void) | null = null;
 
     constructor() {
         effect(() => {
-            if (!this.onChange && !this.onTouched) {
-                return;
+            if (this.onChange && this.onTouched) {
+                const value = this.store.value();
+                this.onChange(value);
+                this.onTouched();
             }
-
-            const value = this.store.value();
-            this.onChange(value);
-            this.onTouched();
         });
     }
 
@@ -351,6 +349,16 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             });
     }
 
+    /**
+     * Opens the file editor dialog with specific configurations and handles the file upload process.
+     *
+     * This method performs the following actions:
+     * - Retrieves the header message for the dialog.
+     * - Opens the `DotFormFileEditorComponent` dialog with various options such as header, appendTo, closeOnEscape, draggable, keepInViewport, maskStyleClass, resizable, modal, width, and style.
+     * - Passes data to the dialog, including the uploaded file and a flag to allow file name editing.
+     * - Subscribes to the dialog's onClose event to handle the uploaded file and update the store with the preview file.
+     *
+     */
     showFileEditorDialog() {
         const header = this.#dotMessageService.get('dot.file.field.dialog.create.new.file.header');
 
@@ -371,9 +379,14 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             }
         });
 
-        this.#dialogRef.onClose.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((file) => {
-            console.log('file', file);
-        });
+        this.#dialogRef.onClose
+            .pipe(
+                filter((file) => !!file),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((file) => {
+                this.store.setPreviewFile(file);
+            });
     }
 
     /**

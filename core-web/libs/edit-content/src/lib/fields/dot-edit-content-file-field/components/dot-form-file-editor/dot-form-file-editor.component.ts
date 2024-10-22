@@ -9,16 +9,19 @@ import {
     Component,
     effect,
     inject,
-    output,
-    viewChild, OnInit
+    viewChild,
+    OnInit,
+    untracked
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
+
 import { DotMessagePipe, DotFieldValidationMessageComponent } from '@dotcms/ui';
 
 import { FormFileEditorStore } from './store/form-file-editor.store';
@@ -29,7 +32,7 @@ type DialogProps = {
     allowFileNameEdit: boolean;
     userMonacoOptions: Partial<MonacoEditorConstructionOptions>;
     uploadedFile: UploadedFile | null;
-}
+};
 
 @Component({
     selector: 'dot-form-file-editor',
@@ -50,7 +53,6 @@ type DialogProps = {
 export class DotFormFileEditorComponent implements OnInit {
     readonly store = inject(FormFileEditorStore);
     readonly #formBuilder = inject(FormBuilder);
-    readonly #dotMessageService = inject(DotMessageService);
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #dialogConfig = inject(DynamicDialogConfig<DialogProps>);
 
@@ -59,14 +61,9 @@ export class DotFormFileEditorComponent implements OnInit {
         content: ['']
     });
 
-
-    tempFileUploaded = output<UploadedFile>();
-    cancel = output<void>();
-
     $editorRef = viewChild.required(MonacoEditorComponent);
 
     constructor() {
-
         effect(() => {
             const isUploading = this.store.isUploading();
 
@@ -76,6 +73,33 @@ export class DotFormFileEditorComponent implements OnInit {
                 this.#enableEditor();
             }
         });
+
+        effect(
+            () => {
+                const isDone = this.store.isDone();
+                const uploadedFile = this.store.uploadedFile();
+
+                untracked(() => {
+                    if (isDone) {
+                        this.#dialogRef.close(uploadedFile);
+                    }
+                });
+            },
+            {
+                allowSignalWrites: true
+            }
+        );
+
+        this.nameField.valueChanges
+            .pipe(
+                debounceTime(350),
+                distinctUntilChanged(),
+                filter((value) => value.length > 0),
+                takeUntilDestroyed()
+            )
+            .subscribe((value) => {
+                this.store.setFileName(value);
+            });
     }
 
     ngOnInit(): void {
@@ -92,7 +116,10 @@ export class DotFormFileEditorComponent implements OnInit {
 
         this.store.initLoad({
             monacoOptions: userMonacoOptions || {},
-            allowFileNameEdit: allowFileNameEdit || true
+            allowFileNameEdit: allowFileNameEdit || true,
+            uploadedFile,
+            acceptedFiles: [],
+            uploadType: 'dotasset'
         });
     }
 
@@ -104,15 +131,16 @@ export class DotFormFileEditorComponent implements OnInit {
             return;
         }
 
-        this.store.uploadFile();
+        const values = this.form.getRawValue();
+        this.store.uploadFile(values);
     }
 
     get nameField() {
-        return this.form.get('name');
+        return this.form.controls.name;
     }
 
     get contentField() {
-        return this.form.get('content');
+        return this.form.controls.content;
     }
 
     #disableEditor() {
@@ -132,5 +160,9 @@ export class DotFormFileEditorComponent implements OnInit {
             name: source === 'temp' ? file.fileName : file.title,
             content: file.content
         });
+    }
+
+    cancelUpload(): void {
+        this.#dialogRef.close();
     }
 }

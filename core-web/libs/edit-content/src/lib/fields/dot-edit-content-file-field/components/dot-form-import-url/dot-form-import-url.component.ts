@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, effect, inject, OnInit } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    effect,
+    inject,
+    OnInit,
+    untracked
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -49,9 +56,11 @@ export class DotFormImportUrlComponent implements OnInit {
                 const file = this.store.file();
                 const isDone = this.store.isDone();
 
-                if (file && isDone) {
-                    this.#dialogRef.close(file);
-                }
+                untracked(() => {
+                    if (isDone) {
+                        this.#dialogRef.close(file);
+                    }
+                });
             },
             {
                 allowSignalWrites: true

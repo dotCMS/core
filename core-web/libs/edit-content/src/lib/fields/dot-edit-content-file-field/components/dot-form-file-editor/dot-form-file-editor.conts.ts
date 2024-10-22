@@ -1,7 +1,5 @@
 import { MonacoEditorConstructionOptions } from '@materia-ui/ngx-monaco-editor';
 
-export const DEFAULT_FILE_TYPE = 'text';
-
 export const DEFAULT_MONACO_CONFIG: MonacoEditorConstructionOptions = {
     theme: 'vs',
     minimap: {

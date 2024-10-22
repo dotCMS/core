@@ -30,15 +30,15 @@
             data-testId="code-editor"
             formControlName="content" />
 
-        @let mimeType = store.file()?.mimeType;
-        <div [class.editor-mode__helper--visible]="mimeType" class="editor-mode__helper">
+        @let file = store.file();
+        <div [class.editor-mode__helper--visible]="file.mimeType" class="editor-mode__helper">
             <i class="pi pi-info-circle"></i>
-            <small>Mime Type: {{ mimeType }}</small>
+            <small>Mime Type: {{ file.mimeType }}</small>
         </div>
     </div>
     <div class="editor-mode__actions">
         <p-button
-            (click)="cancel.emit()"
+            (click)="cancelUpload()"
             [label]="'dot.common.cancel' | dm"
             aria-label="Cancel button"
             data-testId="cancel-button"

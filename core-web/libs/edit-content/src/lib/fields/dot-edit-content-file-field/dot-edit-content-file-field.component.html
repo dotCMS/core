@@ -93,10 +93,11 @@
             <dot-spinner data-testId="loading" />
         }
         @case ('preview') {
-            @if (store.uploadedFile()) {
+            @let uploadedFile = store.uploadedFile();
+            @if (uploadedFile) {
                 <dot-file-field-preview
                     (removeFile)="store.removeFile()"
-                    [previewFile]="store.uploadedFile()" />
+                    [previewFile]="uploadedFile" />
             }
         }
     }

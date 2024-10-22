@@ -61,8 +61,8 @@ describe('FormImportUrlStore', () => {
 
             store.uploadFileByUrl({ fileUrl, abortSignal: abortController.signal });
 
-            expect(store.file().file).toEqual(mockContentlet);
-            expect(store.file().source).toEqual('contentlet');
+            expect(store.file()?.file).toEqual(mockContentlet);
+            expect(store.file()?.source).toEqual('contentlet');
             expect(store.status()).toBe('done');
         });
 

@@ -1,44 +1,68 @@
 import { MonacoEditorConstructionOptions } from '@materia-ui/ngx-monaco-editor';
+import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { pipe } from 'rxjs';
 
-import { computed } from '@angular/core';
+import { computed, inject } from '@angular/core';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { switchMap, tap } from 'rxjs/operators';
 
-import { DEFAULT_FILE_TYPE, DEFAULT_MONACO_CONFIG } from '../dot-form-file-editor.conts';
+import { ComponentStatus, DotHttpErrorResponse } from '@dotcms/dotcms-models';
+
+import {
+    extractFileExtension,
+    getInfoByLang
+} from '../../../../dot-edit-content-binary-field/utils/editor';
+import { UPLOAD_TYPE, UploadedFile } from '../../../models';
+import { DotFileFieldUploadService } from '../../../services/upload-file/upload-file.service';
+import { DEFAULT_MONACO_CONFIG } from '../dot-form-file-editor.conts';
 
 type FileInfo = {
     name: string;
     content: string;
     mimeType: string;
     extension: string;
+    language: string;
 };
 
 export interface FormFileEditorState {
-    file: FileInfo | null;
+    file: FileInfo;
     allowFileNameEdit: boolean;
     status: ComponentStatus;
     error: string | null;
-    languageType: string;
     monacoOptions: MonacoEditorConstructionOptions;
+    uploadedFile: UploadedFile | null;
+    uploadType: UPLOAD_TYPE;
+    acceptedFiles: string[];
 }
 
 const initialState: FormFileEditorState = {
-    file: null,
+    file: {
+        name: '',
+        content: '',
+        mimeType: 'plain/text',
+        extension: '.txt',
+        language: 'text'
+    },
     allowFileNameEdit: false,
     status: ComponentStatus.INIT,
     error: null,
-    languageType: DEFAULT_FILE_TYPE,
-    monacoOptions: DEFAULT_MONACO_CONFIG
+    monacoOptions: DEFAULT_MONACO_CONFIG,
+    uploadedFile: null,
+    uploadType: 'dotasset',
+    acceptedFiles: []
 };
 
 export const FormFileEditorStore = signalStore(
     withState(initialState),
     withComputed((state) => ({
         isUploading: computed(() => state.status() === ComponentStatus.LOADING),
+        isDone: computed(() => state.status() === ComponentStatus.LOADED && state.uploadedFile),
+        allowFiles: computed(() => state.acceptedFiles().join(', ')),
         monacoConfig: computed<MonacoEditorConstructionOptions>(() => {
             const monacoOptions = state.monacoOptions();
-            const language = state.languageType();
+            const { language } = state.file();
 
             return {
                 ...monacoOptions,
@@ -47,39 +71,116 @@ export const FormFileEditorStore = signalStore(
         })
     })),
     withMethods((store) => {
+        const uploadService = inject(DotFileFieldUploadService);
+
         return {
-            setFile(file: FileInfo) {
-                patchState(store, { file });
+            setFileName(name: string) {
+                const file = store.file();
+
+                const extension = extractFileExtension(name);
+                const info = getInfoByLang(extension);
+
+                patchState(store, {
+                    file: {
+                        ...file,
+                        name,
+                        mimeType: info.mimeType,
+                        extension: info.extension,
+                        language: info.lang
+                    }
+                });
             },
-            initLoad({monacoOptions, allowFileNameEdit}:{
-                monacoOptions: Partial<MonacoEditorConstructionOptions>,
-                allowFileNameEdit: boolean
+            initLoad({
+                monacoOptions,
+                allowFileNameEdit,
+                uploadedFile,
+                acceptedFiles,
+                uploadType
+            }: {
+                monacoOptions: Partial<MonacoEditorConstructionOptions>;
+                allowFileNameEdit: boolean;
+                uploadedFile: UploadedFile | null;
+                acceptedFiles: string[];
+                uploadType: UPLOAD_TYPE;
             }) {
                 const prevState = store.monacoOptions();
 
-                patchState(store, {
+                const state: Partial<FormFileEditorState> = {
                     monacoOptions: {
                         ...prevState,
                         ...monacoOptions
                     },
-                    allowFileNameEdit
-                });
-            },
-            uploadFile(): void {
-                const fileInfo = store.file();
+                    allowFileNameEdit,
+                    acceptedFiles,
+                    uploadType
+                };
 
-                if (!fileInfo) {
-                    return;
+                if (uploadedFile) {
+                    const { file, source } = uploadedFile;
+
+                    const name = source === 'contentlet' ? file.title : file.fileName;
+                    const extension = extractFileExtension(name);
+                    const info = getInfoByLang(extension);
+
+                    state.file = {
+                        name,
+                        content: file.content || '',
+                        mimeType: info.mimeType,
+                        extension: info.extension,
+                        language: info.lang
+                    };
                 }
 
-                const file = new File([fileInfo.content], fileInfo.name, {
-                    type: fileInfo.mimeType
-                });
+                patchState(store, state);
+            },
+            uploadFile: rxMethod<{
+                name: string;
+                content: string;
+            }>(
+                pipe(
+                    tap(() => patchState(store, { status: ComponentStatus.LOADING })),
+                    switchMap(({ name, content }) => {
+                        const { mimeType: type } = store.file();
+                        const uploadType = store.uploadType();
+                        const acceptedFiles = store.acceptedFiles();
 
-                console.log(file);
+                        const file = new File([content], name, { type });
 
-                // implementation
-            }
+                        return uploadService
+                            .uploadFile({
+                                file,
+                                uploadType,
+                                acceptedFiles,
+                                maxSize: null
+                            })
+                            .pipe(
+                                tapResponse({
+                                    next: (uploadedFile) => {
+                                        patchState(store, {
+                                            uploadedFile,
+                                            status: ComponentStatus.LOADED
+                                        });
+                                    },
+                                    error: (error: DotHttpErrorResponse) => {
+                                        let errorMessage = error?.message || '';
+
+                                        if (error instanceof Error) {
+                                            if (errorMessage === 'Invalid file type') {
+                                                errorMessage =
+                                                    'dot.file.field.error.type.file.not.supported.message';
+                                            }
+                                        }
+
+                                        patchState(store, {
+                                            error: errorMessage,
+                                            status: ComponentStatus.ERROR
+                                        });
+                                    }
+                                })
+                            );
+                    })
+                )
+            )
         };
     })
 );
