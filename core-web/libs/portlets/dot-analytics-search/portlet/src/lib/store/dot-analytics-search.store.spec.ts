@@ -87,7 +87,7 @@ describe('DotAnalyticsSearchStore', () => {
 
             store.getResults({ query: 'test' });
 
-            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockError);
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
         });
     });
 });

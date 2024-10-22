@@ -1,9 +1,10 @@
 /* eslint-disable */
 export default {
-    displayName: 'dot-analytics-search',
+    displayName: 'portlets-dot-analytics-search',
     preset: '../../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-    coverageDirectory: '../../../../coverage/libs/portlets/dot-analytics-search/portlet',
+    globals: {},
+    coverageDirectory: '../../../../../target/core-web-reports/',
     transform: {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',
@@ -18,5 +19,6 @@ export default {
         'jest-preset-angular/build/serializers/no-ng-attributes',
         'jest-preset-angular/build/serializers/ng-snapshot',
         'jest-preset-angular/build/serializers/html-comment'
-    ]
+    ],
+    testEnvironment: '@happy-dom/jest-environment'
 };

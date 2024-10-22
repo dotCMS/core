@@ -1,21 +1,60 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator';
-import { byTestId } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { ActivatedRoute } from '@angular/router';
+
+import {
+    DotAnalyticsSearchService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAnalyticsSearchComponent } from './dot-analytics-search.component';
 
 import { DotAnalyticsSearchStore } from '../store/dot-analytics-search.store';
 
+const messageServiceMock = new MockDotMessageService({
+    'analytics.search.query': 'Query',
+    'analytics.search.run.query': 'Run Query',
+    'analytics.search.results': 'Results'
+});
+
 describe('DotAnalyticsSearchComponent', () => {
     let spectator: Spectator<DotAnalyticsSearchComponent>;
     let store: InstanceType<typeof DotAnalyticsSearchStore>;
+
     const createComponent = createComponentFactory({
         component: DotAnalyticsSearchComponent,
-        mocks: [DotAnalyticsSearchStore]
+        componentProviders: [DotAnalyticsSearchStore, DotAnalyticsSearchService],
+        imports: [],
+        mocks: [],
+        providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            {
+                provide: ActivatedRoute,
+                useValue: {
+                    snapshot: {
+                        data: {
+                            isEnterprise: true
+                        }
+                    }
+                }
+            },
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            },
+
+            mockProvider(DotHttpErrorManagerService)
+        ]
     });
 
     beforeEach(() => {
-        store = spectator.inject(DotAnalyticsSearchStore, true);
         spectator = createComponent();
+        store = spectator.inject(DotAnalyticsSearchStore, true);
     });
 
     it('should initialize store with enterprise state on init', () => {
