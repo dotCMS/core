@@ -133,7 +133,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             return this.#dotMessageService.get('dot.file.field.action.generate.with.tooltip');
         }
 
-        return null;
+        return '';
     });
 
     private onChange: (value: string) => void;
@@ -235,7 +235,11 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
      *
      * @return {void}
      */
-    fileSelected(files: FileList) {
+    fileSelected(files: FileList | null) {
+        if (!files || files.length === 0) {
+            return;
+        }
+
         const file = files[0];
 
         if (!file) {
@@ -360,7 +364,11 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             resizable: false,
             modal: true,
             width: '90%',
-            style: { 'max-width': '1040px' }
+            style: { 'max-width': '1040px' },
+            data: {
+                uploadedFile: this.store.uploadedFile(),
+                allowFileNameEdit: true
+            }
         });
 
         this.#dialogRef.onClose.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((file) => {

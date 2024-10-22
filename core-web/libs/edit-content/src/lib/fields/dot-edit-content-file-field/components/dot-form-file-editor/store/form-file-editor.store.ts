@@ -51,14 +51,18 @@ export const FormFileEditorStore = signalStore(
             setFile(file: FileInfo) {
                 patchState(store, { file });
             },
-            setMonacoOptions(monacoOptions: Partial<MonacoEditorConstructionOptions>) {
+            initLoad({monacoOptions, allowFileNameEdit}:{
+                monacoOptions: Partial<MonacoEditorConstructionOptions>,
+                allowFileNameEdit: boolean
+            }) {
                 const prevState = store.monacoOptions();
 
                 patchState(store, {
                     monacoOptions: {
                         ...prevState,
                         ...monacoOptions
-                    }
+                    },
+                    allowFileNameEdit
                 });
             },
             uploadFile(): void {

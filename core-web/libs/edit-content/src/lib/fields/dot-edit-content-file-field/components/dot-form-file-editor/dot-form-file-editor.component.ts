@@ -9,9 +9,8 @@ import {
     Component,
     effect,
     inject,
-    input,
     output,
-    viewChild
+    viewChild, OnInit
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -24,8 +23,13 @@ import { DotMessagePipe, DotFieldValidationMessageComponent } from '@dotcms/ui';
 
 import { FormFileEditorStore } from './store/form-file-editor.store';
 
-import { INPUT_TYPE } from '../../../dot-edit-content-text-field/utils';
 import { UploadedFile } from '../../models';
+
+type DialogProps = {
+    allowFileNameEdit: boolean;
+    userMonacoOptions: Partial<MonacoEditorConstructionOptions>;
+    uploadedFile: UploadedFile | null;
+}
 
 @Component({
     selector: 'dot-form-file-editor',
@@ -43,24 +47,18 @@ import { UploadedFile } from '../../models';
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [FormFileEditorStore]
 })
-export class DotFormFileEditorComponent {
+export class DotFormFileEditorComponent implements OnInit {
     readonly store = inject(FormFileEditorStore);
     readonly #formBuilder = inject(FormBuilder);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dialogRef = inject(DynamicDialogRef);
-    readonly #dialogConfig = inject(
-        DynamicDialogConfig<{ inputType: INPUT_TYPE; acceptedFiles: string[] }>
-    );
+    readonly #dialogConfig = inject(DynamicDialogConfig<DialogProps>);
 
     readonly form = this.#formBuilder.nonNullable.group({
         name: ['', [Validators.required, Validators.pattern(/^[^.]+\.[^.]+$/)]],
         content: ['']
     });
 
-    $fileName = input.required<string>({ alias: 'fileName' });
-    $fileContent = input.required<string>({ alias: 'fileContent' });
-    $allowFileNameEdit = input(false, { alias: 'allowFileNameEdit' });
-    $userMonacoOptions = input<MonacoEditorConstructionOptions>({});
 
     tempFileUploaded = output<UploadedFile>();
     cancel = output<void>();
@@ -68,19 +66,6 @@ export class DotFormFileEditorComponent {
     $editorRef = viewChild.required(MonacoEditorComponent);
 
     constructor() {
-        effect(() => {
-            const name = this.$fileName();
-            const content = this.$fileContent();
-
-            this.form.patchValue({
-                name,
-                content
-            });
-        });
-
-        effect(() => {
-            this.store.setMonacoOptions(this.$userMonacoOptions());
-        });
 
         effect(() => {
             const isUploading = this.store.isUploading();
@@ -90,6 +75,24 @@ export class DotFormFileEditorComponent {
             } else {
                 this.#enableEditor();
             }
+        });
+    }
+
+    ngOnInit(): void {
+        const data = this.#dialogConfig?.data as DialogProps;
+        if (!data) {
+            return;
+        }
+
+        const { uploadedFile, userMonacoOptions, allowFileNameEdit } = data;
+
+        if (uploadedFile) {
+            this.#initValuesForm(uploadedFile);
+        }
+
+        this.store.initLoad({
+            monacoOptions: userMonacoOptions || {},
+            allowFileNameEdit: allowFileNameEdit || true
         });
     }
 
@@ -121,6 +124,13 @@ export class DotFormFileEditorComponent {
     #enableEditor() {
         this.form.enable();
         const editor = this.$editorRef().editor;
-        editor.updateOptions({ readOnly: true });
+        editor.updateOptions({ readOnly: false });
+    }
+
+    #initValuesForm({ source, file }: UploadedFile): void {
+        this.form.patchValue({
+            name: source === 'temp' ? file.fileName : file.title,
+            content: file.content
+        });
     }
 }
