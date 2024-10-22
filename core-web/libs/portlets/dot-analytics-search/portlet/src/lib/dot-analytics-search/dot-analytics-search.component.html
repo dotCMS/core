@@ -13,7 +13,8 @@
     </div>
     <ngx-monaco-editor
         [(ngModel)]="queryEditor"
-        [options]="ANALYTICS_MONACO_EDITOR_OPTIONS"></ngx-monaco-editor>
+        [options]="ANALYTICS_MONACO_EDITOR_OPTIONS"
+        data-testId="query-editor"></ngx-monaco-editor>
 </section>
 <section class="content-analytics__results">
     <div class="content-analytics__header">
@@ -21,5 +22,6 @@
     </div>
     <ngx-monaco-editor
         [ngModel]="results()"
-        [options]="ANALYTICS__RESULTS_MONACO_EDITOR_OPTIONS"></ngx-monaco-editor>
+        [options]="ANALYTICS__RESULTS_MONACO_EDITOR_OPTIONS"
+        data-testId="results-editor"></ngx-monaco-editor>
 </section>

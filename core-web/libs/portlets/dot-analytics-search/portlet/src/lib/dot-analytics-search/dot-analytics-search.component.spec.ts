@@ -1,25 +1,16 @@
+import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { MockModule } from 'ng-mocks';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import {
-    DotAnalyticsSearchService,
-    DotHttpErrorManagerService,
-    DotMessageService
-} from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotAnalyticsSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
 
 import { DotAnalyticsSearchComponent } from './dot-analytics-search.component';
 
 import { DotAnalyticsSearchStore } from '../store/dot-analytics-search.store';
-
-const messageServiceMock = new MockDotMessageService({
-    'analytics.search.query': 'Query',
-    'analytics.search.run.query': 'Run Query',
-    'analytics.search.results': 'Results'
-});
 
 describe('DotAnalyticsSearchComponent', () => {
     let spectator: Spectator<DotAnalyticsSearchComponent>;
@@ -27,8 +18,9 @@ describe('DotAnalyticsSearchComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsSearchComponent,
+        imports: [MockModule(MonacoEditorModule)],
         componentProviders: [DotAnalyticsSearchStore, DotAnalyticsSearchService],
-        imports: [],
+        declarations: [],
         mocks: [],
         providers: [
             provideHttpClient(),
@@ -43,11 +35,6 @@ describe('DotAnalyticsSearchComponent', () => {
                     }
                 }
             },
-            {
-                provide: DotMessageService,
-                useValue: messageServiceMock
-            },
-
             mockProvider(DotHttpErrorManagerService)
         ]
     });
@@ -59,7 +46,8 @@ describe('DotAnalyticsSearchComponent', () => {
 
     it('should initialize store with enterprise state on init', () => {
         const initLoadSpy = jest.spyOn(store, 'initLoad');
-        spectator.detectChanges();
+        spectator.component.ngOnInit();
+
         expect(initLoadSpy).toHaveBeenCalledWith(true);
     });
 

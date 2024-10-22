@@ -47,6 +47,7 @@ export class DotAnalyticsSearchComponent {
 
     ngOnInit() {
         const { isEnterprise } = this.route.snapshot.data;
+
         this.store.initLoad(isEnterprise);
     }
 
