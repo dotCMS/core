@@ -1,7 +1,7 @@
 import { client } from "@/utils/dotcmsClient";
 import { useEffect, useState } from "react";
 
-export function SimpleWidget({ title }) {
+export function SimpleWidget() {
     const [destination, setDestination] = useState([]);
 
     useEffect(() => {
@@ -18,7 +18,7 @@ export function SimpleWidget({ title }) {
 
     return (
         <div className="relative z-10 p-6 -mt-24 w-full bg-white rounded-lg shadow-lg lg:mx-auto lg:max-w-5xl">
-            <h2 className="mb-6 text-3xl font-bold text-gray-800">{title}</h2>
+            <h2 className="mb-6 text-3xl font-bold text-gray-800">Find your next destination</h2>
             <form className="flex flex-wrap gap-4 items-end">
                 <div className="flex-grow min-w-[200px]">
                     <label htmlFor="destination" className="block mb-1 text-sm font-medium text-gray-700">Destination</label>

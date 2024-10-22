@@ -28,15 +28,15 @@
     @apply space-y-4;
 }
 
-.row-gradient-purple {
+.row-gradient {
     @apply relative
 }
 
-.row-gradient-purple::after {
-    @apply absolute left-0 top-40 z-0 w-full h-4/5 bg-gradient-to-t from-lime-50 via-lime-100 via-lime-200 to-lime-300 border-t-8 border-lime-500 origin-top-right skew-y-3;
+.row-gradient::after {
+    @apply absolute left-0 top-40 z-0 w-full h-4/5 bg-gradient-to-t from-lime-50 to-lime-200 border-t-8 border-lime-300 origin-top-right skew-y-3;
     content: "";
 }
 
-.row-gradient-purple .container {
+.row-gradient .container {
     @apply relative z-10;
 }
