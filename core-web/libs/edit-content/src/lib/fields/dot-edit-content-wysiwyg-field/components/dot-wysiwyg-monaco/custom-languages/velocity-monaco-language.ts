@@ -63,8 +63,8 @@ export const dotVelocityLanguageDefinition: monaco.languages.IMonarchLanguage = 
             [/"[^"]*"|'[^']*'/, 'attribute.value.html'],
 
             // Velocity Comments
-            [/##.*$/, 'comment.velocity'],
-            [/#\*/, 'comment.velocity', '@velocityComment'],
+            [/##[^\n]*/, 'comment.velocity'],
+            [/#\*(?!\*)/, 'comment.velocity', '@velocityComment'],
 
             // Strings
             [/"/, 'string.velocity', '@string_double'],
