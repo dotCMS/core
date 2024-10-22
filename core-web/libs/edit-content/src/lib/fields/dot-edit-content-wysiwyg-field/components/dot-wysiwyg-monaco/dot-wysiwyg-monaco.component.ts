@@ -1,26 +1,53 @@
-import { MonacoEditorComponent, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+import {
+    MonacoEditorComponent,
+    MonacoEditorLoaderService,
+    MonacoEditorModule
+} from '@materia-ui/ngx-monaco-editor';
 
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
     inject,
     input,
+    NgZone,
     OnDestroy,
+    OnInit,
+    signal,
     viewChild
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { PaginatorModule } from 'primeng/paginator';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
+import { dotVelocityLanguageDefinition } from './custom-languages/velocity-monaco-language';
+
 import { getFieldVariablesParsed, stringToJson } from '../../../../utils/functions.util';
 import {
+    AvailableLanguageMonaco,
     COMMENT_TINYMCE,
     DEFAULT_MONACO_LANGUAGE,
     DEFAULT_WYSIWYG_FIELD_MONACO_CONFIG
 } from '../../dot-edit-content-wysiwyg-field.constant';
+import {
+    isHtml,
+    isJavascript,
+    isMarkdown,
+    isVelocity
+} from '../../dot-edit-content-wysiwyg-field.utils';
+
+interface WindowWithMonaco extends Window {
+    monaco?: {
+        languages: {
+            register: (language: { id: string }) => void;
+            setMonarchTokensProvider: (id: string, provider: unknown) => void;
+        };
+    };
+}
 
 /**
  * DotWysiwygMonacoComponent is an Angular component utilizing Monaco Editor.
@@ -41,23 +68,47 @@ import {
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotWysiwygMonacoComponent implements OnDestroy {
+export class DotWysiwygMonacoComponent implements OnDestroy, OnInit {
+    #monacoLoaderService: MonacoEditorLoaderService = inject(MonacoEditorLoaderService);
+    #ngZone: NgZone = inject(NgZone);
+    #destroyRef = inject(DestroyRef);
+
+    ngOnInit() {
+        this.#monacoLoaderService.isMonacoLoaded$
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((isLoaded) => {
+                if (isLoaded) {
+                    this.registerVelocityLanguage();
+                }
+            });
+    }
+    private registerVelocityLanguage() {
+        this.#ngZone.runOutsideAngular(() => {
+            const windowWithMonaco = window as WindowWithMonaco;
+            if (windowWithMonaco.monaco) {
+                windowWithMonaco.monaco.languages.register({
+                    id: AvailableLanguageMonaco.Velocity
+                });
+                windowWithMonaco.monaco.languages.setMonarchTokensProvider(
+                    AvailableLanguageMonaco.Velocity,
+                    dotVelocityLanguageDefinition
+                );
+                console.warn('Velocity language registered successfully');
+            } else {
+                console.warn('Monaco is not available globally');
+            }
+        });
+    }
+
     /**
      * Holds a reference to the MonacoEditorComponent.
      */
-    $editorRef = viewChild<MonacoEditorComponent>('editorRef');
+    $monacoEditorComponentRef = viewChild<MonacoEditorComponent>('editorRef');
 
     /**
      * Represents a required DotCMS content type field.
      */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-
-    /**
-     * Represents the programming language to be used in the Monaco editor.
-     * This variable sets the default language for code input and is initially set to `DEFAULT_MONACO_LANGUAGE`.
-     * It can be customized by providing a different value through the alias 'language'.
-     */
-    $language = input<string>(DEFAULT_MONACO_LANGUAGE, { alias: 'language' });
 
     /**
      * A computed property that retrieves and parses custom Monaco properties that comes from
@@ -92,6 +143,54 @@ export class DotWysiwygMonacoComponent implements OnDestroy {
         };
     });
 
+    $language = signal<string>(DEFAULT_MONACO_LANGUAGE);
+
+    private readonly languageDetectors = {
+        [AvailableLanguageMonaco.Velocity]: isVelocity,
+        [AvailableLanguageMonaco.Javascript]: isJavascript,
+        [AvailableLanguageMonaco.Html]: isHtml,
+        [AvailableLanguageMonaco.Markdown]: isMarkdown
+    };
+
+    /**
+     * Detects the language of the content in the Monaco editor and sets the appropriate language.
+     */
+    private detectLanguage() {
+        const content = this.#editor.getValue().trim();
+
+        if (!content) {
+            this.setLanguage(AvailableLanguageMonaco.PlainText);
+
+            return;
+        }
+
+        const detectedLanguage = Object.entries(this.languageDetectors).find(([, detector]) =>
+            detector(content)
+        )?.[0] as AvailableLanguageMonaco;
+
+        this.setLanguage(detectedLanguage || AvailableLanguageMonaco.PlainText);
+    }
+
+    /**
+     * Inserts content into the Monaco editor.
+     *
+     * @param {string} content - The content to insert into the editor.
+     */
+    insertContent(content: string): void {
+        if (this.#editor) {
+            const selection = this.#editor.getSelection();
+            const range = new monaco.Range(
+                selection.startLineNumber,
+                selection.startColumn,
+                selection.endLineNumber,
+                selection.endColumn
+            );
+            const id = { major: 1, minor: 1 };
+            const op = { identifier: id, range, text: content, forceMoveMarkers: true };
+            this.#editor.executeEdits('my-source', [op]);
+        }
+    }
+
     /**
      * A disposable reference that manages the lifecycle of content change listeners.
      * It starts as null and can be assigned a disposable object that will be used
@@ -107,8 +206,9 @@ export class DotWysiwygMonacoComponent implements OnDestroy {
      *
      * @return {void} No return value.
      */
-    onEditorInit() {
-        this.#editor = this.$editorRef().editor;
+    onEditorInit($editorRef: monaco.editor.IStandaloneCodeEditor) {
+        this.#editor = $editorRef;
+
         this.processEditorContent();
         this.setupContentChangeListener();
     }
@@ -121,6 +221,8 @@ export class DotWysiwygMonacoComponent implements OnDestroy {
             if (currentContent !== processedContent) {
                 this.#editor.setValue(processedContent);
             }
+
+            this.detectLanguage();
         }
     }
 
@@ -148,17 +250,35 @@ export class DotWysiwygMonacoComponent implements OnDestroy {
         this.#editor = null;
     }
 
+    /**
+     * Removes the TinyMCE comment from the content.
+     *
+     * @param {string} content - The content to remove the comment from.
+     * @returns {string} The content with the TinyMCE comment removed.
+     */
     private removeWysiwygComment(content: string): string {
         const regex = new RegExp(`^\\s*${COMMENT_TINYMCE}\\s*`);
 
         return content.replace(regex, '');
     }
 
+    /**
+     * Sets up a listener for content changes in the Monaco editor.
+     */
     private setupContentChangeListener() {
         if (this.#editor) {
             this.#contentChangeDisposable = this.#editor.onDidChangeModelContent(() => {
                 this.processEditorContent();
             });
         }
+    }
+
+    /**
+     * Sets the language of the Monaco editor.
+     *
+     * @param {string} language - The language to set for the editor.
+     */
+    private setLanguage(language: string) {
+        this.$language.set(language);
     }
 }

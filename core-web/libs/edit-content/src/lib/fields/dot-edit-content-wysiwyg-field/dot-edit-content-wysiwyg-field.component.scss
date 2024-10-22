@@ -1,19 +1,32 @@
 @use "variables" as *;
 :host {
-    &.wysiwyg__wrapper {
+    &.dot-wysiwyg__wrapper {
         display: flex;
         gap: $spacing-1;
         flex-direction: column;
     }
 
-    .wysiwyg__editor {
+    .dot-wysiwyg__editor {
         display: flex;
         flex-direction: column;
     }
 
-    .wysiwyg__controls {
+    .dot-wysiwyg__controls {
         display: flex;
         justify-content: space-between;
+    }
+
+    .dot-wysiwyg__language-selector {
+        position: relative;
+        min-width: 12rem;
+    }
+
+    .dot-wysiwyg__search-icon {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
     }
 
     ::ng-deep {
@@ -37,7 +50,10 @@
         }
 
         p-dropdown {
-            min-width: 10rem;
+            min-width: 12rem;
+        }
+        p-autocomplete .p-inputwrapper {
+            padding-right: 35px;
         }
     }
 }

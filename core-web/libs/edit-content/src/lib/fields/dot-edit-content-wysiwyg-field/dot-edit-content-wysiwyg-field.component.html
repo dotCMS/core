@@ -1,11 +1,4 @@
-<div class="wysiwyg__editor">
-    @if ($displayedEditor() === editorTypes.TinyMCE) {
-        <dot-wysiwyg-tinymce [field]="$field()" />
-    } @else {
-        <dot-wysiwyg-monaco [field]="$field()" [language]="$selectedLanguageDropdown()" />
-    }
-</div>
-<div class="wysiwyg__controls">
+<div class="dot-wysiwyg__controls">
     <p-dropdown
         [options]="editorOptions"
         [(ngModel)]="$selectedEditorDropdown"
@@ -13,11 +6,31 @@
         (onChange)="onEditorChange($event.value)"
         data-testId="editor-selector" />
 
-    @if ($selectedEditorDropdown() === editorTypes.Monaco) {
-        <p-dropdown
-            [options]="monacoLanguagesOptions"
-            [(ngModel)]="$selectedLanguageDropdown"
+    <div class="dot-wysiwyg__language-selector">
+        <p-autoComplete
+            class="dot-wysiwyg__language-autocomplete"
+            data-testId="language-variable-selector"
+            [placeholder]="'edit.content.wysiwyg-field.language-variable-placeholder' | dm"
+            [(ngModel)]="$selectedItem"
             [ngModelOptions]="{ standalone: true }"
-            data-testId="language-selector" />
+            [suggestions]="$filteredSuggestions()"
+            (onSelect)="onSelectLanguageVariable($event)"
+            (completeMethod)="search($event)"
+            [styleClass]="'dot-wysiwyg__language-autocomplete--with-icon'">
+            <ng-template let-variable pTemplate="item">
+                <span class="dot-wysiwyg__language-item">
+                    {{ variable.key }} - {{ variable.value }}
+                </span>
+            </ng-template>
+        </p-autoComplete>
+        <i class="dot-wysiwyg__search-icon pi pi-search"></i>
+    </div>
+</div>
+
+<div class="dot-wysiwyg__editor">
+    @if ($displayedEditor() === editorTypes.TinyMCE) {
+        <dot-wysiwyg-tinymce [field]="$field()" />
+    } @else {
+        <dot-wysiwyg-monaco [field]="$field()" />
     }
 </div>
