@@ -73,8 +73,8 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'analytics-search',
-        // canActivate: [MenuGuardService],
-        // canActivateChild: [MenuGuardService],
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
         providers: [DotEnterpriseLicenseResolver],
         resolve: {
             isEnterprise: DotEnterpriseLicenseResolver

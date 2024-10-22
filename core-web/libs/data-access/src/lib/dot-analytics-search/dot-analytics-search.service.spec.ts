@@ -18,8 +18,9 @@ describe('DotAnalyticsSearchService', () => {
         });
 
         const req = spectator.expectOne('/api/v1/analytics/content/_query', HttpMethod.POST);
-        expect(req.request.body).toEqual({ query });
         req.flush(mockResponse);
+
+        expect(req.request.body).toEqual({ ...query });
     });
 
     it('should perform a POST request to the cube URL and return results', (done) => {
@@ -29,7 +30,8 @@ describe('DotAnalyticsSearchService', () => {
         });
 
         const req = spectator.expectOne('/api/v1/analytics/content/_query/cube', HttpMethod.POST);
-        expect(req.request.body).toEqual({ query });
         req.flush(mockResponse);
+
+        expect(req.request.body).toEqual({ ...query });
     });
 });
