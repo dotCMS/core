@@ -76,3 +76,4 @@ This maintenance release includes the following code fixes:
 70. https://github.com/dotCMS/core/issues/28855 : When page is locked, hover text still says "Lock Page" #28855
 71. https://github.com/dotCMS/core/issues/28576 : GraphQL __icon__ field violates GraphQL introspection convention prohibiting __ prefixes #28576
 72. https://github.com/dotCMS/core/issues/29355 : Sessions expiring unexpectedly when using Redis #29355
+73. https://github.com/dotCMS/core/issues/30420 : Fix Test CircuitBreakerUrlTest.testGet and RemoteAnnouncementsLoaderIntegrationTest.TestAnnouncementsLoader #30420
