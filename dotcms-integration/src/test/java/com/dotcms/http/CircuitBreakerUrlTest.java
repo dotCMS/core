@@ -376,7 +376,7 @@ public class CircuitBreakerUrlTest {
         for (int i = 0; i < 10; i++) {
             try {
                 String x = new CircuitBreakerUrl(goodUrl, 2000).doString();
-                assert (x.contains("dotCMS empowers brands to simplify content creation"));
+                assert (x.contains("<meta name=\"author\" content=\"dotCMS\">"));
 
             } catch (Exception e) {
                 assert (e instanceof CircuitBreakerOpenException);
