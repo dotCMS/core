@@ -8,7 +8,7 @@ function Header({ children }) {
                 <div className="flex justify-between items-center p-4">
                     <Link
                         href="/"
-                        className="flex gap-2 items-center text-3xl font-bold text-white"
+                        className="flex gap-2 items-center text-3xl font-medium text-white"
                     >
                         <Image
                             className="invert"

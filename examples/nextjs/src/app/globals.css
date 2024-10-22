@@ -12,12 +12,31 @@
     }
 }
 
-.full-width .container {
+/* ROW CLASSES */
+.uncontained .container {
     @apply max-w-none;
 }
 
-.full-height,
-.full-height [data-dot-object="container"] {
+.vertical-fill,
+.vertical-fill [data-dot-object="container"] {
     @apply grid gap-4 h-full;
     grid-template-rows: repeat(auto-fit, minmax(0, 1fr));
+}
+
+.spacing-y-md,
+.spacing-y-md [data-dot-object="container"] {
+    @apply space-y-4;
+}
+
+.row-gradient-purple {
+    @apply relative
+}
+
+.row-gradient-purple::after {
+    @apply absolute left-0 top-40 z-0 w-full h-4/5 bg-gradient-to-t from-lime-50 via-lime-100 via-lime-200 to-lime-300 border-t-8 border-lime-500 origin-top-right skew-y-3;
+    content: "";
+}
+
+.row-gradient-purple .container {
+    @apply relative z-10;
 }
