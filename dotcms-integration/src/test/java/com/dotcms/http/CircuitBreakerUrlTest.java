@@ -321,8 +321,8 @@ public class CircuitBreakerUrlTest {
 
 
     }
-    
-    
+
+
     @Test(expected = BadRequestException.class)
     public void disallowRedirects() throws Exception {
 
@@ -335,11 +335,11 @@ public class CircuitBreakerUrlTest {
 
         new CircuitBreakerUrl(redirectUrl, timeout, breaker).doString();
     }
-    
-    
-    
-    
-    
+
+
+
+
+
     public void testMemory() throws Exception {
         System.gc();
 
@@ -376,7 +376,7 @@ public class CircuitBreakerUrlTest {
         for (int i = 0; i < 10; i++) {
             try {
                 String x = new CircuitBreakerUrl(goodUrl, 2000).doString();
-                assert (x.contains("/application/themes/dotcms/js/bootstrap.min.js"));
+                assert (x.contains("<link rel=\"author\" href=\"https://www.dotcms.com/\"/>"));
 
             } catch (Exception e) {
                 assert (e instanceof CircuitBreakerOpenException);
