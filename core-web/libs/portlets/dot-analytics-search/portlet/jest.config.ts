@@ -4,7 +4,6 @@ export default {
     preset: '../../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},
-    coverageDirectory: '../../../../../target/core-web-reports/',
     transform: {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',

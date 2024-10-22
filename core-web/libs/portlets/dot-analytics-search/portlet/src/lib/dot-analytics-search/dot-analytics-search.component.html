@@ -21,7 +21,7 @@
         <h4>{{ 'analytics.search.results' | dm }}</h4>
     </div>
     <ngx-monaco-editor
-        [ngModel]="results()"
+        [ngModel]="results$()"
         [options]="ANALYTICS__RESULTS_MONACO_EDITOR_OPTIONS"
         data-testId="results-editor"></ngx-monaco-editor>
 </section>

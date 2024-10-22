@@ -39,7 +39,7 @@ export class DotAnalyticsSearchComponent {
     /**
      * Computed property to get the results from the store and format them as a JSON string.
      */
-    results = computed(() => {
+    results$ = computed(() => {
         const results = this.store.results();
 
         return results ? JSON.stringify(results, null, 2) : null;
