@@ -16,7 +16,7 @@ public class CircuitBreaker {
 
     // The number of failures that will cause the circuit to open
     static final int DEFAULT_CIRCUIT_BREAKER_FAILURE_THRESHOLD = Config.getIntProperty(
-            "DEFAULT_CIRCUIT_BREAKER_FAILURE_THRESHOLD", 5
+            "DEFAULT_CIRCUIT_BREAKER_FAILURE_THRESHOLD", 10
     );
 
     // The time in milliseconds after which to attempt to close the circuit
