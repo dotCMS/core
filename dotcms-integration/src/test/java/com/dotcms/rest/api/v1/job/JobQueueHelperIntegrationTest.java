@@ -137,7 +137,7 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
      * Given scenario: call cancel Job with an invalid job id
      * Expected result: we should get a DoesNotExistException
      */
-    @Test
+   @Test
     void testCancelNonExistingJob(){
         assertThrows(DoesNotExistException.class, () -> {
             jobQueueHelper.cancelJob("nonExisting" );

@@ -19,10 +19,10 @@ import org.junit.jupiter.api.Test;
 public class JobQueueManagerAPICDITest extends TestBaseJunit5WeldInitiator {
 
     @Inject
-    private JobQueueManagerAPI jobQueueManagerAPI;
+    JobQueueManagerAPI jobQueueManagerAPI;
 
     @Inject
-    private JobQueueManagerAPI jobQueueManagerAPI2;
+    JobQueueManagerAPI jobQueueManagerAPI2;
 
     /**
      * Method to test: Multiple injections of JobQueueManagerAPI Given Scenario: Two separate
