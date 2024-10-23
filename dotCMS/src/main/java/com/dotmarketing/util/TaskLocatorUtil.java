@@ -383,6 +383,7 @@ public class TaskLocatorUtil {
 		ret.add(Task240102AlterVarcharLengthOfRelationType.class);
 		ret.add(Task240131UpdateLanguageVariableContentType.class);
 		ret.add(Task240513UpdateContentTypesSystemField.class);
+		ret.add(Task241013RemoveFullPathLcColumnFromIdentifier.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

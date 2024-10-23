@@ -277,7 +277,8 @@ import org.junit.runners.Suite.SuiteClasses;
         DropOldContentVersionsJobTest.class,
         Task231109AddPublishDateToContentletVersionInfoTest.class,
         Task240513UpdateContentTypesSystemFieldTest.class,
-        EmailActionletTest.class
+        EmailActionletTest.class,
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class
 })
 
 public class MainSuite2b {
