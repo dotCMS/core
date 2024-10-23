@@ -9,6 +9,8 @@
     <div class="dot-wysiwyg__language-selector">
         <p-autoComplete
             class="dot-wysiwyg__language-autocomplete"
+            [pTooltip]="'edit.content.wysiwyg-field.language-variable-tooltip' | dm"
+            tooltipPosition="bottom"
             data-testId="language-variable-selector"
             [placeholder]="'edit.content.wysiwyg-field.language-variable-placeholder' | dm"
             [(ngModel)]="$selectedItem"
