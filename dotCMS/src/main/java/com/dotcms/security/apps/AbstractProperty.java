@@ -98,7 +98,7 @@ public abstract class AbstractProperty<T> implements Serializable {
     }
 
     public boolean hasEnvVarValue() {
-        return Objects.nonNull(envVarValue);
+        return Objects.nonNull(envVarValue) && StringUtils.isNotBlank(String.valueOf(envVarValue));
     }
 
     @JsonIgnore
