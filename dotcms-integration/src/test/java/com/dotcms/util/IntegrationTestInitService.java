@@ -10,6 +10,8 @@ import com.dotcms.jobs.business.api.JobQueueManagerAPIImpl;
 import com.dotcms.jobs.business.api.events.EventProducer;
 import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.error.CircuitBreaker;
+import com.dotcms.jobs.business.error.NoRetryStrategy;
+import com.dotcms.jobs.business.error.RetryPolicyProcessor;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.error.RetryStrategyProducer;
 import com.dotcms.jobs.business.queue.JobQueue;
@@ -76,7 +78,9 @@ public class IntegrationTestInitService {
                                 JobProcessorFactory.class,
                                 EventProducer.class,
                                 JobProcessorScanner.class,
-                                JobQueueHelper.class)
+                                JobQueueHelper.class,
+                                RetryPolicyProcessor.class,
+                                NoRetryStrategy.class)
                         .initialize();
 
                 System.setProperty(TestUtil.DOTCMS_INTEGRATION_TEST, TestUtil.DOTCMS_INTEGRATION_TEST);

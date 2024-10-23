@@ -8,6 +8,8 @@ import com.dotcms.jobs.business.api.JobQueueManagerAPIImpl;
 import com.dotcms.jobs.business.api.events.EventProducer;
 import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.error.CircuitBreaker;
+import com.dotcms.jobs.business.error.NoRetryStrategy;
+import com.dotcms.jobs.business.error.RetryPolicyProcessor;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.error.RetryStrategyProducer;
 import com.dotcms.jobs.business.queue.JobQueue;
@@ -32,7 +34,7 @@ public class TestBaseJunit5WeldInitiator {
                             JobQueueProducer.class, JobQueueConfigProducer.class,
                             RetryStrategyProducer.class, RealTimeJobMonitor.class,
                             EventProducer.class, JobProcessorFactory.class, JobQueueHelper.class,
-                            JobProcessorScanner.class
+                            JobProcessorScanner.class, RetryPolicyProcessor.class, NoRetryStrategy.class
                     )
     );
 
