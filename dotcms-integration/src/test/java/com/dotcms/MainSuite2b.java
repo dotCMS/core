@@ -177,7 +177,11 @@ import com.dotmarketing.startup.runonce.Task240112AddMetadataColumnToStructureTa
 import com.dotmarketing.startup.runonce.Task240513UpdateContentTypesSystemFieldTest;
 import com.dotmarketing.startup.runonce.Task240530AddDotAIPortletToLayoutTest;
 import com.dotmarketing.startup.runonce.Task240606AddVariableColumnToWorkflowTest;
+import com.dotmarketing.startup.runonce.Task241007CreateUniqueFieldsTableTest;
+import com.dotmarketing.startup.runonce.Task241009CreatePostgresJobQueueTablesTest;
 import com.dotmarketing.startup.runonce.Task241013RemoveFullPathLcColumnFromIdentifierTest;
+import com.dotmarketing.startup.runonce.Task241015ReplaceLanguagesWithLocalesPortletTest;
+import com.dotmarketing.startup.runonce.Task241016AddCustomLanguageVariablesPortletToLayoutTest;
 import com.dotmarketing.util.ConfigUtilsTest;
 import com.dotmarketing.util.ITConfigTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -193,6 +197,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        Task241007CreateUniqueFieldsTableTest.class,
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
@@ -381,7 +386,11 @@ import org.junit.runners.Suite.SuiteClasses;
         ConfigUtilsTest.class,
         SimpleInjectionIT.class,
         LegacyJSONObjectRenderTest.class,
-        Task241013RemoveFullPathLcColumnFromIdentifierTest.class
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
+        Task241009CreatePostgresJobQueueTablesTest.class,
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
+        Task241015ReplaceLanguagesWithLocalesPortletTest.class,
+        Task241016AddCustomLanguageVariablesPortletToLayoutTest.class
 })
 
 public class MainSuite2b {
