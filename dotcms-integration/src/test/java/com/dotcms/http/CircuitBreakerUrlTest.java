@@ -321,8 +321,8 @@ public class CircuitBreakerUrlTest {
 
 
     }
-    
-    
+
+
     @Test(expected = BadRequestException.class)
     public void disallowRedirects() throws Exception {
 
@@ -335,11 +335,11 @@ public class CircuitBreakerUrlTest {
 
         new CircuitBreakerUrl(redirectUrl, timeout, breaker).doString();
     }
-    
-    
-    
-    
-    
+
+
+
+
+
     public void testMemory() throws Exception {
         System.gc();
 
