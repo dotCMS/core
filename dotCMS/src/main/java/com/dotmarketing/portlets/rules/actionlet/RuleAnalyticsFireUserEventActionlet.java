@@ -80,7 +80,7 @@ public class RuleAnalyticsFireUserEventActionlet extends RuleActionlet<RuleAnaly
         return true;
     }
 
-    private String getRuleId(HttpServletRequest request, HttpServletResponse response) {
+    private String getRuleId(final HttpServletRequest request, final HttpServletResponse response) {
 
         return Optional.of(request.getAttribute(WebKeys.RULES_ENGINE_PARAM_CURRENT_RULE_ID)).orElseGet(()-> StringPool.UNKNOWN).toString();
     }
