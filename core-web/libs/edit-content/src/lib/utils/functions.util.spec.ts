@@ -15,7 +15,6 @@ import {
 } from './functions.util';
 import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
 
-
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
