@@ -74,11 +74,11 @@ import javax.servlet.http.HttpServletRequest;
  * @see Queue
  * @see ExponentialBackoffRetryPolicy
  */
-@Queue("importContentlet")
+@Queue("importContentlets")
 @ExponentialBackoffRetryPolicy(
         maxRetries = 0
 )
-public class ImportContentletProcessor implements JobProcessor, Cancellable {
+public class ImportContentletsProcessor implements JobProcessor, Cancellable {
 
     private static final String PARAMETER_LANGUAGE = "language";
     private static final String PARAMETER_FIELDS = "fields";
@@ -262,7 +262,7 @@ public class ImportContentletProcessor implements JobProcessor, Cancellable {
             final Charset charset, final User user, final LongConsumer progressCallback) {
 
         AdminLogger.log(
-                ImportContentletProcessor.class, "process",
+                ImportContentletsProcessor.class, "process",
                 "Importing Contentlets", user
         );
 
@@ -561,7 +561,7 @@ public class ImportContentletProcessor implements JobProcessor, Cancellable {
      */
     private Long totalLines(final Job job, final File dotTempFile) {
 
-        long totalCount = 0;
+        long totalCount;
         try (BufferedReader reader = new BufferedReader(new FileReader(dotTempFile))) {
             totalCount = reader.lines().count();
             if (totalCount == 0) {
