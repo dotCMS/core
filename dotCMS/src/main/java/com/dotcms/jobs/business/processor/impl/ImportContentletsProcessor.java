@@ -9,6 +9,7 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.processor.Cancellable;
 import com.dotcms.jobs.business.processor.ExponentialBackoffRetryPolicy;
 import com.dotcms.jobs.business.processor.JobProcessor;
+import com.dotcms.jobs.business.processor.NoRetryPolicy;
 import com.dotcms.jobs.business.processor.Queue;
 import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.mock.request.FakeHttpRequest;
@@ -75,9 +76,7 @@ import javax.servlet.http.HttpServletRequest;
  * @see ExponentialBackoffRetryPolicy
  */
 @Queue("importContentlets")
-@ExponentialBackoffRetryPolicy(
-        maxRetries = 0
-)
+@NoRetryPolicy
 public class ImportContentletsProcessor implements JobProcessor, Cancellable {
 
     private static final String PARAMETER_LANGUAGE = "language";

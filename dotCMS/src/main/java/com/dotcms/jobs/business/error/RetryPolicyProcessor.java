@@ -2,10 +2,12 @@ package com.dotcms.jobs.business.error;
 
 import com.dotcms.jobs.business.processor.ExponentialBackoffRetryPolicy;
 import com.dotcms.jobs.business.processor.JobProcessor;
+import com.dotcms.jobs.business.processor.NoRetryPolicy;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 /**
  * Processes retry policies for job processors. This class is responsible for interpreting retry
@@ -14,16 +16,31 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class RetryPolicyProcessor {
 
+    private final NoRetryStrategy noRetryStrategy;
+
+    @Inject
+    public RetryPolicyProcessor(NoRetryStrategy noRetryStrategy) {
+        this.noRetryStrategy = noRetryStrategy;
+    }
+
     /**
      * Processes the retry policy for a given job processor class.
      * <p>
-     * Currently supports ExponentialBackoffRetryPolicy.
+     * Currently supports ExponentialBackoffRetryPolicy and NoRetryPolicy.
      *
-     * @param processorClass The class of the job processor to process
+     * @param processorClass The class of the job processor to process.
      * @return A RetryStrategy based on the annotation present on the processor class, or null if no
-     * supported annotation is found
+     * supported annotation is found.
+     *
+     * @see ExponentialBackoffRetryPolicy
+     * @see NoRetryPolicy
      */
     public RetryStrategy processRetryPolicy(Class<? extends JobProcessor> processorClass) {
+
+        // Check for NoRetryPolicy
+        if (processorClass.isAnnotationPresent(NoRetryPolicy.class)) {
+            return noRetryStrategy;
+        }
 
         // Check for ExponentialBackoffRetryPolicy
         if (processorClass.isAnnotationPresent(ExponentialBackoffRetryPolicy.class)) {
@@ -31,12 +48,6 @@ public class RetryPolicyProcessor {
                     processorClass.getAnnotation(ExponentialBackoffRetryPolicy.class)
             );
         }
-
-        // Add checks for other retry policy annotations here in the future
-        // For example:
-        // if (processorClass.isAnnotationPresent(SomeOtherRetryPolicy.class)) {
-        //     return processSomeOtherPolicy(processorClass.getAnnotation(SomeOtherRetryPolicy.class));
-        // }
 
         return null;
     }

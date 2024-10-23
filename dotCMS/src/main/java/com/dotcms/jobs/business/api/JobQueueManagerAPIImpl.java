@@ -23,6 +23,7 @@ import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.processor.Cancellable;
 import com.dotcms.jobs.business.processor.DefaultProgressTracker;
+import com.dotcms.jobs.business.processor.DefaultRetryStrategy;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.queue.JobQueue;
@@ -143,7 +144,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     public JobQueueManagerAPIImpl(JobQueue jobQueue,
             JobQueueConfig jobQueueConfig,
             CircuitBreaker circuitBreaker,
-            RetryStrategy defaultRetryStrategy,
+            @DefaultRetryStrategy RetryStrategy defaultRetryStrategy,
             RealTimeJobMonitor realTimeJobMonitor,
             EventProducer eventProducer,
             JobProcessorFactory jobProcessorFactory,
