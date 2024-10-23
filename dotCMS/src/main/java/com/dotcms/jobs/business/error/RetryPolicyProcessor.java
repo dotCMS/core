@@ -16,7 +16,14 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class RetryPolicyProcessor {
 
-    private final NoRetryStrategy noRetryStrategy;
+    private NoRetryStrategy noRetryStrategy;
+
+    /**
+     * Default constructor required for CDI proxy creation.
+     */
+    public RetryPolicyProcessor() {
+        // Default constructor for CDI
+    }
 
     @Inject
     public RetryPolicyProcessor(NoRetryStrategy noRetryStrategy) {

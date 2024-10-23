@@ -237,6 +237,10 @@ public class RealTimeJobMonitor {
      */
     public static class Predicates {
 
+        private Predicates() {
+            // Prevent instantiation
+        }
+
         /**
          * Creates a predicate that matches jobs with any of the specified states.
          *
