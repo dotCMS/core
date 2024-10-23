@@ -5,13 +5,16 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.JUnit4WeldRunner;
 import java.util.Optional;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * Integration test for simple CDI injection
  */
-public class SimpleInjectionIT extends IntegrationTestBase {
+@RunWith(JUnit4WeldRunner.class)
+public class SimpleInjectionIT  {
 
     /**
      * Test CDI injection

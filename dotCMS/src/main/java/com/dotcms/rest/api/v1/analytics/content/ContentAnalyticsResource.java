@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.inject.Inject;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -56,13 +57,7 @@ public class ContentAnalyticsResource {
     private final WebResource webResource;
     private final ContentAnalyticsAPI contentAnalyticsAPI;
 
-    @SuppressWarnings("unused")
-    public ContentAnalyticsResource() {
-        this(CDIUtils.getBean(ContentAnalyticsAPI.class).orElseGet(APILocator::getContentAnalyticsAPI));
-    }
-
-    //@Inject
-    @VisibleForTesting
+    @Inject
     public ContentAnalyticsResource(final ContentAnalyticsAPI contentAnalyticsAPI) {
         this(new WebResource(), contentAnalyticsAPI);
     }
