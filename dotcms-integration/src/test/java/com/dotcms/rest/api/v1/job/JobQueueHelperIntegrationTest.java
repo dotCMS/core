@@ -37,9 +37,14 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
 
     @Test
     void testEmptyParams(){
+
+        final var jobParams = new JobParams();
+        final var user = mock(User.class);
+        final var request = mock(HttpServletRequest.class);
+
         assertThrows(IllegalArgumentException.class, () -> {
             jobQueueHelper.createJob(
-                    "any", new JobParams(), mock(User.class), mock(HttpServletRequest.class)
+                    "any", jobParams, user, request
             );
         });
     }
