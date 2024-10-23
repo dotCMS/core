@@ -116,7 +116,7 @@ public class JobQueueHelper {
      */
     @VisibleForTesting
     void registerProcessor(final String queueName, final Class<? extends JobProcessor> processor){
-        jobQueueManagerAPI.registerProcessor(queueName.toLowerCase(), processor);
+        jobQueueManagerAPI.registerProcessor(queueName, processor);
     }
 
     /**
@@ -210,7 +210,7 @@ public class JobQueueHelper {
      */
     JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize) {
         try {
-            return jobQueueManagerAPI.getActiveJobs(queueName.toLowerCase(), page, pageSize);
+            return jobQueueManagerAPI.getActiveJobs(queueName, page, pageSize);
         } catch (JobQueueDataException e) {
             Logger.error(this.getClass(), "Error fetching active jobs", e);
         }

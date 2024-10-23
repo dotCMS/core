@@ -53,9 +53,13 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
     void testWithValidParamsButInvalidQueueName(){
         final JobParams jobParams = new JobParams();
         jobParams.setJsonParams("{}");
+
+        final var user = mock(User.class);
+        when(user.getUserId()).thenReturn("dotcms.org.1");
+
         assertThrows(DoesNotExistException.class, () -> {
             jobQueueHelper.createJob(
-                    "nonExisting", jobParams, mock(User.class), mock(HttpServletRequest.class)
+                    "nonExisting", jobParams, user, mock(HttpServletRequest.class)
             );
         });
     }
@@ -91,15 +95,18 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
         final JobParams jobParams = new JobParams();
         jobParams.setJsonParams("{}");
 
+        final var user = mock(User.class);
+        when(user.getUserId()).thenReturn("dotcms.org.1");
+
         final String jobId = jobQueueHelper.createJob(
-                "demoQueue", jobParams, mock(User.class), mock(HttpServletRequest.class)
+                "demoQueue", jobParams, user, mock(HttpServletRequest.class)
         );
 
         Assertions.assertNotNull(jobId);
         final Job job = jobQueueHelper.getJob(jobId);
         Assertions.assertNotNull(job);
         Assertions.assertEquals(jobId, job.id());
-        Assertions.assertTrue(jobQueueHelper.getQueueNames().contains("demoQueue".toLowerCase()));
+        Assertions.assertTrue(jobQueueHelper.getQueueNames().contains("demoQueue"));
     }
 
     /**
@@ -113,8 +120,12 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
         jobQueueHelper.registerProcessor("testQueue", DemoJobProcessor.class);
         final JobParams jobParams = new JobParams();
         jobParams.setJsonParams("{}");
+
+        final var user = mock(User.class);
+        when(user.getUserId()).thenReturn("dotcms.org.1");
+
         final String jobId = jobQueueHelper.createJob(
-                "testQueue", jobParams, mock(User.class), mock(HttpServletRequest.class)
+                "testQueue", jobParams, user, mock(HttpServletRequest.class)
         );
         Assertions.assertNotNull(jobId);
         final Job job = jobQueueHelper.getJob(jobId);
@@ -133,8 +144,12 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
         jobQueueHelper.registerProcessor("testQueue", DemoJobProcessor.class);
         final JobParams jobParams = new JobParams();
         jobParams.setJsonParams("{}");
+
+        final var user = mock(User.class);
+        when(user.getUserId()).thenReturn("dotcms.org.1");
+
         final String jobId = jobQueueHelper.createJob(
-                "testQueue", jobParams, mock(User.class), mock(HttpServletRequest.class)
+                "testQueue", jobParams, user, mock(HttpServletRequest.class)
         );
         Assertions.assertNotNull(jobId);
         final Job job = jobQueueHelper.getJob(jobId);
