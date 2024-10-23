@@ -6,6 +6,49 @@
     overflow: auto;
     background: $white;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     padding: $spacing-3 $spacing-4;
+    gap: $spacing-3;
+
+    ngx-monaco-editor {
+        height: 300px;
+        width: 100%;
+        border: $field-border-size solid $color-palette-gray-400;
+        border-radius: $border-radius-md;
+        display: flex;
+        flex-grow: 1;
+    }
+
+    .content-analytics__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: $spacing-3;
+
+        h4 {
+            font-size: $font-size-lmd;
+            margin: $spacing-3 0;
+        }
+    }
+
+    .content-analytics__actions {
+        display: flex;
+        gap: $spacing-3;
+    }
+
+    section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .content-analytics__results {
+        flex: 2;
+    }
+
+    ::ng-deep {
+        .editor-container {
+            border-radius: $border-radius-md;
+        }
+    }
 }
