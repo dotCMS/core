@@ -10,12 +10,9 @@ import { switchMap, tap } from 'rxjs/operators';
 
 import { ComponentStatus, DotHttpErrorResponse } from '@dotcms/dotcms-models';
 
-import {
-    extractFileExtension,
-    getInfoByLang
-} from '../../../../dot-edit-content-binary-field/utils/editor';
 import { UPLOAD_TYPE, UploadedFile } from '../../../models';
 import { DotFileFieldUploadService } from '../../../services/upload-file/upload-file.service';
+import { extractFileExtension, getInfoByLang } from '../../../utils/editor';
 import { DEFAULT_MONACO_CONFIG } from '../dot-form-file-editor.conts';
 
 type FileInfo = {
@@ -74,6 +71,16 @@ export const FormFileEditorStore = signalStore(
         const uploadService = inject(DotFileFieldUploadService);
 
         return {
+            /**
+             * Sets the file name and updates the file's metadata in the store.
+             *
+             * @param name - The new name of the file.
+             *
+             * This method performs the following actions:
+             * 1. Extracts the file extension from the provided name.
+             * 2. Retrieves file information based on the extracted extension.
+             * 3. Updates the store with the new file name and its associated metadata, including MIME type, extension, and language.
+             */
             setFileName(name: string) {
                 const file = store.file();
 
@@ -90,6 +97,16 @@ export const FormFileEditorStore = signalStore(
                     }
                 });
             },
+            /**
+             * Initializes the file editor state with the provided options.
+             *
+             * @param params - The parameters for initializing the file editor.
+             * @param params.monacoOptions - Partial options for configuring the Monaco editor.
+             * @param params.allowFileNameEdit - Flag indicating if the file name can be edited.
+             * @param params.uploadedFile - The uploaded file information, or null if no file is uploaded.
+             * @param params.acceptedFiles - Array of accepted file types.
+             * @param params.uploadType - The type of upload being performed.
+             */
             initLoad({
                 monacoOptions,
                 allowFileNameEdit,
@@ -133,6 +150,10 @@ export const FormFileEditorStore = signalStore(
 
                 patchState(store, state);
             },
+            /**
+             * Uploads the file content to the server.
+             *
+             */
             uploadFile: rxMethod<{
                 name: string;
                 content: string;
