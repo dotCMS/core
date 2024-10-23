@@ -78,3 +78,4 @@ export * from './lib/dot-action-menu-item.model';
 export * from './lib/dot-vanity-url.model';
 export * from './lib/dot-categories.model';
 export * from './lib/dot-ai.model';
+export * from './lib/dot-content-analytics.model';
