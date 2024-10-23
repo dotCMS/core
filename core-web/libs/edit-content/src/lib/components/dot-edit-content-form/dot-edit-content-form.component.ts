@@ -139,7 +139,7 @@ export class DotEditContentFormComponent implements OnInit {
      *
      * @memberof DotEditContentFormComponent
      */
-    restOfTabs = computed(() => this.$store.tabs().slice(1));
+    $restOfTabs = computed(() => this.$store.tabs().slice(1));
 
     ngOnInit(): void {
         if (this.$store.tabs().length) {
