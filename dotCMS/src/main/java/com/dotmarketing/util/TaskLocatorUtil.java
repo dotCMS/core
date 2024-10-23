@@ -386,6 +386,7 @@ public class TaskLocatorUtil {
 		final List<Class<?>> ret = new ArrayList<>();
 		ret.add(Task240513UpdateContentTypesSystemField.class);
 		ret.add(Task240530AddDotAIPortletToLayout.class);
+		ret.add(Task241013RemoveFullPathLcColumnFromIdentifier.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

@@ -298,7 +298,8 @@ import org.junit.runners.Suite.SuiteClasses;
         SearchToolTest.class,
         EmbeddingsToolTest.class,
         CompletionsToolTest.class,
-        EmbeddingContentListenerTest.class
+        EmbeddingContentListenerTest.class,
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class
 })
 
 public class MainSuite2b {
