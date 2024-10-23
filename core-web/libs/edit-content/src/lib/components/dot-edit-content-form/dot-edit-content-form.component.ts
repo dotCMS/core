@@ -132,7 +132,7 @@ export class DotEditContentFormComponent implements OnInit {
      *
      * @memberof DotEditContentFormComponent
      */
-    firstTab = computed(() => this.$store.tabs()[0] || null);
+    $firstTab = computed(() => this.$store.tabs()[0] || null);
 
     /**
      * Computed property that retrieves the rest of tabs from the store.

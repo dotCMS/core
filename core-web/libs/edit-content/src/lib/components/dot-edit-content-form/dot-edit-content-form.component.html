@@ -17,15 +17,15 @@
                 [dotTabViewAppend]="appendContent"></ng-template>
 
             <!-- First tab is not lazy -->
-            @if (firstTab()) {
-                <p-tabPanel [header]="firstTab()!.title" [@fadeIn]>
+            @if ($firstTab()) {
+                <p-tabPanel [header]="$firstTab()!.title" [@fadeIn]>
                     <ng-container
-                        *ngTemplateOutlet="tabPanelTemplate; context: { tab: firstTab() }" />
+                        *ngTemplateOutlet="tabPanelTemplate; context: { tab: $firstTab() }" />
                 </p-tabPanel>
             }
 
             <!-- Rest of the tabs are lazy -->
-            @for (tab of restOfTabs(); track tab) {
+            @for (tab of $restOfTabs(); track tab) {
                 <p-tabPanel [header]="tab.title" [@fadeIn]>
                     <ng-template pTemplate="content">
                         <ng-container *ngTemplateOutlet="tabPanelTemplate; context: { tab: tab }" />

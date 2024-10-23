@@ -16,7 +16,7 @@ import { TabView } from 'primeng/tabview';
 })
 export class TabViewInsertDirective implements AfterViewInit {
     $prependTpl = input<TemplateRef<unknown> | null>(null, { alias: 'dotTabViewPrepend' });
-    $appendTpl = input<TemplateRef<unknown>>(null, { alias: 'dotTabViewAppend' });
+    $appendTpl = input<TemplateRef<unknown> | null>(null, { alias: 'dotTabViewAppend' });
 
     #viewContainer = inject(ViewContainerRef);
     #renderer = inject(Renderer2);
