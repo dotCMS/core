@@ -32,9 +32,9 @@ import {
     MOCK_CONTENTLET_1_TAB as MOCK_CONTENTLET_1_OR_2_TABS,
     MOCK_CONTENTTYPE_1_TAB,
     MOCK_CONTENTTYPE_2_TABS,
-    MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
-    MockResizeObserver
-} from '../../utils/mocks';
+    MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB
+} from '../../utils/edit-content.mock';
+import { MockResizeObserver } from '../../utils/mocks';
 
 describe('DotFormComponent', () => {
     let spectator: Spectator<DotEditContentFormComponent>;

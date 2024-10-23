@@ -2,6 +2,7 @@ import { describe, expect, it } from '@jest/globals';
 
 import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
 
+import { MOCK_CONTENTTYPE_2_TABS, MOCK_FORM_CONTROL_FIELDS } from './edit-content.mock';
 import * as functionsUtil from './functions.util';
 import {
     createPaths,
@@ -12,13 +13,8 @@ import {
     setPersistSidebarState,
     stringToJson
 } from './functions.util';
-import {
-    CALENDAR_FIELD_TYPES,
-    JSON_FIELD_MOCK,
-    MOCK_CONTENTTYPE_2_TABS,
-    MOCK_FORM_CONTROL_FIELDS,
-    MULTIPLE_TABS_MOCK
-} from './mocks';
+import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
+
 
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
@@ -436,6 +432,7 @@ describe('Utils Functions', () => {
                                     fieldTypeLabel: 'Row',
                                     fieldVariables: [],
                                     fixed: false,
+                                    forceIncludeInApi: false,
                                     iDate: 1697051073000,
                                     id: 'a31ea895f80eb0a3754e4a2292e09a52',
                                     indexed: false,
