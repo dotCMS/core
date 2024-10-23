@@ -66,9 +66,9 @@ public class RuleAnalyticsFireUserEventActionletTest extends UnitTestBase {
 
         final RuleAnalyticsFireUserEventActionlet analyticsFireUserEventActionlet = new RuleAnalyticsFireUserEventActionlet(webEventsCollectorService);
         final Map<String, ParameterModel> params = new HashMap<>();
-        params.put(RuleAnalyticsFireUserEventActionlet.EVENT_TYPE, new ParameterModel(RuleAnalyticsFireUserEventActionlet.EVENT_TYPE, "page"));
-        params.put(RuleAnalyticsFireUserEventActionlet.OBJECT_TYPE, new ParameterModel());
-        params.put(RuleAnalyticsFireUserEventActionlet.OBJECT_ID, new ParameterModel(RuleAnalyticsFireUserEventActionlet.EVENT_TYPE, "345"));
+        params.put(RuleAnalyticsFireUserEventActionlet.RULE_EVENT_TYPE, new ParameterModel(RuleAnalyticsFireUserEventActionlet.RULE_EVENT_TYPE, "page"));
+        params.put(RuleAnalyticsFireUserEventActionlet.RULE_OBJECT_TYPE, new ParameterModel());
+        params.put(RuleAnalyticsFireUserEventActionlet.RULE_OBJECT_ID, new ParameterModel(RuleAnalyticsFireUserEventActionlet.RULE_EVENT_TYPE, "345"));
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
