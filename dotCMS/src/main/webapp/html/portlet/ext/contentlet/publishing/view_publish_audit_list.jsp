@@ -1,28 +1,18 @@
 <%@page import="org.apache.commons.lang.StringEscapeUtils"%>
-<%@page import="com.dotcms.publisher.business.PublishAuditUtil"%>
 <%@page import="com.dotmarketing.beans.PermissionableProxy"%>
-<%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditStatus"%>
-<%@page import="com.dotmarketing.util.URLEncoder"%>
-<%@page import="java.util.Date"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="com.liferay.portal.model.User"%>
-<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotcms.publisher.business.DotPublisherException"%>
-<%@page import="com.dotmarketing.business.DotStateException"%>
 <%@page import="java.util.Map"%>
 <%@page import="com.dotcms.publisher.business.PublisherAPI"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="java.util.Calendar"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
-<%@ page import="com.dotcms.publisher.bundle.bean.Bundle"%>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="com.dotcms.publisher.business.PublishQueueElementTransformer" %>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
@@ -298,7 +288,6 @@
 
 
 			<th  nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>
-			<th  nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_dialog_bundle_name") %></strong></th>
 			<th style="width:100%" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>
 			<th style="width:100px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>
 			<th style="width:40px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
@@ -346,13 +335,6 @@
 
 				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
 					<%=shortBundleId.toString()%>
-				</td>
-				<%--BundleName--%>
-				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
-					<% Bundle bundle = APILocator.getBundleAPI().getBundleById(c.getBundleId()); %>
-                    <%if ( bundle != null && bundle.getName() != null && (!bundle.getName().equals( bundle.getId() ))) { %>
-                        <%=bundle.getName()%>
-                    <%}%>
 				</td>
 				<%--BundleTitle--%>
 				<%try{ %>
