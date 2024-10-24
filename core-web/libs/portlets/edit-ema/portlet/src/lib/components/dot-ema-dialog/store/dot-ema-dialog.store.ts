@@ -48,8 +48,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     readonly createContentletFromPalette = this.effect(
         (contentTypeVariable$: Observable<CreateFromPaletteAction>) => {
             return contentTypeVariable$.pipe(
-                switchMap(({ name, variable, payload }) => {
-                    return this.dotActionUrlService.getCreateContentletUrl(variable).pipe(
+                switchMap(({ name, variable, payload, language_id }) => {
+                    return this.dotActionUrlService.getCreateContentletUrl(variable, language_id).pipe(
                         tapResponse(
                             (url) => {
                                 this.createContentlet({
@@ -92,16 +92,21 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      */
     readonly createContentlet = this.updater(
         (state, { url, contentType, payload }: CreateContentletAction) => {
+
+            // const newUrl = url.replace("_content_lang=1", "_content_lang=2");
+            // console.log("HERE", url);
+            // console.log("HERE", newUrl);
+
             return {
                 ...state,
-                url: url,
+                url,
+                payload,
                 header: this.dotMessageService.get(
                     'contenttypes.content.create.contenttype',
                     contentType
                 ),
                 status: DialogStatus.LOADING,
-                type: 'content',
-                payload
+                type: 'content'
             };
         }
     );
