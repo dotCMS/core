@@ -94,9 +94,6 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      */
     readonly createContentlet = this.updater(
         (state, { url, contentType, payload }: CreateContentletAction) => {
-            // const newUrl = url.replace("_content_lang=1", "_content_lang=2");
-            // console.log("HERE", url);
-            // console.log("HERE", newUrl);
 
             return {
                 ...state,
