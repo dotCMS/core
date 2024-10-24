@@ -49,20 +49,22 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         (contentTypeVariable$: Observable<CreateFromPaletteAction>) => {
             return contentTypeVariable$.pipe(
                 switchMap(({ name, variable, payload, language_id }) => {
-                    return this.dotActionUrlService.getCreateContentletUrl(variable, language_id).pipe(
-                        tapResponse(
-                            (url) => {
-                                this.createContentlet({
-                                    url,
-                                    contentType: name,
-                                    payload
-                                });
-                            },
-                            (e) => {
-                                console.error(e);
-                            }
-                        )
-                    );
+                    return this.dotActionUrlService
+                        .getCreateContentletUrl(variable, language_id)
+                        .pipe(
+                            tapResponse(
+                                (url) => {
+                                    this.createContentlet({
+                                        url,
+                                        contentType: name,
+                                        payload
+                                    });
+                                },
+                                (e) => {
+                                    console.error(e);
+                                }
+                            )
+                        );
                 })
             );
         }
@@ -92,7 +94,6 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      */
     readonly createContentlet = this.updater(
         (state, { url, contentType, payload }: CreateContentletAction) => {
-
             // const newUrl = url.replace("_content_lang=1", "_content_lang=2");
             // console.log("HERE", url);
             // console.log("HERE", newUrl);
