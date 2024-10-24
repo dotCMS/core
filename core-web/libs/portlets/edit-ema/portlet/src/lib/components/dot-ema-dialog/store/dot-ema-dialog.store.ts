@@ -94,7 +94,6 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      */
     readonly createContentlet = this.updater(
         (state, { url, contentType, payload }: CreateContentletAction) => {
-
             return {
                 ...state,
                 url,
