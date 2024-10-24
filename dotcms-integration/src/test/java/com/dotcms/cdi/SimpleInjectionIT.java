@@ -23,12 +23,8 @@ public class SimpleInjectionIT  {
      */
     @Test
     public void testInjection() {
-
-        Optional<GreetingBean> optional = CDIUtils.getBean(GreetingBean.class);
-        assertTrue(optional.isPresent());
-        final GreetingBean greetingBean = optional.get();
+        final GreetingBean greetingBean = CDIUtils.getBeanThrows(GreetingBean.class);
         assertEquals("Hello World", greetingBean.greet());
-
     }
 
 }

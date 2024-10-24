@@ -7,13 +7,8 @@ import org.junit.runners.model.InitializationError;
 
 public class JUnit4WeldRunner extends BlockJUnit4ClassRunner {
 
-    private static final Weld WELD;
-    private static final WeldContainer CONTAINER;
-
-    static {
-        WELD = new Weld();
-        CONTAINER = WELD.initialize();
-    }
+    private final Weld weld;
+    private final WeldContainer container;
 
     /**
      * Creates a DataProviderRunner to run supplied {@code clazz}.
@@ -23,6 +18,8 @@ public class JUnit4WeldRunner extends BlockJUnit4ClassRunner {
      */
     public JUnit4WeldRunner(Class<?> clazz) throws InitializationError {
         super(clazz);
+        this.weld = new Weld();
+        this.container = weld.initialize();
     }
 
     /**
@@ -32,6 +29,6 @@ public class JUnit4WeldRunner extends BlockJUnit4ClassRunner {
      */
     @Override
     protected Object createTest() throws Exception {
-        return CONTAINER.instance().select(getTestClass().getJavaClass()).get();
+        return container.instance().select(getTestClass().getJavaClass()).get();
     }
 }
