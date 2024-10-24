@@ -1,4 +1,4 @@
-<img src="https://www.dotcms.com/dA/99fe3769-d649/256w/dotcms.png" title="dotcms open source hybrid content management system">
+<img src="https://www2.dotcms.com/dA/99fe3769-d649/256w/dotcms.png" title="dotcms open source hybrid content management system">
 
 
 [![Merge Queue](https://github.com/dotCMS/core/actions/workflows/cicd_2-merge-queue.yml/badge.svg)](https://github.com/dotCMS/core/actions/workflows/cicd_2-merge-queue.yml)
