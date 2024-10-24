@@ -31,6 +31,7 @@
         <ngx-monaco-editor
             [class.file-field__code-editor--disabled]="form.disabled"
             [options]="store.monacoConfig()"
+            (init)="onEditorInit($event)"
             class="file-field__code-editor"
             data-testId="code-editor"
             formControlName="content" />

@@ -1,5 +1,4 @@
 import {
-    MonacoEditorComponent,
     MonacoEditorConstructionOptions,
     MonacoEditorModule
 } from '@materia-ui/ngx-monaco-editor';
@@ -9,9 +8,9 @@ import {
     Component,
     effect,
     inject,
-    viewChild,
     OnInit,
-    untracked
+    untracked,
+    Injector
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -74,6 +73,8 @@ export class DotFormFileEditorComponent implements OnInit {
      */
     readonly #dialogConfig = inject(DynamicDialogConfig<DialogProps>);
 
+    readonly #injector = inject(Injector);
+
     /**
      * Form group for the file editor component.
      *
@@ -94,7 +95,7 @@ export class DotFormFileEditorComponent implements OnInit {
      *
      * @type {MonacoEditorComponent}
      */
-    $editorRef = viewChild.required(MonacoEditorComponent);
+    #editorRef: monaco.editor.IStandaloneCodeEditor | null = null;
 
     constructor() {
         effect(() => {
@@ -221,9 +222,12 @@ export class DotFormFileEditorComponent implements OnInit {
      * @private
      */
     #disableEditor() {
+        if (!this.#editorRef) {
+            return
+        }
+
         this.form.disable();
-        const editor = this.$editorRef().editor;
-        editor.updateOptions({ readOnly: true });
+        this.#editorRef.updateOptions({ readOnly: true });
     }
 
     /**
@@ -235,9 +239,12 @@ export class DotFormFileEditorComponent implements OnInit {
      * 3. Updates the editor options to make it writable (readOnly: false).
      */
     #enableEditor() {
+        if (!this.#editorRef) {
+            return
+        }
+
         this.form.enable();
-        const editor = this.$editorRef().editor;
-        editor.updateOptions({ readOnly: false });
+        this.#editorRef.updateOptions({ readOnly: false });
     }
 
     /**
@@ -266,5 +273,9 @@ export class DotFormFileEditorComponent implements OnInit {
      */
     cancelUpload(): void {
         this.#dialogRef.close();
+    }
+
+    onEditorInit(editor: monaco.editor.IStandaloneCodeEditor) {
+        this.#editorRef = editor;
     }
 }
