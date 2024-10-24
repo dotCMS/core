@@ -53,20 +53,27 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
 import java.io.File;
-import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -108,6 +115,78 @@ public class ImportUtil {
         "EEEE, MMMM dd, yyyy", "MM/dd/yyyy", "hh:mm:ss aa", "HH:mm:ss", "hh:mm aa", "yyyy-MM-dd" };
 
     private static final SimpleDateFormat DATE_FIELD_FORMAT = new SimpleDateFormat("yyyyMMdd");
+
+    /**
+     * Imports the data contained in a CSV file into dotCMS. The data can be
+     * either new or an update for existing content. The {@code preview}
+     * parameter determines the behavior of this method:
+     * <ul>
+     * <li>{@code preview == true}: This is the ideal approach. The data
+     * contained in the CSV file is previously analyzed and evaluated
+     * <b>BEFORE</b> actually committing any changes to existing contentlets or
+     * adding new ones. This way, users can perform the appropriate corrections
+     * (if needed) before submitting the new contents.</li>
+     * <li>{@code preview == false}: Setting the parameter this way will make
+     * the system try to import the contents right away. The method will also
+     * return a summary with the status of the operation.</li>
+     * </ul>
+     *
+     * @param importId
+     *            - The ID of this data import.
+     * @param currentSiteId
+     *            - The ID of the Site where the content will be added/updated.
+     * @param contentTypeInode
+     *            - The Inode of the Content Type that the content is associated
+     *            to.
+     * @param keyfields
+     *            - The Inodes of the fields used to associated existing dotCMS
+     *            contentlets with the information in this file. Can be empty.
+     * @param preview
+     *            - Set to {@code true} if an analysis and evaluation of the
+     *            imported data will be generated <b>before</b> actually
+     *            importing the data. Otherwise, set to {@code false}.
+     * @param isMultilingual
+     *            - If set to {@code true}, the CSV file will import contents in
+     *            more than one language. Otherwise, set to {@code false}.
+     * @param user
+     *            - The {@link User} performing this action.
+     * @param language
+     *            - The language ID for the contents. If the ID equals -1, the
+     *            columns for language code and country code will be used to
+     *            infer the language ID.
+     * @param csvHeaders
+     *            - The headers for each column in the CSV file.
+     * @param csvreader
+     *            - The actual data contained in the CSV file.
+     * @param languageCodeHeaderColumn
+     *            - The column name containing the language code.
+     * @param countryCodeHeaderColumn
+     *            - The column name containing the country code.
+     * @param reader
+     *            - The character streams reader.
+     * @param wfActionId
+     *            - The workflow Action Id to execute on the import
+     * @param request
+     *            - The request object.
+     * @return The resulting analysis performed on the CSV file. This provides
+     *         information regarding inconsistencies, errors, warnings and/or
+     *         precautions to the user.
+     * @throws DotRuntimeException
+     *             An error occurred when analyzing the CSV file.
+     * @throws DotDataException
+     *             An error occurred when analyzing the CSV file.
+     */
+    public static HashMap<String, List<String>> importFile(
+            Long importId, String currentSiteId, String contentTypeInode, String[] keyfields,
+            boolean preview, boolean isMultilingual, User user, long language,
+            String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn,
+            int countryCodeHeaderColumn, Reader reader, String wfActionId,
+            final HttpServletRequest request) throws DotRuntimeException, DotDataException {
+
+        return importFile(importId, currentSiteId, contentTypeInode, keyfields, preview,
+                isMultilingual, user, language, csvHeaders, csvreader, languageCodeHeaderColumn,
+                countryCodeHeaderColumn, wfActionId, request, null);
+    }
 
 	/**
 	 * Imports the data contained in a CSV file into dotCMS. The data can be
@@ -155,10 +234,12 @@ public class ImportUtil {
 	 *            - The column name containing the language code.
 	 * @param countryCodeHeaderColumn
 	 *            - The column name containing the country code.
-	 * @param reader
-	 *            - The character streams reader.
      * @param wfActionId
      *            - The workflow Action Id to execute on the import
+     * @param request
+     *            - The request object.
+     * @param progressCallback
+     *           - A callback function to report progress.
 	 * @return The resulting analysis performed on the CSV file. This provides
 	 *         information regarding inconsistencies, errors, warnings and/or
 	 *         precautions to the user.
@@ -167,7 +248,11 @@ public class ImportUtil {
 	 * @throws DotDataException
 	 *             An error occurred when analyzing the CSV file.
 	 */
-    public static HashMap<String, List<String>> importFile(Long importId, String currentSiteId, String contentTypeInode, String[] keyfields, boolean preview, boolean isMultilingual, User user, long language, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader, String wfActionId, final HttpServletRequest request)
+    public static HashMap<String, List<String>> importFile(Long importId, String currentSiteId,
+            String contentTypeInode, String[] keyfields, boolean preview, boolean isMultilingual,
+            User user, long language, String[] csvHeaders, CsvReader csvreader,
+            int languageCodeHeaderColumn, int countryCodeHeaderColumn, String wfActionId,
+            final HttpServletRequest request, final LongConsumer progressCallback)
             throws DotRuntimeException, DotDataException {
 
         HashMap<String, List<String>> results = new HashMap<>();
@@ -293,6 +378,11 @@ public class ImportUtil {
                             errors++;
                             Logger.warn(ImportUtil.class, "Error line: " + lines + " (" + csvreader.getRawRecord()
                                     + "). Line Ignored.");
+                        } finally {
+                            // Progress callback
+                            if (progressCallback != null) {
+                                progressCallback.accept(lines);
+                            }
                         }
                     }
 
@@ -331,14 +421,6 @@ public class ImportUtil {
         } catch (final Exception e) {
             Logger.error(ImportContentletsAction.class, String.format("An error occurred when parsing CSV file in " +
                     "line #%s: %s", lineNumber, e.getMessage()), e);
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                	// Reader could not be closed. Continue
-                }
-            }
         }
         final String action = preview ? "Content preview" : "Content import";
         String statusMsg = String.format("%s has finished, %d lines were read correctly.", action, lines);

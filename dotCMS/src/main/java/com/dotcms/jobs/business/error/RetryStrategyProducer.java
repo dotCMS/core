@@ -1,5 +1,6 @@
 package com.dotcms.jobs.business.error;
 
+import com.dotcms.jobs.business.processor.DefaultRetryStrategy;
 import com.dotmarketing.util.Config;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
@@ -38,6 +39,7 @@ public class RetryStrategyProducer {
      * @return An ExponentialBackoffRetryStrategy instance configured with the default values.
      */
     @Produces
+    @DefaultRetryStrategy
     public RetryStrategy produceDefaultRetryStrategy() {
         return new ExponentialBackoffRetryStrategy(
                 DEFAULT_RETRY_STRATEGY_INITIAL_DELAY,

@@ -389,7 +389,7 @@
 							"// Check if cancellation message is returned",
 							"var jsonData = pm.response.json();",
 							"pm.test(\"Job cancelled successfully\", function () {",
-							"    pm.expect(jsonData.entity).to.equal('Job cancelled successfully');",
+							"    pm.expect(jsonData.entity).to.include('Cancellation request successfully sent to job');",
 							"});",
 							"",
 							"var jobId = pm.collectionVariables.get(\"jobId\");",
