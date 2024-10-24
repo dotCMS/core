@@ -35,8 +35,11 @@ import org.glassfish.jersey.server.JSONP;
 @SuppressWarnings("serial")
 public class JVMInfoResource implements Serializable {
 
+    public static final Pattern obfuscateBasePattern = Pattern.compile("passw|pass|passwd|secret|key|token",
+            Pattern.CASE_INSENSITIVE);
+
     public static final Pattern obfuscatePattern = Pattern.compile(
-            Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", "passw|pass|passwd|secret|key|token"),
+            Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", ""),
             Pattern.CASE_INSENSITIVE);
 
     @Path("/")
@@ -187,7 +190,9 @@ public class JVMInfoResource implements Serializable {
     public static String obfuscateIfNeeded(final String key, final Object valueObject) {
         final String value = (String) valueObject;
         if(UtilMethods.isEmpty(value)) return "";
-        return obfuscatePattern.matcher(key).find() ? obfuscate(value) : value;
+        return obfuscateBasePattern.matcher(key).find() || obfuscatePattern.matcher(key).find()
+                ? obfuscate(value)
+                : value;
     }
     
     private static String obfuscate(final String value) {
