@@ -9,8 +9,7 @@ import {
     effect,
     inject,
     OnInit,
-    untracked,
-    Injector
+    untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -72,8 +71,6 @@ export class DotFormFileEditorComponent implements OnInit {
      * This configuration is injected using the `DynamicDialogConfig` class with a generic type of `DialogProps`.
      */
     readonly #dialogConfig = inject(DynamicDialogConfig<DialogProps>);
-
-    readonly #injector = inject(Injector);
 
     /**
      * Form group for the file editor component.
