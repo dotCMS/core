@@ -42,10 +42,15 @@ import {
 } from './dot-edit-content-wysiwyg-field.constant';
 import { shouldUseDefaultEditor } from './dot-edit-content-wysiwyg-field.utils';
 
+import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
+
 interface LanguageVariable {
     key: string;
     value: string;
 }
+
+// Quantity of language variables to show in the autocomplete
+const MAX_LANGUAGES_SUGGESTIONS = 20;
 
 /**
  * Component representing a WYSIWYG (What You See Is What You Get) editor field for editing content in DotCMS.
@@ -84,6 +89,13 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     #confirmationService = inject(ConfirmationService);
     #dotMessageService = inject(DotMessageService);
     #dotLanguagesService = inject(DotLanguagesService);
+    #store = inject(DotEditContentStore);
+
+    /**
+     * This variable represents if the sidebar is closed.
+     */
+    $sidebarClosed = computed(() => !this.#store.showSidebar());
+
     /**
      * This variable represents a required content type field in DotCMS.
      */
@@ -175,6 +187,26 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
      */
     $searchQuery = signal('');
 
+    /**
+     * Computed property to filter the language variables based on the search query.
+     */
+    $filteredSuggestions = computed(() => {
+        const term = this.$searchQuery().toLowerCase();
+
+        if (!term) {
+            return [];
+        }
+
+        return this.$languageVariables()
+            .filter((variable) => variable.key.toLowerCase().includes(term))
+            .slice(0, MAX_LANGUAGES_SUGGESTIONS);
+    });
+
+    /**
+     * Signal to track if the dropdown is loading.
+     */
+    $dropdownLoading = signal(false);
+
     ngAfterViewInit(): void {
         // Assign the selected editor value
         this.$selectedEditorDropdown.set(this.$contentEditorUsed());
@@ -233,23 +265,13 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     }
 
     /**
-     * Computed property to filter the language variables based on the search query.
-     */
-    $filteredSuggestions = computed(() => {
-        const term = this.$searchQuery().toLowerCase();
-
-        return this.$languageVariables()
-            .filter((variable) => variable.key.toLowerCase().includes(term))
-            .slice(0, 10);
-    });
-
-    /**
      * Handles the selection of a language variable from the autocomplete.
      *
      * @param {AutoCompleteSelectEvent} $event - The event object containing the selected value.
      * @return {void}
      */
     onSelectLanguageVariable($event: AutoCompleteSelectEvent) {
+        this.$searchQuery.set('');
         if (this.$displayedEditor() === AvailableEditor.TinyMCE) {
             const tinyMCE = this.$tinyMCEComponent();
             if (tinyMCE) {
@@ -272,7 +294,12 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     /**
      * Fetches language variables from the DotCMS Languages API and formats them for use in the autocomplete.
      */
-    private getLanguageVariables() {
+    getLanguageVariables() {
+        if (this.$languageVariables().length > 0) {
+            return;
+        }
+
+        this.$dropdownLoading.set(true);
         // TODO: This is a temporary solution to get the language variables from the DotCMS Languages API.
         // We need a way to get the current language from the contentlet.
         this.#dotLanguagesService
@@ -307,9 +334,11 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
                         );
 
                     this.$languageVariables.set(formattedVariables);
+                    this.$dropdownLoading.set(false);
                 },
                 error: (error) => {
                     console.error('Error fetching language variables:', error);
+                    this.$dropdownLoading.set(false);
                 }
             });
     }

@@ -20,7 +20,7 @@
 
     .dot-wysiwyg__language-selector {
         position: relative;
-        min-width: 12rem;
+        min-width: 16rem;
     }
 
     .dot-wysiwyg__search-icon {
@@ -30,6 +30,25 @@
         transform: translateY(-50%);
         pointer-events: none;
         color: $color-palette-primary-500;
+    }
+
+    .dot-wysiwyg__language-item {
+        display: flex;
+        gap: 8px;
+        max-width: 100%;
+
+        .dot-wysiwyg__language-key {
+            flex: 0 1 auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            direction: rtl;
+        }
+
+        .dot-wysiwyg__language-value {
+            flex: 0 0 auto;
+            font-weight: $font-weight-medium-bold;
+        }
     }
 
     ::ng-deep {
@@ -52,10 +71,18 @@
         }
 
         p-dropdown {
-            min-width: 12rem;
+            min-width: 10rem;
         }
         p-autocomplete .p-inputwrapper {
             padding-right: 35px;
+        }
+
+        .p-autocomplete-panel {
+            z-index: 1000;
+            position: fixed;
+            max-width: 16rem;
+        }
+        .dot-wysiwyg__sidebar-closed .p-autocomplete-panel {
         }
     }
 }

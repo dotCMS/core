@@ -9,19 +9,22 @@
     <div class="dot-wysiwyg__language-selector">
         <p-autoComplete
             class="dot-wysiwyg__language-autocomplete"
-            [pTooltip]="'edit.content.wysiwyg-field.language-variable-tooltip' | dm"
-            tooltipPosition="bottom"
+            [class.dot-wysiwyg__sidebar-closed]="$sidebarClosed()"
             data-testId="language-variable-selector"
             [placeholder]="'edit.content.wysiwyg-field.language-variable-placeholder' | dm"
             [(ngModel)]="$selectedItem"
             [ngModelOptions]="{ standalone: true }"
             [suggestions]="$filteredSuggestions()"
+            [minLength]="3"
+            debounce="500"
+            tooltipEvent="focus"
             (onSelect)="onSelectLanguageVariable($event)"
             (completeMethod)="search($event)"
             [styleClass]="'dot-wysiwyg__language-autocomplete--with-icon'">
             <ng-template let-variable pTemplate="item">
                 <span class="dot-wysiwyg__language-item">
-                    {{ variable.key }} - {{ variable.value }}
+                    <span class="dot-wysiwyg__language-key">{{ variable.key }}</span>
+                    <span class="dot-wysiwyg__language-value">{{ variable.value }}</span>
                 </span>
             </ng-template>
         </p-autoComplete>
