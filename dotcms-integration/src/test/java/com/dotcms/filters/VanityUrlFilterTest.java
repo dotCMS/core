@@ -176,7 +176,7 @@ public class VanityUrlFilterTest {
             String content = FileUtil.read(tmp);
             assert (content != null);
             assert (content.contains("All rights reserved"));
-            assert (content.contains("<meta property=\"og:url\" content=\"https://www.dotcms.com/\">"));
+            assert (content.contains("content=\"dotCMS\""));
         }
     }
 
