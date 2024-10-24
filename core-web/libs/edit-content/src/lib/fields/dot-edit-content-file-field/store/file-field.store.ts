@@ -76,7 +76,7 @@ export const FileFieldStore = signalStore(
              * @param initState
              */
             initLoad: (initState: {
-                inputType: FileFieldState['inputType'];
+                inputType: INPUT_TYPES;
                 fieldVariable: FileFieldState['fieldVariable'];
                 isAIPluginInstalled?: boolean;
             }) => {

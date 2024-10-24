@@ -6,7 +6,7 @@ type Actions = {
     allowCreateFile: boolean;
     allowGenerateImg: boolean;
     acceptedFiles: string[];
-    maxFileSize: number;
+    maxFileSize: number | null;
 };
 
 type ConfigActions = Record<INPUT_TYPES, Actions>;

@@ -19,7 +19,7 @@
             } @else {
                 <dot-field-validation-message
                     [message]="'dot.file.field.action.import.from.url.error.message' | dm"
-                    [field]="form.get('url')"
+                    [field]="form.controls.url"
                     data-testId="error-message" />
             }
         </div>
