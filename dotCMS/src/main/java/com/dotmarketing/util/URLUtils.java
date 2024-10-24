@@ -81,11 +81,10 @@ public class URLUtils {
 		public void setFragment(String fragment) {
 			this.fragment = fragment;
 		}
-	}	
+	}
 
 	private static final Pattern regexPattern = Pattern.compile(
-			"((\\w+)://([^/\\p{Cntrl}:]+)(?::(\\d+))?)?(((?:/[^/\\p{Cntrl}]+)*)(?:/([^/\\p{Cntrl}?#]+)?))?\\??([^#]*)?(?:#(.*))?");
-	
+    "(([^:/?#]+)://([^/\\p{Cntrl}:]+)(?::(\\d+))?)?(((?:/[^\\p{Cntrl}?#]*)*)(?:/([^/\\p{Cntrl}?#]+)?))?\\??([^#]*)?(?:#(.*))?");
 	public static ParsedURL parseURL(String url) throws IllegalArgumentException {
 		
 		Matcher matcher = regexPattern.matcher(url);
