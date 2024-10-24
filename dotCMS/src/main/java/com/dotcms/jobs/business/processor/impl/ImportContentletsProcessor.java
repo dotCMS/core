@@ -42,6 +42,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
@@ -470,7 +471,12 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
             return new String[0];
         }
 
-        return (String[]) job.parameters().get(PARAMETER_FIELDS);
+        final var fields = job.parameters().get(PARAMETER_FIELDS);
+        if (fields instanceof ArrayList) {
+            return ((ArrayList<String>) fields).toArray(new String[0]);
+        }
+        
+        return (String[]) fields;
     }
 
     /**
