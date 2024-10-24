@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.dotcms.TestBaseJunit5WeldInitiator;
 import com.dotcms.jobs.business.error.ExponentialBackoffRetryStrategy;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
@@ -28,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 import org.awaitility.Awaitility;
+import org.jboss.weld.junit5.EnableWeld;
+import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,15 +38,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Integration tests for the JobQueueManagerAPI.
  * These tests verify the functionality of the job queue system in a real environment,
  * including job creation, processing, cancellation, retrying, and progress tracking.
  */
+@EnableWeld
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(Lifecycle.PER_CLASS)
-public class JobQueueManagerAPIIntegrationTest extends TestBaseJunit5WeldInitiator {
+public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBaseTest {
 
     @Inject
     JobQueueManagerAPI jobQueueManagerAPI;
