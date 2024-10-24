@@ -48,7 +48,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     readonly createContentletFromPalette = this.effect(
         (contentTypeVariable$: Observable<CreateFromPaletteAction>) => {
             return contentTypeVariable$.pipe(
-                switchMap(({ name, variable, payload, language_id }) => {
+                switchMap(({ name, variable, payload, language_id = 1 }) => {
                     return this.dotActionUrlService
                         .getCreateContentletUrl(variable, language_id)
                         .pipe(
