@@ -59,8 +59,6 @@ public class DotRestApplication extends ResourceConfig {
 		  "com.dotcms.ai.rest",
 		  "io.swagger.v3.jaxrs2"
 		).register(CdiComponentProvider.class);
-
-		System.out.println("DotRestApplication: " + this);
 	}
 
 	/**
