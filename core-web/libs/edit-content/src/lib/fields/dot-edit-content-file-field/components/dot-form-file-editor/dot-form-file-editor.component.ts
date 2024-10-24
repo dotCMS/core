@@ -1,7 +1,4 @@
-import {
-    MonacoEditorConstructionOptions,
-    MonacoEditorModule
-} from '@materia-ui/ngx-monaco-editor';
+import { MonacoEditorConstructionOptions, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
 import {
     ChangeDetectionStrategy,
@@ -220,7 +217,7 @@ export class DotFormFileEditorComponent implements OnInit {
      */
     #disableEditor() {
         if (!this.#editorRef) {
-            return
+            return;
         }
 
         this.form.disable();
@@ -237,7 +234,7 @@ export class DotFormFileEditorComponent implements OnInit {
      */
     #enableEditor() {
         if (!this.#editorRef) {
-            return
+            return;
         }
 
         this.form.enable();
