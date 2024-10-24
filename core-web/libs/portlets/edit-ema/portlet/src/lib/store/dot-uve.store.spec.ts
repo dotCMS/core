@@ -172,6 +172,12 @@ describe('UVEStore', () => {
             });
         });
 
+        describe('$languageId', () => {
+            it('should return the languageId', () => {
+                expect(store.$languageId()).toBe(MOCK_RESPONSE_HEADLESS.viewAs.language.id);
+            });
+        });
+
         describe('$shellProps', () => {
             it('should return the shell props for Headless Pages', () => {
                 expect(store.$shellProps()).toEqual(BASE_SHELL_PROPS_RESPONSE);

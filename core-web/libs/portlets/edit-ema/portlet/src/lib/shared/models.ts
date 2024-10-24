@@ -216,6 +216,7 @@ export interface CreateFromPaletteAction {
     variable: string;
     name: string;
     payload: ActionPayload;
+    language_id?: string | number;
 }
 
 export interface EditContentletPayload {

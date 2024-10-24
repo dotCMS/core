@@ -155,7 +155,7 @@ public class ContentTypeUtil {
      * Returns the action URL for the specified Content Type. Valid layouts must
      * be returned by the {@link User} requesting this data; otherwise, the URL
      * will not be returned. This means that a layout must contain at least one
-     * portlet.
+     * portlet. The user's language will be considered to return results
      *
      * @param request
      *            - The {@link HttpServletRequest} object.
@@ -167,10 +167,32 @@ public class ContentTypeUtil {
      * @param strutsAction - struts action url to execute
      * @return The action URL associated to the specified Content Type.
      */
-    public String getActionUrl( HttpServletRequest request, final String contentTypeInode, final User user, final String strutsAction) {
+    public String getActionUrl( HttpServletRequest request, final String contentTypeInode, final User user, final String strutsAction){
+        return getActionUrl(request, contentTypeInode, user, strutsAction, user.getLanguageId());
+
+    }
+
+    /**
+     * Returns the action URL for the specified Content Type. Valid layouts must
+     * be returned by the {@link User} requesting this data; otherwise, the URL
+     * will not be returned. This means that a layout must contain at least one
+     * portlet.
+     *
+     * @param request
+     *            - The {@link HttpServletRequest} object.
+     * @param contentTypeInode
+     *            - The Inode of the Content Type whose action URL will be
+     *            returned.
+     * @param user
+     *            - The user performing this action.
+     * @param strutsAction - struts action url to execute
+     * @param languageId - The language to be used for the search
+     * @return The action URL associated to the specified Content Type.
+     */
+    public String getActionUrl( HttpServletRequest request, final String contentTypeInode, final User user, final String strutsAction, final String languageId) {
         final List<Layout> layouts;
         String actionUrl = StringUtils.EMPTY;
-        String referrer = StringUtils.EMPTY;
+        String referrer;
         try {
             layouts = this.layoutAPI.loadLayoutsForUser(user);
             if (UtilMethods.isSet(layouts)) {
@@ -185,7 +207,7 @@ public class ContentTypeUtil {
                         "referer", new String[] {referrer},
                         "inode", new String[] {""},
                         "selectedStructure", new String[] {contentTypeInode},
-                        "lang", new String[] {this.getLanguageId(user.getLanguageId()).toString()})));
+                        "lang", new String[] {(this.getLanguageId(languageId).toString())})));
                 actionUrl = portletURL.toString();
             } else {
                 Logger.info(this, "Layouts are empty for the user: " + user.getUserId());

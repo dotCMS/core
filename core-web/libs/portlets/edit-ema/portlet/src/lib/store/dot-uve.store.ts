@@ -121,6 +121,9 @@ export const UVEStore = signalStore(
                             }
                         ]
                     };
+                }),
+                $languageId: computed<number>(() => {
+                    return pageAPIResponse()?.viewAs.language?.id || 1;
                 })
             };
         }
