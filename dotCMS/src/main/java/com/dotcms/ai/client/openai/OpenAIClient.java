@@ -16,7 +16,6 @@ import com.dotcms.ai.exception.DotAIModelNotOperationalException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;
 import io.vavr.Lazy;
-import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.http.HttpHeaders;
@@ -29,6 +28,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.BufferedInputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
@@ -129,17 +129,19 @@ public class OpenAIClient implements AIClient {
 
         lastRestCall.put(aiModel, System.currentTimeMillis());
 
-        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+        try (final CloseableHttpClient httpClient = HttpClients.createDefault()) {
             final StringEntity jsonEntity = new StringEntity(payload.toString(), ContentType.APPLICATION_JSON);
             final HttpUriRequest httpRequest = AIClient.resolveMethod(jsonRequest.getMethod(), jsonRequest.getUrl());
             httpRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
             httpRequest.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + appConfig.getApiKey());
 
             if (!payload.getAsMap().isEmpty()) {
-                Try.run(() -> HttpEntityEnclosingRequestBase.class.cast(httpRequest).setEntity(jsonEntity));
+                Try.run(() -> ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(jsonEntity));
             }
 
-            try (CloseableHttpResponse response = httpClient.execute(httpRequest)) {
+            try (final CloseableHttpResponse response = httpClient.execute(httpRequest)) {
+                onStreamCheckFotStatusCode(modelName, payload, response);
+
                 final BufferedInputStream in = new BufferedInputStream(response.getEntity().getContent());
                 final byte[] buffer = new byte[1024];
                 int len;
@@ -148,6 +150,8 @@ public class OpenAIClient implements AIClient {
                     output.flush();
                 }
             }
+        } catch (DotAIModelNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             if (appConfig.getConfigBoolean(AppKeys.DEBUG_LOGGING)){
                 Logger.warn(this, "INVALID REQUEST: " + e.getMessage(), e);
@@ -158,6 +162,19 @@ public class OpenAIClient implements AIClient {
             Logger.warn(this, " -  " + jsonRequest.getMethod() + " : " + payload);
 
             throw new DotAIClientConnectException("Error while sending request to OpenAI", e);
+        }
+    }
+
+    private static void onStreamCheckFotStatusCode(final String modelName,
+                                                   final JSONObject payload,
+                                                   final CloseableHttpResponse response) {
+        if (payload.optBoolean(AiKeys.STREAM, false)) {
+            final int statusCode = response.getStatusLine().getStatusCode();
+            if (Response.Status.Family.familyOf(statusCode) == Response.Status.Family.CLIENT_ERROR) {
+                throw new DotAIModelNotFoundException(String.format(
+                        "Model used [%s] in request in stream mode is not found",
+                        modelName));
+            }
         }
     }
 
