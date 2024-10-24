@@ -8,7 +8,7 @@ import { computed, inject } from '@angular/core';
 import { filter, switchMap, tap } from 'rxjs/operators';
 
 import { INPUT_CONFIG } from '../dot-edit-content-file-field.const';
-import { INPUT_TYPES, FILE_STATUS, UIMessage, UploadedFile } from '../models';
+import { FILE_STATUS, INPUT_TYPES, UIMessage, UploadedFile } from '../models';
 import { DotFileFieldUploadService } from '../services/upload-file/upload-file.service';
 import { getUiMessage } from '../utils/messages';
 
@@ -49,6 +49,7 @@ const initialState: FileFieldState = {
 };
 
 export const FileFieldStore = signalStore(
+    { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState(initialState),
     withComputed(({ fileStatus }) => ({
         isInit: computed(() => {
