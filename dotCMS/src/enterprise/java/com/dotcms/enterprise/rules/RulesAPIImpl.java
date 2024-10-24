@@ -70,6 +70,7 @@ import com.dotmarketing.portlets.rules.actionlet.CountRulesActionlet;
 import com.dotmarketing.portlets.rules.actionlet.PersonaActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionletOSGIService;
+import com.dotmarketing.portlets.rules.actionlet.RuleAnalyticsFireUserEventActionlet;
 import com.dotmarketing.portlets.rules.actionlet.SendRedirectActionlet;
 import com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionlet;
 import com.dotmarketing.portlets.rules.actionlet.SetResponseHeaderActionlet;
@@ -195,6 +196,7 @@ public class RulesAPIImpl implements RulesAPI {
                     .add(VisitorTagsActionlet.class)
                     .add(SendRedirectActionlet.class)
                     .add(StopProcessingActionlet.class)
+                    .add(RuleAnalyticsFireUserEventActionlet.class)
                     .build();
 
     public RulesAPIImpl() {
