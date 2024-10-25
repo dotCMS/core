@@ -13,9 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -30,9 +28,7 @@ public class AppConfig implements Serializable {
     private static final String AI_API_URL_KEY = "AI_API_URL";
     private static final String AI_IMAGE_API_URL_KEY = "AI_IMAGE_API_URL";
     private static final String AI_EMBEDDINGS_API_URL_KEY = "AI_EMBEDDINGS_API_URL";
-    private static final String SYSTEM_HOST = "System Host";
     private static final String AI_DEBUG_LOGGING_KEY = "AI_DEBUG_LOGGING";
-    private static final AtomicReference<AppConfig> SYSTEM_HOST_CONFIG = new AtomicReference<>();
 
     public static final Pattern SPLITTER = Pattern.compile("\\s?,\\s?");
 
@@ -53,9 +49,6 @@ public class AppConfig implements Serializable {
 
     public AppConfig(final String host, final Map<String, Secret> secrets) {
         this.host = host;
-        if (SYSTEM_HOST.equalsIgnoreCase(host)) {
-            setSystemHostConfig(this);
-        }
 
         final AIAppUtil aiAppUtil = AIAppUtil.get();
         apiKey = aiAppUtil.discoverSecret(secrets, AppKeys.API_KEY);
@@ -88,35 +81,22 @@ public class AppConfig implements Serializable {
     }
 
     /**
-     * Retrieves the system host configuration.
-     *
-     * @return the system host configuration
-     */
-    public static AppConfig getSystemHostConfig() {
-        if (Objects.isNull(SYSTEM_HOST_CONFIG.get())) {
-            setSystemHostConfig(ConfigService.INSTANCE.config());
-        }
-        return SYSTEM_HOST_CONFIG.get();
-    }
-
-    /**
      * Prints a specific error message to the log, based on the {@link AppKeys#DEBUG_LOGGING}
      * property instead of the usual Log4j configuration.
      *
-     * @param config The {#link AppConfig} to be used when logging.
+     * @param appConfig The {#link AppConfig} to be used when logging.
      * @param clazz   The {@link Class} to log the message for.
      * @param message The {@link Supplier} with the message to log.
      */
-    public static void debugLogger(final AppConfig config, final Class<?> clazz, final Supplier<String> message) {
-        final AppConfig appConfig = Optional.ofNullable(config).orElseGet(AppConfig::getSystemHostConfig);
+    public static void debugLogger(final AppConfig appConfig, final Class<?> clazz, final Supplier<String> message) {
+        if (appConfig == null) {
+            Logger.debug(clazz, message);
+            return;
+        }
         if (appConfig.getConfigBoolean(AppKeys.DEBUG_LOGGING)
                 || Config.getBooleanProperty(AI_DEBUG_LOGGING_KEY, false)) {
             Logger.info(clazz, message.get());
         }
-    }
-
-    static void setSystemHostConfig(final AppConfig systemHostConfig) {
-        AppConfig.SYSTEM_HOST_CONFIG.set(systemHostConfig);
     }
 
     /**
