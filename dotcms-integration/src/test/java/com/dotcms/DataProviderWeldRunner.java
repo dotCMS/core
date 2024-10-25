@@ -7,8 +7,13 @@ import org.junit.runners.model.InitializationError;
 
 public class DataProviderWeldRunner extends DataProviderRunner {
 
-    private final Weld weld;
-    private final WeldContainer container;
+    private static final Weld WELD;
+    private static final WeldContainer CONTAINER;
+
+    static {
+        WELD = new Weld("DataProviderWeldRunner");
+        CONTAINER = WELD.initialize();
+    }
 
     /**
      * Creates a DataProviderRunner to run supplied {@code clazz}.
@@ -18,9 +23,6 @@ public class DataProviderWeldRunner extends DataProviderRunner {
      */
     public DataProviderWeldRunner(Class<?> clazz) throws InitializationError {
         super(clazz);
-        this.weld = new Weld();
-        this.container = weld.initialize();
-
     }
 
     /**
@@ -30,7 +32,7 @@ public class DataProviderWeldRunner extends DataProviderRunner {
      */
     @Override
     protected Object createTest() throws Exception {
-        return container.instance().select(getTestClass().getJavaClass()).get();
+        return CONTAINER.instance().select(getTestClass().getJavaClass()).get();
     }
 
 }

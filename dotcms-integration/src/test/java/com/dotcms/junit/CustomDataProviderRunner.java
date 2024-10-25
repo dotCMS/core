@@ -5,6 +5,8 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.internal.DataConverter;
 import com.tngtech.java.junit.dataprovider.internal.TestGenerator;
 import com.tngtech.java.junit.dataprovider.internal.TestValidator;
+import org.jboss.weld.environment.se.Weld;
+import org.jboss.weld.environment.se.WeldContainer;
 import org.junit.Ignore;
 import org.junit.rules.RunRules;
 import org.junit.runner.Description;
@@ -15,6 +17,14 @@ import org.junit.runners.model.InitializationError;
 import java.util.List;
 
 public class CustomDataProviderRunner extends DataProviderRunner {
+
+    private static final Weld WELD;
+    private static final WeldContainer CONTAINER;
+
+    static {
+        WELD = new Weld("JUnit4WeldRunner");
+        CONTAINER = WELD.initialize();
+    }
 
     public CustomDataProviderRunner(Class<?> clazz) throws InitializationError {
         super(clazz);
@@ -59,6 +69,11 @@ public class CustomDataProviderRunner extends DataProviderRunner {
             }
         };
         testValidator = new TestValidator(dataConverter);
+    }
+
+    @Override
+    protected Object createTest() throws Exception {
+        return CONTAINER.instance().select(getTestClass().getJavaClass()).get();
     }
 
 }

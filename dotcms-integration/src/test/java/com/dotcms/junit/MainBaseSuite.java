@@ -7,8 +7,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import java.util.LinkedList;
 import java.util.List;
-import org.jboss.weld.environment.se.Weld;
-import org.jboss.weld.environment.se.WeldContainer;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
 import org.junit.runner.notification.RunNotifier;
@@ -17,14 +15,6 @@ import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.RunnerBuilder;
 
 public class MainBaseSuite extends Suite {
-
-    private static final Weld WELD;
-    private static final WeldContainer CONTAINER;
-
-    static {
-        WELD = new Weld("MainBaseSuiteRunner");
-        CONTAINER = WELD.initialize();
-    }
 
     public MainBaseSuite(Class<?> klass, RunnerBuilder builder) throws InitializationError {
         super(klass, getRunners(getAnnotatedClasses(klass)));
@@ -65,7 +55,7 @@ public class MainBaseSuite extends Suite {
 
     private static class DotRunner extends Runner {
 
-        private final Runner runner;
+        private Runner runner;
 
         DotRunner(Runner runner) {
             this.runner = runner;
