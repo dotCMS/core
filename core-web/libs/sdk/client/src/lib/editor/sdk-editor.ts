@@ -70,7 +70,7 @@ export function isInsideEditor(): boolean {
 export function initDotSDK() {
     window.dotSDK = {
         editContentlet,
-        lastScrollYPosition: 0
+        lastScrollYPosition: window?.dotSDK?.lastScrollYPosition ?? 0
     };
 }
 
