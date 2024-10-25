@@ -197,7 +197,7 @@ public class ContentTypeUtil {
             layouts = this.layoutAPI.loadLayoutsForUser(user);
             if (UtilMethods.isSet(layouts)) {
                 final Layout contentLayout = getContentPortletLayout(layouts);
-                referrer = generateReferrerUrl(request, contentLayout, contentTypeInode, user);
+                referrer = generateReferrerUrl(request, contentLayout, contentTypeInode, languageId);
                 final PortletURL portletURL =
                         new PortletURLImpl(request, PortletID.CONTENT.toString(), contentLayout.getId(), true);
                 portletURL.setWindowState(WindowState.MAXIMIZED);
@@ -207,7 +207,7 @@ public class ContentTypeUtil {
                         "referer", new String[] {referrer},
                         "inode", new String[] {""},
                         "selectedStructure", new String[] {contentTypeInode},
-                        "lang", new String[] {(this.getLanguageId(languageId).toString())})));
+                        "lang", new String[] {languageId})));
                 actionUrl = portletURL.toString();
             } else {
                 Logger.info(this, "Layouts are empty for the user: " + user.getUserId());
@@ -246,6 +246,34 @@ public class ContentTypeUtil {
                 "inode", new String[] {""},
                 "structure_id", new String[] {contentTypeInode},
                 "lang", new String[] {this.getLanguageId(user.getLanguageId()).toString()})));
+        return portletURL.toString();
+    }
+
+
+    /**
+     * Generates the referrer URL that will indicate the system what location the user will be
+     * redirected to after performing an operation in the back-end. For example, this can be used by
+     * the "+" sign component that adds different types of content to the system, as it indicates
+     * where to return after adding new content.
+     *
+     * @param request - The {@link HttpServletRequest} object.
+     * @param layout - The layout where the user will be redirected after performing his task.
+     * @param contentTypeInode - The Inode of the content type used by the new content.
+     * @param languageId - The languageId.
+     * @return The referrer URL.
+     * @throws WindowStateException If the portlet does not support the
+     *         {@link WindowState.MAXIMIZED} state.
+     */
+    private String generateReferrerUrl(final HttpServletRequest request, final Layout layout, final String contentTypeInode,
+                                       final String languageId) throws WindowStateException {
+        final PortletURL portletURL = new PortletURLImpl(request, PortletID.CONTENT.toString(), layout.getId(), true);
+        portletURL.setWindowState(WindowState.MAXIMIZED);
+        portletURL.setParameters(new HashMap<>(Map.of(
+                "struts_action", new String[] {"/ext/contentlet/view_contentlets"},
+                "cmd", new String[] {"new"},
+                "inode", new String[] {""},
+                "structure_id", new String[] {contentTypeInode},
+                "lang", new String[] {languageId})));
         return portletURL.toString();
     }
 
