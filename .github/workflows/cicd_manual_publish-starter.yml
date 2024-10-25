@@ -28,7 +28,7 @@ env:
   EMPTY_STARTER_TOKEN: ${{ secrets.DOT_EMPTY_STARTER_ACCESS_TOKEN }}
   FULL_STARTER_URL: ${{ vars.DOT_STARTER_URL }}
   FULL_STARTER_TOKEN: ${{ secrets.DOT_STARTER_ACCESS_TOKEN }}
-  DOWNLOAD_ENDPOINT: api/v1/maintenance/_downloadStarterWithAssets?oldAssets=true
+  DOWNLOAD_ENDPOINT: api/v1/maintenance/_downloadStarterWithAssets?oldAssets=false
 
 jobs:
   get-starter:
