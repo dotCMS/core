@@ -37,9 +37,6 @@ export function updateNavigation(pathname: string): void {
  * @param {Contentlet<T>} contentlet - The contentlet to edit.
  */
 export function editContentlet<T>(contentlet: Contentlet<T>) {
-    // eslint-disable-next-line no-console
-    console.log('editContentlet', contentlet);
-
     postMessageToEditor({
         action: CUSTOMER_ACTIONS.EDIT_CONTENTLET,
         payload: contentlet
