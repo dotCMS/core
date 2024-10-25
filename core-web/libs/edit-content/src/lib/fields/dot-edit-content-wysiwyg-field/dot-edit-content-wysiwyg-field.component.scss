@@ -34,7 +34,7 @@
 
     .dot-wysiwyg__language-item {
         display: flex;
-        gap: 8px;
+        gap: $spacing-1;
         max-width: 100%;
 
         .dot-wysiwyg__language-key {
