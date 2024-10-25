@@ -198,6 +198,7 @@ export interface DialogAction {
     event: CustomEvent;
     payload: ActionPayload;
     form: DialogForm;
+    isCustomerAction: boolean;
 }
 
 export type DialogType = 'content' | 'form' | 'widget' | null;
@@ -209,6 +210,7 @@ export interface EditEmaDialogState {
     type: DialogType;
     payload?: ActionPayload;
     editContentForm: DialogForm;
+    isCustomerAction: boolean;
 }
 
 // We can modify this if we add more events, for now I think is enough
@@ -221,6 +223,7 @@ export interface CreateFromPaletteAction {
 export interface EditContentletPayload {
     inode: string;
     title: string;
+    isCustomerAction?: boolean;
 }
 
 export interface CreateContentletAction {

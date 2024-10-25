@@ -30,7 +30,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             editContentForm: {
                 status: FormStatus.PRISTINE,
                 isTranslation: false
-            }
+            },
+            isCustomerAction: false
         });
     }
 
@@ -126,15 +127,18 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @memberof DotEmaDialogStore
      */
-    readonly editContentlet = this.updater((state, { inode, title }: EditContentletPayload) => {
-        return {
-            ...state,
-            header: title,
-            status: DialogStatus.LOADING,
-            type: 'content',
-            url: this.createEditContentletUrl(inode)
-        };
-    });
+    readonly editContentlet = this.updater(
+        (state, { inode, title, isCustomerAction }: EditContentletPayload) => {
+            return {
+                ...state,
+                header: title,
+                status: DialogStatus.LOADING,
+                type: 'content',
+                url: this.createEditContentletUrl(inode),
+                isCustomerAction: Boolean(isCustomerAction)
+            };
+        }
+    );
 
     /**
      * This method is called when the user clicks on the edit URL Content Map button
@@ -264,7 +268,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             editContentForm: {
                 status: FormStatus.PRISTINE,
                 isTranslation: false
-            }
+            },
+            isCustomerAction: false
         };
     });
 

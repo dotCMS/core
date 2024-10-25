@@ -136,10 +136,11 @@ export class DotEmaDialogComponent {
      * @param {Partial<DotCMSContentlet>} contentlet
      * @memberof DotEmaDialogComponent
      */
-    editContentlet(contentlet: Partial<DotCMSContentlet>) {
+    editContentlet(contentlet: Partial<DotCMSContentlet>, isCustomerAction = false) {
         this.store.editContentlet({
             inode: contentlet.inode,
-            title: contentlet.title
+            title: contentlet.title,
+            isCustomerAction
         });
     }
 
@@ -405,8 +406,8 @@ export class DotEmaDialogComponent {
     }
 
     private emitAction(event: CustomEvent) {
-        const { payload, editContentForm } = this.dialogState();
+        const { payload, editContentForm, isCustomerAction } = this.dialogState();
 
-        this.action.emit({ event, payload, form: editContentForm });
+        this.action.emit({ event, payload, form: editContentForm, isCustomerAction });
     }
 }

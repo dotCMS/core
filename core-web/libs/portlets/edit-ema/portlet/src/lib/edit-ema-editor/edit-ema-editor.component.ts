@@ -78,7 +78,8 @@ import {
     VTLFile,
     DeletePayload,
     InsertPayloadFromDelete,
-    ReorderPayload
+    ReorderPayload,
+    DialogAction
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { ClientRequestProps } from '../store/features/client/withClient';
@@ -542,11 +543,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     /**
      * Handle the custom event
      *
-     * @param {{ event: CustomEvent; payload: ActionPayload }} { event, payload }
+     * @param {DialogAction}
      * @memberof EditEmaEditorComponent
      */
-    onCustomEvent({ event, payload }: { event: CustomEvent; payload: ActionPayload }) {
-        this.handleNgEvent({ event, payload })?.();
+    onCustomEvent(dialogAction: DialogAction) {
+        this.handleNgEvent(dialogAction)?.();
     }
 
     /**
@@ -683,7 +684,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         });
     }
 
-    protected handleNgEvent({ event, payload }: { event: CustomEvent; payload: ActionPayload }) {
+    protected handleNgEvent({ event, payload, isCustomerAction }: DialogAction) {
         const { detail } = event;
 
         return (<Record<NG_CUSTOM_EVENTS, () => void>>{
@@ -710,6 +711,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.reloadURLContentMapPage(contentletIdentifier);
 
                     return;
+                }
+
+                if (isCustomerAction) {
+                    this.contentWindow?.postMessage(
+                        {
+                            name: NOTIFY_CUSTOMER.UVE_RELOAD_PAGE
+                        },
+                        this.host
+                    );
                 }
 
                 if (!payload) {
@@ -972,7 +982,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.uveStore.reload();
             },
             [CUSTOMER_ACTIONS.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
-                this.dialog.editContentlet(contentlet);
+                this.dialog.editContentlet(contentlet, true);
             },
             [CUSTOMER_ACTIONS.REORDER_MENU]: ({ reorderUrl }: ReorderPayload) => {
                 this.dialog.openDialogOnUrl(

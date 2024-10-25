@@ -27,6 +27,15 @@ export function updateNavigation(pathname: string): void {
     });
 }
 
+/**
+ * You can use this function to edit a contentlet in the editor.
+ *
+ * Calling this function inside the editor, will prompt the UVE to open a dialog to edit the contentlet.
+ *
+ * @export
+ * @template T
+ * @param {Contentlet<T>} contentlet - The contentlet to edit.
+ */
 export function editContentlet<T>(contentlet: Contentlet<T>) {
     // eslint-disable-next-line no-console
     console.log('editContentlet', contentlet);
