@@ -33,7 +33,11 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
-import { getPersistSidebarState, setPersistSidebarState } from '../../../utils/functions.util';
+import {
+    getPersistSidebarState,
+    setPersistSidebarState,
+    transformFormDataFn
+} from '../../../utils/functions.util';
 
 interface EditContentState {
     actions: DotCMSWorkflowAction[];
@@ -113,7 +117,13 @@ export const DotEditContentStore = signalStore(
                 contentlet: store.contentlet(),
                 contentType: store.contentType()
             };
-        })
+        }),
+
+        /**
+         * Computed property that transforms the layout of the current content type
+         * into tabs and returns them.
+         */
+        tabs: computed(() => transformFormDataFn(store.contentType()))
     })),
     withMethods(
         (
