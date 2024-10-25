@@ -5,24 +5,25 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
-import com.dotcms.TestBaseJunit5WeldInitiator;
+import com.dotcms.Junit5WeldBaseTest;
 import com.dotcms.jobs.business.error.ExponentialBackoffRetryStrategy;
 import com.dotcms.jobs.business.queue.JobQueue;
 import javax.inject.Inject;
+import org.jboss.weld.junit5.EnableWeld;
 import org.junit.jupiter.api.Test;
 
 /**
  * Test class for verifying the CDI (Contexts and Dependency Injection) functionality of the
  * JobQueueManagerAPI implementation.
  */
-
-public class JobQueueManagerAPICDITest extends TestBaseJunit5WeldInitiator {
-
-    @Inject
-    private JobQueueManagerAPI jobQueueManagerAPI;
+@EnableWeld
+public class JobQueueManagerAPICDITest extends Junit5WeldBaseTest {
 
     @Inject
-    private JobQueueManagerAPI jobQueueManagerAPI2;
+    JobQueueManagerAPI jobQueueManagerAPI;
+
+    @Inject
+    JobQueueManagerAPI jobQueueManagerAPI2;
 
     /**
      * Method to test: Multiple injections of JobQueueManagerAPI Given Scenario: Two separate

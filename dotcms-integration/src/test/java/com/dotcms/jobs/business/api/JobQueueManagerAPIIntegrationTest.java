@@ -13,7 +13,6 @@ import com.dotcms.jobs.business.processor.Cancellable;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
@@ -26,24 +25,33 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.inject.Inject;
 import org.awaitility.Awaitility;
+import org.jboss.weld.junit5.EnableWeld;
+import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Integration tests for the JobQueueManagerAPI.
  * These tests verify the functionality of the job queue system in a real environment,
  * including job creation, processing, cancellation, retrying, and progress tracking.
  */
+@EnableWeld
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class JobQueueManagerAPIIntegrationTest {
+@TestInstance(Lifecycle.PER_CLASS)
+public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBaseTest {
 
-    private static JobQueueManagerAPI jobQueueManagerAPI;
+    @Inject
+    JobQueueManagerAPI jobQueueManagerAPI;
 
     /**
      * Sets up the test environment before all tests are run.
@@ -55,8 +63,6 @@ public class JobQueueManagerAPIIntegrationTest {
     static void setUp() throws Exception {
         // Initialize the test environment
         IntegrationTestInitService.getInstance().init();
-
-        jobQueueManagerAPI = APILocator.getJobQueueManagerAPI();
     }
 
     /**
@@ -66,7 +72,7 @@ public class JobQueueManagerAPIIntegrationTest {
      * @throws Exception if there's an error during cleanup
      */
     @AfterAll
-    static void cleanUp() throws Exception {
+    void cleanUp() throws Exception {
        if(null != jobQueueManagerAPI) {
            jobQueueManagerAPI.close();
        }

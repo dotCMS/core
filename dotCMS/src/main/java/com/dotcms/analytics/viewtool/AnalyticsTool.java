@@ -40,19 +40,11 @@ public class AnalyticsTool  implements ViewTool {
     }
 
     private static ContentAnalyticsAPI getContentAnalyticsAPI() {
-        final Optional<ContentAnalyticsAPI> contentAnalyticsAPI = CDIUtils.getBean(ContentAnalyticsAPI.class);
-        if (!contentAnalyticsAPI.isPresent()) {
-            throw new DotRuntimeException("Could not instance ContentAnalyticsAPI");
-        }
-        return contentAnalyticsAPI.get();
+        return CDIUtils.getBeanThrows(ContentAnalyticsAPI.class);
     }
 
     private static AnalyticsQueryParser getAnalyticsQueryParser() {
-        final Optional<AnalyticsQueryParser> queryParserOptional = CDIUtils.getBean(AnalyticsQueryParser.class);
-        if (!queryParserOptional.isPresent()) {
-            throw new DotRuntimeException("Could not instance AnalyticsQueryParser");
-        }
-        return queryParserOptional.get();
+        return CDIUtils.getBeanThrows(AnalyticsQueryParser.class);
     }
 
     public AnalyticsTool(final ContentAnalyticsAPI contentAnalyticsAPI,

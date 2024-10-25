@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.job;
 
-import com.dotcms.cdi.CDIUtils;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.rest.ResponseEntityView;
@@ -14,6 +13,7 @@ import graphql.VisibleForTesting;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -38,8 +38,9 @@ public class JobQueueResource {
 
     private final JobQueueHelper helper;
 
-    public JobQueueResource() {
-        this(new WebResource(), CDIUtils.getBean(JobQueueHelper.class).orElseThrow(()->new IllegalStateException("JobQueueHelper Bean not found")));
+    @Inject
+    public JobQueueResource(final JobQueueHelper helper) {
+        this(new WebResource(), helper);
     }
 
     @VisibleForTesting

@@ -4,6 +4,7 @@ import com.dotcms.cdi.CDIUtils;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
+import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.servers.Server;
@@ -57,7 +58,7 @@ public class DotRestApplication extends ResourceConfig {
 		  "com.dotcms.rendering.js",
 		  "com.dotcms.ai.rest",
 		  "io.swagger.v3.jaxrs2"
-		);
+		).register(CdiComponentProvider.class);
 	}
 
 	/**

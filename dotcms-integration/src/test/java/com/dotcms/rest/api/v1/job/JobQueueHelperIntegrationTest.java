@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.dotcms.TestBaseJunit5WeldInitiator;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -22,6 +21,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.jboss.weld.junit5.EnableWeld;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +30,8 @@ import org.junit.jupiter.api.Test;
  * Helper add functionality to consume JobQueueManagerAPI
  * Here we test those functionalities, methods that simply call the JobQueueManagerAPI are not tested
  */
-public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
+@EnableWeld
+public class JobQueueHelperIntegrationTest  extends com.dotcms.Junit5WeldBaseTest {
 
     @Inject
     JobQueueHelper jobQueueHelper;
@@ -137,7 +138,7 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
      * Given scenario: call cancel Job with an invalid job id
      * Expected result: we should get a DoesNotExistException
      */
-    @Test
+   @Test
     void testCancelNonExistingJob(){
         assertThrows(DoesNotExistException.class, () -> {
             jobQueueHelper.cancelJob("nonExisting" );

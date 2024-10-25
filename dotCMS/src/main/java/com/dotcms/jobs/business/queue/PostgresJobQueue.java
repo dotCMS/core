@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * PostgreSQL implementation of the JobQueue interface. This class provides concrete implementations
@@ -53,6 +54,8 @@ import java.util.stream.Collectors;
  * @see Job
  * @see JobState
  */
+
+@ApplicationScoped
 public class PostgresJobQueue implements JobQueue {
 
     private static final String CREATE_JOB_QUEUE_QUERY = "INSERT INTO job_queue "
