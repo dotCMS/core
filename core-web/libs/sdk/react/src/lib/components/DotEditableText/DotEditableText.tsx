@@ -5,7 +5,8 @@ import {
     isInsideEditor as isInsideEditorFn,
     postMessageToEditor,
     CUSTOMER_ACTIONS,
-    DotCmsClient
+    DotCmsClient,
+    NOTIFY_CUSTOMER
 } from '@dotcms/client';
 
 import { DotEditableTextProps, TINYMCE_CONFIG } from './utils';
@@ -79,7 +80,7 @@ export function DotEditableText({
 
         const onMessage = ({ data }: MessageEvent) => {
             const { name, payload } = data;
-            if (name !== 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS') {
+            if (name !== NOTIFY_CUSTOMER.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS) {
                 return;
             }
 
