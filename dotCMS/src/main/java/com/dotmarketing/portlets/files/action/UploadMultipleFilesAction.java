@@ -212,7 +212,13 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 		if(!UtilMethods.isSet(fileNamesStr))
 			throw new ActionException(LanguageUtil.get(user, "message.file_asset.alert.please.upload"));
 
-		String selectedStructureInode = ParamUtil.getString(req, "selectedStructure");
+		String selectedStructureInode;
+
+		if (config.getPortletName().contains("site-browser")){
+			selectedStructureInode = ParamUtil.getString(req, "selectedStructure");
+		} else {
+			selectedStructureInode = folder.getDefaultFileType();
+		}
 		if(!UtilMethods.isSet(selectedStructureInode))
 			selectedStructureInode = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
 
