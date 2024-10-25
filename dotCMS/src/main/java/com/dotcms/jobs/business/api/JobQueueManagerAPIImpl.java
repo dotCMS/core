@@ -302,16 +302,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getJobs(final int page, final int pageSize) throws DotDataException {
-        try {
-            return jobQueue.getJobs(page, pageSize);
-        } catch (JobQueueDataException e) {
-            throw new DotDataException("Error fetching jobs", e);
-        }
-    }
-
-    @CloseDBIfOpened
-    @Override
     public JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize)
             throws JobQueueDataException {
         try {
@@ -323,12 +313,55 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
+    public JobPaginatedResult getJobs(final int page, final int pageSize) throws DotDataException {
+        try {
+            return jobQueue.getJobs(page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getActiveJobs(int page, int pageSize)
+            throws JobQueueDataException {
+        try {
+            return jobQueue.getActiveJobs(page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new JobQueueDataException("Error fetching active jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getCompletedJobs(int page, int pageSize)
+            throws JobQueueDataException {
+        try {
+            return jobQueue.getCompletedJobs(page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new JobQueueDataException("Error fetching completed jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getCanceledJobs(int page, int pageSize)
+            throws JobQueueDataException {
+        try {
+            return jobQueue.getCanceledJobs(page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new JobQueueDataException("Error fetching canceled jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
     public JobPaginatedResult getFailedJobs(int page, int pageSize)
             throws JobQueueDataException {
         try {
             return jobQueue.getFailedJobs(page, pageSize);
         } catch (JobQueueDataException e) {
-            throw new JobQueueDataException("Error fetching active jobs", e);
+            throw new JobQueueDataException("Error fetching failed jobs", e);
         }
     }
 

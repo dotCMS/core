@@ -120,31 +120,77 @@ public class JobQueueHelper {
     }
 
     /**
-     * creates a job
+     * Creates a job
+     *
      * @param queueName The name of the queue
-     * @param form The request form with the job parameters
-     * @param user The user requesting to create the job
-     * @param request The request object
+     * @param form      The request form with the job parameters
+     * @param user      The user requesting to create the job
+     * @param request   The request object
      * @return jobId The ID of the created job
      * @throws JsonProcessingException If there is an error processing the request form parameters
-     * @throws DotDataException If there is an error creating the job
+     * @throws DotDataException        If there is an error creating the job
      */
     String createJob(final String queueName, final JobParams form, final User user,
             final HttpServletRequest request) throws JsonProcessingException, DotDataException {
 
-        final HashMap <String, Object>in = new HashMap<>(form.getParams());
+        final HashMap<String, Object> in;
+
+        final var parameters = form.getParams();
+        if (parameters != null) {
+            in = new HashMap<>(parameters);
+        } else {
+            in = new HashMap<>();
+        }
+
         handleUploadIfPresent(form, in, request);
+        return createJob(queueName, in, user, request);
+    }
+
+    /**
+     * Creates a job with the given parameters
+     *
+     * @param queueName  The name of the queue
+     * @param parameters The job parameters
+     * @param user       The user requesting to create the job
+     * @param request    The request object
+     * @return jobId The ID of the created job
+     * @throws DotDataException If there is an error creating the job
+     */
+    String createJob(final String queueName, final Map<String, Object> parameters, final User user,
+            final HttpServletRequest request) throws DotDataException {
+
+        final HashMap<String, Object> in;
+        if (parameters != null) {
+            in = new HashMap<>(parameters);
+        } else {
+            in = new HashMap<>();
+        }
+        return createJob(queueName, in, user, request);
+    }
+
+    /**
+     * Creates a job with the given parameters
+     *
+     * @param queueName  The name of the queue
+     * @param parameters The job parameters
+     * @param user       The user requesting to create the job
+     * @param request    The request object
+     * @return jobId The ID of the created job
+     * @throws DotDataException If there is an error creating the job
+     */
+    private String createJob(final String queueName, final HashMap<String, Object> parameters,
+            final User user, final HttpServletRequest request) throws DotDataException {
 
         // Get the current host and include it in the job params
         final var currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        in.put("siteName", currentHost.getHostname());
-        in.put("siteIdentifier", currentHost.getIdentifier());
+        parameters.put("siteName", currentHost.getHostname());
+        parameters.put("siteIdentifier", currentHost.getIdentifier());
 
         // Including the user id in the job params
-        in.put("userId", user.getUserId());
+        parameters.put("userId", user.getUserId());
 
         try {
-            return jobQueueManagerAPI.createJob(queueName, Map.copyOf(in));
+            return jobQueueManagerAPI.createJob(queueName, Map.copyOf(parameters));
         } catch (JobProcessorNotFoundException e) {
             Logger.error(this.getClass(), "Error creating job", e);
             throw new DoesNotExistException(e.getMessage());
@@ -192,22 +238,6 @@ public class JobQueueHelper {
      * @return JobPaginatedResult
      * @throws DotDataException if there's an error fetching the jobs
      */
-    JobPaginatedResult getJobs(int page, int pageSize) {
-        try {
-            return jobQueueManagerAPI.getJobs(page, pageSize);
-        } catch (DotDataException e){
-            Logger.error(this.getClass(), "Error fetching jobs", e);
-        }
-        return JobPaginatedResult.builder().build();
-    }
-
-    /**
-     * Retrieves a list of jobs.
-     * @param page    The page number
-     * @param pageSize The number of jobs per page
-     * @return JobPaginatedResult
-     * @throws DotDataException if there's an error fetching the jobs
-     */
     JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getActiveJobs(queueName, page, pageSize);
@@ -218,11 +248,75 @@ public class JobQueueHelper {
     }
 
     /**
-     * Retrieves a list of completed jobs for a specific queue within a date range.
+     * Retrieves a list of jobs.
+     *
+     * @param page     The page number
+     * @param pageSize The number of jobs per page
+     * @return A result object containing the list of jobs and pagination information.
+     */
+    JobPaginatedResult getJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getJobs(page, pageSize);
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(), "Error fetching jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
+    }
+
+    /**
+     * Retrieves a list of active jobs, meaning jobs that are currently being processed.
+     *
+     * @param page     The page number
+     * @param pageSize The number of jobs per page
+     * @return A result object containing the list of active jobs and pagination information.
+     */
+    JobPaginatedResult getActiveJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getActiveJobs(page, pageSize);
+        } catch (JobQueueDataException e) {
+            Logger.error(this.getClass(), "Error fetching active jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
+    }
+
+    /**
+     * Retrieves a list of completed jobs
+     *
      * @param page     The page number
      * @param pageSize The number of jobs per page
      * @return A result object containing the list of completed jobs and pagination information.
-     * @throws JobQueueDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getCompletedJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getCompletedJobs(page, pageSize);
+        } catch (JobQueueDataException e) {
+            Logger.error(this.getClass(), "Error fetching completed jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
+    }
+
+    /**
+     * Retrieves a list of canceled jobs
+     *
+     * @param page     The page number
+     * @param pageSize The number of jobs per page
+     * @return A result object containing the list of canceled jobs and pagination information.
+     */
+    JobPaginatedResult getCanceledJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getCanceledJobs(page, pageSize);
+        } catch (JobQueueDataException e) {
+            Logger.error(this.getClass(), "Error fetching canceled jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
+    }
+
+    /**
+     * Retrieves a list of failed jobs
+     *
+     * @param page     The page number
+     * @param pageSize The number of jobs per page
+     * @return A result object containing the list of completed jobs and pagination information.
      */
     JobPaginatedResult getFailedJobs(int page, int pageSize) {
         try {
@@ -230,7 +324,7 @@ public class JobQueueHelper {
         } catch (JobQueueDataException e) {
             Logger.error(this.getClass(), "Error fetching failed jobs", e);
         }
-       return JobPaginatedResult.builder().build();
+        return JobPaginatedResult.builder().build();
     }
 
     /**

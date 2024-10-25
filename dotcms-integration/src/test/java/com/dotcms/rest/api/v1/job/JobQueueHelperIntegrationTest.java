@@ -198,6 +198,31 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
     }
 
     /**
+     * Test with null parameters creating a job
+     * Given scenario: create a job with null parameters and valida queue name
+     * Expected result: the job is created
+     *
+     * @throws DotDataException if there's an error creating the job
+     */
+    @Test
+    void testCreateJobWithNoParameters() throws DotDataException {
+
+        jobQueueHelper.registerProcessor("demoQueue", DemoJobProcessor.class);
+
+        final var user = mock(User.class);
+        when(user.getUserId()).thenReturn("dotcms.org.1");
+
+        final String jobId = jobQueueHelper.createJob(
+                "demoQueue", (Map<String, Object>) null, user, mock(HttpServletRequest.class)
+        );
+
+        Assertions.assertNotNull(jobId);
+        final Job job = jobQueueHelper.getJob(jobId);
+        Assertions.assertNotNull(job);
+        Assertions.assertEquals(jobId, job.id());
+    }
+
+    /**
      * Test file upload
      * Given scenario: upload a file
      * Expected result: the file is uploaded and the request fingerprint and temp file id are added to the map

@@ -25,7 +25,7 @@ public class JobParams {
     private String jsonParams;
 
     @FormDataParam("params")
-    private Map params;
+    private Map<String, Object> params;
 
     public InputStream getFileInputStream() {
         return fileInputStream;
@@ -47,17 +47,16 @@ public class JobParams {
         this.jsonParams = jsonParams;
     }
 
-    public Map getParams() throws JsonProcessingException {
+    public Map<String, Object> getParams() throws JsonProcessingException {
         if (null == params) {
-            if (null == jsonParams){
-                throw new IllegalArgumentException("Job Params must be passed as a json object in the params field.");
+            if (null != jsonParams && !jsonParams.isEmpty()) {
+                params = new ObjectMapper().readValue(jsonParams, Map.class);
             }
-            params = new ObjectMapper().readValue(jsonParams, Map.class);
         }
         return params;
     }
 
-    public void setParams(Map<Object, Object> params) {
+    public void setParams(Map<String, Object> params) {
         this.params = params;
     }
 
