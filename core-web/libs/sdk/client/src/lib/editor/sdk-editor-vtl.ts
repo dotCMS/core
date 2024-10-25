@@ -4,14 +4,7 @@ import {
     preserveScrollOnIframe,
     scrollHandler
 } from './listeners/listeners';
-import { DotSDK } from './models/client.model';
 import { isInsideEditor, addClassToEmptyContentlets, initDotSDK } from './sdk-editor';
-
-declare global {
-    interface Window {
-        dotSDK: DotSDK;
-    }
-}
 
 /**
  * This is the main entry point for the SDK VTL.

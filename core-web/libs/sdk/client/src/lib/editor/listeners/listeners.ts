@@ -1,4 +1,4 @@
-import { CUSTOMER_ACTIONS, DotSDK, postMessageToEditor } from '../models/client.model';
+import { CUSTOMER_ACTIONS, postMessageToEditor } from '../models/client.model';
 import { DotCMSPageEditorSubscription, NOTIFY_CUSTOMER } from '../models/listeners.model';
 import {
     findVTLData,
@@ -7,12 +7,6 @@ import {
     getPageElementBound,
     scrollIsInBottom
 } from '../utils/editor.utils';
-
-declare global {
-    interface Window {
-        dotSDK: DotSDK;
-    }
-}
 
 /**
  * Represents an array of DotCMSPageEditorSubscription objects.
