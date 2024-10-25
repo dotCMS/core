@@ -40,6 +40,10 @@ public abstract class UniqueFieldValidationStrategy {
     public final void validate(final Contentlet contentlet, final Field uniqueField)
             throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException {
 
+        if (!uniqueField.unique()) {
+            throw new IllegalArgumentException("The Field " + uniqueField.variable() + " is not unique");
+        }
+
         Object value = contentlet.get(uniqueField.variable());
 
         Objects.requireNonNull(contentlet);

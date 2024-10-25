@@ -99,6 +99,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.postgresql.util.PGobject;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -2292,7 +2293,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void updateContentletWithDuplicateValuesInUniqueFields()
-            throws DotDataException, DotSecurityException, InterruptedException {
+            throws DotDataException, DotSecurityException, InterruptedException, IOException {
         ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(true);
 
         final Language language = new LanguageDataGen().nextPersisted();
@@ -2328,6 +2329,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final ImmutableTextField uniqueFieldUpdated = ImmutableTextField.builder()
                 .from(uniqueTextField)
                 .contentTypeId(contentType.id())
+                .unique(true)
                 .build();
 
         APILocator.getContentTypeFieldAPI().save(uniqueFieldUpdated, APILocator.systemUser());
@@ -2338,7 +2340,8 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 "fieldValue", uniqueVersionValue.toString(),
                 "languageId", language.getId(),
                 "hostId", host.getIdentifier(),
-                "uniquePerSite", true
+                "uniquePerSite", true,
+                "variant", VariantAPI.DEFAULT_VARIANT.name()
         );
 
         final Map<String, Object> supportingValues = new HashMap<>(uniqueFieldCriteriaMap);
@@ -2359,7 +2362,24 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
         APILocator.getContentletAPI().checkin(checkout, APILocator.systemUser(), false);
 
-        checkUniqueFieldsTable(false, contentType, uniqueTextField, contentlet_1, contentlet_2);
+        checkContentletInUniqueFieldsTable(contentlet_1);
+        checkContentletInUniqueFieldsTable(contentlet_2);
+    }
+
+    private static void checkContentletInUniqueFieldsTable(final Contentlet contentlet) throws DotDataException, IOException {
+        final List<Map<String, Object>> result_1 = new DotConnect()
+                .setSQL("SELECT * FROM unique_fields WHERE supporting_values->'contentletsId' @> ?::jsonb")
+                .addParam("\"" + contentlet.getIdentifier() + "\"")
+                .loadObjectResults();
+
+        assertEquals(1, result_1.size());
+
+        final PGobject supportingValues = (PGobject) result_1.get(0).get("supporting_values");
+        final Map<String, Object> supportingValuesMap = JsonUtil.getJsonFromString(supportingValues.getValue());
+        final List<String> contentletsId = (List<String>) supportingValuesMap.get("contentletsId");
+
+        assertEquals(1, contentletsId.size());
+        assertEquals(contentlet.getIdentifier(), contentletsId.get(0));
     }
 
     /**

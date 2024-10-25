@@ -7,10 +7,12 @@ import com.dotcms.contenttype.business.*;
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategy;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -19,7 +21,11 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import org.postgresql.util.PGobject;
+
 import static com.dotcms.util.CollectionsUtils.list;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,8 +58,8 @@ public class ExtraTableUniqueFieldValidationStrategy extends UniqueFieldValidati
                        final ContentType contentType) throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException {
 
         if (UtilMethods.isSet(contentlet.getIdentifier())) {
-            cleanUniqueFieldsUp(contentlet);
-        }
+            cleanUniqueFieldsUp(contentlet, field);
+       }
 
         final User systemUser = APILocator.systemUser();
         final Host host = APILocator.getHostAPI().find(contentlet.getHost(), systemUser, false);
@@ -71,22 +77,27 @@ public class ExtraTableUniqueFieldValidationStrategy extends UniqueFieldValidati
         checkUnique(uniqueFieldCriteria, contentlet.getIdentifier());
     }
 
-    private static void cleanUniqueFieldsUp(Contentlet contentlet) throws DotDataException {
+    private static void cleanUniqueFieldsUp(final Contentlet contentlet, final  Field field) throws DotDataException {
         Optional<Map<String, Object>> uniqueFieldOptional = UniqueFieldDataBaseUtil.INSTANCE.get(contentlet);
 
-        if (uniqueFieldOptional.isPresent()) {
-            final Map<String, Object> uniqueFields = uniqueFieldOptional.get();
+        try {
+            if (uniqueFieldOptional.isPresent()) {
+                final Map<String, Object> uniqueFields = uniqueFieldOptional.get();
 
-            final String hash = uniqueFields.get("unique_key_val").toString();
-            final Map<String, Object> supportingValues = (Map<String, Object>) uniqueFields.get("supporting_values");
-            final List<String> contentletsId = (List<String>) supportingValues.get("contentletsId");
+                final String hash = uniqueFields.get("unique_key_val").toString();
+                final PGobject supportingValues = (PGobject) uniqueFields.get("supporting_values");
+                final Map<String, Object> supportingValuesMap = JsonUtil.getJsonFromString(supportingValues.getValue());
+                final List<String> contentletsId = (List<String>) supportingValuesMap.get("contentletsId");
 
-            if (contentletsId.size() == 1) {
-                UniqueFieldDataBaseUtil.INSTANCE.delete(hash);
-            } else {
-                contentletsId.remove(contentlet.getIdentifier());
-                UniqueFieldDataBaseUtil.INSTANCE.updateContentLists(hash, contentletsId);
+                if (contentletsId.size() == 1) {
+                    UniqueFieldDataBaseUtil.INSTANCE.delete(hash, field.variable());
+                } else {
+                    contentletsId.remove(contentlet.getIdentifier());
+                    UniqueFieldDataBaseUtil.INSTANCE.updateContentLists(hash, contentletsId);
+                }
             }
+        } catch (IOException e){
+            throw new DotDataException(e);
         }
     }
 

@@ -234,7 +234,7 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
 
             final ExtraTableUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy = new ExtraTableUniqueFieldValidationStrategy();
             extraTableUniqueFieldValidationStrategy.validate(contentlet, notUniqueField);
-            throw new AssertionError("IllegalArgumentExceptionΩ Expected");
+            throw new AssertionError("IllegalArgumentException Expected");
         } catch (IllegalArgumentException e) {
             //expected
             assertEquals("The Field " + notUniqueField.variable() + " is not unique", e.getMessage());
@@ -433,8 +433,22 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
 
         extraTableUniqueFieldValidationStrategy.validate(contentlet_2, field);
 
-        validateAfterInsert(uniqueFieldCriteria_1, contentlet);
+        validateDoesNotExists(uniqueFieldCriteria_1);
         validateAfterInsert(uniqueFieldCriteria_2, contentlet_2);
+    }
+
+    private static void validateDoesNotExists(final UniqueFieldCriteria uniqueFieldCriteria_1) throws DotDataException {
+        final List<Map<String, Object>> results = new DotConnect()
+                .setSQL("SELECT * FROM unique_fields WHERE supporting_values->>'contentTypeID' = ? AND " +
+                        "supporting_values->>'fieldVariableName' = ? AND supporting_values->>'fieldValue' = ? AND " +
+                        "(supporting_values->>'languageId')::numeric = ?")
+                .addParam(uniqueFieldCriteria_1.contentType().id())
+                .addParam(uniqueFieldCriteria_1.field().variable())
+                .addParam(uniqueFieldCriteria_1.value())
+                .addParam(uniqueFieldCriteria_1.language().getId())
+                .loadObjectResults();
+
+        assertTrue(results.isEmpty());
     }
 
     /**
@@ -495,7 +509,7 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
 
         extraTableUniqueFieldValidationStrategy.validate(contentlet_2, field);
 
-        validateAfterInsert(uniqueFieldCriteria_1, contentlet);
+        validateDoesNotExists(uniqueFieldCriteria_1);
         validateAfterInsert(uniqueFieldCriteria_2, contentlet_2);
     }
 

@@ -1,6 +1,5 @@
 package com.dotcms.contenttype.business.uniquefields.extratable;
 
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -25,7 +24,8 @@ enum UniqueFieldDataBaseUtil {
     private final static String GET_UNIQUE_FIELDS_BY_CONTENTLET = "SELECT * FROM unique_fields " +
             "WHERE supporting_values->'contentletsId' @> ?::jsonb AND supporting_values->>'variant' = ?";
 
-    private final String DELETE_UNIQUE_FIELDS = "DELETE FROM unique_fields WHERE unique_key_val = ?";
+    private final String DELETE_UNIQUE_FIELDS = "DELETE FROM unique_fields WHERE unique_key_val = ? " +
+            "AND supporting_values->>'fieldVariableName' = ?";
 
     /**
      * Insert a new register into the unique_fields table, if already exists another register with the same
@@ -64,9 +64,10 @@ enum UniqueFieldDataBaseUtil {
         return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
     }
 
-    public void delete(final String hash) throws DotDataException {
+    public void delete(final String hash, String fiedVariable) throws DotDataException {
         new DotConnect().setSQL(DELETE_UNIQUE_FIELDS)
                 .addParam(hash)
+                .addParam(fiedVariable)
                 .loadObjectResults();
     }
 }
