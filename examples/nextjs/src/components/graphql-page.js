@@ -56,7 +56,7 @@ export function MyGraphQLPage({ pageAsset, nav, query }) {
         : DotcmsLayout;
 
     return (
-        <div className="flex flex-col gap-6 min-h-screen bg-lime-50">
+        <div className="min-h-screen bg-lime-50">
             {pageAsset.layout.header && (
                 <Header>
                     <Navigation items={nav} />

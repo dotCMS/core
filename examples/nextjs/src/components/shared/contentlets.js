@@ -11,10 +11,10 @@ const dateFormatOptions = {
 
 function Contentlets({ contentlets }) {
     return (
-        <ul className="flex flex-col gap-7">
+        <ul className="flex flex-col gap-4">
             {contentlets.map((contentlet) => (
                 <Contentlet contentlet={contentlet} key={contentlet.identifier}>
-                    <li className="flex gap-7 min-h-16">
+                    <li className="flex gap-4 min-h-16">
                         <a
                             className="relative min-w-32"
                             href={contentlet.urlMap || contentlet.url}
@@ -33,7 +33,7 @@ function Contentlets({ contentlets }) {
                         </a>
                         <div className="flex flex-col gap-1">
                             <a
-                                className="text-sm text-zinc-900 font-bold"
+                                className="text-sm font-bold text-zinc-900"
                                 href={contentlet.urlMap || contentlet.url}
                             >
                                 {contentlet.title}

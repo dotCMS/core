@@ -2,27 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .line-clamp-1 {
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
 
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
+    main > div {
+        @apply my-8;
+    }
 }
 
-/* Custom classes, example to BlockEditorRenderer */
-table, th, td {
-  border: 1px solid;
+/* ROW CLASSES */
+.uncontained .container {
+    @apply max-w-none;
 }
 
-.blocks {
-  border: 5px solid red;
+.vertical-fill,
+.vertical-fill [data-dot-object="container"] {
+    @apply grid gap-4 h-full;
+    grid-template-rows: repeat(auto-fit, minmax(0, 1fr));
+}
+
+.spacing-y-md,
+.spacing-y-md [data-dot-object="container"] {
+    @apply space-y-4;
+}
+
+.row-gradient {
+    @apply relative
+}
+
+.row-gradient::after {
+    @apply absolute left-0 top-40 z-0 w-full h-4/5 bg-gradient-to-t from-lime-50 to-lime-200 border-t-8 border-lime-300 origin-top-right skew-y-3;
+    content: "";
+}
+
+.row-gradient .container {
+    @apply relative z-10;
 }
