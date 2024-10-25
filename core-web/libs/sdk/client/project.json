@@ -9,6 +9,7 @@
             "outputs": ["{options.outputPath}"],
             "options": {
                 "format": ["esm", "cjs"],
+                "deleteOutputPath": false,
                 "compiler": "tsc",
                 "generateExportsField": true,
                 "assets": [{ "input": "libs/sdk/client", "output": ".", "glob": "*.md" }],
