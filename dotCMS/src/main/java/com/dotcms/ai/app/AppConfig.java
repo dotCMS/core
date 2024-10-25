@@ -2,6 +2,7 @@ package com.dotcms.ai.app;
 
 import com.dotcms.ai.domain.Model;
 import com.dotcms.security.apps.Secret;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
@@ -30,6 +31,7 @@ public class AppConfig implements Serializable {
     private static final String AI_IMAGE_API_URL_KEY = "AI_IMAGE_API_URL";
     private static final String AI_EMBEDDINGS_API_URL_KEY = "AI_EMBEDDINGS_API_URL";
     private static final String SYSTEM_HOST = "System Host";
+    private static final String AI_DEBUG_LOGGING_KEY = "AI_DEBUG_LOGGING";
     private static final AtomicReference<AppConfig> SYSTEM_HOST_CONFIG = new AtomicReference<>();
 
     public static final Pattern SPLITTER = Pattern.compile("\\s?,\\s?");
@@ -63,7 +65,7 @@ public class AppConfig implements Serializable {
 
         if (!secrets.isEmpty() || isEnabled()) {
             AIModels.get().loadModels(
-                    this.host,
+                    this,
                     List.of(
                             aiAppUtil.createTextModel(secrets),
                             aiAppUtil.createImageModel(secrets),
@@ -101,16 +103,19 @@ public class AppConfig implements Serializable {
      * Prints a specific error message to the log, based on the {@link AppKeys#DEBUG_LOGGING}
      * property instead of the usual Log4j configuration.
      *
+     * @param config The {#link AppConfig} to be used when logging.
      * @param clazz   The {@link Class} to log the message for.
      * @param message The {@link Supplier} with the message to log.
      */
-    public static void debugLogger(final Class<?> clazz, final Supplier<String> message) {
-        if (getSystemHostConfig().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
+    public static void debugLogger(final AppConfig config, final Class<?> clazz, final Supplier<String> message) {
+        final AppConfig appConfig = Optional.ofNullable(config).orElseGet(AppConfig::getSystemHostConfig);
+        if (appConfig.getConfigBoolean(AppKeys.DEBUG_LOGGING)
+                || Config.getBooleanProperty(AI_DEBUG_LOGGING_KEY, false)) {
             Logger.info(clazz, message.get());
         }
     }
 
-    public static void setSystemHostConfig(final AppConfig systemHostConfig) {
+    static void setSystemHostConfig(final AppConfig systemHostConfig) {
         AppConfig.SYSTEM_HOST_CONFIG.set(systemHostConfig);
     }
 
@@ -316,6 +321,10 @@ public class AppConfig implements Serializable {
      */
     public boolean isEnabled() {
         return Stream.of(apiUrl, apiImageUrl, apiEmbeddingsUrl, apiKey).allMatch(StringUtils::isNotBlank);
+    }
+
+    public void debugLogger(final Class<?> clazz, final Supplier<String> message) {
+        debugLogger(this, clazz, message);
     }
 
     @Override

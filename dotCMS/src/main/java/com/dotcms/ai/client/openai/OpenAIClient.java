@@ -82,7 +82,7 @@ public class OpenAIClient implements AIClient {
         final JSONObjectAIRequest jsonRequest = AIClient.useRequestOrThrow(request);
         final AppConfig appConfig = jsonRequest.getConfig();
 
-        AppConfig.debugLogger(
+        request.getConfig().debugLogger(
                 OpenAIClient.class,
                 () -> String.format(
                         "Posting to [%s] with method [%s]%s  with app config:%s%s  the payload: %s",
@@ -94,7 +94,7 @@ public class OpenAIClient implements AIClient {
                         jsonRequest.payloadToString()));
 
         if (!appConfig.isEnabled()) {
-            AppConfig.debugLogger(OpenAIClient.class, () -> "App dotAI is not enabled and will not send request.");
+            request.getConfig().debugLogger(OpenAIClient.class, () -> "App dotAI is not enabled and will not send request.");
             throw new DotAIAppConfigDisabledException("App dotAI config without API urls or API key");
         }
 
@@ -106,7 +106,7 @@ public class OpenAIClient implements AIClient {
         final AIModel aiModel = modelTuple._1;
 
         if (!modelTuple._2.isOperational()) {
-            AppConfig.debugLogger(
+            request.getConfig().debugLogger(
                     getClass(),
                     () -> String.format("Resolved model [%s] is not operational, avoiding its usage", modelName));
             throw new DotAIModelNotOperationalException(String.format("Model [%s] is not operational", modelName));
