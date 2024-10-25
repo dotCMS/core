@@ -45,29 +45,43 @@ function setBounds(): void {
  * @memberof DotCMSPageEditor
  */
 export function listenEditorMessages(): void {
-    const messageCallback = (event: MessageEvent) => {
-        switch (event.data) {
-            case NOTIFY_CUSTOMER.UVE_REQUEST_BOUNDS: {
+    const messageCallback = (
+        event: MessageEvent<{ name: NOTIFY_CUSTOMER; direction: 'up' | 'down' }>
+    ) => {
+        const ACTIONS_NOTIFICATION: Record<NOTIFY_CUSTOMER, () => void> = {
+            [NOTIFY_CUSTOMER.UVE_RELOAD_PAGE]: () => {
+                window.location.reload();
+            },
+            [NOTIFY_CUSTOMER.UVE_REQUEST_BOUNDS]: () => {
                 setBounds();
-                break;
+            },
+            [NOTIFY_CUSTOMER.UVE_SCROLL_INSIDE_IFRAME]: () => {
+                const direction = event.data.direction;
+
+                if (
+                    (window.scrollY === 0 && direction === 'up') ||
+                    (scrollIsInBottom() && direction === 'down')
+                ) {
+                    // If the iframe scroll is at the top or bottom, do not send anything.
+                    // This avoids losing the scrollend event.
+                    return;
+                }
+
+                const scrollY = direction === 'up' ? -120 : 120;
+                window.scrollBy({ left: 0, top: scrollY, behavior: 'smooth' });
+            },
+            [NOTIFY_CUSTOMER.UVE_SET_PAGE_DATA]: () => {
+                /** NOOP **/
+            },
+            [NOTIFY_CUSTOMER.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS]: () => {
+                /** NOOP **/
+            },
+            [NOTIFY_CUSTOMER.UVE_EDITOR_PONG]: () => {
+                /** NOOP **/
             }
-        }
+        };
 
-        if (event.data.name === NOTIFY_CUSTOMER.UVE_SCROLL_INSIDE_IFRAME) {
-            const direction = event.data.direction;
-
-            if (
-                (window.scrollY === 0 && direction === 'up') ||
-                (scrollIsInBottom() && direction === 'down')
-            ) {
-                // If the iframe scroll is at the top or bottom, do not send anything.
-                // This avoids losing the scrollend event.
-                return;
-            }
-
-            const scrollY = direction === 'up' ? -120 : 120;
-            window.scrollBy({ left: 0, top: scrollY, behavior: 'smooth' });
-        }
+        ACTIONS_NOTIFICATION[event.data.name]?.();
     };
 
     window.addEventListener('message', messageCallback);

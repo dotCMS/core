@@ -200,7 +200,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         const isDragging = this.uveStore.$editorIsInDraggingState();
 
         if (isDragging) {
-            this.contentWindow?.postMessage(NOTIFY_CUSTOMER.UVE_REQUEST_BOUNDS, this.host);
+            this.contentWindow?.postMessage(
+                {
+                    name: NOTIFY_CUSTOMER.UVE_REQUEST_BOUNDS
+                },
+                this.host
+            );
         }
     });
 
@@ -306,7 +311,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
 
                 this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
-                this.contentWindow?.postMessage(NOTIFY_CUSTOMER.UVE_REQUEST_BOUNDS, this.host);
+                this.contentWindow?.postMessage(
+                    {
+                        name: NOTIFY_CUSTOMER.UVE_REQUEST_BOUNDS
+                    },
+                    this.host
+                );
 
                 if (dragItem) {
                     return;
