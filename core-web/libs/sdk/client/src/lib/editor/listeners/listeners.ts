@@ -1,4 +1,4 @@
-import { CUSTOMER_ACTIONS, postMessageToEditor } from '../models/client.model';
+import { CUSTOMER_ACTIONS, DotSDK, postMessageToEditor } from '../models/client.model';
 import { DotCMSPageEditorSubscription, NOTIFY_CUSTOMER } from '../models/listeners.model';
 import {
     findVTLData,
@@ -10,7 +10,7 @@ import {
 
 declare global {
     interface Window {
-        lastScrollYPosition: number;
+        dotSDK: DotSDK;
     }
 }
 
@@ -174,7 +174,7 @@ export function scrollHandler(): void {
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.IFRAME_SCROLL
         });
-        window.lastScrollYPosition = window.scrollY;
+        window.dotSDK.lastScrollYPosition = window.scrollY;
     };
 
     const scrollEndCallback = () => {
@@ -210,7 +210,7 @@ export function scrollHandler(): void {
  */
 export function preserveScrollOnIframe(): void {
     const preserveScrollCallback = () => {
-        window.scrollTo(0, window.lastScrollYPosition);
+        window.scrollTo(0, window.dotSDK.lastScrollYPosition);
     };
 
     window.addEventListener('load', preserveScrollCallback);

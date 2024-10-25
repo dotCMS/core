@@ -14,7 +14,6 @@ function Contentlets({ contentlets }) {
         <ul className="flex flex-col gap-7">
             {contentlets.map((contentlet) => (
                 <li className="flex gap-7 min-h-16 relative" key={contentlet.identifier}>
-                    {' '}
                     <button
                         onClick={() => editContentlet(contentlet)}
                         style={{

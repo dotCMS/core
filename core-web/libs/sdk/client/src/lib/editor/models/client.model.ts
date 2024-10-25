@@ -1,3 +1,5 @@
+import { editContentlet } from '../sdk-editor';
+
 /**
  * Actions send to the dotcms editor
  *
@@ -85,4 +87,9 @@ type PostMessageProps<T> = {
  */
 export function postMessageToEditor<T = unknown>(message: PostMessageProps<T>) {
     window.parent.postMessage(message, '*');
+}
+
+export interface DotSDK {
+    editContentlet: typeof editContentlet;
+    lastScrollYPosition: number;
 }
