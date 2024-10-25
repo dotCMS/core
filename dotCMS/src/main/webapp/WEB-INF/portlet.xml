@@ -501,7 +501,7 @@
     </portlet>
 
     <portlet>
-        <portlet-name>analytics_search</portlet-name>
+        <portlet-name>analytics-search</portlet-name>
         <display-name>Analytics Search</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>

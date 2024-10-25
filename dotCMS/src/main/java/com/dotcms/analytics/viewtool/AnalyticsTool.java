@@ -85,7 +85,7 @@ public class AnalyticsTool  implements ViewTool {
      * 	"limit":100,
      * 	"offset":1,
      * 	"timeDimensions":"Events.day day",
-     * 	"orders":"Events.day ASC"
+     * 	"order":"Events.day ASC"
      * }")
      *
      * $analytics.runReportFromJson($query)
@@ -110,7 +110,7 @@ public class AnalyticsTool  implements ViewTool {
      * $myMap.put('limit', 100)
      * $myMap.put('offset', 1)
      * $myMap.put('timeDimensions', "Events.day day")
-     * $myMap.put('orders', "Events.day ASC")
+     * $myMap.put('order', "Events.day ASC")
      *
      * $analytics.runReportFromMap($myQuery)
      * </code>

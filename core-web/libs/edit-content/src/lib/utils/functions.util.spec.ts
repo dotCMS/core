@@ -2,19 +2,22 @@ import { describe, expect, it } from '@jest/globals';
 
 import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
 
+import { MOCK_CONTENTTYPE_2_TABS, MOCK_FORM_CONTROL_FIELDS } from './edit-content.mock';
 import * as functionsUtil from './functions.util';
 import {
-    getFieldVariablesParsed,
-    isValidJson,
-    stringToJson,
     createPaths,
+    getFieldVariablesParsed,
     getPersistSidebarState,
-    setPersistSidebarState
+    isFilteredType,
+    isValidJson,
+    setPersistSidebarState,
+    stringToJson
 } from './functions.util';
 import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
 
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
+import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 import { SIDEBAR_LOCAL_STORAGE_KEY } from '../models/dot-edit-content.constant';
 
 describe('Utils Functions', () => {
@@ -428,6 +431,7 @@ describe('Utils Functions', () => {
                                     fieldTypeLabel: 'Row',
                                     fieldVariables: [],
                                     fixed: false,
+                                    forceIncludeInApi: false,
                                     iDate: 1697051073000,
                                     id: 'a31ea895f80eb0a3754e4a2292e09a52',
                                     indexed: false,
@@ -630,6 +634,29 @@ describe('Utils Functions', () => {
 
                 setPersistSidebarState('false');
                 expect(localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY)).toBe('false');
+            });
+        });
+    });
+
+    describe('isFilteredType', () => {
+        it('should correctly identify filtered and non-filtered field types', () => {
+            const allFields = MOCK_CONTENTTYPE_2_TABS.fields;
+            const nonFormControlFieldTypes = Object.values(NON_FORM_CONTROL_FIELD_TYPES);
+
+            // Verify that none of the form control fields are filtered types
+            MOCK_FORM_CONTROL_FIELDS.forEach((field) => {
+                expect(isFilteredType(field)).toBe(false);
+            });
+
+            const filteredFields = allFields.filter((field) => {
+                return !isFilteredType(field);
+            });
+
+            expect(filteredFields.length).toBe(MOCK_FORM_CONTROL_FIELDS.length);
+
+            filteredFields.forEach((field) => {
+                const fieldType = field.fieldType as NON_FORM_CONTROL_FIELD_TYPES;
+                expect(nonFormControlFieldTypes.includes(fieldType)).toBe(false);
             });
         });
     });
