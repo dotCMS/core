@@ -2,7 +2,6 @@ import { editContentlet } from '../sdk-editor';
 declare global {
     interface Window {
         dotSDK: DotSDK;
-        TEST: string;
     }
 }
 
