@@ -13,7 +13,7 @@ declare global {
     }
 }
 
-window.dotSDK.editContentlet = editContentlet;
+window.dotSDK = { editContentlet };
 
 /**
  * This is the main entry point for the SDK VTL.

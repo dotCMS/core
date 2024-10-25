@@ -210,7 +210,7 @@ export function scrollHandler(): void {
  */
 export function preserveScrollOnIframe(): void {
     const preserveScrollCallback = () => {
-        window.scrollTo(0, window.dotSDK.lastScrollYPosition);
+        window.scrollTo(0, window.dotSDK?.lastScrollYPosition ?? 0);
     };
 
     window.addEventListener('load', preserveScrollCallback);
