@@ -73,6 +73,7 @@
         p-dropdown {
             min-width: 10rem;
         }
+
         p-autocomplete .p-inputwrapper {
             padding-right: 35px;
         }
@@ -81,8 +82,6 @@
             z-index: 1000;
             position: fixed;
             max-width: 16rem;
-        }
-        .dot-wysiwyg__sidebar-closed .p-autocomplete-panel {
         }
     }
 }

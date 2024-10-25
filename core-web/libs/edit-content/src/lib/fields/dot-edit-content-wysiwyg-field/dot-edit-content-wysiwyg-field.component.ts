@@ -15,11 +15,7 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
-import {
-    AutoCompleteCompleteEvent,
-    AutoCompleteModule,
-    AutoCompleteSelectEvent
-} from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteModule, AutoCompleteSelectEvent } from 'primeng/autocomplete';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputGroupModule } from 'primeng/inputgroup';
@@ -80,11 +76,30 @@ const MAX_LANGUAGES_SUGGESTIONS = 20;
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
+    /**
+     * Clear the autocomplete when the overlay is hidden.
+     */
+    onHideOverlay() {
+        this.$autoComplete()?.clear();
+    }
+
+    /**
+     * Signal to get the TinyMCE component.
+     */
     $tinyMCEComponent: Signal<DotWysiwygTinymceComponent | undefined> = viewChild(
         DotWysiwygTinymceComponent
     );
+
+    /**
+     * Signal to get the Monaco component.
+     */
     $monacoComponent: Signal<DotWysiwygMonacoComponent | undefined> =
         viewChild(DotWysiwygMonacoComponent);
+
+    /**
+     * Signal to get the autocomplete component.
+     */
+    $autoComplete = viewChild<AutoComplete>(AutoComplete);
 
     #confirmationService = inject(ConfirmationService);
     #dotMessageService = inject(DotMessageService);
@@ -172,40 +187,25 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     $languageVariables = signal<LanguageVariable[]>([]);
 
     /**
-     * Signal to track if the user has interacted with the autocomplete.
-     * This is used to determine if the language variables should be loaded, and to avoid unnecessary loading.
-     */
-    $hasInteracted = signal(false);
-
-    /**
      * Signal to store the selected item from the autocomplete.
      */
-    $selectedItem = signal<LanguageVariable | null>(null);
-
-    /**
-     * Signal to store the search query from the autocomplete.
-     */
-    $searchQuery = signal('');
+    $selectedItem = model<string>('');
 
     /**
      * Computed property to filter the language variables based on the search query.
      */
     $filteredSuggestions = computed(() => {
-        const term = this.$searchQuery().toLowerCase();
+        const term = this.$selectedItem()?.toLowerCase();
+        const languageVariables = this.$languageVariables();
 
         if (!term) {
             return [];
         }
 
-        return this.$languageVariables()
+        return languageVariables
             .filter((variable) => variable.key.toLowerCase().includes(term))
             .slice(0, MAX_LANGUAGES_SUGGESTIONS);
     });
-
-    /**
-     * Signal to track if the dropdown is loading.
-     */
-    $dropdownLoading = signal(false);
 
     ngAfterViewInit(): void {
         // Assign the selected editor value
@@ -251,16 +251,25 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     /**
      * Search for language variables.
      *
-     * @param {AutoCompleteCompleteEvent} event - The event object containing the search query.
      * @return {void}
      */
-    search(event: AutoCompleteCompleteEvent) {
-        if (event.query) {
-            this.$searchQuery.set(event.query);
-        }
-
+    loadSuggestions() {
         if (this.$languageVariables().length === 0) {
             this.getLanguageVariables();
+        } else {
+            /**
+             * Set the autocomplete loading to false and show the overlay if there are suggestions.
+             * this for handle the bug in the autocomplete and show the loading icon when there are suggestions
+             */
+            const autocomplete = this.$autoComplete();
+            if (autocomplete) {
+                autocomplete.loading = false;
+                if (this.$filteredSuggestions().length > 0) {
+                    autocomplete.overlayVisible = true;
+                }
+
+                autocomplete.cd.markForCheck();
+            }
         }
     }
 
@@ -271,35 +280,38 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
      * @return {void}
      */
     onSelectLanguageVariable($event: AutoCompleteSelectEvent) {
-        this.$searchQuery.set('');
+        const { value } = $event;
+
         if (this.$displayedEditor() === AvailableEditor.TinyMCE) {
             const tinyMCE = this.$tinyMCEComponent();
             if (tinyMCE) {
-                tinyMCE.insertContent(`$text.get('${$event.value.key}')`);
+                tinyMCE.insertContent(`$text.get('${value.key}')`);
+                this.resetAutocomplete();
             } else {
                 console.warn('TinyMCE component is not available');
             }
         } else if (this.$displayedEditor() === AvailableEditor.Monaco) {
             const monaco = this.$monacoComponent();
             if (monaco) {
-                monaco.insertContent(`$text.get('${$event.value.key}')`);
+                monaco.insertContent(`$text.get('${value.key}')`);
+                this.resetAutocomplete();
             } else {
                 console.warn('Monaco component is not available');
             }
         }
+    }
 
-        this.$selectedItem.set(null);
+    /**
+     * Resets the autocomplete state.
+     */
+    private resetAutocomplete() {
+        this.$autoComplete()?.clear();
     }
 
     /**
      * Fetches language variables from the DotCMS Languages API and formats them for use in the autocomplete.
      */
     getLanguageVariables() {
-        if (this.$languageVariables().length > 0) {
-            return;
-        }
-
-        this.$dropdownLoading.set(true);
         // TODO: This is a temporary solution to get the language variables from the DotCMS Languages API.
         // We need a way to get the current language from the contentlet.
         this.#dotLanguagesService
@@ -334,11 +346,9 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
                         );
 
                     this.$languageVariables.set(formattedVariables);
-                    this.$dropdownLoading.set(false);
                 },
                 error: (error) => {
                     console.error('Error fetching language variables:', error);
-                    this.$dropdownLoading.set(false);
                 }
             });
     }
