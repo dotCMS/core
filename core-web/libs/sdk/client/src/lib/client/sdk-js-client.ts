@@ -2,6 +2,7 @@ import { Content } from './content/content-api';
 import { ErrorMessages } from './models';
 import { DotcmsClientListener } from './models/types';
 
+import { NOTIFY_CUSTOMER } from '../editor/models/listeners.model';
 import { isInsideEditor } from '../editor/sdk-editor';
 
 export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
@@ -312,7 +313,7 @@ export class DotCmsClient {
 
             if (action === 'changes') {
                 const messageCallback = (event: MessageEvent) => {
-                    if (event.data.name === 'SET_PAGE_DATA') {
+                    if (event.data.name === NOTIFY_CUSTOMER.UVE_SET_PAGE_DATA) {
                         callbackFn(event.data.payload);
                     }
                 };

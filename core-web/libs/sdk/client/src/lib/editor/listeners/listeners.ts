@@ -47,13 +47,13 @@ function setBounds(): void {
 export function listenEditorMessages(): void {
     const messageCallback = (event: MessageEvent) => {
         switch (event.data) {
-            case NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS: {
+            case NOTIFY_CUSTOMER.UVE_REQUEST_BOUNDS: {
                 setBounds();
                 break;
             }
         }
 
-        if (event.data.name === NOTIFY_CUSTOMER.EMA_SCROLL_INSIDE_IFRAME) {
+        if (event.data.name === NOTIFY_CUSTOMER.UVE_SCROLL_INSIDE_IFRAME) {
             const direction = event.data.direction;
 
             if (

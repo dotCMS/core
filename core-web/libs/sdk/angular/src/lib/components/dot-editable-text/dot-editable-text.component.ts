@@ -19,6 +19,7 @@ import {
     CUSTOMER_ACTIONS,
     DotCmsClient,
     isInsideEditor,
+    NOTIFY_CUSTOMER,
     postMessageToEditor
 } from '@dotcms/client';
 
@@ -139,7 +140,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
     @HostListener('window:message', ['$event'])
     onMessage({ data }: MessageEvent) {
         const { name, payload } = data;
-        if (name !== 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS') {
+        if (name !== NOTIFY_CUSTOMER.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS) {
             return;
         }
 

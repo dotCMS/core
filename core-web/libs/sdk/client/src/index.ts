@@ -5,8 +5,10 @@ import {
     DotCMSPageEditorConfig,
     EditorConfig
 } from './lib/editor/models/editor.model';
+import { NOTIFY_CUSTOMER } from './lib/editor/models/listeners.model';
 import {
     destroyEditor,
+    editContentlet,
     initEditor,
     isInsideEditor,
     updateNavigation
@@ -17,9 +19,11 @@ export {
     graphqlToPageEntity,
     getPageRequestParams,
     isInsideEditor,
+    editContentlet,
     DotCmsClient,
     DotCMSPageEditorConfig,
     CUSTOMER_ACTIONS,
+    NOTIFY_CUSTOMER,
     CustomClientParams,
     postMessageToEditor,
     EditorConfig,

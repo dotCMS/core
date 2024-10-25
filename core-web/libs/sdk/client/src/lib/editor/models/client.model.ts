@@ -55,6 +55,10 @@ export enum CUSTOMER_ACTIONS {
      */
     CLIENT_READY = 'client-ready',
     /**
+     * Tell the editor to edit a contentlet
+     */
+    EDIT_CONTENTLET = 'edit-contentlet',
+    /**
      * Tell the editor to do nothing
      */
     NOOP = 'noop'

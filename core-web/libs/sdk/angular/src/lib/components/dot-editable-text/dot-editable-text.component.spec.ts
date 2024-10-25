@@ -248,11 +248,12 @@ describe('DotEditableTextComponent', () => {
                     focusSpy = jest.spyOn(spectator.component.editorComponent.editor, 'focus');
                 });
 
-                it("should focus on the editor when the message is 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS'", () => {
+                it("should focus on the editor when the message is 'uve-copy-contentlet-inline-editing-success'", () => {
                     window.dispatchEvent(
                         new MessageEvent('message', {
                             data: {
-                                name: 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS',
+                                name: dotcmsClient.NOTIFY_CUSTOMER
+                                    .UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
                                 payload: {
                                     oldInode: dotcmsContentletMock.inode,
                                     inode: dotcmsContentletMock.inode
@@ -264,7 +265,7 @@ describe('DotEditableTextComponent', () => {
                     expect(focusSpy).toHaveBeenCalled();
                 });
 
-                it("should not focus on the editor when the message is not 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS'", () => {
+                it("should not focus on the editor when the message is not 'uve-copy-contentlet-inline-editing-success'", () => {
                     window.dispatchEvent(
                         new MessageEvent('message', {
                             data: { name: 'ANOTHER_EVENT' }
