@@ -67,6 +67,13 @@ export function isInsideEditor(): boolean {
     return window.parent !== window;
 }
 
+export function initDotSDK() {
+    window.dotSDK = {
+        editContentlet,
+        lastScrollYPosition: 0
+    };
+}
+
 /**
  * Initializes the DotCMS page editor.
  *
@@ -78,6 +85,7 @@ export function isInsideEditor(): boolean {
  * ```
  */
 export function initEditor(config: DotCMSPageEditorConfig): void {
+    initDotSDK();
     fetchPageDataFromInsideUVE(config.pathname);
     listenEditorMessages();
     listenHoveredContentlet();

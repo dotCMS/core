@@ -5,15 +5,13 @@ import {
     scrollHandler
 } from './listeners/listeners';
 import { DotSDK } from './models/client.model';
-import { isInsideEditor, addClassToEmptyContentlets, editContentlet } from './sdk-editor';
+import { isInsideEditor, addClassToEmptyContentlets, initDotSDK } from './sdk-editor';
 
 declare global {
     interface Window {
         dotSDK: DotSDK;
     }
 }
-
-window.dotSDK = { editContentlet };
 
 /**
  * This is the main entry point for the SDK VTL.
@@ -26,6 +24,7 @@ window.dotSDK = { editContentlet };
  *
  */
 if (isInsideEditor()) {
+    initDotSDK();
     listenEditorMessages();
     scrollHandler();
     preserveScrollOnIframe();

@@ -91,5 +91,5 @@ export function postMessageToEditor<T = unknown>(message: PostMessageProps<T>) {
 
 export interface DotSDK {
     editContentlet: typeof editContentlet;
-    lastScrollYPosition?: number;
+    lastScrollYPosition: number;
 }
