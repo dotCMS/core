@@ -8,6 +8,8 @@ import {
 import { CUSTOMER_ACTIONS, postMessageToEditor } from './models/client.model';
 import { DotCMSPageEditorConfig } from './models/editor.model';
 
+import { Contentlet } from '../client/content/shared/types';
+
 /**
  * Updates the navigation in the editor.
  *
@@ -22,6 +24,16 @@ export function updateNavigation(pathname: string): void {
         payload: {
             url: pathname === '/' ? 'index' : pathname?.replace('/', '')
         }
+    });
+}
+
+export function editContentlet<T>(contentlet: Contentlet<T>) {
+    // eslint-disable-next-line no-console
+    console.log('editContentlet', contentlet);
+
+    postMessageToEditor({
+        action: CUSTOMER_ACTIONS.EDIT_CONTENTLET,
+        payload: contentlet
     });
 }
 
