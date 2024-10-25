@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.JUnit4WeldRunner;
 import java.util.Optional;
+import javax.enterprise.inject.spi.CDI;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -23,6 +24,7 @@ public class SimpleInjectionIT  {
      */
     @Test
     public void testInjection() {
+        System.out.println(CDI.current());
         final GreetingBean greetingBean = CDIUtils.getBeanThrows(GreetingBean.class);
         assertEquals("Hello World", greetingBean.greet());
     }
