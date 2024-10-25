@@ -24,7 +24,6 @@ public class SimpleInjectionIT  {
      */
     @Test
     public void testInjection() {
-        System.out.println(CDI.current());
         final GreetingBean greetingBean = CDIUtils.getBeanThrows(GreetingBean.class);
         assertEquals("Hello World", greetingBean.greet());
     }
