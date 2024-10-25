@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Vetoed;
 
 /**
