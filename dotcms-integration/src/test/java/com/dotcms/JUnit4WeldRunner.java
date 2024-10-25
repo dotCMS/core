@@ -5,6 +5,9 @@ import org.jboss.weld.environment.se.WeldContainer;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.InitializationError;
 
+/**
+ * Annotate your JUnit4 test class with {@code @RunWith(JUnit4WeldRunner.class)} to run it with Weld container.
+ */
 public class JUnit4WeldRunner extends BlockJUnit4ClassRunner {
 
     private static final Weld WELD;

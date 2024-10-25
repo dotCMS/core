@@ -1,33 +1,55 @@
 package com.dotcms.junit;
 
+import com.dotcms.DataProviderWeldRunner;
+import com.dotcms.JUnit4WeldRunner;
 import com.dotmarketing.util.Logger;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.internal.DataConverter;
 import com.tngtech.java.junit.dataprovider.internal.TestGenerator;
 import com.tngtech.java.junit.dataprovider.internal.TestValidator;
+import java.util.Optional;
 import org.jboss.weld.environment.se.Weld;
 import org.jboss.weld.environment.se.WeldContainer;
 import org.junit.Ignore;
 import org.junit.rules.RunRules;
 import org.junit.runner.Description;
+import org.junit.runner.RunWith;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
-
 import java.util.List;
 
 public class CustomDataProviderRunner extends DataProviderRunner {
+
+    // We assume that any test annotated with any of the following runners is meant to be run with Weld
+    static final List<Class<?>> weldRunners = List.of(JUnit4WeldRunner.class, DataProviderWeldRunner.class);
+
+    /**
+     * Check if the given class is annotated with any of the Weld runners
+     * @param clazz the class to check
+     * @return true if the class is annotated with any of the Weld runners
+     */
+    static boolean isWeldRunnerPresent(Class<?> clazz) {
+        return Optional.ofNullable(clazz.getAnnotation(RunWith.class))
+                .map(RunWith::value)
+                .map(runnerClass -> weldRunners.stream()
+                        .anyMatch(weldRunner -> weldRunner.equals(runnerClass)))
+                .orElse(false);
+    }
 
     private static final Weld WELD;
     private static final WeldContainer CONTAINER;
 
     static {
-        WELD = new Weld("JUnit4WeldRunner");
+        WELD = new Weld("CustomDataProviderRunner");
         CONTAINER = WELD.initialize();
     }
 
+    private final boolean instantiateWithWeld;
+
     public CustomDataProviderRunner(Class<?> clazz) throws InitializationError {
         super(clazz);
+        instantiateWithWeld = isWeldRunnerPresent(clazz);
     }
 
     @Override
@@ -73,7 +95,11 @@ public class CustomDataProviderRunner extends DataProviderRunner {
 
     @Override
     protected Object createTest() throws Exception {
-        return CONTAINER.instance().select(getTestClass().getJavaClass()).get();
+        if (instantiateWithWeld) {
+            final Class<?> javaClass = getTestClass().getJavaClass();
+            Logger.debug(this, String.format("Instantiating [%s] with Weld", javaClass));
+            return CONTAINER.instance().select(javaClass).get();
+        }
+        return super.createTest();
     }
-
 }
