@@ -405,6 +405,40 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
     }
 
     /**
+     * Given scenario: We create a dotAsset-like contentlet, set a "title" property,
+     * and then call getContentPrintableMap, which should return a map of the contentlet's properties.
+     * Expected result: The "title" property in the resulting map should match the custom title set
+     * in the original contentlet.
+     * @throws Exception in case of errors during the mapping process
+     */
+    @Test
+    public void Test_DotAsset_With_Title_Property_Pushed_into_Transformer() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final Contentlet dotAssetLikeContentlet = TestDataUtils.getDotAssetLikeContentlet();
+        dotAssetLikeContentlet.setProperty("title", "my custom title");
+
+        final Map<String, Object> map1 = ContentletUtil.getContentPrintableMap(
+                systemUser, dotAssetLikeContentlet, true);
+        Assert.assertEquals("my custom title", map1.get("title"));
+    }
+
+    /**
+     * Given scenario: We create a dotAsset-like contentlet without setting a "title" property
+     * and call getContentPrintableMap, which should return a map of the contentlet's properties.
+     * Expected result: The "title" property in the resulting map should match the asset title.
+     * @throws Exception in case of errors during the mapping process
+     */
+    @Test
+    public void Test_DotAsset_Without_Title_Property_Pushed_into_Transformer() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final Contentlet dotAssetLikeContentlet = TestDataUtils.getDotAssetLikeContentlet();
+
+        final Map<String, Object> map1 = ContentletUtil.getContentPrintableMap(
+                systemUser, dotAssetLikeContentlet, true);
+        Assert.assertEquals("test.jpg", map1.get("title"));
+    }
+
+    /**
      * Given Scenario: We have a contentlet with a dotAsset field, and we push it into the transformer prepared with the FILEASSET_VIEW strategy.
      * Expected Result: We should get the dotAsset field with the expected properties.
      * @throws Exception

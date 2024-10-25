@@ -1,7 +1,11 @@
 package com.dotcms.ai.client;
 
+import com.dotcms.ai.domain.AIResponseData;
+
+import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.util.Optional;
 
 /**
  * Default implementation of the {@link AIClientStrategy} interface.
@@ -22,11 +26,17 @@ import java.io.Serializable;
 public class AIDefaultStrategy implements AIClientStrategy {
 
     @Override
-    public void applyStrategy(final AIClient client,
-                              final AIResponseEvaluator handler,
-                              final AIRequest<? extends Serializable> request,
-                              final OutputStream output) {
-        client.sendRequest(request, output);
+    public AIResponseData applyStrategy(final AIClient client,
+                                        final AIResponseEvaluator handler,
+                                        final AIRequest<? extends Serializable> request,
+                                        final OutputStream incoming) {
+        final JSONObjectAIRequest jsonRequest = AIClient.useRequestOrThrow(request);
+        final boolean isStream = AIClientStrategy.isStream(jsonRequest);
+        final OutputStream output = Optional.ofNullable(incoming).orElseGet(ByteArrayOutputStream::new);
+
+        client.sendRequest(jsonRequest, output);
+
+        return AIClientStrategy.response(output, isStream);
     }
 
 }
