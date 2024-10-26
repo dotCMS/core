@@ -35,18 +35,57 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
     @Inject
     JobQueueHelper jobQueueHelper;
 
+    /**
+     * Test with no parameters in the JobParams creating a job
+     * Given scenario: create a job with no parameters and valid queue name
+     * Expected result: the job is created
+     *
+     * @throws DotDataException if there's an error creating the job
+     */
     @Test
-    void testEmptyParams(){
+    void testEmptyParams() throws DotDataException, JsonProcessingException {
+
+        jobQueueHelper.registerProcessor("demoQueue", DemoJobProcessor.class);
 
         final var jobParams = new JobParams();
         final var user = mock(User.class);
         final var request = mock(HttpServletRequest.class);
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            jobQueueHelper.createJob(
-                    "any", jobParams, user, request
-            );
-        });
+        when(user.getUserId()).thenReturn("dotcms.org.1");
+
+        final String jobId = jobQueueHelper.createJob(
+                "demoQueue", jobParams, user, request
+        );
+
+        Assertions.assertNotNull(jobId);
+        final Job job = jobQueueHelper.getJob(jobId);
+        Assertions.assertNotNull(job);
+        Assertions.assertEquals(jobId, job.id());
+    }
+
+    /**
+     * Test with null parameters creating a job
+     * Given scenario: create a job with null parameters and valid queue name
+     * Expected result: the job is created
+     *
+     * @throws DotDataException if there's an error creating the job
+     */
+    @Test
+    void testCreateJobWithNoParameters() throws DotDataException {
+
+        jobQueueHelper.registerProcessor("demoQueue", DemoJobProcessor.class);
+
+        final var user = mock(User.class);
+        when(user.getUserId()).thenReturn("dotcms.org.1");
+
+        final String jobId = jobQueueHelper.createJob(
+                "demoQueue", (Map<String, Object>) null, user, mock(HttpServletRequest.class)
+        );
+
+        Assertions.assertNotNull(jobId);
+        final Job job = jobQueueHelper.getJob(jobId);
+        Assertions.assertNotNull(job);
+        Assertions.assertEquals(jobId, job.id());
     }
 
     @Test
@@ -195,31 +234,6 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
         FormDataContentDisposition formDataContentDisposition = mock(FormDataContentDisposition.class);
         when(formDataContentDisposition.getFileName()).thenReturn("test.txt");
         return formDataContentDisposition;
-    }
-
-    /**
-     * Test with null parameters creating a job
-     * Given scenario: create a job with null parameters and valida queue name
-     * Expected result: the job is created
-     *
-     * @throws DotDataException if there's an error creating the job
-     */
-    @Test
-    void testCreateJobWithNoParameters() throws DotDataException {
-
-        jobQueueHelper.registerProcessor("demoQueue", DemoJobProcessor.class);
-
-        final var user = mock(User.class);
-        when(user.getUserId()).thenReturn("dotcms.org.1");
-
-        final String jobId = jobQueueHelper.createJob(
-                "demoQueue", (Map<String, Object>) null, user, mock(HttpServletRequest.class)
-        );
-
-        Assertions.assertNotNull(jobId);
-        final Job job = jobQueueHelper.getJob(jobId);
-        Assertions.assertNotNull(job);
-        Assertions.assertEquals(jobId, job.id());
     }
 
     /**

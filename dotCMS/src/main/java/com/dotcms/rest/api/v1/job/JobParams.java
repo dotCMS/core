@@ -48,10 +48,8 @@ public class JobParams {
     }
 
     public Map<String, Object> getParams() throws JsonProcessingException {
-        if (null == params) {
-            if (null != jsonParams && !jsonParams.isEmpty()) {
-                params = new ObjectMapper().readValue(jsonParams, Map.class);
-            }
+        if (null == params && (null != jsonParams && !jsonParams.isEmpty())) {
+            params = new ObjectMapper().readValue(jsonParams, Map.class);
         }
         return params;
     }
