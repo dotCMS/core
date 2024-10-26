@@ -98,7 +98,7 @@ public class ContentAnalyticsResource {
                                                             "        \"measures\": [\n" +
                                                             "            \"request.count\"\n" +
                                                             "        ],\n" +
-                                                            "        \"orders\": \"request.count DESC\",\n" +
+                                                            "        \"order\": \"request.count DESC\",\n" +
                                                             "        \"dimensions\": [\n" +
                                                             "            \"request.url\",\n" +
                                                             "            \"request.pageId\",\n" +
