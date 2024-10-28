@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "@types/node": "^22.7.5"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.48.1",
+    "dotenv": "^16.4.5"
+  },
+  "type": "module"
+}
