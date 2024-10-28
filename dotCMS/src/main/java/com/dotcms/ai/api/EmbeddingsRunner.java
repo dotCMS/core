@@ -1,5 +1,6 @@
 package com.dotcms.ai.api;
 
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.db.EmbeddingsDTO;
@@ -17,7 +18,6 @@ import java.text.BreakIterator;
 import java.util.List;
 import java.util.Locale;
 
-import static com.dotcms.ai.app.AppConfig.debugLogger;
 import static com.liferay.util.StringPool.SPACE;
 
 /**
@@ -86,9 +86,9 @@ class EmbeddingsRunner implements Runnable {
             }
 
             if (buffer.toString().split("\\s+").length > 0) {
-                debugLogger(this.getClass(), () -> String.format("Saving embeddings for contentlet ID '%s'", this.contentlet.getIdentifier()));
+                AppConfig.debugLogger(embeddingsAPI.config, this.getClass(), () -> String.format("Saving embeddings for contentlet ID '%s'", this.contentlet.getIdentifier()));
                 this.saveEmbedding(buffer.toString());
-                debugLogger(this.getClass(), () -> String.format("Embeddings for contentlet ID '%s' were saved", this.contentlet.getIdentifier()));
+                AppConfig.debugLogger(embeddingsAPI.config, this.getClass(), () -> String.format("Embeddings for contentlet ID '%s' were saved", this.contentlet.getIdentifier()));
             }
         } catch (final Exception e) {
             final String errorMsg = String.format("Failed to generate embeddings for contentlet ID " +
