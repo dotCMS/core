@@ -213,8 +213,7 @@ public class ReindexThread {
                     bulkProcessor = finalizeReIndex(bulkProcessor);
                 }
 
-                if (!workingRecords.isEmpty() && !ElasticReadOnlyCommand.getInstance()
-                        .isIndexOrClusterReadOnly()) {
+                if (!workingRecords.isEmpty()) {
                     Logger.debug(this,
                             "Found  " + workingRecords + " index items to process");
 
