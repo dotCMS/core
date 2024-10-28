@@ -78,6 +78,7 @@ public class CountOfSitesWithThumbnailsMetricType implements MetricType {
     private List<String> getAllSitesInodes() throws DotDataException {
         final DotConnect db = new DotConnect();
         final List<Map<String, Object>> results = db.setSQL(ALL_SITES_INODES).loadObjectResults();
-        return results.stream().map((map)->(String)map.get("inode")).collect(Collectors.toList());
+        return results.stream().map(map -> (String) map.get("inode")).collect(Collectors.toList());
     }
+
 }

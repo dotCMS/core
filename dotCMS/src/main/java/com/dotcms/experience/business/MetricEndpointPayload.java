@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter;
  */
 public class MetricEndpointPayload {
 
-    final static DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm" +
+    static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm" +
                     ":ss.S'Z'")
             .withZone(ZoneId.systemDefault());
     private final String clientName;

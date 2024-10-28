@@ -11,9 +11,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Represents a Metric to count how many times the Endpoint '/contentAsset/image/' is called from Front End.
+ * Represents a Metric to count how many times the Endpoint '/contentAsset/image/' is called from
+ * Front End.
  */
 public class CountOfContentAssetImageFEAPICalls extends ApiMetricType {
+
     @Override
     public String getName() {
         return "COUNT_OF_FE_CONTENTASSET_CALLS";
@@ -45,10 +47,12 @@ public class CountOfContentAssetImageFEAPICalls extends ApiMetricType {
         return HTTPMethod.GET;
     }
 
+    @Override
     @JsonIgnore
-    public boolean shouldCount(final HttpServletRequest request, final HttpServletResponse response){
+    public boolean shouldCount(final HttpServletRequest request,
+                               final HttpServletResponse response) {
         final PageMode currentPageMode = PageMode.get(request);
-
         return currentPageMode == PageMode.LIVE;
     }
+
 }

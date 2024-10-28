@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
  * Represents a Metric to count how many times the Endpoint '/dA' is called From Back End.
  */
 public class CountOfDAImageBEAPICalls extends ApiMetricType {
+
     @Override
     public String getName() {
         return "COUNT_OF_BE_DA_CALLS";
@@ -45,10 +46,12 @@ public class CountOfDAImageBEAPICalls extends ApiMetricType {
         return HTTPMethod.GET;
     }
 
+    @Override
     @JsonIgnore
-    public boolean shouldCount(final HttpServletRequest request, final HttpServletResponse response){
+    public boolean shouldCount(final HttpServletRequest request,
+                               final HttpServletResponse response) {
         final PageMode currentPageMode = PageMode.get(request);
-
         return currentPageMode != PageMode.LIVE;
     }
+
 }

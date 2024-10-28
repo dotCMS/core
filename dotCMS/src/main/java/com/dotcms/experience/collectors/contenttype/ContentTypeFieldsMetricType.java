@@ -55,7 +55,7 @@ public abstract class ContentTypeFieldsMetricType implements MetricType {
 
     abstract boolean filterCondition(Map<String, Object> map);
 
-    Optional<Object> getValue(List<Map<String, Object>> results) throws DotDataException {
+    Optional<Object> getValue(List<Map<String, Object>> results) {
         return Optional.of(results.stream()
                 .filter(this::filterCondition)
                 .map(m -> m.get("count"))

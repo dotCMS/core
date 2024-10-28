@@ -45,7 +45,7 @@ public enum ApiMetricFactory {
             "(epoch FROM MIN(timestamp)))/3600 " +
             "as overall FROM metrics_temp";
 
-    final ObjectMapper JSON_MAPPER = new ObjectMapper();
+    final ObjectMapper jsonMapper = new ObjectMapper();
 
     ApiMetricFactory() {
 
@@ -58,7 +58,7 @@ public enum ApiMetricFactory {
      */
     public void save(final ApiMetricRequest apiMetricRequest) {
         try {
-            final String jsonStr = JSON_MAPPER.writeValueAsString(apiMetricRequest.getMetric());
+            final String jsonStr = jsonMapper.writeValueAsString(apiMetricRequest.getMetric());
 
             final PGobject jsonObject = new PGobject();
             jsonObject.setType("json");

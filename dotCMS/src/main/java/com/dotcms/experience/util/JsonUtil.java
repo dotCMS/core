@@ -11,13 +11,14 @@ public enum JsonUtil {
 
     INSTANCE;
 
-    final static JsonMapper JSON_MAPPER = new JsonMapper();
+    static final JsonMapper jsonMapper = new JsonMapper();
 
     public String getAsJson(final MetricEndpointPayload metricEndpointPayload)  {
         try {
-            return JSON_MAPPER.writeValueAsString(metricEndpointPayload);
+            return jsonMapper.writeValueAsString(metricEndpointPayload);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
+
 }

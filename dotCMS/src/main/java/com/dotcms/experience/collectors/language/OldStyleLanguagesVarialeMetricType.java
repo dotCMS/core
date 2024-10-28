@@ -5,6 +5,8 @@ import com.dotcms.experience.MetricFeature;
 import com.dotcms.experience.MetricType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 
 import java.util.Optional;
 import java.util.Set;
@@ -42,11 +44,11 @@ public class OldStyleLanguagesVarialeMetricType implements MetricType {
         final LanguageAPI languageAPI = APILocator.getLanguageAPI();
 
         final Set<String> languagesCodes = languageAPI.getLanguages().stream()
-                .map(languege -> languege.getLanguageCode())
+                .map(Language::getLanguageCode)
                 .collect(Collectors.toSet());
 
         final Set<String> oldStyleLanguageKey = languagesCodes.stream().flatMap(languagesCode -> languageAPI.getLanguageKeys(languagesCode).stream())
-                .map(languegeKey -> languegeKey.getKey())
+                .map(LanguageKey::getKey)
                 .collect(Collectors.toSet());
 
         return Optional.of(oldStyleLanguageKey.size());

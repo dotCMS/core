@@ -14,9 +14,9 @@ public enum ApiMetricFactorySubmitter {
 
     INSTANCE;
 
-    final static int API_METRIC_SUBMITTER_POOL_SIZE = Config.getIntProperty(
+    static final int API_METRIC_SUBMITTER_POOL_SIZE = Config.getIntProperty(
             "API_METRIC_SUBMITTER_POOL_SIZE", 1);
-    final static int API_METRIC_SUBMITTER_MAX_POOL_SIZE = Config.getIntProperty(
+    static final int API_METRIC_SUBMITTER_MAX_POOL_SIZE = Config.getIntProperty(
             "API_METRIC_SUBMITTER_MAX_POOL_SIZE", 40);
 
     private DotSubmitter submitter;
@@ -52,9 +52,7 @@ public enum ApiMetricFactorySubmitter {
 
     private void save(final ApiMetricRequest metricAPIRequest) {
         try {
-            LocalTransaction.wrap(() -> {
-                ApiMetricFactory.INSTANCE.save(metricAPIRequest);
-            });
+            LocalTransaction.wrap(() -> ApiMetricFactory.INSTANCE.save(metricAPIRequest));
         } catch (Exception e) {
             throw new DotRuntimeException(e);
         }

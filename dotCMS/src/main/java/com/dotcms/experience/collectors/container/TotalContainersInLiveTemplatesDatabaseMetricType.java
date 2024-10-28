@@ -28,13 +28,13 @@ import java.util.stream.Stream;
  */
 public abstract class TotalContainersInLiveTemplatesDatabaseMetricType extends TotalContainersInTemplateDatabaseMetricType {
 
-    private final static String LIVE_TEMPLATES_INODES_QUERY = "SELECT DISTINCT template" +
+    private static final String LIVE_TEMPLATES_INODES_QUERY = "SELECT DISTINCT template" +
             ".identifier as value " +
             "FROM template_version_info " +
             "INNER JOIN template ON template_version_info.identifier = template.identifier " +
             "WHERE title NOT LIKE 'anonymous_layout_%' and deleted = false";
 
-    private final static String LIVE_FILE_TEMPLATES_INODES_QUERY = "SELECT distinct id" +
+    private static final String LIVE_FILE_TEMPLATES_INODES_QUERY = "SELECT distinct id" +
             ".parent_path as value " +
             "FROM contentlet_version_info cvi INNER JOIN identifier id ON cvi.identifier = id.id " +
             "WHERE id.parent_path LIKE '/application/templates/%' AND id.asset_name = 'body.vtl' " +

@@ -81,7 +81,7 @@ public abstract class TotalContainersInTemplateDatabaseMetricType implements Met
 
     abstract boolean filterContainer(final String containerId);
 
-    public Collection<String> getContainersInTemplate(final Template template) throws DotDataException, DotSecurityException {
+    public Collection<String> getContainersInTemplate(final Template template) {
         final Collection<ContainerUUID> containerUUIDs;
 
         if(Boolean.TRUE.equals(template.isDrawed())) {

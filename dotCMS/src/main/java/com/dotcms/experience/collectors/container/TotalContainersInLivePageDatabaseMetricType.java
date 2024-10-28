@@ -24,7 +24,7 @@ import java.util.Collection;
  */
 public abstract class TotalContainersInLivePageDatabaseMetricType extends TotalContainersInTemplateDatabaseMetricType {
 
-    private final static String LIVE_USED_TEMPLATES_INODES_QUERY = "SELECT " + "distinct " +
+    private static final  String LIVE_USED_TEMPLATES_INODES_QUERY = "SELECT " + "distinct " +
             "contentlet_as_json -> 'fields' -> 'template' ->> 'value' as value " + "FROM " +
             "contentlet INNER JOIN contentlet_version_info ON contentlet.inode = " +
             "contentlet_version_info.live_inode " + "WHERE structure_inode IN (SELECT inode FROM " +

@@ -16,7 +16,7 @@ import java.util.TreeMap;
  */
 public class RequestHashCalculator {
 
-    final ObjectMapper JSON_MAPPER = new ObjectMapper();
+    final ObjectMapper jsonMapper = new ObjectMapper();
     final MessageDigest digest;
 
     RequestHashCalculator() {
@@ -84,7 +84,7 @@ public class RequestHashCalculator {
         final String requestContent = request.getReadContent();
         try {
             if (!requestContent.isEmpty()) {
-                final Map<String, Object> bodyMap = JSON_MAPPER.readValue(requestContent,
+                final Map<String, Object> bodyMap = jsonMapper.readValue(requestContent,
                         Map.class);
 
                 return Optional.of(sort(bodyMap));
