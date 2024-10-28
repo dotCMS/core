@@ -1,4 +1,4 @@
-package com.dotcms.experience.collectors.urlMap;
+package com.dotcms.experience.collectors.urlmap;
 
 import com.dotcms.experience.MetricCategory;
 import com.dotcms.experience.MetricFeature;
