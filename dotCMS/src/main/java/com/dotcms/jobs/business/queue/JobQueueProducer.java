@@ -3,6 +3,7 @@ package com.dotcms.jobs.business.queue;
 import com.dotmarketing.util.Config;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
+import javax.inject.Named;
 
 /**
  * This class is responsible for producing the JobQueue implementation used in the application. It
@@ -22,6 +23,7 @@ public class JobQueueProducer {
      *
      * @return A JobQueue instance
      */
+    @Named("queueProducer")
     @Produces
     public JobQueue produceJobQueue() {
 
