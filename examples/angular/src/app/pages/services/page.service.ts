@@ -106,7 +106,7 @@ export class PageService {
           return of({ page: {}, error: null } as any);
         }
 
-        return of({ page: null, error: null });
+        return of({ page: null, error });
       })
     );
   }
