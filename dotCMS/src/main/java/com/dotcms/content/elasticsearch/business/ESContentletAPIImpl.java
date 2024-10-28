@@ -291,6 +291,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return ENABLED_UNIQUE_FIELDS_DATA_BASE_VALIDATION.get();
     }
 
+    @VisibleForTesting
     public static void  setEnabledUniqueFieldsDataBaseValidation(final boolean newValue) {
         ENABLED_UNIQUE_FIELDS_DATA_BASE_VALIDATION = Lazy.of(() -> newValue);
     }

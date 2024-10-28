@@ -15,7 +15,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -121,7 +120,14 @@ public class ESUniqueFieldValidationStrategy extends UniqueFieldValidationStrate
         }
     }
 
-    @NotNull
+    /**
+     * Build and execute the Lucene Query to check unique fields validation in ES.
+     *
+     * @param contentlet
+     * @param uniqueField
+     * @param fieldValue
+     * @return
+     */
     private List<ContentletSearch> getContentletFromES(Contentlet contentlet, Field uniqueField, Object fieldValue) {
         final StringBuilder buffy = new StringBuilder(UUIDGenerator.generateUuid());
         buffy.append(" +structureInode:" + contentlet.getContentTypeId());

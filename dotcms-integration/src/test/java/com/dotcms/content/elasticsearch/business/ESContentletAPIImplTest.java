@@ -2294,76 +2294,82 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     @Test
     public void updateContentletWithDuplicateValuesInUniqueFields()
             throws DotDataException, DotSecurityException, InterruptedException, IOException {
-        ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(true);
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
 
-        final Language language = new LanguageDataGen().nextPersisted();
+        try {
+            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(true);
 
-        final Field uniqueTextField = new FieldDataGen()
-                .type(TextField.class)
-                .next();
+            final Language language = new LanguageDataGen().nextPersisted();
 
-        final Host host = new SiteDataGen().nextPersisted();
+            final Field uniqueTextField = new FieldDataGen()
+                    .type(TextField.class)
+                    .next();
 
-        final ContentType contentType = new ContentTypeDataGen()
-                .host(host)
-                .fields(list(uniqueTextField))
-                .nextPersisted();
+            final Host host = new SiteDataGen().nextPersisted();
 
-        final String uniqueVersionValue = "unique-value";
+            final ContentType contentType = new ContentTypeDataGen()
+                    .host(host)
+                    .fields(list(uniqueTextField))
+                    .nextPersisted();
 
-        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
-                .host(host)
-                .setProperty(uniqueTextField.variable(), uniqueVersionValue)
-                .languageId(language.getId())
-                .nextPersisted();
+            final String uniqueVersionValue = "unique-value";
 
-        final Contentlet contentlet_2 = new ContentletDataGen(contentType)
-                .host(host)
-                .setProperty(uniqueTextField.variable(), uniqueVersionValue)
-                .languageId(language.getId())
-                .nextPersisted();
+            final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                    .host(host)
+                    .setProperty(uniqueTextField.variable(), uniqueVersionValue)
+                    .languageId(language.getId())
+                    .nextPersisted();
 
-        final Field uniqueTextFieldFromDB = APILocator.getContentTypeFieldAPI()
-                .byContentTypeAndVar(contentType, uniqueTextField.variable());
+            final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                    .host(host)
+                    .setProperty(uniqueTextField.variable(), uniqueVersionValue)
+                    .languageId(language.getId())
+                    .nextPersisted();
 
-        final ImmutableTextField uniqueFieldUpdated = ImmutableTextField.builder()
-                .from(uniqueTextField)
-                .contentTypeId(contentType.id())
-                .unique(true)
-                .build();
+            final Field uniqueTextFieldFromDB = APILocator.getContentTypeFieldAPI()
+                    .byContentTypeAndVar(contentType, uniqueTextField.variable());
 
-        APILocator.getContentTypeFieldAPI().save(uniqueFieldUpdated, APILocator.systemUser());
+            final ImmutableTextField uniqueFieldUpdated = ImmutableTextField.builder()
+                    .from(uniqueTextField)
+                    .contentTypeId(contentType.id())
+                    .unique(true)
+                    .build();
 
-        Map<String, ? extends Serializable> uniqueFieldCriteriaMap = Map.of(
-                "contentTypeID", contentType.id(),
-                "fieldVariableName", uniqueTextFieldFromDB.variable(),
-                "fieldValue", uniqueVersionValue.toString(),
-                "languageId", language.getId(),
-                "hostId", host.getIdentifier(),
-                "uniquePerSite", true,
-                "variant", VariantAPI.DEFAULT_VARIANT.name()
-        );
+            APILocator.getContentTypeFieldAPI().save(uniqueFieldUpdated, APILocator.systemUser());
 
-        final Map<String, Object> supportingValues = new HashMap<>(uniqueFieldCriteriaMap);
-        supportingValues.put("contentletsId", CollectionsUtils.list(contentlet_1.getIdentifier(),
-                contentlet_2.getIdentifier()));
-        supportingValues.put("uniquePerSite", false);
+            Map<String, ? extends Serializable> uniqueFieldCriteriaMap = Map.of(
+                    "contentTypeID", contentType.id(),
+                    "fieldVariableName", uniqueTextFieldFromDB.variable(),
+                    "fieldValue", uniqueVersionValue.toString(),
+                    "languageId", language.getId(),
+                    "hostId", host.getIdentifier(),
+                    "uniquePerSite", true,
+                    "variant", VariantAPI.DEFAULT_VARIANT.name()
+            );
 
-        final String hash = StringUtils.hashText(contentType.id() + uniqueTextFieldFromDB.variable() +
-                language.getId() + uniqueVersionValue + host.getIdentifier());
+            final Map<String, Object> supportingValues = new HashMap<>(uniqueFieldCriteriaMap);
+            supportingValues.put("contentletsId", CollectionsUtils.list(contentlet_1.getIdentifier(),
+                    contentlet_2.getIdentifier()));
+            supportingValues.put("uniquePerSite", false);
 
-        new DotConnect().setSQL("INSERT INTO unique_fields (unique_key_val, supporting_values) VALUES(?, ?)")
-                .addParam(hash)
-                .addJSONParam(supportingValues)
-                .loadObjectResults();
+            final String hash = StringUtils.hashText(contentType.id() + uniqueTextFieldFromDB.variable() +
+                    language.getId() + uniqueVersionValue + host.getIdentifier());
 
-        final Contentlet checkout = ContentletDataGen.checkout(contentlet_1);
-        checkout.setProperty(uniqueTextField.variable(), "another-value");
+            new DotConnect().setSQL("INSERT INTO unique_fields (unique_key_val, supporting_values) VALUES(?, ?)")
+                    .addParam(hash)
+                    .addJSONParam(supportingValues)
+                    .loadObjectResults();
 
-        APILocator.getContentletAPI().checkin(checkout, APILocator.systemUser(), false);
+            final Contentlet checkout = ContentletDataGen.checkout(contentlet_1);
+            checkout.setProperty(uniqueTextField.variable(), "another-value");
 
-        checkContentletInUniqueFieldsTable(contentlet_1);
-        checkContentletInUniqueFieldsTable(contentlet_2);
+            APILocator.getContentletAPI().checkin(checkout, APILocator.systemUser(), false);
+
+            checkContentletInUniqueFieldsTable(contentlet_1);
+            checkContentletInUniqueFieldsTable(contentlet_2);
+        } finally {
+            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+        }
     }
 
     private static void checkContentletInUniqueFieldsTable(final Contentlet contentlet) throws DotDataException, IOException {
@@ -2396,61 +2402,67 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     @UseDataProvider("enabledUniqueFieldDatabaseValidation")
     public void createVersionInAnotherVarianttWithUniqueFields(final Boolean enabledDataBaseValidation)
             throws DotDataException, DotSecurityException {
-        ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(enabledDataBaseValidation);
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
+
+        try {
+            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(enabledDataBaseValidation);
 
 
-        final Variant variant = new VariantDataGen().nextPersisted();
-        final Language language = new LanguageDataGen().nextPersisted();
+            final Variant variant = new VariantDataGen().nextPersisted();
+            final Language language = new LanguageDataGen().nextPersisted();
 
-        final Field uniqueTextField = new FieldDataGen()
-                .unique(true)
-                .type(TextField.class)
-                .next();
+            final Field uniqueTextField = new FieldDataGen()
+                    .unique(true)
+                    .type(TextField.class)
+                    .next();
 
-        final Field titleTextField = new FieldDataGen()
-                .type(TextField.class)
-                .next();
+            final Field titleTextField = new FieldDataGen()
+                    .type(TextField.class)
+                    .next();
 
-        final Host host = new SiteDataGen().nextPersisted();
+            final Host host = new SiteDataGen().nextPersisted();
 
-        final ContentType contentType = new ContentTypeDataGen()
-                .host(host)
-                .fields(list(uniqueTextField, titleTextField))
-                .nextPersisted();
+            final ContentType contentType = new ContentTypeDataGen()
+                    .host(host)
+                    .fields(list(uniqueTextField, titleTextField))
+                    .nextPersisted();
 
-        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
-                .host(host)
-                .setProperty(uniqueTextField.variable(), "default-unique-value")
-                .setProperty(titleTextField.variable(), "Title")
-                .languageId(language.getId())
-                .nextPersisted();
+            final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                    .host(host)
+                    .setProperty(uniqueTextField.variable(), "default-unique-value")
+                    .setProperty(titleTextField.variable(), "Title")
+                    .languageId(language.getId())
+                    .nextPersisted();
 
-        Contentlet checkout = ContentletDataGen.checkout(contentlet_1);
-        checkout.setProperty(uniqueTextField.variable(), "variant-unique-value");
-        checkout.setProperty(titleTextField.variable(), "Title2");
-        checkout.setVariantId(variant.name());
+            Contentlet checkout = ContentletDataGen.checkout(contentlet_1);
+            checkout.setProperty(uniqueTextField.variable(), "variant-unique-value");
+            checkout.setProperty(titleTextField.variable(), "Title2");
+            checkout.setVariantId(variant.name());
 
-        final Contentlet contentletVariantVersion = ContentletDataGen.checkin(checkout);
+            final Contentlet contentletVariantVersion = ContentletDataGen.checkin(checkout);
 
-        List<Contentlet> allVersions = APILocator.getContentletAPI().findAllVersions(
-                APILocator.getIdentifierAPI().find(contentlet_1.getIdentifier()),
-                APILocator.systemUser(), false);
+            List<Contentlet> allVersions = APILocator.getContentletAPI().findAllVersions(
+                    APILocator.getIdentifierAPI().find(contentlet_1.getIdentifier()),
+                    APILocator.systemUser(), false);
 
-        assertEquals(2, allVersions.size());
+            assertEquals(2, allVersions.size());
 
-        final Contentlet contentlet_1FromDB = allVersions.stream()
-                .filter(contentlet -> contentlet.getInode().equals(contentlet_1.getInode()))
-                .findFirst()
-                .orElseThrow();
+            final Contentlet contentlet_1FromDB = allVersions.stream()
+                    .filter(contentlet -> contentlet.getInode().equals(contentlet_1.getInode()))
+                    .findFirst()
+                    .orElseThrow();
 
-        assertEquals(contentlet_1.getVariantId(), contentlet_1FromDB.getVariantId());
+            assertEquals(contentlet_1.getVariantId(), contentlet_1FromDB.getVariantId());
 
-        final Contentlet contentlet_2FromDB = allVersions.stream()
-                .filter(contentlet -> contentlet.getInode().equals(contentletVariantVersion.getInode()))
-                .findFirst()
-                .orElseThrow();
+            final Contentlet contentlet_2FromDB = allVersions.stream()
+                    .filter(contentlet -> contentlet.getInode().equals(contentletVariantVersion.getInode()))
+                    .findFirst()
+                    .orElseThrow();
 
-        assertEquals(contentletVariantVersion.getVariantId(), contentlet_2FromDB.getVariantId());
+            assertEquals(contentletVariantVersion.getVariantId(), contentlet_2FromDB.getVariantId());
+        } finally {
+            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+        }
     }
 
     /**

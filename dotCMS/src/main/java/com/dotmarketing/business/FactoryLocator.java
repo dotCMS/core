@@ -7,7 +7,12 @@ import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cluster.business.ServerFactory;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
-import com.dotcms.contenttype.business.*;
+import com.dotcms.contenttype.business.ContentTypeFactory;
+import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
+import com.dotcms.contenttype.business.FieldFactory;
+import com.dotcms.contenttype.business.FieldFactoryImpl;
+import com.dotcms.contenttype.business.RelationshipFactory;
+import com.dotcms.contenttype.business.RelationshipFactoryImpl;
 import com.dotcms.cube.CubeJSClientFactory;
 import com.dotcms.cube.CubeJSClientFactoryImpl;
 import com.dotcms.enterprise.DashboardProxy;
@@ -377,7 +382,6 @@ enum FactoryIndex
     LANGUAGE_VARIABLE_FACTORY,
     CONTENT_ANALYTICS_FACTORY,
     PORTLET_FACTORY;
-
 
 	Object create() {
 		switch(this) {
