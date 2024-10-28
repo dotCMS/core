@@ -59,19 +59,19 @@ public class AIModels {
         return INSTANCE.get();
     }
 
-    private static CircuitBreakerUrl.Response<OpenAIModels> fetchOpenAIModels(final String apiKey) {
+    private static CircuitBreakerUrl.Response<OpenAIModels> fetchOpenAIModels(final AppConfig appConfig) {
         final CircuitBreakerUrl.Response<OpenAIModels> response = CircuitBreakerUrl.builder()
                 .setMethod(CircuitBreakerUrl.Method.GET)
                 .setUrl(AI_MODELS_API_URL)
                 .setTimeout(AI_MODELS_FETCH_TIMEOUT)
                 .setTryAgainAttempts(AI_MODELS_FETCH_ATTEMPTS)
-                .setHeaders(CircuitBreakerUrl.authHeaders("Bearer " + apiKey))
+                .setHeaders(CircuitBreakerUrl.authHeaders("Bearer " + appConfig.getApiKey()))
                 .setThrowWhenNot2xx(true)
                 .build()
                 .doResponse(OpenAIModels.class);
 
         if (!CircuitBreakerUrl.isSuccessResponse(response)) {
-            AppConfig.debugLogger(
+            appConfig.debugLogger(
                     AIModels.class,
                     () -> String.format(
                             "Error fetching OpenAI supported models from [%s] (status code: [%d])",
@@ -98,10 +98,11 @@ public class AIModels {
      * are already loaded, this method does nothing. It also maps model names to their
      * corresponding AIModel instances.
      *
-     * @param host the host for which the models are being loaded
+     * @param appConfig app config
      * @param loading the list of AI models to load
      */
-    public void loadModels(final String host, final List<AIModel> loading) {
+    public void loadModels(final AppConfig appConfig, final List<AIModel> loading) {
+        final String host = appConfig.getHost();
         final List<Tuple2<AIModelType, AIModel>> added = internalModels.putIfAbsent(
                 host,
                 loading.stream()
@@ -112,7 +113,7 @@ public class AIModels {
                 .forEach(model -> {
                     final Tuple3<String, Model, AIModelType> key = Tuple.of(host, model, aiModel.getType());
                     if (modelsByName.containsKey(key)) {
-                        AppConfig.debugLogger(
+                        appConfig.debugLogger(
                                 getClass(),
                                 () -> String.format(
                                         "Model [%s] already exists for host [%s], ignoring it",
@@ -230,11 +231,11 @@ public class AIModels {
         }
 
         if (!appConfig.isEnabled()) {
-            AppConfig.debugLogger(getClass(), () -> "dotAI is not enabled, returning empty set of supported models");
+            appConfig.debugLogger(getClass(), () -> "dotAI is not enabled, returning empty set of supported models");
             return Set.of();
         }
 
-        final CircuitBreakerUrl.Response<OpenAIModels> response = fetchOpenAIModels(appConfig.getApiKey());
+        final CircuitBreakerUrl.Response<OpenAIModels> response = fetchOpenAIModels(appConfig);
         if (Objects.nonNull(response.getResponse().getError())) {
             throw new DotRuntimeException("Found error in AI response: " + response.getResponse().getError().getMessage());
         }

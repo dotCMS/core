@@ -56,9 +56,9 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
      */
     @Override
     public AIResponseData applyStrategy(final AIClient client,
-                                      final AIResponseEvaluator handler,
-                                      final AIRequest<? extends Serializable> request,
-                                      final OutputStream incoming) {
+                                        final AIResponseEvaluator handler,
+                                        final AIRequest<? extends Serializable> request,
+                                        final OutputStream incoming) {
         final JSONObjectAIRequest jsonRequest = AIClient.useRequestOrThrow(request);
         final Tuple2<AIModel, Model> modelTuple = resolveModel(jsonRequest);
 
@@ -95,9 +95,9 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
         return firstAttempt.equals(model);
     }
 
-    private static boolean isOperational(final Model model) {
+    private static boolean isOperational(final Model model, final AppConfig config) {
         if (!model.isOperational()) {
-            AppConfig.debugLogger(
+            config.debugLogger(
                     AIModelFallbackStrategy.class,
                     () -> String.format("Model [%s] is not operational. Skipping.", model.getName()));
             return false;
@@ -117,7 +117,7 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
     }
 
     private static void notifyFailure(final AIModel aiModel, final JSONObjectAIRequest request) {
-        AIAppValidator.get().validateModelsUsage(aiModel, request.getUserId());
+        AIAppValidator.get().validateModelsUsage(aiModel, request);
     }
 
     private static void handleFailure(final Tuple2<AIModel, Model> modelTuple,
@@ -127,7 +127,7 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
         final Model model = modelTuple._2;
 
         if (!responseData.getStatus().doesNeedToThrow()) {
-            AppConfig.debugLogger(
+            request.getConfig().debugLogger(
                     AIModelFallbackStrategy.class,
                     () -> String.format(
                             "Model [%s] failed then setting its status to [%s].",
@@ -138,7 +138,7 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
 
         if (model.getIndex() == aiModel.getModels().size() - 1) {
             aiModel.setCurrentModelIndex(AIModel.NOOP_INDEX);
-            AppConfig.debugLogger(
+            request.getConfig().debugLogger(
                     AIModelFallbackStrategy.class,
                     () -> String.format(
                             "Model [%s] is the last one. Cannot fallback anymore.",
@@ -167,7 +167,7 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
             if (!responseData.isSuccess()) {
                 if (responseData.getStatus().doesNeedToThrow()) {
                     if (!modelTuple._1.isOperational()) {
-                        AppConfig.debugLogger(
+                        request.getConfig().debugLogger(
                                 AIModelFallbackStrategy.class,
                                 () -> String.format(
                                         "All models from type [%s] are not operational. Throwing exception.",
@@ -181,11 +181,11 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
             }
 
             if (responseData.isSuccess()) {
-                AppConfig.debugLogger(
+                request.getConfig().debugLogger(
                         AIModelFallbackStrategy.class,
                         () -> String.format("Model [%s] succeeded. No need to fallback.", modelTuple._2.getName()));
             } else {
-                logFailure(modelTuple, responseData);
+                logFailure(modelTuple, request, responseData);
 
                 handleFailure(modelTuple, request, responseData);
             }
@@ -198,18 +198,20 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
         return responseData;
     }
 
-    private static void logFailure(final Tuple2<AIModel, Model> modelTuple, final AIResponseData responseData) {
+    private static void logFailure(final Tuple2<AIModel, Model> modelTuple,
+                                   final JSONObjectAIRequest request,
+                                   final AIResponseData responseData) {
         Optional
                 .ofNullable(responseData.getResponse())
                 .ifPresentOrElse(
-                        response -> AppConfig.debugLogger(
+                        response -> request.getConfig().debugLogger(
                                 AIModelFallbackStrategy.class,
                                 () -> String.format(
                                         "Model [%s] failed with response:%s%sTrying next model.",
                                         modelTuple._2.getName(),
                                         System.lineSeparator(),
                                         response)),
-                        () -> AppConfig.debugLogger(
+                        () -> request.getConfig().debugLogger(
                                 AIModelFallbackStrategy.class,
                                 () -> String.format(
                                         "Model [%s] failed with error: [%s]. Trying next model.",
@@ -229,7 +231,7 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
                                                final OutputStream output,
                                                final Tuple2<AIModel, Model> modelTuple) {
         for(final Model model : modelTuple._1.getModels()) {
-            if (isSameAsFirst(modelTuple._2, model) || !isOperational(model)) {
+            if (isSameAsFirst(modelTuple._2, model) || !isOperational(model, request.getConfig())) {
                 continue;
             }
 

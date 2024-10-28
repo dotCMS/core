@@ -3,6 +3,7 @@ package com.dotcms.ai.validator;
 import com.dotcms.ai.AiTest;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
+import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.datagen.SiteDataGen;
@@ -101,7 +102,8 @@ public class AIAppValidatorTest {
         AiTest.aiAppSecrets(host, invalidModels, "dall-e-3", "text-embedding-ada-002");
         appConfig = ConfigService.INSTANCE.config(host);
 
-        validator.validateModelsUsage(appConfig.getModel(), user.getUserId());
+        final JSONObjectAIRequest request = JSONObjectAIRequest.builder().withUserId("jon.snow").build();
+        validator.validateModelsUsage(appConfig.getModel(), request);
 
         verify(systemMessageEventUtil, atLeast(2))
                 .pushMessage(any(SystemMessage.class), anyList());
