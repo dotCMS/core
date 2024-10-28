@@ -11,11 +11,11 @@ import java.util.HashMap;
 import java.util.Objects;
 
 /**
- * This synchronized collector that collects the vanities
+ * This synchronous collector collects information from the Vanity URL that has been processed.
+ *
  * @author jsanca
  */
 public class SyncVanitiesCollector implements Collector {
-
 
     public static final String VANITY_URL_KEY = "vanity_url";
 
@@ -31,7 +31,6 @@ public class SyncVanitiesCollector implements Collector {
     @Override
     public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
                                         final CollectorPayloadBean collectorPayloadBean) {
-
         if (null != collectorContextMap.get("request")) {
 
             final HttpServletRequest request = (HttpServletRequest)collectorContextMap.get("request");
@@ -54,11 +53,11 @@ public class SyncVanitiesCollector implements Collector {
         final HashMap<String, String> vanityObject = new HashMap<>();
 
         if (Objects.nonNull(cachedVanityUrl)) {
-
             vanityObject.put("id", cachedVanityUrl.vanityUrlId);
-            vanityObject.put("forward_to",
-                    collectorPayloadBean.get(VANITY_URL_KEY)!=null?(String)collectorPayloadBean.get(VANITY_URL_KEY):cachedVanityUrl.forwardTo);
-            vanityObject.put("url", uri);
+            vanityObject.put("forward_to", collectorPayloadBean.get(VANITY_URL_KEY) != null
+                    ? (String) collectorPayloadBean.get(VANITY_URL_KEY)
+                    : cachedVanityUrl.forwardTo);
+            vanityObject.put("url", cachedVanityUrl.url);
             vanityObject.put("response", String.valueOf(cachedVanityUrl.response));
         }
 
@@ -70,11 +69,6 @@ public class SyncVanitiesCollector implements Collector {
         collectorPayloadBean.put("event_type", EventType.VANITY_REQUEST.getType());
 
         return collectorPayloadBean;
-    }
-
-    @Override
-    public boolean isAsync() {
-        return false;
     }
 
 }
