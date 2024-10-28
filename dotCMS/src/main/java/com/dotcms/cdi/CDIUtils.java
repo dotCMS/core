@@ -16,7 +16,7 @@ public class CDIUtils {
     }
 
     /**
-     * Get a bean from CDI container
+     * Get a bean from CDI container and return an Optional with the bean if found, empty otherwise
      * @param clazz the class of the bean
      * @return an Optional with the bean if found, empty otherwise
      */
@@ -31,7 +31,7 @@ public class CDIUtils {
 
 
     /**
-     * Get a bean from CDI container
+     * Get a bean from CDI container but throw an exception if the bean is not found
      * @param clazz the class of the bean
      * @return the bean
      * @param <T> the type of the bean
