@@ -1,6 +1,5 @@
-import { CLIENT_ACTIONS, postMessageToEditor } from '../models/client.model';
+import { CLIENT_ACTIONS, INITIAL_DOT_SDK, postMessageToEditor } from '../models/client.model';
 import { DotCMSPageEditorSubscription, NOTIFY_CLIENT } from '../models/listeners.model';
-import { editContentlet } from '../sdk-editor';
 import {
     findVTLData,
     findDotElement,
@@ -170,11 +169,9 @@ export function scrollHandler(): void {
             action: CLIENT_ACTIONS.IFRAME_SCROLL
         });
 
-        // In case it doesn't have a dotSDK object, we create it.
+        // In case it doesn't have a dotSDK object, we create it with the initial values.
         window.dotSDK = {
-            ...(window.dotSDK || {
-                editContentlet
-            }),
+            ...(window.dotSDK ?? INITIAL_DOT_SDK),
             lastScrollYPosition: window.scrollY
         };
     };

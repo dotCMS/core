@@ -5,6 +5,11 @@ declare global {
     }
 }
 
+export const INITIAL_DOT_SDK: DotSDK = {
+    editContentlet,
+    lastScrollYPosition: 0
+};
+
 /**
  * Actions send to the dotcms editor
  *

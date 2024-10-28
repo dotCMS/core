@@ -5,7 +5,7 @@ import {
     scrollHandler,
     subscriptions
 } from './listeners/listeners';
-import { CLIENT_ACTIONS, postMessageToEditor } from './models/client.model';
+import { CLIENT_ACTIONS, INITIAL_DOT_SDK, postMessageToEditor } from './models/client.model';
 import { DotCMSPageEditorConfig } from './models/editor.model';
 
 import { Contentlet } from '../client/content/shared/types';
@@ -65,10 +65,7 @@ export function isInsideEditor(): boolean {
 }
 
 export function initDotSDK() {
-    window.dotSDK = {
-        editContentlet,
-        lastScrollYPosition: window?.dotSDK?.lastScrollYPosition ?? 0
-    };
+    window.dotSDK = INITIAL_DOT_SDK;
 }
 
 /**
