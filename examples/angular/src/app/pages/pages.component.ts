@@ -1,10 +1,4 @@
-import {
-  Component,
-  DestroyRef,
-  OnInit,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NavigationEnd } from '@angular/router';
@@ -37,7 +31,6 @@ type PageRender = {
   error: PageError | null;
   status: 'idle' | 'success' | 'error' | 'loading';
 };
-
 
 @Component({
   selector: 'app-dotcms-page',
@@ -72,29 +65,37 @@ export class DotCMSPagesComponent implements OnInit {
   ngOnInit() {
     this.#router.events
       .pipe(
-        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        filter(
+          (event): event is NavigationEnd => event instanceof NavigationEnd
+        ),
         startWith(null), // Trigger initial load
         tap(() => this.#setLoading()),
-        switchMap(() => this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)),
+        switchMap(() =>
+          this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)
+        ),
         takeUntilDestroyed(this.#destroyRef)
       )
       .subscribe(
-        ({ page, nav }: {
+        ({
+          page,
+          nav,
+        }: {
           page: DotCMSPageAsset | { error: PageError };
           nav: DotcmsNavigationItem | null;
         }) => {
           if ('error' in page) {
             this.#setError(page.error);
-          } else {
-            const { vanityUrl } = page;
-
-            if (vanityUrl?.permanentRedirect || vanityUrl?.temporaryRedirect) {
-              this.#router.navigate([vanityUrl.forwardTo]);
-              return;
-            }
-
-            this.#setPageContent(page, nav);
+            return;
           }
+
+          const { vanityUrl } = page;
+
+          if (vanityUrl?.permanentRedirect || vanityUrl?.temporaryRedirect) {
+            this.#router.navigate([vanityUrl.forwardTo]);
+            return;
+          }
+
+          this.#setPageContent(page, nav);
         }
       );
   }
