@@ -32,6 +32,11 @@ type PageRender = {
   status: 'idle' | 'success' | 'error' | 'loading';
 };
 
+type PageResponse = {
+  page: DotCMSPageAsset | { error: PageError };
+  nav: DotcmsNavigationItem | null;
+};
+
 @Component({
   selector: 'app-dotcms-page',
   standalone: true,
@@ -70,34 +75,24 @@ export class DotCMSPagesComponent implements OnInit {
         ),
         startWith(null), // Trigger initial load
         tap(() => this.#setLoading()),
-        switchMap(() =>
-          this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)
-        ),
+        switchMap(() => this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)),
         takeUntilDestroyed(this.#destroyRef)
       )
-      .subscribe(
-        ({
-          page,
-          nav,
-        }: {
-          page: DotCMSPageAsset | { error: PageError };
-          nav: DotcmsNavigationItem | null;
-        }) => {
-          if ('error' in page) {
-            this.#setError(page.error);
-            return;
-          }
-
-          const { vanityUrl } = page;
-
-          if (vanityUrl?.permanentRedirect || vanityUrl?.temporaryRedirect) {
-            this.#router.navigate([vanityUrl.forwardTo]);
-            return;
-          }
-
-          this.#setPageContent(page, nav);
+      .subscribe(({ page, nav }: PageResponse) => {
+        if ('error' in page) {
+          this.#setError(page.error);
+          return;
         }
-      );
+
+        const { vanityUrl } = page;
+
+        if (vanityUrl?.permanentRedirect || vanityUrl?.temporaryRedirect) {
+          this.#router.navigate([vanityUrl.forwardTo]);
+          return;
+        }
+
+        this.#setPageContent(page, nav);
+      });
   }
 
   #setPageContent(page: DotCMSPageAsset, nav: DotcmsNavigationItem | null) {
