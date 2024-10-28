@@ -271,7 +271,7 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     }
 
     public static CubeJSClientFactory getCubeJSClientFactory() {
-        return (CubeJSClientFactory) getInstance(FactoryIndex.CUBEJS_CLIENT_FACTORY);
+        return CDIUtils.getBean(CubeJSClientFactory.class).orElseThrow(() -> new DotRuntimeException("CubeJSClientFactory not found"));
     }
 
     /**
@@ -289,7 +289,7 @@ public class FactoryLocator extends Locator<FactoryIndex>{
      * @return An instance of the {@link ContentAnalyticsFactory} object.
      */
     public static ContentAnalyticsFactory getContentAnalyticsFactory() {
-        return (ContentAnalyticsFactory) getInstance(FactoryIndex.CONTENT_ANALYTICS_FACTORY);
+        return CDIUtils.getBean(ContentAnalyticsFactory.class).orElseThrow(() -> new DotRuntimeException("ContentAnalyticsFactory not found"));
     }
 
     /**
@@ -378,9 +378,7 @@ enum FactoryIndex
     VARIANT_FACTORY,
     EXPERIMENTS_FACTORY,
     SYSTEM_TABLE_FACTORY,
-    CUBEJS_CLIENT_FACTORY,
     LANGUAGE_VARIABLE_FACTORY,
-    CONTENT_ANALYTICS_FACTORY,
     PORTLET_FACTORY;
 
 	Object create() {
@@ -423,9 +421,7 @@ enum FactoryIndex
             case VARIANT_FACTORY : return new VariantFactoryImpl();
             case EXPERIMENTS_FACTORY: return new ExperimentsFactoryImpl();
             case SYSTEM_TABLE_FACTORY: return new SystemTableFactoryImpl();
-            case CUBEJS_CLIENT_FACTORY: return new CubeJSClientFactoryImpl();
             case LANGUAGE_VARIABLE_FACTORY: return new LanguageVariableFactoryImpl();
-            case CONTENT_ANALYTICS_FACTORY: CDIUtils.getBean(ContentAnalyticsFactory.class).orElseThrow(() -> new DotRuntimeException("ContentAnalyticsFactory not found"));
             case PORTLET_FACTORY: return new PortletFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);

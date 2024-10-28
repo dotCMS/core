@@ -63,6 +63,8 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.media.multipart.BodyPart;
@@ -124,7 +126,11 @@ import static com.dotmarketing.util.NumberUtil.toLong;
  */
 @Path("/content")
 @Tag(name = "Content Delivery")
+@ApplicationScoped
 public class ContentResource {
+
+    @Inject
+    SteveTestBean steveTestBean;
 
     // set this only from an environmental variable so it cannot be overridden in our Config class
     private final boolean USE_XSTREAM_FOR_DESERIALIZATION = System.getenv("USE_XSTREAM_FOR_DESERIALIZATION")!=null && "true".equals(System.getenv("USE_XSTREAM_FOR_DESERIALIZATION"));
@@ -570,6 +576,11 @@ public class ContentResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getContent(@Context HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("params") String params) {
+
+        String mytest = steveTestBean.sayHello();
+
+        Logger.error(this, "mytest: " + mytest);
+
         final InitDataObject initData = this.webResource.init
                 (params, request, response, false, null);
         // Creating a utility response object
