@@ -403,8 +403,8 @@ export class DotEmaDialogComponent {
     }
 
     private emitAction(event: CustomEvent) {
-        const { payload, form: editContentForm, clientAction } = this.dialogState();
+        const { payload, form, clientAction } = this.dialogState();
 
-        this.action.emit({ event, payload, form: editContentForm, clientAction });
+        this.action.emit({ event, payload, form, clientAction });
     }
 }
