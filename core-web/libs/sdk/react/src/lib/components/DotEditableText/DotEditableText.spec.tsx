@@ -8,7 +8,7 @@ import { DotEditableText } from './DotEditableText';
 
 import { dotcmsContentletMock } from '../../mocks/mockPageContext';
 
-const { CUSTOMER_ACTIONS, postMessageToEditor } = dotcmsClient;
+const { CLIENT_ACTIONS, postMessageToEditor } = dotcmsClient;
 
 // Define mockEditor before using it in jest.mock
 const TINYMCE_EDITOR_MOCK = {
@@ -155,7 +155,7 @@ describe('DotEditableText', () => {
                         }
                     };
                     expect(postMessageToEditor).toHaveBeenCalledWith({
-                        action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+                        action: CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
                         payload
                     });
                 });
@@ -209,7 +209,7 @@ describe('DotEditableText', () => {
                     fireEvent(editorElem, event);
 
                     const postMessageData = {
-                        action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                        action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
                         payload: {
                             content: 'New content',
                             dataset: {

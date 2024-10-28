@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import {
     isInsideEditor as isInsideEditorFn,
     postMessageToEditor,
-    CUSTOMER_ACTIONS,
+    CLIENT_ACTIONS,
     DotCmsClient,
-    NOTIFY_CUSTOMER
+    NOTIFY_CLIENT
 } from '@dotcms/client';
 
 import { DotEditableTextProps, TINYMCE_CONFIG } from './utils';
@@ -80,7 +80,7 @@ export function DotEditableText({
 
         const onMessage = ({ data }: MessageEvent) => {
             const { name, payload } = data;
-            if (name !== NOTIFY_CUSTOMER.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS) {
+            if (name !== NOTIFY_CLIENT.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS) {
                 return;
             }
 
@@ -112,7 +112,7 @@ export function DotEditableText({
         event.preventDefault();
 
         postMessageToEditor({
-            action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+            action: CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
             payload: {
                 dataset: {
                     inode,
@@ -132,7 +132,7 @@ export function DotEditableText({
         }
 
         postMessageToEditor({
-            action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+            action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
             payload: {
                 content: editedContent,
                 dataset: {
