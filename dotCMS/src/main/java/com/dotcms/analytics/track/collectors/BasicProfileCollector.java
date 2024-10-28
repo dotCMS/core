@@ -15,11 +15,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 public class BasicProfileCollector implements Collector {
+
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'");
+
     @Override
     public boolean test(CollectorContextMap collectorContextMap) {
-
-        return true; // every one needs a basic profile
+        // Every collector needs a basic profile
+        return true;
     }
 
     @Override
@@ -62,22 +64,16 @@ public class BasicProfileCollector implements Collector {
 
         collectorPayloadBean.put("renderMode", PageMode.get(request).toString().replace("_MODE", ""));
 
-        //Include default vakue for other Bool fiedls in the Clickhouse table
-
+        // Include default value for other boolean fields in the Clickhouse table
         collectorPayloadBean.put("comeFromVanityURL", false);
         collectorPayloadBean.put("isexperimentpage", false);
         collectorPayloadBean.put("istargetpage", false);
-
         return collectorPayloadBean;
-    }
-
-    @Override
-    public boolean isAsync() {
-        return false;
     }
 
     @Override
     public boolean isEventCreator(){
         return false;
     }
+
 }
