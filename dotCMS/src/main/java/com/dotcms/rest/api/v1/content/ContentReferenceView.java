@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.content;
 
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.ContainerView;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 
 /**
@@ -10,11 +11,11 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 public class ContentReferenceView {
 
     private final IHTMLPage page;
-    private final Container container;
+    private final ContainerView container;
     private final String personaName;
 
     public ContentReferenceView(final IHTMLPage page,
-                                final Container container,
+                                final ContainerView container,
                                 final String personaName) {
         this.page = page;
         this.container = container;
@@ -25,7 +26,7 @@ public class ContentReferenceView {
         return page;
     }
 
-    public Container getContainer() {
+    public ContainerView getContainer() {
         return container;
     }
 

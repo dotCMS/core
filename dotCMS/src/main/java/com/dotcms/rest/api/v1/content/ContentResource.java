@@ -29,6 +29,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.ContainerView;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -381,7 +382,7 @@ public class ContentResource {
                 references.stream()
                 .map(reference -> new ContentReferenceView(
                         (IHTMLPage) reference.get("page"),
-                        (Container) reference.get("container"),
+                        new ContainerView((Container) reference.get("container")),
                         (String) reference.get("personaName")))
                 .collect(Collectors.toList()):
                 List.of();
