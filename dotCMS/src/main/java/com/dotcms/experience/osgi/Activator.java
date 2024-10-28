@@ -2,7 +2,7 @@ package com.dotcms.experience.osgi;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.ClusterLockManager;
-import com.dotcms.experience.TelemetryResource;
+import com.dotcms.rest.api.v1.experience.TelemetryResource;
 import com.dotcms.experience.collectors.api.ApiMetricAPI;
 import com.dotcms.experience.collectors.api.ApiMetricFactorySubmitter;
 import com.dotcms.experience.collectors.api.ApiMetricWebInterceptor;
@@ -87,12 +87,6 @@ public class Activator extends GenericBundleActivator {
         final Instant nextRun = cron.getNextValidTimeAfter(Date.from(previousRun)).toInstant();
         final Duration delay = Duration.between(now, nextRun);
         final Duration runEvery = Duration.between(previousRun, nextRun);
-
-        scheduledFuture = DotConcurrentFactory.getScheduledThreadPoolExecutor().scheduleAtFixedRate(
-                () -> metricsStatsJob.run(lockManager)
-                , delay.get(ChronoUnit.SECONDS),
-                runEvery.get(ChronoUnit.SECONDS),
-                TimeUnit.SECONDS);
     }
 
     @Override
