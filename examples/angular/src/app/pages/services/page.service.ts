@@ -1,13 +1,22 @@
 import { inject, Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { from, Observable, of, shareReplay, throwError } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { forkJoin, from, Observable, of, shareReplay } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 import { getPageRequestParams, isInsideEditor } from '@dotcms/client';
 import { DotcmsNavigationItem, DotCMSPageAsset } from '@dotcms/angular';
 
 import { PageError } from '../pages.component';
 import { DOTCMS_CLIENT_TOKEN } from '../../app.config';
+
+export interface PageResponse {
+  page: DotCMSPageAsset | null;
+  error?: PageError;
+}
+
+export interface PageAndNavResponse extends PageResponse {
+  nav: DotcmsNavigationItem | null;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -27,18 +36,20 @@ export class PageService {
   getPageAndNavigation(
     route: ActivatedRoute,
     config: any
-  ): Observable<{
-    page: DotCMSPageAsset | { error: PageError };
-    nav: DotcmsNavigationItem | null;
-  }> {
+  ): Observable<PageAndNavResponse> {
     if (!this.navObservable) {
       this.navObservable = this.fetchNavigation(route);
     }
 
-    return this.fetchPage(route, config).pipe(
-      switchMap((page) =>
-        this.navObservable.pipe(map((nav) => ({ page, nav })))
-      )
+    return forkJoin({
+      nav: this.navObservable,
+      pageAsset: this.fetchPage(route, config),
+    }).pipe(
+      map(({ nav, pageAsset }) => {
+        const { page, error } = pageAsset;
+
+        return { nav, page, error };
+      })
     );
   }
 
@@ -63,7 +74,7 @@ export class PageService {
   private fetchPage(
     route: ActivatedRoute,
     config: any
-  ): Observable<DotCMSPageAsset | { error: PageError }> {
+  ): Observable<PageAndNavResponse> {
     const queryParams = route.snapshot.queryParamMap;
     const url = route.snapshot.url.map((segment) => segment.path).join('/');
     const path = url || '/';
@@ -74,9 +85,10 @@ export class PageService {
     });
 
     return from(this.client.page.get({ ...pageParams, ...config.params })).pipe(
-      map((response: any) => {
-        if (!response?.layout) {
+      map((page: any) => {
+        if (!page?.layout) {
           return {
+            page: null,
             error: {
               message:
                 'You might be using an advanced template, or your dotCMS instance might lack an enterprise license.',
@@ -85,16 +97,16 @@ export class PageService {
           };
         }
 
-        return response as DotCMSPageAsset;
+        return { page, error: null };
       }),
       catchError((error) => {
         // If the page is not found and we are inside the editor, return an empty object
-        // Because the editor will get the working/unpublished page
+        // The editor will get the working/unpublished page
         if (error.status === 404 && isInsideEditor()) {
           return of({} as any);
         }
 
-        return of({error});
+        return of({ page: null, error });
       })
     );
   }
