@@ -1,5 +1,6 @@
 import { CLIENT_ACTIONS, postMessageToEditor } from '../models/client.model';
 import { DotCMSPageEditorSubscription, NOTIFY_CLIENT } from '../models/listeners.model';
+import { editContentlet } from '../sdk-editor';
 import {
     findVTLData,
     findDotElement,
@@ -168,7 +169,14 @@ export function scrollHandler(): void {
         postMessageToEditor({
             action: CLIENT_ACTIONS.IFRAME_SCROLL
         });
-        window.dotSDK.lastScrollYPosition = window.scrollY;
+
+        // In case it doesn't have a dotSDK object, we create it.
+        window.dotSDK = {
+            ...(window.dotSDK || {
+                editContentlet
+            }),
+            lastScrollYPosition: window.scrollY
+        };
     };
 
     const scrollEndCallback = () => {
