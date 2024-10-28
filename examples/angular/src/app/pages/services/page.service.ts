@@ -87,17 +87,14 @@ export class PageService {
 
         return response as DotCMSPageAsset;
       }),
-      catchError((e) => {
-        if (e.status === 404 && isInsideEditor()) {
+      catchError((error) => {
+        // If the page is not found and we are inside the editor, return an empty object
+        // Because the editor will get the working/unpublished page
+        if (error.status === 404 && isInsideEditor()) {
           return of({} as any);
         }
 
-        return of({
-          error: {
-            message: e.message,
-            status: e.status,
-          },
-        });
+        return of({error});
       })
     );
   }
