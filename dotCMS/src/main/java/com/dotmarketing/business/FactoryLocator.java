@@ -38,6 +38,8 @@ import com.dotcms.publisher.environment.business.EnvironmentFactory;
 import com.dotcms.publisher.environment.business.EnvironmentFactoryImpl;
 import com.dotcms.variant.VariantFactory;
 import com.dotcms.variant.VariantFactoryImpl;
+import com.dotmarketing.business.portal.PortletFactory;
+import com.dotmarketing.business.portal.PortletFactoryImpl;
 import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginFactory;
@@ -290,6 +292,15 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (ContentAnalyticsFactory) getInstance(FactoryIndex.CONTENT_ANALYTICS_FACTORY);
     }
 
+    /**
+     * Returns a singleton of the {@link PortletFactory} class.
+     *
+     * @return The {@link PortletFactory} singleton.
+     */
+    public static PortletFactory getPortletFactory() {
+        return (PortletFactory) getInstance(FactoryIndex.PORTLET_FACTORY);
+    }
+
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -369,7 +380,8 @@ enum FactoryIndex
     SYSTEM_TABLE_FACTORY,
     CUBEJS_CLIENT_FACTORY,
     LANGUAGE_VARIABLE_FACTORY,
-    CONTENT_ANALYTICS_FACTORY;
+    CONTENT_ANALYTICS_FACTORY,
+    PORTLET_FACTORY;
 
 	Object create() {
 		switch(this) {
@@ -414,8 +426,9 @@ enum FactoryIndex
             case CUBEJS_CLIENT_FACTORY: return new CubeJSClientFactoryImpl();
             case LANGUAGE_VARIABLE_FACTORY: return new LanguageVariableFactoryImpl();
             case CONTENT_ANALYTICS_FACTORY: CDIUtils.getBean(ContentAnalyticsFactory.class).orElseThrow(() -> new DotRuntimeException("ContentAnalyticsFactory not found"));
+            case PORTLET_FACTORY: return new PortletFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}
-}
 
+}

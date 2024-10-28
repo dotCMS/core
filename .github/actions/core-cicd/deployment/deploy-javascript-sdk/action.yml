@@ -24,20 +24,16 @@ inputs:
     description: 'Package tag'
     required: false
     default: 'alpha'
-  node-version:
-    description: 'Node.js version'
-    required: false
-    default: '19'
   github-token:
     description: 'GitHub Token'
-    required: true
+    required: true    
 outputs:
   npm-package-version:
     description: 'SDK libs - NPM package version'
     value: ${{ steps.next_version.outputs.next_version }}
   published:
     description: 'SDK libs - Published'
-    value: ${{ steps.next_version.outputs.publish }}
+    value: ${{ steps.deployment_status.outputs.published }}
 runs:
   using: "composite"
   steps:
@@ -47,10 +43,26 @@ runs:
         ref: ${{ inputs.ref }}
         token: ${{ inputs.github-token }}
 
-    - name: 'Set up Node.js'
-      uses: actions/setup-node@v4
+    - name: 'Run Maven Job'
+      uses: ./.github/actions/core-cicd/maven-job
       with:
-        node-version: ${{ inputs.node-version }}
+        stage-name: 'Build'
+        maven-args: 'process-resources -pl :dotcms-core-web -am'
+        requires-node: true
+        cleanup-runner: true
+        generate-docker: false
+        generate-artifacts: false
+        version: '1.0.0-SNAPSHOT'
+        github-token: ${{ inputs.github-token }}
+
+    - name: 'Adding node and yarn to the PATH env'
+      run: |
+        echo "::group::Adding node and yarn to the PATH env"
+        BASE_PATH=${{ github.workspace }}/installs
+        ls -R $BASE_PATH
+        echo "PATH=$PATH:${BASE_PATH}/node/:${BASE_PATH}/node/yarn/dist/bin" >> $GITHUB_ENV
+        echo "::endgroup::"
+      shell: bash               
 
     - name: 'Get current version from NPM'
       id: current_version
@@ -62,7 +74,7 @@ runs:
        echo "::endgroup::"
       shell: bash
 
-    - name: Calculate next version
+    - name: 'Calculate next version'
       id: next_version
       env:
        CURRENT_VERSION: ${{ steps.current_version.outputs.current_version }}
@@ -177,7 +189,7 @@ runs:
         done
       shell: bash
 
-    - name: 'Printing SDK packages'
+    - name: 'Printing SDK packages configuration'
       env:
         SDK_LIBS_PATH: ${{ github.workspace }}/core-web/libs/sdk
         EXAMPLES_PATH: ${{ github.workspace }}/examples
@@ -193,10 +205,25 @@ runs:
         echo "Examples:"
         print_packages "$EXAMPLES_PATH"
         echo "::endgroup::"
-      shell: bash               
+      shell: bash   
+
+    - name: 'Install project'
+      working-directory: ${{ github.workspace }}/core-web/
+      run: | 
+        yarn install
+        npm --version
+        node --version
+        npx --version               
+      shell: bash
+
+    - name: 'Build SDK packages'
+      working-directory: ${{ github.workspace }}/core-web/
+      run: |
+        npx nx run-many --target=build --projects='sdk-*' --configuration=production --skip-nx-cache
+      shell: bash
 
     - name: 'Publishing sdk into NPM registry'
-      working-directory: ${{ github.workspace }}/core-web/libs/sdk/
+      working-directory: ${{ github.workspace }}/core-web/dist/libs/sdk/
       env:
         NEXT_VERSION: ${{ steps.next_version.outputs.next_version }}
         NPM_AUTH_TOKEN: ${{ inputs.npm-token }}
@@ -209,9 +236,15 @@ runs:
           cd $sdk && echo "$(pwd)"
           echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
           npm publish --access public --tag $NPM_TAG
-          npm dist-tag $NEXT_VERSION latest
+          npm dist-tag add @dotcms/${sdk}@${NEXT_VERSION} latest
           cd ..
         done
         echo "::endgroup::"
-      shell: bash      
-      
+      shell: bash
+
+    - name: 'Set output'
+      id: deployment_status
+      if: success()
+      run: |
+        echo "published=true" >> $GITHUB_OUTPUT
+      shell: bash

@@ -56,7 +56,7 @@ public class CurrentVariantWebInterceptor implements WebInterceptor {
         }
 
         if (!UtilMethods.isSet(currentVariantName)) {
-            final HttpSession session = request.getSession();
+            final HttpSession session = request.getSession(false);
 
             if (session != null) {
                 final Object attribute = session.getAttribute(VariantAPI.VARIANT_KEY);

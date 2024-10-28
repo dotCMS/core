@@ -23,7 +23,7 @@ public class Task240530AddDotAIPortletToLayout implements StartupTask {
 	@Override
 	public boolean forceRun() {
 
-		// first we get all layouts we have maintenance portelt
+		// first we get all layouts we have maintenance portlet
 		final List<Object> apiPlaygroundLayouts = getAPIPlaygroundLayouts();
 
 		// then check if all layouts which contains API Playground also have dotAI

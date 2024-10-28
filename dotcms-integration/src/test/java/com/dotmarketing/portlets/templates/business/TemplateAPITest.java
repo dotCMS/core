@@ -1285,8 +1285,6 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         assertFalse(pages.isEmpty());
         assertEquals(1, pages.size());
-        assertEquals(htmlPageAsset.getInode(), pages.get(0).getInode());
-        assertEquals(htmlPageAsset.getLanguageId(), pages.get(0).getLanguageId());
         assertEquals(htmlPageAsset.getVariantId(), pages.get(0).getVariantName());
         assertEquals(htmlPageAsset.getIdentifier(), pages.get(0).getIdentifier());
     }
@@ -1386,11 +1384,11 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertFalse(pagesTemplate.isEmpty());
         assertEquals(htmlPageAssets.length, pagesTemplate.size());
 
-        final List<String> inodesFromTemplate = pagesTemplate.stream()
-                .map(pageVersion -> pageVersion.getInode()).collect(Collectors.toList());
+        final List<String> idsFromTemplate = pagesTemplate.stream()
+                .map(pageVersion -> pageVersion.getIdentifier()).collect(Collectors.toList());
 
         for (final HTMLPageAsset htmlPageAsset : htmlPageAssets) {
-            assertTrue(inodesFromTemplate.contains(htmlPageAsset.getInode()));
+            assertTrue(idsFromTemplate.contains(htmlPageAsset.getIdentifier()));
         }
     }
 

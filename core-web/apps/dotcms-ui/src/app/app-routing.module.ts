@@ -15,6 +15,7 @@ import { DotLoginPageComponent } from '@components/login/main/dot-login-page.com
 import { MainCoreLegacyComponent } from '@components/main-core-legacy/main-core-legacy-component';
 import { MainComponentLegacyComponent } from '@components/main-legacy/main-legacy.component';
 import { EmaAppConfigurationService } from '@dotcms/data-access';
+import { DotEnterpriseLicenseResolver } from '@dotcms/ui';
 import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
 
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
@@ -69,6 +70,22 @@ const PORTLETS_ANGULAR: Route[] = [
         },
         loadChildren: () =>
             import('@dotcms/portlets/dot-locales/portlet').then((m) => m.DotLocalesRoutes)
+    },
+    {
+        path: 'analytics-search',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        providers: [DotEnterpriseLicenseResolver],
+        resolve: {
+            isEnterprise: DotEnterpriseLicenseResolver
+        },
+        data: {
+            reuseRoute: false
+        },
+        loadComponent: () =>
+            import('@dotcms/portlets/dot-analytics-search/portlet').then(
+                (m) => m.DotAnalyticsSearchComponent
+            )
     },
     {
         path: 'forms',

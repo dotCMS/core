@@ -846,5 +846,30 @@ public class DotDatabaseMetaData {
         }
         return isColumnLengthExpected;
     }
+
+    /**
+     * Checks if an index exists in a table
+     * @param tableName
+     * @param indexName
+     * @return boolean - true if the index exists in the table
+     */
+    public boolean checkIndex(final String tableName, final String indexName) {
+        final DotDatabaseMetaData dbMetadata = new DotDatabaseMetaData();
+
+        try {
+            final ResultSet indicesInfo = dbMetadata.getIndices(DbConnectionFactory.getConnection(),
+                    null, tableName, false);
+            while (indicesInfo.next()) {
+                final String currentIndex = indicesInfo.getString("INDEX_NAME");
+
+                if (currentIndex.equals(indexName)) {
+                    return true;
+                }
+            }
+        } catch (final SQLException e) {
+            Logger.error(this, e);
+        }
+        return false;
+    }
 } // E:O:F:DotDatabaseMetaData.
 

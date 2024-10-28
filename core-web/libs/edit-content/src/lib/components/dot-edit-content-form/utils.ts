@@ -15,7 +15,7 @@ export type FnResolutionValue = (
  * @returns {*} The resolved value for the field.
  */
 const defaultResolutionFn: FnResolutionValue = (contentlet, field) =>
-    contentlet?.[field.variable] ?? field.defaultValue;
+    contentlet ? (contentlet[field.variable] ?? field.defaultValue) : field.defaultValue;
 
 /**
  * The resolutionValue variable is a record that is responsible for mapping and transforming the
