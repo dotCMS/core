@@ -18,7 +18,8 @@ import { CustomNoComponent } from "./content-types/empty";
 
 import { usePageAsset } from "../hooks/usePageAsset";
 import BlogWithBlockEditor from "./content-types/blog";
-import { DotCmsClient } from "@dotcms/client";
+import { DotCmsClient, isInsideEditor } from "@dotcms/client";
+import NotFound from "@/app/not-found";
 
 /**
  * Configure experiment settings below. If you are not using experiments,
@@ -62,19 +63,23 @@ export function MyPage({ pageAsset, nav }) {
 
     pageAsset = usePageAsset(pageAsset);
 
+    if(!pageAsset) {
+        return <NotFound />;
+    }
+
     return (
         <div className="flex flex-col gap-6 min-h-screen bg-lime-50">
-            {pageAsset.layout.header && (
+            {pageAsset.layout?.header && (
                 <Header>
-                    <Navigation items={nav} />
+                    {!!nav && <Navigation items={nav} />}
                 </Header>
             )}
 
             <main className="flex flex-col gap-8 m-auto">
                 <DotLayoutComponent
                     pageContext={{
+                        pageAsset,
                         components: componentsMap,
-                        pageAsset: pageAsset,
                     }}
                     config={{
                         pathname,
@@ -87,7 +92,7 @@ export function MyPage({ pageAsset, nav }) {
                 />
             </main>
 
-            {pageAsset.layout.footer && <Footer />}
+            {pageAsset.layout?.footer && <Footer />}
         </div>
     );
 }
