@@ -411,7 +411,8 @@ public class ContentHandler implements IHandler {
 					// if a host does not exist on target, skip content
 					if(ignoreContent(content)){
 						Contentlet finalContent = content;
-						Logger.warn(this.getClass(), "Ignoring contentlet:" + content.getIdentifier() + " | " + Try.of(()->finalContent.getTitle()).getOrElse("unknown")  + " . Unable to find referenced host id:" + content.getHost());
+						Logger.warn(this.getClass(), "Ignoring contentlet:" + content.getIdentifier() + " | " + Try.of(
+                                finalContent::getTitle).getOrElse("unknown")  + " . Unable to find referenced host id:" + content.getHost());
 						continue;
 					}
 

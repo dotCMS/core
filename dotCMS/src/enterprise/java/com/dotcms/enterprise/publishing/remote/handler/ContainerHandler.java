@@ -179,7 +179,8 @@ public class ContainerHandler implements IHandler {
         Host localHost = APILocator.getHostAPI().find(containerId.getHostId(), systemUser, false);
         if(UtilMethods.isEmpty(()->localHost.getIdentifier())){
           final Container finalContainer = container;
-          Logger.warn(this.getClass(), "Ignoring container on non-existing host.  Id:" + container.getIdentifier() + ", title:" + Try.of(()->finalContainer.getTitle()).getOrElse("unknown") + ". Unable to find referenced host id:" + containerId.getHostId());
+          Logger.warn(this.getClass(), "Ignoring container on non-existing host.  Id:" + container.getIdentifier() + ", title:" + Try.of(
+                  finalContainer::getTitle).getOrElse("unknown") + ". Unable to find referenced host id:" + containerId.getHostId());
           continue;
         }
 
