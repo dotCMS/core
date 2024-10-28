@@ -32,11 +32,6 @@ type PageRender = {
   status: 'idle' | 'success' | 'error' | 'loading';
 };
 
-type PageResponse = {
-  page: DotCMSPageAsset | { error: PageError };
-  nav: DotcmsNavigationItem | null;
-};
-
 @Component({
   selector: 'app-dotcms-page',
   standalone: true,
@@ -78,13 +73,13 @@ export class DotCMSPagesComponent implements OnInit {
         switchMap(() => this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)),
         takeUntilDestroyed(this.#destroyRef)
       )
-      .subscribe(({ page, nav }: PageResponse) => {
-        if ('error' in page) {
-          this.#setError(page.error);
+      .subscribe(({ page, nav, error }) => {
+        if (error) {
+          this.#setError(error);
           return;
         }
 
-        const { vanityUrl } = page;
+        const { vanityUrl } = page as DotCMSPageAsset;
 
         if (vanityUrl?.permanentRedirect || vanityUrl?.temporaryRedirect) {
           this.#router.navigate([vanityUrl.forwardTo]);
@@ -95,13 +90,16 @@ export class DotCMSPagesComponent implements OnInit {
       });
   }
 
-  #setPageContent(page: DotCMSPageAsset, nav: DotcmsNavigationItem | null) {
-    this.$context.update((state) => ({
+  #setPageContent(
+    page: DotCMSPageAsset | null,
+    nav: DotcmsNavigationItem | null
+  ) {
+    this.$context.set({
       status: 'success',
       page,
       nav,
       error: null,
-    }));
+    });
   }
 
   #setLoading() {
