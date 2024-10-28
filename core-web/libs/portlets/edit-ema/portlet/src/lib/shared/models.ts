@@ -1,4 +1,5 @@
-import { DotDevice } from '@dotcms/dotcms-models';
+import { CLIENT_ACTIONS } from '@dotcms/client';
+import { DotCMSContentlet, DotDevice } from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
 
 import { CommonErrors, DialogStatus, FormStatus } from './enums';
@@ -194,13 +195,6 @@ export interface DialogForm {
     isTranslation: boolean;
 }
 
-export interface DialogAction {
-    event: CustomEvent;
-    payload: ActionPayload;
-    form: DialogForm;
-    isCustomerAction: boolean;
-}
-
 export type DialogType = 'content' | 'form' | 'widget' | null;
 
 export interface EditEmaDialogState {
@@ -209,8 +203,13 @@ export interface EditEmaDialogState {
     url: string;
     type: DialogType;
     payload?: ActionPayload;
-    editContentForm: DialogForm;
-    isCustomerAction: boolean;
+    form: DialogForm;
+    clientAction: CLIENT_ACTIONS;
+}
+
+export interface DialogAction
+    extends Pick<EditEmaDialogState, 'payload' | 'form' | 'clientAction'> {
+    event: CustomEvent;
 }
 
 // We can modify this if we add more events, for now I think is enough
@@ -220,14 +219,17 @@ export interface CreateFromPaletteAction {
     payload: ActionPayload;
 }
 
-export interface EditContentletPayload {
-    inode: string;
-    title: string;
-    isCustomerAction?: boolean;
+export interface EditContentletPayload extends Partial<DotCMSContentlet> {
+    clientAction?: CLIENT_ACTIONS;
 }
 
 export interface CreateContentletAction {
     url: string;
     contentType: string;
     payload: ActionPayload;
+}
+
+export interface PostMessage {
+    action: CLIENT_ACTIONS;
+    payload: unknown;
 }

@@ -44,7 +44,7 @@ describe('DotEmaDialogStoreService', () => {
                 header: '',
                 type: null,
                 status: DialogStatus.LOADING,
-                editContentForm: {
+                form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 }
@@ -57,7 +57,7 @@ describe('DotEmaDialogStoreService', () => {
         spectator.service.setDirty();
 
         spectator.service.dialogState$.subscribe((state) => {
-            expect(state.editContentForm.status).toBe(FormStatus.DIRTY);
+            expect(state.form.status).toBe(FormStatus.DIRTY);
             done();
         });
     });
@@ -66,7 +66,7 @@ describe('DotEmaDialogStoreService', () => {
         spectator.service.setSaved();
 
         spectator.service.dialogState$.subscribe((state) => {
-            expect(state.editContentForm.status).toBe(FormStatus.SAVED);
+            expect(state.form.status).toBe(FormStatus.SAVED);
             done();
         });
     });
@@ -83,7 +83,7 @@ describe('DotEmaDialogStoreService', () => {
                 header: '',
                 type: null,
                 payload: undefined,
-                editContentForm: {
+                form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 }
@@ -114,7 +114,7 @@ describe('DotEmaDialogStoreService', () => {
                 status: DialogStatus.LOADING,
                 header: 'test',
                 type: 'content',
-                editContentForm: {
+                form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 }
@@ -145,7 +145,7 @@ describe('DotEmaDialogStoreService', () => {
                 status: DialogStatus.LOADING,
                 header: 'test',
                 type: 'content',
-                editContentForm: {
+                form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 }
@@ -169,7 +169,7 @@ describe('DotEmaDialogStoreService', () => {
                 type: 'content',
                 status: DialogStatus.LOADING,
                 payload: PAYLOAD_MOCK,
-                editContentForm: {
+                form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 }
@@ -188,7 +188,7 @@ describe('DotEmaDialogStoreService', () => {
                 url: null,
                 type: 'form',
                 payload: PAYLOAD_MOCK,
-                editContentForm: {
+                form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 }
@@ -211,7 +211,7 @@ describe('DotEmaDialogStoreService', () => {
                 header: 'Create test',
                 type: 'content',
                 payload: PAYLOAD_MOCK,
-                editContentForm: {
+                form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 }
@@ -270,7 +270,7 @@ describe('DotEmaDialogStoreService', () => {
                 status: DialogStatus.LOADING,
                 header: 'test',
                 type: 'content',
-                editContentForm: {
+                form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 }
@@ -291,7 +291,7 @@ describe('DotEmaDialogStoreService', () => {
                 status: DialogStatus.LOADING,
                 header: 'test',
                 type: 'content',
-                editContentForm: {
+                form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 }
@@ -335,7 +335,7 @@ describe('DotEmaDialogStoreService', () => {
                     status: DialogStatus.LOADING,
                     header: 'test',
                     type: 'content',
-                    editContentForm: {
+                    form: {
                         status: FormStatus.PRISTINE,
                         isTranslation: true
                     }
@@ -379,7 +379,7 @@ describe('DotEmaDialogStoreService', () => {
                     status: DialogStatus.LOADING,
                     header: 'test',
                     type: 'content',
-                    editContentForm: {
+                    form: {
                         status: FormStatus.PRISTINE,
                         isTranslation: true
                     }

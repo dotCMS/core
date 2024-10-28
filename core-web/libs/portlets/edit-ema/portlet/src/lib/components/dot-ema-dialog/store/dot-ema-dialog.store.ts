@@ -5,6 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { switchMap } from 'rxjs/operators';
 
+import { CLIENT_ACTIONS } from '@dotcms/client';
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotActionUrlService } from '../../../services/dot-action-url/dot-action-url.service';
@@ -27,11 +28,11 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             url: '',
             type: null,
             status: DialogStatus.IDLE,
-            editContentForm: {
+            form: {
                 status: FormStatus.PRISTINE,
                 isTranslation: false
             },
-            isCustomerAction: false
+            clientAction: CLIENT_ACTIONS.NOOP
         });
     }
 
@@ -128,14 +129,14 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      * @memberof DotEmaDialogStore
      */
     readonly editContentlet = this.updater(
-        (state, { inode, title, isCustomerAction }: EditContentletPayload) => {
+        (state, { inode, title, clientAction }: EditContentletPayload) => {
             return {
                 ...state,
                 header: title,
                 status: DialogStatus.LOADING,
                 type: 'content',
                 url: this.createEditContentletUrl(inode),
-                isCustomerAction: Boolean(isCustomerAction)
+                clientAction: clientAction ?? CLIENT_ACTIONS.NOOP //In case it is undefined we set it to "noop"
             };
         }
     );
@@ -172,7 +173,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
                 status: DialogStatus.LOADING,
                 type: 'content',
                 url: this.createTranslatePageUrl(page, newLanguage),
-                editContentForm: {
+                form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: true
                 }
@@ -214,8 +215,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     readonly setDirty = this.updater((state) => {
         return {
             ...state,
-            editContentForm: {
-                ...state.editContentForm,
+            form: {
+                ...state.form,
                 status: FormStatus.DIRTY
             }
         };
@@ -229,8 +230,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     readonly setSaved = this.updater((state) => {
         return {
             ...state,
-            editContentForm: {
-                ...state.editContentForm,
+            form: {
+                ...state.form,
                 status: FormStatus.SAVED
             }
         };
@@ -265,11 +266,11 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             status: DialogStatus.IDLE,
             type: null,
             payload: undefined,
-            editContentForm: {
+            form: {
                 status: FormStatus.PRISTINE,
                 isTranslation: false
             },
-            isCustomerAction: false
+            clientAction: CLIENT_ACTIONS.NOOP
         };
     });
 

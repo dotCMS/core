@@ -79,7 +79,8 @@ import {
     DeletePayload,
     InsertPayloadFromDelete,
     ReorderPayload,
-    DialogAction
+    DialogAction,
+    PostMessage
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { ClientRequestProps } from '../store/features/client/withClient';
@@ -684,7 +685,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         });
     }
 
-    protected handleNgEvent({ event, payload, isCustomerAction }: DialogAction) {
+    protected handleNgEvent({ event, payload, clientAction }: DialogAction) {
         const { detail } = event;
 
         return (<Record<NG_CUSTOM_EVENTS, () => void>>{
@@ -713,7 +714,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                if (isCustomerAction) {
+                if (clientAction === CLIENT_ACTIONS.EDIT_CONTENTLET) {
                     this.contentWindow?.postMessage(
                         {
                             name: NOTIFY_CLIENT.UVE_RELOAD_PAGE
@@ -818,7 +819,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @return {*}
      * @memberof DotEmaComponent
      */
-    private handlePostMessage({ action, payload }: { action: string; payload: unknown }): void {
+    private handlePostMessage({ action, payload }: PostMessage): void {
         const CLIENT_ACTIONS_FUNC_MAP = {
             [CLIENT_ACTIONS.NAVIGATION_UPDATE]: (payload: SetUrlPayload) => {
                 // When we set the url, we trigger in the shell component a load to get the new state of the page
@@ -982,7 +983,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.uveStore.reload();
             },
             [CLIENT_ACTIONS.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
-                this.dialog.editContentlet(contentlet, true);
+                this.dialog.editContentlet({ ...contentlet, clientAction: action });
             },
             [CLIENT_ACTIONS.REORDER_MENU]: ({ reorderUrl }: ReorderPayload) => {
                 this.dialog.openDialogOnUrl(

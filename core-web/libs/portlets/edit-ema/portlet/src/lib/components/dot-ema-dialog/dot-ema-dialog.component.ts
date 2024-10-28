@@ -40,6 +40,7 @@ import {
     CreateFromPaletteAction,
     DialogAction,
     DotPage,
+    EditContentletPayload,
     VTLFile
 } from '../../shared/models';
 import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
@@ -133,15 +134,11 @@ export class DotEmaDialogComponent {
     /**
      * Edit contentlet
      *
-     * @param {Partial<DotCMSContentlet>} contentlet
+     * @param {EditContentletPayload} contentlet
      * @memberof DotEmaDialogComponent
      */
-    editContentlet(contentlet: Partial<DotCMSContentlet>, isCustomerAction = false) {
-        this.store.editContentlet({
-            inode: contentlet.inode,
-            title: contentlet.title,
-            isCustomerAction
-        });
+    editContentlet(payload: EditContentletPayload) {
+        this.store.editContentlet(payload);
     }
 
     /**
@@ -334,7 +331,7 @@ export class DotEmaDialogComponent {
 
                     case NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED: {
                         // The edit content emits this for savings when translating a page and does not emit anything when changing the content
-                        if (this.dialogState().editContentForm.isTranslation) {
+                        if (this.dialogState().form.isTranslation) {
                             this.store.setSaved();
 
                             if (event.detail.payload.isMoveAction) {
@@ -406,8 +403,8 @@ export class DotEmaDialogComponent {
     }
 
     private emitAction(event: CustomEvent) {
-        const { payload, editContentForm, isCustomerAction } = this.dialogState();
+        const { payload, form: editContentForm, clientAction } = this.dialogState();
 
-        this.action.emit({ event, payload, form: editContentForm, isCustomerAction });
+        this.action.emit({ event, payload, form: editContentForm, clientAction });
     }
 }
