@@ -1,9 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { from, Observable, shareReplay } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { from, Observable, of, shareReplay, throwError } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
-import { getPageRequestParams } from '@dotcms/client';
+import { getPageRequestParams, isInsideEditor } from '@dotcms/client';
 import { DotcmsNavigationItem, DotCMSPageAsset } from '@dotcms/angular';
 
 import { PageError } from '../pages.component';
@@ -37,9 +37,7 @@ export class PageService {
 
     return this.fetchPage(route, config).pipe(
       switchMap((page) =>
-        this.navObservable.pipe(
-          map((nav) => ({ page, nav }))
-        )
+        this.navObservable.pipe(map((nav) => ({ page, nav })))
       )
     );
   }
@@ -75,24 +73,32 @@ export class PageService {
       params: queryParams,
     });
 
-    return from(
-      this.client.page
-        .get({ ...pageParams, ...config.params })
-        .then((response) => {
-          if (!(response as any).layout) {
-            return { error: { message: 'You might be using an advanced template, or your dotCMS instance might lack an enterprise license.', status: 'Page without layout' } };
-          }
+    return from(this.client.page.get({ ...pageParams, ...config.params })).pipe(
+      map((response: any) => {
+        if (!response?.layout) {
+          return {
+            error: {
+              message:
+                'You might be using an advanced template, or your dotCMS instance might lack an enterprise license.',
+              status: 'Page without layout',
+            },
+          };
+        }
 
-          return response as DotCMSPageAsset
-        })
-        .catch((e) => {
-          console.error(`Error fetching page: ${e.message}`);
-          const error: PageError = {
+        return response as DotCMSPageAsset;
+      }),
+      catchError((e) => {
+        if (e.status === 404 && isInsideEditor()) {
+          return of({} as any);
+        }
+
+        return of({
+          error: {
             message: e.message,
             status: e.status,
-          };
-          return { error };
-        })
+          },
+        });
+      })
     );
   }
 }
