@@ -13,7 +13,6 @@ import graphql.VisibleForTesting;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BeanParam;
@@ -32,7 +31,6 @@ import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.glassfish.jersey.media.sse.SseFeature;
 
-@ApplicationScoped
 @Path("/v1/jobs")
 public class JobQueueResource {
 
