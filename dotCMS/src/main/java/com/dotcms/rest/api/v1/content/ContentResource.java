@@ -6,9 +6,11 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.rest.AnonymousAccess;
+import com.dotcms.rest.CountView;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MapToContentletPopulator;
 import com.dotcms.rest.ResponseEntityContentletView;
+import com.dotcms.rest.ResponseEntityCountView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -26,12 +28,14 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -50,14 +54,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.LongSupplier;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -72,7 +70,15 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.LongSupplier;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Version 1 of the Content resource, to interact and retrieve contentlets
@@ -84,6 +90,7 @@ public class ContentResource {
     private final WebResource    webResource;
     private final ContentletAPI  contentletAPI;
     private final IdentifierAPI  identifierAPI;
+    private final LanguageWebAPI languageWebAPI;
 
     private final Lazy<Boolean> isDefaultContentToDefaultLanguageEnabled = Lazy.of(
             () -> Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false));
@@ -93,17 +100,20 @@ public class ContentResource {
 
         this(new WebResource(),
                 APILocator.getContentletAPI(),
-                APILocator.getIdentifierAPI());
+                APILocator.getIdentifierAPI(),
+                WebAPILocator.getLanguageWebAPI());
     }
 
     @VisibleForTesting
     public ContentResource(final WebResource     webResource,
                            final ContentletAPI   contentletAPI,
-                           final IdentifierAPI  identifierAPI) {
+                           final IdentifierAPI  identifierAPI,
+                           final LanguageWebAPI languageWebAPI) {
 
         this.webResource    = webResource;
         this.contentletAPI  = contentletAPI;
         this.identifierAPI  = identifierAPI;
+        this.languageWebAPI = languageWebAPI;
     }
 
     /**
@@ -139,7 +149,7 @@ public class ContentResource {
         final long languageId = LanguageUtil.getLanguageId(language);
         final PageMode mode = PageMode.get(request);
         final Contentlet contentlet = this.getContentlet(inode, identifier, languageId,
-                () -> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), contentForm,
+                () -> this.languageWebAPI.getLanguage(request).getId(), contentForm,
                 initDataObject.getUser(), mode);
         if (UtilMethods.isSet(indexPolicy)) {
             contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
@@ -284,7 +294,6 @@ public class ContentResource {
 
         Logger.debug(this, () -> "Finding the contentlet: " + inodeOrIdentifier);
 
-        final LanguageWebAPI languageWebAPI = WebAPILocator.getLanguageWebAPI();
         final LongSupplier sessionLanguageSupplier = ()-> languageWebAPI.getLanguage(request).getId();
         final PageMode mode   = PageMode.get(request);
         final long testLangId = LanguageUtil.getLanguageId(language);
@@ -299,6 +308,84 @@ public class ContentResource {
         contentlet = new DotTransformerBuilder().contentResourceOptions(false).content(contentlet).build().hydrate().get(0);
         return Response.ok(new ResponseEntityView<>(
                 WorkflowHelper.getInstance().contentletToMap(contentlet))).build();
+    }
+
+    /**
+     * Retrieves the count of a Contentlet based on the identifier
+     * If the contentlet exist or not, does not matter, the count will be returned
+     *
+     * @param request  The current {@link HttpServletRequest} instance.
+     * @param response The current {@link HttpServletResponse} instance.
+     *
+     * @return The {@link ResponseEntityCountView}
+     */
+    @GET
+    @Path("/{identifier}/references/count")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResponseEntityCountView getAllContentletReferencesCount(
+                            @Context HttpServletRequest request,
+                               @Context final HttpServletResponse response,
+                               @PathParam("identifier") final String identifier
+    ) throws DotDataException {
+
+        new WebResource.InitBuilder(this.webResource)
+                        .requestAndResponse(request, response)
+                        .requiredAnonAccess(AnonymousAccess.READ)
+                        .init();
+
+        Logger.debug(this, () -> "Finding the counts for contentlet id: " + identifier);
+        final Optional<Integer> count = this.contentletAPI.getAllContentletReferencesCount(identifier);
+
+        if (!count.isPresent()) {
+            throw new DoesNotExistException("The contentlet with identifier " + identifier + " does not exist");
+        }
+
+        return new ResponseEntityCountView(new CountView(count.get()));
+    }
+
+    /**
+     * Retrieves the references of a Contentlet based on the identifier
+     * If the contentlet does not exist, 404
+     *
+     * @param request  The current {@link HttpServletRequest} instance.
+     * @param response The current {@link HttpServletResponse} instance.
+     *
+     * @return The {@link ResponseEntityView<List<ContentReferenceView>>}
+     */
+    @GET
+    @Path("/{inodeOrIdentifier}/references")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResponseEntityView<List<ContentReferenceView>> getContentletReferences(
+            @Context HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
+            @DefaultValue("") @QueryParam("language") final String language
+    ) throws DotDataException, DotSecurityException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .requiredAnonAccess(AnonymousAccess.READ)
+                .init().getUser();
+
+        Logger.debug(this, () -> "Finding the references for contentlet id: " + inodeOrIdentifier);
+
+        final LongSupplier sessionLanguageSupplier = ()-> languageWebAPI.getLanguage(request).getId();
+        final PageMode mode   = PageMode.get(request);
+        final long testLangId = LanguageUtil.getLanguageId(language);
+        final long languageId = testLangId <=0 ? sessionLanguageSupplier.getAsLong() : testLangId;
+
+        final Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user);
+
+        final List<Map<String, Object>>  references = this.contentletAPI.getContentletReferences(contentlet, user, mode.respectAnonPerms);
+        final List<ContentReferenceView> contentReferenceViews = Objects.nonNull(references)?
+                references.stream()
+                .map(reference -> new ContentReferenceView(
+                        (IHTMLPage) reference.get("page"),
+                        (Container) reference.get("container"),
+                        (String) reference.get("personaName")))
+                .collect(Collectors.toList()):
+                List.of();
+        return new ResponseEntityView<>(contentReferenceViews);
     }
 
     @GET
@@ -317,7 +404,7 @@ public class ContentResource {
 
         final PageMode mode   = PageMode.get(request);
         final long testLangId = LanguageUtil.getLanguageId(language);
-        final long languageId = testLangId <=0 ? WebAPILocator.getLanguageWebAPI().getLanguage(request).getId() : testLangId;
+        final long languageId = testLangId <=0 ? this.languageWebAPI.getLanguage(request).getId() : testLangId;
 
         final Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user);
 
@@ -463,7 +550,7 @@ public class ContentResource {
                 ", limit: " + pullRelatedForm.getLimit() + ", offset: " + pullRelatedForm.getOffset() + ", orderby: " + pullRelatedForm.getOrderBy());
 
         final User user = initData.getUser();
-        final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+        final Language language = this.languageWebAPI.getLanguage(request);
         final long langId = UtilMethods.isSet(pullRelatedForm.getCondition())
                 && pullRelatedForm.getCondition().contains("languageId") ? -1 : language.getId();
         final String tmDate = request.getSession (false) != null?
@@ -500,4 +587,7 @@ public class ContentResource {
         Logger.debug(this, ()-> "The field:" + pullRelatedForm.getFieldVariable() + " is not a relationship");
         throw new IllegalArgumentException("The field:" + pullRelatedForm.getFieldVariable() + " is not a relationship");
     }
+
+
+
 }
