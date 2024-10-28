@@ -129,14 +129,14 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      * @memberof DotEmaDialogStore
      */
     readonly editContentlet = this.updater(
-        (state, { inode, title, clientAction }: EditContentletPayload) => {
+        (state, { inode, title, clientAction = CLIENT_ACTIONS.NOOP }: EditContentletPayload) => {
             return {
                 ...state,
+                clientAction, //In case it is undefined we set it to "noop"
                 header: title,
                 status: DialogStatus.LOADING,
                 type: 'content',
-                url: this.createEditContentletUrl(inode),
-                clientAction: clientAction ?? CLIENT_ACTIONS.NOOP //In case it is undefined we set it to "noop"
+                url: this.createEditContentletUrl(inode)
             };
         }
     );
