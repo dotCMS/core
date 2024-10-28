@@ -103,10 +103,10 @@ export class PageService {
         // If the page is not found and we are inside the editor, return an empty object
         // The editor will get the working/unpublished page
         if (error.status === 404 && isInsideEditor()) {
-          return of({} as any);
+          return of({ page: {}, error: null } as any);
         }
 
-        return of({ page: null, error });
+        return of({ page: null, error: null });
       })
     );
   }

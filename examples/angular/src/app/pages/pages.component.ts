@@ -73,25 +73,25 @@ export class DotCMSPagesComponent implements OnInit {
         switchMap(() => this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)),
         takeUntilDestroyed(this.#destroyRef)
       )
-      .subscribe(({ page, nav, error }) => {
+      .subscribe(({ page = {}, nav, error }) => {
         if (error) {
           this.#setError(error);
           return;
         }
 
-        const { vanityUrl } = page as DotCMSPageAsset;
+        const { vanityUrl } = page || {};
 
         if (vanityUrl?.permanentRedirect || vanityUrl?.temporaryRedirect) {
           this.#router.navigate([vanityUrl.forwardTo]);
           return;
         }
 
-        this.#setPageContent(page, nav);
+        this.#setPageContent(page as DotCMSPageAsset, nav);
       });
   }
 
   #setPageContent(
-    page: DotCMSPageAsset | null,
+    page: DotCMSPageAsset,
     nav: DotcmsNavigationItem | null
   ) {
     this.$context.set({
@@ -111,6 +111,9 @@ export class DotCMSPagesComponent implements OnInit {
   }
 
   #setError(error: PageError) {
+
+    console.log("LLAMADO 2");
+
     this.$context.update((state) => ({
       ...state,
       error: error,
