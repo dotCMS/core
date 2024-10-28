@@ -53,7 +53,9 @@ public class UniqueFieldDataBaseUtilTest {
                 "contentletsId", CollectionsUtils.list( randomStringGenerator.nextString() )
         );
 
-        UniqueFieldDataBaseUtil.INSTANCE.insert(hash, supportingValues);
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+
+        uniqueFieldDataBaseUtil.insert(hash, supportingValues);
 
         final List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE unique_key_val = ?")
                 .addParam(hash).loadObjectResults();
@@ -89,7 +91,8 @@ public class UniqueFieldDataBaseUtilTest {
                 "contentletsId", "['" + randomStringGenerator.nextString() + "']"
         );
 
-        UniqueFieldDataBaseUtil.INSTANCE.insert(hash, supportingValues_1);
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        uniqueFieldDataBaseUtil.insert(hash, supportingValues_1);
 
         final Map<String, Object> supportingValues_2 = Map.of(
                 "contentTypeID", randomStringGenerator.nextString(),
@@ -102,7 +105,7 @@ public class UniqueFieldDataBaseUtilTest {
         );
 
         try {
-            UniqueFieldDataBaseUtil.INSTANCE.insert(hash, supportingValues_2);
+            uniqueFieldDataBaseUtil.insert(hash, supportingValues_2);
 
             throw new AssertionError("Exception expected");
         } catch (DotDataException e) {

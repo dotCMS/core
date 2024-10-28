@@ -73,7 +73,9 @@ class UniqueFieldCriteria {
             return uniqueField.fieldVariableValue(ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
                     .map(Boolean::valueOf).orElse(false);
         } catch (DotDataException e) {
-            throw  new DotRuntimeException(e);
+            throw  new DotRuntimeException(
+                    String.format("Impossible to get FieldVariable from Field: %s, Content Type: %s",
+                            fieldVariableName, contentTypeId), e);
         }
     }
 

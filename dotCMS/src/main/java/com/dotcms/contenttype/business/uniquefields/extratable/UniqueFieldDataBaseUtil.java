@@ -4,6 +4,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -13,9 +14,9 @@ import static com.dotcms.util.CollectionsUtils.list;
 /**
  * Util class to handle QL statement related with the unique_fiedls table
  */
-enum UniqueFieldDataBaseUtil {
+@ApplicationScoped
+public class UniqueFieldDataBaseUtil {
 
-    INSTANCE;
     private final static String INSERT_SQL = "INSERT INTO unique_fields (unique_key_val, supporting_values) VALUES (?, ?)";
     private final static String UPDATE_CONTENT_LIST ="UPDATE unique_fields " +
             "SET supporting_values = jsonb_set(supporting_values, '{contentletsId}', ?::jsonb) " +

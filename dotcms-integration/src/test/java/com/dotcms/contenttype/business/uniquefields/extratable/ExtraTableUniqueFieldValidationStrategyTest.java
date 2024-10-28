@@ -5,7 +5,6 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.variant.VariantAPI;
@@ -17,7 +16,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import net.bytebuddy.utility.RandomString;
 import org.junit.BeforeClass;
@@ -37,9 +35,12 @@ import static org.junit.Assert.*;
 
 public class ExtraTableUniqueFieldValidationStrategyTest {
 
+    static UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil;
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
 
         //TODO: Remove this when the whole change is done
         try {
@@ -53,7 +54,7 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
     }
 
     /**
-     * Method to test: {@link ExtraTableUniqueFieldValidationStrategy#validate(Contentlet, Field)}
+     * Method to test: {@link DBUniqueFieldValidationStrategy#validate(Contentlet, Field)}
      * When: Called the method with the right parameters
      * Should: Insert a register in the unique_fields table
      */
@@ -71,7 +72,8 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
                 .languageId(language.getId())
                 .next();
 
-        final ExtraTableUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy = new ExtraTableUniqueFieldValidationStrategy();
+        final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
+                new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
         extraTableUniqueFieldValidationStrategy.validate(contentlet, field);
 
         final UniqueFieldCriteria uniqueFieldCriteria = new UniqueFieldCriteria.Builder()
@@ -87,7 +89,7 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
     }
 
     /**
-     * Method to test:  {@link ExtraTableUniqueFieldValidationStrategy#validate(Contentlet, Field)}
+     * Method to test:  {@link DBUniqueFieldValidationStrategy#validate(Contentlet, Field)}
      * When: Called the method with a 'unique_key_val' duplicated
      * Should: Throw a {@link UniqueFieldValueDuplicatedException}
      */
@@ -106,7 +108,8 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
                 .next();
 
 
-        final ExtraTableUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy = new ExtraTableUniqueFieldValidationStrategy();
+        final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
+                new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
         extraTableUniqueFieldValidationStrategy.validate(contentlet, uniqueField);
 
         final String hash = StringUtils.hashText(contentType.id() + uniqueField.variable() + language.getId() + value);
@@ -129,7 +132,7 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
     }
 
     /**
-     * Method to test: {@link ExtraTableUniqueFieldValidationStrategy#validate(Contentlet, Field)}
+     * Method to test: {@link DBUniqueFieldValidationStrategy#validate(Contentlet, Field)}
      * When: Called the method with a field with uniquePerSite set to true
      * Should: Allow insert the same values in different Host
      */
@@ -168,7 +171,8 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
                 .languageId(language.getId())
                 .next();
 
-        final ExtraTableUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy = new ExtraTableUniqueFieldValidationStrategy();
+        final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
+                new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
         extraTableUniqueFieldValidationStrategy.validate(contentlet_1, uniqueField);
 
         final UniqueFieldCriteria uniqueFieldCriteria_2 = new UniqueFieldCriteria.Builder()
@@ -212,7 +216,7 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
     }
 
     /**
-     * Method to test: {@link ExtraTableUniqueFieldValidationStrategy#validate(Contentlet, Field)}
+     * Method to test: {@link DBUniqueFieldValidationStrategy#validate(Contentlet, Field)}
      * When: Called the method with a Not Unique Field
      * Should: thrown an {@link IllegalArgumentException}
      */
@@ -232,7 +236,8 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
 
         try {
 
-            final ExtraTableUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy = new ExtraTableUniqueFieldValidationStrategy();
+            final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
+                    new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
             extraTableUniqueFieldValidationStrategy.validate(contentlet, notUniqueField);
             throw new AssertionError("IllegalArgumentException Expected");
         } catch (IllegalArgumentException e) {
@@ -273,7 +278,7 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
     }
 
     /**
-     * Method to test:  {@link ExtraTableUniqueFieldValidationStrategy#validate(Contentlet, Field)}
+     * Method to test:  {@link DBUniqueFieldValidationStrategy#validate(Contentlet, Field)}
      * When: Called the method twice with different Content Type
      * Should: Insert a register in the unique_fields table
      */
@@ -300,7 +305,8 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
                 .languageId(language.getId())
                 .next();
 
-        final ExtraTableUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy = new ExtraTableUniqueFieldValidationStrategy();
+        final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
+                new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
         extraTableUniqueFieldValidationStrategy.validate(contentlet_1, field_1);
 
         validateAfterInsert(uniqueFieldCriteria_1, contentlet_1);
@@ -328,7 +334,7 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
     }
 
     /**
-     * Method to test:  {@link ExtraTableUniqueFieldValidationStrategy#validate(Contentlet, Field)}
+     * Method to test:  {@link DBUniqueFieldValidationStrategy#validate(Contentlet, Field)}
      * When: Called the method twice with different Field
      * Should: Insert a register in the unique_fields table
      */
@@ -360,7 +366,8 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
                 .setVariantName(VariantAPI.DEFAULT_VARIANT.name())
                 .build();
 
-        final ExtraTableUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy = new ExtraTableUniqueFieldValidationStrategy();
+        final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
+                new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
         extraTableUniqueFieldValidationStrategy.validate(contentlet, field_1);
 
         final UniqueFieldCriteria uniqueFieldCriteria_2 = new UniqueFieldCriteria.Builder()
@@ -379,7 +386,7 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
     }
 
     /**
-     * Method to test: {@link ExtraTableUniqueFieldValidationStrategy#validate(Contentlet, Field)}
+     * Method to test: {@link DBUniqueFieldValidationStrategy#validate(Contentlet, Field)}
      * When: Called the method twice with different Value
      * Should: Insert a register in the unique_fields table
      */
@@ -412,7 +419,8 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
                 .setVariantName(VariantAPI.DEFAULT_VARIANT.name())
                 .build();
 
-        final ExtraTableUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy = new ExtraTableUniqueFieldValidationStrategy();
+        final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
+                new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
         extraTableUniqueFieldValidationStrategy.validate(contentlet, field);
 
         final UniqueFieldCriteria uniqueFieldCriteria_2 = new UniqueFieldCriteria.Builder()
@@ -452,7 +460,7 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
     }
 
     /**
-     * Method to test: {@link ExtraTableUniqueFieldValidationStrategy#validate(Contentlet, Field)}
+     * Method to test: {@link DBUniqueFieldValidationStrategy#validate(Contentlet, Field)}
      * When: Called the method twice with different Language
      * Should: Insert a register in the unique_fields table
      */
@@ -485,7 +493,8 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
                 .setVariantName(VariantAPI.DEFAULT_VARIANT.name())
                 .build();
 
-        final ExtraTableUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy = new ExtraTableUniqueFieldValidationStrategy();
+        final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
+                new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
         extraTableUniqueFieldValidationStrategy.validate(contentlet, field);
 
 
@@ -514,7 +523,7 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
     }
 
     /**
-     * Method to test: {@link ExtraTableUniqueFieldValidationStrategy#validate(Contentlet, Field)}
+     * Method to test: {@link DBUniqueFieldValidationStrategy#validate(Contentlet, Field)}
      * When: Pretend that we are calling the afterSaved method after saved a new Contentlet
      * Should: Update the unique_fields register created before to add the Id in the contentlet list
      */
@@ -532,7 +541,8 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
                 .languageId(language.getId())
                 .next();
 
-        final ExtraTableUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy = new ExtraTableUniqueFieldValidationStrategy();
+        final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
+                new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
         extraTableUniqueFieldValidationStrategy.validate(contentlet, field);
 
         final UniqueFieldCriteria uniqueFieldCriteria = new UniqueFieldCriteria.Builder()
@@ -574,7 +584,7 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
     }
 
     /**
-     * Method to test: {@link ExtraTableUniqueFieldValidationStrategy#afterSaved(Contentlet, boolean)}
+     * Method to test: {@link DBUniqueFieldValidationStrategy#afterSaved(Contentlet, boolean)}
      * When: Pretend that we are calling the afterSaved method after updated Contentlet
      * Should: Update the unique_fields register created before to add the Id in the contentlet list
      */
@@ -596,7 +606,8 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
                 .languageId(language.getId())
                 .next();
 
-        final ExtraTableUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy = new ExtraTableUniqueFieldValidationStrategy();
+        final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
+                new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
         extraTableUniqueFieldValidationStrategy.validate(contentlet, field);
 
         final UniqueFieldCriteria uniqueFieldCriteria = new UniqueFieldCriteria.Builder()
@@ -625,7 +636,7 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
 
 
     /**
-     * Method to test: {@link ExtraTableUniqueFieldValidationStrategy#afterSaved(Contentlet, boolean)}
+     * Method to test: {@link DBUniqueFieldValidationStrategy#afterSaved(Contentlet, boolean)}
      * When: Pretend that we are calling the afterSaved method after saved a new Contentlet with 2 unique fields
      * Should: Update the unique_fields register created before to add the Id in the contentlet list
      */
@@ -650,7 +661,8 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
                 .languageId(language.getId())
                 .next();
 
-        final ExtraTableUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy = new ExtraTableUniqueFieldValidationStrategy();
+        final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
+                new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
         extraTableUniqueFieldValidationStrategy.validate(contentlet, uniquefield_1);
         extraTableUniqueFieldValidationStrategy.validate(contentlet, uniquefield_2);
 
@@ -693,7 +705,7 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
 
 
     /**
-     * Method to test: {@link ExtraTableUniqueFieldValidationStrategy#afterSaved(Contentlet, boolean)}
+     * Method to test: {@link DBUniqueFieldValidationStrategy#afterSaved(Contentlet, boolean)}
      * When: Pretend that we are calling the afterSaved method after update a Contentlet with 2 unique fields
      * Should: Update the unique_fields register created before to add the Id in the contentlet list
      */
@@ -722,7 +734,8 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
                 .languageId(language.getId())
                 .next();
 
-        final ExtraTableUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy = new ExtraTableUniqueFieldValidationStrategy();
+        final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
+                new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
         extraTableUniqueFieldValidationStrategy.validate(contentlet, uniquefield_1);
         extraTableUniqueFieldValidationStrategy.validate(contentlet, uniquefield_2);
 
@@ -764,7 +777,7 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
     }
 
     /**
-     * Method to test: {@link ExtraTableUniqueFieldValidationStrategy#validate(Contentlet, Field)}
+     * Method to test: {@link DBUniqueFieldValidationStrategy#validate(Contentlet, Field)}
      * When: Pretend that we are calling the validate method after updated Contentlet, and the unique value is the changed
      * Should: Update the unique_fields register
      */
@@ -787,7 +800,8 @@ public class ExtraTableUniqueFieldValidationStrategyTest {
                 .languageId(language.getId())
                 .next();
 
-        final ExtraTableUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy = new ExtraTableUniqueFieldValidationStrategy();
+        final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
+                new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
         extraTableUniqueFieldValidationStrategy.validate(contentlet, field);
 
         final UniqueFieldCriteria uniqueFieldCriteria_1 = new UniqueFieldCriteria.Builder()

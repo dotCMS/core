@@ -1090,10 +1090,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     public void savingFieldWithUniqueFieldInTheSameHost(final Boolean enabledDataBaseValidation)
             throws DotDataException, DotSecurityException {
 
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(enabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(enabledDataBaseValidation);
             final ContentType contentType = new ContentTypeDataGen()
                     .nextPersisted();
 
@@ -1137,7 +1137,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 checkUniqueFieldsTable(true, contentType, uniqueTextField, contentlet_1);
             }
         } finally {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
 
@@ -1201,10 +1201,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     public void savingFieldWithUniqueFieldInTheSameHostUniquePerSiteToFalse(final Boolean enabledDataBaseValidation)
             throws DotDataException, DotSecurityException {
 
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(enabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(enabledDataBaseValidation);
             final ContentType contentType = new ContentTypeDataGen()
                     .nextPersisted();
 
@@ -1248,7 +1248,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 checkUniqueFieldsTable(true, contentType, uniqueTextField, contentlet_1);
             }
         } finally {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
 
@@ -1271,10 +1271,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             throws DotDataException, DotSecurityException {
 
 
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(enabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(enabledDataBaseValidation);
 
             final ContentType contentType = new ContentTypeDataGen()
                     .nextPersisted();
@@ -1321,7 +1321,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 checkUniqueFieldsTable(true, contentType, uniqueTextField, contentlet_1, contentlet_2);
             }
         } finally {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
 
@@ -1343,10 +1343,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     public void savingFieldWithUniqueFieldInDifferentHostUniquePerSiteToFalse(final Boolean enabledDataBaseValidation)
             throws DotDataException, DotSecurityException {
 
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(enabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(enabledDataBaseValidation);
             final ContentType contentType = new ContentTypeDataGen()
                     .nextPersisted();
 
@@ -1390,7 +1390,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 checkUniqueFieldsTable(false, contentType, uniqueTextField, contentlet_1);
             }
         } finally {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
 
@@ -1740,10 +1740,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     @UseDataProvider("enabledUniqueFieldDatabaseValidation")
     public void savingFieldWithUniqueFieldInDifferentHostUsingContentTypeHost(final Boolean enabledDataBaseValidation)
             throws DotDataException, DotSecurityException {
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(enabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(enabledDataBaseValidation);
 
             final ContentType contentType = new ContentTypeDataGen()
                     .nextPersisted();
@@ -1790,7 +1790,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 checkUniqueFieldsTable(true, contentType, uniqueTextField, contentlet_1, contentlet_2);
             }
         } finally {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
 
     }
@@ -1810,10 +1810,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     public void savingFieldWithUniqueFieldInTheSameHostTakingContentTypeHost(final Boolean enabledDataBaseValidation)
             throws DotDataException, DotSecurityException {
 
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(enabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(enabledDataBaseValidation);
 
             final Field uniqueTextField = new FieldDataGen()
                     .unique(true)
@@ -1852,7 +1852,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 checkUniqueFieldsTable(false, contentType, uniqueTextField, contentlet_1);
             }
         } finally {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
 
@@ -1871,10 +1871,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     public void updateContentletWithUniqueFields(final Boolean enabledDataBaseValidation)
             throws DotDataException, DotSecurityException {
 
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(enabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(enabledDataBaseValidation);
 
             final Field uniqueTextField = new FieldDataGen()
                     .unique(true)
@@ -1910,7 +1910,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 checkUniqueFieldsTable(false, contentType, uniqueTextField, contentlet_1);
             }
         } finally {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
 
@@ -1929,10 +1929,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     public void updateUniqueFieldVariantValue()
             throws DotDataException, DotSecurityException {
 
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(true);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(true);
 
             final Variant specificVariant = new VariantDataGen().nextPersisted();
 
@@ -1970,7 +1970,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             checkUniqueFieldsTable(false, contentType, uniqueTextField, contentlet_1, checkin_2);
 
         } finally {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
 
@@ -1989,10 +1989,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     public void savingDifferentLanguageContentletWithUniqueFields(final Boolean enabledDataBaseValidation)
             throws DotDataException, DotSecurityException {
 
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(enabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(enabledDataBaseValidation);
 
             final Language language_1 = new LanguageDataGen().nextPersisted();
             final Language language_2 = new LanguageDataGen().nextPersisted();
@@ -2037,7 +2037,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 checkUniqueFieldsTable(false, contentType, uniqueTextField, contentlet_1, contentlet_2);
             }
         } finally {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
 
@@ -2056,10 +2056,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     @UseDataProvider("enabledUniqueFieldDatabaseValidation")
     public void createVersionInAnotherVarianttWithUniqueFieldsAndDifferentValue(final Boolean enabledDataBaseValidation)
             throws DotDataException, DotSecurityException, InterruptedException {
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(enabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(enabledDataBaseValidation);
             final Variant variant = new VariantDataGen().nextPersisted();
             final Language language = new LanguageDataGen().nextPersisted();
 
@@ -2123,7 +2123,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 assertEquals(expectedMessage, e.getMessage());
             }
         } finally {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
 
@@ -2143,10 +2143,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     @UseDataProvider("enabledUniqueFieldDatabaseValidation")
     public void reUseUniqueValues(final Boolean enabledDataBaseValidation)
             throws DotDataException, DotSecurityException, InterruptedException {
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(enabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(enabledDataBaseValidation);
             final Language language = new LanguageDataGen().nextPersisted();
 
             final Field uniqueTextField = new FieldDataGen()
@@ -2203,7 +2203,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                         contentlet_2FromDB);
             }
         } finally {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
 
@@ -2223,10 +2223,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     @UseDataProvider("enabledUniqueFieldDatabaseValidation")
     public void uniqueFieldWithArchiveContentlet(final Boolean enabledDataBaseValidation)
             throws DotDataException, DotSecurityException, InterruptedException {
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(enabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(enabledDataBaseValidation);
             final Language language = new LanguageDataGen().nextPersisted();
 
             final Field uniqueTextField = new FieldDataGen()
@@ -2271,7 +2271,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 checkUniqueFieldsTable(false, contentType, uniqueTextField, contentlet_1);
             }
         } finally {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
 
@@ -2294,10 +2294,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     @Test
     public void updateContentletWithDuplicateValuesInUniqueFields()
             throws DotDataException, DotSecurityException, InterruptedException, IOException {
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(true);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(true);
 
             final Language language = new LanguageDataGen().nextPersisted();
 
@@ -2368,7 +2368,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             checkContentletInUniqueFieldsTable(contentlet_1);
             checkContentletInUniqueFieldsTable(contentlet_2);
         } finally {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
 
@@ -2402,10 +2402,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     @UseDataProvider("enabledUniqueFieldDatabaseValidation")
     public void createVersionInAnotherVarianttWithUniqueFields(final Boolean enabledDataBaseValidation)
             throws DotDataException, DotSecurityException {
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getEnabledUniqueFieldsDataBaseValidation();
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(enabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(enabledDataBaseValidation);
 
 
             final Variant variant = new VariantDataGen().nextPersisted();
@@ -2461,7 +2461,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
             assertEquals(contentletVariantVersion.getVariantId(), contentlet_2FromDB.getVariantId());
         } finally {
-            ESContentletAPIImpl.setEnabledUniqueFieldsDataBaseValidation(oldEnabledDataBaseValidation);
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
 

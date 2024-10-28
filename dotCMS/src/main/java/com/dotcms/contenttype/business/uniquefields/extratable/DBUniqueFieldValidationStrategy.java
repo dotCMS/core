@@ -10,18 +10,18 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import org.postgresql.util.PGobject;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
@@ -37,9 +37,17 @@ import java.util.stream.Collectors;
  * {@link UniqueFieldValidationStrategy} that check the unique values using a SQL Query and a Extra table.
  * This is the same extra table created here {@link com.dotmarketing.startup.runonce.Task241007CreateUniqueFieldsTable}
  */
-public class ExtraTableUniqueFieldValidationStrategy extends UniqueFieldValidationStrategy {
+@ApplicationScoped
+public class DBUniqueFieldValidationStrategy extends UniqueFieldValidationStrategy {
 
 
+    private UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil;
+
+    @Inject
+    public DBUniqueFieldValidationStrategy(final  UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil){
+        this.uniqueFieldDataBaseUtil = uniqueFieldDataBaseUtil;
+
+    }
     /**
      *
      * @param contentlet
@@ -77,8 +85,8 @@ public class ExtraTableUniqueFieldValidationStrategy extends UniqueFieldValidati
         checkUnique(uniqueFieldCriteria, contentlet.getIdentifier());
     }
 
-    private static void cleanUniqueFieldsUp(final Contentlet contentlet, final  Field field) throws DotDataException {
-        Optional<Map<String, Object>> uniqueFieldOptional = UniqueFieldDataBaseUtil.INSTANCE.get(contentlet);
+    private  void cleanUniqueFieldsUp(final Contentlet contentlet, final  Field field) throws DotDataException {
+        Optional<Map<String, Object>> uniqueFieldOptional = uniqueFieldDataBaseUtil.get(contentlet);
 
         try {
             if (uniqueFieldOptional.isPresent()) {
@@ -90,10 +98,10 @@ public class ExtraTableUniqueFieldValidationStrategy extends UniqueFieldValidati
                 final List<String> contentletsId = (List<String>) supportingValuesMap.get("contentletsId");
 
                 if (contentletsId.size() == 1) {
-                    UniqueFieldDataBaseUtil.INSTANCE.delete(hash, field.variable());
+                    uniqueFieldDataBaseUtil.delete(hash, field.variable());
                 } else {
                     contentletsId.remove(contentlet.getIdentifier());
-                    UniqueFieldDataBaseUtil.INSTANCE.updateContentLists(hash, contentletsId);
+                    uniqueFieldDataBaseUtil.updateContentLists(hash, contentletsId);
                 }
             }
         } catch (IOException e){
@@ -130,7 +138,7 @@ public class ExtraTableUniqueFieldValidationStrategy extends UniqueFieldValidati
                         .setValue(fieldValue)
                         .build();
 
-                UniqueFieldDataBaseUtil.INSTANCE.updateContentList(uniqueFieldCriteria.hash(), contentlet.getIdentifier());
+                uniqueFieldDataBaseUtil.updateContentList(uniqueFieldCriteria.hash(), contentlet.getIdentifier());
             }
         }
     }
@@ -144,7 +152,7 @@ public class ExtraTableUniqueFieldValidationStrategy extends UniqueFieldValidati
      * @throws UniqueFieldValueDuplicatedException when the Value is duplicated
      * @throws DotDataException when a DotDataException is throws
      */
-    private static void checkUnique(UniqueFieldCriteria uniqueFieldCriteria, String contentletId) throws UniqueFieldValueDuplicatedException {
+    private  void checkUnique(UniqueFieldCriteria uniqueFieldCriteria, String contentletId) throws UniqueFieldValueDuplicatedException {
         final boolean uniqueForSite = uniqueFieldCriteria.field().fieldVariableValue(ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
                 .map(Boolean::valueOf).orElse(false);
 
@@ -153,8 +161,8 @@ public class ExtraTableUniqueFieldValidationStrategy extends UniqueFieldValidati
         supportingValues.put("uniquePerSite", uniqueForSite);
 
         try {
-            Logger.debug(ExtraTableUniqueFieldValidationStrategy.class, "Including value in the unique_fields table");
-            UniqueFieldDataBaseUtil.INSTANCE.insert(uniqueFieldCriteria.hash(), supportingValues);
+            Logger.debug(DBUniqueFieldValidationStrategy.class, "Including value in the unique_fields table");
+            uniqueFieldDataBaseUtil.insert(uniqueFieldCriteria.hash(), supportingValues);
         } catch (DotDataException e) {
 
             if (isDuplicatedKeyError(e)) {
@@ -162,7 +170,7 @@ public class ExtraTableUniqueFieldValidationStrategy extends UniqueFieldValidati
                         uniqueFieldCriteria.value(), uniqueFieldCriteria.field().variable(),
                         uniqueFieldCriteria.contentType().variable());
 
-                Logger.error(ExtraTableUniqueFieldValidationStrategy.class, duplicatedValueMessage);
+                Logger.error(DBUniqueFieldValidationStrategy.class, duplicatedValueMessage);
                 throw new UniqueFieldValueDuplicatedException(duplicatedValueMessage);
             }
         }

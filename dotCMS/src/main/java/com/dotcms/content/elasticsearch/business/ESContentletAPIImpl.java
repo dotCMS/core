@@ -234,8 +234,8 @@ import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PER
  */
 public class ESContentletAPIImpl implements ContentletAPI {
 
-    private static Lazy<Boolean> ENABLED_UNIQUE_FIELDS_DATA_BASE_VALIDATION = Lazy.of(() ->
-            Config.getBooleanProperty("ENABLED_UNIQUE_FIELDS_DATA_BASE_VALIDATION", false));
+    private static Lazy<Boolean> FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = Lazy.of(() ->
+            Config.getBooleanProperty("FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION", false));
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT = "Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
     private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
@@ -287,13 +287,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final Supplier<String> ND_SUPPLIER = () -> "N/D";
     private final ElasticReadOnlyCommand elasticReadOnlyCommand;
 
-    public static boolean getEnabledUniqueFieldsDataBaseValidation() {
-        return ENABLED_UNIQUE_FIELDS_DATA_BASE_VALIDATION.get();
+    public static boolean getFeatureFlagDbUniqueFieldValidation() {
+        return FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION.get();
     }
 
     @VisibleForTesting
-    public static void  setEnabledUniqueFieldsDataBaseValidation(final boolean newValue) {
-        ENABLED_UNIQUE_FIELDS_DATA_BASE_VALIDATION = Lazy.of(() -> newValue);
+    public static void setFeatureFlagDbUniqueFieldValidation(final boolean newValue) {
+        FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = Lazy.of(() -> newValue);
     }
 
     /**
@@ -7658,7 +7658,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     cve.addUniqueField(field);
                     hasError = true;
                     Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue,
-                            UtilMethods.isSet(e.getContentlets()) ? e.getContentlets().get(0) : "UnKnow"));
+                            UtilMethods.isSet(e.getContentlets()) ? e.getContentlets().get(0) : "Unknown"));
                 } catch (DotDataException | DotSecurityException e) {
                     Logger.warn(this, "Unable to get contentlets for Content Type: "
                             + contentlet.getContentType().name(), e);
