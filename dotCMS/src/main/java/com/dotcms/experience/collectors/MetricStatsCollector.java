@@ -1,6 +1,5 @@
 package com.dotcms.experience.collectors;
 
-
 import com.dotcms.experience.MetricCalculationError;
 import com.dotcms.experience.MetricType;
 import com.dotcms.experience.MetricValue;
@@ -77,10 +76,10 @@ import com.dotcms.experience.collectors.theme.TotalThemeMetricType;
 import com.dotcms.experience.collectors.theme.TotalThemeUsedInLiveTemplatesMetricType;
 import com.dotcms.experience.collectors.theme.TotalThemeUsedInWorkingTemplatesMetricType;
 import com.dotcms.experience.collectors.theme.TotalWorkingContainerDatabaseMetricType;
-import com.dotcms.experience.collectors.urlMap.ContentTypesWithUrlMapDatabaseMetricType;
-import com.dotcms.experience.collectors.urlMap.LiveContentInUrlMapDatabaseMetricType;
-import com.dotcms.experience.collectors.urlMap.UrlMapPatterWithTwoVariablesDatabaseMetricType;
-import com.dotcms.experience.collectors.urlMap.WorkingContentInUrlMapDatabaseMetricType;
+import com.dotcms.experience.collectors.urlmap.ContentTypesWithUrlMapDatabaseMetricType;
+import com.dotcms.experience.collectors.urlmap.LiveContentInUrlMapDatabaseMetricType;
+import com.dotcms.experience.collectors.urlmap.UrlMapPatterWithTwoVariablesDatabaseMetricType;
+import com.dotcms.experience.collectors.urlmap.WorkingContentInUrlMapDatabaseMetricType;
 import com.dotcms.experience.collectors.user.ActiveUsersDatabaseMetricType;
 import com.dotcms.experience.collectors.user.LastLoginDatabaseMetricType;
 import com.dotcms.experience.collectors.user.LastLoginUserDatabaseMetric;
