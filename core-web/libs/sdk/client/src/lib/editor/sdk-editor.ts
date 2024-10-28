@@ -5,7 +5,7 @@ import {
     scrollHandler,
     subscriptions
 } from './listeners/listeners';
-import { CUSTOMER_ACTIONS, postMessageToEditor } from './models/client.model';
+import { CLIENT_ACTIONS, postMessageToEditor } from './models/client.model';
 import { DotCMSPageEditorConfig } from './models/editor.model';
 
 import { Contentlet } from '../client/content/shared/types';
@@ -20,7 +20,7 @@ import { Contentlet } from '../client/content/shared/types';
  */
 export function updateNavigation(pathname: string): void {
     postMessageToEditor({
-        action: CUSTOMER_ACTIONS.NAVIGATION_UPDATE,
+        action: CLIENT_ACTIONS.NAVIGATION_UPDATE,
         payload: {
             url: pathname === '/' ? 'index' : pathname?.replace('/', '')
         }
@@ -38,7 +38,7 @@ export function updateNavigation(pathname: string): void {
  */
 export function editContentlet<T>(contentlet: Contentlet<T>) {
     postMessageToEditor({
-        action: CUSTOMER_ACTIONS.EDIT_CONTENTLET,
+        action: CLIENT_ACTIONS.EDIT_CONTENTLET,
         payload: contentlet
     });
 }

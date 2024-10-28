@@ -18,7 +18,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { CUSTOMER_ACTIONS } from '@dotcms/client';
+import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -598,7 +598,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.REORDER_MENU,
+                                    action: CLIENT_ACTIONS.REORDER_MENU,
                                     payload: {
                                         reorderUrl: 'http://localhost:3000/reorder-menu'
                                     }
@@ -673,7 +673,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.REORDER_MENU,
+                                    action: CLIENT_ACTIONS.REORDER_MENU,
                                     payload: {
                                         reorderUrl: 'http://localhost:3000/reorder-menu'
                                     }
@@ -946,7 +946,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+                                    action: CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
                                     payload: {
                                         inode: '123'
                                     }
@@ -2711,7 +2711,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
                                 payload: {
                                     dataset: {
                                         inode: '123',
@@ -2747,7 +2747,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
                                 payload: null
                             }
                         })
@@ -2767,7 +2767,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.CLIENT_READY
+                                    action: CLIENT_ACTIONS.CLIENT_READY
                                 }
                             })
                         );
@@ -2791,7 +2791,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.CLIENT_READY,
+                                    action: CLIENT_ACTIONS.CLIENT_READY,
                                     payload: config
                                 }
                             })
@@ -2819,7 +2819,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.CLIENT_READY,
+                                    action: CLIENT_ACTIONS.CLIENT_READY,
                                     payload: config
                                 }
                             })

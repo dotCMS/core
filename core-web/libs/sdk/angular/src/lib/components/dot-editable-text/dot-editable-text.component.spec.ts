@@ -14,7 +14,7 @@ import { TINYMCE_CONFIG } from './utils';
 
 import { dotcmsContentletMock } from '../../utils/testing.utils';
 
-const { CUSTOMER_ACTIONS, postMessageToEditor } = dotcmsClient;
+const { CLIENT_ACTIONS, postMessageToEditor } = dotcmsClient;
 
 // Mock @dotcms/client module
 jest.mock('@dotcms/client', () => ({
@@ -252,7 +252,7 @@ describe('DotEditableTextComponent', () => {
                     window.dispatchEvent(
                         new MessageEvent('message', {
                             data: {
-                                name: dotcmsClient.NOTIFY_CUSTOMER
+                                name: dotcmsClient.NOTIFY_CLIENT
                                     .UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
                                 payload: {
                                     oldInode: dotcmsContentletMock.inode,
@@ -313,7 +313,7 @@ describe('DotEditableTextComponent', () => {
                     };
 
                     expect(postMessageToEditor).toHaveBeenCalledWith({
-                        action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+                        action: CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
                         payload
                     });
                     expect(event.stopPropagation).toHaveBeenCalled();
@@ -402,7 +402,7 @@ describe('DotEditableTextComponent', () => {
                     spectator.triggerEventHandler(editorDebugElement, 'onFocusOut', customEvent);
 
                     const postMessageData = {
-                        action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                        action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
                         payload: {
                             content: 'New content',
                             dataset: {

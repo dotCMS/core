@@ -4,7 +4,7 @@ import {
     fetchPageDataFromInsideUVE,
     scrollHandler
 } from './listeners/listeners';
-import { postMessageToEditor, CUSTOMER_ACTIONS } from './models/client.model';
+import { postMessageToEditor, CLIENT_ACTIONS } from './models/client.model';
 import {
     addClassToEmptyContentlets,
     initEditor,
@@ -14,7 +14,7 @@ import {
 
 jest.mock('./models/client.model', () => ({
     postMessageToEditor: jest.fn(),
-    CUSTOMER_ACTIONS: {
+    CLIENT_ACTIONS: {
         NAVIGATION_UPDATE: 'set-url',
         SET_BOUNDS: 'set-bounds',
         SET_CONTENTLET: 'set-contentlet',
@@ -80,7 +80,7 @@ describe('DotCMSPageEditor', () => {
         it('should update navigation', () => {
             updateNavigation('/');
             expect(postMessageToEditor).toHaveBeenCalledWith({
-                action: CUSTOMER_ACTIONS.NAVIGATION_UPDATE,
+                action: CLIENT_ACTIONS.NAVIGATION_UPDATE,
                 payload: {
                     url: 'index'
                 }

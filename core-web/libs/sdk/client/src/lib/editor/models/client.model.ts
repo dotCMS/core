@@ -11,7 +11,7 @@ declare global {
  * @export
  * @enum {number}
  */
-export enum CUSTOMER_ACTIONS {
+export enum CLIENT_ACTIONS {
     /**
      * Tell the dotcms editor that page change
      */
@@ -79,7 +79,7 @@ export enum CUSTOMER_ACTIONS {
  * @interface PostMessageProps
  */
 type PostMessageProps<T> = {
-    action: CUSTOMER_ACTIONS;
+    action: CLIENT_ACTIONS;
     payload?: T;
 };
 

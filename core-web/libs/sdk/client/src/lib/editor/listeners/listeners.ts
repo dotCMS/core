@@ -1,5 +1,5 @@
-import { CUSTOMER_ACTIONS, postMessageToEditor } from '../models/client.model';
-import { DotCMSPageEditorSubscription, NOTIFY_CUSTOMER } from '../models/listeners.model';
+import { CLIENT_ACTIONS, postMessageToEditor } from '../models/client.model';
+import { DotCMSPageEditorSubscription, NOTIFY_CLIENT } from '../models/listeners.model';
 import {
     findVTLData,
     findDotElement,
@@ -27,7 +27,7 @@ function setBounds(): void {
     const positionData = getPageElementBound(containers);
 
     postMessageToEditor({
-        action: CUSTOMER_ACTIONS.SET_BOUNDS,
+        action: CLIENT_ACTIONS.SET_BOUNDS,
         payload: positionData
     });
 }
@@ -40,16 +40,16 @@ function setBounds(): void {
  */
 export function listenEditorMessages(): void {
     const messageCallback = (
-        event: MessageEvent<{ name: NOTIFY_CUSTOMER; direction: 'up' | 'down' }>
+        event: MessageEvent<{ name: NOTIFY_CLIENT; direction: 'up' | 'down' }>
     ) => {
-        const ACTIONS_NOTIFICATION: Record<NOTIFY_CUSTOMER, () => void> = {
-            [NOTIFY_CUSTOMER.UVE_RELOAD_PAGE]: () => {
+        const ACTIONS_NOTIFICATION: Record<NOTIFY_CLIENT, () => void> = {
+            [NOTIFY_CLIENT.UVE_RELOAD_PAGE]: () => {
                 window.location.reload();
             },
-            [NOTIFY_CUSTOMER.UVE_REQUEST_BOUNDS]: () => {
+            [NOTIFY_CLIENT.UVE_REQUEST_BOUNDS]: () => {
                 setBounds();
             },
-            [NOTIFY_CUSTOMER.UVE_SCROLL_INSIDE_IFRAME]: () => {
+            [NOTIFY_CLIENT.UVE_SCROLL_INSIDE_IFRAME]: () => {
                 const direction = event.data.direction;
 
                 if (
@@ -64,13 +64,13 @@ export function listenEditorMessages(): void {
                 const scrollY = direction === 'up' ? -120 : 120;
                 window.scrollBy({ left: 0, top: scrollY, behavior: 'smooth' });
             },
-            [NOTIFY_CUSTOMER.UVE_SET_PAGE_DATA]: () => {
+            [NOTIFY_CLIENT.UVE_SET_PAGE_DATA]: () => {
                 /** NOOP **/
             },
-            [NOTIFY_CUSTOMER.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS]: () => {
+            [NOTIFY_CLIENT.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS]: () => {
                 /** NOOP **/
             },
-            [NOTIFY_CUSTOMER.UVE_EDITOR_PONG]: () => {
+            [NOTIFY_CLIENT.UVE_EDITOR_PONG]: () => {
                 /** NOOP **/
             }
         };
@@ -136,7 +136,7 @@ export function listenHoveredContentlet(): void {
         };
 
         postMessageToEditor({
-            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
+            action: CLIENT_ACTIONS.SET_CONTENTLET,
             payload: {
                 x,
                 y,
@@ -166,14 +166,14 @@ export function listenHoveredContentlet(): void {
 export function scrollHandler(): void {
     const scrollCallback = () => {
         postMessageToEditor({
-            action: CUSTOMER_ACTIONS.IFRAME_SCROLL
+            action: CLIENT_ACTIONS.IFRAME_SCROLL
         });
         window.dotSDK.lastScrollYPosition = window.scrollY;
     };
 
     const scrollEndCallback = () => {
         postMessageToEditor({
-            action: CUSTOMER_ACTIONS.IFRAME_SCROLL_END
+            action: CLIENT_ACTIONS.IFRAME_SCROLL_END
         });
     };
 
@@ -223,7 +223,7 @@ export function preserveScrollOnIframe(): void {
  */
 export function fetchPageDataFromInsideUVE(pathname: string) {
     postMessageToEditor({
-        action: CUSTOMER_ACTIONS.GET_PAGE_DATA,
+        action: CLIENT_ACTIONS.GET_PAGE_DATA,
         payload: {
             pathname
         }

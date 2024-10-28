@@ -4,7 +4,7 @@
  * @export
  * @enum {number}
  */
-export enum NOTIFY_CUSTOMER {
+export enum NOTIFY_CLIENT {
     /**
      * Request to page to reload
      */
