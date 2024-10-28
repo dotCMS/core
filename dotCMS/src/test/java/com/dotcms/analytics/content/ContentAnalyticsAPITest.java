@@ -61,7 +61,7 @@ public class ContentAnalyticsAPITest {
         // ╚══════════════════╝
         final AnalyticsQuery analyticsQuery = new AnalyticsQuery.Builder()
                 .measures(Set.of("request.count"))
-                .orders("request.count DESC")
+                .order("request.count DESC")
                 .dimensions(Set.of("request.url", "request.pageId", "request.pageTitle"))
                 .filters("request.whatAmI = ['PAGE']")
                 .limit(100)

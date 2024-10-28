@@ -77,7 +77,7 @@ public class PageDetailCollector implements Collector {
             pageObject.put("id", detailPageContent.getIdentifier());
             pageObject.put("title", detailPageContent.getTitle());
             pageObject.put("url", uri);
-            pageObject.put("detail_page_url", urlMapContentType.detailPage());
+            pageObject.put("detail_page_url", Try.of(detailPageContent::getURI).getOrElse(""));
             collectorPayloadBean.put("object",  pageObject);
         }
 

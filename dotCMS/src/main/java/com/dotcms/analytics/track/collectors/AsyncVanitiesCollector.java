@@ -15,7 +15,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This asynchronized collector collects the page/asset information based on the vanity URL previous loaded on the
+ * This asynchronous collector collects page information based on the Vanity URL that has been
+ * processed previously.
+ *
  * @author jsanca
  */
 public class AsyncVanitiesCollector implements Collector {

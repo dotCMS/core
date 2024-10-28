@@ -13,6 +13,8 @@ import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.google.common.collect.ImmutableMap;
 
+import static org.junit.Assert.assertEquals;
+
 public class VanityUrlRequestWrapperTest {
 
     final String URL = "URL";
@@ -98,4 +100,28 @@ public class VanityUrlRequestWrapperTest {
         
     }
 
+
+    @Test
+    public void test_that_vanityUrlParams_requestParams_Are_Same_Should_Not_Be_Duped() {
+
+
+        final HttpServletRequest baseRequest = new MockHttpRequestUnitTest("testing", "/test?param1=" + URL + "&param2=" + URL).request();
+
+        final VanityUrlResult vanityUrlResult = new VanityUrlResult("/newUrl", "param1=" + URL + "&param2=" + URL, false);
+
+        final HttpServletRequest request = new VanityUrlRequestWrapper(baseRequest, vanityUrlResult);
+
+        final String queryString= request.getQueryString();
+        assert(queryString!=null);
+        assert(!queryString.startsWith("&"));
+        assert(!queryString.endsWith("&"));
+        assert(queryString.contains("param1=" + URL));
+        assert(queryString.contains("param2=" + URL));
+        List<NameValuePair> queryParams = URLEncodedUtils.parse(queryString, Charset.forName("UTF-8"));
+        assertEquals("Should be only 2 params since all are the same. Params: " + queryParams,2,queryParams.size());
+
+
+
+
+    }
 }

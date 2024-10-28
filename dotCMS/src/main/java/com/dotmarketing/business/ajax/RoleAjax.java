@@ -98,7 +98,7 @@ public class RoleAjax {
 	private final UserWebAPI userWebAPI;
 
 	private static final Lazy<Boolean> HIDE_OLD_LANGUAGES_PORTLET =
-			Lazy.of(() -> Config.getBooleanProperty("FEATURE_FLAG_LOCALES_HIDE-OLD-LANGUAGES-PORTLET", true));
+			Lazy.of(() -> Config.getBooleanProperty("FEATURE_FLAG_LOCALES_HIDE_OLD_LANGUAGES_PORTLET", true));
 
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
             .getDefaultObjectMapper();

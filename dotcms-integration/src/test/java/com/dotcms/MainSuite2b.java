@@ -10,6 +10,13 @@ import com.dotcms.ai.viewtool.CompletionsToolTest;
 import com.dotcms.ai.viewtool.EmbeddingsToolTest;
 import com.dotcms.ai.viewtool.SearchToolTest;
 import com.dotcms.ai.workflow.OpenAIContentPromptActionletTest;
+import com.dotcms.analytics.track.collectors.AsyncVanitiesCollectorTest;
+import com.dotcms.analytics.track.collectors.BasicProfileCollectorTest;
+import com.dotcms.analytics.track.collectors.FilesCollectorTest;
+import com.dotcms.analytics.track.collectors.PageDetailCollectorTest;
+import com.dotcms.analytics.track.collectors.PagesCollectorTest;
+import com.dotcms.analytics.track.collectors.SyncVanitiesCollectorTest;
+import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceImplTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.bayesian.BayesianAPIImplIT;
@@ -390,7 +397,14 @@ import org.junit.runners.Suite.SuiteClasses;
         Task241009CreatePostgresJobQueueTablesTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241015ReplaceLanguagesWithLocalesPortletTest.class,
-        Task241016AddCustomLanguageVariablesPortletToLayoutTest.class
+        Task241016AddCustomLanguageVariablesPortletToLayoutTest.class,
+        WebEventsCollectorServiceImplTest.class,
+        BasicProfileCollectorTest.class,
+        PagesCollectorTest.class,
+        PageDetailCollectorTest.class,
+        FilesCollectorTest.class,
+        SyncVanitiesCollectorTest.class,
+        AsyncVanitiesCollectorTest.class
 })
 
 public class MainSuite2b {
