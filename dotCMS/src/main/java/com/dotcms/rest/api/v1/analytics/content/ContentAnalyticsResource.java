@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import org.glassfish.jersey.server.JSONP;
 
@@ -48,6 +49,7 @@ import java.util.stream.Collectors;
  * @author Jose Castro
  * @since Sep 13th, 2024
  */
+@ApplicationScoped
 @Path("/v1/analytics/content")
 @Tag(name = "Content Analytics",
         description = "Endpoints that exposes information related to how dotCMS content is accessed and interacted with by users.")

@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import com.dotcms.DataProviderWeldRunner;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,6 +13,7 @@ import org.junit.runner.RunWith;
 /**
  * Integration test for simple CDI injection using the Runner DataProviderWeldRunner
  */
+@ApplicationScoped
 @RunWith(DataProviderWeldRunner.class)
 public class SimpleDataProviderWeldRunnerInjectionIT {
 
