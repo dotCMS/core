@@ -1,7 +1,19 @@
 package com.dotcms.analytics.track.collectors;
 
 /**
- * A collector command basically puts information into a collector payload bean
+ * A collector command basically puts information into a collector payload bean. There are different
+ * implementations of a Collector, such as:
+ * <ul>
+ *     <li>{@link BasicProfileCollector}</li>
+ *     <li>{@link PagesCollector}</li>
+ *     <li>{@link FilesCollector}</li>
+ *     <li>{@link SyncVanitiesCollector} and {@link AsyncVanitiesCollector}</li>
+ *     <li>And so on</li>
+ * </ul>
+ * They all retrieve specific information from sources such as the request, the response, or related
+ * information form internal APIs, and put that information into a collector payload bean. Such a
+ * bean will be sent to the {@link com.dotcms.jitsu.EventLogSubmitter} to be persisted as an event.
+ *
  * @author jsanca
  */
 public interface Collector {

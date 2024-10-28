@@ -238,6 +238,7 @@ public class AIProxyClientTest {
         final JSONObjectAIRequest request = textRequest(
                 model,
                 "What are the major achievements of the Apollo space program?");
+        request.getPayload().put(AiKeys.STREAM, true);
 
         final AIResponse aiResponse = aiProxyClient.callToAI(
                 request,
