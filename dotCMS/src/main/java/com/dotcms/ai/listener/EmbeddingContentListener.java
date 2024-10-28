@@ -83,7 +83,7 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
 
         final AppConfig appConfig = ConfigService.INSTANCE.config(host);
         if (!appConfig.isEnabled()) {
-            AppConfig.debugLogger(
+            appConfig.debugLogger(
                     getClass(),
                     () -> "dotAI is not enabled since no API urls or API key found in app config");
             throw new DotAIAppConfigDisabledException("App dotAI config without API urls or API key");
