@@ -1,9 +1,9 @@
-import { DotMessagePipe } from 'libs/ui/src/lib/dot-message/dot-message.pipe';
-
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
+
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotDataViewComponent } from './components/dot-dataview/dot-dataview.component';
 import { DotSideBarComponent } from './components/dot-sidebar/dot-sidebar.component';
