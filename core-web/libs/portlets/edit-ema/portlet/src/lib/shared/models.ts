@@ -216,6 +216,7 @@ export interface DialogAction
 export interface CreateFromPaletteAction extends Pick<EditEmaDialogState, 'actionPayload'> {
     variable: string;
     name: string;
+    language_id?: string | number;
 }
 
 export interface EditContentletPayload extends Partial<DotCMSContentlet> {

@@ -245,7 +245,8 @@ describe('DotEmaDialogStoreService', () => {
         spectator.service.createContentletFromPalette({
             variable: 'blogPost',
             name: 'Blog',
-            actionPayload: PAYLOAD_MOCK
+            actionPayload: PAYLOAD_MOCK,
+            language_id: 2
         });
 
         spectator.service.dialogState$.subscribe((state) => {
@@ -258,7 +259,7 @@ describe('DotEmaDialogStoreService', () => {
             done();
         });
 
-        expect(dotActionUrlService.getCreateContentletUrl).toHaveBeenCalledWith('blogPost');
+        expect(dotActionUrlService.getCreateContentletUrl).toHaveBeenCalledWith('blogPost', 2);
     });
 
     it('should initialize with loading iframe properties', (done) => {

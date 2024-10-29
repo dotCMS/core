@@ -51,21 +51,23 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     readonly createContentletFromPalette = this.effect(
         (contentTypeVariable$: Observable<CreateFromPaletteAction>) => {
             return contentTypeVariable$.pipe(
-                switchMap(({ name, variable, actionPayload }) => {
-                    return this.dotActionUrlService.getCreateContentletUrl(variable).pipe(
-                        tapResponse(
-                            (url) => {
-                                this.createContentlet({
-                                    url,
-                                    contentType: name,
-                                    actionPayload
-                                });
-                            },
-                            (e) => {
-                                console.error(e);
-                            }
-                        )
-                    );
+                switchMap(({ name, variable, actionPayload, language_id = 1 }) => {
+                    return this.dotActionUrlService
+                        .getCreateContentletUrl(variable, language_id)
+                        .pipe(
+                            tapResponse(
+                                (url) => {
+                                    this.createContentlet({
+                                        url,
+                                        contentType: name,
+                                        actionPayload
+                                    });
+                                },
+                                (e) => {
+                                    console.error(e);
+                                }
+                            )
+                        );
                 })
             );
         }
@@ -97,14 +99,14 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         (state, { url, contentType, actionPayload }: CreateContentletAction) => {
             return {
                 ...state,
-                url: url,
+                url,
+                actionPayload,
                 header: this.dotMessageService.get(
                     'contenttypes.content.create.contenttype',
                     contentType
                 ),
                 status: DialogStatus.LOADING,
-                type: 'content',
-                actionPayload
+                type: 'content'
             };
         }
     );

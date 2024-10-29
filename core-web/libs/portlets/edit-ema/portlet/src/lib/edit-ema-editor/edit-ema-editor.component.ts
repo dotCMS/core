@@ -622,7 +622,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
             this.dialog.createContentletFromPalette({
                 ...dragItem.draggedPayload.item,
-                actionPayload: payload
+                actionPayload: payload,
+                language_id: this.uveStore.$languageId()
             });
         } else if (dragItem.draggedPayload.type === 'temp') {
             const { pageContainers, didInsert } = insertContentletInContainer({
