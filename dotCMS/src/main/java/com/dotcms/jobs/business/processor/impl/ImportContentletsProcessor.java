@@ -1,6 +1,5 @@
 package com.dotcms.jobs.business.processor.impl;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.JobProcessingException;
@@ -12,9 +11,6 @@ import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.NoRetryPolicy;
 import com.dotcms.jobs.business.processor.Queue;
 import com.dotcms.jobs.business.util.JobUtil;
-import com.dotcms.mock.request.FakeHttpRequest;
-import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotmarketing.beans.Host;
@@ -28,8 +24,6 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.google.common.hash.Hashing;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
@@ -51,7 +45,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.LongConsumer;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Processor implementation for handling content import operations in dotCMS. This class provides
@@ -320,7 +313,7 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
         final var fields = getFields(job);
         final var language = getLanguage(job);
         final var workflowActionId = getWorkflowActionId(job);
-        final var httpReq = getRequest(user, currentSiteName);
+        final var httpReq = JobUtil.generateMockRequest(user, currentSiteName);
 
         Logger.info(this, "-------- Starting Content Import Preview -------- ");
         Logger.info(this, String.format("-> Content Type ID: %s", contentType));
@@ -356,7 +349,7 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
         final var fields = getFields(job);
         final var language = getLanguage(job);
         final var workflowActionId = getWorkflowActionId(job);
-        final var httpReq = getRequest(user, currentSiteName);
+        final var httpReq = JobUtil.generateMockRequest(user, currentSiteName);
         final var importId = jobIdToLong(job.id());
 
         Logger.info(this, "-------- Starting Content Import Process -------- ");
@@ -510,35 +503,6 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
         } catch (DotSecurityException | DotDataException e) {
             throw new JobProcessingException(job.id(), "Error validating content type", e);
         }
-    }
-
-    /**
-     * Creates or retrieves an HttpServletRequest for the import operation. Uses thread-local
-     * request if available, otherwise creates a mock request with the specified user and site
-     * information.
-     *
-     * @param user     The user performing the import
-     * @param siteName The name of the site for the import
-     * @return An HttpServletRequest instance configured for the import operation
-     */
-    private HttpServletRequest getRequest(final User user, final String siteName) {
-
-        if (null != HttpServletRequestThreadLocal.INSTANCE.getRequest()) {
-            return HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        }
-
-        final HttpServletRequest requestProxy = new MockSessionRequest(
-                new MockHeaderRequest(
-                        new FakeHttpRequest(siteName, "/").request(),
-                        "referer",
-                        "https://" + siteName + "/fakeRefer")
-                        .request());
-        requestProxy.setAttribute(WebKeys.CMS_USER, user);
-        requestProxy.getSession().setAttribute(WebKeys.CMS_USER, user);
-        requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER_ID,
-                UtilMethods.extractUserIdOrNull(user));
-
-        return requestProxy;
     }
 
     /**
