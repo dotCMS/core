@@ -36,7 +36,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
@@ -468,7 +467,7 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
         if (fields instanceof List) {
             return ((List<String>) fields).toArray(new String[0]);
         }
-        
+
         return (String[]) fields;
     }
 
