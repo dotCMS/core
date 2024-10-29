@@ -72,6 +72,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.LargeMessageActionlet;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
+import com.dotmarketing.portlets.workflows.actionlet.AnalyticsFireUserEventActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.AsyncEmailActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.BatchAction;
@@ -104,6 +105,7 @@ import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.*;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
@@ -140,6 +142,7 @@ import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
+import org.apache.felix.framework.OSGIUtil;
 import org.elasticsearch.search.query.QueryPhaseExecutionException;
 import org.osgi.framework.BundleContext;
 
@@ -263,6 +266,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				NotifyAssigneeActionlet.class,
 				UnarchiveContentActionlet.class,
 				ResetTaskActionlet.class,
+				ResetPermissionsActionlet.class,
 				MultipleApproverActionlet.class,
 				FourEyeApproverActionlet.class,
 				TwitterActionlet.class,
@@ -288,7 +292,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				DotEmbeddingsActionlet.class,
 				OpenAIContentPromptActionlet.class,
 				OpenAIGenerateImageActionlet.class,
-				OpenAIAutoTagActionlet.class
+				OpenAIAutoTagActionlet.class,
+				AnalyticsFireUserEventActionlet.class
 		));
 
 		refreshWorkFlowActionletMap();
@@ -367,16 +372,23 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	public void registerBundleService () {
-		if(System.getProperty(WebKeys.OSGI_ENABLED)!=null){
-			// Register main service
-			BundleContext context = HostActivator.instance().getBundleContext();
-			if (null != context) {
-				Hashtable<String, String> props = new Hashtable<>();
-				context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
-			} else {
-				Logger.error(this, "Bundle Context is null, WorkflowAPIOsgiService has been not registered");
-			}
+
+		// force init if not already done
+		OSGIUtil.getInstance().initializeFramework();
+		if (System.getProperty(WebKeys.OSGI_ENABLED) == null) {
+			// OSGI is not inited
+			throw new DotRuntimeException("Unable to register WorkflowAPIOsgiService as OSGI is not inited");
 		}
+
+		BundleContext context = HostActivator.instance().getBundleContext();
+		if (context == null) {
+			throw new DotRuntimeException("Bundle Context is null, WorkflowAPIOsgiService has been not registered");
+		}
+		if (context.getServiceReference(WorkflowAPIOsgiService.class.getName()) == null) {
+			Hashtable<String, String> props = new Hashtable<>();
+			context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
+		}
+
 	}
 
 	/**
@@ -1690,7 +1702,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
         return this.findAvailableActions(contentlet, user, RenderMode.EDITING);
     }
-	
+
 	 /**
      * This method will return the list of workflows actions available to a user on any give
      * piece of content, based on how and who has the content locked and what workflow step the content
@@ -1703,7 +1715,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		return this.findAvailableActions(contentlet, user, RenderMode.LISTING);
     }
-	
+
 	/**
 	 * This method will return the list of workflows actions available to a user on any give
 	 * piece of content, based on how and who has the content locked and what workflow step the content
@@ -2224,13 +2236,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			// Delete action class
 			final int orderOfActionClassToDelete = actionClass.getOrder();
 			workFlowFactory.deleteActionClass(actionClass);
-			
-			// We don't need to get "complete" base action object from the database 
+
+			// We don't need to get "complete" base action object from the database
 			// to retrieve all action classes from him. So, we can create the base action object
 			// with the "action id" contain in actionClass parameter.
 			WorkflowAction baseAction = new WorkflowAction();
 			baseAction.setId(actionClass.getActionId());
-			
+
 			// Reorder the action classes in the database
 			final List<WorkflowActionClass> actionClasses = findActionClasses(baseAction);
 			if((actionClasses.size() > 1) && (actionClasses.size() != orderOfActionClassToDelete)) {
@@ -2273,12 +2285,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			List<WorkflowActionClass> actionClasses = null;
 			try {
-				// We don't need to get "complete" base action object from the database 
+				// We don't need to get "complete" base action object from the database
 				// to retrieve all action classes from him. So, we can create the base action object
 				// with the "action id" contain in actionClass parameter.
 				final WorkflowAction baseAction = new WorkflowAction();
 				baseAction.setId(actionClass.getActionId());
-				
+
 				actionClasses = findActionClasses(baseAction);
 			} catch (Exception e) {
 				throw new DotDataException(e.getLocalizedMessage());

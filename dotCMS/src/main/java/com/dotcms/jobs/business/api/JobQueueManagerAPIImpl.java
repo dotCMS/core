@@ -38,6 +38,7 @@ import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -68,7 +69,7 @@ import javax.inject.Inject;
  *        jobQueueManagerAPI.setRetryStrategy("contentImport", contentImportRetryStrategy);
  *
  *        // Register job processors
- *        jobQueueManagerAPI.registerProcessor("contentImport", new ContentImportJobProcessor());
+ *        jobQueueManagerAPI.registerProcessor("contentImport", ContentImportJobProcessor.class);
  *
  *        // Start the job queue manager
  *        jobQueueManagerAPI.start();
@@ -99,7 +100,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     private final CircuitBreaker circuitBreaker;
     private final JobQueue jobQueue;
-    private final Map<String, JobProcessor> processors;
+    private final Map<String, Class<? extends JobProcessor>> processors;
+    private final Map<String, JobProcessor> processorInstancesByJobId;
     private final int threadPoolSize;
     private ExecutorService executorService;
     private final Map<String, RetryStrategy> retryStrategies;
@@ -110,6 +112,12 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     private final RealTimeJobMonitor realTimeJobMonitor;
     private final EventProducer eventProducer;
+    private final JobProcessorFactory jobProcessorFactory;
+
+    // Cap to prevent overflow
+    private static final int MAX_EMPTY_QUEUE_COUNT = 30;
+    // Arbitrary threshold to reset
+    private static final int EMPTY_QUEUE_RESET_THRESHOLD = Integer.MAX_VALUE - 1000;
 
     /**
      * Constructs a new JobQueueManagerAPIImpl.
@@ -135,11 +143,13 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             CircuitBreaker circuitBreaker,
             RetryStrategy defaultRetryStrategy,
             RealTimeJobMonitor realTimeJobMonitor,
-            EventProducer eventProducer) {
+            EventProducer eventProducer,
+            JobProcessorFactory jobProcessorFactory) {
 
         this.jobQueue = jobQueue;
         this.threadPoolSize = jobQueueConfig.getThreadPoolSize();
         this.processors = new ConcurrentHashMap<>();
+        this.processorInstancesByJobId = new ConcurrentHashMap<>();
         this.retryStrategies = new ConcurrentHashMap<>();
         this.defaultRetryStrategy = defaultRetryStrategy;
         this.circuitBreaker = circuitBreaker;
@@ -153,6 +163,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         // Events
         this.realTimeJobMonitor = realTimeJobMonitor;
         this.eventProducer = eventProducer;
+        this.jobProcessorFactory = jobProcessorFactory;
     }
 
     @Override
@@ -224,23 +235,39 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     }
 
     @Override
-    public void registerProcessor(final String queueName, final JobProcessor processor) {
+    public void registerProcessor(final String queueName, final Class<? extends JobProcessor> processor) {
+        final Class<? extends JobProcessor> jobProcessor = processors.get(queueName);
+        if (null != jobProcessor) {
+            Logger.warn(this, String.format(
+                    "Job processor [%s] already registered for queue: [%s] is getting overridden.",
+                    jobProcessor.getName(), queueName));
+        }
         processors.put(queueName, processor);
+    }
+
+    @Override
+    public Map<String,Class<? extends JobProcessor>> getQueueNames() {
+        return Map.copyOf(processors);
     }
 
     @WrapInTransaction
     @Override
     public String createJob(final String queueName, final Map<String, Object> parameters)
             throws JobProcessorNotFoundException, DotDataException {
-
-        if (!processors.containsKey(queueName)) {
+        final Class<? extends JobProcessor> clazz = processors.get(queueName);
+        if (null == clazz) {
             final var error = new JobProcessorNotFoundException(queueName);
             Logger.error(JobQueueManagerAPIImpl.class, error);
             throw error;
         }
 
+        //first attempt instantiating the processor, cuz if we cant no use to create an entry in the db
+        final var processor = newProcessorInstance(queueName);
+        // now that we know we can instantiate the processor, we can add it to the map of instances
+        // But first we need the job id
         try {
-            String jobId = jobQueue.createJob(queueName, parameters);
+            final String jobId = jobQueue.createJob(queueName, parameters);
+            addInstanceRef(jobId, processor);
             eventProducer.getEvent(JobCreatedEvent.class).fire(
                     new JobCreatedEvent(jobId, queueName, LocalDateTime.now(), parameters)
             );
@@ -272,6 +299,28 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         }
     }
 
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize)
+            throws JobQueueDataException {
+        try {
+            return jobQueue.getActiveJobs(queueName, page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new JobQueueDataException("Error fetching active jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getFailedJobs(int page, int pageSize)
+            throws JobQueueDataException {
+        try {
+            return jobQueue.getFailedJobs(page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new JobQueueDataException("Error fetching active jobs", e);
+        }
+    }
+
     @WrapInTransaction
     @Override
     public void cancelJob(final String jobId) throws DotDataException {
@@ -285,31 +334,27 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             throw new DotDataException("Error fetching job", e);
         }
 
-        final var processor = processors.get(job.queueName());
-        if (processor instanceof Cancellable) {
-
-            try {
-
-                Logger.info(this, "Cancelling job " + jobId);
-
-                ((Cancellable) processor).cancel(job);
-                handleJobCancelling(job, processor);
-            } catch (Exception e) {
-                final var error = new DotDataException("Error cancelling job " + jobId, e);
-                Logger.error(JobQueueManagerAPIImpl.class, error);
-                throw error;
+        final Optional<JobProcessor> instance = getInstance(jobId);
+        if (instance.isPresent()) {
+            final var processor = instance.get();
+            if (processor instanceof Cancellable) {
+                try {
+                    Logger.info(this, "Cancelling job " + jobId);
+                    ((Cancellable) processor).cancel(job);
+                    handleJobCancelling(job, processor);
+                } catch (Exception e) {
+                    final var error = new DotDataException("Error cancelling job " + jobId, e);
+                    Logger.error(JobQueueManagerAPIImpl.class, error);
+                    throw error;
+                }
+            } else {
+               final var error = new DotDataException("Job " + jobId + " cannot be canceled");
+               Logger.error(JobQueueManagerAPIImpl.class, error);
+               throw error;
             }
         } else {
-
-            if (processor == null) {
-                final var error = new JobProcessorNotFoundException(job.queueName());
-                Logger.error(JobQueueManagerAPIImpl.class, error);
-                throw error;
-            }
-
-            final var error = new DotDataException(jobId, "Job " + jobId + " cannot be canceled");
-            Logger.error(JobQueueManagerAPIImpl.class, error);
-            throw error;
+            Logger.error(this, "No processor found for job " + jobId);
+            throw new JobProcessorNotFoundException(job.queueName(), jobId);
         }
     }
 
@@ -321,6 +366,12 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     @Override
     public void setRetryStrategy(final String queueName, final RetryStrategy retryStrategy) {
         retryStrategies.put(queueName, retryStrategy);
+    }
+
+    @Override
+    @VisibleForTesting
+    public Optional<JobProcessor> getInstance(final String jobId) {
+        return Optional.ofNullable(processorInstancesByJobId.get(jobId));
     }
 
     @Override
@@ -352,7 +403,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      */
     @CloseDBIfOpened
     private void pollJobUpdates() {
-
         try {
             final var watchedJobIds = realTimeJobMonitor.getWatchedJobIds();
             if (watchedJobIds.isEmpty()) {
@@ -365,9 +415,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             );
             realTimeJobMonitor.updateWatchers(updatedJobs);
             lastPollJobUpdateTime = currentPollTime;
-        } catch (JobQueueDataException e) {
-            Logger.error(this, "Error polling job updates: " + e.getMessage(), e);
-            throw new DotRuntimeException("Error polling job updates", e);
+        } catch (Exception e) {
+            Logger.error(this, "Error polling job updates: " + e.getMessage(), e);//
         }
     }
 
@@ -423,15 +472,17 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
             try {
 
-                boolean jobProcessed = processNextJob();
+                final boolean jobProcessed = processNextJob();
                 if (jobProcessed) {
                     emptyQueueCount = 0;
                 } else {
                     // If no jobs were found, wait for a short time before checking again
                     // Implement exponential backoff when queue is repeatedly empty
-                    long sleepTime = Math.min(1000 * (long) Math.pow(2, emptyQueueCount), 30000);
+                    long sleepTime = calculateBackoffTime(emptyQueueCount, MAX_EMPTY_QUEUE_COUNT);
                     Thread.sleep(sleepTime);
-                    emptyQueueCount++;
+                    emptyQueueCount = incrementAndResetEmptyQueueCount(
+                            emptyQueueCount, MAX_EMPTY_QUEUE_COUNT, EMPTY_QUEUE_RESET_THRESHOLD
+                    );
                 }
             } catch (InterruptedException e) {
                 Logger.error(this, "Job processing thread interrupted: " + e.getMessage(), e);
@@ -584,8 +635,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      */
     private void processJob(final Job job) throws DotDataException {
 
-        JobProcessor processor = processors.get(job.queueName());
-        if (processor != null) {
+        final Optional<JobProcessor> optional = getProcessorInstance(job);
+        if (optional.isPresent()) {
+            final JobProcessor processor = optional.get();
 
             final ProgressTracker progressTracker = new DefaultProgressTracker();
             Job runningJob = job.markAsRunning().withProgressTracker(progressTracker);
@@ -622,6 +674,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 } else {
                     handleJobCompletion(runningJob, processor);
                 }
+                //Free up resources
+                removeInstanceRef(runningJob.id());
             } catch (Exception e) {
 
                 Logger.error(this,
@@ -638,6 +692,57 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                     "No processor found for queue", "Processor selection"
             );
         }
+    }
+
+    /**
+     * Get an instance of a processor for a job.
+     * If an instance already exists, it will be returned. otherwise a new instance will be created.
+     * @param job The job to get the processor for
+     * @return The processor instance
+     */
+    private Optional<JobProcessor> getProcessorInstance(final Job job) {
+        try {
+            return Optional.of(processorInstancesByJobId.computeIfAbsent(job.id(),
+                    id -> newProcessorInstance(job.queueName()))
+            );
+        } catch (Exception e){
+          Logger.error(this, "Error getting processor instance", e);
+        }
+        return Optional.empty();
+    }
+
+
+    /**
+     * Creates a new instance of a JobProcessor for a specific queue.
+     * @param queueName The name of the queue
+     * @return An optional containing the new JobProcessor instance, or an empty optional if the processor could not be created.
+     */
+    private JobProcessor newProcessorInstance(final String queueName) {
+        final var processorClass = processors.get(queueName);
+        if (processorClass != null) {
+            return jobProcessorFactory.newInstance(processorClass);
+        } else {
+            throw new JobProcessorNotFoundException(queueName);
+        }
+    }
+
+    /**
+     * Once we're sure a processor can be instantiated, we add it to the map of instances.
+     * @param jobId The ID of the job
+     * @param processor The processor to add
+     * @return The processor instance
+     */
+    private void addInstanceRef(final String jobId, final JobProcessor processor) {
+        //Get an instance and put it in the map
+        processorInstancesByJobId.putIfAbsent(jobId, processor);
+    }
+
+    /**
+     * Removes a processor instance from the map of instances.
+     * @param jobId The ID of the job
+     */
+    private void removeInstanceRef(final String jobId) {
+        processorInstancesByJobId.remove(jobId);
     }
 
     /**
@@ -865,6 +970,37 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         }
 
         return progress;
+    }
+
+    /**
+     * Calculates the backoff time based on the number of empty queue counts.
+     *
+     * @param emptyQueueCount    the current count of empty queue checks
+     * @param maxEmptyQueueCount the maximum count of empty queue checks
+     * @return the calculated backoff time in milliseconds, the result is capped at 30,000
+     * milliseconds (30 seconds) to prevent excessively long sleep times.
+     */
+    @VisibleForTesting
+    public long calculateBackoffTime(int emptyQueueCount, int maxEmptyQueueCount) {
+        emptyQueueCount = Math.min(emptyQueueCount, maxEmptyQueueCount);
+        return Math.min(1000L * (1L << emptyQueueCount), 30000L);
+    }
+
+    /**
+     * Increments the empty queue count and resets it if it exceeds the reset threshold.
+     *
+     * @param emptyQueueCount    the current count of empty queue checks
+     * @param maxEmptyQueueCount the maximum count of empty queue checks
+     * @param resetThreshold     the threshold at which the empty queue count should be reset
+     * @return the updated empty queue count
+     */
+    private int incrementAndResetEmptyQueueCount(
+            int emptyQueueCount, int maxEmptyQueueCount, int resetThreshold) {
+        emptyQueueCount++;
+        if (emptyQueueCount > resetThreshold) {
+            emptyQueueCount = maxEmptyQueueCount; // Reset to max to avoid wrap around
+        }
+        return emptyQueueCount;
     }
 
     /**

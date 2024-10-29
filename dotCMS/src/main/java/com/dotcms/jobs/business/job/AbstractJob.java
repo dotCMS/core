@@ -1,6 +1,8 @@
 package com.dotcms.jobs.business.job;
 
 import com.dotcms.jobs.business.processor.ProgressTracker;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.LocalDateTime;
@@ -20,6 +22,8 @@ import org.immutables.value.Value.Default;
 @JsonDeserialize(as = Job.class)
 public interface AbstractJob {
 
+    String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS";
+
     String id();
 
     String queueName();
@@ -28,18 +32,23 @@ public interface AbstractJob {
 
     Optional<String> executionNode();
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DATE_PATTERN)
     Optional<LocalDateTime> createdAt();
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DATE_PATTERN)
     Optional<LocalDateTime> startedAt();
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DATE_PATTERN)
     Optional<LocalDateTime> updatedAt();
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DATE_PATTERN)
     Optional<LocalDateTime> completedAt();
 
     Optional<JobResult> result();
 
     Map<String, Object> parameters();
 
+    @JsonIgnore
     Optional<ProgressTracker> progressTracker();
 
     @Default

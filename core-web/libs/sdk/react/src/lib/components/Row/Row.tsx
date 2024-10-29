@@ -1,6 +1,6 @@
 import { forwardRef, useContext } from 'react';
 
-import styles from './row.module.css';
+import styles from './Row.module.css';
 
 import { PageContext } from '../../contexts/PageContext';
 import { DotCMSPageContext } from '../../models';

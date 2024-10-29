@@ -24,7 +24,7 @@ public class DotGraphQLHttpServletTest {
     @Test
     public void testing_cors_headers() {
         
-        HashMap<String,String> headers = new DotGraphQLHttpServlet().corsHeaders.apply();
+        HashMap<String,String> headers = new DotGraphQLHttpServlet().corsHeaders.get();
         
         assertEquals(headers.get("access-control-allow-origin"), "*");
         assertEquals(headers.get("access-control-allow-credentials"), "true");

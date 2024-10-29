@@ -5,7 +5,7 @@ import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Provider, Type } from '@angular/core';
+import { Provider, signal, Type } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
@@ -21,6 +21,7 @@ import { DotKeyValueComponent } from '@dotcms/ui';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
+import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
@@ -168,6 +169,12 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             {
                 provide: DotWorkflowActionsFireService,
                 useValue: {}
+            },
+            {
+                provide: DotEditContentStore,
+                useValue: {
+                    showSidebar: signal(false)
+                }
             }
         ],
         declarations: [MockComponent(EditorComponent)]
@@ -239,11 +246,11 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
 
         it('should render the correct field type', () => {
             spectator.detectChanges();
-            const field = spectator.debugElement.query(
-                By.css(`[data-testId="field-${fieldMock.variable}"]`)
-            );
             const FIELD_TYPE = fieldTestBed.component ? fieldTestBed.component : fieldTestBed;
-            expect(field.componentInstance instanceof FIELD_TYPE).toBeTruthy();
+            const component = spectator.query(FIELD_TYPE);
+
+            expect(component).toBeTruthy();
+            expect(component instanceof FIELD_TYPE).toBeTruthy();
         });
 
         if (fieldTestBed.outsideFormControl) {

@@ -1,5 +1,5 @@
 <ngx-monaco-editor
-    (init)="onEditorInit()"
+    (init)="onEditorInit($event)"
     [options]="$monacoOptions()"
     #editorRef
     data-testId="code-editor"

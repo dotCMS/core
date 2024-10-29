@@ -56,3 +56,9 @@ export const CATEGORY_FIELD_EMPTY_MESSAGES: Record<
         subtitle: 'edit.content.category-field.search.error.legend'
     }
 };
+
+/**
+ * Represents the route for the content search page.
+ * This constant is used for navigation to the content listing page,
+ */
+export const CONTENT_SEARCH_ROUTE = '/c/content';

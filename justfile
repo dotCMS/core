@@ -39,6 +39,9 @@ build-test:
 build-quick:
     ./mvnw -DskipTests install
 
+build-quicker:
+    ./mvnw -pl :dotcms-core -DskipTests install
+
 # Builds the project for production, skipping tests
 build-prod:
     ./mvnw -DskipTests clean install -Pprod
@@ -85,7 +88,7 @@ dev-stop:
 dev-clean-volumes:
     ./mvnw -pl :dotcms-core -Pdocker-clean-volumes
 
-# Starts the dotCMS application in a Tomcat container on port 8080, running in the foreground
+# Starts the dotCMS application in a Tomcat container on port 8087, running in the foreground
 dev-tomcat-run port="8087":
     ./mvnw -pl :dotcms-core -Ptomcat-run -Pdebug -Dservlet.port={{ port }}
 
