@@ -34,7 +34,7 @@ jobs:
   get-starter:
     runs-on: macos-13
     if: github.repository == 'dotcms/core'
-    environment: trunk
+    environment: starter
     steps:
       - name: 'Github context'
         run: |
