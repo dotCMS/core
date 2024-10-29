@@ -15,6 +15,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.business.HostSearchOptions;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
@@ -43,7 +44,9 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
 
         hostAPI = APILocator.getHostAPI();
         user = APILocator.getUserAPI().getSystemUser();
-        originalHostSize = APILocator.getHostAPI().findAllFromDB(user, false).size();
+        originalHostSize = APILocator.getHostAPI().findAllFromDB(user,
+                new HostSearchOptions().withIncludeSystemHost(true)
+                        .withRespectFrontendRoles(false)).size();
     }
 
     /**
@@ -76,7 +79,9 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             });
 
             Assert.assertEquals(originalHostSize + 1,
-                    APILocator.getHostAPI().findAllFromDB(user, false).size());
+                    APILocator.getHostAPI().findAllFromDB(user,
+                            new HostSearchOptions().withIncludeSystemHost(true)
+                                .withRespectFrontendRoles(false)).size());
 
             contentSet.add(host2.getIdentifier());
 
@@ -107,7 +112,9 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             hostHandler.handle(tempDir);
 
             Assert.assertEquals(originalHostSize,
-                    APILocator.getHostAPI().findAllFromDB(user, false).size());
+                    APILocator.getHostAPI().findAllFromDB(user,
+                            new HostSearchOptions().withIncludeSystemHost(true)
+                                    .withRespectFrontendRoles(false)).size());
 
             TestDataUtils.assertEmptyQueue();
         } finally {
@@ -148,7 +155,9 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             }
 
             Assert.assertEquals(originalHostSize + 1,
-                    APILocator.getHostAPI().findAllFromDB(user, false).size());
+                    APILocator.getHostAPI().findAllFromDB(user,
+                            new HostSearchOptions().withIncludeSystemHost(true)
+                                    .withRespectFrontendRoles(false)).size());
 
             contentSet.add(host.getIdentifier());
 

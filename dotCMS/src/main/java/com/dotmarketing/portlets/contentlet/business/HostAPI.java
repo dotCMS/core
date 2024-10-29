@@ -184,7 +184,7 @@ public interface HostAPI {
     /**
      * @deprecated This method is basically duplicated code. Use one of the following methods instead:
 	 * <ul>
-	 *     <li>{@link #findAllFromDB(User, boolean)}</li>
+	 *     <li>{@link #findAllFromDB(User, HostSearchOptions)}</li>
 	 *     <li>{@link #findAllFromCache(User, boolean)}</li>
 	 *     <li>{@link #search(String, boolean, boolean, int, int, User, boolean)}</li>
 	 * </ul>
@@ -218,56 +218,20 @@ public interface HostAPI {
 	 */
 	List<Host> findAll(User user, int limit, int offset, String sortBy, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-    /**
-     * Returns the complete list of Sites in your dotCMS repository retrieved <b>directly from the data source</b>,
-	 * including the System Host.
-     *
-     * @param user                 The {@link User} that is calling this method.
-     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
-     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
-     *
-     * @return The list of {@link Host} objects.
-     *
-     * @throws DotDataException     An error occurred when accessing the data source.
-     * @throws DotSecurityException The specified User does not have the required permissions to perform this
-     *                              operation.
-     */
-    List<Host> findAllFromDB(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-
-	/**
-	 * Returns the complete list of Sites in your dotCMS repository retrieved <b>directly from the data source</b>. This
-	 * method allows you to <b>EXCLUDE</b> the System Host from the result list.
-	 *
-	 * @param user                 The {@link User} that is calling this method.
-	 * @param includeSystemHost    If the System Host must be included in the results, set to {@code true}.
-	 * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
-	 *                             operation, set to {@code true}. Otherwise, set to {@code false}.
-	 *
-	 * @return The list of {@link Host} objects.
-	 *
-	 * @throws DotDataException     An error occurred when accessing the data source.
-	 * @throws DotSecurityException The specified User does not have the required permissions to perform this
-	 *                              operation.
-	 */
-	List<Host> findAllFromDB(final User user, final boolean includeSystemHost, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-
 	/**
 	 * Returns the complete list of Sites in your dotCMS repository retrieved <b>directly from the data source</b>. This
 	 * method allows you to <b>EXCLUDE</b> the System Host from the result list. Additionally, you can specify whether
 	 * you want to retrieve the live version of the Site over its working version if available.
 	 *
 	 * @param user 			   		The {@link User} that is calling this method.
-	 * @param includeSystemHost		If the System Host must be included in the results, set to {@code true}.
-	 * @param retrieveLiveVersion	If the live version of the Site must be retrieved when it's available, set to {@code true}.
-	 * @param respectFrontendRoles  If the User's front-end roles need to be taken into account in order to perform this
-	 *                              operation, set to {@code true}. Otherwise, set to {@code false}.
+	 * @param searchOptions			The search options to be used when retrieving the list of Sites.
 	 *
 	 * @return The list of {@link Host} objects.
 	 * @throws DotDataException 	An error occurred when accessing the data source.
 	 * @throws DotSecurityException The specified User does not have the required permissions to perform this
 	 * 								operation.
 	 */
-	List<Host> findAllFromDB(final User user, final boolean includeSystemHost, final boolean retrieveLiveVersion, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Host> findAllFromDB(final User user, final HostSearchOptions searchOptions) throws DotDataException, DotSecurityException;
 
     /**
      * Returns the complete list of Sites in your dotCMS repository retrieved from the cache. If no data is currently

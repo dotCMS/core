@@ -1009,7 +1009,9 @@ public class HostAPITest extends IntegrationTestBase  {
     public void Test_findAllCache() throws DotSecurityException, DotDataException {
         final User systemUser = APILocator.systemUser();
         final HostAPI hostAPI = APILocator.getHostAPI();
-        final List<Host> allFromDB1 = hostAPI.findAllFromDB(systemUser, false);
+        final List<Host> allFromDB1 = hostAPI.findAllFromDB(systemUser,
+                new HostSearchOptions().withIncludeSystemHost(true)
+                        .withRespectFrontendRoles(false));
         final List<Host> allFromCache1 = hostAPI.findAllFromCache(systemUser, false);
         Assert.assertTrue( allFromDB1.size() == allFromCache1.size() &&
                 allFromDB1.containsAll(allFromCache1) && allFromCache1.containsAll(allFromDB1));
@@ -1830,7 +1832,7 @@ public class HostAPITest extends IntegrationTestBase  {
 
     /**
      * <ul>
-     *     <li><b>Method to test: </b>{@link HostAPI#findAllFromDB(User, boolean, boolean)}</li>
+     *     <li><b>Method to test: </b>{@link HostAPI#findAllFromDB(User, HostSearchOptions)}</li>
      *     <li><b>Given Scenario: </b>Create a test Site and call the {@findAllFromDB} method that allows you to include
      *     or exclude the System Host.</li>
      *     <li><b>Expected Result: </b>When calling the method with the {@code includeSystemHost} parameter as
@@ -1844,8 +1846,12 @@ public class HostAPITest extends IntegrationTestBase  {
         final User systemUser = APILocator.systemUser();
 
         // Test data generation
-        final List<Host> siteList = hostAPI.findAllFromDB(systemUser, false, false);
-        final List<Host> siteListWithSystemHost = hostAPI.findAllFromDB(systemUser, true, false);
+        final List<Host> siteList = hostAPI.findAllFromDB(systemUser,
+                new HostSearchOptions().withIncludeSystemHost(false)
+                        .withRespectFrontendRoles(false));
+        final List<Host> siteListWithSystemHost = hostAPI.findAllFromDB(systemUser,
+                new HostSearchOptions().withIncludeSystemHost(true)
+                        .withRespectFrontendRoles(false));
 
         // Assertions
         assertEquals("The size difference between both Site lists MUST be 1", 1,

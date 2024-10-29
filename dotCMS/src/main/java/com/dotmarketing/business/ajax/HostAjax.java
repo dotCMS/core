@@ -8,6 +8,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -16,6 +17,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.business.HostSearchOptions;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.quartz.QuartzUtils;
@@ -33,6 +36,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -124,7 +128,9 @@ public class HostAjax {
 		final User user = this.getLoggedInUser();
 		final boolean respectFrontend = !this.userWebAPI.isLoggedToBackend(this.getHttpRequest());
 		final List<Host> sitesFromDb = this.hostAPI.findAllFromDB(user,
-				false, true, respectFrontend);
+				new HostSearchOptions().withIncludeSystemHost(false)
+						.withRetrieveLiveVersion(true)
+						.withRespectFrontendRoles(respectFrontend));
 		final List<Field> fields = FieldsCache.getFieldsByStructureVariableName(Host.HOST_VELOCITY_VAR_NAME);
         final List<Field> searchableFields = fields.stream().filter(field -> field.isListed() && field
                 .getFieldType().startsWith("text")).collect(Collectors.toList());
@@ -154,12 +160,21 @@ public class HostAjax {
                     Logger.warn(HostAjax.class, String.format("An error occurred when reviewing the creation status for " +
                             "Site '%s': %s", site.getIdentifier(), e.getMessage()), e);
                 }
+				String workingInode = site.getInode();
+				if (site.isLive() && !site.isWorking()) {
+					 final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI()
+							.getContentletVersionInfo(site.getIdentifier(), site.getLanguageId());
+					 if (versionInfo.isPresent()) {
+						 workingInode = versionInfo.get().getWorkingInode();
+					 }
+				}
                 final Map<String, Object> siteInfoMap = site.getMap();
 				siteInfoMap.putAll(Map.of(
                         "userPermissions", this.permissionAPI.getPermissionIdsFromUser(site, user),
                         "hostInSetup", siteInSetup,
                         "archived", site.isArchived(),
-                        "live", site.isLive()));
+                        "live", site.isLive(),
+						"workingInode", workingInode));
 				siteList.add(siteInfoMap);
 			}
 		}

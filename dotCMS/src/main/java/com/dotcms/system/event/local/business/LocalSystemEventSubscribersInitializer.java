@@ -17,6 +17,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolver;
+import com.dotmarketing.portlets.contentlet.business.HostSearchOptions;
 import com.dotmarketing.portlets.folders.business.ApplicationContainerFolderListener;
 import com.dotmarketing.portlets.folders.business.ApplicationTemplateFolderListener;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -85,7 +86,9 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         try {
 
             final User user  = APILocator.systemUser();
-            final List<Host> hosts = APILocator.getHostAPI().findAllFromDB(user, false);
+            final List<Host> hosts = APILocator.getHostAPI().findAllFromDB(user,
+                    new HostSearchOptions().withIncludeSystemHost(true)
+                            .withRespectFrontendRoles(false));
             final ApplicationContainerFolderListener listener = new ApplicationContainerFolderListener();
             for (final Host host : hosts) {
 
@@ -107,7 +110,9 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         try {
 
             final User user  = APILocator.systemUser();
-            final List<Host> hosts = APILocator.getHostAPI().findAllFromDB(user, false);
+            final List<Host> hosts = APILocator.getHostAPI().findAllFromDB(user,
+                    new HostSearchOptions().withIncludeSystemHost(true)
+                            .withRespectFrontendRoles(false));
             final ApplicationTemplateFolderListener listener = new ApplicationTemplateFolderListener();
             for (final Host host : hosts) {
 

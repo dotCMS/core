@@ -236,6 +236,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     @Override
+    @CloseDBIfOpened
     public Optional<Host> findByIdOrKey(final String siteIdOrKey, final User user,
                                         final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         checkNotEmpty(siteIdOrKey, IllegalArgumentException.class, "'siteIdOrKey' parameter cannot be null or empty");
@@ -339,7 +340,9 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     @Deprecated
     public List<Host> findAll(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        return this.findAllFromDB(user, respectFrontendRoles);
+        return this.findAllFromDB(user,
+                new HostSearchOptions().withIncludeSystemHost(true)
+                        .withRespectFrontendRoles(respectFrontendRoles));
     }
 
     @Override
@@ -349,23 +352,12 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     @Override
-    public List<Host> findAllFromDB(final User user, final boolean respectFrontendRoles) throws DotDataException,
-            DotSecurityException {
-        return this.findAllFromDB(user, true, respectFrontendRoles);
-    }
-
-    @Override
-    public List<Host> findAllFromDB(final User user, final boolean includeSystemHost,
-                                    final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        return this.findAllFromDB(user, includeSystemHost, false, respectFrontendRoles);
-    }
-
-    @Override
-    public List<Host> findAllFromDB(final User user, final boolean includeSystemHost,
-                                    final boolean retrieveLiveVersion,
-                                    final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    @CloseDBIfOpened
+    public List<Host> findAllFromDB(final User user, final HostSearchOptions searchOptions) throws DotDataException, DotSecurityException {
         return this.findPaginatedSitesFromDB(user, 0, 0, null,
-                includeSystemHost, retrieveLiveVersion, respectFrontendRoles);
+                searchOptions.isIncludeSystemHost(),
+                searchOptions.isRetrieveLiveVersion(),
+                searchOptions.isRespectFrontendRoles());
     }
 
     /**
@@ -460,9 +452,13 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         Set<Host> cachedSites = hostCache.getAllSites(respectFrontendRoles);
         if(null == cachedSites){
             final List<Host> allFromDB = findAllFromDB(APILocator.systemUser(),
-                    true, false,false);
+                    new HostSearchOptions().withIncludeSystemHost(true)
+                            .withRetrieveLiveVersion(false)
+                            .withRespectFrontendRoles(false));
             final List<Host> allFromDBLive = findAllFromDB(APILocator.systemUser(),
-                    true, true,false);
+                    new HostSearchOptions().withIncludeSystemHost(true)
+                            .withRetrieveLiveVersion(true)
+                            .withRespectFrontendRoles(false));
             hostCache.addAll(allFromDB, allFromDBLive);
             final List<Host> filteredSiteList = filterHostsByPermissions(
                     user, true, respectFrontendRoles,
@@ -532,7 +528,9 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         // If host is marked as default make sure that no other host is already set to be the default
         if(host.isDefault()) {
             ContentletAPI conAPI = APILocator.getContentletAPI();
-            List<Host> hosts= findAllFromDB(user, respectFrontendRoles);
+            List<Host> hosts= findAllFromDB(user,
+                    new HostSearchOptions().withIncludeSystemHost(true)
+                            .withRespectFrontendRoles(respectFrontendRoles));
             Host otherHost;
             Contentlet otherHostContentlet;
             for(Host h : hosts){
