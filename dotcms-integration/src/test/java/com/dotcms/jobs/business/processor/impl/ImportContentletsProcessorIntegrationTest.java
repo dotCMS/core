@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import org.jboss.weld.junit5.EnableWeld;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +39,8 @@ import org.junit.jupiter.api.Test;
  * <p>The test suite creates temporary content types and files for testing,
  * and includes cleanup operations to maintain database integrity.
  */
-public class ImportContentletsProcessorIntegrationTest {
+@EnableWeld
+public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5WeldBaseTest {
 
     private static Host defaultSite;
     private static User systemUser;
