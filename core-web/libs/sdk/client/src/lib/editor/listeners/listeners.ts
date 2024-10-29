@@ -1,4 +1,4 @@
-import { CLIENT_ACTIONS, INITIAL_DOT_SDK, postMessageToEditor } from '../models/client.model';
+import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from '../models/client.model';
 import { DotCMSPageEditorSubscription, NOTIFY_CLIENT } from '../models/listeners.model';
 import {
     findVTLData,
@@ -160,9 +160,9 @@ export function scrollHandler(): void {
             action: CLIENT_ACTIONS.IFRAME_SCROLL
         });
 
-        // In case it doesn't have a dotSDK object, we create it with the initial values.
-        window.dotSDK = {
-            ...(window.dotSDK ?? INITIAL_DOT_SDK),
+        // In case it doesn't have a dotUVE object, we create it with the initial values.
+        window.dotUVE = {
+            ...(window.dotUVE ?? INITIAL_DOT_UVE),
             lastScrollYPosition: window.scrollY
         };
     };
@@ -200,7 +200,7 @@ export function scrollHandler(): void {
  */
 export function preserveScrollOnIframe(): void {
     const preserveScrollCallback = () => {
-        window.scrollTo(0, window.dotSDK?.lastScrollYPosition);
+        window.scrollTo(0, window.dotUVE?.lastScrollYPosition);
     };
 
     window.addEventListener('load', preserveScrollCallback);

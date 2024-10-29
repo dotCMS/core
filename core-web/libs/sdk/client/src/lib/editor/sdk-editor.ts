@@ -5,7 +5,7 @@ import {
     scrollHandler,
     subscriptions
 } from './listeners/listeners';
-import { CLIENT_ACTIONS, INITIAL_DOT_SDK, postMessageToEditor } from './models/client.model';
+import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from './models/client.model';
 import { DotCMSPageEditorConfig } from './models/editor.model';
 
 import { Contentlet } from '../client/content/shared/types';
@@ -64,8 +64,8 @@ export function isInsideEditor(): boolean {
     return window.parent !== window;
 }
 
-export function initDotSDK() {
-    window.dotSDK = INITIAL_DOT_SDK;
+export function initDotUVE() {
+    window.dotUVE = INITIAL_DOT_UVE;
 }
 
 /**
@@ -79,7 +79,7 @@ export function initDotSDK() {
  * ```
  */
 export function initEditor(config: DotCMSPageEditorConfig): void {
-    initDotSDK();
+    initDotUVE();
     fetchPageDataFromInsideUVE(config.pathname);
     listenEditorMessages();
     listenHoveredContentlet();

@@ -1,11 +1,11 @@
 import { editContentlet } from '../sdk-editor';
 declare global {
     interface Window {
-        dotSDK: DotSDK;
+        dotUVE: DotUVE;
     }
 }
 
-export const INITIAL_DOT_SDK: DotSDK = {
+export const INITIAL_DOT_UVE: DotUVE = {
     editContentlet,
     lastScrollYPosition: 0
 };
@@ -99,7 +99,7 @@ export function postMessageToEditor<T = unknown>(message: PostMessageProps<T>) {
     window.parent.postMessage(message, '*');
 }
 
-export interface DotSDK {
+export interface DotUVE {
     editContentlet: typeof editContentlet;
     lastScrollYPosition: number;
 }

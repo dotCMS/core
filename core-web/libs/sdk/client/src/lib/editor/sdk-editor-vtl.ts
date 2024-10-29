@@ -4,7 +4,7 @@ import {
     preserveScrollOnIframe,
     scrollHandler
 } from './listeners/listeners';
-import { isInsideEditor, addClassToEmptyContentlets, initDotSDK } from './sdk-editor';
+import { isInsideEditor, addClassToEmptyContentlets, initDotUVE } from './sdk-editor';
 
 /**
  * This is the main entry point for the SDK VTL.
@@ -17,7 +17,7 @@ import { isInsideEditor, addClassToEmptyContentlets, initDotSDK } from './sdk-ed
  *
  */
 if (isInsideEditor()) {
-    initDotSDK();
+    initDotUVE();
     listenEditorMessages();
     scrollHandler();
     preserveScrollOnIframe();
