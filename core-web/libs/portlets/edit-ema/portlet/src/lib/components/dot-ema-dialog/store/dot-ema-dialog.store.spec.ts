@@ -2,6 +2,7 @@ import { expect, it, describe } from '@jest/globals';
 import { SpectatorService, createServiceFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { CLIENT_ACTIONS } from '@dotcms/client';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -47,7 +48,8 @@ describe('DotEmaDialogStoreService', () => {
                 form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
-                }
+                },
+                clientAction: CLIENT_ACTIONS.NOOP
             });
             done();
         });
@@ -86,7 +88,8 @@ describe('DotEmaDialogStoreService', () => {
                 form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
-                }
+                },
+                clientAction: CLIENT_ACTIONS.NOOP
             });
             done();
         });
@@ -117,7 +120,41 @@ describe('DotEmaDialogStoreService', () => {
                 form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
-                }
+                },
+                clientAction: CLIENT_ACTIONS.NOOP
+            });
+            done();
+        });
+    });
+
+    it('should initialize with edit iframe properties and with clientAction', (done) => {
+        spectator.service.editContentlet({
+            inode: '123',
+            title: 'test',
+            clientAction: CLIENT_ACTIONS.EDIT_CONTENTLET
+        });
+
+        const queryParams = new URLSearchParams({
+            p_p_id: 'content',
+            p_p_action: '1',
+            p_p_state: 'maximized',
+            p_p_mode: 'view',
+            _content_struts_action: '/ext/contentlet/edit_contentlet',
+            _content_cmd: 'edit',
+            inode: '123'
+        });
+
+        spectator.service.dialogState$.subscribe((state) => {
+            expect(state).toEqual({
+                url: LAYOUT_URL + '?' + queryParams.toString(),
+                status: DialogStatus.LOADING,
+                header: 'test',
+                type: 'content',
+                form: {
+                    status: FormStatus.PRISTINE,
+                    isTranslation: false
+                },
+                clientAction: CLIENT_ACTIONS.EDIT_CONTENTLET
             });
             done();
         });
@@ -148,7 +185,8 @@ describe('DotEmaDialogStoreService', () => {
                 form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
-                }
+                },
+                clientAction: CLIENT_ACTIONS.NOOP
             });
             done();
         });
@@ -172,7 +210,8 @@ describe('DotEmaDialogStoreService', () => {
                 form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
-                }
+                },
+                clientAction: CLIENT_ACTIONS.NOOP
             });
             done();
         });
@@ -191,7 +230,8 @@ describe('DotEmaDialogStoreService', () => {
                 form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
-                }
+                },
+                clientAction: CLIENT_ACTIONS.NOOP
             });
             done();
         });
@@ -214,7 +254,8 @@ describe('DotEmaDialogStoreService', () => {
                 form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
-                }
+                },
+                clientAction: CLIENT_ACTIONS.NOOP
             });
             done();
         });
@@ -274,7 +315,8 @@ describe('DotEmaDialogStoreService', () => {
                 form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
-                }
+                },
+                clientAction: CLIENT_ACTIONS.NOOP
             });
             done();
         });
@@ -295,7 +337,8 @@ describe('DotEmaDialogStoreService', () => {
                 form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
-                }
+                },
+                clientAction: CLIENT_ACTIONS.NOOP
             });
             done();
         });
@@ -339,7 +382,8 @@ describe('DotEmaDialogStoreService', () => {
                     form: {
                         status: FormStatus.PRISTINE,
                         isTranslation: true
-                    }
+                    },
+                    clientAction: CLIENT_ACTIONS.NOOP
                 });
             });
         });
@@ -383,7 +427,8 @@ describe('DotEmaDialogStoreService', () => {
                     form: {
                         status: FormStatus.PRISTINE,
                         isTranslation: true
-                    }
+                    },
+                    clientAction: CLIENT_ACTIONS.NOOP
                 });
             });
         });

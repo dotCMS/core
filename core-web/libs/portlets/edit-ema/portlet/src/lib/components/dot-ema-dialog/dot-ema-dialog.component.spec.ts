@@ -15,6 +15,7 @@ import { By } from '@angular/platform-browser';
 import { MessageService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
 
+import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -178,11 +179,12 @@ describe('DotEmaDialogComponent', () => {
                 event: expect.objectContaining({
                     isTrusted: false
                 }),
-                payload: PAYLOAD_MOCK,
+                actionPayload: PAYLOAD_MOCK,
                 form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
-                }
+                },
+                clientAction: CLIENT_ACTIONS.NOOP
             });
         });
 
@@ -200,11 +202,12 @@ describe('DotEmaDialogComponent', () => {
                         name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
                     }
                 }),
-                payload: PAYLOAD_MOCK,
+                actionPayload: PAYLOAD_MOCK,
                 form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
-                }
+                },
+                clientAction: CLIENT_ACTIONS.NOOP
             });
         });
     });
@@ -331,7 +334,7 @@ describe('DotEmaDialogComponent', () => {
                 containerId: PAYLOAD_MOCK.container.identifier,
                 acceptTypes: PAYLOAD_MOCK.container.acceptTypes,
                 language_id: PAYLOAD_MOCK.language_id,
-                payload: PAYLOAD_MOCK
+                actionPayload: PAYLOAD_MOCK
             });
         });
 
@@ -352,7 +355,7 @@ describe('DotEmaDialogComponent', () => {
                 containerId: PAYLOAD_MOCK.container.identifier,
                 acceptTypes: DotCMSBaseTypesContentTypes.WIDGET,
                 language_id: PAYLOAD_MOCK.language_id,
-                payload: PAYLOAD_MOCK
+                actionPayload: PAYLOAD_MOCK
             });
         });
 
@@ -379,10 +382,7 @@ describe('DotEmaDialogComponent', () => {
 
             component.editContentlet(PAYLOAD_MOCK.contentlet);
 
-            expect(editContentletSpy).toHaveBeenCalledWith({
-                inode: PAYLOAD_MOCK.contentlet.inode,
-                title: PAYLOAD_MOCK.contentlet.title
-            });
+            expect(editContentletSpy).toHaveBeenCalledWith(PAYLOAD_MOCK.contentlet);
         });
 
         it('should trigger editVTLContentlet in the store', () => {
@@ -418,13 +418,13 @@ describe('DotEmaDialogComponent', () => {
             component.createContentlet({
                 url: 'https://demo.dotcms.com/jsp.jsp',
                 contentType: 'test',
-                payload: PAYLOAD_MOCK
+                actionPayload: PAYLOAD_MOCK
             });
 
             expect(createContentletSpy).toHaveBeenCalledWith({
                 contentType: 'test',
                 url: 'https://demo.dotcms.com/jsp.jsp',
-                payload: PAYLOAD_MOCK
+                actionPayload: PAYLOAD_MOCK
             });
         });
 
@@ -442,7 +442,7 @@ describe('DotEmaDialogComponent', () => {
 
             expect(createContentletFromPalletSpy).toHaveBeenCalledWith({
                 name: 'test',
-                payload: PAYLOAD_MOCK,
+                actionPayload: PAYLOAD_MOCK,
                 variable: 'test'
             });
         });

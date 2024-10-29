@@ -710,7 +710,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.uveStore.savePage(pageContainers);
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
-                const { shouldReloadPage, contentletIdentifier } = detail.payload;
+                const { shouldReloadPage, contentletIdentifier } = detail.payload ?? {};
 
                 if (shouldReloadPage) {
                     this.reloadURLContentMapPage(contentletIdentifier);
