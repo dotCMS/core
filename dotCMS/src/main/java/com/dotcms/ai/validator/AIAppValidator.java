@@ -3,6 +3,7 @@ package com.dotcms.ai.validator;
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.domain.Model;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -52,7 +53,7 @@ public class AIAppValidator {
      */
     public void validateAIConfig(final AppConfig appConfig, final String userId) {
         if (Objects.isNull(userId)) {
-            AppConfig.debugLogger(getClass(), () -> "User Id is null, skipping AI configuration validation");
+            appConfig.debugLogger(getClass(), () -> "User Id is null, skipping AI configuration validation");
             return;
         }
 
@@ -89,11 +90,11 @@ public class AIAppValidator {
      * If any exhausted or invalid models are found, a warning message is pushed to the user.
      *
      * @param aiModel the AI model
-     * @param userId the user ID
+     * @param request the ai request
      */
-    public void validateModelsUsage(final AIModel aiModel, final String userId) {
-        if (Objects.isNull(userId)) {
-            AppConfig.debugLogger(getClass(), () -> "User Id is null, skipping AI models usage validation");
+    public void validateModelsUsage(final AIModel aiModel, final JSONObjectAIRequest request) {
+        if (Objects.isNull(request.getUserId())) {
+            request.getConfig().debugLogger(getClass(), () -> "User Id is null, skipping AI models usage validation");
             return;
         }
 
@@ -114,7 +115,7 @@ public class AIAppValidator {
                 .setLife(DateUtil.SEVEN_SECOND_MILLIS)
                 .create();
 
-        systemMessageEventUtil.pushMessage(systemMessage, Collections.singletonList(userId));
+        systemMessageEventUtil.pushMessage(systemMessage, Collections.singletonList(request.getUserId()));
     }
 
     @VisibleForTesting
