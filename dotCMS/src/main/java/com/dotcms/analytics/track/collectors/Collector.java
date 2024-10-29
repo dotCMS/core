@@ -18,6 +18,20 @@ package com.dotcms.analytics.track.collectors;
  */
 public interface Collector {
 
+    String REQUEST_ID = "request_id";
+    String UTC_TIME = "utc_time";
+    String CLUSTER = "cluster";
+    String SERVER = "server";
+    String SESSION_ID = "sessionId";
+    String SESSION_NEW = "sessionNew";
+    String REFERER = "referer";
+    String USER_AGENT = "userAgent";
+    String PERSONA = "persona";
+    String RENDER_MODE = "renderMode";
+    String COME_FROM_VANITY_URL = "comeFromVanityURL";
+    String ISEXPERIMENTPAGE = "isexperimentpage";
+    String ISTARGETPAGE = "istargetpage";
+
     /**
      * Test if the collector should run
      * @param collectorContextMap
