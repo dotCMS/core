@@ -2,7 +2,7 @@ package com.dotcms.experience.osgi;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.ClusterLockManager;
-import com.dotcms.rest.api.v1.experience.TelemetryResource;
+import com.dotcms.experience.TelemetryResource;
 import com.dotcms.experience.collectors.api.ApiMetricAPI;
 import com.dotcms.experience.collectors.api.ApiMetricFactorySubmitter;
 import com.dotcms.experience.collectors.api.ApiMetricWebInterceptor;
