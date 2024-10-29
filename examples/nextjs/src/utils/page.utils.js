@@ -2,6 +2,8 @@ import { client } from "./dotcmsClient";
 
 export const fetchPageData = async (params) => {
     try {
+        // Can the `get` method use the user cookie under the hood when it's inside the editor?
+        // Maybe using the dotUVE object from the window object?
         const pageAsset = await client.page.get({
             ...params,
             depth: 3,
@@ -9,6 +11,10 @@ export const fetchPageData = async (params) => {
 
         return { pageAsset };
     } catch (error) {
+        if (error?.status === 404) {
+            return { pageAsset: null, error: null };
+        }
+
         return { pageAsset: null, error };
     }
 };

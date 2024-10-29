@@ -35,7 +35,6 @@ export async function generateMetadata({ params, searchParams }) {
     }
 }
 
-// 1. Token as a Search Params
 export default async function Home({ searchParams, params }) {
     const getPageData = async () => {
         const path = params?.slug?.join("/") || "/";
@@ -56,7 +55,7 @@ export default async function Home({ searchParams, params }) {
     const { pageAsset, nav, error } = await getPageData();
 
     // Move this to MyPage
-    if (error && error.status !== 404) {
+    if (error) {
         return <ErrorPage error={error} />;
     }
 
@@ -64,5 +63,5 @@ export default async function Home({ searchParams, params }) {
         handleVanityUrlRedirect(pageAsset?.vanityUrl);
     }
 
-    return <MyPage nav={nav?.entity.children} pageAsset={pageAsset} ></MyPage>;
+    return <MyPage nav={nav?.entity.children} pageAsset={pageAsset} />;
 }
