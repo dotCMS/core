@@ -458,6 +458,8 @@
          * #editContentlet() macro
          * More info: https://github.com/dotCMS/core/issues/30218
          *
+         * Maybe we can avoid this after this is merged: https://github.com/dotCMS/core/pull/30110
+         *
          */
         const newSaveContentCallBack = (data) => setTimeout(() => saveContentCallback(data), 1800);
 
