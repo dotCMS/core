@@ -5,7 +5,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import com.dotcms.LicenseTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -23,7 +22,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.launch.Framework;
 
-public class GenericBundleActivatorTest {
+public class GenericBundleActivatorIntegrationTest {
 
     /**
      * Sets up OSGI and makes sure the framework has started
