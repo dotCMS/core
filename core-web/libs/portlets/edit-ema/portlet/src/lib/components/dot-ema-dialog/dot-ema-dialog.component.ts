@@ -199,11 +199,12 @@ export class DotEmaDialogComponent {
      * @param {CreateFromPaletteAction} { variable, name, payload }
      * @memberof DotEmaDialogComponent
      */
-    createContentletFromPalette({ variable, name, payload }: CreateFromPaletteAction) {
+    createContentletFromPalette({ variable, name, payload, language_id }: CreateFromPaletteAction) {
         this.store.createContentletFromPalette({
             variable,
             name,
-            payload
+            payload,
+            language_id
         });
     }
 
