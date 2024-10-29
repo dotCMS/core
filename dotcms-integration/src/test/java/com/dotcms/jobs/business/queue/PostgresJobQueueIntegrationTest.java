@@ -80,12 +80,12 @@ public class PostgresJobQueueIntegrationTest {
     }
 
     /**
-     * Method to test: getActiveJobs in PostgresJobQueue
+     * Method to test: getActiveJobs in PostgresJobQueue for queue
      * Given Scenario: Multiple active jobs are created
      * ExpectedResult: All active jobs are retrieved correctly
      */
     @Test
-    void test_getActiveJobs() throws JobQueueException {
+    void test_getActiveJobsForQueue() throws JobQueueException {
 
         String queueName = "testQueue";
         for (int i = 0; i < 5; i++) {
@@ -98,12 +98,29 @@ public class PostgresJobQueueIntegrationTest {
     }
 
     /**
-     * Method to test: getCompletedJobs in PostgresJobQueue
+     * Method to test: getActiveJobs in PostgresJobQueue Given Scenario: Multiple active jobs are
+     * created ExpectedResult: All active jobs are retrieved correctly
+     */
+    @Test
+    void test_getActiveJobs() throws JobQueueException {
+
+        String queueName = "testQueue";
+        for (int i = 0; i < 5; i++) {
+            jobQueue.createJob(queueName, new HashMap<>());
+        }
+
+        JobPaginatedResult result = jobQueue.getActiveJobs(1, 10);
+        assertEquals(5, result.jobs().size());
+        assertEquals(5, result.total());
+    }
+
+    /**
+     * Method to test: getCompletedJobs in PostgresJobQueue for queue
      * Given Scenario: Multiple jobs are created and completed
      * ExpectedResult: All completed jobs within the given time range are retrieved
      */
     @Test
-    void testGetCompletedJobs() throws JobQueueException {
+    void testGetCompletedJobsForQueue() throws JobQueueException {
 
         String queueName = "testQueue";
         LocalDateTime startDate = LocalDateTime.now().minusDays(1);
@@ -121,6 +138,54 @@ public class PostgresJobQueueIntegrationTest {
         assertEquals(3, result.jobs().size());
         assertEquals(3, result.total());
         result.jobs().forEach(job -> assertEquals(JobState.COMPLETED, job.state()));
+    }
+
+    /**
+     * Method to test: getCompletedJobs in PostgresJobQueue
+     * Given Scenario: Multiple jobs are created and completed
+     * ExpectedResult: All completed jobs are retrieved
+     */
+    @Test
+    void testGetCompletedJobs() throws JobQueueException {
+
+        String queueName = "testQueue";
+
+        // Create and complete some jobs
+        for (int i = 0; i < 3; i++) {
+            String jobId = jobQueue.createJob(queueName, new HashMap<>());
+            Job job = jobQueue.getJob(jobId);
+            Job completedJob = job.markAsCompleted(null);
+            jobQueue.updateJobStatus(completedJob);
+        }
+
+        JobPaginatedResult result = jobQueue.getCompletedJobs(1, 10);
+        assertEquals(3, result.jobs().size());
+        assertEquals(3, result.total());
+        result.jobs().forEach(job -> assertEquals(JobState.COMPLETED, job.state()));
+    }
+
+    /**
+     * Method to test: getCanceledJobs in PostgresJobQueue
+     * Given Scenario: Multiple jobs are created and canceled
+     * ExpectedResult: All canceled jobs are retrieved
+     */
+    @Test
+    void testGetCanceledJobs() throws JobQueueException {
+
+        String queueName = "testQueue";
+
+        // Create and complete some jobs
+        for (int i = 0; i < 3; i++) {
+            String jobId = jobQueue.createJob(queueName, new HashMap<>());
+            Job job = jobQueue.getJob(jobId);
+            Job completedJob = job.markAsCanceled(null);
+            jobQueue.updateJobStatus(completedJob);
+        }
+
+        JobPaginatedResult result = jobQueue.getCanceledJobs(1, 10);
+        assertEquals(3, result.jobs().size());
+        assertEquals(3, result.total());
+        result.jobs().forEach(job -> assertEquals(JobState.CANCELED, job.state()));
     }
 
     /**
