@@ -42,7 +42,7 @@ export function listenEditorMessages(): void {
     const messageCallback = (
         event: MessageEvent<{ name: NOTIFY_CLIENT; direction: 'up' | 'down' }>
     ) => {
-        const ACTIONS_NOTIFICATION: Record<NOTIFY_CLIENT, () => void> = {
+        const ACTIONS_NOTIFICATION: { [K in NOTIFY_CLIENT]?: () => void } = {
             [NOTIFY_CLIENT.UVE_RELOAD_PAGE]: () => {
                 window.location.reload();
             },
@@ -63,15 +63,6 @@ export function listenEditorMessages(): void {
 
                 const scrollY = direction === 'up' ? -120 : 120;
                 window.scrollBy({ left: 0, top: scrollY, behavior: 'smooth' });
-            },
-            [NOTIFY_CLIENT.UVE_SET_PAGE_DATA]: () => {
-                /** NOOP **/
-            },
-            [NOTIFY_CLIENT.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS]: () => {
-                /** NOOP **/
-            },
-            [NOTIFY_CLIENT.UVE_EDITOR_PONG]: () => {
-                /** NOOP **/
             }
         };
 
