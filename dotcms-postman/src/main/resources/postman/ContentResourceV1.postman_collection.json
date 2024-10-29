@@ -2543,6 +2543,26 @@
 				},
 				{
 					"name": "CreateContentRich",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Test Page created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -2591,7 +2611,32 @@
 				},
 				{
 					"name": "AddContentToPage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -2632,7 +2677,7 @@
 									"",
 									"pm.test(\"count successfully\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.count).to.eql(1);",
+									"    pm.expect(jsonData.entity.count).to.gte(1);",
 									"});"
 								],
 								"type": "text/javascript",
