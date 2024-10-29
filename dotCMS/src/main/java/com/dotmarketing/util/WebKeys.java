@@ -361,6 +361,8 @@ public final class WebKeys {
     public static final String RULES_ACTIONLET_CLASSES = "RULES_ACTIONLET_CLASSES";
     public static final String RULES_CONDITIONLET_VISITEDURLS = "RULES_CONDITIONLET_VISITEDURLS";
     public static final String RULES_ENGINE_PARAM = "dotRules";
+    // stores the rule id that is currently being evaluated
+    public static final String RULES_ENGINE_PARAM_CURRENT_RULE_ID = "dotCurrentRuleId";
     public static final String RULES_ENGINE_FIRE_LIST = "dotRulesFired";
 
 	//ADMIN CONTROL

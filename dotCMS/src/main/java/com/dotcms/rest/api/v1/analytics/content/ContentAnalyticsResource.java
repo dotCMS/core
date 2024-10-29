@@ -5,13 +5,11 @@ import com.dotcms.analytics.content.ReportResponse;
 import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceFactory;
 import com.dotcms.analytics.track.matchers.UserCustomDefinedRequestMatcher;
-import com.dotcms.cdi.CDIUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.util.DotPreconditions;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.google.common.annotations.VisibleForTesting;
@@ -21,8 +19,11 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.glassfish.jersey.server.JSONP;
-
+import java.io.Serializable;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -31,11 +32,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * Resource class that exposes endpoints to query content analytics data.
@@ -46,6 +43,7 @@ import java.util.stream.Collectors;
  * @author Jose Castro
  * @since Sep 13th, 2024
  */
+
 @Path("/v1/analytics/content")
 @Tag(name = "Content Analytics",
         description = "Endpoints that exposes information related to how dotCMS content is accessed and interacted with by users.")
@@ -56,13 +54,7 @@ public class ContentAnalyticsResource {
     private final WebResource webResource;
     private final ContentAnalyticsAPI contentAnalyticsAPI;
 
-    @SuppressWarnings("unused")
-    public ContentAnalyticsResource() {
-        this(CDIUtils.getBean(ContentAnalyticsAPI.class).orElseGet(APILocator::getContentAnalyticsAPI));
-    }
-
-    //@Inject
-    @VisibleForTesting
+    @Inject
     public ContentAnalyticsResource(final ContentAnalyticsAPI contentAnalyticsAPI) {
         this(new WebResource(), contentAnalyticsAPI);
     }
@@ -97,7 +89,7 @@ public class ContentAnalyticsResource {
                                                             "        \"measures\": [\n" +
                                                             "            \"request.count\"\n" +
                                                             "        ],\n" +
-                                                            "        \"orders\": \"request.count DESC\",\n" +
+                                                            "        \"order\": \"request.count DESC\",\n" +
                                                             "        \"dimensions\": [\n" +
                                                             "            \"request.url\",\n" +
                                                             "            \"request.pageId\",\n" +
@@ -244,7 +236,7 @@ public class ContentAnalyticsResource {
         DotPreconditions.checkNotNull(userEventPayload, IllegalArgumentException.class, "The 'userEventPayload' JSON cannot be null");
         DotPreconditions.checkNotNull(userEventPayload.get("event_type"), IllegalArgumentException.class, "The 'event_type' field is required");
         Logger.debug(this,  ()->"Creating an user custom event with the payload: " + userEventPayload);
-        request.setAttribute("requestId", UUIDUtil.uuid());
+        request.setAttribute("requestId", Objects.nonNull(request.getAttribute("requestId")) ? request.getAttribute("requestId") : UUIDUtil.uuid());
         WebEventsCollectorServiceFactory.getInstance().getWebEventsCollectorService().fireCollectorsAndEmitEvent(request, response, USER_CUSTOM_DEFINED_REQUEST_MATCHER, userEventPayload);
         return new ResponseEntityStringView("User event created successfully");
     }

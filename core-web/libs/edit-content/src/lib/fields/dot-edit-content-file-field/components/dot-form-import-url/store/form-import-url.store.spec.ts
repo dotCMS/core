@@ -3,6 +3,8 @@ import { of, throwError } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
+import { ComponentStatus } from '@dotcms/dotcms-models';
+
 import { NEW_FILE_MOCK } from './../../../../../utils/mocks';
 import { FormImportUrlStore, FormImportUrlState } from './form-import-url.store';
 
@@ -29,7 +31,7 @@ describe('FormImportUrlStore', () => {
 
     it('should initialize with the correct state', () => {
         expect(store.file()).toBeNull();
-        expect(store.status()).toBe('init');
+        expect(store.status()).toBe(ComponentStatus.INIT);
         expect(store.error()).toBeNull();
         expect(store.uploadType()).toBe('temp');
         expect(store.acceptedFiles()).toEqual([]);
@@ -61,9 +63,9 @@ describe('FormImportUrlStore', () => {
 
             store.uploadFileByUrl({ fileUrl, abortSignal: abortController.signal });
 
-            expect(store.file().file).toEqual(mockContentlet);
-            expect(store.file().source).toEqual('contentlet');
-            expect(store.status()).toBe('done');
+            expect(store.file()?.file).toEqual(mockContentlet);
+            expect(store.file()?.source).toEqual('contentlet');
+            expect(store.status()).toBe(ComponentStatus.LOADED);
         });
 
         it('should handle upload file by URL error', () => {
@@ -77,7 +79,7 @@ describe('FormImportUrlStore', () => {
             expect(store.error()).toBe(
                 'dot.file.field.import.from.url.error.file.not.supported.message'
             );
-            expect(store.status()).toBe('error');
+            expect(store.status()).toBe(ComponentStatus.ERROR);
         });
     });
 });

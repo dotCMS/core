@@ -239,6 +239,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         assertFalse(newContentlet.getMap().containsKey(Contentlet.NULL_PROPERTIES));
         assertEquals(newContentlet.getMap().get(ContentletForm.IDENTIFIER_KEY), identifier);
         assertEquals(newContentlet.getMap().get(HTMLPageAssetAPI.URL_FIELD), urlExpected);
+        assertTrue(newContentlet.getMap().containsKey(DefaultTransformStrategy.SHORTY_ID));
     }
 
     @Test
@@ -313,6 +314,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         assertTrue(newContentlet.getMap().containsKey(HTMLPageAssetAPI.URL_FIELD));
         assertEquals(urlExpected, newContentlet.getMap().get(HTMLPageAssetAPI.URL_FIELD));
         assertFalse(newContentlet.getMap().containsKey(Contentlet.NULL_PROPERTIES));
+        assertTrue(newContentlet.getMap().containsKey(DefaultTransformStrategy.SHORTY_ID));
     }
 
 
