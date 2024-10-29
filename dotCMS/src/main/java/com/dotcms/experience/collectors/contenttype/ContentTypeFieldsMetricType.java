@@ -6,7 +6,6 @@ import com.dotcms.experience.MetricType;
 import com.dotcms.experience.MetricValue;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 
 import javax.ws.rs.NotSupportedException;

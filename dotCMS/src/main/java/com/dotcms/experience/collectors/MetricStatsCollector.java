@@ -111,6 +111,10 @@ public final class MetricStatsCollector {
     public static final ApiMetricAPI apiStatAPI = new ApiMetricAPI();
     static final Collection<MetricType> metricStatsCollectors;
 
+    private MetricStatsCollector() {
+
+    }
+
     static {
         metricStatsCollectors = new HashSet<>();
 
