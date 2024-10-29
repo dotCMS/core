@@ -50,6 +50,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  * Manages the processing of jobs in a distributed job queue system. This class is responsible for
@@ -138,7 +139,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * - Initializes event handlers for various job state changes.
      */
     @Inject
-    public JobQueueManagerAPIImpl(JobQueue jobQueue,
+    public JobQueueManagerAPIImpl(@Named("queueProducer") JobQueue jobQueue,
             JobQueueConfig jobQueueConfig,
             CircuitBreaker circuitBreaker,
             RetryStrategy defaultRetryStrategy,
