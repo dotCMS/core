@@ -5,7 +5,6 @@ import com.dotcms.business.SystemCache;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -206,7 +205,7 @@ public class ReindexThread {
         while (state.get() != ThreadState.STOPPED) {
             try {
                 reindex();
-            } catch (Throwable ex) {
+            } catch (Exception ex) {
                 Logger.error(this, "ReindexThread Exception", ex);
                 ThreadUtils.sleep(SLEEP_ON_ERROR);
             } finally {
