@@ -207,28 +207,30 @@ export interface EditEmaDialogState {
     clientAction: CLIENT_ACTIONS;
 }
 
+export type DialogActionPayload = Pick<EditEmaDialogState, 'actionPayload'>;
+
 export interface DialogAction
     extends Pick<EditEmaDialogState, 'actionPayload' | 'form' | 'clientAction'> {
     event: CustomEvent;
 }
 
 // We can modify this if we add more events, for now I think is enough
-export interface CreateFromPaletteAction extends Pick<EditEmaDialogState, 'actionPayload'> {
+export interface CreateFromPaletteAction extends DialogActionPayload {
     variable: string;
     name: string;
     language_id?: string | number;
 }
 
-export interface EditContentletPayload extends Partial<DotCMSContentlet> {
-    clientAction?: CLIENT_ACTIONS;
-}
+export type EditContentletPayload = Partial<
+    DotCMSContentlet & Pick<EditEmaDialogState, 'clientAction'>
+>;
 
-export interface CreateContentletAction extends Pick<EditEmaDialogState, 'actionPayload'> {
+export interface CreateContentletAction extends DialogActionPayload {
     url: string;
     contentType: string;
 }
 
-export interface AddContentletAction extends Pick<EditEmaDialogState, 'actionPayload'> {
+export interface AddContentletAction extends DialogActionPayload {
     containerId: string;
     acceptTypes: string;
     language_id: string;
