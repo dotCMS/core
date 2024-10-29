@@ -18,7 +18,7 @@
 
 ## Features
 
-- A set of Angular components developer for dotCMS page rendering and editor integration.
+- A set of Angular components developed for dotCMS page rendering and editor integration.
 - Enhanced development workflow with full TypeScript support.
 - Optimized performance for efficient rendering of dotCMS pages in Angular applications.
 - Flexible customization options to adapt to various project requirements.
@@ -91,7 +91,7 @@ this.client.page
       // Use the error response
     })
 ```
-For more information to how to use DotCms Client, you can visit the [documentation](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/client/README.md)
+For more information on how to use the dotCMS Client,you can visit the [documentation](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/client/README.md)
 
 ## DotCMS Page API
 
