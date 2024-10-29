@@ -10,6 +10,7 @@ import com.dotmarketing.filters.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -23,7 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 /**
- * This class provides the default implementation for the WebEventsCollectorService
+ * This class provides the default implementation for the {@link WebEventsCollectorService}
+ * interface.
  *
  * @author jsanca
  */
@@ -53,18 +55,25 @@ public class WebEventsCollectorServiceFactory {
         return webEventsCollectorService;
     }
 
-    private static class WebEventsCollectorServiceImpl implements WebEventsCollectorService {
+    /**
+     *
+     */
+    public static class WebEventsCollectorServiceImpl implements WebEventsCollectorService {
 
         private final Collectors baseCollectors = new Collectors();
         private final Collectors eventCreatorCollectors = new Collectors();
 
-        private final EventLogSubmitter submitter = new EventLogSubmitter();
+        private EventLogSubmitter submitter = new EventLogSubmitter();
 
         WebEventsCollectorServiceImpl () {
 
             addCollector(new BasicProfileCollector(), new FilesCollector(), new PagesCollector(),
-                    new PageDetailCollector(), new SyncVanitiesCollector(), new AsyncVanitiesCollector(),
-                    new CustomerEventCollector());
+                    new PageDetailCollector(), new SyncVanitiesCollector(), new AsyncVanitiesCollector());
+        }
+
+        @VisibleForTesting
+        WebEventsCollectorServiceImpl(final EventLogSubmitter submitter) {
+            this.submitter = submitter;
         }
 
         @Override
@@ -81,7 +90,6 @@ public class WebEventsCollectorServiceFactory {
             }
         }
 
-        @Override
         /**
          * Allows to fire the collections and emit the event from a base payload map already built by the user
          * @param request
@@ -89,6 +97,7 @@ public class WebEventsCollectorServiceFactory {
          * @param requestMatcher
          * @param basePayloadMap
          */
+        @Override
         public void fireCollectorsAndEmitEvent(final HttpServletRequest request,
                                                 final HttpServletResponse response,
                                                 final RequestMatcher requestMatcher,
