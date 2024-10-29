@@ -406,6 +406,212 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Get with language_id query param",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Parse the response JSON",
+									"var jsonData = pm.response.json();",
+									"",
+									"// Check if the `entity` property is present",
+									"pm.test(\"Check entity is present in the response\", function () {",
+									"    pm.expect(jsonData).to.have.property(\"entity\");",
+									"});",
+									"",
+									"// Extract the URL from the entity",
+									"var entityURL = jsonData.entity;",
+									"",
+									"// Check if the entity URL contains \"_content_lang\"",
+									"pm.test(\"Check _content_lang is present in the entity URL\", function () {",
+									"    pm.expect(entityURL).to.include(\"_content_lang\");",
+									"});",
+									"",
+									"// Manually parse the query parameters from the entity URL",
+									"var entityQueryString = entityURL.split('?')[1];",
+									"var entityParams = {};",
+									"if (entityQueryString) {",
+									"    entityQueryString.split('&').forEach(function(param) {",
+									"        var pair = param.split('=');",
+									"        entityParams[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');",
+									"    });",
+									"}",
+									"",
+									"// Validate that the extracted language_id from the entity is \"2\"",
+									"pm.test(\"Check language_id is '2' from entity URL\", function () {",
+									"    pm.expect(entityParams['_content_lang']).to.equal(\"2\");",
+									"});",
+									"",
+									"// Extract the referrer URL from the entity",
+									"var referrerParam = entityURL.split(\"&_content_referer=\")[1];",
+									"",
+									"// Check if the referrer URL exists",
+									"pm.test(\"Check referrer URL is present\", function () {",
+									"    pm.expect(referrerParam).to.not.be.undefined;",
+									"});",
+									"",
+									"// Decode the referrer URL and extract parameters",
+									"if (referrerParam) {",
+									"    referrerParam = decodeURIComponent(referrerParam.split('&')[0]); // Decode and get the actual URL",
+									"",
+									"    // Check if the referrer URL contains \"_content_lang\"",
+									"    pm.test(\"Check _content_lang is present in the referrer URL\", function () {",
+									"        pm.expect(referrerParam).to.include(\"_content_lang\");",
+									"    });",
+									"",
+									"    // Manually parse the query parameters from the decoded referrer URL",
+									"    var referrerQueryString = referrerParam.split('?')[1];",
+									"    var referrerParams = {};",
+									"    if (referrerQueryString) {",
+									"        referrerQueryString.split('&').forEach(function(param) {",
+									"            var pair = param.split('=');",
+									"            referrerParams[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');",
+									"        });",
+									"    }",
+									"",
+									"    // Validate that the extracted language_id from the referrer is \"2\"",
+									"    pm.test(\"Check language_id is '2' from referrer URL\", function () {",
+									"        pm.expect(referrerParams['_content_lang']).to.equal(\"2\");",
+									"    });",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/_actionurl/webpagecontent?language_id=2",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"_actionurl",
+								"webpagecontent"
+							],
+							"query": [
+								{
+									"key": "language_id",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get without language_id query param",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Parse the response JSON",
+									"var jsonData = pm.response.json();",
+									"",
+									"// Check if the `entity` property is present",
+									"pm.test(\"Check entity is present in the response\", function () {",
+									"    pm.expect(jsonData).to.have.property(\"entity\");",
+									"});",
+									"",
+									"// Extract the URL from the entity",
+									"var entityURL = jsonData.entity;",
+									"",
+									"// Check if the entity URL contains \"_content_lang\"",
+									"pm.test(\"Check _content_lang is present in the entity URL\", function () {",
+									"    pm.expect(entityURL).to.include(\"_content_lang\");",
+									"});",
+									"",
+									"// Manually parse the query parameters from the entity URL",
+									"var entityQueryString = entityURL.split('?')[1];",
+									"var entityParams = {};",
+									"if (entityQueryString) {",
+									"    entityQueryString.split('&').forEach(function(param) {",
+									"        var pair = param.split('=');",
+									"        entityParams[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');",
+									"    });",
+									"}",
+									"",
+									"// Validate that the extracted language_id from the entity is \"1\"",
+									"pm.test(\"Check language_id is '1' from entity URL\", function () {",
+									"    pm.expect(entityParams['_content_lang']).to.equal(\"1\");",
+									"});",
+									"",
+									"// Extract the referrer URL from the entity",
+									"var referrerParam = entityURL.split(\"&_content_referer=\")[1];",
+									"",
+									"// Check if the referrer URL exists",
+									"pm.test(\"Check referrer URL is present\", function () {",
+									"    pm.expect(referrerParam).to.not.be.undefined;",
+									"});",
+									"",
+									"// Decode the referrer URL and extract parameters",
+									"if (referrerParam) {",
+									"    referrerParam = decodeURIComponent(referrerParam.split('&')[0]); // Decode and get the actual URL",
+									"",
+									"    // Check if the referrer URL contains \"_content_lang\"",
+									"    pm.test(\"Check _content_lang is present in the referrer URL\", function () {",
+									"        pm.expect(referrerParam).to.include(\"_content_lang\");",
+									"    });",
+									"",
+									"    // Manually parse the query parameters from the decoded referrer URL",
+									"    var referrerQueryString = referrerParam.split('?')[1];",
+									"    var referrerParams = {};",
+									"    if (referrerQueryString) {",
+									"        referrerQueryString.split('&').forEach(function(param) {",
+									"            var pair = param.split('=');",
+									"            referrerParams[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');",
+									"        });",
+									"    }",
+									"",
+									"    // Validate that the extracted language_id from the referrer is \"1\"",
+									"    pm.test(\"Check language_id is '1' from referrer URL\", function () {",
+									"        pm.expect(referrerParams['_content_lang']).to.equal(\"1\");",
+									"    });",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/_actionurl/webpagecontent",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"_actionurl",
+								"webpagecontent"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"description": "This suite verifies that the `{{serverURL}}/api/v1/portlet/_actionurl/{{contentTypeVarName}}` works as expected.\n\nIt returns the Action URL used by the legacy Liferay layer to render a Portlet inside dotCMS. It includes several query String parameters such as IDs for the language, Content Type, Struts Actions, and so on."

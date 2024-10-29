@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
@@ -94,12 +95,12 @@ public class AnalyticsFireUserEventActionlet extends WorkFlowActionlet {
             final HashMap<String, String> objectDetail = new HashMap<>();
             final Map<String, Serializable> userEventPayload = new HashMap<>();
 
-            userEventPayload.put(ID, Objects.nonNull(objectId) ? objectId : identifier);
+            userEventPayload.put(ID, UtilMethods.isSet(objectId) ? objectId.trim() : identifier);
 
             objectDetail.put(ID, identifier);
-            objectDetail.put(OBJECT_CONTENT_TYPE_VAR_NAME, Objects.nonNull(objectType) ? objectType : CONTENT);
+            objectDetail.put(OBJECT_CONTENT_TYPE_VAR_NAME, UtilMethods.isSet(objectType) ? objectType.trim() : CONTENT);
             userEventPayload.put(OBJECT, objectDetail);
-            userEventPayload.put(EVENT_TYPE1, eventType);
+            userEventPayload.put(EVENT_TYPE1, UtilMethods.isSet(eventType)? eventType.trim(): eventType);
             webEventsCollectorService.fireCollectorsAndEmitEvent(request, response, USER_CUSTOM_DEFINED_REQUEST_MATCHER, userEventPayload);
         } else {
             Logger.warn(this, "The request or response is null, can't send the event for the contentlet: " + identifier);
