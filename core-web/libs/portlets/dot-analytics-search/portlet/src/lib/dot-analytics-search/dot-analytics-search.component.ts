@@ -6,14 +6,12 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
-import { SelectItem } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { SplitterModule } from 'primeng/splitter';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAnalyticsSearchService, DotMessageService } from '@dotcms/data-access';
-import { AnalyticsQueryType } from '@dotcms/dotcms-models';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import {
@@ -58,14 +56,6 @@ export class DotAnalyticsSearchComponent {
      * The content of the query editor.
      */
     queryEditor = '';
-
-    /**
-     * Signal representing the available query types.
-     */
-    $queryType = signal<SelectItem[]>([
-        { label: 'DotCMS Query', value: AnalyticsQueryType.DEFAULT },
-        { label: 'Cube Query', value: AnalyticsQueryType.CUBE }
-    ]);
 
     /**
      * Signal representing the empty state configuration.

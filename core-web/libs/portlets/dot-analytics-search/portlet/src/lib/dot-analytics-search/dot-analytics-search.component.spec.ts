@@ -7,7 +7,6 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotAnalyticsSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { AnalyticsQueryType } from '@dotcms/dotcms-models';
 
 import { DotAnalyticsSearchComponent } from './dot-analytics-search.component';
 
@@ -74,13 +73,5 @@ describe('DotAnalyticsSearchComponent', () => {
         spectator.click(button);
 
         expect(button).toBeDisabled();
-    });
-
-    it('should update query type when a new type is selected from the dropdown', () => {
-        const updateQueryTypeSpy = jest.spyOn(store, 'updateQueryType');
-
-        spectator.triggerEventHandler('p-dropdown', 'onChange', { value: AnalyticsQueryType.CUBE });
-
-        expect(updateQueryTypeSpy).toHaveBeenCalledWith(AnalyticsQueryType.CUBE);
     });
 });

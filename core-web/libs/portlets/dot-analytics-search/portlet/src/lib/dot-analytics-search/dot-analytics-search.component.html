@@ -1,7 +1,3 @@
-<p-dropdown
-    [options]="$queryType()"
-    (onChange)="store.updateQueryType($event.value)"
-    data-testId="query-dropdown"></p-dropdown>
 <p-splitter [panelSizes]="[35, 65]" styleClass="mb-5">
     <ng-template pTemplate>
         <section>
@@ -12,7 +8,6 @@
                     pButton
                     icon="pi pi-question-circle"></button>
             </div>
-            {{ 'analytics.search.valid.json' | dm }}
             <ngx-monaco-editor
                 [(ngModel)]="queryEditor"
                 [options]="ANALYTICS_MONACO_EDITOR_OPTIONS"

@@ -34,7 +34,7 @@ export const initialState: DotContentAnalyticsState = {
     results: null,
     query: {
         value: null,
-        type: AnalyticsQueryType.DEFAULT
+        type: AnalyticsQueryType.CUBE
     },
     state: ComponentStatus.INIT,
     errorMessage: ''
@@ -59,20 +59,6 @@ export const DotAnalyticsSearchStore = signalStore(
                 patchState(store, {
                     ...initialState,
                     isEnterprise
-                });
-            },
-
-            /**
-             * Updates the query type and resets the results.
-             * @param type - The new query type.
-             */
-            updateQueryType: (type: AnalyticsQueryType): void => {
-                patchState(store, {
-                    results: null,
-                    query: {
-                        ...store.query(),
-                        type
-                    }
                 });
             },
 
