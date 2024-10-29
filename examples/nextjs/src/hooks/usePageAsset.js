@@ -8,7 +8,10 @@ export const usePageAsset = (currentPageAsset) => {
 
     useEffect(() => {
         client.editor.on("changes", (page) => {
-            setIsReady(true);
+            if (!page) {
+                return;
+            }
+
             setPageAsset(page);
         });
 

@@ -458,6 +458,14 @@ describe('EditEmaEditorComponent', () => {
                     ).not.toBeNull();
                 });
             });
+
+            it('should set the client is ready to false when the component is destroyed', () => {
+                store.setIsClientReady(true);
+
+                spectator.component.ngOnDestroy();
+
+                expect(store.isClientReady()).toBe(false);
+            });
         });
 
         describe('customer actions', () => {
