@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 .file-selector {
-    height: 45rem;
+    height: 43rem;
     .file-selector__sidebar {
         border-right: $field-border-size solid $color-palette-gray-400;
         ::ng-deep {

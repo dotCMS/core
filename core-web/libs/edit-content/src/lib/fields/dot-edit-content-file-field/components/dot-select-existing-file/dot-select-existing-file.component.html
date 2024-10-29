@@ -1,15 +1,25 @@
 <div class="file-selector flex flex-column gap-3">
     <div class="file-selector__main grid grid-nogutter flex-grow-1 overflow-hidden">
         <div class="col-3 file-selector__sidebar">
-            <dot-sidebar />
+            <dot-sidebar [folders]="store.folders().data" [loading]="store.foldersIsLoading()" />
         </div>
         <div class="col">
-            <dot-dataview />
+            <dot-dataview [data]="store.content().data" [loading]="store.contentIsLoading()" />
         </div>
     </div>
     <div class="flex justify-content-end flex-none flex-wrap gap-3">
-        <p-button label="Cancel" [text]="true" severity="primary" />
-        <p-button label="Upload" [text]="true" [outlined]="true" severity="primary" />
-        <p-button label="Add" severity="primary" />
+        <p-button
+            (click)="closeDialog()"
+            [label]="'dot.file.field.dialog.select.existing.file.actions.cancel' | dm"
+            [text]="true"
+            severity="primary" />
+        <p-button
+            [label]="'dot.file.field.dialog.select.existing.file.actions.upload' | dm"
+            [text]="true"
+            [outlined]="true"
+            severity="primary" />
+        <p-button
+            [label]="'dot.file.field.dialog.select.existing.file.actions.add' | dm"
+            severity="primary" />
     </div>
 </div>

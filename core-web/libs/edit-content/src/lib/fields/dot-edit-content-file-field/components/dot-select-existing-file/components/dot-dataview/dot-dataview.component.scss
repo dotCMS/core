@@ -1,11 +1,27 @@
+@use "variables" as *;
+
+:host {
+    height: 100%;
+    display: block;
+}
+::ng-deep {
+    p-table {
+        .p-datatable .p-datatable-header {
+            background-color: $color-palette-gray-100;
+        }
+    }
+}
+
+.file-selector__table_header {
+    th {
+        font-weight: $font-weight-bold;
+        background-color: $color-palette-gray-100;
+    }
+}
 .img {
     max-inline-size: 100%;
     block-size: auto;
     aspect-ratio: 2/1;
     object-fit: cover;
     object-position: top center;
-}
-:host {
-    height: 100%;
-    display: block;
 }

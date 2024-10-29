@@ -1,7 +1,5 @@
-import { faker } from '@faker-js/faker';
-
 import { DatePipe, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, signal, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DataViewModule } from 'primeng/dataview';
@@ -12,6 +10,10 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { Content } from '../../store/select-existing-file.store';
 
 @Component({
     selector: 'dot-dataview',
@@ -27,31 +29,27 @@ import { TagModule } from 'primeng/tag';
         SkeletonModule,
         ImageModule,
         NgOptimizedImage,
-        DatePipe
+        DatePipe,
+        DotMessagePipe
     ],
     templateUrl: './dot-dataview.component.html',
     styleUrls: ['./dot-dataview.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotDataViewComponent implements OnInit {
-    $data = signal([]);
-    $loading = signal(false);
-
-    ngOnInit() {
-        this.$loading.set(true);
-        setTimeout(() => {
-            const data = faker.helpers.multiple(
-                () => ({
-                    id: faker.string.uuid(),
-                    image: faker.image.url(),
-                    title: faker.commerce.productName(),
-                    modifiedBy: faker.internet.displayName(),
-                    lastModified: faker.date.recent()
-                }),
-                { count: 100 }
-            );
-            this.$data.set(data);
-            this.$loading.set(false);
-        }, 3000);
-    }
+export class DotDataViewComponent {
+    /**
+     * Represents an observable stream of content data.
+     *
+     * @type {Observable<Content[]>}
+     * @alias data
+     * @required
+     */
+    $data = input.required<Content[]>({ alias: 'data' });
+    /**
+     * A boolean observable that indicates the loading state.
+     * This is typically used to show or hide a loading indicator in the UI.
+     *
+     * @type {boolean}
+     */
+    $loading = input.required<boolean>({ alias: 'loading' });
 }

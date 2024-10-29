@@ -3,7 +3,7 @@
     [loading]="$loading()"
     [paginator]="true"
     [rows]="7"
-    styleClass="p-datatable-lg flex flex-column h-full  justify-content-between">
+    styleClass="p-datatable-lg flex flex-column h-full justify-content-between">
     <ng-template pTemplate="caption">
         <div class="flex">
             <p-iconField iconPosition="left">
@@ -13,22 +13,27 @@
         </div>
     </ng-template>
     <ng-template pTemplate="header">
-        <tr>
-            <th scope="col">Title</th>
-            <th scope="col">Modified by</th>
-            <th scope="col">Last Modified</th>
+        <tr class="file-selector__table_header">
+            <th scope="col">{{ 'dot.file.field.dialog.select.existing.file.table.title' | dm }}</th>
+            <th scope="col">
+                {{ 'dot.file.field.dialog.select.existing.file.table.modified.by' | dm }}
+            </th>
+            <th scope="col">
+                {{ 'dot.file.field.dialog.select.existing.file.table.last.modified' | dm }}
+            </th>
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-content>
         <tr class="h-4rem">
             <td>
                 <div class="flex gap-1 align-items-center">
-                    <img
-                        lazy
-                        class="image"
-                        width="40"
+                    <p-image
+                        loading="lazy"
+                        [preview]="true"
+                        styleClass="image"
                         [src]="content.image"
-                        [alt]="content.title" />
+                        [alt]="content.title"
+                        width="40" />
 
                     <p class="m-0">{{ content.title }}</p>
                 </div>
@@ -41,8 +46,7 @@
         <tr class="h-4rem">
             @for (col of columns; track $index) {
                 <td>
-                    <p-skeleton
-                        [style.width]="$even ? (col.field === 'year' ? '30%' : '40%') : '60%'" />
+                    <p-skeleton />
                 </td>
             }
         </tr>

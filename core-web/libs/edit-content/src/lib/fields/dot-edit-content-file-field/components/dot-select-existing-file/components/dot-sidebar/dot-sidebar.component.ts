@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { TreeNode } from 'primeng/api';
 import { TreeModule } from 'primeng/tree';
@@ -12,33 +12,18 @@ import { TreeModule } from 'primeng/tree';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotSideBarComponent {
-    tree = signal<TreeNode[]>([
-        {
-            label: 'demo.dotcms.com',
-            expandedIcon: 'pi pi-folder-open',
-            collapsedIcon: 'pi pi-folder',
-            children: [
-                {
-                    label: 'demo.dotcms.com',
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder',
-                    children: [
-                        {
-                            label: 'documents'
-                        }
-                    ]
-                },
-                {
-                    label: 'demo.dotcms.com',
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder'
-                }
-            ]
-        },
-        {
-            label: 'nico.dotcms.com',
-            expandedIcon: 'pi pi-folder-open',
-            collapsedIcon: 'pi pi-folder'
-        }
-    ]);
+    /**
+     * An observable that emits an array of TreeNode objects representing folders.
+     *
+     * @type {Observable<TreeNode[]>}
+     * @alias folders
+     */
+    $folders = input.required<TreeNode[]>({ alias: 'folders' });
+    /**
+     * Represents a loading state for the component.
+     *
+     * @type {boolean}
+     * @alias loading
+     */
+    $loading = input.required<boolean>({ alias: 'loading' });
 }
