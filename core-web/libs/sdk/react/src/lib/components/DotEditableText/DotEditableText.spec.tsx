@@ -106,11 +106,12 @@ describe('DotEditableText', () => {
                     focusSpy = jest.spyOn(TINYMCE_EDITOR_MOCK, 'focus');
                 });
 
-                it("should focus on the editor when the message is 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS'", () => {
+                it("should focus on the editor when the message is 'UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS'", () => {
                     window.dispatchEvent(
                         new MessageEvent('message', {
                             data: {
-                                name: 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS',
+                                name: dotcmsClient.NOTIFY_CLIENT
+                                    .UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
                                 payload: {
                                     oldInode: dotcmsContentletMock['inode'],
                                     inode: '456'
@@ -121,7 +122,7 @@ describe('DotEditableText', () => {
                     expect(focusSpy).toHaveBeenCalled();
                 });
 
-                it("should not focus on the editor when the message is not 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS'", () => {
+                it("should not focus on the editor when the message is not 'UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS'", () => {
                     window.dispatchEvent(
                         new MessageEvent('message', {
                             data: { name: 'ANOTHER_EVENT' }
