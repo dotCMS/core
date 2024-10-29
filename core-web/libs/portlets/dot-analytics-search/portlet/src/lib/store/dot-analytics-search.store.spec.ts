@@ -89,5 +89,17 @@ describe('DotAnalyticsSearchStore', () => {
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
         });
+
+        it('should update the query type and reset results', () => {
+            dotAnalyticsSearchService.get.mockReturnValue(of(mockResponse));
+
+            store.getResults({ query: 'test' });
+
+            expect(store.results()).toEqual(mockResponse);
+
+            store.updateQueryType(AnalyticsQueryType.CUBE);
+            expect(store.query().type).toEqual(AnalyticsQueryType.CUBE);
+            expect(store.results()).toBeNull();
+        });
     });
 });

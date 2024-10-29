@@ -7,6 +7,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotAnalyticsSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import { AnalyticsQueryType } from '@dotcms/dotcms-models';
 
 import { DotAnalyticsSearchComponent } from './dot-analytics-search.component';
 
@@ -53,8 +54,11 @@ describe('DotAnalyticsSearchComponent', () => {
 
     it('should call getResults with valid JSON', () => {
         const getResultsSpy = jest.spyOn(store, 'getResults');
+
         spectator.component.queryEditor = '{"measures": ["request.count"]}';
+        spectator.component.handleQueryChange('{"measures": ["request.count"]}');
         spectator.detectChanges();
+
         const button = spectator.query(byTestId('run-query')) as HTMLButtonElement;
         spectator.click(button);
 
@@ -62,12 +66,21 @@ describe('DotAnalyticsSearchComponent', () => {
     });
 
     it('should not call getResults with invalid JSON', () => {
-        const getResultsSpy = jest.spyOn(store, 'getResults');
         spectator.component.queryEditor = 'invalid json';
+        spectator.component.handleQueryChange('invalid json');
         spectator.detectChanges();
+
         const button = spectator.query(byTestId('run-query')) as HTMLButtonElement;
         spectator.click(button);
 
-        expect(getResultsSpy).not.toHaveBeenCalled();
+        expect(button).toBeDisabled();
+    });
+
+    it('should update query type when a new type is selected from the dropdown', () => {
+        const updateQueryTypeSpy = jest.spyOn(store, 'updateQueryType');
+
+        spectator.triggerEventHandler('p-dropdown', 'onChange', { value: AnalyticsQueryType.CUBE });
+
+        expect(updateQueryTypeSpy).toHaveBeenCalledWith(AnalyticsQueryType.CUBE);
     });
 });
