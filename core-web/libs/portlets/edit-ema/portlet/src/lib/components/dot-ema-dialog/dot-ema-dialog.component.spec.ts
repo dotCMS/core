@@ -437,7 +437,7 @@ describe('DotEmaDialogComponent', () => {
             component.createContentletFromPalette({
                 variable: 'test',
                 name: 'test',
-                payload: PAYLOAD_MOCK
+                actionPayload: PAYLOAD_MOCK
             });
 
             expect(createContentletFromPalletSpy).toHaveBeenCalledWith({

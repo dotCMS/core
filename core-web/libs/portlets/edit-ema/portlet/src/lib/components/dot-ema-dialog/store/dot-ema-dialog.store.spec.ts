@@ -82,7 +82,7 @@ describe('DotEmaDialogStoreService', () => {
                 status: DialogStatus.IDLE,
                 header: '',
                 type: null,
-                payload: undefined,
+                actionPayload: undefined,
                 form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
@@ -159,7 +159,7 @@ describe('DotEmaDialogStoreService', () => {
             containerId: '1234',
             acceptTypes: 'test',
             language_id: '1',
-            payload: PAYLOAD_MOCK
+            actionPayload: PAYLOAD_MOCK
         });
 
         spectator.service.dialogState$.subscribe((state) => {
@@ -168,7 +168,7 @@ describe('DotEmaDialogStoreService', () => {
                 header: 'Search Content',
                 type: 'content',
                 status: DialogStatus.LOADING,
-                payload: PAYLOAD_MOCK,
+                actionPayload: PAYLOAD_MOCK,
                 form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
@@ -187,7 +187,7 @@ describe('DotEmaDialogStoreService', () => {
                 status: DialogStatus.LOADING,
                 url: null,
                 type: 'form',
-                payload: PAYLOAD_MOCK,
+                actionPayload: PAYLOAD_MOCK,
                 form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
@@ -201,7 +201,7 @@ describe('DotEmaDialogStoreService', () => {
         spectator.service.createContentlet({
             contentType: 'test',
             url: 'some/really/long/url',
-            payload: PAYLOAD_MOCK
+            actionPayload: PAYLOAD_MOCK
         });
 
         spectator.service.dialogState$.subscribe((state) => {
@@ -210,7 +210,7 @@ describe('DotEmaDialogStoreService', () => {
                 status: DialogStatus.LOADING,
                 header: 'Create test',
                 type: 'content',
-                payload: PAYLOAD_MOCK,
+                actionPayload: PAYLOAD_MOCK,
                 form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
@@ -224,7 +224,7 @@ describe('DotEmaDialogStoreService', () => {
         spectator.service.createContentlet({
             url: 'some/really/long/url',
             contentType: 'Blog Posts',
-            payload: PAYLOAD_MOCK
+            actionPayload: PAYLOAD_MOCK
         });
 
         spectator.service.dialogState$.subscribe((state) => {
@@ -232,7 +232,7 @@ describe('DotEmaDialogStoreService', () => {
             expect(state.status).toBe(DialogStatus.LOADING);
             expect(state.url).toBe('some/really/long/url');
             expect(state.type).toBe('content');
-            expect(state.payload).toEqual(PAYLOAD_MOCK);
+            expect(state.actionPayload).toEqual(PAYLOAD_MOCK);
             done();
         });
     });
@@ -245,7 +245,7 @@ describe('DotEmaDialogStoreService', () => {
         spectator.service.createContentletFromPalette({
             variable: 'blogPost',
             name: 'Blog',
-            payload: PAYLOAD_MOCK
+            actionPayload: PAYLOAD_MOCK
         });
 
         spectator.service.dialogState$.subscribe((state) => {
@@ -254,7 +254,7 @@ describe('DotEmaDialogStoreService', () => {
 
             expect(state.url).toBe('https://demo.dotcms.com/jsp.jsp');
             expect(state.type).toBe('content');
-            expect(state.payload).toEqual(PAYLOAD_MOCK);
+            expect(state.actionPayload).toEqual(PAYLOAD_MOCK);
             done();
         });
 

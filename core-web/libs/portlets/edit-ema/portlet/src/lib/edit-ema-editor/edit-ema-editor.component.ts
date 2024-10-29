@@ -620,7 +620,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         } else if (dragItem.draggedPayload.type === 'content-type') {
             this.uveStore.resetEditorProperties(); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
 
-            this.dialog.createContentletFromPalette({ ...dragItem.draggedPayload.item, payload });
+            this.dialog.createContentletFromPalette({
+                ...dragItem.draggedPayload.item,
+                actionPayload: payload
+            });
         } else if (dragItem.draggedPayload.type === 'temp') {
             const { pageContainers, didInsert } = insertContentletInContainer({
                 ...payload,
@@ -685,7 +688,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         });
     }
 
-    protected handleNgEvent({ event, payload, clientAction }: DialogAction) {
+    protected handleNgEvent({ event, actionPayload, clientAction }: DialogAction) {
         const { detail } = event;
 
         return (<Record<NG_CUSTOM_EVENTS, () => void>>{
@@ -694,7 +697,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
                 const { pageContainers, didInsert } = insertContentletInContainer({
-                    ...payload,
+                    ...actionPayload,
                     newContentletId: detail.data.identifier
                 });
                 if (!didInsert) {
@@ -723,14 +726,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     );
                 }
 
-                if (!payload) {
+                if (!actionPayload) {
                     this.uveStore.reload();
 
                     return;
                 }
 
                 const { pageContainers, didInsert } = insertContentletInContainer({
-                    ...payload,
+                    ...actionPayload,
                     newContentletId: contentletIdentifier
                 });
 
@@ -746,7 +749,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.dialog.createContentlet({
                     contentType: detail.data.contentType,
                     url: detail.data.url,
-                    payload
+                    actionPayload
                 });
                 this.cd.detectChanges();
             },
@@ -754,14 +757,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const formId = detail.data.identifier;
 
                 this.dotPageApiService
-                    .getFormIndetifier(payload.container.identifier, formId)
+                    .getFormIndetifier(actionPayload.container.identifier, formId)
                     .pipe(
                         tap(() => {
                             this.uveStore.setUveStatus(UVE_STATUS.LOADING);
                         }),
                         map((newFormId: string) => {
                             return {
-                                ...payload,
+                                ...actionPayload,
                                 newContentletId: newFormId
                             };
                         }),

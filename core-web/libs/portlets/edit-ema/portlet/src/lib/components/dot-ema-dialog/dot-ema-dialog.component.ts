@@ -94,22 +94,22 @@ export class DotEmaDialogComponent {
     /**
      * Add contentlet
      *
-     * @param {ActionPayload} payload
+     * @param {ActionPayload} actionPayload
      * @memberof EditEmaEditorComponent
      */
-    addContentlet(payload: ActionPayload): void {
+    addContentlet(actionPayload: ActionPayload): void {
         this.store.addContentlet({
-            containerId: payload.container.identifier,
-            acceptTypes: payload.container.acceptTypes ?? '*',
-            language_id: payload.language_id,
-            payload
+            containerId: actionPayload.container.identifier,
+            acceptTypes: actionPayload.container.acceptTypes ?? '*',
+            language_id: actionPayload.language_id,
+            actionPayload
         });
     }
 
     /**
      * Add Form
      *
-     * @param {ActionPayload} _payload
+     * @param {ActionPayload} actionPayload
      * @memberof EditEmaEditorComponent
      */
     addForm(payload: ActionPayload): void {
@@ -119,15 +119,15 @@ export class DotEmaDialogComponent {
     /**
      * Add Widget
      *
-     * @param {ActionPayload} payload
+     * @param {ActionPayload} actionPayload
      * @memberof EditEmaEditorComponent
      */
-    addWidget(payload: ActionPayload): void {
+    addWidget(actionPayload: ActionPayload): void {
         this.store.addContentlet({
-            containerId: payload.container.identifier,
+            containerId: actionPayload.container.identifier,
             acceptTypes: DotCMSBaseTypesContentTypes.WIDGET,
-            language_id: payload.language_id,
-            payload
+            language_id: actionPayload.language_id,
+            actionPayload
         });
     }
 
@@ -183,11 +183,11 @@ export class DotEmaDialogComponent {
      * @param {CreateContentletAction} { url, contentType, payload }
      * @memberof DotEmaDialogComponent
      */
-    createContentlet({ url, contentType, payload }: CreateContentletAction) {
+    createContentlet({ url, contentType, actionPayload }: CreateContentletAction) {
         this.store.createContentlet({
             url,
             contentType,
-            payload
+            actionPayload
         });
     }
 
@@ -197,11 +197,11 @@ export class DotEmaDialogComponent {
      * @param {CreateFromPaletteAction} { variable, name, payload }
      * @memberof DotEmaDialogComponent
      */
-    createContentletFromPalette({ variable, name, payload }: CreateFromPaletteAction) {
+    createContentletFromPalette({ variable, name, actionPayload }: CreateFromPaletteAction) {
         this.store.createContentletFromPalette({
             variable,
             name,
-            payload
+            actionPayload
         });
     }
 
@@ -403,8 +403,8 @@ export class DotEmaDialogComponent {
     }
 
     private emitAction(event: CustomEvent) {
-        const { payload, form, clientAction } = this.dialogState();
+        const { actionPayload, form, clientAction } = this.dialogState();
 
-        this.action.emit({ event, payload, form, clientAction });
+        this.action.emit({ event, actionPayload, form, clientAction });
     }
 }

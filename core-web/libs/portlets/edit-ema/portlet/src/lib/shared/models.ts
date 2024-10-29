@@ -202,31 +202,35 @@ export interface EditEmaDialogState {
     status: DialogStatus;
     url: string;
     type: DialogType;
-    payload?: ActionPayload;
+    actionPayload?: ActionPayload;
     form: DialogForm;
     clientAction: CLIENT_ACTIONS;
 }
 
 export interface DialogAction
-    extends Pick<EditEmaDialogState, 'payload' | 'form' | 'clientAction'> {
+    extends Pick<EditEmaDialogState, 'actionPayload' | 'form' | 'clientAction'> {
     event: CustomEvent;
 }
 
 // We can modify this if we add more events, for now I think is enough
-export interface CreateFromPaletteAction {
+export interface CreateFromPaletteAction extends Pick<EditEmaDialogState, 'actionPayload'> {
     variable: string;
     name: string;
-    payload: ActionPayload;
 }
 
 export interface EditContentletPayload extends Partial<DotCMSContentlet> {
     clientAction?: CLIENT_ACTIONS;
 }
 
-export interface CreateContentletAction {
+export interface CreateContentletAction extends Pick<EditEmaDialogState, 'actionPayload'> {
     url: string;
     contentType: string;
-    payload: ActionPayload;
+}
+
+export interface AddContentletAction extends Pick<EditEmaDialogState, 'actionPayload'> {
+    containerId: string;
+    acceptTypes: string;
+    language_id: string;
 }
 
 export interface PostMessage {

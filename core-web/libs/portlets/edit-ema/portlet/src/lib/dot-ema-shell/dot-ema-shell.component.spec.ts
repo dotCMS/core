@@ -829,7 +829,7 @@ describe('DotEmaShellComponent', () => {
                             name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
                         }
                     }),
-                    payload: PAYLOAD_MOCK,
+                    actionPayload: PAYLOAD_MOCK,
                     form: {
                         status: FormStatus.DIRTY,
                         isTranslation: true
@@ -871,7 +871,7 @@ describe('DotEmaShellComponent', () => {
                             name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
                         }
                     }),
-                    payload: PAYLOAD_MOCK,
+                    actionPayload: PAYLOAD_MOCK,
                     form: {
                         status: FormStatus.PRISTINE,
                         isTranslation: true
@@ -914,7 +914,7 @@ describe('DotEmaShellComponent', () => {
                             name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
                         }
                     }),
-                    payload: PAYLOAD_MOCK,
+                    actionPayload: PAYLOAD_MOCK,
                     form: {
                         isTranslation: true,
                         status: FormStatus.SAVED
@@ -955,7 +955,7 @@ describe('DotEmaShellComponent', () => {
                             }
                         }
                     }),
-                    payload: PAYLOAD_MOCK,
+                    actionPayload: PAYLOAD_MOCK,
                     form: {
                         status: FormStatus.SAVED,
                         isTranslation: false
@@ -985,7 +985,7 @@ describe('DotEmaShellComponent', () => {
                             }
                         }
                     }),
-                    payload: PAYLOAD_MOCK,
+                    actionPayload: PAYLOAD_MOCK,
                     form: {
                         status: FormStatus.SAVED,
                         isTranslation: false
@@ -1026,7 +1026,7 @@ describe('DotEmaShellComponent', () => {
                             }
                         }
                     }),
-                    payload: PAYLOAD_MOCK,
+                    actionPayload: PAYLOAD_MOCK,
                     form: {
                         status: FormStatus.SAVED,
                         isTranslation: false

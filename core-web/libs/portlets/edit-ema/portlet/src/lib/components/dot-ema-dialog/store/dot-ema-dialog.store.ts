@@ -13,6 +13,7 @@ import { LAYOUT_URL, CONTENTLET_SELECTOR_URL } from '../../../shared/consts';
 import { DialogStatus, FormStatus } from '../../../shared/enums';
 import {
     ActionPayload,
+    AddContentletAction,
     CreateContentletAction,
     CreateFromPaletteAction,
     DotPage,
@@ -50,14 +51,14 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     readonly createContentletFromPalette = this.effect(
         (contentTypeVariable$: Observable<CreateFromPaletteAction>) => {
             return contentTypeVariable$.pipe(
-                switchMap(({ name, variable, payload }) => {
+                switchMap(({ name, variable, actionPayload }) => {
                     return this.dotActionUrlService.getCreateContentletUrl(variable).pipe(
                         tapResponse(
                             (url) => {
                                 this.createContentlet({
                                     url,
                                     contentType: name,
-                                    payload
+                                    actionPayload
                                 });
                             },
                             (e) => {
@@ -93,7 +94,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      * @memberof DotEmaDialogStore
      */
     readonly createContentlet = this.updater(
-        (state, { url, contentType, payload }: CreateContentletAction) => {
+        (state, { url, contentType, actionPayload }: CreateContentletAction) => {
             return {
                 ...state,
                 url: url,
@@ -103,7 +104,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
                 ),
                 status: DialogStatus.LOADING,
                 type: 'content',
-                payload
+                actionPayload
             };
         }
     );
@@ -186,26 +187,16 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @memberof DotEmaDialogStore
      */
-    readonly addContentlet = this.updater(
-        (
-            state,
-            data: {
-                containerId: string;
-                acceptTypes: string;
-                language_id: string;
-                payload: ActionPayload;
-            }
-        ) => {
-            return {
-                ...state,
-                header: this.dotMessageService.get('edit.ema.page.dialog.header.search.content'),
-                status: DialogStatus.LOADING,
-                url: this.createAddContentletUrl(data),
-                type: 'content',
-                payload: data.payload
-            };
-        }
-    );
+    readonly addContentlet = this.updater((state, data: AddContentletAction) => {
+        return {
+            ...state,
+            header: this.dotMessageService.get('edit.ema.page.dialog.header.search.content'),
+            status: DialogStatus.LOADING,
+            url: this.createAddContentletUrl(data),
+            type: 'content',
+            actionPayload: data.actionPayload
+        };
+    });
 
     /**
      * This method is called when the user make changes in the form
@@ -249,7 +240,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             status: DialogStatus.LOADING,
             url: null,
             type: 'form',
-            payload
+            actionPayload: payload
         };
     });
 
@@ -265,7 +256,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             header: '',
             status: DialogStatus.IDLE,
             type: null,
-            payload: undefined,
+            actionPayload: undefined,
             form: {
                 status: FormStatus.PRISTINE,
                 isTranslation: false
