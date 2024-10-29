@@ -1,7 +1,6 @@
 package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.analytics.track.matchers.RequestMatcher;
-import com.dotcms.analytics.track.matchers.UserCustomDefinedRequestMatcher;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -17,7 +16,6 @@ public interface WebEventsCollectorService {
     void fireCollectors (final HttpServletRequest request, final HttpServletResponse response,
                         final RequestMatcher requestMatcher);
 
-
     /**
      * Add a collector
      * @param collectors
@@ -31,13 +29,18 @@ public interface WebEventsCollectorService {
     void removeCollector(final String collectorId);
 
     /**
-     * Fire the collectors and emit the event
-     * @param request
-     * @param response
-     * @param requestMatcher
-     * @param userEventPayload
+     * Allows to fire the collectors and emit the event from a base payload map already built by
+     * the user
+     *
+     * @param request        The current instance of the {@link HttpServletRequest}.
+     * @param response       The current instance of the {@link HttpServletResponse}.
+     * @param requestMatcher The {@link RequestMatcher} that matched the dotCMS object being
+     *                       processed, such as: HTML Page, File Asset, URL Mapped Content,
+     *                       Vanity URL, etc.
+     * @param basePayloadMap A Map containing all the properties that were retrieved by a given
+     *                       {@link Collector}.
      */
-    void fireCollectorsAndEmitEvent(HttpServletRequest request, HttpServletResponse response,
-                                    final RequestMatcher requestMatcher, Map<String, Serializable> userEventPayload);
+    void fireCollectorsAndEmitEvent(final HttpServletRequest request, final HttpServletResponse response,
+                                    final RequestMatcher requestMatcher, final Map<String, Serializable> userEventPayload);
 
 }
