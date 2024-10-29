@@ -338,7 +338,7 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
      * regarding inconsistencies, errors, warnings and/or precautions to the user.
      * @throws DotDataException An error occurred when importing the CSV file.
      */
-    private HashMap<String, List<String>> processFile(final Job job, final User user,
+    private Map<String, List<String>> processFile(final Job job, final User user,
             final String[] csvHeaders, final CsvReader csvReader,
             final int languageCodeHeaderColumn, final int countryCodeHeaderColumn,
             final LongConsumer progressCallback) throws DotDataException {
@@ -465,8 +465,8 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
         }
 
         final var fields = job.parameters().get(PARAMETER_FIELDS);
-        if (fields instanceof ArrayList) {
-            return ((ArrayList<String>) fields).toArray(new String[0]);
+        if (fields instanceof List) {
+            return ((List<String>) fields).toArray(new String[0]);
         }
         
         return (String[]) fields;
