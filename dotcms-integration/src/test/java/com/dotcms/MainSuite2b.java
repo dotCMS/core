@@ -25,7 +25,9 @@ import com.dotcms.business.SystemTableFactoryTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
 import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
+import com.dotcms.cdi.SimpleDataProviderWeldRunnerInjectionIT;
 import com.dotcms.cdi.SimpleInjectionIT;
+import com.dotcms.cdi.SimpleJUnit4InjectionIT;
 import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.business.json.ContentletJsonAPITest;
 import com.dotcms.content.business.json.LegacyJSONObjectRenderTest;
@@ -109,7 +111,7 @@ import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
-import com.dotmarketing.osgi.GenericBundleActivatorTest;
+import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.browser.BrowserUtilTest;
 import com.dotmarketing.portlets.browser.ajax.BrowserAjaxTest;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
@@ -233,7 +235,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task201102UpdateColumnSitelicTableTest.class,
         DependencyManagerTest.class,
         com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
-        GenericBundleActivatorTest.class,
+        GenericBundleActivatorIntegrationTest.class,
         SAMLHelperTest.class,
         PermissionHelperTest.class,
         ResetPasswordTokenUtilTest.class,
@@ -392,6 +394,8 @@ import org.junit.runners.Suite.SuiteClasses;
         JobQueueManagerAPITest.class,
         ConfigUtilsTest.class,
         SimpleInjectionIT.class,
+        SimpleDataProviderWeldRunnerInjectionIT.class,
+        SimpleJUnit4InjectionIT.class,
         LegacyJSONObjectRenderTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241009CreatePostgresJobQueueTablesTest.class,
