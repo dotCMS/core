@@ -53,7 +53,6 @@ import java.util.stream.Collectors;
  * @see Job
  * @see JobState
  */
-
 public class PostgresJobQueue implements JobQueue {
 
     private static final String CREATE_JOB_QUEUE_QUERY = "INSERT INTO job_queue "
