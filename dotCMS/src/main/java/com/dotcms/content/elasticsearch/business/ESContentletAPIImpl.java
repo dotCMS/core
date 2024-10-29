@@ -1,9 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.analytics.content.ContentAnalyticsAPI;
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
@@ -235,7 +237,7 @@ import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PER
 public class ESContentletAPIImpl implements ContentletAPI {
 
     private static Lazy<Boolean> FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = Lazy.of(() ->
-            Config.getBooleanProperty("FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION", false));
+            Config.getBooleanProperty("FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION", true));
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT = "Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
     private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
@@ -278,6 +280,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             BaseTypeToContentTypeStrategyResolver.getInstance();
 
 
+    private  final Lazy<UniqueFieldValidationStrategyResolver> uniqueFieldValidationStrategyResolver;
+
     public enum QueryType {
         search, suggest, moreLike, Facets
     }
@@ -301,6 +305,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     @VisibleForTesting
     public ESContentletAPIImpl(final ElasticReadOnlyCommand readOnlyCommand) {
+        this.uniqueFieldValidationStrategyResolver = Lazy.of( () -> getUniqueFieldValidationStrategyResolver());
         indexAPI = new ContentletIndexAPIImpl();
         contentFactory = new ESContentFactoryImpl();
         permissionAPI = APILocator.getPermissionAPI();
@@ -315,6 +320,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
         tempApi = APILocator.getTempFileAPI();
         this.elasticReadOnlyCommand = readOnlyCommand;
         fileMetadataAPI = APILocator.getFileMetadataAPI();
+    }
+
+    private static UniqueFieldValidationStrategyResolver getUniqueFieldValidationStrategyResolver() {
+        final Optional<UniqueFieldValidationStrategyResolver> uniqueFieldValidationStrategyResolver =
+                CDIUtils.getBean(UniqueFieldValidationStrategyResolver.class);
+
+        if (!uniqueFieldValidationStrategyResolver.isPresent()) {
+            throw new DotRuntimeException("Could not instance UniqueFieldValidationStrategyResolver");
+        }
+        return uniqueFieldValidationStrategyResolver.get();
     }
 
     public ESContentletAPIImpl() {
@@ -5526,7 +5541,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
            if (hasUniqueField(contentType)) {
-               UniqueFieldValidationStrategyResolver.INSTANCE.get().afterSaved(contentlet, isNewContent);
+               uniqueFieldValidationStrategyResolver.get().get().afterSaved(contentlet, isNewContent);
            }
 
 
@@ -7652,7 +7667,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (field.isUnique()) {
 
                 try {
-                    UniqueFieldValidationStrategyResolver.INSTANCE.get().validate(contentlet,
+                    uniqueFieldValidationStrategyResolver.get().get().validate(contentlet,
                             LegacyFieldTransformer.from(field));
                 } catch (UniqueFieldValueDuplicatedException e) {
                     cve.addUniqueField(field);

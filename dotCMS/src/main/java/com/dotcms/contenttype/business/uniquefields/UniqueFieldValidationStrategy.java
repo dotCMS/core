@@ -14,7 +14,7 @@ import java.util.Objects;
 /**
  * Represent a Strategy to check if a value may violate unique field constraints.
  */
-public abstract class UniqueFieldValidationStrategy {
+public interface  UniqueFieldValidationStrategy {
 
     /**
      * This method checks if a contentlet can be saved without violating unique field constraints.
@@ -37,7 +37,7 @@ public abstract class UniqueFieldValidationStrategy {
      * @throws DotDataException If it is thrown in the process
      * @throws DotSecurityException If it is thrown in the process
      */
-    public final void validate(final Contentlet contentlet, final Field uniqueField)
+    default void validate(final Contentlet contentlet, final Field uniqueField)
             throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException {
 
         if (!uniqueField.unique()) {
@@ -75,7 +75,7 @@ public abstract class UniqueFieldValidationStrategy {
      * @throws DotDataException If it is thrown in the process
      * @throws DotSecurityException If it is thrown in the process
      */
-    public abstract void innerValidate(final Contentlet contentlet, final Field field, final Object fieldValue,
+     void innerValidate(final Contentlet contentlet, final Field field, final Object fieldValue,
                                 ContentType contentType)
             throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException;
 
@@ -88,7 +88,7 @@ public abstract class UniqueFieldValidationStrategy {
 //     * @param contentlet {@link Contentlet} saved
      * @param isNew if it is true then the  {@link Contentlet} is new, otherwise the {@link Contentlet} was updated
      */
-    public void afterSaved(final Contentlet contentlet, final boolean isNew) throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
+    default void afterSaved(final Contentlet contentlet, final boolean isNew) throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
 
     }
 }

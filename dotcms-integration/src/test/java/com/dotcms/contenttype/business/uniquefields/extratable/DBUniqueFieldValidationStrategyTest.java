@@ -33,7 +33,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_K
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.INODE_KEY;
 import static org.junit.Assert.*;
 
-public class ExtraTableUniqueFieldValidationStrategyTest {
+public class DBUniqueFieldValidationStrategyTest {
 
     static UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil;
 

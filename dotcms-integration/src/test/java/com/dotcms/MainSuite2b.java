@@ -25,7 +25,7 @@ import com.dotcms.content.business.json.LegacyJSONObjectRenderTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.*;
-import com.dotcms.contenttype.business.uniquefields.extratable.ExtraTableUniqueFieldValidationStrategyTest;
+import com.dotcms.contenttype.business.uniquefields.extratable.DBUniqueFieldValidationStrategyTest;
 import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtilTest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
@@ -390,7 +390,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task241009CreatePostgresJobQueueTablesTest.class,
 
         UniqueFieldDataBaseUtilTest.class,
-        ExtraTableUniqueFieldValidationStrategyTest.class,
+        DBUniqueFieldValidationStrategyTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241015ReplaceLanguagesWithLocalesPortletTest.class,

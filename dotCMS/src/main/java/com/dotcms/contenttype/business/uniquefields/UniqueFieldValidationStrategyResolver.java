@@ -1,10 +1,14 @@
 package com.dotcms.contenttype.business.uniquefields;
 
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.uniquefields.extratable.DBUniqueFieldValidationStrategy;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.google.common.annotations.VisibleForTesting;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.Optional;
 
 /**
  * Utility class responsible for returning the appropriate {@link UniqueFieldValidationStrategy}
@@ -16,17 +20,23 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class UniqueFieldValidationStrategyResolver {
 
-    private final ESUniqueFieldValidationStrategy esUniqueFieldValidationStrategy;
-    private final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy;
     @Inject
+    private ESUniqueFieldValidationStrategy esUniqueFieldValidationStrategy;
+    @Inject
+    private  DBUniqueFieldValidationStrategy dbUniqueFieldValidationStrategy;
+
+    public UniqueFieldValidationStrategyResolver(){}
+
+    @VisibleForTesting
     public  UniqueFieldValidationStrategyResolver(final ESUniqueFieldValidationStrategy esUniqueFieldValidationStrategy,
-                                                 final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy){
+                                                 final DBUniqueFieldValidationStrategy dbUniqueFieldValidationStrategy){
         this.esUniqueFieldValidationStrategy = esUniqueFieldValidationStrategy;
-        this.extraTableUniqueFieldValidationStrategy = extraTableUniqueFieldValidationStrategy;
+        this.dbUniqueFieldValidationStrategy = dbUniqueFieldValidationStrategy;
+
     }
 
     public UniqueFieldValidationStrategy get() {
         return ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation() ?
-                extraTableUniqueFieldValidationStrategy : esUniqueFieldValidationStrategy;
+                dbUniqueFieldValidationStrategy : esUniqueFieldValidationStrategy;
     }
 }

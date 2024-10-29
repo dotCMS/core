@@ -16,6 +16,9 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Default;
+import javax.inject.Inject;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -41,11 +44,13 @@ import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQ
  * This approach has a race condition bug because if another {@link Contentlet} is saved before that the change is mirror
  * in ES then the duplicate value is going to be allowed, remember that the {@link Contentlet} sare storage in ES in an async way.
  */
-public class ESUniqueFieldValidationStrategy extends UniqueFieldValidationStrategy {
+@ApplicationScoped
+@Default
+public class ESUniqueFieldValidationStrategy implements UniqueFieldValidationStrategy {
 
     /**
-     * ES implementation for {@link UniqueFieldValidationStrategy#innerValidate(Contentlet, Field, Object, ContentType)} 
-     * 
+     * ES implementation for {@link UniqueFieldValidationStrategy#innerValidate(Contentlet, Field, Object, ContentType)}
+     *
      * @param contentlet
      * @param uniqueField
      * @param fieldValue

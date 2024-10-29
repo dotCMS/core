@@ -17,10 +17,12 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import org.postgresql.util.PGobject;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Default;
 import javax.inject.Inject;
 
 import static com.dotcms.util.CollectionsUtils.list;
@@ -38,16 +40,19 @@ import java.util.stream.Collectors;
  * This is the same extra table created here {@link com.dotmarketing.startup.runonce.Task241007CreateUniqueFieldsTable}
  */
 @ApplicationScoped
-public class DBUniqueFieldValidationStrategy extends UniqueFieldValidationStrategy {
-
-
-    private UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil;
+public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStrategy {
 
     @Inject
+    private UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil;
+
+    public DBUniqueFieldValidationStrategy(){
+    }
+
+    @VisibleForTesting
     public DBUniqueFieldValidationStrategy(final  UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil){
         this.uniqueFieldDataBaseUtil = uniqueFieldDataBaseUtil;
-
     }
+
     /**
      *
      * @param contentlet
@@ -109,7 +114,7 @@ public class DBUniqueFieldValidationStrategy extends UniqueFieldValidationStrate
         }
     }
 
-    @Override
+    //@Override
     public void afterSaved(final Contentlet contentlet, final boolean isNew) throws DotDataException, DotSecurityException {
         if (isNew) {
             final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
