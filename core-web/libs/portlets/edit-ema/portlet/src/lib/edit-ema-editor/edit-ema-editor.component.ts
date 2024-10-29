@@ -607,8 +607,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             return;
         } else if (dragItem.draggedPayload.type === 'content-type') {
             this.uveStore.resetEditorProperties(); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
-
-            this.dialog.createContentletFromPalette({ ...dragItem.draggedPayload.item, payload });
+            this.dialog.createContentletFromPalette({
+                ...dragItem.draggedPayload.item,
+                language_id: this.uveStore.$languageId(),
+                payload
+            });
         } else if (dragItem.draggedPayload.type === 'temp') {
             const { pageContainers, didInsert } = insertContentletInContainer({
                 ...payload,
