@@ -1,3 +1,4 @@
+import { CUSTOMER_ACTIONS, postMessageToEditor } from "@dotcms/client";
 import type { DotCMSPageAsset } from "@dotcms/types";
 import { client } from "@utils/client";
 import { useEffect, useState } from "react";
@@ -12,6 +13,13 @@ export const usePageAsset = (currentPageAsset: DotCMSPageAsset | undefined) => {
       }
       setPageAsset(page as DotCMSPageAsset);
     });
+
+    // If the page is not found, let the editor know
+    if (!currentPageAsset) {
+      postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY });
+
+      return;
+    }
 
     return () => {
       client.editor.off("changes");
