@@ -1,0 +1,11 @@
+.img {
+    max-inline-size: 100%;
+    block-size: auto;
+    aspect-ratio: 2/1;
+    object-fit: cover;
+    object-position: top center;
+}
+:host {
+    height: 100%;
+    display: block;
+}

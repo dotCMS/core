@@ -1,0 +1,25 @@
+.p-icon-field .p-input-icon {
+    position: absolute;
+    top: 50%;
+    margin-top: -0.5rem;
+  }
+  .p-icon-field-left .p-input-icon:first-of-type {
+    left: 0.75rem;
+    color: #a1a1aa;
+  }
+
+  .p-icon-field-right .p-input-icon:last-of-type {
+    right: 0.75rem;
+    color: #a1a1aa;
+  }
+  .p-icon-field-left > .p-inputtext {
+    padding-left: 2.5rem;
+  }
+
+  .p-icon-field-left.p-float-label > label {
+    left: 2.5rem;
+  }
+
+  .p-icon-field-right > .p-inputtext {
+    padding-right: 2.5rem;
+  }

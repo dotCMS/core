@@ -1,0 +1,15 @@
+<div class="file-selector flex flex-column gap-3">
+    <div class="file-selector__main grid grid-nogutter flex-grow-1 overflow-hidden">
+        <div class="col-3 file-selector__sidebar">
+            <dot-sidebar />
+        </div>
+        <div class="col">
+            <dot-dataview />
+        </div>
+    </div>
+    <div class="flex justify-content-end flex-none flex-wrap gap-3">
+        <p-button label="Cancel" [text]="true" severity="primary" />
+        <p-button label="Upload" [text]="true" [outlined]="true" severity="primary" />
+        <p-button label="Add" severity="primary" />
+    </div>
+</div>
