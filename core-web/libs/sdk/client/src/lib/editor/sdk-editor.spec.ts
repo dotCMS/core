@@ -12,18 +12,25 @@ import {
     updateNavigation
 } from './sdk-editor';
 
-jest.mock('./models/client.model', () => ({
-    postMessageToEditor: jest.fn(),
-    CLIENT_ACTIONS: {
-        NAVIGATION_UPDATE: 'set-url',
-        SET_BOUNDS: 'set-bounds',
-        SET_CONTENTLET: 'set-contentlet',
-        IFRAME_SCROLL: 'scroll',
-        PING_EDITOR: 'ping-editor',
-        CONTENT_CHANGE: 'content-change',
-        NOOP: 'noop'
-    }
-}));
+jest.mock('./models/client.model', () => {
+    return {
+        postMessageToEditor: jest.fn(),
+        CLIENT_ACTIONS: {
+            NAVIGATION_UPDATE: 'set-url',
+            SET_BOUNDS: 'set-bounds',
+            SET_CONTENTLET: 'set-contentlet',
+            EDIT_CONTENTLET: 'edit-contentlet',
+            IFRAME_SCROLL: 'scroll',
+            PING_EDITOR: 'ping-editor',
+            CONTENT_CHANGE: 'content-change',
+            NOOP: 'noop'
+        },
+        INITIAL_DOT_UVE: {
+            editContentlet: jest.fn(),
+            lastScrollYPosition: 0
+        }
+    };
+});
 
 jest.mock('./listeners/listeners', () => ({
     pingEditor: jest.fn(),
@@ -93,6 +100,10 @@ describe('DotCMSPageEditor', () => {
             expect(listenEditorMessages).toHaveBeenCalled();
             expect(listenHoveredContentlet).toHaveBeenCalled();
             expect(scrollHandler).toHaveBeenCalled();
+            expect(window.dotUVE).toEqual({
+                editContentlet: expect.any(Function),
+                lastScrollYPosition: 0
+            });
         });
     });
 

@@ -14,11 +14,16 @@ jest.mock('../models/client.model', () => ({
         NAVIGATION_UPDATE: 'set-url',
         SET_BOUNDS: 'set-bounds',
         SET_CONTENTLET: 'set-contentlet',
+        EDIT_CONTENTLET: 'edit-contentlet',
         IFRAME_SCROLL: 'scroll',
         PING_EDITOR: 'ping-editor',
         CONTENT_CHANGE: 'content-change',
         GET_PAGE_DATA: 'get-page-data',
         NOOP: 'noop'
+    },
+    INITIAL_DOT_UVE: {
+        editContentlet: jest.fn(),
+        lastScrollYPosition: 0
     }
 }));
 
