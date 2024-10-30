@@ -18,7 +18,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { CUSTOMER_ACTIONS } from '@dotcms/client';
+import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -600,13 +600,56 @@ describe('EditEmaEditorComponent', () => {
                     );
                 });
 
+                it('should open a dialog to edit contentlet using custom action and trigger reload after saving', (done) => {
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CLIENT_ACTIONS.EDIT_CONTENTLET,
+                                payload: CONTENTLETS_MOCK[0]
+                            }
+                        })
+                    );
+
+                    spectator.detectComponentChanges();
+
+                    const dialog = spectator.debugElement.query(
+                        By.css("[data-testId='ema-dialog']")
+                    );
+
+                    const pDialog = dialog.query(By.css('p-dialog'));
+
+                    expect(pDialog.attributes['ng-reflect-visible']).toBe('true');
+
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                    iframe.nativeElement.contentWindow.addEventListener(
+                        'message',
+                        (event: MessageEvent) => {
+                            expect(event).toBeTruthy();
+                            done();
+                        }
+                    );
+
+                    triggerCustomEvent(dialog, 'action', {
+                        event: new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                                payload: {}
+                            }
+                        })
+                    });
+
+                    spectator.detectChanges();
+                });
+
                 describe('reorder navigation', () => {
                     it('should open a dialog to reorder the navigation', () => {
                         window.dispatchEvent(
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.REORDER_MENU,
+                                    action: CLIENT_ACTIONS.REORDER_MENU,
                                     payload: {
                                         reorderUrl: 'http://localhost:3000/reorder-menu'
                                     }
@@ -681,7 +724,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.REORDER_MENU,
+                                    action: CLIENT_ACTIONS.REORDER_MENU,
                                     payload: {
                                         reorderUrl: 'http://localhost:3000/reorder-menu'
                                     }
@@ -954,7 +997,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+                                    action: CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
                                     payload: {
                                         inode: '123'
                                     }
@@ -1026,7 +1069,7 @@ describe('EditEmaEditorComponent', () => {
                                 }
                             }
                         }),
-                        payload: PAYLOAD_MOCK
+                        actionPayload: PAYLOAD_MOCK
                     });
 
                     spectator.detectChanges();
@@ -1086,7 +1129,7 @@ describe('EditEmaEditorComponent', () => {
                                 }
                             }
                         }),
-                        payload
+                        actionPayload: payload
                     });
 
                     spectator.detectChanges();
@@ -1164,7 +1207,7 @@ describe('EditEmaEditorComponent', () => {
                                 }
                             }
                         }),
-                        payload
+                        actionPayload: payload
                     });
 
                     spectator.detectChanges();
@@ -1245,7 +1288,7 @@ describe('EditEmaEditorComponent', () => {
                                 }
                             }
                         }),
-                        payload
+                        actionPayload: payload
                     });
 
                     spectator.detectChanges();
@@ -1323,7 +1366,7 @@ describe('EditEmaEditorComponent', () => {
                                 }
                             }
                         }),
-                        payload
+                        actionPayload: payload
                     });
 
                     spectator.detectChanges();
@@ -1404,7 +1447,7 @@ describe('EditEmaEditorComponent', () => {
                                 }
                             }
                         }),
-                        payload
+                        actionPayload: payload
                     });
 
                     spectator.detectChanges();
@@ -2719,7 +2762,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
                                 payload: {
                                     dataset: {
                                         inode: '123',
@@ -2755,7 +2798,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
                                 payload: null
                             }
                         })
@@ -2775,7 +2818,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.CLIENT_READY
+                                    action: CLIENT_ACTIONS.CLIENT_READY
                                 }
                             })
                         );
@@ -2799,7 +2842,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.CLIENT_READY,
+                                    action: CLIENT_ACTIONS.CLIENT_READY,
                                     payload: config
                                 }
                             })
@@ -2827,7 +2870,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.CLIENT_READY,
+                                    action: CLIENT_ACTIONS.CLIENT_READY,
                                     payload: config
                                 }
                             })
