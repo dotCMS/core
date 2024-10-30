@@ -5649,7 +5649,7 @@ public class WorkflowResource {
                     @ApiResponse(responseCode = "500", description = "Internal Server Error") // includes when inode not found
             }
     )
-    public final ResponseEntityView<List<WorkflowTimelineItem>> getWorkflowTasksHistoryComments(@Context final HttpServletRequest request,
+    public final ResponseEntityWorkflowHistoryCommentsView getWorkflowTasksHistoryComments(@Context final HttpServletRequest request,
                                                                                          @Context final HttpServletResponse response,
                                                                                          @PathParam("contentletIdentifier") @Parameter(
                                                                                      required = true,
@@ -5687,7 +5687,7 @@ public class WorkflowResource {
             final List<WorkflowTimelineItemView> workflowTimelineItemViews = workflowComments.stream()
                     .map(this::toWorkflowTimelineItemView)
                     .collect(Collectors.toList());
-            return new ResponseEntityView<>(workflowComments);
+            return new ResponseEntityWorkflowHistoryCommentsView(workflowTimelineItemViews);
         }
 
         throw new DoesNotExistException("Contentlet with identifier " + contentletIdentifier + " does not exist.");
