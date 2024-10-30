@@ -5685,8 +5685,7 @@ public class WorkflowResource {
             final WorkflowTask currentWorkflowTask = this.workflowAPI.findTaskByContentlet(currentContentlet.get());
             final List<WorkflowTimelineItem> workflowComments = this.workflowAPI.getCommentsAndChangeHistory(currentWorkflowTask);
             final List<WorkflowTimelineItemView> workflowTimelineItemViews = workflowComments.stream()
-                    .map(wfTimeLine -> new WorkflowTimelineItemView(wfTimeLine.createdDate(), wfTimeLine.roleId(), this.workflowHelper.getPostedby(wfTimeLine.roleId()),
-                            wfTimeLine.actionId(), wfTimeLine.stepId(), wfTimeLine.commentDescription(), wfTimeLine.taskId(), wfTimeLine.type()))
+                    .map(this::toWorkflowTimelineItemView)
                     .collect(Collectors.toList());
             return new ResponseEntityView<>(workflowComments);
         }
@@ -5694,5 +5693,11 @@ public class WorkflowResource {
         throw new DoesNotExistException("Contentlet with identifier " + contentletIdentifier + " does not exist.");
     }
 
+    private WorkflowTimelineItemView toWorkflowTimelineItemView(final WorkflowTimelineItem wfTimeLine) {
+
+        final String postedBy = this.workflowHelper.getPostedBy(wfTimeLine.roleId());
+        return new WorkflowTimelineItemView(wfTimeLine.createdDate(), wfTimeLine.roleId(), postedBy,
+                wfTimeLine.commentDescription(), wfTimeLine.taskId(), wfTimeLine.type());
+    }
 
 } // E:O:F:WorkflowResource.

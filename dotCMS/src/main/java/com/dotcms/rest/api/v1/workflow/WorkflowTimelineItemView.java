@@ -12,18 +12,19 @@ public class WorkflowTimelineItemView {
     private final Date createdDate;
     private final String roleId;
     private final String postedBy;
-    private final String actionId;
-    private final String stepId;
     private final String commentDescription;
     private final String taskId;
     private final String type;
 
-    public WorkflowTimelineItemView(Date createdDate, String roleId, String postedBy, String actionId, String stepId, String commentDescription, String taskId, String type) {
+    public WorkflowTimelineItemView(final Date createdDate,
+                                    final String roleId,
+                                    final String postedBy,
+                                    final String commentDescription,
+                                    final String taskId,
+                                    final String type) {
         this.createdDate = createdDate;
         this.roleId = roleId;
         this.postedBy = postedBy;
-        this.actionId = actionId;
-        this.stepId = stepId;
         this.commentDescription = commentDescription;
         this.taskId = taskId;
         this.type = type;
@@ -39,14 +40,6 @@ public class WorkflowTimelineItemView {
 
     public String getPostedBy() {
         return postedBy;
-    }
-
-    public String getActionId() {
-        return actionId;
-    }
-
-    public String getStepId() {
-        return stepId;
     }
 
     public String getCommentDescription() {

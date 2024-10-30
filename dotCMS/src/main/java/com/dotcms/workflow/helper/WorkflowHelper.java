@@ -2051,20 +2051,21 @@ public class WorkflowHelper {
      * @param roleId
      * @return String
      */
-    public String getPostedby(String roleId){
+    public String getPostedBy(final String roleId){
 
+        String postedBy = "unknown";
         try {
 
-            return APILocator.getUserAPI().loadUserById(roleId, APILocator.systemUser(), false).getFullName();
+            postedBy = APILocator.getUserAPI().loadUserById(roleId, APILocator.systemUser(), false).getFullName();
         } catch (Exception e) {
             try{
-                return APILocator.getRoleAPI().loadRoleById(roleId).getName();
+                postedBy = APILocator.getRoleAPI().loadRoleById(roleId).getName();
             }
             catch(Exception ee){
 
             }
         }
-        return "unknown";
+        return postedBy;
     }
 
 
