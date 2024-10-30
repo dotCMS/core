@@ -286,7 +286,7 @@ jobs:
         if: github.event.inputs.deploy_artifact == 'true'
 
       - name: Generate/Push Javadoc
-        uses: ./.github/actions/core-cicd/deployment/deploy-artifact-javadoc
+        uses: ./.github/actions/core-cicd/deployment/deploy-javadoc
         with:
           ref: ${{ github.ref }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
