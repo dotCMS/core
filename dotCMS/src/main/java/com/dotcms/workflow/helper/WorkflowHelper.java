@@ -2046,4 +2046,26 @@ public class WorkflowHelper {
         return wfTask;
     }
 
+    /**
+     * Tries to recover the user name based on the role
+     * @param roleId
+     * @return String
+     */
+    public String getPostedby(String roleId){
+
+        try {
+
+            return APILocator.getUserAPI().loadUserById(roleId, APILocator.systemUser(), false).getFullName();
+        } catch (Exception e) {
+            try{
+                return APILocator.getRoleAPI().loadRoleById(roleId).getName();
+            }
+            catch(Exception ee){
+
+            }
+        }
+        return "unknown";
+    }
+
+
 } // E:O:F:WorkflowHelper.
