@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.dotcms.TestBaseJunit5WeldInitiator;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -22,6 +21,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.jboss.weld.junit5.EnableWeld;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -30,24 +30,77 @@ import org.junit.jupiter.api.Test;
  * Helper add functionality to consume JobQueueManagerAPI
  * Here we test those functionalities, methods that simply call the JobQueueManagerAPI are not tested
  */
-public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
+@EnableWeld
+public class JobQueueHelperIntegrationTest  extends com.dotcms.Junit5WeldBaseTest {
 
     @Inject
     JobQueueHelper jobQueueHelper;
 
+    /**
+     * Test with no parameters in the JobParams creating a job
+     * Given scenario: create a job with no parameters and valid queue name
+     * Expected result: the job is created
+     *
+     * @throws DotDataException if there's an error creating the job
+     */
     @Test
-    void testEmptyParams(){
-        assertThrows(IllegalArgumentException.class, () -> {
-            jobQueueHelper.createJob("any", new JobParams(), mock(HttpServletRequest.class));
-        });
+    void testEmptyParams() throws DotDataException, JsonProcessingException {
+
+        jobQueueHelper.registerProcessor("demoQueue", DemoJobProcessor.class);
+
+        final var jobParams = new JobParams();
+        final var user = mock(User.class);
+        final var request = mock(HttpServletRequest.class);
+
+        when(user.getUserId()).thenReturn("dotcms.org.1");
+
+        final String jobId = jobQueueHelper.createJob(
+                "demoQueue", jobParams, user, request
+        );
+
+        Assertions.assertNotNull(jobId);
+        final Job job = jobQueueHelper.getJob(jobId);
+        Assertions.assertNotNull(job);
+        Assertions.assertEquals(jobId, job.id());
+    }
+
+    /**
+     * Test with null parameters creating a job
+     * Given scenario: create a job with null parameters and valid queue name
+     * Expected result: the job is created
+     *
+     * @throws DotDataException if there's an error creating the job
+     */
+    @Test
+    void testCreateJobWithNoParameters() throws DotDataException {
+
+        jobQueueHelper.registerProcessor("demoQueue", DemoJobProcessor.class);
+
+        final var user = mock(User.class);
+        when(user.getUserId()).thenReturn("dotcms.org.1");
+
+        final String jobId = jobQueueHelper.createJob(
+                "demoQueue", (Map<String, Object>) null, user, mock(HttpServletRequest.class)
+        );
+
+        Assertions.assertNotNull(jobId);
+        final Job job = jobQueueHelper.getJob(jobId);
+        Assertions.assertNotNull(job);
+        Assertions.assertEquals(jobId, job.id());
     }
 
     @Test
     void testWithValidParamsButInvalidQueueName(){
         final JobParams jobParams = new JobParams();
         jobParams.setJsonParams("{}");
+
+        final var user = mock(User.class);
+        when(user.getUserId()).thenReturn("dotcms.org.1");
+
         assertThrows(DoesNotExistException.class, () -> {
-            jobQueueHelper.createJob("nonExisting", jobParams, mock(HttpServletRequest.class));
+            jobQueueHelper.createJob(
+                    "nonExisting", jobParams, user, mock(HttpServletRequest.class)
+            );
         });
     }
 
@@ -82,14 +135,18 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
         final JobParams jobParams = new JobParams();
         jobParams.setJsonParams("{}");
 
-        final String jobId = jobQueueHelper.createJob("demoQueue", jobParams,
-                mock(HttpServletRequest.class));
+        final var user = mock(User.class);
+        when(user.getUserId()).thenReturn("dotcms.org.1");
+
+        final String jobId = jobQueueHelper.createJob(
+                "demoQueue", jobParams, user, mock(HttpServletRequest.class)
+        );
 
         Assertions.assertNotNull(jobId);
         final Job job = jobQueueHelper.getJob(jobId);
         Assertions.assertNotNull(job);
         Assertions.assertEquals(jobId, job.id());
-        Assertions.assertTrue(jobQueueHelper.getQueueNames().contains("demoQueue".toLowerCase()));
+        Assertions.assertTrue(jobQueueHelper.getQueueNames().contains("demoQueue"));
     }
 
     /**
@@ -103,8 +160,13 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
         jobQueueHelper.registerProcessor("testQueue", DemoJobProcessor.class);
         final JobParams jobParams = new JobParams();
         jobParams.setJsonParams("{}");
-        final String jobId = jobQueueHelper.createJob("testQueue", jobParams,
-                mock(HttpServletRequest.class));
+
+        final var user = mock(User.class);
+        when(user.getUserId()).thenReturn("dotcms.org.1");
+
+        final String jobId = jobQueueHelper.createJob(
+                "testQueue", jobParams, user, mock(HttpServletRequest.class)
+        );
         Assertions.assertNotNull(jobId);
         final Job job = jobQueueHelper.getJob(jobId);
         assertFalse(jobQueueHelper.isNotWatchable(job));
@@ -122,8 +184,13 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
         jobQueueHelper.registerProcessor("testQueue", DemoJobProcessor.class);
         final JobParams jobParams = new JobParams();
         jobParams.setJsonParams("{}");
-        final String jobId = jobQueueHelper.createJob("testQueue", jobParams,
-                mock(HttpServletRequest.class));
+
+        final var user = mock(User.class);
+        when(user.getUserId()).thenReturn("dotcms.org.1");
+
+        final String jobId = jobQueueHelper.createJob(
+                "testQueue", jobParams, user, mock(HttpServletRequest.class)
+        );
         Assertions.assertNotNull(jobId);
         final Job job = jobQueueHelper.getJob(jobId);
         final Map<String, Object> info = jobQueueHelper.getJobStatusInfo(job);
@@ -137,7 +204,7 @@ public class JobQueueHelperIntegrationTest extends TestBaseJunit5WeldInitiator {
      * Given scenario: call cancel Job with an invalid job id
      * Expected result: we should get a DoesNotExistException
      */
-    @Test
+   @Test
     void testCancelNonExistingJob(){
         assertThrows(DoesNotExistException.class, () -> {
             jobQueueHelper.cancelJob("nonExisting" );
