@@ -527,6 +527,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+        this.uveStore.setIsClientReady(false);
     }
 
     /**

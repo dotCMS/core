@@ -4,6 +4,7 @@ import { ErrorPage } from "@/components/error";
 import { handleVanityUrlRedirect } from "@/utils/vanityUrlHandler";
 import { client } from "@/utils/dotcmsClient";
 import { getPageRequestParams } from "@dotcms/client";
+import { fetchNavData, fetchPageData } from "@/utils/page.utils";
 
 /**
  * Generate metadata
@@ -36,38 +37,31 @@ export async function generateMetadata({ params, searchParams }) {
 
 export default async function Home({ searchParams, params }) {
     const getPageData = async () => {
-        try {
-            const path = params?.slug?.join("/") || "/";
-            const pageRequestParams = getPageRequestParams({
-                path,
-                params: searchParams,
-            });
-            const pageAsset = await client.page.get({
-                ...pageRequestParams,
-                depth: 3,
-            });
-            const nav = await client.nav.get({
-                path: "/",
-                depth: 2,
-                languageId: searchParams.language_id,
-            });
+        const path = params?.slug?.join("/") || "/";
+        const pageParams = getPageRequestParams({
+            path,
+            params: searchParams,
+        });
 
-            return { pageAsset, nav };
-        } catch (error) {
-            return { pageAsset: null, nav: null, error };
-        }
+        const { pageAsset, error: pageError } = await fetchPageData(pageParams);
+        const { nav, error: navError } = await fetchNavData(pageParams.language_id);
+
+        return {
+            nav,
+            pageAsset,
+            error: pageError || navError,
+        };
     };
     const { pageAsset, nav, error } = await getPageData();
 
+    // Move this to MyPage
     if (error) {
         return <ErrorPage error={error} />;
     }
 
-    const { vanityUrl } = pageAsset;
-
-    if (vanityUrl) {
-        handleVanityUrlRedirect(vanityUrl);
+    if (pageAsset?.vanityUrl) {
+        handleVanityUrlRedirect(pageAsset?.vanityUrl);
     }
 
-    return <MyPage nav={nav.entity.children} pageAsset={pageAsset}></MyPage>;
+    return <MyPage nav={nav?.entity.children} pageAsset={pageAsset} />;
 }
