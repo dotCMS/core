@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
 
 import { client } from "@/utils/dotcmsClient";
-import { CUSTOMER_ACTIONS, isInsideEditor, postMessageToEditor } from "@dotcms/client";
+import {
+    CUSTOMER_ACTIONS,
+    isInsideEditor,
+    postMessageToEditor,
+} from "@dotcms/client";
 
 export const usePageAsset = (currentPageAsset) => {
     const [pageAsset, setPageAsset] = useState(null);
 
     useEffect(() => {
+        if (!isInsideEditor()) {
+            return;
+        }
+
         client.editor.on("changes", (page) => {
             if (!page) {
                 return;

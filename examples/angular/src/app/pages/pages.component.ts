@@ -111,9 +111,6 @@ export class DotCMSPagesComponent implements OnInit {
   }
 
   #setError(error: PageError) {
-
-    console.log("LLAMADO 2");
-
     this.$context.update((state) => ({
       ...state,
       error: error,
