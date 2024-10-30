@@ -17,4 +17,15 @@ public class JobProcessingException extends RuntimeException {
     public JobProcessingException(String jobId, String reason, Throwable cause) {
         super("Error processing job " + jobId + ". Reason: " + reason, cause);
     }
+
+    /**
+     * Constructs a new JobProcessingException with the specified job ID, reason, and cause.
+     *
+     * @param jobId  The ID of the job that encountered an error during processing
+     * @param reason A description of why the error occurred
+     */
+    public JobProcessingException(String jobId, String reason) {
+        super("Error processing job " + jobId + ". Reason: " + reason);
+    }
+
 }

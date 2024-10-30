@@ -33,9 +33,9 @@ import com.dotcms.content.business.json.ContentletJsonAPITest;
 import com.dotcms.content.business.json.LegacyJSONObjectRenderTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
-import com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest;
-import com.dotcms.contenttype.business.ContentTypeInitializerTest;
-import com.dotcms.contenttype.business.StoryBlockAPITest;
+import com.dotcms.contenttype.business.*;
+import com.dotcms.contenttype.business.uniquefields.extratable.DBUniqueFieldValidationStrategyTest;
+import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtilTest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
@@ -399,6 +399,10 @@ import org.junit.runners.Suite.SuiteClasses;
         LegacyJSONObjectRenderTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241009CreatePostgresJobQueueTablesTest.class,
+
+        UniqueFieldDataBaseUtilTest.class,
+        DBUniqueFieldValidationStrategyTest.class,
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241015ReplaceLanguagesWithLocalesPortletTest.class,
         Task241016AddCustomLanguageVariablesPortletToLayoutTest.class,

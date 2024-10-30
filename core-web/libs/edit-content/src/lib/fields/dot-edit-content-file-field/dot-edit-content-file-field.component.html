@@ -44,6 +44,7 @@
                 }
                 @if (store.allowExistingFile()) {
                     <p-button
+                        (click)="showSelectExistingFileDialog()"
                         [label]="'dot.file.field.action.select.existing.file' | dm"
                         data-testId="action-existing-file"
                         icon="pi pi-file"
