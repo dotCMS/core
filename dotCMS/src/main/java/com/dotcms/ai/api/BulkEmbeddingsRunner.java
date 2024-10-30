@@ -12,6 +12,8 @@ import io.vavr.control.Try;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
+
 /**
  * The BulkEmbeddingsRunner class is responsible for generating embeddings for a list of contentlets in a bulk operation.
  * It implements the Runnable interface, allowing it to be used in a multithreaded context.
@@ -23,6 +25,10 @@ public class BulkEmbeddingsRunner implements Runnable {
     private final User user;
     private final EmbeddingsForm embeddingsForm;
     private final List<String> inodes;
+
+
+
+
 
     public BulkEmbeddingsRunner(List<String> inodes, EmbeddingsForm embeddingsForm) {
         user = Try.of(() -> APILocator
