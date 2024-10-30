@@ -37,7 +37,6 @@ public class TelemetryResource {
                                             ResponseEntityMetricsSnapshotView.class)))})
     public final Response getData(@Context final HttpServletRequest request,
                                   @Context final HttpServletResponse response) {
-        Logger.info(this, () -> "Retrieving Telemetry data");
         new WebResource.InitBuilder(new WebResource())
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)

@@ -31,7 +31,6 @@ public class TotalFilesInThemeMetricType implements DBMetricType {
 
     @Override
     public String getSqlQuery() {
-        Logger.warn(this, "ESTA METRICA ESTA CORRIENDO DESDE CORE!");
         return "SELECT COUNT(distinct CONCAT(id.parent_path, asset_name)) as value " +
                 "FROM contentlet_version_info cvi INNER JOIN identifier id ON cvi.identifier = id.id " +
                 "WHERE deleted = false AND " +
