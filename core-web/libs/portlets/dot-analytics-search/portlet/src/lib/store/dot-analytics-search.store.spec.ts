@@ -56,7 +56,7 @@ describe('DotAnalyticsSearchStore', () => {
     it('should initialize with default state', () => {
         expect(store.isEnterprise()).toEqual(false);
         expect(store.results()).toEqual(null);
-        expect(store.query()).toEqual({ value: null, type: AnalyticsQueryType.DEFAULT });
+        expect(store.query()).toEqual({ value: null, type: AnalyticsQueryType.CUBE });
         expect(store.state()).toEqual(ComponentStatus.INIT);
         expect(store.errorMessage()).toEqual('');
     });
@@ -74,7 +74,7 @@ describe('DotAnalyticsSearchStore', () => {
 
             expect(dotAnalyticsSearchService.get).toHaveBeenCalledWith(
                 { query: 'test' },
-                AnalyticsQueryType.DEFAULT
+                AnalyticsQueryType.CUBE
             );
 
             expect(store.results()).toEqual(mockResponse);

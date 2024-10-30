@@ -26,7 +26,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.glassfish.jersey.media.sse.SseFeature;
@@ -53,118 +52,108 @@ public class JobQueueResource {
     @Path("/{queueName}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createJob(
+    public ResponseEntityView<String> createJob(
             @Context HttpServletRequest request,
             @PathParam("queueName") String queueName,
             @BeanParam JobParams form) throws JsonProcessingException, DotDataException {
-           new WebResource.InitBuilder(webResource)
+        final var initDataObject = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
                 .init();
-            final String jobId = helper.createJob(queueName, form, request);
-            return Response.ok(new ResponseEntityView<>(jobId)).build();
+        final String jobId = helper.createJob(queueName, form, initDataObject.getUser(), request);
+        return new ResponseEntityView<>(jobId);
+    }
+
+    @POST
+    @Path("/{queueName}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResponseEntityView<String> createJob(
+            @Context HttpServletRequest request,
+            @PathParam("queueName") String queueName,
+            Map<String, Object> parameters) throws DotDataException {
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .init();
+        final String jobId = helper.createJob(
+                queueName, parameters, initDataObject.getUser(), request);
+        return new ResponseEntityView<>(jobId);
     }
 
     @GET
     @Path("/queues")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<Set<String>> getQueues(@Context HttpServletRequest request) {
-            new WebResource.InitBuilder(webResource)
+        new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
                 .init();
-            return new ResponseEntityView<>(helper.getQueueNames());
+        return new ResponseEntityView<>(helper.getQueueNames());
     }
 
     @GET
     @Path("/{jobId}/status")
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<Job> getJobStatus(@Context HttpServletRequest request, @PathParam("jobId") String jobId)
+    public ResponseEntityView<Job> getJobStatus(@Context HttpServletRequest request,
+            @PathParam("jobId") String jobId)
             throws DotDataException {
 
-            new WebResource.InitBuilder(webResource)
+        new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
                 .init();
 
-            Job job = helper.getJob(jobId);
-            return new ResponseEntityView<>(job);
+        Job job = helper.getJob(jobId);
+        return new ResponseEntityView<>(job);
     }
 
     @POST
     @Path("/{jobId}/cancel")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.WILDCARD)
-    public ResponseEntityView<String> cancelJob(@Context HttpServletRequest request, @PathParam("jobId") String jobId)
-            throws DotDataException {
-            new WebResource.InitBuilder(webResource)
+    public ResponseEntityView<String> cancelJob(@Context HttpServletRequest request,
+            @PathParam("jobId") String jobId) throws DotDataException {
+        new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
                 .init();
-            helper.cancelJob(jobId);
-            return new ResponseEntityView<>("Job cancelled successfully");
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView <JobPaginatedResult> listJobs(@Context HttpServletRequest request,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-            new WebResource.InitBuilder(webResource)
-                .requiredBackendUser(true)
-                .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
-                .rejectWhenNoUser(true)
-                .init();
-            final JobPaginatedResult result = helper.getJobs(page, pageSize);
-            return new ResponseEntityView<>(result);
+        helper.cancelJob(jobId);
+        return new ResponseEntityView<>("Cancellation request successfully sent to job " + jobId);
     }
 
     @GET
     @Path("/{queueName}/active")
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<JobPaginatedResult> activeJobs(@Context HttpServletRequest request, @PathParam("queueName") String queueName,
+    public ResponseEntityView<JobPaginatedResult> activeJobs(@Context HttpServletRequest request,
+            @PathParam("queueName") String queueName,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-            new WebResource.InitBuilder(webResource)
+        new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
                 .init();
-            final JobPaginatedResult result = helper.getActiveJobs(queueName, page, pageSize);
-            return new ResponseEntityView<>(result);
+        final JobPaginatedResult result = helper.getActiveJobs(queueName, page, pageSize);
+        return new ResponseEntityView<>(result);
     }
-
-    @GET
-    @Path("/failed")
-    @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<JobPaginatedResult> failedJobs(@Context HttpServletRequest request,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-            new WebResource.InitBuilder(webResource)
-                .requiredBackendUser(true)
-                .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
-                .rejectWhenNoUser(true)
-                .init();
-            final JobPaginatedResult result = helper.getFailedJobs(page, pageSize);
-            return new ResponseEntityView<>(result);
-    }
-
 
     @GET
     @Path("/{jobId}/monitor")
     @Produces(SseFeature.SERVER_SENT_EVENTS)
-    public EventOutput monitorJob(@Context HttpServletRequest request, @PathParam("jobId") String jobId) {
+    public EventOutput monitorJob(@Context HttpServletRequest request,
+            @PathParam("jobId") String jobId) {
 
         new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -194,7 +183,7 @@ public class JobQueueResource {
             } catch (IOException e) {
                 Logger.error(this, "Error closing SSE connection", e);
             }
-        }  else {
+        } else {
             // Callback for watching job updates and sending them to the client
             helper.watchJob(job.id(), watched -> {
                 if (!eventOutput.isClosed()) {
@@ -214,4 +203,84 @@ public class JobQueueResource {
         }
         return eventOutput;
     }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResponseEntityView<JobPaginatedResult> listJobs(@Context HttpServletRequest request,
+            @QueryParam("page") @DefaultValue("1") int page,
+            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .init();
+        final JobPaginatedResult result = helper.getJobs(page, pageSize);
+        return new ResponseEntityView<>(result);
+    }
+
+    @GET
+    @Path("/active")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResponseEntityView<JobPaginatedResult> activeJobs(@Context HttpServletRequest request,
+            @QueryParam("page") @DefaultValue("1") int page,
+            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .init();
+        final JobPaginatedResult result = helper.getActiveJobs(page, pageSize);
+        return new ResponseEntityView<>(result);
+    }
+
+    @GET
+    @Path("/completed")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResponseEntityView<JobPaginatedResult> completedJobs(@Context HttpServletRequest request,
+            @QueryParam("page") @DefaultValue("1") int page,
+            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .init();
+        final JobPaginatedResult result = helper.getCompletedJobs(page, pageSize);
+        return new ResponseEntityView<>(result);
+    }
+
+    @GET
+    @Path("/canceled")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResponseEntityView<JobPaginatedResult> canceledJobs(@Context HttpServletRequest request,
+            @QueryParam("page") @DefaultValue("1") int page,
+            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .init();
+        final JobPaginatedResult result = helper.getCanceledJobs(page, pageSize);
+        return new ResponseEntityView<>(result);
+    }
+
+    @GET
+    @Path("/failed")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResponseEntityView<JobPaginatedResult> failedJobs(@Context HttpServletRequest request,
+            @QueryParam("page") @DefaultValue("1") int page,
+            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .init();
+        final JobPaginatedResult result = helper.getFailedJobs(page, pageSize);
+        return new ResponseEntityView<>(result);
+    }
+
 }

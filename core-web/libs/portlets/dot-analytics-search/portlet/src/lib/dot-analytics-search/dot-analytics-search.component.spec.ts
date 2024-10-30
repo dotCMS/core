@@ -53,8 +53,11 @@ describe('DotAnalyticsSearchComponent', () => {
 
     it('should call getResults with valid JSON', () => {
         const getResultsSpy = jest.spyOn(store, 'getResults');
+
         spectator.component.queryEditor = '{"measures": ["request.count"]}';
+        spectator.component.handleQueryChange('{"measures": ["request.count"]}');
         spectator.detectChanges();
+
         const button = spectator.query(byTestId('run-query')) as HTMLButtonElement;
         spectator.click(button);
 
@@ -62,12 +65,13 @@ describe('DotAnalyticsSearchComponent', () => {
     });
 
     it('should not call getResults with invalid JSON', () => {
-        const getResultsSpy = jest.spyOn(store, 'getResults');
         spectator.component.queryEditor = 'invalid json';
+        spectator.component.handleQueryChange('invalid json');
         spectator.detectChanges();
+
         const button = spectator.query(byTestId('run-query')) as HTMLButtonElement;
         spectator.click(button);
 
-        expect(getResultsSpy).not.toHaveBeenCalled();
+        expect(button).toBeDisabled();
     });
 });
