@@ -5,6 +5,7 @@ import com.dotcms.business.SystemCache;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -201,58 +202,48 @@ public class ReindexThread {
      * possible.
      */
     private void runReindexLoop() {
-
+        BulkProcessor bulkProcessor = null;
+        BulkProcessorListener bulkProcessorListener = null;
         while (state.get() != ThreadState.STOPPED) {
             try {
-                reindex();
-            } catch (Exception ex) {
+
+                final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
+
+                if (workingRecords.isEmpty()) {
+                    bulkProcessor = finalizeReIndex(bulkProcessor);
+                }
+
+                if (!workingRecords.isEmpty()) {
+                    Logger.debug(this,
+                            "Found  " + workingRecords + " index items to process");
+
+                    if (bulkProcessor == null || rebuildBulkIndexer.get()) {
+                        closeBulkProcessor(bulkProcessor);
+                        bulkProcessorListener = new BulkProcessorListener();
+                        bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
+                    }
+                    bulkProcessorListener.workingRecords.putAll(workingRecords);
+                    indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
+                    contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
+                    // otherwise, reindex normally
+
+                }
+            } catch (Throwable ex) {
                 Logger.error(this, "ReindexThread Exception", ex);
                 ThreadUtils.sleep(SLEEP_ON_ERROR);
             } finally {
                 DbConnectionFactory.closeSilently();
             }
-
-            paused();
-        }
-    }
-
-    private void paused() {
-        while (state.get() == ThreadState.PAUSED) {
-            ThreadUtils.sleep(SLEEP);
-            //Logs every 60 minutes
-            Logger.infoEvery(ReindexThread.class, "--- ReindexThread Paused",
-                    Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 60) * 60000);
-            Long restartTime = (Long) cache.get().get(REINDEX_THREAD_PAUSED);
-            if (restartTime == null || restartTime < System.currentTimeMillis()) {
-                state.set(ThreadState.RUNNING);
+            while (state.get() == ThreadState.PAUSED) {
+                ThreadUtils.sleep(SLEEP);
+                //Logs every 60 minutes
+                Logger.infoEvery(ReindexThread.class, "--- ReindexThread Paused",
+                        Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 60) * 60000);
+                Long restartTime = (Long) cache.get().get(REINDEX_THREAD_PAUSED);
+                if (restartTime == null || restartTime < System.currentTimeMillis()) {
+                    state.set(ThreadState.RUNNING);
+                }
             }
-        }
-    }
-
-    private void reindex() throws DotDataException, LanguageException, SQLException, InterruptedException {
-        BulkProcessor bulkProcessor = null;
-        BulkProcessorListener bulkProcessorListener = null;
-
-        final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
-
-        if (workingRecords.isEmpty()) {
-            bulkProcessor = finalizeReIndex(bulkProcessor);
-        }
-
-        if (!workingRecords.isEmpty()) {
-            Logger.debug(this,
-                    "Found  " + workingRecords + " index items to process");
-
-            if (bulkProcessor == null || rebuildBulkIndexer.get()) {
-                closeBulkProcessor(bulkProcessor);
-                bulkProcessorListener = new BulkProcessorListener();
-                bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
-            }
-            bulkProcessorListener.workingRecords.putAll(workingRecords);
-            indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
-            contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
-            // otherwise, reindex normally
-
         }
     }
 
