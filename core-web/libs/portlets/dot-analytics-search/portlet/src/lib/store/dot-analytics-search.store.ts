@@ -12,6 +12,9 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotAnalyticsSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { AnalyticsQueryType, ComponentStatus } from '@dotcms/dotcms-models';
 
+/**
+ * Type definition for the state of the DotContentAnalytics.
+ */
 export type DotContentAnalyticsState = {
     isEnterprise: boolean;
     results: JsonObject[] | null;
@@ -23,17 +26,23 @@ export type DotContentAnalyticsState = {
     errorMessage: string;
 };
 
+/**
+ * Initial state for the DotContentAnalytics.
+ */
 export const initialState: DotContentAnalyticsState = {
     isEnterprise: false,
     results: null,
     query: {
         value: null,
-        type: AnalyticsQueryType.DEFAULT
+        type: AnalyticsQueryType.CUBE
     },
     state: ComponentStatus.INIT,
     errorMessage: ''
 };
 
+/**
+ * Store for managing the state and actions related to DotAnalyticsSearch.
+ */
 export const DotAnalyticsSearchStore = signalStore(
     withState(initialState),
     withMethods(
@@ -43,8 +52,8 @@ export const DotAnalyticsSearchStore = signalStore(
             dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
         ) => ({
             /**
-             * Set if initial state, including, the user is enterprise or not
-             * @param isEnterprise
+             * Initializes the state with the given enterprise status.
+             * @param isEnterprise - Boolean indicating if the user is an enterprise user.
              */
             initLoad: (isEnterprise: boolean) => {
                 patchState(store, {
@@ -52,6 +61,11 @@ export const DotAnalyticsSearchStore = signalStore(
                     isEnterprise
                 });
             },
+
+            /**
+             * Fetches the results based on the current query.
+             * @param query - The query to fetch results for.
+             */
             getResults: rxMethod<JsonObject>(
                 pipe(
                     tap(() => {
