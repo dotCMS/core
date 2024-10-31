@@ -1610,4 +1610,48 @@ public class ContentResourceTest extends IntegrationTestBase {
         assertEquals(grandChild.getIdentifier(), grandChildJSONContentlet.get(IDENTIFIER));
         assertEquals("grandChild", grandChildJSONContentlet.get("title"));
     }
+
+
+    /**
+     * <b>Method to test:</b> {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * <b><br></br>Given scenario:</b> The method is invoked for a widget </br>
+     * <b><br></br>Expected result:</b> The response should override the URL with the one provided in the contentlet
+     */
+    @Test
+    public void testGetContentShouldReturnUrlOverridden() throws Exception {
+
+        final ContentType type = TestDataUtils.getWidgetLikeContentType();
+
+        final Contentlet contentlet = new ContentletDataGen(type.id())
+                .languageId(1L)
+                .setProperty("title", "Test Contentlet")
+                .setProperty("url", "testUrl")
+                .nextPersisted();
+
+        // Build request and response
+        final HttpServletRequest request = createHttpRequest(null, null);
+        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+
+        // Send request
+        final ContentResource contentResource = new ContentResource();
+
+
+        Response endpointResponse = contentResource.getContent(request, response,
+                "/query/+identifier:" + contentlet.getIdentifier() + "/type/xml");
+
+        // Verify XML result
+        final DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        final DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+
+        final InputSource inputSource = new InputSource();
+        inputSource.setCharacterStream(
+                new StringReader(endpointResponse.getEntity().toString().replaceAll("\\n", "")));
+        final Document doc = dBuilder.parse(inputSource);
+        doc.getDocumentElement().normalize();
+
+        final Element contentletFromXML = (Element) doc.getFirstChild().getFirstChild();
+
+        assertEquals(contentletFromXML.getElementsByTagName("url"), "testUrl");
+
+    }
 }
