@@ -17,8 +17,13 @@ import { HeaderComponent } from './components/header/header.component';
 import { NavigationComponent } from './components/navigation/navigation.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { PageService } from './services/page.service';
-import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
+import {
+  CUSTOMER_ACTIONS,
+  isInsideEditor,
+  postMessageToEditor,
+} from '@dotcms/client';
 import { DYNAMIC_COMPONENTS } from './components';
+import { DOTCMS_CLIENT_TOKEN } from '../app.config';
 
 export type PageError = {
   message: string;
@@ -58,11 +63,16 @@ export class DotCMSPagesComponent implements OnInit {
     status: 'idle',
   });
   protected readonly components = signal<any>(DYNAMIC_COMPONENTS);
+  protected readonly client = inject(DOTCMS_CLIENT_TOKEN);
 
   // This should be PageApiOptions from @dotcms/client
   protected readonly editorCofig: any = { params: { depth: 2 } };
 
   ngOnInit() {
+    if (isInsideEditor()) {
+      this.#listenToEditorChanges();
+    }
+
     this.#router.events
       .pipe(
         filter(
@@ -70,7 +80,9 @@ export class DotCMSPagesComponent implements OnInit {
         ),
         startWith(null), // Trigger initial load
         tap(() => this.#setLoading()),
-        switchMap(() => this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)),
+        switchMap(() =>
+          this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)
+        ),
         takeUntilDestroyed(this.#destroyRef)
       )
       .subscribe(({ page = {}, nav, error }) => {
@@ -90,10 +102,7 @@ export class DotCMSPagesComponent implements OnInit {
       });
   }
 
-  #setPageContent(
-    page: DotCMSPageAsset,
-    nav: DotcmsNavigationItem | null
-  ) {
+  #setPageContent(page: DotCMSPageAsset, nav: DotcmsNavigationItem | null) {
     this.$context.set({
       status: 'success',
       page,
@@ -123,5 +132,19 @@ export class DotCMSPagesComponent implements OnInit {
      * This will be removed once the editor is able to detect when the client is ready without use DotcmsLayoutComponent.
      */
     postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: {} });
+  }
+
+  #listenToEditorChanges() {
+    this.client.editor.on('changes', (page) => {
+      if (!page) {
+        return;
+      }
+
+      this.$context.update((state) => ({
+        ...state,
+        status: 'loading',
+        error: null,
+      }));
+    });
   }
 }
