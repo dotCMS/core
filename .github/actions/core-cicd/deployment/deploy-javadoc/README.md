@@ -65,3 +65,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: 'us-east-1'
 ```
+
+# Notes
+
+- Ensure that the github-token, aws-access-key-id, and aws-secret-access-key inputs are provided securely using GitHub secrets.
+- The artifact-run-id is optional and can be used to restore classes from previous artifact runs if necessary.
