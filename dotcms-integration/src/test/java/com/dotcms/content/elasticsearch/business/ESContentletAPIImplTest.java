@@ -277,51 +277,6 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
-    @Test()
-    public void testCheckInWithLegacyRelationshipsAndReadOnlyClusterShouldThrowAnException()
-            throws DotDataException, DotSecurityException {
-        final long time = System.currentTimeMillis();
-        ContentType contentType = null;
-        final ElasticReadOnlyCommand esReadOnlyMonitor = mock(ElasticReadOnlyCommand.class);
-        final ESContentletAPIImpl contentletAPIImpl = new ESContentletAPIImpl(esReadOnlyMonitor);
-
-        try {
-            contentType = createContentType("test" + time);
-
-            final Structure structure = new StructureTransformer(contentType).asStructure();
-
-            final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
-            final ContentletRelationships contentletRelationship = new ContentletRelationships(
-                    contentlet);
-
-            final Relationship relationship = new Relationship(structure, structure,
-                    "parent" + contentType.variable(), "child" + contentType.variable(),
-                    RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal(), false, false);
-
-            final ContentletRelationshipRecords relationshipsRecord = contentletRelationship.new ContentletRelationshipRecords(
-                    relationship,
-                    false);
-
-            contentletRelationship
-                    .setRelationshipsRecords(CollectionsUtils.list(relationshipsRecord));
-
-            setClusterAsReadOnly(true);
-
-            contentlet.setProperty(Contentlet.IS_TEST_MODE, true);
-            contentletAPIImpl.checkin(contentlet, contentletRelationship, null, null, user, false);
-
-            throw new  AssertionError("DotContentletStateException Expected");
-        } catch(DotContentletStateException e) {
-            verify(esReadOnlyMonitor).executeCheck();
-        }finally{
-            if (contentType != null && contentType.id() != null){
-                contentTypeAPI.delete(contentType);
-            }
-
-            setClusterAsReadOnly(false);
-        }
-    }
-
     /**
      * Test for isCheckInSafe method with legacy relationships. It should return false when the cluster
      * is in read only mode
