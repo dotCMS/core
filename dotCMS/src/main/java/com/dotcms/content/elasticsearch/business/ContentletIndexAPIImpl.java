@@ -553,6 +553,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 .build()
                 : List.of(parentContenlet);
 
+        if (ElasticReadOnlyCommand.getInstance().isIndexOrClusterReadOnly()) {
+            ElasticReadOnlyCommand.getInstance().sendReadOnlyMessage();
+        }
+
         if (parentContenlet.getIndexPolicy() == IndexPolicy.DEFER) {
             queueApi.addContentletsReindex(contentToIndex);
         } else if (!DbConnectionFactory.inTransaction()) {

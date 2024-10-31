@@ -406,7 +406,7 @@ public class DotInitScheduler {
 			final String triggerName  = "trigger29";
 			final String triggerGroup = "group98";
 
-			if (Config.getBooleanProperty( "ENABLE_ELASTIC_READ_ONLY_MONITOR", false)) {
+			if (Config.getBooleanProperty( "ENABLE_ELASTIC_READ_ONLY_MONITOR", true)) {
 
 					final JobBuilder elasticReadOnlyMonitorJob = new JobBuilder().setJobClass(EsReadOnlyMonitorJob.class)
 							.setJobName(jobName)
