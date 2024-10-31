@@ -92,7 +92,7 @@ public class PagesCollector implements Collector {
         collectorPayloadBean.put("language", language);
 
         if (Objects.nonNull(site)) {
-            collectorPayloadBean.put("host",  site.getIdentifier());
+            collectorPayloadBean.put("host",  site.getHostname());
         }
 
         return collectorPayloadBean;
