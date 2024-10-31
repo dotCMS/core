@@ -18,7 +18,7 @@ import { NavigationComponent } from './components/navigation/navigation.componen
 import { FooterComponent } from './components/footer/footer.component';
 import { PageService } from './services/page.service';
 import {
-  CUSTOMER_ACTIONS,
+  CLIENT_ACTIONS,
   isInsideEditor,
   postMessageToEditor,
 } from '@dotcms/client';
@@ -81,9 +81,7 @@ export class DotCMSPagesComponent implements OnInit {
         ),
         startWith(null), // Trigger initial load
         tap(() => this.#setLoading()),
-        switchMap(() =>
-          this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)
-        ),
+        switchMap(() => this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)),
         takeUntilDestroyed(this.#destroyRef)
       )
       .subscribe(({ page = {}, nav, error }) => {
@@ -132,7 +130,7 @@ export class DotCMSPagesComponent implements OnInit {
      * This is a temporary workaround to avoid the editor to be stuck in the loading state.
      * This will be removed once the editor is able to detect when the client is ready without use DotcmsLayoutComponent.
      */
-    postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: {} });
+    postMessageToEditor({ action: CLIENT_ACTIONS.CLIENT_READY, payload: {} });
   }
 
   #listenToEditorChanges() {
@@ -140,11 +138,11 @@ export class DotCMSPagesComponent implements OnInit {
       if (!page) {
         return;
       }
-
       this.$context.update((state) => ({
         ...state,
         page: page as DotCMSPageAsset,
         status: 'success',
+        error: null,
       }));
     });
   }
