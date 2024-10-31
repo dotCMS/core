@@ -56,6 +56,8 @@ export class DotCMSPagesComponent implements OnInit {
   readonly #destroyRef = inject(DestroyRef);
   readonly #router = inject(Router);
   readonly #pageService = inject(PageService);
+  readonly #client = inject(DOTCMS_CLIENT_TOKEN);
+
   protected readonly $context = signal<PageRender>({
     page: null,
     nav: null,
@@ -63,7 +65,6 @@ export class DotCMSPagesComponent implements OnInit {
     status: 'idle',
   });
   protected readonly components = signal<any>(DYNAMIC_COMPONENTS);
-  protected readonly client = inject(DOTCMS_CLIENT_TOKEN);
 
   // This should be PageApiOptions from @dotcms/client
   protected readonly editorCofig: any = { params: { depth: 2 } };
@@ -80,9 +81,7 @@ export class DotCMSPagesComponent implements OnInit {
         ),
         startWith(null), // Trigger initial load
         tap(() => this.#setLoading()),
-        switchMap(() =>
-          this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)
-        ),
+        switchMap(() => this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)),
         takeUntilDestroyed(this.#destroyRef)
       )
       .subscribe(({ page = {}, nav, error }) => {
@@ -135,7 +134,7 @@ export class DotCMSPagesComponent implements OnInit {
   }
 
   #listenToEditorChanges() {
-    this.client.editor.on('changes', (page) => {
+    this.#client.editor.on('changes', (page) => {
       if (!page) {
         return;
       }
