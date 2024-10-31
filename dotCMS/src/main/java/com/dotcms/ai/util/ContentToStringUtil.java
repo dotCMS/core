@@ -1,6 +1,7 @@
 package com.dotcms.ai.util;
 
 
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -40,7 +41,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.dotcms.ai.app.AppConfig.debugLogger;
 import static com.liferay.util.StringPool.BLANK;
 import static com.liferay.util.StringPool.SPACE;
 
@@ -194,7 +194,8 @@ public class ContentToStringUtil {
                 .filter(f ->
                         f.dataType().equals(DataTypes.LONG_TEXT)
                 ).collect(Collectors.toUnmodifiableList());
-        debugLogger(this.getClass(), () -> String.format("Found %d indexable field(s) for Contentlet ID '%s': %s",
+        final AppConfig config = ConfigService.INSTANCE.config();
+        config.debugLogger(this.getClass(), () -> String.format("Found %d indexable field(s) for Contentlet ID '%s': %s",
                 indexableFields.size(), contentlet.getIdentifier(), indexableFields.stream().map(Field::variable).collect(Collectors.toSet())));
         return indexableFields;
     }
@@ -253,10 +254,10 @@ public class ContentToStringUtil {
             parseField(contentlet, field)
                     .ifPresent(s -> builder.append(s).append(SPACE));
         }
-        final int embeddingsMinimumLength =
-                ConfigService.INSTANCE.config().getConfigInteger(AppKeys.EMBEDDINGS_MINIMUM_TEXT_LENGTH_TO_INDEX);
+        final AppConfig config = ConfigService.INSTANCE.config();
+        final int embeddingsMinimumLength = config.getConfigInteger(AppKeys.EMBEDDINGS_MINIMUM_TEXT_LENGTH_TO_INDEX);
         if (builder.length() < embeddingsMinimumLength) {
-            debugLogger(this.getClass(), () -> String.format("Parseable fields for Contentlet ID " +
+            config.debugLogger(this.getClass(), () -> String.format("Parseable fields for Contentlet ID " +
                     "'%s' don't meet the minimum length requirement of %d characters. Skipping indexing.",
                     contentlet.getIdentifier(), embeddingsMinimumLength));
             return Optional.empty();

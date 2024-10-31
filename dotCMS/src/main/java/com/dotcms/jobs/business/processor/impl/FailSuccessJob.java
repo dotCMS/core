@@ -6,13 +6,14 @@ import com.dotcms.jobs.business.processor.Queue;
 import com.dotmarketing.exception.DotRuntimeException;
 import java.util.Map;
 
-@Queue("fail")
-public class FailJob implements JobProcessor {
+@Queue("failSuccess")
+public class FailSuccessJob implements JobProcessor {
 
     @Override
     public void process(Job job) {
-
-        throw new DotRuntimeException( "Failed job !");
+        if (job.parameters().containsKey("fail")) {
+            throw new DotRuntimeException("Failed job !");
+        }
     }
 
     @Override

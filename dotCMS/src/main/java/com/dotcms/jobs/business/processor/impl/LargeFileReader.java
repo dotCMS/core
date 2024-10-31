@@ -6,15 +6,13 @@ import com.dotcms.jobs.business.processor.Cancellable;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.processor.Queue;
+import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
-import com.dotcms.rest.api.v1.temp.TempFileAPI;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -36,7 +34,7 @@ public class LargeFileReader implements JobProcessor, Cancellable {
         Logger.info(this.getClass(), "Processing job: " + job.id());
         Map<String, Object> params = job.parameters();
 
-        Optional<DotTempFile> tempFile = tempFile(params);
+        Optional<DotTempFile> tempFile = JobUtil.retrieveTempFile(job);
         if (tempFile.isEmpty()) {
             Logger.error(this.getClass(), "Unable to retrieve the temporary file. Quitting the job.");
             throw new DotRuntimeException("Unable to retrieve the temporary file.");
@@ -179,36 +177,6 @@ public class LargeFileReader implements JobProcessor, Cancellable {
         }
 
         return Optional.of(nLines);
-    }
-
-    /**
-     * Retrieve the temporary file from the parameters
-     *
-     * @param params input parameters
-     * @return the temporary file
-     */
-    Optional<DotTempFile> tempFile(Map<String, Object> params) {
-        // Extract parameters
-        String tempFileId = (String) params.get("tempFileId");
-
-        final Object requestFingerPrintRaw = params.get("requestFingerPrint");
-        if (!(requestFingerPrintRaw instanceof String)) {
-            Logger.error(this.getClass(),
-                    "Parameter 'requestFingerPrint' is required and must be a string.");
-            return Optional.empty();
-        }
-        final String requestFingerPrint = (String) requestFingerPrintRaw;
-
-        // Retrieve the temporary file
-        final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
-        final Optional<DotTempFile> tempFile = tempFileAPI.getTempFile(List.of(requestFingerPrint),
-                tempFileId);
-        if (tempFile.isEmpty()) {
-            Logger.error(this.getClass(), "Temporary file not found: " + tempFileId);
-            return Optional.empty();
-        }
-
-        return tempFile;
     }
 
     /**

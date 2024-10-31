@@ -40,6 +40,7 @@ import {
     CreateFromPaletteAction,
     DialogAction,
     DotPage,
+    EditContentletPayload,
     VTLFile
 } from '../../shared/models';
 import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
@@ -93,22 +94,22 @@ export class DotEmaDialogComponent {
     /**
      * Add contentlet
      *
-     * @param {ActionPayload} payload
+     * @param {ActionPayload} actionPayload
      * @memberof EditEmaEditorComponent
      */
-    addContentlet(payload: ActionPayload): void {
+    addContentlet(actionPayload: ActionPayload): void {
         this.store.addContentlet({
-            containerId: payload.container.identifier,
-            acceptTypes: payload.container.acceptTypes ?? '*',
-            language_id: payload.language_id,
-            payload
+            containerId: actionPayload.container.identifier,
+            acceptTypes: actionPayload.container.acceptTypes ?? '*',
+            language_id: actionPayload.language_id,
+            actionPayload
         });
     }
 
     /**
      * Add Form
      *
-     * @param {ActionPayload} _payload
+     * @param {ActionPayload} actionPayload
      * @memberof EditEmaEditorComponent
      */
     addForm(payload: ActionPayload): void {
@@ -118,29 +119,26 @@ export class DotEmaDialogComponent {
     /**
      * Add Widget
      *
-     * @param {ActionPayload} payload
+     * @param {ActionPayload} actionPayload
      * @memberof EditEmaEditorComponent
      */
-    addWidget(payload: ActionPayload): void {
+    addWidget(actionPayload: ActionPayload): void {
         this.store.addContentlet({
-            containerId: payload.container.identifier,
+            containerId: actionPayload.container.identifier,
             acceptTypes: DotCMSBaseTypesContentTypes.WIDGET,
-            language_id: payload.language_id,
-            payload
+            language_id: actionPayload.language_id,
+            actionPayload
         });
     }
 
     /**
      * Edit contentlet
      *
-     * @param {Partial<DotCMSContentlet>} contentlet
+     * @param {EditContentletPayload} contentlet
      * @memberof DotEmaDialogComponent
      */
-    editContentlet(contentlet: Partial<DotCMSContentlet>) {
-        this.store.editContentlet({
-            inode: contentlet.inode,
-            title: contentlet.title
-        });
+    editContentlet(payload: EditContentletPayload) {
+        this.store.editContentlet(payload);
     }
 
     /**
@@ -185,11 +183,11 @@ export class DotEmaDialogComponent {
      * @param {CreateContentletAction} { url, contentType, payload }
      * @memberof DotEmaDialogComponent
      */
-    createContentlet({ url, contentType, payload }: CreateContentletAction) {
+    createContentlet({ url, contentType, actionPayload }: CreateContentletAction) {
         this.store.createContentlet({
             url,
             contentType,
-            payload
+            actionPayload
         });
     }
 
@@ -199,11 +197,17 @@ export class DotEmaDialogComponent {
      * @param {CreateFromPaletteAction} { variable, name, payload }
      * @memberof DotEmaDialogComponent
      */
-    createContentletFromPalette({ variable, name, payload }: CreateFromPaletteAction) {
+    createContentletFromPalette({
+        variable,
+        name,
+        actionPayload,
+        language_id
+    }: CreateFromPaletteAction) {
         this.store.createContentletFromPalette({
             variable,
             name,
-            payload
+            actionPayload,
+            language_id
         });
     }
 
@@ -333,7 +337,7 @@ export class DotEmaDialogComponent {
 
                     case NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED: {
                         // The edit content emits this for savings when translating a page and does not emit anything when changing the content
-                        if (this.dialogState().editContentForm.isTranslation) {
+                        if (this.dialogState().form.isTranslation) {
                             this.store.setSaved();
 
                             if (event.detail.payload.isMoveAction) {
@@ -405,8 +409,8 @@ export class DotEmaDialogComponent {
     }
 
     private emitAction(event: CustomEvent) {
-        const { payload, editContentForm } = this.dialogState();
+        const { actionPayload, form, clientAction } = this.dialogState();
 
-        this.action.emit({ event, payload, form: editContentForm });
+        this.action.emit({ event, actionPayload, form, clientAction });
     }
 }

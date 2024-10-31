@@ -1,0 +1,18 @@
+@use "variables" as *;
+
+.file-selector {
+    height: 43rem;
+    .file-selector__sidebar {
+        border-right: $field-border-size solid $color-palette-gray-400;
+        ::ng-deep {
+            .p-tree {
+                border: 0px;
+            }
+        }
+    }
+    .file-selector__main {
+        margin-top: 1px;
+        border-radius: $border-radius-md;
+        border: $field-border-size solid $color-palette-gray-400;
+    }
+}
