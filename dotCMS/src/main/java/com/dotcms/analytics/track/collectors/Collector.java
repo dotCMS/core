@@ -18,6 +18,7 @@ package com.dotcms.analytics.track.collectors;
  */
 public interface Collector {
 
+    String ID = "id";
     String REQUEST_ID = "request_id";
     String UTC_TIME = "utc_time";
     String CLUSTER = "cluster";
@@ -31,6 +32,21 @@ public interface Collector {
     String COME_FROM_VANITY_URL = "comeFromVanityURL";
     String ISEXPERIMENTPAGE = "isexperimentpage";
     String ISTARGETPAGE = "istargetpage";
+    String URL = "url";
+    String HOST = "host";
+    String LANGUAGE = "language";
+    String SITE = "site";
+    String TITLE = "title";
+    String EVENT_TYPE = "event_type";
+    String OBJECT = "object";
+    String DETAIL_PAGE_URL = "detail_page_url";
+    String CONTENT_TYPE_ID = "content_type_id";
+    String CONTENT_TYPE_NAME = "content_type_name";
+    String CONTENT_TYPE_VAR_NAME = "content_type_var_name";
+    String RESPONSE_CODE = "response_code";
+    String VANITY_QUERY_STRING = "vanity_query_string";
+    String RESPONSE = "response";
+    String LANGUAGE_ID = "language_id";
 
     /**
      * Test if the collector should run

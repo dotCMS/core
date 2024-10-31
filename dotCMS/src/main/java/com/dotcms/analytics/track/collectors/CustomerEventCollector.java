@@ -2,9 +2,7 @@ package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.analytics.track.matchers.UserCustomDefinedRequestMatcher;
 import com.dotmarketing.beans.Host;
-
-import java.util.HashMap;
-import java.util.Objects;
+import com.liferay.util.StringPool;
 
 /**
  * This event collector creator basically allows to send a message for a customer event.
@@ -21,17 +19,17 @@ public class CustomerEventCollector implements Collector {
     @Override
     public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
                                         final CollectorPayloadBean collectorPayloadBean) {
-        final String uri = (String)collectorContextMap.get("uri");
-        final String host = (String)collectorContextMap.get("host");
-        final Host site = (Host) collectorContextMap.get("currentHost");
-        final String language = (String)collectorContextMap.get("lang");
-        collectorPayloadBean.put("url", uri);
-        collectorPayloadBean.put("host", host);
-        collectorPayloadBean.put("language", language);
-        collectorPayloadBean.put("site", null != site?site.getIdentifier():"unknown");
-        final String eventType = (String)collectorContextMap.get("eventType") == null?
-                    EventType.CUSTOM_USER_EVENT.getType():(String)collectorContextMap.get("eventType");
-        collectorPayloadBean.put("event_type", eventType);
+        final String uri = (String)collectorContextMap.get(CollectorContextMap.URI);
+        final String host = (String)collectorContextMap.get(CollectorContextMap.HOST);
+        final Host site = (Host) collectorContextMap.get(CollectorContextMap.CURRENT_HOST);
+        final String language = (String)collectorContextMap.get(CollectorContextMap.LANG);
+        collectorPayloadBean.put(URL, uri);
+        collectorPayloadBean.put(HOST, host);
+        collectorPayloadBean.put(LANGUAGE, language);
+        collectorPayloadBean.put(SITE, null != site?site.getIdentifier(): StringPool.UNKNOWN);
+        final String eventType = collectorContextMap.get(CollectorContextMap.EVENT_TYPE) == null?
+                    EventType.CUSTOM_USER_EVENT.getType():(String)collectorContextMap.get(CollectorContextMap.EVENT_TYPE);
+        collectorPayloadBean.put(EVENT_TYPE, eventType);
 
         return collectorPayloadBean;
     }
