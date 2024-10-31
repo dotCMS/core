@@ -39,6 +39,12 @@ export class ColumnComponent implements OnInit {
      */
     @HostBinding('class') containerClasses = '';
 
+    /**
+     * Lifecycle hook that is called after data-bound properties of a directive are initialized.
+     * Initializes the container classes based on the column's left offset and width.
+     *
+     * @memberof ColumnComponent
+     */
     ngOnInit() {
         const { startClass, endClass } = getPositionStyleClasses(
             this.column.leftOffset,

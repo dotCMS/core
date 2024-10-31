@@ -1,13 +1,40 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+/**
+ * Represents a DotCMS page asset.
+ */
 export interface DotCMSPageAsset {
+    /**
+     * Indicates if the user can create a template.
+     */
     canCreateTemplate: boolean;
+    /**
+     * The containers of the page asset.
+     */
     containers: DotCMSPageAssetContainer;
+    /**
+     * The layout of the page asset.
+     */
     layout: DotCMSLayout;
+    /**
+     * The page information.
+     */
     page: DotCMSPage;
+    /**
+     * The site information.
+     */
     site: DotCMSSite;
+    /**
+     * The template information.
+     */
     template: DotCMSTemplate;
+    /**
+     * The view-as information.
+     */
     viewAs: DotCMSViewAs;
+    /**
+     * The vanity URL information.
+     */
     vanityUrl?: {
         pattern: string;
         vanityUrlId: string;
@@ -23,34 +50,91 @@ export interface DotCMSPageAsset {
     };
 }
 
+/**
+ * Represents a row in the page asset layout.
+ */
 export interface DotPageAssetLayoutRow {
+    /**
+     * The identifier of the row.
+     */
     identifier: number;
+    /**
+     * The value of the row.
+     */
     value?: string;
+    /**
+     * The ID of the row.
+     */
     id?: string;
+    /**
+     * The columns in the row.
+     */
     columns: DotPageAssetLayoutColumn[];
+    /**
+     * The style class of the row.
+     */
     styleClass?: string;
 }
 
+/**
+ * Represents a column in the page asset layout.
+ */
 export interface DotPageAssetLayoutColumn {
+    /**
+     * Indicates if the column is in preview mode.
+     */
     preview: boolean;
+    /**
+     * The containers in the column.
+     */
     containers: DotCMSContainer[];
+    /**
+     * The width percentage of the column.
+     */
     widthPercent: number;
+    /**
+     * The width of the column.
+     */
     width: number;
+    /**
+     * The left offset of the column.
+     */
     leftOffset: number;
+    /**
+     * The left position of the column.
+     */
     left: number;
+    /**
+     * The style class of the column.
+     */
     styleClass?: string;
 }
 
+/**
+ * Represents the containers of a DotCMS page asset.
+ */
 export interface DotCMSPageAssetContainer {
     [key: string]: {
+        /**
+         * The container information.
+         */
         container: DotCMSContainer;
+        /**
+         * The container structures.
+         */
         containerStructures: DotCMSContainerStructure[];
+        /**
+         * The contentlets in the container.
+         */
         contentlets: {
             [key: string]: DotCMSContentlet[];
         };
     };
 }
 
+/**
+ * Represents a container in DotCMS.
+ */
 export interface DotCMSContainer {
     identifier: string;
     uuid: string;
@@ -94,6 +178,9 @@ export interface DotCMSContainer {
     parentPermissionable: DotCMSSiteParentPermissionable;
 }
 
+/**
+ * Represents a contentlet in DotCMS.
+ */
 export interface DotCMSContentlet {
     archived: boolean;
     baseType: string;
@@ -134,6 +221,9 @@ export interface DotCMSContentlet {
     [key: string]: any; // This is a catch-all for any other custom properties that might be on the contentlet.
 }
 
+/**
+ * Represents a navigation item in DotCMS.
+ */
 export interface DotcmsNavigationItem {
     code?: any;
     folder: string;
@@ -148,6 +238,9 @@ export interface DotcmsNavigationItem {
     order: number;
 }
 
+/**
+ * Represents a template in DotCMS.
+ */
 interface DotCMSTemplate {
     iDate: number;
     type: string;
@@ -183,6 +276,9 @@ interface DotCMSTemplate {
     canEdit: boolean;
 }
 
+/**
+ * Represents a page in DotCMS.
+ */
 interface DotCMSPage {
     template: string;
     modDate: number;
@@ -229,6 +325,9 @@ interface DotCMSPage {
     shortyLive: string;
 }
 
+/**
+ * Represents the view-as information in DotCMS.
+ */
 interface DotCMSViewAs {
     language: {
         id: number;
@@ -240,6 +339,9 @@ interface DotCMSViewAs {
     mode: string;
 }
 
+/**
+ * Represents the layout of a DotCMS page asset.
+ */
 interface DotCMSLayout {
     pageWidth: string;
     width: string;
@@ -251,6 +353,9 @@ interface DotCMSLayout {
     sidebar: DotPageAssetLayoutSidebar;
 }
 
+/**
+ * Represents a container structure in DotCMS.
+ */
 interface DotCMSContainerStructure {
     id: string;
     structureId: string;
@@ -260,6 +365,9 @@ interface DotCMSContainerStructure {
     contentTypeVar: string;
 }
 
+/**
+ * Represents the sidebar layout of a DotCMS page asset.
+ */
 interface DotPageAssetLayoutSidebar {
     preview: boolean;
     containers: DotCMSContainer[];
@@ -268,10 +376,16 @@ interface DotPageAssetLayoutSidebar {
     width: string;
 }
 
+/**
+ * Represents the body layout of a DotCMS page asset.
+ */
 interface DotPageAssetLayoutBody {
     rows: DotPageAssetLayoutRow[];
 }
 
+/**
+ * Represents a site in DotCMS.
+ */
 interface DotCMSSite {
     lowIndexPriority: boolean;
     name: string;
@@ -323,6 +437,9 @@ interface DotCMSSite {
     contentType: DotCMSSiteContentType;
 }
 
+/**
+ * Represents the content type of a DotCMS site.
+ */
 interface DotCMSSiteContentType {
     owner?: any;
     parentPermissionable: DotCMSSiteParentPermissionable;
@@ -330,6 +447,9 @@ interface DotCMSSiteContentType {
     permissionType: string;
 }
 
+/**
+ * Represents the parent permissionable of a DotCMS site.
+ */
 export interface DotCMSSiteParentPermissionable {
     Inode: string;
     Identifier: string;
@@ -345,6 +465,9 @@ export interface DotCMSSiteParentPermissionable {
     variantId?: string;
 }
 
+/**
+ * Represents the structure of a DotCMS site.
+ */
 interface DotCMSSiteStructure {
     iDate: number;
     type: string;
@@ -391,6 +514,9 @@ interface DotCMSSiteStructure {
     versionType: string;
 }
 
+/**
+ * Represents a field in a DotCMS site structure.
+ */
 interface DotCMSSiteField {
     iDate: number;
     type: string;
