@@ -5,6 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { switchMap } from 'rxjs/operators';
 
+import { CLIENT_ACTIONS } from '@dotcms/client';
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotActionUrlService } from '../../../services/dot-action-url/dot-action-url.service';
@@ -12,6 +13,7 @@ import { LAYOUT_URL, CONTENTLET_SELECTOR_URL } from '../../../shared/consts';
 import { DialogStatus, FormStatus } from '../../../shared/enums';
 import {
     ActionPayload,
+    AddContentletAction,
     CreateContentletAction,
     CreateFromPaletteAction,
     DotPage,
@@ -27,10 +29,11 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             url: '',
             type: null,
             status: DialogStatus.IDLE,
-            editContentForm: {
+            form: {
                 status: FormStatus.PRISTINE,
                 isTranslation: false
-            }
+            },
+            clientAction: CLIENT_ACTIONS.NOOP
         });
     }
 
@@ -48,7 +51,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     readonly createContentletFromPalette = this.effect(
         (contentTypeVariable$: Observable<CreateFromPaletteAction>) => {
             return contentTypeVariable$.pipe(
-                switchMap(({ name, variable, payload, language_id = 1 }) => {
+                switchMap(({ name, variable, actionPayload, language_id = 1 }) => {
                     return this.dotActionUrlService
                         .getCreateContentletUrl(variable, language_id)
                         .pipe(
@@ -57,7 +60,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
                                     this.createContentlet({
                                         url,
                                         contentType: name,
-                                        payload
+                                        actionPayload
                                     });
                                 },
                                 (e) => {
@@ -93,11 +96,11 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      * @memberof DotEmaDialogStore
      */
     readonly createContentlet = this.updater(
-        (state, { url, contentType, payload }: CreateContentletAction) => {
+        (state, { url, contentType, actionPayload }: CreateContentletAction) => {
             return {
                 ...state,
                 url,
-                payload,
+                actionPayload,
                 header: this.dotMessageService.get(
                     'contenttypes.content.create.contenttype',
                     contentType
@@ -128,15 +131,18 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @memberof DotEmaDialogStore
      */
-    readonly editContentlet = this.updater((state, { inode, title }: EditContentletPayload) => {
-        return {
-            ...state,
-            header: title,
-            status: DialogStatus.LOADING,
-            type: 'content',
-            url: this.createEditContentletUrl(inode)
-        };
-    });
+    readonly editContentlet = this.updater(
+        (state, { inode, title, clientAction = CLIENT_ACTIONS.NOOP }: EditContentletPayload) => {
+            return {
+                ...state,
+                clientAction, //In case it is undefined we set it to "noop"
+                header: title,
+                status: DialogStatus.LOADING,
+                type: 'content',
+                url: this.createEditContentletUrl(inode)
+            };
+        }
+    );
 
     /**
      * This method is called when the user clicks on the edit URL Content Map button
@@ -170,7 +176,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
                 status: DialogStatus.LOADING,
                 type: 'content',
                 url: this.createTranslatePageUrl(page, newLanguage),
-                editContentForm: {
+                form: {
                     status: FormStatus.PRISTINE,
                     isTranslation: true
                 }
@@ -183,26 +189,16 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @memberof DotEmaDialogStore
      */
-    readonly addContentlet = this.updater(
-        (
-            state,
-            data: {
-                containerId: string;
-                acceptTypes: string;
-                language_id: string;
-                payload: ActionPayload;
-            }
-        ) => {
-            return {
-                ...state,
-                header: this.dotMessageService.get('edit.ema.page.dialog.header.search.content'),
-                status: DialogStatus.LOADING,
-                url: this.createAddContentletUrl(data),
-                type: 'content',
-                payload: data.payload
-            };
-        }
-    );
+    readonly addContentlet = this.updater((state, data: AddContentletAction) => {
+        return {
+            ...state,
+            header: this.dotMessageService.get('edit.ema.page.dialog.header.search.content'),
+            status: DialogStatus.LOADING,
+            url: this.createAddContentletUrl(data),
+            type: 'content',
+            actionPayload: data.actionPayload
+        };
+    });
 
     /**
      * This method is called when the user make changes in the form
@@ -212,8 +208,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     readonly setDirty = this.updater((state) => {
         return {
             ...state,
-            editContentForm: {
-                ...state.editContentForm,
+            form: {
+                ...state.form,
                 status: FormStatus.DIRTY
             }
         };
@@ -227,8 +223,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     readonly setSaved = this.updater((state) => {
         return {
             ...state,
-            editContentForm: {
-                ...state.editContentForm,
+            form: {
+                ...state.form,
                 status: FormStatus.SAVED
             }
         };
@@ -246,7 +242,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             status: DialogStatus.LOADING,
             url: null,
             type: 'form',
-            payload
+            actionPayload: payload
         };
     });
 
@@ -262,11 +258,12 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             header: '',
             status: DialogStatus.IDLE,
             type: null,
-            payload: undefined,
-            editContentForm: {
+            actionPayload: undefined,
+            form: {
                 status: FormStatus.PRISTINE,
                 isTranslation: false
-            }
+            },
+            clientAction: CLIENT_ACTIONS.NOOP
         };
     });
 

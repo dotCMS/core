@@ -4,23 +4,31 @@
  * @export
  * @enum {number}
  */
-export enum NOTIFY_CUSTOMER {
+export enum NOTIFY_CLIENT {
     /**
      * Request to page to reload
      */
-    EMA_RELOAD_PAGE = 'ema-reload-page',
+    UVE_RELOAD_PAGE = 'uve-reload-page',
     /**
      * Request the bounds for the elements
      */
-    EMA_REQUEST_BOUNDS = 'ema-request-bounds',
+    UVE_REQUEST_BOUNDS = 'uve-request-bounds',
     /**
      * Received pong from the editor
      */
-    EMA_EDITOR_PONG = 'ema-editor-pong',
+    UVE_EDITOR_PONG = 'uve-editor-pong',
     /**
      * Received scroll event trigger from the editor
      */
-    EMA_SCROLL_INSIDE_IFRAME = 'scroll-inside-iframe'
+    UVE_SCROLL_INSIDE_IFRAME = 'uve-scroll-inside-iframe',
+    /**
+     * Set the page data
+     */
+    UVE_SET_PAGE_DATA = 'uve-set-page-data',
+    /**
+     * Copy contentlet inline editing success
+     */
+    UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS = 'uve-copy-contentlet-inline-editing-success'
 }
 
 type ListenerCallbackMessage = (event: MessageEvent) => void;
