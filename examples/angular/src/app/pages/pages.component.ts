@@ -81,7 +81,9 @@ export class DotCMSPagesComponent implements OnInit {
         ),
         startWith(null), // Trigger initial load
         tap(() => this.#setLoading()),
-        switchMap(() => this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)),
+        switchMap(() =>
+          this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)
+        ),
         takeUntilDestroyed(this.#destroyRef)
       )
       .subscribe(({ page = {}, nav, error }) => {
@@ -141,8 +143,8 @@ export class DotCMSPagesComponent implements OnInit {
 
       this.$context.update((state) => ({
         ...state,
-        status: 'loading',
-        error: null,
+        page: page as DotCMSPageAsset,
+        status: 'success',
       }));
     });
   }
