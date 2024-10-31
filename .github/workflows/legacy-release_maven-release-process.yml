@@ -275,6 +275,13 @@ jobs:
         with:
           servers: '[{ "id": "dotcms-libs-local", "username": "${{ secrets.EE_REPO_USERNAME }}", "password": "${{ secrets.EE_REPO_PASSWORD }}" }]'
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
       - name: Deploy Release
         run: |
           ./mvnw -ntp \
@@ -286,16 +293,28 @@ jobs:
         if: github.event.inputs.deploy_artifact == 'true'
 
       - name: Generate/Push Javadoc
-        uses: ./.github/actions/core-cicd/deployment/deploy-javadoc
-        with:
-          ref: ${{ github.ref }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          artifact-run-id: ${{ github.run_id }}
-          release-version: ${{ inputs.release_version }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}        
-        if: github.event.inputs.upload_javadocs == 'true'        
+        run: |
+          ./mvnw -ntp \
+            ${JVM_TEST_MAVEN_OPTS} \
+            javadoc:javadoc \
+            -pl :dotcms-core
+          rc=$?
+          if [[ $rc != 0 ]]; then
+            echo "Javadoc generation failed with exit code $rc"
+            exit $rc
+          fi
+
+          site_dir=./dotCMS/target/site
+          javadoc_dir=${site_dir}/javadocs
+          s3_uri=s3://static.dotcms.com/docs/${{ needs.prepare-release.outputs.release_version }}/javadocs
+
+          mv ${site_dir}/apidocs ${javadoc_dir}
+          echo "Running: aws s3 cp ${javadoc_dir} ${s3_uri} --recursive"
+          aws s3 cp ${javadoc_dir} ${s3_uri} --recursive
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        if: github.event.inputs.upload_javadocs == 'true'
 
       - name: Update Plugins
         run: |
