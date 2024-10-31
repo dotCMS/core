@@ -70,8 +70,14 @@ public class BasicProfileCollector implements Collector {
 
         // Include default value for other boolean fields in the Clickhouse table
         collectorPayloadBean.put(COME_FROM_VANITY_URL, false);
-        collectorPayloadBean.put(ISEXPERIMENTPAGE, false);
-        collectorPayloadBean.put(ISTARGETPAGE, false);
+        collectorPayloadBean.put(IS_EXPERIMENT_PAGE, false);
+        collectorPayloadBean.put(IS_TARGET_PAGE, false);
+
+        if (Objects.nonNull(collectorPayloadBean.get(EVENT_SOURCE))) {
+            // this is the default event source
+            collectorPayloadBean.put(EVENT_SOURCE, EventSource.DOT_CMS.getName());
+        }
+
         return collectorPayloadBean;
     }
 

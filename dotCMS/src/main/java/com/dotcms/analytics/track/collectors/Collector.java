@@ -30,8 +30,8 @@ public interface Collector {
     String PERSONA = "persona";
     String RENDER_MODE = "renderMode";
     String COME_FROM_VANITY_URL = "comeFromVanityURL";
-    String ISEXPERIMENTPAGE = "isexperimentpage";
-    String ISTARGETPAGE = "istargetpage";
+    String IS_EXPERIMENT_PAGE = "isexperimentpage";
+    String IS_TARGET_PAGE = "istargetpage";
     String URL = "url";
     String HOST = "host";
     String LANGUAGE = "language";
@@ -47,6 +47,7 @@ public interface Collector {
     String VANITY_QUERY_STRING = "vanity_query_string";
     String RESPONSE = "response";
     String LANGUAGE_ID = "language_id";
+    String EVENT_SOURCE = "event_source";
 
     /**
      * Test if the collector should run

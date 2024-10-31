@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import com.dotcms.analytics.track.collectors.Collector;
+import com.dotcms.analytics.track.collectors.EventSource;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorService;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceFactory;
 import com.dotcms.analytics.track.matchers.UserCustomDefinedRequestMatcher;
@@ -36,10 +38,6 @@ public class RuleAnalyticsFireUserEventActionlet extends RuleActionlet<RuleAnaly
     public static final String RULE_OBJECT_ID = "objectId";
     public static final String RULE_REQUEST_ID = "requestId";
     public static final String RULE_CONTENT = "CONTENT";
-    public static final String RULE_ID = "id";
-    public static final String RULE_OBJECT_CONTENT_TYPE_VAR_NAME = "object_content_type_var_name";
-    public static final String RULE_OBJECT = "object";
-    public static final String RULE_EVENT_TYPE1 = "event_type";
 
     public RuleAnalyticsFireUserEventActionlet() {
         this(WebEventsCollectorServiceFactory.getInstance().getWebEventsCollectorService());
@@ -70,12 +68,13 @@ public class RuleAnalyticsFireUserEventActionlet extends RuleActionlet<RuleAnaly
         final HashMap<String, String> objectDetail = new HashMap<>();
         final Map<String, Serializable> userEventPayload = new HashMap<>();
 
-        userEventPayload.put(RULE_ID, Objects.nonNull(instance.objectId) ? instance.objectId : identifier);
+        userEventPayload.put(Collector.ID, Objects.nonNull(instance.objectId) ? instance.objectId : identifier);
 
-        objectDetail.put(RULE_ID, identifier);
-        objectDetail.put(RULE_OBJECT_CONTENT_TYPE_VAR_NAME, Objects.nonNull(instance.objectType) ? instance.objectType : RULE_CONTENT);
-        userEventPayload.put(RULE_OBJECT, objectDetail);
-        userEventPayload.put(RULE_EVENT_TYPE1, instance.eventType);
+        objectDetail.put(Collector.ID, identifier);
+        objectDetail.put(Collector.CONTENT_TYPE_VAR_NAME, Objects.nonNull(instance.objectType) ? instance.objectType : RULE_CONTENT);
+        userEventPayload.put(Collector.OBJECT, objectDetail);
+        userEventPayload.put(Collector.EVENT_TYPE, instance.eventType);
+        userEventPayload.put(Collector.EVENT_SOURCE, EventSource.RULE.getName());
         webEventsCollectorService.fireCollectorsAndEmitEvent(request, response, USER_CUSTOM_DEFINED_REQUEST_MATCHER, userEventPayload);
 
         return true;
