@@ -1,5 +1,5 @@
-import { CUSTOMER_ACTIONS, postMessageToEditor } from '../models/client.model';
-import { DotCMSPageEditorSubscription, NOTIFY_CUSTOMER } from '../models/listeners.model';
+import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from '../models/client.model';
+import { DotCMSPageEditorSubscription, NOTIFY_CLIENT } from '../models/listeners.model';
 import {
     findVTLData,
     findDotElement,
@@ -7,12 +7,6 @@ import {
     getPageElementBound,
     scrollIsInBottom
 } from '../utils/editor.utils';
-
-declare global {
-    interface Window {
-        lastScrollYPosition: number;
-    }
-}
 
 /**
  * Represents an array of DotCMSPageEditorSubscription objects.
@@ -33,7 +27,7 @@ function setBounds(): void {
     const positionData = getPageElementBound(containers);
 
     postMessageToEditor({
-        action: CUSTOMER_ACTIONS.SET_BOUNDS,
+        action: CLIENT_ACTIONS.SET_BOUNDS,
         payload: positionData
     });
 }
@@ -45,29 +39,34 @@ function setBounds(): void {
  * @memberof DotCMSPageEditor
  */
 export function listenEditorMessages(): void {
-    const messageCallback = (event: MessageEvent) => {
-        switch (event.data) {
-            case NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS: {
+    const messageCallback = (
+        event: MessageEvent<{ name: NOTIFY_CLIENT; direction: 'up' | 'down' }>
+    ) => {
+        const ACTIONS_NOTIFICATION: { [K in NOTIFY_CLIENT]?: () => void } = {
+            [NOTIFY_CLIENT.UVE_RELOAD_PAGE]: () => {
+                window.location.reload();
+            },
+            [NOTIFY_CLIENT.UVE_REQUEST_BOUNDS]: () => {
                 setBounds();
-                break;
+            },
+            [NOTIFY_CLIENT.UVE_SCROLL_INSIDE_IFRAME]: () => {
+                const direction = event.data.direction;
+
+                if (
+                    (window.scrollY === 0 && direction === 'up') ||
+                    (scrollIsInBottom() && direction === 'down')
+                ) {
+                    // If the iframe scroll is at the top or bottom, do not send anything.
+                    // This avoids losing the scrollend event.
+                    return;
+                }
+
+                const scrollY = direction === 'up' ? -120 : 120;
+                window.scrollBy({ left: 0, top: scrollY, behavior: 'smooth' });
             }
-        }
+        };
 
-        if (event.data.name === NOTIFY_CUSTOMER.EMA_SCROLL_INSIDE_IFRAME) {
-            const direction = event.data.direction;
-
-            if (
-                (window.scrollY === 0 && direction === 'up') ||
-                (scrollIsInBottom() && direction === 'down')
-            ) {
-                // If the iframe scroll is at the top or bottom, do not send anything.
-                // This avoids losing the scrollend event.
-                return;
-            }
-
-            const scrollY = direction === 'up' ? -120 : 120;
-            window.scrollBy({ left: 0, top: scrollY, behavior: 'smooth' });
-        }
+        ACTIONS_NOTIFICATION[event.data.name]?.();
     };
 
     window.addEventListener('message', messageCallback);
@@ -128,7 +127,7 @@ export function listenHoveredContentlet(): void {
         };
 
         postMessageToEditor({
-            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
+            action: CLIENT_ACTIONS.SET_CONTENTLET,
             payload: {
                 x,
                 y,
@@ -158,14 +157,19 @@ export function listenHoveredContentlet(): void {
 export function scrollHandler(): void {
     const scrollCallback = () => {
         postMessageToEditor({
-            action: CUSTOMER_ACTIONS.IFRAME_SCROLL
+            action: CLIENT_ACTIONS.IFRAME_SCROLL
         });
-        window.lastScrollYPosition = window.scrollY;
+
+        // In case it doesn't have a dotUVE object, we create it with the initial values.
+        window.dotUVE = {
+            ...(window.dotUVE ?? INITIAL_DOT_UVE),
+            lastScrollYPosition: window.scrollY
+        };
     };
 
     const scrollEndCallback = () => {
         postMessageToEditor({
-            action: CUSTOMER_ACTIONS.IFRAME_SCROLL_END
+            action: CLIENT_ACTIONS.IFRAME_SCROLL_END
         });
     };
 
@@ -196,7 +200,7 @@ export function scrollHandler(): void {
  */
 export function preserveScrollOnIframe(): void {
     const preserveScrollCallback = () => {
-        window.scrollTo(0, window.lastScrollYPosition);
+        window.scrollTo(0, window.dotUVE?.lastScrollYPosition);
     };
 
     window.addEventListener('load', preserveScrollCallback);
@@ -215,7 +219,7 @@ export function preserveScrollOnIframe(): void {
  */
 export function fetchPageDataFromInsideUVE(pathname: string) {
     postMessageToEditor({
-        action: CUSTOMER_ACTIONS.GET_PAGE_DATA,
+        action: CLIENT_ACTIONS.GET_PAGE_DATA,
         payload: {
             pathname
         }

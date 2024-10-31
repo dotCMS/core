@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import {
-    CUSTOMER_ACTIONS,
+    CLIENT_ACTIONS,
     DotCmsClient,
     destroyEditor,
     initEditor,
@@ -69,7 +69,7 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
             return;
         }
 
-        postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: editor });
+        postMessageToEditor({ action: CLIENT_ACTIONS.CLIENT_READY, payload: editor });
     }, [pathname, editor]);
 
     /**
