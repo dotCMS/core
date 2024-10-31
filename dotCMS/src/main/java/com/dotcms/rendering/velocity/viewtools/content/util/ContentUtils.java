@@ -28,6 +28,8 @@ import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -812,8 +814,7 @@ public class ContentUtils {
 						new JSONObject(), null, languageId, mode.showLive, false,
 						true);
 
-				final HashMap<String,Object> relationshipsMap = DotObjectMapperProvider.getInstance()
-						.getDefaultObjectMapper().readValue(jsonWithRelationShips.toString(), HashMap.class);
+				final HashMap<String,Object> relationshipsMap = getStringObjectHashMap(jsonWithRelationShips);
 
 				if (UtilMethods.isSet(relationshipsMap)) {
 					contentlet.getMap().putAll(relationshipsMap);
@@ -830,5 +831,19 @@ public class ContentUtils {
 		}
 
 	}
-		
+
+	private static HashMap<String, Object> getStringObjectHashMap(
+			JSONObject jsonWithRelationShips) {
+		final HashMap<String, Object> relationshipsMap;
+		try {
+			relationshipsMap = DotObjectMapperProvider.getInstance()
+			.getDefaultObjectMapper().readValue(jsonWithRelationShips.toString(), new TypeReference<HashMap<String, Object>>() {});
+		} catch (JsonProcessingException e) {
+			Logger.error(ContentUtils.class, "Failed to process jsonRelationships document:", e);
+			Logger.error(ContentUtils.class, "jsonWithRelationShips: " + jsonWithRelationShips.toString());
+			throw new DotRuntimeException(e);
+		}
+		return relationshipsMap;
+	}
+
 }
