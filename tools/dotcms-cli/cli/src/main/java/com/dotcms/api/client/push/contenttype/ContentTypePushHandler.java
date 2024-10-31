@@ -5,6 +5,7 @@ import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.push.PushHandler;
 import com.dotcms.api.client.util.NamingUtils;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.model.contenttype.AbstractSaveContentTypeRequest;
 import com.dotcms.model.contenttype.SaveContentTypeRequest;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.context.control.ActivateRequestContext;
@@ -61,8 +62,8 @@ public class ContentTypePushHandler implements PushHandler<ContentType> {
 
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
 
-        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
-                from(localContentType).build();
+        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
+                .of(localContentType).build();
         final var response = contentTypeAPI.createContentTypes(List.of(saveRequest));
 
         return response.entity().stream()
@@ -78,8 +79,8 @@ public class ContentTypePushHandler implements PushHandler<ContentType> {
 
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
 
-        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
-                from(localContentType).build();
+        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
+                .of(localContentType).build();
         final var response = contentTypeAPI.updateContentType(localContentType.variable(),
                 saveRequest);
 
