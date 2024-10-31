@@ -1622,12 +1622,9 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         final ContentType type = TestDataUtils.getWidgetLikeContentType();
 
-        final Contentlet contentlet = new ContentletDataGen(type.id())
-                .languageId(1L)
-                .setProperty("title", "Test Contentlet")
-                .setProperty("url", "testUrl")
-                .nextPersisted();
-
+        final Contentlet contentlet = TestDataUtils
+                .getWidgetContent(true, 1L, type.id());
+        contentlet.getMap().put("url", "testUrl");
         // Build request and response
         final HttpServletRequest request = createHttpRequest(null, null);
         final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
@@ -1651,7 +1648,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         final Element contentletFromXML = (Element) doc.getFirstChild().getFirstChild();
 
-        assertEquals(contentletFromXML.getElementsByTagName("url").item(0).getTextContent(), "testUrl");
+        assertEquals("testUrl", contentletFromXML.getElementsByTagName("url").item(0).getTextContent());
 
     }
 }
