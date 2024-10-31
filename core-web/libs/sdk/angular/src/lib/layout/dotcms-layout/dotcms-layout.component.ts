@@ -11,7 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import {
-    CUSTOMER_ACTIONS,
+    CLIENT_ACTIONS,
     DotCmsClient,
     EditorConfig,
     initEditor,
@@ -137,7 +137,7 @@ export class DotcmsLayoutComponent implements OnInit {
             this.pageContextService.setPageAsset(data as DotCMSPageAsset);
         });
 
-        postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: this.editor });
+        postMessageToEditor({ action: CLIENT_ACTIONS.CLIENT_READY, payload: this.editor });
     }
 
     ngOnDestroy() {
