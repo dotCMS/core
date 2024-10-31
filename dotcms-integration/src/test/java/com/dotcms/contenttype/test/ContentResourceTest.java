@@ -1651,7 +1651,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         final Element contentletFromXML = (Element) doc.getFirstChild().getFirstChild();
 
-        assertEquals(contentletFromXML.getElementsByTagName("url"), "testUrl");
+        assertEquals(contentletFromXML.getElementsByTagName("url").item(0).getTextContent(), "testUrl");
 
     }
 }
