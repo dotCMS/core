@@ -238,11 +238,10 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                 page: 40,
                 type: 'WIDGET'
             }),
-            this.dotConfigurationService
-                .getKeyAsList('CONTENT_PALETTE_HIDDEN_CONTENT_TYPES')
+            this.dotConfigurationService.getKeyAsList('CONTENT_PALETTE_HIDDEN_CONTENT_TYPES')
         ]).pipe(
             map((results) => {
-                const [filteredContentTypes, widgets,hiddenContentTypes] = results;
+                const [filteredContentTypes, widgets, hiddenContentTypes] = results;
 
                 // Some pages bring widgets in the CONTENT_PALETTE_HIDDEN_CONTENT_TYPES, and others don't.
                 // However, all pages allow widgets, so we make a request just to get them.
@@ -252,7 +251,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                     (item) => item.baseType !== 'WIDGET'
                 );
                 // Filter widgets based to exclude hidden content types
-                const relevantWidgets = widgets.filter(widget => !hiddenContentTypes.includes(widget.variable)
+                const relevantWidgets = widgets.filter(
+                    (widget) => !hiddenContentTypes.includes(widget.variable)
                 );
 
                 // Merge both array and order them by name
