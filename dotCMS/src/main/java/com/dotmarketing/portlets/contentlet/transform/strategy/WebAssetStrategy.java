@@ -47,6 +47,9 @@ public abstract class WebAssetStrategy <T extends Contentlet>  extends
      * @param map
      */
     private void urlOverride(final Contentlet contentlet, final Map<String, Object> map){
+        if (contentlet.getMap().get(URL_FIELD) != null) {
+            return;
+        }
         final String url = toolBox.contentHelper.getUrl(contentlet);
         if (null != url) {
             map.put(URL_FIELD, url);
