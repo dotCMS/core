@@ -10,7 +10,7 @@ import { inject } from '@angular/core';
 import { switchMap, tap } from 'rxjs/operators';
 
 import { DotAnalyticsSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { AnalyticsQueryType, ComponentStatus } from '@dotcms/dotcms-models';
+import { AnalyticsQueryType, ComponentStatus, HealthStatusTypes } from '@dotcms/dotcms-models';
 
 /**
  * Type definition for the state of the DotContentAnalytics.
@@ -23,6 +23,7 @@ export type DotContentAnalyticsState = {
         type: AnalyticsQueryType;
     };
     state: ComponentStatus;
+    healthCheck: HealthStatusTypes;
     errorMessage: string;
 };
 
@@ -37,6 +38,7 @@ export const initialState: DotContentAnalyticsState = {
         type: AnalyticsQueryType.CUBE
     },
     state: ComponentStatus.INIT,
+    healthCheck: HealthStatusTypes.NOT_CONFIGURED,
     errorMessage: ''
 };
 
@@ -54,11 +56,13 @@ export const DotAnalyticsSearchStore = signalStore(
             /**
              * Initializes the state with the given enterprise status.
              * @param isEnterprise - Boolean indicating if the user is an enterprise user.
+             * @param healthCheck - Boolean indicating if the health check passed.
              */
-            initLoad: (isEnterprise: boolean) => {
+            initLoad: (isEnterprise: boolean, healthCheck: HealthStatusTypes) => {
                 patchState(store, {
                     ...initialState,
-                    isEnterprise
+                    isEnterprise,
+                    healthCheck
                 });
             },
 

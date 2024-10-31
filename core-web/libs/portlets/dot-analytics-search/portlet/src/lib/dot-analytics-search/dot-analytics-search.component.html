@@ -1,44 +1,48 @@
-<p-splitter [panelSizes]="[35, 65]" styleClass="mb-5">
-    <ng-template pTemplate>
-        <section>
-            <div class="content-analytics__query-header">
-                <h4>{{ 'analytics.search.query' | dm }}</h4>
-                <button
-                    class="p-button-rounded p-button-link p-button-sm"
-                    pButton
-                    icon="pi pi-question-circle"></button>
-            </div>
-            <ngx-monaco-editor
-                [(ngModel)]="queryEditor"
-                [options]="ANALYTICS_MONACO_EDITOR_OPTIONS"
-                (ngModelChange)="handleQueryChange($event)"
-                data-testId="query-editor"></ngx-monaco-editor>
-            <div class="content-analytics__actions">
-                <span
-                    tooltipPosition="top"
-                    [pTooltip]="$isValidJson() ? '' : ('analytics.search.valid.json' | dm)">
+@if (store.healthCheck()) {
+    <h2>No</h2>
+} @else {
+    <p-splitter [panelSizes]="[35, 65]" styleClass="mb-5">
+        <ng-template pTemplate>
+            <section>
+                <div class="content-analytics__query-header">
+                    <h4>{{ 'analytics.search.query' | dm }}</h4>
                     <button
+                        class="p-button-rounded p-button-link p-button-sm"
                         pButton
-                        (click)="handleRequest()"
-                        [disabled]="!$isValidJson()"
-                        [label]="'analytics.search.execute.query' | dm"
-                        data-testId="run-query"></button>
-                </span>
-            </div>
-        </section>
-    </ng-template>
-    <ng-template pTemplate>
-        @if ($results() === null) {
-            <dot-empty-container
-                [configuration]="$emptyState()"
-                [hideContactUsLink]="true"></dot-empty-container>
-        } @else {
-            <section class="content-analytics__results">
+                        icon="pi pi-question-circle"></button>
+                </div>
                 <ngx-monaco-editor
-                    [ngModel]="$results()"
-                    [options]="ANALYTICS__RESULTS_MONACO_EDITOR_OPTIONS"
-                    data-testId="results-editor"></ngx-monaco-editor>
+                    [(ngModel)]="queryEditor"
+                    [options]="ANALYTICS_MONACO_EDITOR_OPTIONS"
+                    (ngModelChange)="handleQueryChange($event)"
+                    data-testId="query-editor"></ngx-monaco-editor>
+                <div class="content-analytics__actions">
+                    <span
+                        tooltipPosition="top"
+                        [pTooltip]="$isValidJson() ? '' : ('analytics.search.valid.json' | dm)">
+                        <button
+                            pButton
+                            (click)="handleRequest()"
+                            [disabled]="!$isValidJson()"
+                            [label]="'analytics.search.execute.query' | dm"
+                            data-testId="run-query"></button>
+                    </span>
+                </div>
             </section>
-        }
-    </ng-template>
-</p-splitter>
+        </ng-template>
+        <ng-template pTemplate>
+            @if ($results() === null) {
+                <dot-empty-container
+                    [configuration]="$emptyState()"
+                    [hideContactUsLink]="true"></dot-empty-container>
+            } @else {
+                <section class="content-analytics__results">
+                    <ngx-monaco-editor
+                        [ngModel]="$results()"
+                        [options]="ANALYTICS__RESULTS_MONACO_EDITOR_OPTIONS"
+                        data-testId="results-editor"></ngx-monaco-editor>
+                </section>
+            }
+        </ng-template>
+    </p-splitter>
+}

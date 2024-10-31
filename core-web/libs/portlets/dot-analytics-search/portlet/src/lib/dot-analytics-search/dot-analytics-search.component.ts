@@ -1,5 +1,6 @@
 import { JsonObject } from '@angular-devkit/core';
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+import { addStylePlugin } from '@nxext/stencil/src/stencil-core-utils';
 
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
@@ -81,9 +82,9 @@ export class DotAnalyticsSearchComponent {
     });
 
     ngOnInit() {
-        const { isEnterprise } = this.route.snapshot.data;
+        const { isEnterprise, healthCheck } = this.route.snapshot.data;
 
-        this.store.initLoad(isEnterprise);
+        this.store.initLoad(isEnterprise, healthCheck);
     }
 
     /**
@@ -106,4 +107,6 @@ export class DotAnalyticsSearchComponent {
     handleQueryChange(value: string) {
         this.$isValidJson.set(!!isValidJson(value));
     }
+
+    protected readonly addStylePlugin = addStylePlugin;
 }
