@@ -259,6 +259,8 @@ runs:
         name: "build-classes"
         path: |
           **/target/classes/**/*.class
+          **/target/generated-sources/**/*.java
+          **/target/test-classes/**/*.class
           LICENSE
 
     - id: delete-built-artifacts-from-cache
