@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  CUSTOMER_ACTIONS,
+  CLIENT_ACTIONS,
   isInsideEditor,
   postMessageToEditor,
 } from "@dotcms/client";
@@ -24,7 +24,7 @@ export const usePageAsset = (currentPageAsset: DotCMSPageAsset | undefined) => {
 
     // If the page is not found, let the editor know
     if (!currentPageAsset) {
-      postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY });
+      postMessageToEditor({ action: CLIENT_ACTIONS.CLIENT_READY });
 
       return;
     }
