@@ -1,5 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import { computed, inject } from '@angular/core';
 import { tapResponse } from '@ngrx/component-store';
 import {
     patchState,
@@ -11,11 +9,18 @@ import {
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { computed, inject } from '@angular/core';
+
 import { delay, switchMap, tap } from 'rxjs/operators';
-import { DotHttpErrorManagerService } from '../../../../../../data-access/src/lib/dot-http-error-manager/dot-http-error-manager.service';
-import { ComponentStatus } from '../../../../../../dotcms-models/src/lib/shared-models';
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
+
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+
 import { EditContentState } from './edit-content.store';
+
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
 
 interface InformationState {
     information: {

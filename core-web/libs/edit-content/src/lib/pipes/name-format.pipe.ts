@@ -46,6 +46,7 @@ export class DotNameFormatPipe implements PipeTransform {
             if (fullFormat.length > maxLength) {
                 return `${firstName.charAt(0)}. ${firstLastName.charAt(0)}.`;
             }
+
             return fullFormat;
         }
 
@@ -54,6 +55,7 @@ export class DotNameFormatPipe implements PipeTransform {
         if (fullFormat.length > maxLength) {
             return `${firstName.charAt(0)}. ${parts[1].charAt(0)}.`;
         }
+
         return fullFormat;
     }
 }

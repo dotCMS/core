@@ -23,7 +23,7 @@
 
 a.sidebar-card {
     text-decoration: none;
-}  
+}
 
 .sidebar-card__content-type {
     transition: background-color $basic-speed ease;
@@ -80,7 +80,7 @@ a.sidebar-card {
         }
 
         &:not(:last-child)::after {
-            content: '';
+            content: "";
             position: absolute;
             right: 0;
             top: 50%;

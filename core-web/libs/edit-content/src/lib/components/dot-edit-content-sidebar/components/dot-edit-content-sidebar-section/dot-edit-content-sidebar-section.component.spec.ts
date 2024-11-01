@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { DotEditContentAsideSectionComponent } from './dot-edit-content-sidebar-section.component';
 
 describe('DotEditContentAsideSectionComponent', () => {

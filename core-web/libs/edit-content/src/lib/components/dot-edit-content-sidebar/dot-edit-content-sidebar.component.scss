@@ -13,7 +13,6 @@
     position: relative;
 
     ::ng-deep {
-      
         .tabview-append-content {
             min-height: 52px;
             border-left: 1px solid $color-palette-black-op-10;
@@ -52,18 +51,15 @@
             }
         }
 
-         .p-tabview {
-        .p-tabview-nav-container {
-          position: sticky;
-          top: 0;
-          z-index: 2;
-          background-color: $color-palette-gray-100;
+        .p-tabview {
+            .p-tabview-nav-container {
+                position: sticky;
+                top: 0;
+                z-index: 2;
+                background-color: $color-palette-gray-100;
+            }
         }
     }
-
-    }
-
-   
 }
 
 .content-sidebar {

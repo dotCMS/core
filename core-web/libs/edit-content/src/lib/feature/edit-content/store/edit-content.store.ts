@@ -32,12 +32,11 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
-import { transformFormDataFn } from '../../../utils/functions.util';
-
 import { withInformation } from './edit-content-information.feature';
 import { withSidebar } from './edit-content-sidebar.feature';
-import { withDebug } from './signal-store-debug.feature';
+
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { transformFormDataFn } from '../../../utils/functions.util';
 
 export interface EditContentState {
     actions: DotCMSWorkflowAction[];
@@ -278,7 +277,6 @@ export const DotEditContentStore = signalStore(
     ),
     withSidebar(),
     withInformation(),
-    withDebug(), // TODO: remove this
     withHooks({
         onInit(store) {
             const activatedRoute = inject(ActivatedRoute);

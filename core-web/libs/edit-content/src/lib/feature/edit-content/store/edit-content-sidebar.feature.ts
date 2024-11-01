@@ -1,4 +1,3 @@
-import { computed, inject } from '@angular/core';
 import {
     patchState,
     signalStoreFeature,
@@ -8,10 +7,14 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
-import { ComponentStatus } from '../../../../../../dotcms-models/src/lib/shared-models';
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
-import { getPersistSidebarState, setPersistSidebarState } from '../../../utils/functions.util';
+
+import { computed } from '@angular/core';
+
+import { ComponentStatus } from '@dotcms/dotcms-models';
+
 import { EditContentState } from './edit-content.store';
+
+import { getPersistSidebarState, setPersistSidebarState } from '../../../utils/functions.util';
 
 interface AsideState {
     showSidebar: boolean;
@@ -39,7 +42,7 @@ export function withSidebar() {
         withComputed(({ contentlet }) => ({
             getCurrentContentIdentifier: computed(() => contentlet().identifier)
         })),
-        withMethods((store, dotEditContentService = inject(DotEditContentService)) => ({
+        withMethods((store) => ({
             /**
              * Toggles the visibility of the sidebar by updating the application state
              * and persists the sidebar's state to ensure consistency across sessions.

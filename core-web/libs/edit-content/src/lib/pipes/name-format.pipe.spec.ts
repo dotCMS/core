@@ -1,5 +1,7 @@
-import { Component, Input } from '@angular/core';
 import { createPipeFactory, SpectatorPipe } from '@ngneat/spectator/jest';
+
+import { Component, Input } from '@angular/core';
+
 import { DotNameFormatPipe } from './name-format.pipe';
 
 @Component({
