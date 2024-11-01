@@ -1624,7 +1624,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         final Contentlet contentlet = TestDataUtils
                 .getWidgetContent(true, 1L, type.id());
-        contentlet.getMap().put("url", "testUrl");
+        contentlet.setProperty("url", "testUrl");
         // Build request and response
         final HttpServletRequest request = createHttpRequest(null, null);
         final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
