@@ -9,6 +9,7 @@
 
 	String catCount = (String) request.getAttribute("counter");
 	String isURLMap = (String) request.getParameter("isURLMap");
+    String variantName = request.getParameter("variantName") != null ? request.getParameter("variantName") : "DEFAULT";
 %>
 
 <script language='javascript' type='text/javascript'>
@@ -353,7 +354,9 @@
 
         }
 
-		var variantName = sessionStorage.getItem('<%=VariantAPI.VARIANT_KEY%>');
+        console.log('variantName from EDIT CONTENTLET', '<%=variantName%>', "REMOVE");
+
+		var variantName = '<%=variantName%>';
 
 		if (variantName) {
 			formData[formData.length] = '<%=VariantAPI.VARIANT_KEY%>' + nameValueSeparator + variantName;
@@ -769,7 +772,7 @@
         var x = dijit.byId("versions");
         var y =Math.floor(Math.random()*1123213213);
 
-		const variantName = window.sessionStorage.getItem('variantName') || 'DEFAULT';
+		const variantName = '<%=variantName%>';
 
         var myCp = dijit.byId("contentletVersionsCp");
         if (myCp) {
