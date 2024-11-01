@@ -9,7 +9,7 @@ import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { DotAnalyticsSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { AnalyticsQueryType, ComponentStatus } from '@dotcms/dotcms-models';
+import { AnalyticsQueryType, ComponentStatus, HealthStatusTypes } from '@dotcms/dotcms-models';
 
 import { DotAnalyticsSearchStore } from './dot-analytics-search.store';
 
@@ -63,8 +63,9 @@ describe('DotAnalyticsSearchStore', () => {
 
     describe('withMethods', () => {
         it('should set initial state', () => {
-            store.initLoad(true);
+            store.initLoad(true, HealthStatusTypes.OK);
             expect(store.isEnterprise()).toEqual(true);
+            expect(store.healthCheck()).toEqual(HealthStatusTypes.OK);
         });
 
         it('should perform a POST request to the base URL and return results', () => {

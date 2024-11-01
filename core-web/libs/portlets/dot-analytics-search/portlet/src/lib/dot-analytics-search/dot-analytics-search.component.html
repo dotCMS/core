@@ -1,5 +1,5 @@
-@if (store.healthCheck()) {
-    <h2>No</h2>
+@if (store.healthCheck() !== 'OK') {
+    <dot-empty-container [configuration]="$emptyConfiguration()" [hideContactUsLink]="true" />
 } @else {
     <p-splitter [panelSizes]="[35, 65]" styleClass="mb-5">
         <ng-template pTemplate>

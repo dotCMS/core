@@ -4,43 +4,48 @@ import { TestBed } from '@angular/core/testing';
 
 import { DotExperimentsService } from '@dotcms/data-access';
 import { HealthStatusTypes } from '@dotcms/dotcms-models';
+import { dotAnalyticsHealthCheckResolver } from '@dotcms/ui';
 
-import { DotAnalyticsHealthCheckResolver } from './dot-analytics-health-check.resolver.service';
-
-describe('DotAnalyticsHealthCheckResolver', () => {
-    let resolver: DotAnalyticsHealthCheckResolver;
+describe('dotAnalyticsHealthCheckResolver', () => {
     let dotExperimentsService: jasmine.SpyObj<DotExperimentsService>;
 
     beforeEach(() => {
         const spy = jasmine.createSpyObj('DotExperimentsService', ['healthCheck']);
 
         TestBed.configureTestingModule({
-            providers: [
-                DotAnalyticsHealthCheckResolver,
-                { provide: DotExperimentsService, useValue: spy }
-            ]
+            providers: [{ provide: DotExperimentsService, useValue: spy }]
         });
 
-        resolver = TestBed.inject(DotAnalyticsHealthCheckResolver);
         dotExperimentsService = TestBed.inject(
             DotExperimentsService
         ) as jasmine.SpyObj<DotExperimentsService>;
     });
 
-    it('should return true when healthCheck returns OK', (done) => {
+    it('should return HealthStatusTypes.OK when healthCheck is successful', (done) => {
         dotExperimentsService.healthCheck.and.returnValue(of(HealthStatusTypes.OK));
 
-        resolver.resolve().subscribe((result) => {
-            expect(result).toBe(true);
+        dotAnalyticsHealthCheckResolver(null, null).subscribe((result) => {
+            expect(result).toBe(HealthStatusTypes.OK);
             done();
         });
     });
 
-    it('should return false when healthCheck does not return OK', (done) => {
+    it('should return HealthStatusTypes.NOT_CONFIGURED when healthCheck is not configured', (done) => {
         dotExperimentsService.healthCheck.and.returnValue(of(HealthStatusTypes.NOT_CONFIGURED));
 
-        resolver.resolve().subscribe((result) => {
-            expect(result).toBe(false);
+        dotAnalyticsHealthCheckResolver(null, null).subscribe((result) => {
+            expect(result).toBe(HealthStatusTypes.NOT_CONFIGURED);
+            done();
+        });
+    });
+
+    it('should return HealthStatusTypes.CONFIGURATION_ERROR when healthCheck has configuration error', (done) => {
+        dotExperimentsService.healthCheck.and.returnValue(
+            of(HealthStatusTypes.CONFIGURATION_ERROR)
+        );
+
+        dotAnalyticsHealthCheckResolver(null, null).subscribe((result) => {
+            expect(result).toBe(HealthStatusTypes.CONFIGURATION_ERROR);
             done();
         });
     });

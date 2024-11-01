@@ -1,6 +1,5 @@
 import { JsonObject } from '@angular-devkit/core';
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { addStylePlugin } from '@nxext/stencil/src/stencil-core-utils';
 
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
@@ -13,6 +12,7 @@ import { SplitterModule } from 'primeng/splitter';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAnalyticsSearchService, DotMessageService } from '@dotcms/data-access';
+import { HealthStatusTypes } from '@dotcms/dotcms-models';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import {
@@ -72,6 +72,12 @@ export class DotAnalyticsSearchComponent {
      */
     $isValidJson = signal<boolean>(false);
 
+    $emptyConfiguration = signal<PrincipalConfiguration>({
+        title: this.#dotMessageService.get('analytics.search.no.configured'),
+        icon: 'pi-search',
+        subtitle: this.#dotMessageService.get('analytics.search.no.configured.subtitle')
+    });
+
     /**
      * Computed property to get the results from the store and format them as a JSON string.
      */
@@ -85,6 +91,7 @@ export class DotAnalyticsSearchComponent {
         const { isEnterprise, healthCheck } = this.route.snapshot.data;
 
         this.store.initLoad(isEnterprise, healthCheck);
+        this.setEmptyConfiguration(healthCheck);
     }
 
     /**
@@ -108,5 +115,23 @@ export class DotAnalyticsSearchComponent {
         this.$isValidJson.set(!!isValidJson(value));
     }
 
-    protected readonly addStylePlugin = addStylePlugin;
+    private setEmptyConfiguration(healthCheck: HealthStatusTypes) {
+        const config = {
+            title: '',
+            icon: 'pi-search',
+            subtitle: ''
+        };
+
+        if (healthCheck === HealthStatusTypes.NOT_CONFIGURED) {
+            config.title = this.#dotMessageService.get('analytics.search.no.configured');
+            config.subtitle = this.#dotMessageService.get(
+                'analytics.search.no.configured.subtitle'
+            );
+        } else if (healthCheck === HealthStatusTypes.CONFIGURATION_ERROR) {
+            config.title = this.#dotMessageService.get('analytics.search.config.error');
+            config.subtitle = this.#dotMessageService.get('analytics.search.config.error.subtitle');
+        }
+
+        this.$emptyConfiguration.set(config);
+    }
 }

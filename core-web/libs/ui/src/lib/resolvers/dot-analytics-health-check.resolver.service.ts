@@ -1,16 +1,10 @@
-import { Observable } from 'rxjs';
-
-import { inject, Injectable } from '@angular/core';
-import { Resolve } from '@angular/router';
+import { inject } from '@angular/core';
+import { RouterStateSnapshot } from '@angular/router';
 
 import { DotExperimentsService } from '@dotcms/data-access';
-import { HealthStatusTypes } from '@dotcms/dotcms-models';
 
-@Injectable()
-export class DotAnalyticsHealthCheckResolver implements Resolve<Observable<HealthStatusTypes>> {
-    dotExperimentsService = inject(DotExperimentsService);
+export const dotAnalyticsHealthCheckResolver = (_route, _state: RouterStateSnapshot) => {
+    const dotExperimentsService = inject(DotExperimentsService);
 
-    resolve() {
-        return inject(DotExperimentsService).healthCheck();
-    }
-}
+    return dotExperimentsService.healthCheck();
+};

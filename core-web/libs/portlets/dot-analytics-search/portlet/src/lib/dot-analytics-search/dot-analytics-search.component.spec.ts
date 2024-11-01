@@ -6,7 +6,11 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
+import { Splitter } from 'primeng/splitter';
+
 import { DotAnalyticsSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import { HealthStatusTypes } from '@dotcms/dotcms-models';
+import { DotEmptyContainerComponent } from '@dotcms/ui';
 
 import { DotAnalyticsSearchComponent } from './dot-analytics-search.component';
 
@@ -30,7 +34,8 @@ describe('DotAnalyticsSearchComponent', () => {
                 useValue: {
                     snapshot: {
                         data: {
-                            isEnterprise: true
+                            isEnterprise: true,
+                            healthCheck: HealthStatusTypes.OK
                         }
                     }
                 }
@@ -48,7 +53,7 @@ describe('DotAnalyticsSearchComponent', () => {
         const initLoadSpy = jest.spyOn(store, 'initLoad');
         spectator.component.ngOnInit();
 
-        expect(initLoadSpy).toHaveBeenCalledWith(true);
+        expect(initLoadSpy).toHaveBeenCalledWith(true, HealthStatusTypes.OK);
     });
 
     it('should call getResults with valid JSON', () => {
@@ -73,5 +78,19 @@ describe('DotAnalyticsSearchComponent', () => {
         spectator.click(button);
 
         expect(button).toBeDisabled();
+    });
+
+    it('should render the Splitter when healthCheck is "OK"', () => {
+        spectator.detectChanges();
+        expect(spectator.query(Splitter)).toExist();
+    });
+
+    it('should  render dot-empty-container when healthCheck is not "OK"', () => {
+        spectator.component.store.initLoad(true, HealthStatusTypes.NOT_CONFIGURED);
+
+        spectator.detectChanges();
+
+        const dotEmptyContainer = spectator.query(DotEmptyContainerComponent);
+        expect(dotEmptyContainer).toExist();
     });
 });
