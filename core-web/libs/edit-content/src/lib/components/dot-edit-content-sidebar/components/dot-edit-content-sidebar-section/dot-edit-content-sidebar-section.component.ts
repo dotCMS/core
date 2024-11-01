@@ -7,6 +7,9 @@ import {
     input
 } from '@angular/core';
 
+/**
+ *  Component that renders a section with a title and an optional action template.
+ */
 @Component({
     selector: 'dot-edit-content-sidebar-section',
     standalone: true,
@@ -16,8 +19,14 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentSidebarSectionComponent {
-    title = input.required<string>();
+    /**
+     * The title of the section.
+     */
+    $title = input.required<string>({ alias: 'title' });
 
+    /**
+     * The action template for the section.
+     */
     @ContentChild('sectionAction')
-    actionTemplate?: TemplateRef<unknown>;
+    actionTemplate: TemplateRef<unknown>;
 }
