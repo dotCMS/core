@@ -522,7 +522,8 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * Returns true if the action is resetable.
 	 * @return
 	 */
-	public boolean isResetable() {
+	@JsonProperty("hasResetActionlet")
+	public boolean hasResetActionlet() {
 		return resetable;
 	}
 

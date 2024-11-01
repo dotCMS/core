@@ -17851,7 +17851,7 @@
 					"response": []
 				},
 				{
-					"name": "New Request",
+					"name": "CheckResetable",
 					"event": [
 						{
 							"listen": "test",
@@ -17906,7 +17906,7 @@
 									"        pm.expect(item).to.have.property(\"nextStepCurrentStep\").that.is.a(\"boolean\");",
 									"        pm.expect(item).to.have.property(\"order\").that.is.a(\"number\");",
 									"        pm.expect(item).to.have.property(\"owner\").that.is.null;",
-									"        pm.expect(item).to.have.property(\"resetable\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasResetActionlet\").that.is.a(\"boolean\");",
 									"        pm.expect(item).to.have.property(\"roleHierarchyForAssign\").that.is.a(\"boolean\");",
 									"        pm.expect(item).to.have.property(\"schemeId\").that.is.a(\"string\");",
 									"        pm.expect(item).to.have.property(\"showOn\").that.is.an(\"array\");",
