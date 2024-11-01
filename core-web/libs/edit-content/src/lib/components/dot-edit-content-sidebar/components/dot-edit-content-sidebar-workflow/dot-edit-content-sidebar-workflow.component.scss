@@ -1,0 +1,21 @@
+@use "variables" as *;
+@import "mixins";
+
+
+.workflow-list {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: $spacing-3;
+    margin: 0;
+    
+    dt {
+        font-weight: $font-weight-medium-bold;
+        color: $black;
+    }
+    
+    dd {
+        margin: 0;
+        color: $color-palette-gray-800;
+        font-weight: $font-weight-regular-bold;
+    }
+}

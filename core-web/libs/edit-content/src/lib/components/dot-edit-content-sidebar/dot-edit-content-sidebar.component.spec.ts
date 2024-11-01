@@ -6,24 +6,24 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
-import { DotContentAsideInformationComponent } from './components/dot-content-aside-information/dot-content-aside-information.component';
-import { DotContentAsideWorkflowComponent } from './components/dot-content-aside-workflow/dot-content-aside-workflow.component';
-import { DotEditContentAsideComponent } from './dot-edit-content-aside.component';
+import { DotContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-content-sidebar-information.component';
+import { DotContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
+import { DotEditContentSidebarComponent } from './dot-edit-content-sidebar.component';
 
 import { CONTENT_FORM_DATA_MOCK, MockResizeObserver } from '../../utils/mocks';
 
-describe('DotEditContentAsideComponent', () => {
-    let spectator: Spectator<DotEditContentAsideComponent>;
+describe('DotEditContentSidebarComponent', () => {
+    let spectator: Spectator<DotEditContentSidebarComponent>;
     const createComponent = createComponentFactory({
-        component: DotEditContentAsideComponent,
+        component: DotEditContentSidebarComponent,
         imports: [
             HttpClientTestingModule,
-            DotContentAsideInformationComponent,
-            DotContentAsideWorkflowComponent
+            DotContentSidebarInformationComponent,
+            DotContentSidebarWorkflowComponent
         ],
         declarations: [
-            MockComponent(DotContentAsideInformationComponent),
-            MockComponent(DotContentAsideWorkflowComponent)
+            MockComponent(DotContentSidebarInformationComponent),
+            MockComponent(DotContentSidebarWorkflowComponent)
         ],
         providers: [
             {
@@ -53,26 +53,30 @@ describe('DotEditContentAsideComponent', () => {
 
     it('should render aside information data', () => {
         spectator.detectChanges();
-        const dotContentAsideInformationComponent = spectator.query(
-            DotContentAsideInformationComponent
+        const dotContentSidebarInformationComponent = spectator.query(
+            DotContentSidebarInformationComponent
         );
 
-        expect(dotContentAsideInformationComponent).toBeTruthy();
-        expect(dotContentAsideInformationComponent.contentType).toEqual(dotcmsContentTypeBasicMock);
-        expect(dotContentAsideInformationComponent.contentlet).toEqual(
+        expect(dotContentSidebarInformationComponent).toBeTruthy();
+        expect(dotContentSidebarInformationComponent.contentType).toEqual(
+            dotcmsContentTypeBasicMock
+        );
+        expect(dotContentSidebarInformationComponent.contentlet).toEqual(
             CONTENT_FORM_DATA_MOCK.contentlet
         );
     });
 
     it('should render aside workflow data', () => {
         spectator.detectChanges();
-        const dotContentAsideWorkflowComponent = spectator.query(DotContentAsideWorkflowComponent);
+        const dotContentSidebarWorkflowComponent = spectator.query(
+            DotContentSidebarWorkflowComponent
+        );
 
-        expect(dotContentAsideWorkflowComponent).toBeTruthy();
-        expect(dotContentAsideWorkflowComponent.inode).toEqual(
+        expect(dotContentSidebarWorkflowComponent).toBeTruthy();
+        expect(dotContentSidebarWorkflowComponent.inode).toEqual(
             CONTENT_FORM_DATA_MOCK.contentlet.inode
         );
-        expect(dotContentAsideWorkflowComponent.contentType).toEqual(dotcmsContentTypeBasicMock);
+        expect(dotContentSidebarWorkflowComponent.contentType).toEqual(dotcmsContentTypeBasicMock);
     });
 
     it('should emit toggle event on button click', () => {

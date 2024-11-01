@@ -47,6 +47,9 @@
     opacity: 1;
     transform: translateX(0);
     overflow: hidden;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
 }
 
 .dot-edit-content-actions__sidebar-toggle--hidden {
@@ -71,6 +74,11 @@
 
 // PrimeNG Tabview Overrides
 ::ng-deep {
+    .tabview-append-content {
+        min-height: 52px;
+        display: flex;
+        align-items: center;
+    }
     .dot-edit-content-tabview {
         .p-tabview-nav-container {
             padding: 0 0 0 $spacing-4;

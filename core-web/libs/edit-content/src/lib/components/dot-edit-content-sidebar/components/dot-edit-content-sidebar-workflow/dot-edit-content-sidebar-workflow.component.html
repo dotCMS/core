@@ -1,4 +1,4 @@
-<dl class="content-aside__workflow">
+<dl class="workflow-list">
     <dt class="workflow-column__title" id="workflow-title">{{ 'Workflow' | dm }}</dt>
     <dd
         class="workflow-column__description"
@@ -13,14 +13,6 @@
         aria-labelledby="step-title"
         data-testId="workflow-step">
         {{ $workflowStatus()?.step?.name || 'New' }}
-    </dd>
-
-    <dt class="workflow-column__title" id="content-type-title">{{ 'Content-Type' | dm }}</dt>
-    <dd
-        class="workflow-column__description"
-        aria-labelledby="content-type-title"
-        data-testId="workflow-content-type">
-        {{ contentType.name }}
     </dd>
 
     @if ($workflowStatus()?.task) {

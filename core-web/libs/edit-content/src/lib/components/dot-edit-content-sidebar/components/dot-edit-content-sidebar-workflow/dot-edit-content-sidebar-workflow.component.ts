@@ -11,14 +11,14 @@ import { DotCMSContentType, DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
-    selector: 'dot-content-aside-workflow',
+    selector: 'dot-edit-content-sidebar-workflow',
     standalone: true,
     imports: [DotMessagePipe, SkeletonModule],
     providers: [DotWorkflowService],
-    templateUrl: './dot-content-aside-workflow.component.html',
-    styleUrl: './dot-content-aside-workflow.component.scss'
+    templateUrl: './dot-edit-content-sidebar-workflow.component.html',
+    styleUrl: './dot-edit-content-sidebar-workflow.component.scss'
 })
-export class DotContentAsideWorkflowComponent implements OnInit, OnChanges {
+export class DotEditContentSidebarWorkflowComponent implements OnInit, OnChanges {
     @Input() inode: string;
     @Input() contentType: DotCMSContentType;
 
@@ -45,7 +45,7 @@ export class DotContentAsideWorkflowComponent implements OnInit, OnChanges {
      *
      * @private
      * @return {*}
-     * @memberof DotContentAsideWorkflowComponent
+     * @memberof DotContentSidebarWorkflowComponent
      */
     private getWorkflowStatus(): Observable<DotCMSWorkflowStatus> {
         return this.workflowService.getWorkflowStatus(this.inode);
@@ -56,7 +56,7 @@ export class DotContentAsideWorkflowComponent implements OnInit, OnChanges {
      *
      * @private
      * @return {*}
-     * @memberof DotContentAsideWorkflowComponent
+     * @memberof DotContentSidebarWorkflowComponent
      */
     private getNewContentStatus() {
         return this.workflowService.getSchemaContentType(this.contentType.id).pipe(

@@ -29,8 +29,8 @@ import { mockWorkflowsActions } from '@dotcms/utils-testing';
 import { EditContentLayoutComponent } from './edit-content.layout.component';
 import { DotEditContentStore } from './store/edit-content.store';
 
-import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
+import { DotEditContentAsideComponent } from '../../components/dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import * as utils from '../../utils/functions.util';
 import { CONTENT_TYPE_MOCK } from '../../utils/mocks';

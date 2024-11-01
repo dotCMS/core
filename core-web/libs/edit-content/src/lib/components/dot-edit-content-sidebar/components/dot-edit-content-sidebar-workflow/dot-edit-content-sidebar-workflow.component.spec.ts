@@ -13,19 +13,19 @@ import {
     dotcmsContentTypeBasicMock
 } from '@dotcms/utils-testing';
 
-import { DotContentAsideWorkflowComponent } from './dot-content-aside-workflow.component';
+import { DotEditContentSidebarWorkflowComponent } from './dot-edit-content-sidebar-workflow.component';
 
 const CONTENTTYPE_MOCK = {
     ...dotcmsContentTypeBasicMock,
     name: 'Blogs'
 };
 
-describe('DotContentAsideWorkflowComponent', () => {
-    let spectator: Spectator<DotContentAsideWorkflowComponent>;
+describe('DotEditContentSidebarWorkflowComponent', () => {
+    let spectator: Spectator<DotEditContentSidebarWorkflowComponent>;
     let dotWorkflowService: DotWorkflowService;
 
     const createComponent = createComponentFactory({
-        component: DotContentAsideWorkflowComponent,
+        component: DotEditContentSidebarWorkflowComponent,
         imports: [HttpClientTestingModule, DotMessagePipe, SkeletonModule],
         componentProviders: [
             {

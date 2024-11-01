@@ -1,0 +1,14 @@
+<section class="dot-section">
+    <div class="dot-section__header">
+        <h2 class="dot-section__title">{{ title() }}</h2>
+
+        @if (actionTemplate) {
+            <div class="dot-section__action">
+                <ng-container [ngTemplateOutlet]="actionTemplate" />
+            </div>
+        }
+    </div>
+    <div class="dot-section__content">
+        <ng-content />
+    </div>
+</section>

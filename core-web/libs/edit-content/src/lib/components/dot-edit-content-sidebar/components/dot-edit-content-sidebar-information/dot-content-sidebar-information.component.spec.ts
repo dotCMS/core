@@ -22,7 +22,7 @@ import {
     dotcmsContentTypeBasicMock
 } from '@dotcms/utils-testing';
 
-import { DotContentAsideInformationComponent } from './dot-content-aside-information.component';
+import { DotContentSidebarInformationComponent } from './dot-content-sidebar-information.component';
 
 import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 
@@ -51,17 +51,17 @@ const CONTENT_TYPE_MOCK = {
 };
 
 describe('DotContentAsideInformationComponent', () => {
-    let spectator: Spectator<DotContentAsideInformationComponent>;
+    let spectator: Spectator<DotContentSidebarInformationComponent>;
     let dotRelativeDatePipe: DotRelativeDatePipe;
     let router: Router;
 
     const createComponent = createComponentFactory({
-        component: DotContentAsideInformationComponent,
+        component: DotContentSidebarInformationComponent,
         imports: [
             RouterTestingModule.withRoutes([
                 {
                     path: 'content-types-angular/edit/:contentType',
-                    component: DotContentAsideInformationComponent
+                    component: DotContentSidebarInformationComponent
                 }
             ]),
             TooltipModule,
