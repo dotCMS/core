@@ -693,6 +693,7 @@ public class WorkflowResource {
         workflowActionView.setShowOn(workflowAction.getShowOn());
         workflowActionView.setActionInputs(createActionInputViews(workflowAction));
         workflowActionView.setMetadata(workflowAction.getMetadata());
+        workflowActionView.setResetable(workflowAction.isResetable());
         return workflowActionView;
     }
 

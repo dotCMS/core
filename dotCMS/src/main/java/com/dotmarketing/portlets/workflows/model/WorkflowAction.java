@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
@@ -78,6 +79,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	private boolean moveActionletHasPath;
 	private Set<WorkflowState> showOn = Collections.emptySet();
 	private Map<String, Object> metadata = new HashMap<>();
+	private boolean resetable;
 
 	public WorkflowAction() {
 	}
@@ -206,6 +208,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * Returns true if the action has at least one action let that saves
 	 * @return Boolean true if has save action
 	 */
+	@JsonProperty("hasSaveActionlet")
     public boolean hasSaveActionlet() {
     	return this.saveActionlet;
     }
@@ -214,6 +217,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * Returns true if the action has at least one action let that publish
 	 * @return Boolean true if has publish action
 	 */
+	@JsonProperty("hasPublishActionlet")
     public boolean hasPublishActionlet() {
     	return this.publishActionlet;
     }
@@ -222,7 +226,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * Returns true if the action has at least one action let that publish publish
 	 * @return Boolean true if has push publish action
 	 */
-
+	@JsonProperty("hasPushPublishActionlet")
 	public boolean hasPushPublishActionlet() {
 		return this.pushPublishActionlet;
 	}
@@ -232,7 +236,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * Returns true if the action has at least one action only batch
 	 * @return Boolean true if the action is only batch
 	 */
-
+	@JsonProperty("hasOnlyBatchActionlet")
 	public boolean hasOnlyBatchActionlet() {
 		return this.onlyBatchActionlet;
 	}
@@ -241,6 +245,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * Returns true if the action has a move actionlet
 	 * @return Boolean true if has move action
 	 */
+	@JsonProperty("hasMoveActionletActionlet")
 	public boolean hasMoveActionletActionlet() {
 		return this.moveActionlet;
 	}
@@ -249,6 +254,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * Returns true if the action move has a path already set
 	 * @return Boolean true if action move has a path already set
 	 */
+	@JsonProperty("hasMoveActionletHasPathActionlet")
 	public boolean hasMoveActionletHasPathActionlet() {
 		return this.moveActionletHasPath;
 	}
@@ -257,6 +263,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * Returns true if the action has at least one action let that unpublish
 	 * @return Boolean true if has unpublish action
 	 */
+	@JsonProperty("hasUnpublishActionlet")
 	public boolean hasUnpublishActionlet() {
 		return unpublishActionlet;
 	}
@@ -265,6 +272,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * Returns true if the action has at least one action let that archive
 	 * @return Boolean true if has archive action
 	 */
+	@JsonProperty("hasArchiveActionlet")
 	public boolean hasArchiveActionlet() {
 
 		return archiveActionlet;
@@ -274,6 +282,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * Returns true if the action has at least one action let that unarchive
 	 * @return Boolean true if has unarchive action
 	 */
+	@JsonProperty("hasUnarchiveActionlet")
 	public boolean hasUnarchiveActionlet() {
 
 		return unarchiveActionlet;
@@ -283,6 +292,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * Returns true if the action has at least one action let that delete
 	 * @return Boolean true if has delete action
 	 */
+	@JsonProperty("hasDeleteActionlet")
 	public boolean hasDeleteActionlet() {
 
 		return deleteActionlet;
@@ -292,6 +302,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * Returns true if the action has at least one action let that destroy
 	 * @return Boolean true if has destroy action
 	 */
+	@JsonProperty("hasDestroyActionlet")
 	public boolean hasDestroyActionlet() {
 		return destroyActionlet;
 	}
@@ -505,6 +516,22 @@ public class WorkflowAction implements Permissionable, Serializable{
 
 	public void setAssignable(boolean assignable) {
 		this.assignable = assignable;
+	}
+
+	/**
+	 * Returns true if the action is resetable.
+	 * @return
+	 */
+	public boolean isResetable() {
+		return resetable;
+	}
+
+	/**
+	 * Sets the resetable property for the action.
+	 * @param resetable
+	 */
+	public void setResetable(final boolean resetable) {
+		this.resetable = resetable;
 	}
 
 	public boolean isCommentable() {
