@@ -109,7 +109,7 @@ describe('DotEditContentStore', () => {
 
             expect(store.contentType()).toEqual(CONTENT_TYPE_MOCK);
             expect(store.actions()).toEqual(mockWorkflowsActions);
-            expect(store.status()).toBe(ComponentStatus.LOADED);
+            expect(store.state()).toBe(ComponentStatus.LOADED);
             expect(store.error()).toBeNull();
         });
 
@@ -122,7 +122,7 @@ describe('DotEditContentStore', () => {
             store.initializeNewContent('testContentType');
 
             expect(store.error()).toBe('Error initializing content');
-            expect(store.status()).toBe(ComponentStatus.ERROR);
+            expect(store.state()).toBe(ComponentStatus.ERROR);
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
         }));
     });
@@ -160,7 +160,7 @@ describe('DotEditContentStore', () => {
             expect(store.contentlet()).toEqual(mockContentlet);
             expect(store.contentType()).toEqual(mockContentType);
             expect(store.actions()).toEqual(mockActions);
-            expect(store.status()).toBe(ComponentStatus.LOADED);
+            expect(store.state()).toBe(ComponentStatus.LOADED);
             expect(store.error()).toBe(null);
         });
 
@@ -176,7 +176,7 @@ describe('DotEditContentStore', () => {
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
             expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
 
-            expect(store.status()).toBe(ComponentStatus.ERROR);
+            expect(store.state()).toBe(ComponentStatus.ERROR);
         }));
     });
 
@@ -196,7 +196,7 @@ describe('DotEditContentStore', () => {
             store.fireWorkflowAction(mockOptions);
             tick();
 
-            expect(store.status()).toBe(ComponentStatus.LOADED);
+            expect(store.state()).toBe(ComponentStatus.LOADED);
             expect(store.contentlet()).toEqual(mockContentlet);
             expect(store.actions()).toEqual(mockActions);
             expect(store.error()).toBeNull();
@@ -223,7 +223,7 @@ describe('DotEditContentStore', () => {
             store.fireWorkflowAction(mockOptions);
             tick();
 
-            expect(store.status()).toBe(ComponentStatus.ERROR);
+            expect(store.state()).toBe(ComponentStatus.ERROR);
             expect(store.error()).toBe('Error firing workflow action');
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
         }));

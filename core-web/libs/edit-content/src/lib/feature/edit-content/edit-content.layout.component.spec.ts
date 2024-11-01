@@ -30,7 +30,7 @@ import { EditContentLayoutComponent } from './edit-content.layout.component';
 import { DotEditContentStore } from './store/edit-content.store';
 
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
-import { DotEditContentAsideComponent } from '../../components/dot-edit-content-sidebar/dot-edit-content-sidebar.component';
+import { DotEditContentSidebarComponent } from '../../components/dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import * as utils from '../../utils/functions.util';
 import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
@@ -49,7 +49,7 @@ describe('EditContentLayoutComponent', () => {
 
             MockModule(MessagesModule),
             MockComponent(DotEditContentFormComponent),
-            MockComponent(DotEditContentAsideComponent)
+            MockComponent(DotEditContentSidebarComponent)
         ],
         componentProviders: [
             DotEditContentStore, // Usign the real DotEditContentStore

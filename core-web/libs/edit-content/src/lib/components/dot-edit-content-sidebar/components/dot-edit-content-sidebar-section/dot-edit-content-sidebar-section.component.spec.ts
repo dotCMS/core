@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DotEditContentAsideSectionComponent } from './dot-edit-content-sidebar-section.component';
+import { DotEditContentSidebarSectionComponent } from './dot-edit-content-sidebar-section.component';
 
-describe('DotEditContentAsideSectionComponent', () => {
-    let component: DotEditContentAsideSectionComponent;
-    let fixture: ComponentFixture<DotEditContentAsideSectionComponent>;
+describe('DotEditContentSidebarSectionComponent', () => {
+    let component: DotEditContentSidebarSectionComponent;
+    let fixture: ComponentFixture<DotEditContentSidebarSectionComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [DotEditContentAsideSectionComponent]
+            imports: [DotEditContentSidebarSectionComponent]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(DotEditContentAsideSectionComponent);
+        fixture = TestBed.createComponent(DotEditContentSidebarSectionComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });

@@ -1,91 +1,108 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
+import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
+import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
-
-import { DotContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-content-sidebar-information.component';
-import { DotContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
+import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
+import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentSidebarComponent } from './dot-edit-content-sidebar.component';
 
-import { CONTENT_FORM_DATA_MOCK, MockResizeObserver } from '../../utils/mocks';
+import { ActivatedRoute, Router } from '@angular/router';
+import {
+    DotContentTypeService,
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotWorkflowActionsFireService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
+import { TabView } from 'primeng/tabview';
+import { of } from 'rxjs';
+import { MockResizeObserver } from '../../utils/mocks';
 
 describe('DotEditContentSidebarComponent', () => {
     let spectator: Spectator<DotEditContentSidebarComponent>;
+    let dotEditContentService: SpyObject<DotEditContentService>;
+
     const createComponent = createComponentFactory({
         component: DotEditContentSidebarComponent,
-        imports: [
-            HttpClientTestingModule,
-            DotContentSidebarInformationComponent,
-            DotContentSidebarWorkflowComponent
-        ],
         declarations: [
-            MockComponent(DotContentSidebarInformationComponent),
-            MockComponent(DotContentSidebarWorkflowComponent)
+            MockComponent(DotEditContentSidebarInformationComponent),
+            MockComponent(DotEditContentSidebarWorkflowComponent)
         ],
         providers: [
+            DotEditContentStore, // Due using the store directly
+            mockProvider(DotWorkflowsActionsService),
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotEditContentService),
+            mockProvider(DotContentTypeService),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotMessageService),
+            mockProvider(Router),
             {
-                provide: DotMessageService,
-                useValue: new MockDotMessageService({
-                    Information: 'Information',
-                    Workflow: 'Workflow',
-                    'show-all': 'Show all'
-                })
+                provide: ActivatedRoute,
+                useValue: {
+                    // Provide an empty snapshot to bypass the Store's onInit,
+                    // allowing direct method calls for testing
+                    get snapshot() {
+                        return { params: { id: undefined, contentType: undefined } };
+                    }
+                }
             }
         ]
     });
-    beforeAll(() => {
-        window.ResizeObserver = MockResizeObserver;
-    });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                contentlet: CONTENT_FORM_DATA_MOCK.contentlet,
-                contentType: dotcmsContentTypeBasicMock,
-                loading: false,
-                collapsed: false
-            } as unknown
-        });
-    });
+        window.ResizeObserver = MockResizeObserver;
+        spectator = createComponent({ detectChanges: false });
+        dotEditContentService = spectator.inject(DotEditContentService);
+        dotEditContentService.getReferencePages.mockReturnValue(of(1));
 
-    it('should render aside information data', () => {
         spectator.detectChanges();
-        const dotContentSidebarInformationComponent = spectator.query(
-            DotContentSidebarInformationComponent
-        );
-
-        expect(dotContentSidebarInformationComponent).toBeTruthy();
-        expect(dotContentSidebarInformationComponent.contentType).toEqual(
-            dotcmsContentTypeBasicMock
-        );
-        expect(dotContentSidebarInformationComponent.contentlet).toEqual(
-            CONTENT_FORM_DATA_MOCK.contentlet
-        );
     });
 
-    it('should render aside workflow data', () => {
-        spectator.detectChanges();
-        const dotContentSidebarWorkflowComponent = spectator.query(
-            DotContentSidebarWorkflowComponent
-        );
-
-        expect(dotContentSidebarWorkflowComponent).toBeTruthy();
-        expect(dotContentSidebarWorkflowComponent.inode).toEqual(
-            CONTENT_FORM_DATA_MOCK.contentlet.inode
-        );
-        expect(dotContentSidebarWorkflowComponent.contentType).toEqual(dotcmsContentTypeBasicMock);
+    it('should create the component', () => {
+        expect(spectator.component).toBeTruthy();
     });
 
-    it('should emit toggle event on button click', () => {
-        const spy = jest.spyOn(spectator.component.$toggle, 'emit');
+    it('should render DotEditContentSidebarInformationComponent', () => {
+        const informationComponent = spectator.query(DotEditContentSidebarInformationComponent);
+        expect(informationComponent).toBeTruthy();
+    });
 
-        const toggleBtn = spectator.query('[data-testId="toggle-button"]');
+    it('should render DotEditContentSidebarWorkflowComponent', () => {
+        const workflowComponent = spectator.query(DotEditContentSidebarWorkflowComponent);
+        expect(workflowComponent).toBeTruthy();
+    });
 
-        spectator.click(toggleBtn);
+    it('should render PrimeNG TabView', () => {
+        const tabView = spectator.query(TabView);
+        expect(tabView).toBeTruthy();
+    });
 
-        expect(spy).toHaveBeenCalled();
+    it('should render toggle button', () => {
+        const toggleButton = spectator.query('[data-testId="toggle-button"]');
+        expect(toggleButton).toBeTruthy();
+    });
+
+    it('should render append content in TabView', () => {
+        const tabViewElement = spectator.query('p-tabview');
+        const appendContent = tabViewElement.querySelector(
+            '[data-testid="tabview-append-content"]'
+        );
+        expect(appendContent).toBeTruthy();
+    });
+
+    it('should call toggleSidebar when toggle button is clicked', () => {
+        const storeSpy = jest.spyOn(spectator.component.store, 'toggleSidebar');
+
+        spectator.click(byTestId('toggle-button'));
+
+        expect(storeSpy).toHaveBeenCalled();
     });
 });

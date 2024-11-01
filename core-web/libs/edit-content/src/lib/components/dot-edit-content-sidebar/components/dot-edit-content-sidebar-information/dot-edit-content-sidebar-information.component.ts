@@ -25,7 +25,7 @@ interface ContentSidebarInformation {
 }
 
 @Component({
-    selector: 'dot-content-sidebar-information',
+    selector: 'dot-edit-content-sidebar-information',
     standalone: true,
     imports: [
         CommonModule,
@@ -40,11 +40,11 @@ interface ContentSidebarInformation {
         DotMessagePipe,
         DotNameFormatPipe
     ],
-    templateUrl: './dot-content-sidebar-information.component.html',
-    styleUrl: './dot-content-sidebar-information.component.scss',
+    templateUrl: './dot-edit-content-sidebar-information.component.html',
+    styleUrl: './dot-edit-content-sidebar-information.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotContentSidebarInformationComponent {
+export class DotEditContentSidebarInformationComponent {
     readonly VIEW_CONTENTLET_URL = `/api/content/id/`;
 
     $data = input.required<ContentSidebarInformation>({ alias: 'data' });

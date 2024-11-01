@@ -40,7 +40,7 @@ export function withSidebar() {
         },
         withState(initialState),
         withComputed(({ contentlet }) => ({
-            getCurrentContentIdentifier: computed(() => contentlet().identifier)
+            getCurrentContentIdentifier: computed(() => contentlet()?.identifier)
         })),
         withMethods((store) => ({
             /**

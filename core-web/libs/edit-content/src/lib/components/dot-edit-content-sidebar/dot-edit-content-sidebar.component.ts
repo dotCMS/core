@@ -1,11 +1,11 @@
-import { JsonPipe, SlicePipe } from '@angular/common';
+import { SlicePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { DotContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-content-sidebar-information.component';
+import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
 import { DotEditContentSidebarSectionComponent } from './components/dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 
@@ -20,13 +20,12 @@ import { DotEditContentStore } from '../../feature/edit-content/store/edit-conte
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         DotMessagePipe,
-        DotContentSidebarInformationComponent,
+        DotEditContentSidebarInformationComponent,
         DotEditContentSidebarWorkflowComponent,
         TabViewModule,
         TabViewInsertDirective,
         DotEditContentSidebarSectionComponent,
         DotCopyButtonComponent,
-        JsonPipe,
         SlicePipe
     ]
 })
