@@ -10,7 +10,7 @@
             <p-chip [styleClass]="'p-chip-sm ' + status.classes" [label]="status.label" />
         }
         @if (contentlet?.inode; as inode) {
-            <a [href]="$jsonUrl()" target="_blank">json</a>
+            <a [href]="$jsonUrl()" target="_blank" rel="noopener">json</a>
         }
     </div>
     <div class="content-aside__metadata">
