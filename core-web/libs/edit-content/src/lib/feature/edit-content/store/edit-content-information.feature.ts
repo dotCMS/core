@@ -13,7 +13,7 @@ import { pipe } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
-import { delay, switchMap, tap } from 'rxjs/operators';
+import { switchMap, tap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -74,7 +74,6 @@ export function withInformation() {
                         ),
                         switchMap((identifier: string) => {
                             return dotEditContentService.getReferencePages(identifier).pipe(
-                                delay(3000),
                                 tapResponse({
                                     next: (value) =>
                                         patchState(store, {
