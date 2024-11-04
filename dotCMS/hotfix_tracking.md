@@ -173,3 +173,4 @@ This maintenance release includes the following code fixes:
 166. https://github.com/dotCMS/core/issues/26750 : [UI] Experiments reports - JS error when bayesianResult is null #26750
 167. https://github.com/dotCMS/core/issues/26738 : [UI] Change button with new style in Variations #26738
 168. https://github.com/dotCMS/core/issues/27141 : Responsive Design Issue with Experiment Results Chart Not Resizing Properly #27141
+169. https://github.com/dotCMS/core/issues/27451 : Registering page events after the Experiment ended #27451
