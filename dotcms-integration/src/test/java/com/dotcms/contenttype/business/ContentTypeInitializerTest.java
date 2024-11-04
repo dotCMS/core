@@ -29,8 +29,6 @@ import org.junit.runner.RunWith;
  * Test for the {@link ContentTypeInitializer}
  * @author jsanca
  */
-@ApplicationScoped
-@RunWith(JUnit4WeldRunner.class)
 public class ContentTypeInitializerTest extends IntegrationTestBase {
 
     @BeforeClass

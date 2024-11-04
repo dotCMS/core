@@ -16,9 +16,11 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class UniqueFieldValidationStrategyResolver {
 
-    private final ESUniqueFieldValidationStrategy esUniqueFieldValidationStrategy;
+    private ESUniqueFieldValidationStrategy esUniqueFieldValidationStrategy;
 
-    private final DBUniqueFieldValidationStrategy dbUniqueFieldValidationStrategy;
+    private DBUniqueFieldValidationStrategy dbUniqueFieldValidationStrategy;
+
+    public UniqueFieldValidationStrategyResolver(){}
 
     @Inject
     public  UniqueFieldValidationStrategyResolver(final ESUniqueFieldValidationStrategy esUniqueFieldValidationStrategy,
