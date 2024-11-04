@@ -1,11 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
-import { client } from "@/utils/dotcmsClient";
-import {
-    CUSTOMER_ACTIONS,
-    isInsideEditor,
-    postMessageToEditor,
-} from "@dotcms/client";
+import { client } from '@/utils/dotcmsClient';
+import { CLIENT_ACTIONS, isInsideEditor, postMessageToEditor } from '@dotcms/client';
 
 export const usePageAsset = (currentPageAsset) => {
     const [pageAsset, setPageAsset] = useState(null);
@@ -15,7 +11,7 @@ export const usePageAsset = (currentPageAsset) => {
             return;
         }
 
-        client.editor.on("changes", (page) => {
+        client.editor.on('changes', (page) => {
             if (!page) {
                 return;
             }
@@ -25,13 +21,13 @@ export const usePageAsset = (currentPageAsset) => {
 
         // If the page is not found, let the editor know
         if (!currentPageAsset) {
-            postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY });
+            postMessageToEditor({ action: CLIENT_ACTIONS.CLIENT_READY });
 
             return;
         }
 
         return () => {
-            client.editor.off("changes");
+            client.editor.off('changes');
         };
     }, [currentPageAsset]);
 
