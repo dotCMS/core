@@ -1,16 +1,27 @@
 import { JsonObject } from '@angular-devkit/core';
 import { tapResponse } from '@ngrx/component-store';
-import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotAnalyticsSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import {
+    DotAnalyticsSearchService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { AnalyticsQueryType, ComponentStatus, HealthStatusTypes } from '@dotcms/dotcms-models';
+import { PrincipalConfiguration } from '@dotcms/ui';
+
+interface RouteData {
+    isEnterprise: boolean;
+    healthCheck: HealthStatusTypes;
+}
 
 /**
  * Type definition for the state of the DotContentAnalytics.
@@ -24,7 +35,8 @@ export type DotContentAnalyticsState = {
     };
     state: ComponentStatus;
     healthCheck: HealthStatusTypes;
-    errorMessage: string;
+    wallEmptyConfig: PrincipalConfiguration | null;
+    emptyResultsConfig: PrincipalConfiguration | null;
 };
 
 /**
@@ -39,7 +51,8 @@ export const initialState: DotContentAnalyticsState = {
     },
     state: ComponentStatus.INIT,
     healthCheck: HealthStatusTypes.NOT_CONFIGURED,
-    errorMessage: ''
+    wallEmptyConfig: null,
+    emptyResultsConfig: null
 };
 
 /**
@@ -53,19 +66,6 @@ export const DotAnalyticsSearchStore = signalStore(
             analyticsSearchService = inject(DotAnalyticsSearchService),
             dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
         ) => ({
-            /**
-             * Initializes the state with the given enterprise status.
-             * @param isEnterprise - Boolean indicating if the user is an enterprise user.
-             * @param healthCheck - Boolean indicating if the health check passed.
-             */
-            initLoad: (isEnterprise: boolean, healthCheck: HealthStatusTypes) => {
-                patchState(store, {
-                    ...initialState,
-                    isEnterprise,
-                    healthCheck
-                });
-            },
-
             /**
              * Fetches the results based on the current query.
              * @param query - The query to fetch results for.
@@ -88,8 +88,7 @@ export const DotAnalyticsSearchStore = signalStore(
                                 },
                                 error: (error: HttpErrorResponse) => {
                                     patchState(store, {
-                                        state: ComponentStatus.ERROR,
-                                        errorMessage: 'Error loading data'
+                                        state: ComponentStatus.ERROR
                                     });
 
                                     dotHttpErrorManagerService.handle(error);
@@ -100,5 +99,54 @@ export const DotAnalyticsSearchStore = signalStore(
                 )
             )
         })
-    )
+    ),
+    withHooks({
+        /**
+         * Hook that runs on initialization of the store.
+         * Sets the initial state based on the route data and messages.
+         * @param store - The store instance.
+         */
+        onInit: (store) => {
+            const activatedRoute = inject(ActivatedRoute);
+            const dotMessageService = inject(DotMessageService);
+
+            const { isEnterprise, healthCheck } = activatedRoute.snapshot.data as RouteData;
+
+            const configurationMap = {
+                [HealthStatusTypes.NOT_CONFIGURED]: {
+                    title: dotMessageService.get('analytics.search.no.configured'),
+                    icon: 'pi-search',
+                    subtitle: dotMessageService.get('analytics.search.no.configured.subtitle')
+                },
+                [HealthStatusTypes.CONFIGURATION_ERROR]: {
+                    title: dotMessageService.get('analytics.search.config.error'),
+                    icon: 'pi-search',
+                    subtitle: dotMessageService.get('analytics.search.config.error.subtitle')
+                },
+                [HealthStatusTypes.OK]: null,
+                ['noLicense']: {
+                    title: dotMessageService.get('analytics.search.no.licence'),
+                    icon: 'pi-search',
+                    subtitle: dotMessageService.get('analytics.search.no.license.subtitle')
+                }
+            };
+
+            const emptyResultsConfig = {
+                title: dotMessageService.get('analytics.search.no.results'),
+                icon: 'pi-search',
+                subtitle: dotMessageService.get('analytics.search.execute.results')
+            };
+
+            const wallEmptyConfig = isEnterprise
+                ? configurationMap[healthCheck]
+                : configurationMap['noLicense'];
+
+            patchState(store, {
+                isEnterprise,
+                healthCheck,
+                wallEmptyConfig,
+                emptyResultsConfig
+            });
+        }
+    })
 );

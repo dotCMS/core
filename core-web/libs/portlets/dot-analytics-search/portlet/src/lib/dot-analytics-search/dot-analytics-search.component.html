@@ -1,5 +1,5 @@
-@if (store.healthCheck() !== 'OK') {
-    <dot-empty-container [configuration]="$emptyConfiguration()" [hideContactUsLink]="true" />
+@if (store.wallEmptyConfig()) {
+    <dot-empty-container [configuration]="store.wallEmptyConfig()" [hideContactUsLink]="true" />
 } @else {
     <p-splitter [panelSizes]="[35, 65]" styleClass="mb-5">
         <ng-template pTemplate>
@@ -33,7 +33,7 @@
         <ng-template pTemplate>
             @if ($results() === null) {
                 <dot-empty-container
-                    [configuration]="$emptyState()"
+                    [configuration]="store.emptyResultsConfig()"
                     [hideContactUsLink]="true"></dot-empty-container>
             } @else {
                 <section class="content-analytics__results">
