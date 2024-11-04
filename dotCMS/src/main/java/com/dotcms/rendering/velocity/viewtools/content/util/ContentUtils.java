@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -812,8 +813,7 @@ public class ContentUtils {
 						new JSONObject(), null, languageId, mode.showLive, false,
 						true);
 
-				final HashMap<String,Object> relationshipsMap = DotObjectMapperProvider.getInstance()
-						.getDefaultObjectMapper().readValue(jsonWithRelationShips.toString(), HashMap.class);
+				final HashMap<String,Object> relationshipsMap = jsonToMap(jsonWithRelationShips);
 
 				if (UtilMethods.isSet(relationshipsMap)) {
 					contentlet.getMap().putAll(relationshipsMap);
@@ -828,7 +828,25 @@ public class ContentUtils {
 
 			throw new IllegalArgumentException("Depth must be a number between 0 and 3");
 		}
+	}
 
+	public static HashMap<String, Object> jsonToMap(final JSONObject jsonObject) {
+
+		final HashMap<String, Object> map = new HashMap<>();
+		final Iterator<String> keys = jsonObject.keys();
+
+		while (keys.hasNext()) {
+
+			final String key = keys.next();
+			final Object value = jsonObject.get(key);
+
+			if (value instanceof JSONObject) {
+				map.put(key, jsonToMap((JSONObject) value));
+			} else {
+				map.put(key, value);
+			}
+		}
+		return map;
 	}
 		
 }
