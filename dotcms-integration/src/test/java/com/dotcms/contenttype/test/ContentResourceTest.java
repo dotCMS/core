@@ -1,15 +1,12 @@
 package com.dotcms.contenttype.test;
 
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.ImageField;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
@@ -42,6 +39,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -77,6 +75,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -105,6 +104,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -119,7 +119,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(DataProviderRunner.class)
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
 public class ContentResourceTest extends IntegrationTestBase {
 
     final static String REQUIRED_NUMERIC_FIELD_NAME = "numeric";
@@ -1620,18 +1621,18 @@ public class ContentResourceTest extends IntegrationTestBase {
     @Test
     public void testGetContentShouldReturnUrlOverridden() throws Exception {
 
-        final ContentType type = TestDataUtils.getWidgetLikeContentType();
+        final ContentType type = getWidgetLikeContentTypeUrlField("WidgetType", null, null);
+
 
         ContentletDataGen contentletDataGen = new ContentletDataGen(type.id())
                 .languageId(1L)
                 .host(APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
                 .setProperty("widgetTitle", "titleContent")
-                .setProperty("code", "Widget code");
+                .setProperty("code", "Widget code")
+                .setProperty("url", "somevalue");
 
 
-        final Contentlet contentlet = contentletDataGen.next();
-        contentlet.setProperty("url", "somevalue");
-        contentletDataGen.persist(contentlet);
+        final Contentlet contentlet = contentletDataGen.nextPersisted();
 
         // Build request and response
         final HttpServletRequest request = createHttpRequest(null, null);
@@ -1658,5 +1659,61 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         assertEquals("somevalue", contentletFromXML.getElementsByTagName("url").item(0).getTextContent());
 
+    }
+
+    @WrapInTransaction
+    public static ContentType getWidgetLikeContentTypeUrlField(final String contentTypeName,
+                                                       final Set<String> workflowIds, final Supplier<String> widgetCode) {
+
+        ContentType simpleWidgetContentType = null;
+        try {
+            try {
+                simpleWidgetContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find(contentTypeName);
+            } catch (NotFoundInDbException e) {
+                //Do nothing...
+            }
+            if (simpleWidgetContentType == null) {
+
+                List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+                fields.add(
+                        new FieldDataGen()
+                                .name("Code")
+                                .velocityVarName("code")
+                                .required(true)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("url")
+                                .velocityVarName("url")
+                                .required(true)
+                                .next()
+                );
+                if(null != widgetCode){ //If the widgetCode is not null, then add the field
+                    fields.add(
+                            new FieldDataGen()
+                                    .name("WidgetCode")
+                                    .velocityVarName("widgetCode")
+                                    .type(ConstantField.class)
+                                    .required(false)
+                                    .values(widgetCode.get())
+                                    .next()
+                    );
+                }
+
+                simpleWidgetContentType = new ContentTypeDataGen()
+                        .baseContentType(BaseContentType.WIDGET)
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .fields(fields)
+                        .workflowId(workflowIds)
+                        .nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return simpleWidgetContentType;
     }
 }
