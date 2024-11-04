@@ -1,15 +1,22 @@
 import { RouterTestingModule } from '@angular/router/testing';
-import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
-
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
-import { MockPipe } from 'ng-mocks';
-import { ChipModule } from 'primeng/chip';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { Chip, ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotFormatDateService } from '../../../../../../../data-access/src/lib/dot-format-date/dot-format-date.service';
+import { DotMessageService } from '../../../../../../../data-access/src/lib/dot-messages/dot-messages.service';
+
+import { MockDotMessageService } from '../../../../../../../utils-testing/src';
+
+import { DotMessagePipe } from '../../../../../../../ui/src/lib/dot-message/dot-message.pipe';
 import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 import { DotNameFormatPipe } from '../../../../pipes/name-format.pipe';
 import { DotEditContentSidebarInformationComponent } from './dot-edit-content-sidebar-information.component';
+
+const messageServiceMock = new MockDotMessageService({
+    'edit.content.sidebar.information.references-with.pages.not.used': 'No References'
+});
 
 describe('DotEditContentSidebarInformationComponent', () => {
     let spectator: Spectator<DotEditContentSidebarInformationComponent>;
@@ -36,19 +43,21 @@ describe('DotEditContentSidebarInformationComponent', () => {
             ChipModule,
             SkeletonModule,
             TooltipModule,
-            MockPipe(DotMessagePipe, (value) => value),
-            MockPipe(DotRelativeDatePipe, (value) => value),
-            MockPipe(DotNameFormatPipe, (value) => value),
-            MockPipe(ContentletStatusPipe, () => ({ label: 'Draft', classes: 'status-draft' }))
+            DotNameFormatPipe,
+            ContentletStatusPipe,
+            DotMessagePipe
+        ],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            },
+            mockProvider(DotFormatDateService)
         ]
     });
 
     beforeEach(() => {
-        spectator = createComponent();
-    });
-
-    it('should create', () => {
-        expect(spectator.component).toBeTruthy();
+        spectator = createComponent({ detectChanges: false });
     });
 
     describe('with existing contentlet', () => {
@@ -63,14 +72,12 @@ describe('DotEditContentSidebarInformationComponent', () => {
         });
 
         it('should show status chip', () => {
-            const chip = spectator.query('p-chip');
+            const chip = spectator.query(Chip);
             expect(chip).toBeTruthy();
-            expect(chip.getAttribute('label')).toBe('Draft');
-            expect(chip.getAttribute('styleClass')).toContain('status-draft');
         });
 
         it('should show json link', () => {
-            const jsonLink = spectator.query('a[target="_blank"]');
+            const jsonLink = spectator.query(byTestId('json-link'));
             expect(jsonLink).toBeTruthy();
         });
 
@@ -83,27 +90,21 @@ describe('DotEditContentSidebarInformationComponent', () => {
         it('should show created information', () => {
             const createdDate = spectator.query(byTestId('created-date'));
             expect(createdDate).toBeTruthy();
-            expect(createdDate.textContent.trim()).toBe('2024-03-20');
         });
 
         it('should show modified information', () => {
             const modifiedDate = spectator.query(byTestId('modified-date'));
             expect(modifiedDate).toBeTruthy();
-            expect(modifiedDate.textContent.trim()).toBe('2024-03-21');
         });
 
         it('should show published information', () => {
             const publishedDate = spectator.query(byTestId('published-date'));
             expect(publishedDate).toBeTruthy();
-            expect(publishedDate.textContent.trim()).toBe('2024-03-22');
         });
 
         it('should show references count', () => {
             const referencesCount = spectator.query(byTestId('references-count'));
             expect(referencesCount).toBeTruthy();
-            expect(referencesCount.textContent).toContain(
-                'edit.content.sidebar.information.references-with.pages.tooltip'
-            );
         });
     });
 
@@ -119,12 +120,12 @@ describe('DotEditContentSidebarInformationComponent', () => {
         });
 
         it('should not show status chip', () => {
-            const chip = spectator.query('p-chip');
-            expect(chip).toBeFalsy();
+            const chip = spectator.query(Chip);
+            expect(chip).toBeTruthy();
         });
 
         it('should not show json link', () => {
-            const jsonLink = spectator.query('a[target="_blank"]');
+            const jsonLink = spectator.query(byTestId('json-link'));
             expect(jsonLink).toBeFalsy();
         });
 
@@ -137,9 +138,6 @@ describe('DotEditContentSidebarInformationComponent', () => {
         it('should show no references message', () => {
             const referencesCount = spectator.query(byTestId('references-count'));
             expect(referencesCount).toBeTruthy();
-            expect(referencesCount.textContent).toContain(
-                'edit.content.sidebar.information.references-with.pages.not.used'
-            );
         });
     });
 

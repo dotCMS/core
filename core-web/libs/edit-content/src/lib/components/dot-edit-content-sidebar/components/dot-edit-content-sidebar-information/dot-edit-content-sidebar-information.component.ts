@@ -24,6 +24,9 @@ interface ContentSidebarInformation {
     referencesPageCount: number;
 }
 
+/**
+ * Component that displays the information of a contentlet in the sidebar.
+ */
 @Component({
     selector: 'dot-edit-content-sidebar-information',
     standalone: true,
@@ -45,10 +48,13 @@ interface ContentSidebarInformation {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentSidebarInformationComponent {
-    readonly VIEW_CONTENTLET_URL = `/api/content/id/`;
-
+    /**
+     * Input that contains the data of the contentlet.
+     */
     $data = input.required<ContentSidebarInformation>({ alias: 'data' });
 
-    $jsonUrl = computed(() => `${this.VIEW_CONTENTLET_URL}/${this.$data().contentlet.identifier}`);
-    protected readonly currentDate = new Date();
+    /**
+     * Computed that contains the url to the contentlet.
+     */
+    $jsonUrl = computed(() => `/api/content/id/${this.$data().contentlet.identifier}`);
 }
