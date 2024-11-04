@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.ajax;
 import com.dotcms.business.CloseDB;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -19,11 +20,7 @@ import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PublishStateException;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -60,10 +57,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -2132,6 +2126,9 @@ public class ContentletAjax {
 			        }
 			    }
 			}
+		  if (contentlet != null) {
+			  ensureImageFieldAvailableForLanguage(contentlet, user);
+		  }
 	  }
 	  catch(DotLockException dse){
 		  String errorString = LanguageUtil.get(user,"message.content.locked");
@@ -2259,6 +2256,46 @@ public class ContentletAjax {
 		callbackData.put("referer", referer);
 
 		return callbackData;
+	}
+
+	/**
+	 * Ensures that the image field is available for the specified language.
+	 * If the image contentlet for the specified language is not found, it will
+	 * find the image contentlet in any language, then checkout, checkin, publish,
+	 * and unlock it for the specified language.
+	 *
+	 * @param contentlet the contentlet containing the image field
+	 * @param user the user performing the operation
+	 * @throws DotDataException if there is an error accessing the data
+	 * @throws DotSecurityException if there is a security issue
+	 */
+	private void ensureImageFieldAvailableForLanguage(Contentlet contentlet, User user) throws DotDataException, DotSecurityException {
+
+		for(com.dotcms.contenttype.model.field.Field field: contentlet.getContentType().fields(ImageField.class)){
+			if (field != null) {
+				Object imageIdentifier = contentlet.get(field.variable());
+				if (imageIdentifier != null) {
+					// Try to find image for the specified language (assuming live version is needed)
+					Contentlet imageContentletForSpecifiedLanguage = conAPI.findContentletByIdentifier(
+							imageIdentifier.toString(), true, contentlet.getLanguageId(), user, false);
+
+					// If the image contentlet for the specified language isn't found
+					if (imageContentletForSpecifiedLanguage == null) {
+						Contentlet imageContentlet = conAPI.findContentletByIdentifierAnyLanguage(
+								imageIdentifier.toString(), false);
+
+						if (imageContentlet != null) {
+							// Checkout, set the language, checkin, publish, and unlock the image contentlet
+							Contentlet checkedOutContentlet = conAPI.checkout(imageContentlet.getInode(), user, false);
+							checkedOutContentlet.setLanguageId(contentlet.getLanguageId());
+							Contentlet checkin =  conAPI.checkin(checkedOutContentlet, user, false);
+							conAPI.publish(checkin, user, true);
+							conAPI.unlock(checkin, user, false);
+						}
+					}
+				}
+			}
+		}
 	}
 
 	/**
