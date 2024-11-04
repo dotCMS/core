@@ -170,3 +170,4 @@ This maintenance release includes the following code fixes:
 163. https://github.com/dotCMS/core/issues/30243 : Intermittent 404 issues for customers who came from another DB engine #30243
 164. https://github.com/dotCMS/core/issues/26271 : [UI] Text in experiment data results needs be aligned #26271
 165. https://github.com/dotCMS/core/issues/26399 : [UI] Change Experiment mod date display from simple date to date/time #26399
+166. https://github.com/dotCMS/core/issues/26750 : [UI] Experiments reports - JS error when bayesianResult is null #26750
