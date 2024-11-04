@@ -2,8 +2,6 @@ package com.dotcms.contenttype.business.uniquefields;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.uniquefields.extratable.DBUniqueFieldValidationStrategy;
-
-import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 
