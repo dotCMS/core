@@ -13,7 +13,7 @@ import { dotContentCompareTableDataMock } from '@components/dot-content-compare/
 import { DotContentCompareModule } from '@components/dot-content-compare/dot-content-compare.module';
 import { DotContentCompareStore } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotFormatDateService } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -87,6 +87,10 @@ describe('DotContentCompareComponent', () => {
                                 offset: -21600000
                             })
                     }
+                },
+                {
+                    provide: LoginService,
+                    useValue: { currentUserLanguageId: 'en-US' }
                 }
             ]
         });

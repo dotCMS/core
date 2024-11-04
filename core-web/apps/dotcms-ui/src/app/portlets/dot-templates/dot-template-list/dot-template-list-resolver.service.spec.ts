@@ -12,6 +12,7 @@ import {
     CoreWebService,
     DotcmsConfigService,
     LoggerService,
+    LoginService,
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
@@ -49,6 +50,10 @@ describe('DotTemplateListResolverService', () => {
                                 offset: -21600000
                             })
                     }
+                },
+                {
+                    provide: LoginService,
+                    useValue: { currentUserLanguageId: 'en-US' }
                 }
             ]
         });

@@ -5,7 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { DotContentCompareStore } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import { DotContentletService, DotContentTypeService } from '@dotcms/data-access';
-import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 const generateRandomString = function (length: number) {
@@ -710,6 +710,10 @@ describe('DotContentCompareStore', () => {
                                 offset: -21600000
                             })
                     }
+                },
+                {
+                    provide: LoginService,
+                    useValue: { currentUserLanguageId: 'en-US' }
                 },
                 {
                     provide: DotHttpErrorManagerService,
