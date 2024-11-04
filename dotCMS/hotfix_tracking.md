@@ -178,3 +178,4 @@ This maintenance release includes the following code fixes:
 171. https://github.com/dotCMS/core/issues/27748 : Render Page on Ended Experiment Variant #27748
 172. https://github.com/dotCMS/core/issues/27906 : Experiment: Take the Site account when validate if redirect is needed #27906
 173. https://github.com/dotCMS/core/issues/28238 : Orphan running experiments breaking other API calls #28238
+174. https://github.com/dotCMS/core/issues/28514 : Running Experiment Cache is not working right #28514
