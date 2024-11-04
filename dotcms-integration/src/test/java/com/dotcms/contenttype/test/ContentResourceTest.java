@@ -66,7 +66,6 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
 import org.glassfish.jersey.internal.util.Base64;
-import org.jboss.weld.junit5.EnableWeld;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -78,7 +77,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -122,8 +120,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
-@EnableWeld
-@ApplicationScoped
 public class ContentResourceTest extends IntegrationTestBase {
 
     final static String REQUIRED_NUMERIC_FIELD_NAME = "numeric";
@@ -1632,7 +1628,7 @@ public class ContentResourceTest extends IntegrationTestBase {
                 .setProperty("widgetTitle", "titleContent")
                 .setProperty("code", "Widget code")
                 .setProperty("url", "somevalue");
-        
+
         final Contentlet contentlet = contentletDataGen.nextPersisted();
         // Build request and response
         final HttpServletRequest request = createHttpRequest(null, null);
