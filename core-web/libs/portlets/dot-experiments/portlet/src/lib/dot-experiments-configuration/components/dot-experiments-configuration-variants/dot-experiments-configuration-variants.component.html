@@ -53,7 +53,7 @@
                         data-testId="tooltip-on-disabled"
                         tooltipPosition="bottom">
                         <button
-                            class="p-button-sm p-button-text"
+                            class="p-button-sm p-button-link"
                             [disabled]="!vm.isExperimentADraft || vm.disabledTooltipLabel"
                             (click)="changeTrafficProportion()"
                             data-testId="variant-weight"
@@ -87,7 +87,7 @@
                         data-testId="tooltip-on-disabled"
                         tooltipPosition="bottom">
                         <button
-                            class="p-button-sm p-button-danger p-button-text"
+                            class="p-button-sm p-button-text p-button-danger"
                             [disabled]="
                                 variant.name === defaultVariantName ||
                                 !vm.isExperimentADraft ||

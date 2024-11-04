@@ -171,3 +171,4 @@ This maintenance release includes the following code fixes:
 164. https://github.com/dotCMS/core/issues/26271 : [UI] Text in experiment data results needs be aligned #26271
 165. https://github.com/dotCMS/core/issues/26399 : [UI] Change Experiment mod date display from simple date to date/time #26399
 166. https://github.com/dotCMS/core/issues/26750 : [UI] Experiments reports - JS error when bayesianResult is null #26750
+167. https://github.com/dotCMS/core/issues/26738 : [UI] Change button with new style in Variations #26738
