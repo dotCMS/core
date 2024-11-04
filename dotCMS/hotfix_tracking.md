@@ -177,3 +177,4 @@ This maintenance release includes the following code fixes:
 170. https://github.com/dotCMS/core/issues/27584 : Edit mode navigation render is broken #27584
 171. https://github.com/dotCMS/core/issues/27748 : Render Page on Ended Experiment Variant #27748
 172. https://github.com/dotCMS/core/issues/27906 : Experiment: Take the Site account when validate if redirect is needed #27906
+173. https://github.com/dotCMS/core/issues/28238 : Orphan running experiments breaking other API calls #28238
