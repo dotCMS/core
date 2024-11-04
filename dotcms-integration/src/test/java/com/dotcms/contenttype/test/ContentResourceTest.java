@@ -1626,10 +1626,13 @@ public class ContentResourceTest extends IntegrationTestBase {
                 .languageId(1L)
                 .host(APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
                 .setProperty("widgetTitle", "titleContent")
-                .setProperty("code", "Widget code")
-                .setProperty("url", "somevalue");
+                .setProperty("code", "Widget code");
 
-        final Contentlet contentlet = contentletDataGen.nextPersisted();
+
+        final Contentlet contentlet = contentletDataGen.next();
+
+        contentletDataGen.persist(contentlet);
+        
         // Build request and response
         final HttpServletRequest request = createHttpRequest(null, null);
         final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
