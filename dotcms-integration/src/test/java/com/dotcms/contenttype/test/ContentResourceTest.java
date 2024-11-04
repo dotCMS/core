@@ -1630,9 +1630,9 @@ public class ContentResourceTest extends IntegrationTestBase {
 
 
         final Contentlet contentlet = contentletDataGen.next();
-
+        contentlet.setProperty("url", "somevalue");
         contentletDataGen.persist(contentlet);
-        
+
         // Build request and response
         final HttpServletRequest request = createHttpRequest(null, null);
         final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
