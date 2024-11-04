@@ -19,6 +19,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.io.IOException;
@@ -296,7 +297,9 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
      */
     @Override
     public Optional<String> getCode(final Host host, final HttpServletRequest request) {
-        if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+        final PageMode pageMode = PageMode.get(request);
+
+        if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled() && pageMode == PageMode.LIVE) {
 
             try {
                 final String code = APILocator.getExperimentsAPI().isAnyExperimentRunning() ?
