@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, viewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -36,6 +36,8 @@ export class DotSelectExistingFileComponent implements OnInit {
      * It provides access to the dialog's methods and properties.
      */
     readonly #dialogRef = inject(DynamicDialogRef);
+
+    $sideBarRef = viewChild.required(DotSideBarComponent);
 
     ngOnInit() {
         this.store.loadContent();
