@@ -66,6 +66,7 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
 import org.glassfish.jersey.internal.util.Base64;
+import org.jboss.weld.junit5.EnableWeld;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -77,6 +78,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -120,6 +122,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
+@EnableWeld
+@ApplicationScoped
 public class ContentResourceTest extends IntegrationTestBase {
 
     final static String REQUIRED_NUMERIC_FIELD_NAME = "numeric";
@@ -1613,18 +1617,23 @@ public class ContentResourceTest extends IntegrationTestBase {
 
 
     /**
-     * <b>Method to test:</b> {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
-     * <b><br></br>Given scenario:</b> The method is invoked for a widget </br>
-     * <b><br></br>Expected result:</b> The response should override the URL with the one provided in the contentlet
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: The method is invoked for a widget
+     * Expected result: The response should override the URL with the one provided in the contentlet
      */
     @Test
     public void testGetContentShouldReturnUrlOverridden() throws Exception {
 
         final ContentType type = TestDataUtils.getWidgetLikeContentType();
 
-        final Contentlet contentlet = TestDataUtils
-                .getWidgetContent(true, 1L, type.id());
-        contentlet.setProperty("url", "testUrl");
+        ContentletDataGen contentletDataGen = new ContentletDataGen(type.id())
+                .languageId(1L)
+                .host(APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
+                .setProperty("widgetTitle", "titleContent")
+                .setProperty("code", "Widget code")
+                .setProperty("url", "somevalue");
+        
+        final Contentlet contentlet = contentletDataGen.nextPersisted();
         // Build request and response
         final HttpServletRequest request = createHttpRequest(null, null);
         final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
@@ -1648,7 +1657,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         final Element contentletFromXML = (Element) doc.getFirstChild().getFirstChild();
 
-        assertEquals("testUrl", contentletFromXML.getElementsByTagName("url").item(0).getTextContent());
+        assertEquals("somevalue", contentletFromXML.getElementsByTagName("url").item(0).getTextContent());
 
     }
 }
