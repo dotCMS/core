@@ -4,6 +4,7 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.uniquefields.extratable.DBUniqueFieldValidationStrategy;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 
 /**
@@ -13,14 +14,12 @@ import javax.inject.Inject;
  * an {@link ESUniqueFieldValidationStrategy} is used.
  *
  */
-@ApplicationScoped
+@Dependent
 public class UniqueFieldValidationStrategyResolver {
 
-    private ESUniqueFieldValidationStrategy esUniqueFieldValidationStrategy;
+    private final ESUniqueFieldValidationStrategy esUniqueFieldValidationStrategy;
 
-    private DBUniqueFieldValidationStrategy dbUniqueFieldValidationStrategy;
-
-    public UniqueFieldValidationStrategyResolver(){}
+    private final DBUniqueFieldValidationStrategy dbUniqueFieldValidationStrategy;
 
     @Inject
     public  UniqueFieldValidationStrategyResolver(final ESUniqueFieldValidationStrategy esUniqueFieldValidationStrategy,
