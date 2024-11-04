@@ -2754,4 +2754,51 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     private String getNotExperimentJsCode(){
         return "<SCRIPT>localStorage.removeItem('experiment_data');</SCRIPT>\n";
     }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: Try to render a page with a specific Archived {@link Variant}} and a specific {@link Language}
+     * and the page had a contentlet that:
+     * - had version in that language and that variant.
+     * - had version in that language and DEFAULT variant.
+     * - The page just have version in that specific language.
+     * Should: render the page for DEFAULT {@link Variant}} and  {@link Language} {@link Contentlet} version
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void renderPageWithSpecificArchivedVariant() throws WebAssetException, DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final ContentType contentType = createContentType();
+        final Container container = createAndPublishContainer(host, contentType);
+        final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
+        final Contentlet contentlet = createContentlet(language, host, contentType);
+
+        createNewVersion(contentlet, language, variant);
+
+        addToPage(container, page, contentlet);
+
+        APILocator.getVariantAPI().archive(variant.name());
+
+        final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                variant, page);
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertEquals("<div>DEFAULT content-default-" + language.getId() + "</div>", html);
+    }
 }

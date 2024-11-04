@@ -53,9 +53,11 @@ public class VariantWebAPIImpl implements VariantWebAPI{
             currentVariantName = VariantAPI.DEFAULT_VARIANT.name();
         } else {
             try {
-                final Optional<Variant> byName = APILocator.getVariantAPI()
-                        .get(currentVariantName);
-                currentVariantName = byName.isPresent() ? byName.get().name() : VariantAPI.DEFAULT_VARIANT.name();
+                return APILocator.getVariantAPI()
+                        .get(currentVariantName)
+                        .filter((variant -> !variant.archived()))
+                        .orElse(VariantAPI.DEFAULT_VARIANT)
+                        .name();
             } catch (DotDataException e) {
                 Logger.error(VariantWebAPIImpl.class,
                         String.format("It is not possible get variant y name %s: %s",
