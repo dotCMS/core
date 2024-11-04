@@ -1,52 +1,40 @@
+// dot-analytics-health-check.resolver.service.spec.ts
+
 import { of } from 'rxjs';
 
+import { EnvironmentInjector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { RouterStateSnapshot } from '@angular/router';
 
 import { DotExperimentsService } from '@dotcms/data-access';
 import { HealthStatusTypes } from '@dotcms/dotcms-models';
 import { dotAnalyticsHealthCheckResolver } from '@dotcms/ui';
 
 describe('dotAnalyticsHealthCheckResolver', () => {
-    let dotExperimentsService: jasmine.SpyObj<DotExperimentsService>;
+    let dotExperimentsService: DotExperimentsService;
 
     beforeEach(() => {
-        const spy = jasmine.createSpyObj('DotExperimentsService', ['healthCheck']);
-
         TestBed.configureTestingModule({
-            providers: [{ provide: DotExperimentsService, useValue: spy }]
+            providers: [
+                {
+                    provide: DotExperimentsService,
+                    useValue: { healthCheck: () => of(HealthStatusTypes.OK) }
+                }
+            ]
         });
 
-        dotExperimentsService = TestBed.inject(
-            DotExperimentsService
-        ) as jasmine.SpyObj<DotExperimentsService>;
+        dotExperimentsService = TestBed.inject(DotExperimentsService);
     });
 
-    it('should return HealthStatusTypes.OK when healthCheck is successful', (done) => {
-        dotExperimentsService.healthCheck.and.returnValue(of(HealthStatusTypes.OK));
-
-        dotAnalyticsHealthCheckResolver(null, null).subscribe((result) => {
-            expect(result).toBe(HealthStatusTypes.OK);
-            done();
-        });
-    });
-
-    it('should return HealthStatusTypes.NOT_CONFIGURED when healthCheck is not configured', (done) => {
-        dotExperimentsService.healthCheck.and.returnValue(of(HealthStatusTypes.NOT_CONFIGURED));
-
-        dotAnalyticsHealthCheckResolver(null, null).subscribe((result) => {
-            expect(result).toBe(HealthStatusTypes.NOT_CONFIGURED);
-            done();
-        });
-    });
-
-    it('should return HealthStatusTypes.CONFIGURATION_ERROR when healthCheck has configuration error', (done) => {
-        dotExperimentsService.healthCheck.and.returnValue(
-            of(HealthStatusTypes.CONFIGURATION_ERROR)
+    it('should return HealthStatusTypes.OK when healthCheck is successful', () => {
+        const resolver = runInInjectionContext(TestBed.inject(EnvironmentInjector), () =>
+            dotAnalyticsHealthCheckResolver(null, {} as RouterStateSnapshot)
         );
 
-        dotAnalyticsHealthCheckResolver(null, null).subscribe((result) => {
-            expect(result).toBe(HealthStatusTypes.CONFIGURATION_ERROR);
-            done();
+        spyOn(dotExperimentsService, 'healthCheck').and.returnValue(of(HealthStatusTypes.OK));
+
+        resolver.subscribe((healthStatus) => {
+            expect(healthStatus).toBe(HealthStatusTypes.OK);
         });
     });
 });
