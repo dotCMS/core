@@ -914,7 +914,7 @@ public class ExperimentWebAPIImplIntegrationTest {
     public void severalExperimenstWithTrueRules() throws DotDataException, DotSecurityException {
         final TargetingCondition targetingCondition = TargetingCondition.builder()
                 .conditionKey("RequestAttributeConditionlet")
-                .values((Map<String, String>) map("comparison", "is", "request-attribute",
+                .values((Map<String, String>) Map.of("comparison", "is", "request-attribute",
                         "testing-attribute", "request-attribute-value", "testing"))
                 .operator(LogicalOperator.AND)
                 .build();
@@ -944,6 +944,7 @@ public class ExperimentWebAPIImplIntegrationTest {
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
             when(request.getAttribute("testing-attribute")).thenReturn("testing");
+            when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
 
             for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
