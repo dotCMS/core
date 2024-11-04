@@ -2346,6 +2346,66 @@ class ContentTypeCommandIT extends CommandTest {
     }
 
     /**
+     * Given scenario: Testing the Content Type push command and checking the base type.
+     * Expected Result: The base type on the server should the same as the one on the descriptor before
+     * and after the push operation.
+     *
+     * @throws IOException if an I/O error occurs during the execution of the test
+     */
+    @Test
+    void Test_Push_Content_Type_Update_Checking_Base_Type() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+            // Creating a HTML page content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createPageContentTypeDescriptor(
+                    workspace
+            );
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔════════════════════════════════════════════╗
+            // ║  Validating the information on the server  ║
+            // ╚════════════════════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(BaseContentType.HTMLPAGE, byVarName.get().baseType());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
+            Assertions.assertEquals(
+                    BaseContentType.HTMLPAGE, updatedContentTypeDescriptor.baseType()
+            );
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
      * Function to verify if a list of strings is sorted in ascending order (case-insensitive)
      *
      * @param list the list of strings

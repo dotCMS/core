@@ -1,4 +1,5 @@
-import { DotDevice } from '@dotcms/dotcms-models';
+import { CLIENT_ACTIONS } from '@dotcms/client';
+import { DotCMSContentlet, DotDevice } from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
 
 import { CommonErrors, DialogStatus, FormStatus } from './enums';
@@ -194,12 +195,6 @@ export interface DialogForm {
     isTranslation: boolean;
 }
 
-export interface DialogAction {
-    event: CustomEvent;
-    payload: ActionPayload;
-    form: DialogForm;
-}
-
 export type DialogType = 'content' | 'form' | 'widget' | null;
 
 export interface EditEmaDialogState {
@@ -207,25 +202,41 @@ export interface EditEmaDialogState {
     status: DialogStatus;
     url: string;
     type: DialogType;
-    payload?: ActionPayload;
-    editContentForm: DialogForm;
+    actionPayload?: ActionPayload;
+    form: DialogForm;
+    clientAction: CLIENT_ACTIONS;
+}
+
+export type DialogActionPayload = Pick<EditEmaDialogState, 'actionPayload'>;
+
+export interface DialogAction
+    extends Pick<EditEmaDialogState, 'actionPayload' | 'form' | 'clientAction'> {
+    event: CustomEvent;
 }
 
 // We can modify this if we add more events, for now I think is enough
-export interface CreateFromPaletteAction {
+export interface CreateFromPaletteAction extends DialogActionPayload {
     variable: string;
     name: string;
-    payload: ActionPayload;
     language_id?: string | number;
 }
 
-export interface EditContentletPayload {
-    inode: string;
-    title: string;
-}
+export type EditContentletPayload = Partial<
+    DotCMSContentlet & Pick<EditEmaDialogState, 'clientAction'>
+>;
 
-export interface CreateContentletAction {
+export interface CreateContentletAction extends DialogActionPayload {
     url: string;
     contentType: string;
-    payload: ActionPayload;
+}
+
+export interface AddContentletAction extends DialogActionPayload {
+    containerId: string;
+    acceptTypes: string;
+    language_id: string;
+}
+
+export interface PostMessage {
+    action: CLIENT_ACTIONS;
+    payload: unknown;
 }

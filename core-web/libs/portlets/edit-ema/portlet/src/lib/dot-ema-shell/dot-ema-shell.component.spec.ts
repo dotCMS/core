@@ -20,6 +20,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
+import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotContentletLockerService,
     DotExperimentsService,
@@ -829,11 +830,12 @@ describe('DotEmaShellComponent', () => {
                             name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
                         }
                     }),
-                    payload: PAYLOAD_MOCK,
+                    actionPayload: PAYLOAD_MOCK,
                     form: {
                         status: FormStatus.DIRTY,
                         isTranslation: true
-                    }
+                    },
+                    clientAction: CLIENT_ACTIONS.NOOP
                 });
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
@@ -871,11 +873,12 @@ describe('DotEmaShellComponent', () => {
                             name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
                         }
                     }),
-                    payload: PAYLOAD_MOCK,
+                    actionPayload: PAYLOAD_MOCK,
                     form: {
                         status: FormStatus.PRISTINE,
                         isTranslation: true
-                    }
+                    },
+                    clientAction: CLIENT_ACTIONS.NOOP
                 });
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
@@ -914,11 +917,12 @@ describe('DotEmaShellComponent', () => {
                             name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
                         }
                     }),
-                    payload: PAYLOAD_MOCK,
+                    actionPayload: PAYLOAD_MOCK,
                     form: {
                         isTranslation: true,
                         status: FormStatus.SAVED
-                    }
+                    },
+                    clientAction: CLIENT_ACTIONS.NOOP
                 });
 
                 spectator.detectChanges();
@@ -955,11 +959,12 @@ describe('DotEmaShellComponent', () => {
                             }
                         }
                     }),
-                    payload: PAYLOAD_MOCK,
+                    actionPayload: PAYLOAD_MOCK,
                     form: {
                         status: FormStatus.SAVED,
                         isTranslation: false
-                    }
+                    },
+                    clientAction: CLIENT_ACTIONS.NOOP
                 });
                 spectator.detectChanges();
 
@@ -985,11 +990,12 @@ describe('DotEmaShellComponent', () => {
                             }
                         }
                     }),
-                    payload: PAYLOAD_MOCK,
+                    actionPayload: PAYLOAD_MOCK,
                     form: {
                         status: FormStatus.SAVED,
                         isTranslation: false
-                    }
+                    },
+                    clientAction: CLIENT_ACTIONS.NOOP
                 });
 
                 spectator.detectChanges();
@@ -1026,11 +1032,12 @@ describe('DotEmaShellComponent', () => {
                             }
                         }
                     }),
-                    payload: PAYLOAD_MOCK,
+                    actionPayload: PAYLOAD_MOCK,
                     form: {
                         status: FormStatus.SAVED,
                         isTranslation: false
-                    }
+                    },
+                    clientAction: CLIENT_ACTIONS.NOOP
                 });
 
                 spectator.detectChanges();
