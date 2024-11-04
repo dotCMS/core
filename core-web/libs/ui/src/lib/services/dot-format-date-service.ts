@@ -1,10 +1,13 @@
 import { differenceInCalendarDays, format, formatDistanceStrict, isValid, parse } from 'date-fns';
 import { format as formatTZ, utcToZonedTime } from 'date-fns-tz';
 
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
-import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, DotTimeZone, LoginService } from '@dotcms/dotcms-js';
 import { DotLocaleOptions } from '@dotcms/dotcms-models';
+
+const DEFAULT_ISO_LOCALE = 'en-US';
+const INVALID_DATE_MSG = 'Invalid date';
 
 // Created outside of the service so it can be used on date.validator.ts
 export function _isValid(date: string, formatPattern: string) {
@@ -15,7 +18,17 @@ export function _isValid(date: string, formatPattern: string) {
     providedIn: 'root'
 })
 export class DotFormatDateService {
-    private _localeOptions: DotLocaleOptions;
+    private loginService: LoginService = inject(LoginService);
+
+    private defaultDateFormatOptions: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    };
+
     private _systemTimeZone: DotTimeZone;
 
     constructor(dotcmsConfigService: DotcmsConfigService) {
@@ -23,6 +36,8 @@ export class DotFormatDateService {
             .getSystemTimeZone()
             .subscribe((timezone) => (this._systemTimeZone = timezone));
     }
+
+    private _localeOptions: DotLocaleOptions;
 
     get localeOptions(): DotLocaleOptions {
         return this._localeOptions;
@@ -32,6 +47,11 @@ export class DotFormatDateService {
         this._localeOptions = locale;
     }
 
+    /**
+     * @deprecated
+     * please do not use more date-fns use instead Intl.DateTimeFormat
+     * @param languageId
+     */
     async setLang(languageId: string) {
         let [langCode, countryCode] = languageId.replace('_', '-').split('-');
         let localeLang;
@@ -50,6 +70,36 @@ export class DotFormatDateService {
         }
 
         this.localeOptions = { locale: localeLang.default };
+    }
+
+    /**
+     * Transform a timestamp to a date string using Intl.DateTimeFormat
+     * taking in consideration the user's language selected when logged in.
+     *
+     * @param {number} timestamp
+     * @param userDateFormatOptions
+     * @returns {Date}
+     */
+    getDateFromTimestamp(
+        timestamp: number,
+        userDateFormatOptions?: Intl.DateTimeFormatOptions
+    ): string {
+        if (!this.isValidTimestamp(timestamp)) {
+            console.error('Invalid timestamp provided:', timestamp);
+
+            return INVALID_DATE_MSG;
+        }
+
+        try {
+            const options = userDateFormatOptions || this.defaultDateFormatOptions;
+            const formatter = new Intl.DateTimeFormat(this.getLocaleISOSelectedAtLogin(), options);
+
+            return formatter.format(new Date(timestamp)).replace(/\s+/g, ' ').trim(); // space normalization
+        } catch (error) {
+            console.error('Error formatting date:', error);
+
+            return INVALID_DATE_MSG;
+        }
     }
 
     /**
@@ -127,8 +177,42 @@ export class DotFormatDateService {
      * @memberof DotFormatDateService
      */
     getUTC(time: Date = new Date()): Date {
-        const utcTime = new Date(time.getTime() + time.getTimezoneOffset() * 60000);
+        return new Date(time.getTime() + time.getTimezoneOffset() * 60000);
+    }
 
-        return utcTime;
+    /**
+     * Checks if the given value is a valid timestamp.
+     *
+     * @param {number} value - The value to be checked.
+     * @return {boolean} - Returns true if the value is a valid timestamp, otherwise false.
+     */
+    isValidTimestamp(value: number): boolean {
+        // Check if the value is of type number
+        if (typeof value !== 'number') {
+            return false;
+        }
+
+        if (value < 0 || value > 1e13) {
+            // 1e13 covers up to the year 2286
+            return false;
+        }
+
+        // Attempt to construct a Date object with the timestamp
+        const date = new Date(value);
+
+        // and NaN if it is not. `isNaN` checks if the value is NaN.
+        return !isNaN(date.getTime());
+    }
+
+    /**
+     * Converts the given locale string to the ISO 639-1 format.
+     *
+     * @return {string} - The converted locale string in the ISO 639-1 format.
+     * @private
+     */
+    private getLocaleISOSelectedAtLogin(): string {
+        const languageLoggedIn = this.loginService.currentUserLanguageId;
+
+        return languageLoggedIn ? languageLoggedIn.replace('_', '-') : DEFAULT_ISO_LOCALE;
     }
 }

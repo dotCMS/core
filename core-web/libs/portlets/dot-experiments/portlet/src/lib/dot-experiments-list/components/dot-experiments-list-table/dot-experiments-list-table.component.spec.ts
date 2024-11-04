@@ -8,8 +8,13 @@ import { Menu, MenuItemContent } from 'primeng/menu';
 import { Table } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import { DotExperimentStatus, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
-import { DotEmptyContainerComponent, DotFormatDateService } from '@dotcms/ui';
+import {
+    DotEmptyContainerComponent,
+    DotFormatDateService,
+    DotTimestampToDatePipe
+} from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
     getExperimentMock,
@@ -77,6 +82,7 @@ describe('DotExperimentsListTableComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotExperimentsListTableComponent,
+        imports: [DotTimestampToDatePipe],
         componentMocks: [ConfirmPopup],
         declarations: [MockDatePipe],
         providers: [
@@ -86,7 +92,11 @@ describe('DotExperimentsListTableComponent', () => {
             },
             MessageService,
             ConfirmationService,
-            { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
+            { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
+            {
+                provide: LoginService,
+                useValue: { currentUserLanguageId: 'en-US' }
+            }
         ],
         schemas: [NO_ERRORS_SCHEMA]
     });
@@ -134,9 +144,11 @@ describe('DotExperimentsListTableComponent', () => {
                 DRAFT_EXPERIMENT_MOCK.name
             );
             expect(spectator.query(byTestId('experiment-row__createdDate'))).toHaveText(
-                '1 hour ago'
+                '10/10/2020 10:10 PM'
             );
-            expect(spectator.query(byTestId('experiment-row__modDate'))).toHaveText('1 hour ago');
+            expect(spectator.query(byTestId('experiment-row__modDate'))).toHaveText(
+                '10/10/2020 10:10 PM'
+            );
         });
 
         it('should emit action when a row is clicked', () => {

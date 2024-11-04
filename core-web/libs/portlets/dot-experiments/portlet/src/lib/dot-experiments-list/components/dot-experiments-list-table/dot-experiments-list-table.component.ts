@@ -21,6 +21,7 @@ import {
     DotEmptyContainerComponent,
     DotMessagePipe,
     DotRelativeDatePipe,
+    DotTimestampToDatePipe,
     PrincipalConfiguration
 } from '@dotcms/ui';
 
@@ -41,7 +42,8 @@ import {
         ButtonModule,
         TooltipModule,
         MenuModule,
-        DotEmptyContainerComponent
+        DotEmptyContainerComponent,
+        DotTimestampToDatePipe
     ],
     templateUrl: './dot-experiments-list-table.component.html',
     styleUrls: ['./dot-experiments-list-table.component.scss'],
@@ -50,8 +52,10 @@ import {
 })
 export class DotExperimentsListTableComponent {
     @Input() experimentGroupedByStatus: GroupedExperimentByStatus[] = [];
+
     @Output()
     goToContainer = new EventEmitter<DotExperiment>();
+
     private dotMessageService: DotMessageService = inject(DotMessageService);
     protected readonly emptyConfiguration: PrincipalConfiguration = {
         title: this.dotMessageService.get('experimentspage.not.experiments.found.filtered'),

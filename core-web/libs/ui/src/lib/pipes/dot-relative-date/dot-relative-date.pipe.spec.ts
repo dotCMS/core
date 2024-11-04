@@ -1,6 +1,6 @@
-import { fakeAsync, tick } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
-import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotFormatDateService, DotRelativeDatePipe } from '@dotcms/ui';
 import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
 
@@ -18,11 +18,23 @@ describe('DotRelativeDatePipe', () => {
     let pipe: DotRelativeDatePipe;
 
     beforeEach(() => {
-        formatDateService = new DotFormatDateService(
-            new DotcmsConfigServiceMock() as unknown as DotcmsConfigService
-        );
+        TestBed.configureTestingModule({
+            providers: [
+                {
+                    provide: LoginService,
+                    useValue: { currentUserLanguageId: 'en-US' }
+                },
+                {
+                    provide: DotcmsConfigService,
+                    useClass: DotcmsConfigServiceMock
+                },
+                DotFormatDateService,
+                DotRelativeDatePipe
+            ]
+        });
 
-        pipe = new DotRelativeDatePipe(formatDateService as unknown as DotFormatDateService);
+        formatDateService = TestBed.inject(DotFormatDateService);
+        pipe = TestBed.inject(DotRelativeDatePipe);
     });
 
     describe('relative', () => {
