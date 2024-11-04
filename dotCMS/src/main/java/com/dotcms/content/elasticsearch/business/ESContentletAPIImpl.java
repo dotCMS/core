@@ -1,15 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
-
+import com.dotcms.analytics.content.ContentAnalyticsAPI;
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
@@ -18,20 +14,22 @@ import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.business.field.FieldHandlerStrategyFactory;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
-import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.content.elasticsearch.util.PaginationUtil;
-import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
-import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
-import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.*;
+import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.JSONField;
+import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -129,7 +127,6 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.personas.model.Persona;
-import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -184,6 +181,18 @@ import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import javax.activation.MimeType;
+import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -211,17 +220,12 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.activation.MimeType;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -232,6 +236,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ESContentletAPIImpl implements ContentletAPI {
 
+    private static Lazy<Boolean> FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = Lazy.of(() ->
+            Config.getBooleanProperty("FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION", false));
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT = "Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
     private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
@@ -245,7 +251,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final PermissionAPI permissionAPI;
     private final CategoryAPI categoryAPI;
     private final RelationshipAPI relationshipAPI;
-    private final FieldAPI fieldAPI;
     private final LanguageAPI languageAPI;
     private final ReindexQueueAPI reindexQueueAPI;
     private final TagAPI tagAPI;
@@ -274,6 +279,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final BaseTypeToContentTypeStrategyResolver baseTypeToContentTypeStrategyResolver =
             BaseTypeToContentTypeStrategyResolver.getInstance();
 
+
+    private  final Lazy<UniqueFieldValidationStrategyResolver> uniqueFieldValidationStrategyResolver;
+
     public enum QueryType {
         search, suggest, moreLike, Facets
     }
@@ -281,15 +289,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
     ;
 
     private static final Supplier<String> ND_SUPPLIER = () -> "N/D";
-    private ElasticReadOnlyCommand elasticReadOnlyCommand;
+    private final ElasticReadOnlyCommand elasticReadOnlyCommand;
+
+    public static boolean getFeatureFlagDbUniqueFieldValidation() {
+        return FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION.get();
+    }
+
+    @VisibleForTesting
+    public static void setFeatureFlagDbUniqueFieldValidation(final boolean newValue) {
+        FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = Lazy.of(() -> newValue);
+    }
 
     /**
      * Default class constructor.
      */
     @VisibleForTesting
     public ESContentletAPIImpl(final ElasticReadOnlyCommand readOnlyCommand) {
+        this.uniqueFieldValidationStrategyResolver = Lazy.of( () -> getUniqueFieldValidationStrategyResolver());
         indexAPI = new ContentletIndexAPIImpl();
-        fieldAPI = APILocator.getFieldAPI();
         contentFactory = new ESContentFactoryImpl();
         permissionAPI = APILocator.getPermissionAPI();
         categoryAPI = APILocator.getCategoryAPI();
@@ -305,10 +322,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         fileMetadataAPI = APILocator.getFileMetadataAPI();
     }
 
+    private static UniqueFieldValidationStrategyResolver getUniqueFieldValidationStrategyResolver() {
+        final Optional<UniqueFieldValidationStrategyResolver> uniqueFieldValidationStrategyResolver =
+                CDIUtils.getBean(UniqueFieldValidationStrategyResolver.class);
+
+        if (!uniqueFieldValidationStrategyResolver.isPresent()) {
+            throw new DotRuntimeException("Could not instance UniqueFieldValidationStrategyResolver");
+        }
+        return uniqueFieldValidationStrategyResolver.get();
+    }
+
     public ESContentletAPIImpl() {
         this(ElasticReadOnlyCommand.getInstance());
     }
-
 
     @Override
     public SearchResponse esSearchRaw(String esQuery, boolean live, User user,
@@ -4988,9 +5014,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 generateSystemEvent);
 
                 if (workflowContentletOpt.isPresent()) {
-
                     Logger.info(this,
-                            "A Workflow has been ran instead of checkin the contentlet: " +
+                            "A Workflow has been run instead of checking in Contentlet with ID: " +
                                     workflowContentletOpt.get().getIdentifier());
                     return workflowContentletOpt.get();
                 }
@@ -5001,14 +5026,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 contentletIn, contentRelationships, categories, user,
                                 respectFrontendRoles, createNewVersion
                         )
-                ); // end synchronized block
+                );
             } catch (final Throwable t) {
-                Logger.warn(getClass(), t.getMessage(), t);
+                if (!(t instanceof DotContentletValidationException)) {
+                    Logger.warn(this, ExceptionUtil.getErrorMessage(t), t);
+                }
                 bubbleUpException(t);
             }
 
             //This way no matter how many times the contentlet reference that we're passing in gets override.
             //On the way back this updates the original contentlet references updating the new inode and identifier
+            if (null == contentletOut) {
+                throw new DotDataException("Checked in contentlet is null. This must never happen!");
+            }
             contentletIn.setIdentifier(contentletOut.getIdentifier());
             contentletIn.setInode(contentletOut.getInode());
 
@@ -5281,13 +5311,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (!isCheckInSafe(contentRelationships)) {
 
-            if (contentlet.getBoolProperty(Contentlet.IS_TEST_MODE)) {
-                this.elasticReadOnlyCommand.executeCheck();
-            } else {
-                DotConcurrentFactory.getInstance().getSingleSubmitter()
-                        .submit(() -> this.elasticReadOnlyCommand.executeCheck());
-            }
-
             final String contentletIdentifier =
                     null != contentlet && null != contentlet.getIdentifier()
                             ? contentlet.getIdentifier() : StringPool.NULL;
@@ -5510,6 +5533,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet = contentFactory.save(contentlet);
             }
 
+           if (hasUniqueField(contentType)) {
+               uniqueFieldValidationStrategyResolver.get().get().afterSaved(contentlet, isNewContent);
+           }
+
+
             contentlet.setIndexPolicy(indexPolicy);
             contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
 
@@ -5637,6 +5665,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
+    }
+
+    private static boolean hasUniqueField(ContentType contentType) {
+        return contentType.fields().stream().anyMatch(field -> field.unique());
     }
 
     private boolean shouldRemoveOldHostCache(Contentlet contentlet, String oldHostId) {
@@ -7376,18 +7408,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         boolean hasError = false;
         final DotContentletValidationException cve = new DotContentletValidationException(
-                String.format(
-                        "Contentlet with id:`%s` and title:`%s` has invalid / missing field(s).",
+                String.format("Contentlet with ID '%s' ['%s'] has invalid/missing field(s).",
                         contentIdentifier, contentlet.getTitle())
         );
         final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentTypeId);
         final Map<String, Object> contentletMap = contentlet.getMap();
         final Set<String> nullValueProperties = contentlet.getNullProperties();
         for (final Field field : fields) {
-            final Object fieldValue = (nullValueProperties.contains(field.getVelocityVarName())
-                    ? null : contentletMap.get(field.getVelocityVarName()));
             final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(
                     field);
+            if (isIgnorableField(newField)) {
+                continue;
+            }
+            final Object fieldValue = (nullValueProperties.contains(field.getVelocityVarName())
+                    ? null : contentletMap.get(field.getVelocityVarName()));
             // Validate Field Type
             if (fieldValue != null) {
                 if (isFieldTypeString(field) && !(newField instanceof JSONField)) {
@@ -7531,7 +7565,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 } else if (field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
                     continue;
                 } else if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
-                    if (cats == null || cats.size() == 0) {
+                    if (UtilMethods.isNotSet(cats)) {
                         cve.addRequiredField(field);
                         hasError = true;
                         Logger.warn(this, "Category Field [" + field.getVelocityVarName()
@@ -7548,11 +7582,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             boolean found = false;
                             for (Category cat : childrenCats) {
                                 for (Category passedCat : cats) {
-                                    try {
-                                        if (passedCat.getInode().equalsIgnoreCase(cat.getInode())) {
-                                            found = true;
-                                        }
-                                    } catch (NumberFormatException e) {
+                                    if (passedCat.getInode().equalsIgnoreCase(cat.getInode())) {
+                                        found = true;
                                     }
                                 }
                             }
@@ -7564,13 +7595,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 continue;
                             }
                         }
-                    } catch (DotDataException | DotSecurityException e) {
+                    } catch (final DotDataException | DotSecurityException e) {
+                        cve.addRequiredField(field);
+                        hasError = true;
                         Logger.warn(this,
-                                "Unable to validate a category field [" + field.getVelocityVarName()
-                                        + "]", e);
-                        throw new DotContentletValidationException(
-                                "Unable to validate a category field: "
-                                        + field.getVelocityVarName(), e);
+                                "Unable to validate category field [" + field.getVelocityVarName()
+                                        + "]: " + ExceptionUtil.getErrorMessage(e), e);
+                        continue;
                     }
                 } else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
                     if (!UtilMethods.isSet(contentlet.getHost()) && !UtilMethods.isSet(
@@ -7614,7 +7645,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 } else if (field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
                     if (fieldValue instanceof String) {
                         String s = (String) fieldValue;
-                        if (s.trim().toLowerCase().equals("<br>")) {
+                        if (s.trim().equalsIgnoreCase("<br>")) {
                             cve.addRequiredField(field);
                             hasError = true;
                             Logger.warn(this, "WYSIWYG Field [" + field.getVelocityVarName()
@@ -7627,100 +7658,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // validate unique
             if (field.isUnique()) {
-                final boolean isDataTypeNumber =
-                        field.getDataType().contains(DataTypes.INTEGER.toString())
-                                || field.getDataType().contains(DataTypes.FLOAT.toString());
+
                 try {
-                    final StringBuilder buffy = new StringBuilder(UUIDGenerator.generateUuid());
-                    buffy.append(" +structureInode:" + contentlet.getStructureInode());
-                    if (UtilMethods.isSet(contentlet.getIdentifier())) {
-                        buffy.append(" -(identifier:" + contentlet.getIdentifier() + ")");
-                    }
-
-                    buffy.append(" +languageId:" + contentlet.getLanguageId());
-
-                    if (getUniquePerSiteConfig(field)) {
-                        if (!UtilMethods.isSet(contentlet.getHost())) {
-                            populateHost(contentlet);
-                        }
-
-                        buffy.append(" +conHost:" + contentlet.getHost());
-                    }
-
-                    buffy.append(" +").append(contentlet.getContentType().variable())
-                            .append(StringPool.PERIOD)
-                            .append(field.getVelocityVarName()).append(ESUtils.SHA_256)
-                            .append(StringPool.COLON)
-                            .append(ESUtils.sha256(contentlet.getContentType().variable()
-                                            + StringPool.PERIOD + field.getVelocityVarName(), fieldValue,
-                                    contentlet.getLanguageId()));
-
-                    final List<ContentletSearch> contentlets = new ArrayList<>();
-                    try {
-                        contentlets.addAll(
-                                searchIndex(buffy.toString() + " +working:true", -1, 0, "inode",
-                                        APILocator.getUserAPI().getSystemUser(), false));
-                        contentlets.addAll(
-                                searchIndex(buffy.toString() + " +live:true", -1, 0, "inode",
-                                        APILocator.getUserAPI().getSystemUser(), false));
-                    } catch (final Exception e) {
-                        final String errorMsg =
-                                "Unique field [" + field.getVelocityVarName() + "] with value '" +
-                                        fieldValue + "' could not be validated: " + e.getMessage();
-                        Logger.warn(this, errorMsg, e);
-                        throw new DotContentletValidationException(errorMsg, e);
-                    }
-                    int size = contentlets.size();
-                    if (size > 0 && !hasError) {
-                        Boolean unique = true;
-                        for (final ContentletSearch contentletSearch : contentlets) {
-                            final Contentlet uniqueContent = contentFactory.find(
-                                    contentletSearch.getInode());
-                            if (null == uniqueContent) {
-                                final String errorMsg = String.format(
-                                        "Unique field [%s] could not be validated, as " +
-                                                "unique content Inode '%s' was not found. ES Index might need to be reindexed.",
-                                        field.getVelocityVarName(), contentletSearch.getInode());
-                                Logger.warn(this, errorMsg);
-                                throw new DotContentletValidationException(errorMsg);
-                            }
-                            final Map<String, Object> uniqueContentMap = uniqueContent.getMap();
-                            final Object obj = uniqueContentMap.get(field.getVelocityVarName());
-                            if ((isDataTypeNumber && fieldValue.equals(obj)) ||
-                                    (!isDataTypeNumber && ((String) obj).equalsIgnoreCase(
-                                            ((String) fieldValue)))) {
-                                unique = false;
-                                break;
-                            }
-
-                        }
-                        if (!unique) {
-                            if (UtilMethods.isSet(contentlet.getIdentifier())) {
-                                Iterator<ContentletSearch> contentletsIter = contentlets.iterator();
-                                while (contentletsIter.hasNext()) {
-                                    ContentletSearch cont = (ContentletSearch) contentletsIter.next();
-                                    if (!contentlet.getIdentifier()
-                                            .equalsIgnoreCase(cont.getIdentifier())) {
-                                        cve.addUniqueField(field);
-                                        hasError = true;
-                                        Logger.warn(this,
-                                                getUniqueFieldErrorMessage(field, fieldValue,
-                                                        cont));
-                                        break;
-                                    }
-                                }
-                            } else {
-                                cve.addUniqueField(field);
-                                hasError = true;
-                                Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue,
-                                        contentlets.get(0)));
-                                break;
-                            }
-                        }
-                    }
+                    uniqueFieldValidationStrategyResolver.get().get().validate(contentlet,
+                            LegacyFieldTransformer.from(field));
+                } catch (UniqueFieldValueDuplicatedException e) {
+                    cve.addUniqueField(field);
+                    hasError = true;
+                    Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue,
+                            UtilMethods.isSet(e.getContentlets()) ? e.getContentlets().get(0) : "Unknown"));
                 } catch (DotDataException | DotSecurityException e) {
                     Logger.warn(this, "Unable to get contentlets for Content Type: "
-                            + contentlet.getStructure().getName(), e);
+                            + contentlet.getContentType().name(), e);
                 }
             }
 
@@ -7728,10 +7677,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             String dataType = (field.getFieldContentlet() != null) ? field.getFieldContentlet()
                     .replaceAll("[0-9]*", "") : "";
             if (UtilMethods.isSet(fieldValue) && dataType.equals("text")) {
-                String s = "";
                 try {
-                    s = (String) fieldValue;
-                } catch (Exception e) {
+                    final String stringValue = (String) fieldValue;
+                } catch (final Exception e) {
                     Logger.warn(this, "Unable to get string value from text field ["
                             + field.getVelocityVarName() +
                             "] in contentlet", e);
@@ -7772,25 +7720,34 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
             }
-
             // validate binary
             if (isFieldTypeBinary(field)) {
-                this.validateBinary(File.class.cast(fieldValue), field.getVelocityVarName(), field,
-                        contentType);
+                this.validateBinary((File) fieldValue, field.getVelocityVarName(), field, contentType);
             }
-
         }
         if (hasError) {
             throw cve;
         }
     }
 
+    /**
+     * Determines whether Contentlet Validation process can safely ignore the specified field.
+     *
+     * @param newField The {@link com.dotcms.contenttype.model.field.Field} that might be safely
+     *                 ignored.
+     *
+     * @return If the filed can be ignored, returns {@code true}.
+     */
+    private boolean isIgnorableField(final com.dotcms.contenttype.model.field.Field newField) {
+        return newField instanceof RowField || newField instanceof ColumnField || newField instanceof TabDividerField || newField instanceof LineDividerField;
+    }
+
     private String getUniqueFieldErrorMessage(final Field field, final Object fieldValue,
-            final ContentletSearch contentletSearch) {
+            final String contentletID) {
 
         return String.format(
                 "Value of Field [%s] must be unique. Contents having the same value (%s): %s",
-                field.getVelocityVarName(), fieldValue, contentletSearch.getIdentifier());
+                field.getVelocityVarName(), fieldValue, contentletID);
     }
 
     private boolean getUniquePerSiteConfig(final Field field) {
@@ -8218,7 +8175,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             // a parent...
                             if (relationship.getCardinality()
                                     == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()
-                                    && relatedContents.size() > 0
+                                    && !relatedContents.isEmpty()
                                     && !relatedContents.get(0).getIdentifier()
                                     .equals(contentlet.getIdentifier())) {
                                 final StringBuilder error = new StringBuilder();

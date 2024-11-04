@@ -352,7 +352,10 @@ public class ResourceLink {
         public String getFileLink(final HttpServletRequest request, final User user, final Contentlet contentlet, final String field) throws DotDataException, DotSecurityException {
 
             ResourceLink link = this.build(request, user, contentlet, field);
-            final Host host = getHost(contentlet.getHost(), user);
+            Host host = getHost((String)request.getAttribute(HOST_REQUEST_ATTRIBUTE) , user);
+            if(null == host){
+                host = getHost(contentlet.getHost(), user);
+            }
 
             final StringBuilder hostUrlBuilder = new StringBuilder(request.isSecure()? HTTPS_PREFIX:HTTP_PREFIX);
 

@@ -2,9 +2,9 @@ package com.dotcms.cube;
 
 import com.dotcms.analytics.AnalyticsTestUtils;
 import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.cube.CubeJSQuery.Builder;
-import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
 import com.dotcms.http.server.mock.MockHttpServer;
 import com.dotcms.http.server.mock.MockHttpServerContext;
 import com.dotcms.util.JsonUtil;
@@ -157,14 +157,16 @@ public class CubeJSClientTest {
                     getAccessToken());
 
             try {
-                cubeClient.send(null);
+                CubeJSQuery query = null;
+                cubeClient.send(query);
                 throw new AssertionError("IllegalArgumentException Expected");
             }  catch (IllegalArgumentException e) {
                 mockhttpServer.mustNeverCalled("/cubejs-api/v1/load");
             }
 
             try {
-                cubeClient.send(null);
+                CubeJSQuery query = null;
+                cubeClient.send(query);
                 throw new AssertionError("IllegalArgumentException Expected");
             }  catch (IllegalArgumentException e) {
                 mockhttpServer.mustNeverCalled("/cubejs-api/v1/load");

@@ -1,3 +1,5 @@
+// Beware while using this type, since we have a [key: string]: any; it can be used to store any kind of data and you can write wrong properties and it will not fail
+// Maybe we need to refactor this to a generic type that extends from unknown when missing the generic type
 export interface DotCMSContentlet {
     archived: boolean;
     baseType: string;
@@ -32,9 +34,11 @@ export interface DotCMSContentlet {
     url: string;
     working: boolean;
     body?: string;
+    content?: string;
     contentTypeIcon?: string;
     variant?: string;
     __icon__?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
 }
 

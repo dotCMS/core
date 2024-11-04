@@ -2,6 +2,13 @@ package com.dotcms.e2e.page;
 
 import com.microsoft.playwright.Page;
 
+/**
+ * Class for navigating through the menu.
+ *
+ * This class provides methods to navigate to different group and tool entries in the menu.
+ *
+ * @author vico
+ */
 public class MenuNavigation {
 
     private final Page menuNavigation;

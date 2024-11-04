@@ -1,6 +1,6 @@
 # PR Checks Workflow
 #
-# This workflow is triggered on pull requests to the master branch and orchestrates
+# This workflow is triggered on pull requests to the main branch and orchestrates
 # the entire PR check process. It uses reusable workflows to modularize different
 # stages of the CI process.
 #
@@ -24,6 +24,7 @@ name: '-1 PR Check'
 on:
   pull_request:
     branches:
+      - main
       - master
     types:
       - opened
@@ -68,6 +69,7 @@ jobs:
       postman: ${{ needs.initialize.outputs.backend == 'true' }}
       frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
       cli: ${{ needs.initialize.outputs.cli == 'true' }}
+      e2e: ${{ needs.initialize.outputs.build == 'true' }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
 

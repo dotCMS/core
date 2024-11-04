@@ -1,7 +1,5 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
-
 import com.dotcms.ai.workflow.DotEmbeddingsActionlet;
 import com.dotcms.ai.workflow.OpenAIAutoTagActionlet;
 import com.dotcms.ai.workflow.OpenAIContentPromptActionlet;
@@ -74,6 +72,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.LargeMessageActionlet;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
+import com.dotmarketing.portlets.workflows.actionlet.AnalyticsFireUserEventActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.AsyncEmailActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.BatchAction;
@@ -106,6 +105,7 @@ import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.*;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
@@ -140,6 +140,13 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.commons.lang.time.StopWatch;
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
+import org.apache.felix.framework.OSGIUtil;
+import org.elasticsearch.search.query.QueryPhaseExecutionException;
+import org.osgi.framework.BundleContext;
+
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -168,11 +175,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.annotation.Nullable;
-import org.apache.commons.lang.time.StopWatch;
-import org.apache.commons.lang3.concurrent.ConcurrentUtils;
-import org.elasticsearch.search.query.QueryPhaseExecutionException;
-import org.osgi.framework.BundleContext;
+
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
 
 /**
  * Implementation class for {@link WorkflowAPI}.
@@ -262,6 +266,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				NotifyAssigneeActionlet.class,
 				UnarchiveContentActionlet.class,
 				ResetTaskActionlet.class,
+				ResetPermissionsActionlet.class,
 				MultipleApproverActionlet.class,
 				FourEyeApproverActionlet.class,
 				TwitterActionlet.class,
@@ -287,7 +292,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				DotEmbeddingsActionlet.class,
 				OpenAIContentPromptActionlet.class,
 				OpenAIGenerateImageActionlet.class,
-				OpenAIAutoTagActionlet.class
+				OpenAIAutoTagActionlet.class,
+				AnalyticsFireUserEventActionlet.class
 		));
 
 		refreshWorkFlowActionletMap();
@@ -366,16 +372,23 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	public void registerBundleService () {
-		if(System.getProperty(WebKeys.OSGI_ENABLED)!=null){
-			// Register main service
-			BundleContext context = HostActivator.instance().getBundleContext();
-			if (null != context) {
-				Hashtable<String, String> props = new Hashtable<>();
-				context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
-			} else {
-				Logger.error(this, "Bundle Context is null, WorkflowAPIOsgiService has been not registered");
-			}
+
+		// force init if not already done
+		OSGIUtil.getInstance().initializeFramework();
+		if (System.getProperty(WebKeys.OSGI_ENABLED) == null) {
+			// OSGI is not inited
+			throw new DotRuntimeException("Unable to register WorkflowAPIOsgiService as OSGI is not inited");
 		}
+
+		BundleContext context = HostActivator.instance().getBundleContext();
+		if (context == null) {
+			throw new DotRuntimeException("Bundle Context is null, WorkflowAPIOsgiService has been not registered");
+		}
+		if (context.getServiceReference(WorkflowAPIOsgiService.class.getName()) == null) {
+			Hashtable<String, String> props = new Hashtable<>();
+			context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
+		}
+
 	}
 
 	/**
@@ -1403,7 +1416,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@CloseDBIfOpened
-	public List<IFileAsset> findWorkflowTaskFilesAsContent(final WorkflowTask task, final User user) throws DotDataException {
+	public List<IFileAsset> findWorkflowTaskFilesAsContent(final WorkflowTask task, final User user) throws DotDataException{
 
 		final List<Contentlet> contents =  workFlowFactory.findWorkflowTaskFilesAsContent(task, user);
 		return APILocator.getFileAssetAPI().fromContentletsI(contents);
@@ -1689,7 +1702,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
         return this.findAvailableActions(contentlet, user, RenderMode.EDITING);
     }
-	
+
 	 /**
      * This method will return the list of workflows actions available to a user on any give
      * piece of content, based on how and who has the content locked and what workflow step the content
@@ -1702,7 +1715,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		return this.findAvailableActions(contentlet, user, RenderMode.LISTING);
     }
-	
+
 	/**
 	 * This method will return the list of workflows actions available to a user on any give
 	 * piece of content, based on how and who has the content locked and what workflow step the content
@@ -2223,13 +2236,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			// Delete action class
 			final int orderOfActionClassToDelete = actionClass.getOrder();
 			workFlowFactory.deleteActionClass(actionClass);
-			
-			// We don't need to get "complete" base action object from the database 
+
+			// We don't need to get "complete" base action object from the database
 			// to retrieve all action classes from him. So, we can create the base action object
 			// with the "action id" contain in actionClass parameter.
 			WorkflowAction baseAction = new WorkflowAction();
 			baseAction.setId(actionClass.getActionId());
-			
+
 			// Reorder the action classes in the database
 			final List<WorkflowActionClass> actionClasses = findActionClasses(baseAction);
 			if((actionClasses.size() > 1) && (actionClasses.size() != orderOfActionClassToDelete)) {
@@ -2272,12 +2285,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			List<WorkflowActionClass> actionClasses = null;
 			try {
-				// We don't need to get "complete" base action object from the database 
+				// We don't need to get "complete" base action object from the database
 				// to retrieve all action classes from him. So, we can create the base action object
 				// with the "action id" contain in actionClass parameter.
 				final WorkflowAction baseAction = new WorkflowAction();
 				baseAction.setId(actionClass.getActionId());
-				
+
 				actionClasses = findActionClasses(baseAction);
 			} catch (Exception e) {
 				throw new DotDataException(e.getLocalizedMessage());
@@ -2402,12 +2415,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	@Override
 	public void fireWorkflowPostCheckin(final WorkflowProcessor processor) throws DotDataException,DotWorkflowException{
-
 		try{
 			if(!processor.inProcess()){
 				return;
 			}
-
 			processor.getContentlet().setActionId(processor.getAction().getId());
 
 			final List<WorkflowActionClass> actionClasses = processor.getActionClasses();
@@ -2417,7 +2428,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					final WorkFlowActionlet actionlet = actionClass.getActionlet();
 					final Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
 					if (processor.isRunningBulk() && actionlet instanceof BatchAction) {
-						final BatchAction batchable = BatchAction.class.cast(actionlet);
+						final BatchAction batchable = (BatchAction) actionlet;
 						batchable.preBatchAction(processor, actionClass, params);
 						//gather data to run in batch later
 					} else {
@@ -2445,14 +2456,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					Logger.info(this, "Added contentlet to the index at the end of the workflow execution, dependencies: " + includeDependencies);
 				}
 			}
-		} catch(Exception e) {
-
-			/* Show a more descriptive error of what caused an issue here */
-			Logger.error(WorkflowAPIImpl.class, "There was an unexpected error: " + e.getMessage());
-			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
-			throw new DotWorkflowException(e.getMessage(), e);
+		} catch (final Exception e) {
+			final String errorMsg = String.format("Failed to fire Workflow Action '%s' [%s]: %s",
+					processor.getAction().getName(), processor.getAction().getId(), ExceptionUtil.getErrorMessage(e));
+			Logger.error(WorkflowAPIImpl.class, errorMsg);
+			Logger.debug(WorkflowAPIImpl.class, errorMsg, e);
+			throw new DotWorkflowException(ExceptionUtil.getErrorMessage(e), e);
 		} finally {
-
 			// not matters what we need to reindex in deferred the index just in case.
 			if (UtilMethods.isSet(processor.getContentlet()) &&
 					UtilMethods.isSet(processor.getContentlet().getIdentifier())) {

@@ -823,13 +823,19 @@ public class DotWebdavHelper {
 				final List<Contentlet> versions = conAPI.findAllVersions(identifier, user, false);
 				for(final Contentlet contentlet : versions){
 
-					final File binary = contentlet.getBinary(FileAssetAPI.BINARY_FIELD);
+					// Make sure we are not trying to delete the current version
+					if (!contentlet.isLive() && !contentlet.isWorking()) {
 
-					Logger.debug(this, "inode " + contentlet.getInode() + " size: " + (null != binary? binary.length():0));
-					if(null == binary || binary.length() == 0){
-						Logger.debug(this, "deleting version " + contentlet.getInode());
-						conAPI.deleteVersion(contentlet, user, false);
-						break;
+						final File binary = contentlet.getBinary(FileAssetAPI.BINARY_FIELD);
+
+						Logger.debug(this,
+								() -> "inode " + contentlet.getInode() + " size: " + (null != binary
+										? binary.length() : 0));
+						if(null == binary || binary.length() == 0){
+							Logger.debug(this, "deleting version " + contentlet.getInode());
+							conAPI.deleteVersion(contentlet, user, false);
+							break;
+						}
 					}
 				}
 			}

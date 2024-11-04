@@ -54,7 +54,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.dotcms.ai.app.AppConfig.debugLogger;
 import static com.liferay.util.StringPool.BLANK;
 
 /**
@@ -335,7 +334,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                 .map(encoding -> encoding.encode(content))
                 .orElse(List.of());
         if (tokens.isEmpty()) {
-            debugLogger(this.getClass(), () -> String.format("No tokens for content ID '%s' were encoded: %s", contentId, content));
+            config.debugLogger(this.getClass(), () -> String.format("No tokens for content ID '%s' were encoded: %s", contentId, content));
             return Tuple.of(0, List.of());
         }
 
@@ -432,15 +431,15 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         final JSONObject json = new JSONObject();
         json.put(AiKeys.MODEL, config.getEmbeddingsModel().getCurrentModel());
         json.put(AiKeys.INPUT, tokens);
-        debugLogger(this.getClass(), () -> String.format("Content tokens for content ID '%s': %s", contentId, tokens));
+        config.debugLogger(this.getClass(), () -> String.format("Content tokens for content ID '%s': %s", contentId, tokens));
         final String responseString = AIProxyClient.get()
                 .callToAI(JSONObjectAIRequest.quickEmbeddings(config, json, userId))
                 .getResponse();
-        debugLogger(this.getClass(), () -> String.format("OpenAI Response for content ID '%s': %s",
+        config.debugLogger(this.getClass(), () -> String.format("OpenAI Response for content ID '%s': %s",
                 contentId, responseString.replace("\n", BLANK)));
         final JSONObject jsonResponse = Try.of(() -> new JSONObject(responseString)).getOrElseThrow(e -> {
             Logger.error(this, "OpenAI Response String is not a valid JSON", e);
-            debugLogger(this.getClass(), () -> String.format("Invalid JSON Response: %s", responseString));
+            config.debugLogger(this.getClass(), () -> String.format("Invalid JSON Response: %s", responseString));
             return new DotCorruptedDataException(e);
         });
         if (jsonResponse.containsKey(AiKeys.ERROR)) {

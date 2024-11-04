@@ -16,9 +16,10 @@ import {
 import { DomSanitizer } from '@angular/platform-browser';
 
 import {
-    CUSTOMER_ACTIONS,
+    CLIENT_ACTIONS,
     DotCmsClient,
     isInsideEditor,
+    NOTIFY_CLIENT,
     postMessageToEditor
 } from '@dotcms/client';
 
@@ -139,7 +140,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
     @HostListener('window:message', ['$event'])
     onMessage({ data }: MessageEvent) {
         const { name, payload } = data;
-        if (name !== 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS') {
+        if (name !== NOTIFY_CLIENT.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS) {
             return;
         }
 
@@ -194,7 +195,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
 
         try {
             postMessageToEditor({
-                action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+                action: CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
                 payload: {
                     dataset: {
                         inode,
@@ -224,7 +225,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
 
         try {
             postMessageToEditor({
-                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
                 payload: {
                     content,
                     dataset: {

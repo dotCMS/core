@@ -85,7 +85,7 @@
         <surefire-report-maven.version>3.1.0</surefire-report-maven.version>
         <project-info-reports.version>3.4.5</project-info-reports.version>
         <gib.fetchBaseBranch>true</gib.fetchBaseBranch>
-        <gib.referenceBranch>refs/remotes/origin/master</gib.referenceBranch>
+        <gib.referenceBranch>refs/remotes/origin/main</gib.referenceBranch>
         <gitflow-incremental-builder.version>4.4.1</gitflow-incremental-builder.version>
         <insecure.repositories>WARN</insecure.repositories>
         <!-- jandex maven plugin version -->
@@ -187,7 +187,7 @@
         <docker.container.name.pattern>${docker.run.context}_%a</docker.container.name.pattern>
         <license.user.path>${user.home}/.dotcms/license/license.dat</license.user.path>
         <license.use>false</license.use>
-        <dotcms.startup.timeout>240000</dotcms.startup.timeout>
+        <dotcms.startup.timeout>300000</dotcms.startup.timeout>
         <docker.license.volume.internal>/data/local/dotsecure/license/license.dat</docker.license.volume.internal>
         <docker.starter.volume.internal>/data/starter</docker.starter.volume.internal>
         <docker.db.volume>${docker.run.context}_db</docker.db.volume>
@@ -196,6 +196,8 @@
         <docker.skip.clean.after>false</docker.skip.clean.after>
         <debug.suspend.flag>n</debug.suspend.flag>
         <debug.port>5005</debug.port>
+        <docker.glowroot.enabled>false</docker.glowroot.enabled>
+
         <!-- Default debug port -->
         <debug.args.default>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${debug.suspend.flag},address=*:${debug.port}</debug.args.default>
         <debug.args/>
@@ -206,6 +208,7 @@
         <environment.properties.folder>${maven.multiModuleProjectDirectory}/environments</environment.properties.folder>
         <environment.properties.defaults>${environment.properties.folder}/environment.properties</environment.properties.defaults>
         <spotless.skip>true</spotless.skip>
+        <glowroot.version>0.14.2</glowroot.version>
     </properties>
 
     <build>
@@ -1569,6 +1572,40 @@
                                 <phase>process-resources</phase>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>glowroot</id>
+            <activation>
+                <property>
+                    <name>docker.glowroot.enabled</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <ports combine.children="append">
+                                            <port>glowroot.port:4000</port>
+                                        </ports>
+                                        <env>
+                                            <GLOWROOT_ENABLED>true</GLOWROOT_ENABLED>
+                                            <GLOWROOT_WEB_UI_ENABLED>true</GLOWROOT_WEB_UI_ENABLED>
+                                        </env>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

@@ -8,6 +8,8 @@ import type { FC } from "react";
 
 import { Navigation } from "./layout/navigation";
 import { Footer } from "./layout/footer/footer";
+import NotFound from "./components/notFound";
+
 import type { DotcmsNavigationItem, DotCMSPageAsset } from "@dotcms/types";
 
 export type MyPageProps = {
@@ -17,6 +19,10 @@ export type MyPageProps = {
 
 export const MyPage: FC<MyPageProps> = ({ pageAsset, nav }) => {
   pageAsset = usePageAsset(pageAsset);
+
+  if(!pageAsset) {
+    return <NotFound />
+  }
 
   return (
     <div className="flex flex-col min-h-screen gap-6 bg-lime-50">

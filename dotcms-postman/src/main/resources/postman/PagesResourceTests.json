@@ -2178,7 +2178,7 @@
 										"PUBLISH"
 									]
 								},
-								"description": "Upload an image as a dotasset type, in this test the image with src in \"_resources/image/_[Landscape_2008_urban_park_and_plaza_Ankaran.jpeg](https://github.com/dotCMS/core/blob/master/dotcms-postman/src/main/resources/postman/resources/image/Landscape_2008_urban_park_and_plaza_Ankaran.jpeg)_\"_ is being used"
+								"description": "Upload an image as a dotasset type, in this test the image with src in \"_resources/image/_[Landscape_2008_urban_park_and_plaza_Ankaran.jpeg](https://github.com/dotCMS/core/blob/main/dotcms-postman/src/main/resources/postman/resources/image/Landscape_2008_urban_park_and_plaza_Ankaran.jpeg)_\"_ is being used"
 							},
 							"response": []
 						},

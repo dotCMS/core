@@ -157,7 +157,10 @@ cube('request', {
                MIN(utc_time) as createdAt,
                MAX(source_ip) as source_ip,
                MAX(language) as language,
-               MAX(user_agent) as user_agent,
+               MAX(useragent) as user_agent,
+               MAX(persona) as persona,
+               MAX(rendermode) as rendermode,
+               MAX(referer) as referer,
                MAX(host) as host,
                MAX(CASE WHEN event_type = 'PAGE_REQUEST' THEN object_id ELSE NULL END) as page_id,
                MAX(CASE WHEN event_type = 'PAGE_REQUEST' THEN object_title ELSE NULL END) as page_title,
@@ -174,12 +177,13 @@ cube('request', {
                MAX(CASE WHEN event_type = 'URL_MAP' THEN object_content_type_id ELSE NULL END) as url_map_content_type_id,
                MAX(CASE WHEN event_type = 'URL_MAP' THEN object_content_type_name ELSE NULL END) as url_map_content_type_name,
                MAX(CASE WHEN event_type = 'URL_MAP' THEN object_content_type_var_name ELSE NULL END) as url_map_content_type_var_name,
-               MAX(CASE WHEN event_type = 'URL_MAP' THEN object_detail_page_url ELSE NULL END) as url_map_detail_page_url,
+               MAX(object_detail_page_url) as url_map_detail_page_url,
                MAX(url) AS url,
                CASE
                  WHEN MAX(CASE WHEN event_type = 'FILE_REQUEST' THEN 1 ELSE 0 END) = 1 THEN 'FILE'
                  WHEN MAX(CASE WHEN event_type = 'PAGE_REQUEST' THEN 1 ELSE 0 END) = 1 THEN 'PAGE'
-                 ELSE 'NOTHING'
+                 WHEN MAX(CASE WHEN event_type = 'VANITY_REQUEST' AND object_response != '200' THEN 1 ELSE 0 END) = 1 THEN 'VANITY_REDIRECT'
+                 ELSE 'OTHER'
                END  AS what_am_i
         FROM events
         GROUP BY request_id`,
@@ -192,6 +196,9 @@ cube('request', {
     sourceIp: { sql: 'source_ip', type: `string` },
     language: { sql: 'language', type: `string` },
     userAgent: { sql: 'user_agent', type: `string` },
+    referer: { sql: 'referer', type: `string` },
+    renderMode: { sql: 'rendermode', type: `string` },
+    persona: { sql: 'persona', type: `string` },
     host: { sql: 'host', type: `string` },
     url: { sql: 'url', type: `string` },
     pageId: { sql: 'page_id', type: `string` },
@@ -209,11 +216,52 @@ cube('request', {
     urlMapContentDetailTitle: { sql: 'url_map_content_detail_title', type: `string` },
     urlMapContentId: { sql: 'url_map_content_type_id', type: `string` },
     urlMapContentTypeName: { sql: 'url_map_content_type_name', type: `string` },
-    urlMapContentTypeVarName: { sql: 'url_map_content_type_var_name', type: `string` },
+    urlMapContentTypeVarName: { sql: 'url_map_content_type_var_name', type: `string` }
   },
   measures: {
     count: {
       type: "count"
+    },
+    totalSessions: {
+      sql: 'sessionid',
+      type: 'countDistinct',
+      title: 'Total Sessions'
+    },
+    totalRequest: {
+      sql: 'request_id',
+      type: 'countDistinct',
+      title: 'Total Requests'
+    },
+    pageRequest: {
+      sql: 'page_id',
+      type: 'count',
+      title: 'Count of Page request'
+    },
+    uniquePageRequest: {
+      sql: 'page_id',
+      type: 'countDistinct',
+      title: 'Unique Page Ids by Session'
+    },
+    pageRequestAverage: {
+      sql: `${fileRequest} / NULLIF(${totalRequest}, 0)`,
+      type: 'number',
+      title: 'FileRequest Average'
+    },
+    fileRequest: {
+      sql: 'file_id',
+      type: 'count',
+      title: 'Count of File Request'
+    },
+    uniqueFileRequest: {
+      sql: 'file_id',
+      type: 'countDistinct',
+      title: 'Unique Count of File Request'
+    },
+    fileRequestAverage: {
+      sql: `${fileRequest} / NULLIF(${totalRequest}, 0)`,
+      type: 'number',
+      title: 'FileRequest Average'
     }
   }
 });
+

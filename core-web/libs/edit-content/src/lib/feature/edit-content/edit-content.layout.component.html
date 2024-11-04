@@ -1,16 +1,23 @@
-@if (vm$ | async; as vm) {
-    @if (vm?.contentType?.metadata?.[featuredFlagContentKEY]) {
+<!--Todo: handle Loading and Saving state-->
+@if ($store.isLoaded()) {
+    @let contentType = $store.contentType();
+    @let variable = contentType.variable;
+    @let contentlet = $store.contentlet();
+    @let showSidebar = $store.showSidebar();
+    @let isLoading = $store.isLoading();
+
+    @if ($store.isEnabledNewContentEditor()) {
         <p-messages
-            class="topBar"
+            class="edit-content-layout__topBar"
             styleClass="p-message-border-y"
             severity="success"
-            data-testId="topBar">
+            data-testId="edit-content-layout__topBar">
             <ng-template pTemplate>
                 <i class="pi pi-info-circle"></i>
                 <div>
                     <span [innerHTML]="('edit.content.layout.beta.message' | dm) + ' '"></span>
                     <a
-                        [routerLink]="'/content-types-angular/edit/' + vm.contentType.variable"
+                        [routerLink]="'/content-types-angular/edit/' + variable"
                         data-testId="content-type">
                         {{ 'edit.content.layout.beta.message.switch' | dm }}
                     </a>
@@ -19,24 +26,27 @@
             </ng-template>
         </p-messages>
     }
-    <dot-edit-content-toolbar
-        (actionFired)="
-            fireWorkflowAction({
-                actionId: $event.id,
-                inode: vm.contentlet?.inode,
-                contentType: vm.contentType.variable
-            })
-        "
-        [actions]="vm.actions"
-        class="header"></dot-edit-content-toolbar>
-    <dot-edit-content-form (changeValue)="setFormValue($event)" [formData]="vm" class="body" />
-    <dot-edit-content-aside
-        [loading]="vm.loading"
-        [contentlet]="vm.contentlet"
-        [contentType]="vm.contentType"
-        class="sidebar" />
-} @else {
+
+    <dot-edit-content-form
+        data-testId="edit-content-layout__body"
+        class="edit-content-layout__body" />
+
+    @if (showSidebar) {
+        @defer (when showSidebar) {
+            <dot-edit-content-aside
+                [loading]="isLoading"
+                [contentlet]="contentlet"
+                [contentType]="contentType"
+                (toggle)="$store.toggleSidebar()"
+                data-testId="edit-content-layout__sidebar"
+                class="edit-content-layout__sidebar" />
+        }
+    }
+}
+
+@if ($store.hasError()) {
     {{ 'edit.content.layout.no.content.to.show ' | dm }}
 }
 
-<p-toast></p-toast>
+<p-toast />
+<p-confirmDialog />

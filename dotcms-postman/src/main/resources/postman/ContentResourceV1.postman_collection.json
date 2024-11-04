@@ -1,11 +1,10 @@
 {
 	"info": {
-		"_postman_id": "ddc34e79-b221-402b-81ef-15ef00a2bd07",
+		"_postman_id": "015f66fd-6d09-4641-873d-03e8b08011f4",
 		"name": "ContentResourceV1",
 		"description": "This folder contains a comprehensive set of API requests related to the `ContentResourceV1` API endpoints. These requests cover various operations such as creating, retrieving and updating content. The folder is organized to help developers and testers efficiently validate and interact with the content resource endpoints in the system.\n\n#### Objectives:\n\n1. **Create Content**:\n    \n    - Test the creation of new content items with valid and invalid data.\n        \n    - Ensure that the response includes all necessary details for the created content.\n        \n2. **Retrieve Content**:\n    \n    - Validate the retrieval of content items by ID.\n        \n    - Ensure the response contains accurate and complete content details.\n        \n3. **Update Content**:\n    \n    - Test updating existing content items with valid and invalid data.\n        \n    - Verify that the response reflects the updated content accurately.\n        \n    - Ensure that only authorized users can update content.\n        \n4. **Error Handling**:\n    \n    - Verify that the API returns appropriate error messages for invalid requests.\n        \n    - Ensure the correct HTTP status codes are used for different error scenarios.\n        \n5. **Security**:\n    \n    - Validate that only authorized users can perform operations on the content.\n        \n    - Ensure that all security protocols are enforced during API interactions.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "10041132",
-		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/dot~b1c5dc44-8278-4b11-92c8-b3cd3fb935d3/collection/10041132-ddc34e79-b221-402b-81ef-15ef00a2bd07?action=share&source=collection_link&creator=10041132"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -201,14 +200,14 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"// Validate the errorMessage contains 'has invalid / missing field(s)'",
-											"pm.test(\"Validate errorMessage contains 'has invalid / missing field(s)'\", function () {",
+											"pm.test(\"Validate errorMessage contains 'has invalid/missing field(s)'\", function () {",
 											"  var jsonData = pm.response.json();",
 											"  jsonData.entity.results.forEach((result) => {",
 											"    var error = result[Object.keys(result)[0]].errorMessage;",
-											"    pm.expect(error).to.include('has invalid / missing field(s)');",
+											"    pm.expect(error).to.include('has invalid/missing field(s)');",
 											"  });",
-											"});"
+											"});",
+											""
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -253,15 +252,13 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"// Validate the errorMessage contains 'has invalid / missing field(s)'",
-											"pm.test(\"Validate errorMessage contains 'has invalid / missing field(s)'\", function () {",
+											"pm.test(\"Validate errorMessage contains 'has invalid/missing field(s)'\", function () {",
 											"  var jsonData = pm.response.json();",
 											"  jsonData.entity.results.forEach((result) => {",
 											"    var error = result[Object.keys(result)[0]].errorMessage;",
-											"    pm.expect(error).to.include('has invalid / missing field(s)');",
+											"    pm.expect(error).to.include('has invalid/missing field(s)');",
 											"  });",
 											"});",
-											"",
 											""
 										],
 										"type": "text/javascript",
@@ -477,11 +474,16 @@
 									"listen": "test",
 									"script": {
 										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
 											"pm.test(\"Valid response\", function () {",
 											"    pm.expect(pm.response.text()).to.include(\"SucessRequest\");",
+											"",
+											"    pm.expect(jsonData.entity).to.have.property('shortyId');",
+											"    pm.expect(jsonData.entity).to.have.property('identifier');",
 											"});",
 											"",
-											"var jsonData = pm.response.json();",
+											"",
 											"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
 											"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
 											"",
@@ -493,6 +495,16 @@
 								}
 							],
 							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
 								"method": "PUT",
 								"header": [
 									{
@@ -502,7 +514,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"SucessRequest{{$timestamp}}\",\n  \"value\": \"SucessRequest{{$timestamp}}\"\n}\n}"
+									"raw": "{\n    \"contentlet\": {\n        \"stInode\": \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n        \"languageId\": 1,\n        \"key\": \"SucessRequest{{$timestamp}}\",\n        \"value\": \"SucessRequest{{$timestamp}}\"\n    }\n}"
 								},
 								"url": {
 									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
@@ -2460,6 +2472,334 @@
 				}
 			],
 			"description": "This folder contains a comprehensive set of requests designed to handle the creation, relationship management, and updating of content within our application. These requests are essential for ensuring that content operations are performed correctly and efficiently.  \n  \nThis will include both possitive and negative testing."
+		},
+		{
+			"name": "References",
+			"item": [
+				{
+					"name": "CreatePage",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const pagePost = Math.floor(Math.random()*100+1)",
+									"pm.globals.set(\"pageRefPost\", pagePost)"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Test Page created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.collectionVariables.set(\"pageIdentifier\", jsonData.entity.identifier);",
+									"    pm.collectionVariables.set(\"host_id\", jsonData.entity.host);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy{{pageRefPost}}\",\n        \"url\":\"testPageCopy{{pageRefPost}}\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy{{pageRefPost}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateContentRich",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Test Page created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"test\",\n\t\t\"body\":\"Test body\",\n        \"contentHost\":\"default\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "AddContentToPage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{contentIdentifier}}\"\n        ]\n    }\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{pageIdentifier}}",
+								"content"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckCount",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"count successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.count).to.gte(1);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/content/{{contentIdentifier}}/references/count",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"{{contentIdentifier}}",
+								"references",
+								"count"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckReferences",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"References successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var pageIdCreated = pm.collectionVariables.get(\"pageIdentifier\");",
+									"    console.log(\"pageIdCreated\", pageIdCreated);",
+									"    console.log(\"pageIdCreated\", pageIdCreated, jsonData.entity[0].page.identifier);",
+									"    pm.expect(jsonData.entity[0].page.identifier).to.eql(pageIdCreated);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/content/{{contentIdentifier}}/references",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"{{contentIdentifier}}",
+								"references"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {
@@ -2536,7 +2876,15 @@
 	],
 	"variable": [
 		{
-			"key": "testContentId",
+			"key": "pageIdentifier",
+			"value": ""
+		},
+		{
+			"key": "host_id",
+			"value": ""
+		},
+		{
+			"key": "contentIdentifier",
 			"value": ""
 		},
 		{
@@ -2545,34 +2893,6 @@
 		},
 		{
 			"key": "contentletInode",
-			"value": ""
-		},
-		{
-			"key": "parentId1",
-			"value": ""
-		},
-		{
-			"key": "parentInode1",
-			"value": ""
-		},
-		{
-			"key": "parent1contentlets",
-			"value": ""
-		},
-		{
-			"key": "parent2contentlets",
-			"value": ""
-		},
-		{
-			"key": "parentId2",
-			"value": ""
-		},
-		{
-			"key": "parentInode2",
-			"value": ""
-		},
-		{
-			"key": "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE_ORIGINAL_VALUE",
 			"value": ""
 		}
 	]

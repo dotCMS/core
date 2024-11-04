@@ -10,7 +10,7 @@ inputs:
   branch:
     description: 'Branch name'
     required: true
-    default: master
+    default: main
   initial_sha:
     description: 'Initial commit sha'
     required: true

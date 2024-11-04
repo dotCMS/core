@@ -271,7 +271,6 @@ async function main() {
         if (summaryResults.failures > 0) {
             console.error('Some collections failed.');
             process.exit(0);
-            //process.exit(1);
         }
     } catch (error) {
         console.error('An error occurred:', error);

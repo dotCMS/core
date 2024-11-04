@@ -53,7 +53,7 @@ jest.mock('@dotcms/client', () => ({
             }
         }
     },
-    CUSTOMER_ACTIONS: {
+    CLIENT_ACTIONS: {
         GET_PAGE_DATA: 'get-page-data'
     }
 }));
@@ -148,7 +148,7 @@ describe('DotcmsLayoutComponent', () => {
             it('should post message to editor', () => {
                 spectator.detectChanges();
                 expect(dotcmsClient.postMessageToEditor).toHaveBeenCalledWith({
-                    action: dotcmsClient.CUSTOMER_ACTIONS.CLIENT_READY,
+                    action: dotcmsClient.CLIENT_ACTIONS.CLIENT_READY,
                     payload: query
                 });
             });

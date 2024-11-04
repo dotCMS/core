@@ -17,10 +17,9 @@ import {
 } from 'rxjs/operators';
 
 import { DotMessageService, DotPageLayoutService, DotRouterService } from '@dotcms/data-access';
-import { DotPageRender, DotTemplateDesigner } from '@dotcms/dotcms-models';
+import { DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { TemplateBuilderModule } from '@dotcms/template-builder';
 
-import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_STATUS } from '../shared/enums';
 import { UVEStore } from '../store/dot-uve.store';
 
@@ -90,7 +89,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
             .save(this.uveStore.$layoutProps().pageId, { ...template, title: null })
             .pipe(take(1))
             .subscribe(
-                (updatedPage: DotPageRender) => this.handleSuccessSaveTemplate(updatedPage),
+                () => this.handleSuccessSaveTemplate(),
                 (err: HttpErrorResponse) => this.handleErrorSaveTemplate(err),
                 () => this.dotRouterService.allowRouteDeactivation()
             );
@@ -133,7 +132,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
                 })
             )
             .subscribe(
-                (updatedPage: DotPageRender) => this.handleSuccessSaveTemplate(updatedPage),
+                () => this.handleSuccessSaveTemplate(),
                 (err: HttpErrorResponse) => this.handleErrorSaveTemplate(err)
             );
     }
@@ -143,16 +142,15 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      *
      * @private
      * @template T
-     * @param {T=unkonwm} page // To avoid getting type error with DotPageRender and DotPageApiResponse
      * @memberof EditEmaLayoutComponent
      */
-    private handleSuccessSaveTemplate<T = unknown>(page: T): void {
+    private handleSuccessSaveTemplate(): void {
         this.messageService.add({
             severity: 'success',
             summary: 'Success',
             detail: this.dotMessageService.get('dot.common.message.saved')
         });
-        this.uveStore.updatePageResponse(page as DotPageApiResponse);
+        this.uveStore.reload();
     }
 
     /**

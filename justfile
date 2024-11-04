@@ -39,6 +39,9 @@ build-test:
 build-quick:
     ./mvnw -DskipTests install
 
+build-quicker:
+    ./mvnw -pl :dotcms-core -DskipTests install
+
 # Builds the project for production, skipping tests
 build-prod:
     ./mvnw -DskipTests clean install -Pprod
@@ -85,7 +88,7 @@ dev-stop:
 dev-clean-volumes:
     ./mvnw -pl :dotcms-core -Pdocker-clean-volumes
 
-# Starts the dotCMS application in a Tomcat container on port 8080, running in the foreground
+# Starts the dotCMS application in a Tomcat container on port 8087, running in the foreground
 dev-tomcat-run port="8087":
     ./mvnw -pl :dotcms-core -Ptomcat-run -Pdebug -Dservlet.port={{ port }}
 
@@ -134,9 +137,13 @@ test-e2e-java:
 test-e2e-java-debug-suspend:
     ./mvnw -pl :dotcms-e2e-java verify -De2e.test.skip=false -Pdebug-suspend-e2e-tests
 
+# Executes Node E2E tests
+test-e2e-node:
+    ./mvnw -pl :dotcms-e2e-node verify -De2e.test.skip=false
+
 # Stops E2E test services
 test-e2e-stop:
-    ./mvnw -pl :dotcms-e2e -Pdocker-stop -De2e.test.skip=false
+    ./mvnw -pl :dotcms-e2e-java,:dotcms-e2e-node -Pdocker-stop -De2e.test.skip=false
 
 # Docker Commands
 # Runs a published dotCMS Docker image on a dynamic port
@@ -144,7 +151,7 @@ docker-ext-run tag='latest':
     ./mvnw -pl :dotcms-core -Pdocker-start -Dcontext.name=ext-{{ tag }} -Ddotcms.image.name=dotcms/dotcms:{{ tag }}
 
 # Runs a Docker image from a specific build for testing
-docker-test-ext-run tag='master':
+docker-test-ext-run tag='main':
     ./mvnw -pl :dotcms-core -Pdocker-start -Dcontext.name=test-ext-{{ tag }} -Ddotcms.image.name=ghcr.io/dotcms/dotcms_test:{{ tag }}
 
 # Stops a running Docker container based on the specified tag

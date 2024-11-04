@@ -1,11 +1,11 @@
 import { from, Observable, throwError } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { catchError, pluck, switchMap } from 'rxjs/operators';
 
-import { DotUploadService } from '@dotcms/data-access';
+import { DotUploadService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 
 export enum FileStatus {
@@ -29,10 +29,10 @@ interface PublishContentProps {
  */
 @Injectable()
 export class DotUploadFileService {
-    constructor(
-        private http: HttpClient,
-        private dotUploadService: DotUploadService
-    ) {}
+    readonly #BASE_URL = '/api/v1/workflow/actions/default';
+    readonly #httpClient = inject(HttpClient);
+    readonly #uploadService = inject(DotUploadService);
+    readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService);
 
     publishContent({
         data,
@@ -59,17 +59,13 @@ export class DotUploadFileService {
 
                 statusCallback(FileStatus.IMPORT);
 
-                return this.http
-                    .post(
-                        '/api/v1/workflow/actions/default/fire/PUBLISH',
-                        JSON.stringify({ contentlets }),
-                        {
-                            headers: {
-                                Origin: window.location.hostname,
-                                'Content-Type': 'application/json;charset=UTF-8'
-                            }
+                return this.#httpClient
+                    .post(`${this.#BASE_URL}/fire/PUBLISH`, JSON.stringify({ contentlets }), {
+                        headers: {
+                            Origin: window.location.hostname,
+                            'Content-Type': 'application/json;charset=UTF-8'
                         }
-                    )
+                    })
                     .pipe(pluck('entity', 'results')) as Observable<DotCMSContentlet[]>;
             }),
             catchError((error) => throwError(error))
@@ -82,11 +78,39 @@ export class DotUploadFileService {
         signal
     }: PublishContentProps): Observable<DotCMSTempFile | DotCMSTempFile[]> {
         return from(
-            this.dotUploadService.uploadFile({
+            this.#uploadService.uploadFile({
                 file,
                 maxSize,
                 signal
             })
         );
+    }
+
+    /**
+     * Uploads a file or a string as a dotAsset contentlet.
+     *
+     * If a File is passed, it will be uploaded and the asset will be created
+     * with the file name as the contentlet name.
+     *
+     * If a string is passed, it will be used as the asset id.
+     *
+     * @param file The file to be uploaded or the asset id.
+     * @returns An observable that resolves to the created contentlet.
+     */
+    uploadDotAsset(file: File | string): Observable<DotCMSContentlet> {
+        if (file instanceof File) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>(
+                'dotAsset',
+                { file: file.name },
+                formData
+            );
+        }
+
+        return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>('dotAsset', {
+            asset: file
+        });
     }
 }

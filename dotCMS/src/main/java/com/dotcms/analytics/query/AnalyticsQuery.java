@@ -3,6 +3,7 @@ package com.dotcms.analytics.query;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import java.io.Serializable;
 import java.util.Set;
 
 /**
@@ -23,7 +24,7 @@ import java.util.Set;
  *         "limit": 100,
  *         "offset": 1,
  *         "timeDimensions": "Events.day day",
- *         "orders": "Events.day ASC"
+ *         "order": "Events.day ASC"
  *     }
  * }
  *
@@ -32,7 +33,7 @@ import java.util.Set;
  * @author jsanca
  */
 @JsonDeserialize(builder = AnalyticsQuery.Builder.class)
-public class AnalyticsQuery {
+public class AnalyticsQuery implements Serializable {
 
     private final Set<String> dimensions; // ["Events.referer", "Events.experiment", "Events.variant", "Events.utcTime", "Events.url", "Events.lookBackWindow", "Events.eventType"]
     private final Set<String> measures; // ["Events.count", "Events.uniqueCount"]
@@ -40,7 +41,7 @@ public class AnalyticsQuery {
     private final long limit;
     private final long offset;
     private final String timeDimensions; // Events.day day
-    private String orders; // Events.day ASC
+    private String order; // Events.day ASC
 
     private AnalyticsQuery(final Builder builder) {
         this.dimensions = builder.dimensions;
@@ -49,7 +50,7 @@ public class AnalyticsQuery {
         this.limit = builder.limit;
         this.offset = builder.offset;
         this.timeDimensions = builder.timeDimensions;
-        this.orders = builder.orders;
+        this.order = builder.order;
     }
 
     public Set<String> getDimensions() {
@@ -76,8 +77,8 @@ public class AnalyticsQuery {
         return timeDimensions;
     }
 
-    public String getOrders() {
-        return orders;
+    public String getOrder() {
+        return order;
     }
 
     public static class Builder {
@@ -95,7 +96,7 @@ public class AnalyticsQuery {
         @JsonProperty()
         private String timeDimensions;
         @JsonProperty()
-        private String orders;
+        private String order;
 
 
         public Builder dimensions(Set<String> dimensions) {
@@ -128,8 +129,8 @@ public class AnalyticsQuery {
             return this;
         }
 
-        public Builder orders(String orders) {
-            this.orders = orders;
+        public Builder order(String orders) {
+            this.order = orders;
             return this;
         }
 
@@ -151,7 +152,7 @@ public class AnalyticsQuery {
                 ", limit=" + limit +
                 ", offset=" + offset +
                 ", timeDimensions='" + timeDimensions + '\'' +
-                ", orders='" + orders + '\'' +
+                ", order='" + order + '\'' +
                 '}';
     }
 }

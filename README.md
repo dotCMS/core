@@ -1,4 +1,4 @@
-<img src="https://www.dotcms.com/dA/99fe3769-d649/256w/dotcms.png" title="dotcms open source hybrid content management system">
+<img src="https://www2.dotcms.com/dA/99fe3769-d649/256w/dotcms.png" title="dotcms open source hybrid content management system">
 
 
 [![Merge Queue](https://github.com/dotCMS/core/actions/workflows/cicd_2-merge-queue.yml/badge.svg)](https://github.com/dotCMS/core/actions/workflows/cicd_2-merge-queue.yml)
@@ -51,7 +51,7 @@ For a complete list of requirements, see [this page](http://www.dotcms.com/docs/
 | Installation    | [Installation](https://www.dotcms.com/docs/latest/installation)         |
 | Documentation   | [Documentation](https://www.dotcms.com/docs/latest/table-of-contents)   |
 | Videos          | [Helpful Videos](http://www.dotcms.com/videos/)                         |
-| Merge Queue   | [Merge Queue](https://github.com/dotCMS/core/queue/master)                          |
+| Merge Queue   | [Merge Queue](https://github.com/dotCMS/core/queue/main)                          |
 | Forums/Listserv | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
 | Twitter         | @dotCMS                                                             |
 | Main Site       | [dotCMS.com](https://www.dotcms.com/)                                   |

@@ -4,13 +4,7 @@ import {
     preserveScrollOnIframe,
     scrollHandler
 } from './listeners/listeners';
-import { isInsideEditor, addClassToEmptyContentlets } from './sdk-editor';
-
-declare global {
-    interface Window {
-        lastScrollYPosition: number;
-    }
-}
+import { isInsideEditor, addClassToEmptyContentlets, initDotUVE } from './sdk-editor';
 
 /**
  * This is the main entry point for the SDK VTL.
@@ -23,6 +17,7 @@ declare global {
  *
  */
 if (isInsideEditor()) {
+    initDotUVE();
     listenEditorMessages();
     scrollHandler();
     preserveScrollOnIframe();

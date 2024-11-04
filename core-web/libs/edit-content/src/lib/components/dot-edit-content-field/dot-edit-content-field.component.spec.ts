@@ -5,7 +5,7 @@ import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Provider, Type } from '@angular/core';
+import { Provider, signal, Type } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
@@ -14,18 +14,21 @@ import {
     DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageDisplayService,
-    DotMessageService
+    DotMessageService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotKeyValueComponent } from '@dotcms/ui';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
+import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
 import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
 import { DotEditContentCustomFieldComponent } from '../../fields/dot-edit-content-custom-field/dot-edit-content-custom-field.component';
 import { DotEditContentFileFieldComponent } from '../../fields/dot-edit-content-file-field/dot-edit-content-file-field.component';
+import { DotFileFieldUploadService } from '../../fields/dot-edit-content-file-field/services/upload-file/upload-file.service';
 import { DotEditContentHostFolderFieldComponent } from '../../fields/dot-edit-content-host-folder-field/dot-edit-content-host-folder-field.component';
 import { DotEditContentJsonFieldComponent } from '../../fields/dot-edit-content-json-field/dot-edit-content-json-field.component';
 import { DotEditContentKeyValueComponent } from '../../fields/dot-edit-content-key-value/dot-edit-content-key-value.component';
@@ -70,8 +73,24 @@ declare module '@tiptap/core' {
 const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTestBed> = {
     // We had to use unknown because components have different types.
     [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
-    [FIELD_TYPES.FILE]: DotEditContentFileFieldComponent,
-    [FIELD_TYPES.IMAGE]: DotEditContentFileFieldComponent,
+    [FIELD_TYPES.FILE]: {
+        component: DotEditContentFileFieldComponent,
+        providers: [
+            {
+                provide: DotFileFieldUploadService,
+                useValue: {}
+            }
+        ]
+    },
+    [FIELD_TYPES.IMAGE]: {
+        component: DotEditContentFileFieldComponent,
+        providers: [
+            {
+                provide: DotFileFieldUploadService,
+                useValue: {}
+            }
+        ]
+    },
     [FIELD_TYPES.TEXTAREA]: DotEditContentTextAreaComponent,
     [FIELD_TYPES.SELECT]: DotEditContentSelectFieldComponent,
     [FIELD_TYPES.RADIO]: DotEditContentRadioFieldComponent,
@@ -142,6 +161,22 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     },
     [FIELD_TYPES.WYSIWYG]: {
         component: DotEditContentWYSIWYGFieldComponent,
+        providers: [
+            {
+                provide: DotFileFieldUploadService,
+                useValue: {}
+            },
+            {
+                provide: DotWorkflowActionsFireService,
+                useValue: {}
+            },
+            {
+                provide: DotEditContentStore,
+                useValue: {
+                    showSidebar: signal(false)
+                }
+            }
+        ],
         declarations: [MockComponent(EditorComponent)]
     },
     [FIELD_TYPES.CATEGORY]: {
@@ -211,11 +246,11 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
 
         it('should render the correct field type', () => {
             spectator.detectChanges();
-            const field = spectator.debugElement.query(
-                By.css(`[data-testId="field-${fieldMock.variable}"]`)
-            );
             const FIELD_TYPE = fieldTestBed.component ? fieldTestBed.component : fieldTestBed;
-            expect(field.componentInstance instanceof FIELD_TYPE).toBeTruthy();
+            const component = spectator.query(FIELD_TYPE);
+
+            expect(component).toBeTruthy();
+            expect(component instanceof FIELD_TYPE).toBeTruthy();
         });
 
         if (fieldTestBed.outsideFormControl) {

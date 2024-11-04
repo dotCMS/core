@@ -3,7 +3,11 @@ package com.dotcms.analytics.track.collectors;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.FunctionUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -11,17 +15,20 @@ import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 public class BasicProfileCollector implements Collector {
+
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'");
+
     @Override
     public boolean test(CollectorContextMap collectorContextMap) {
-
-        return true; // every one needs a basic profile
+        // Every collector needs a basic profile
+        return true;
     }
 
     @Override
     public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
                                         final CollectorPayloadBean collectorPayloadBean) {
 
+        // todo: add the user id
         final String requestId = (String)collectorContextMap.get("requestId");
         final Long time = (Long)collectorContextMap.get("time");
         final String clusterId   = (String)collectorContextMap.get("cluster");
@@ -41,16 +48,32 @@ public class BasicProfileCollector implements Collector {
                 FunctionUtils.getOrDefault(Objects.nonNull(serverId), ()->serverId,()->APILocator.getServerAPI().readServerId()));
         collectorPayloadBean.put("sessionId", sessionId);
         collectorPayloadBean.put("sessionNew", sessionNew);
-        return collectorPayloadBean;
-    }
 
-    @Override
-    public boolean isAsync() {
-        return false;
+        if (UtilMethods.isSet(collectorContextMap.get("referer"))) {
+            collectorPayloadBean.put("referer", collectorContextMap.get("referer").toString());
+        }
+
+        if (UtilMethods.isSet(collectorContextMap.get("user-agent"))) {
+            collectorPayloadBean.put("userAgent", collectorContextMap.get("user-agent").toString());
+        }
+
+        final HttpServletRequest request = (HttpServletRequest)collectorContextMap.get("request");
+
+        collectorPayloadBean.put("persona",
+                WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request));
+
+        collectorPayloadBean.put("renderMode", PageMode.get(request).toString().replace("_MODE", ""));
+
+        // Include default value for other boolean fields in the Clickhouse table
+        collectorPayloadBean.put("comeFromVanityURL", false);
+        collectorPayloadBean.put("isexperimentpage", false);
+        collectorPayloadBean.put("istargetpage", false);
+        return collectorPayloadBean;
     }
 
     @Override
     public boolean isEventCreator(){
         return false;
     }
+
 }

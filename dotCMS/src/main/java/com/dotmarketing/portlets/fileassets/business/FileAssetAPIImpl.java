@@ -1,15 +1,64 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.api.tree.Parentable;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.browser.BrowserQuery;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
-import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rendering.velocity.viewtools.content.FileAssetMap;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotcms.tika.TikaUtils;
+import com.dotcms.util.MimeTypeUtils;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
+import com.dotmarketing.portlets.contentlet.model.ResourceLink;
+import com.dotmarketing.portlets.contentlet.transform.strategy.FileViewStrategy;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.io.IOUtils;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -24,47 +73,6 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
-
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.util.MimeTypeUtils;
-import com.dotmarketing.business.*;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.UUIDUtil;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.api.system.event.SystemEventsAPI;
-import com.dotcms.api.system.event.Visibility;
-import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
-import com.dotcms.rendering.velocity.viewtools.content.FileAssetMap;
-import org.apache.commons.io.IOUtils;
-import com.dotcms.tika.TikaUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
-import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 
 /**
  * This class is a bridge impl that will support the older
@@ -310,11 +318,35 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	public List<IFileAsset> fromContentletsI(final List<Contentlet> contentlets) {
 		final List<IFileAsset> fileAssets = new ArrayList<>();
 		for (Contentlet con : contentlets) {
-			fileAssets.add(fromContentlet(con));
+			if (con.isDotAsset()) {
+
+				fileAssets.add(transformDotAsset(con));
+			} else {
+				fileAssets.add(fromContentlet(con));
+			}
 		}
 		return fileAssets;
 
 	}
+
+	private FileAsset transformDotAsset(Contentlet con) {
+		try {
+			con.setProperty(FileAssetAPI.BINARY_FIELD, Try.of(()->con.getBinary("asset")).getOrNull());
+
+			FileAsset fileAsset = FileViewStrategy.convertToFileAsset(con, this);
+
+			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+			if	(request != null) {
+				final String fileLink = new ResourceLink.ResourceLinkBuilder().build(request, APILocator.systemUser(), fileAsset, FileAssetAPI.BINARY_FIELD).getConfiguredImageURL();
+
+
+				fileAsset.getMap().put("fileLink", fileLink);
+			}
+			return fileAsset;
+		} catch (DotDataException | DotSecurityException e) {
+			throw new DotRuntimeException(e);
+		}
+    }
 
 	@CloseDBIfOpened
 	public FileAssetMap fromFileAsset(final FileAsset fileAsset) throws DotStateException {
@@ -441,7 +473,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		String path = "";
 
 		path = java.io.File.separator + _inode.charAt(0)
-				+ java.io.File.separator + _inode.charAt(1) + java.io.File.separator + _inode + java.io.File.separator + "fileAsset" + java.io.File.separator+ fileName;
+				+ java.io.File.separator + _inode.charAt(1) + java.io.File.separator + _inode + java.io.File.separator + FileAssetAPI.BINARY_FIELD + java.io.File.separator+ fileName;
 
 		return path;
 
@@ -582,7 +614,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         final String fullFileName = UtilMethods.isSet(ext) ? fileName + "." + ext : fileName;
         final String path = ((!UtilMethods.isSet(realPath)) ? assetPath : realPath)
                 + inode.charAt(0) + java.io.File.separator + inode.charAt(1)
-                + java.io.File.separator + inode+ java.io.File.separator + "fileAsset" + java.io.File.separator + fullFileName;
+                + java.io.File.separator + inode+ java.io.File.separator + FileAssetAPI.BINARY_FIELD + java.io.File.separator + fullFileName;
 
         if (!UtilMethods.isSet(realPath)) {
             return FileUtil.getRealPath(path);
@@ -642,7 +674,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
         path = ((!UtilMethods.isSet(realPath)) ? assetPath : realPath)
                 + _inode.charAt(0) + java.io.File.separator + _inode.charAt(1)
-                + java.io.File.separator + _inode+ java.io.File.separator + "fileAsset" + java.io.File.separator;
+                + java.io.File.separator + _inode+ java.io.File.separator + FileAssetAPI.BINARY_FIELD + java.io.File.separator;
 
         if (!UtilMethods.isSet(realPath))
             return FileUtil.getRealPath(path);
@@ -887,37 +919,36 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	@Override
 	public FileAsset getFileByPath(final String uri, final Host site,
 								   final long languageId, final boolean live) {
-
 		FileAsset fileAsset = null;
-
 		if (Objects.nonNull(site)) {
-
 			Logger.debug(this, ()-> "Getting the file by path: " + uri + " for host: " + site.getHostname());
 			try {
-
 				final Identifier identifier = APILocator.getIdentifierAPI().find(site, uri);
-				final Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI()
+				final Optional<ContentletVersionInfo> versionInfoOpt = APILocator.getVersionableAPI()
 						.getContentletVersionInfo(identifier.getId(), languageId);
-
-				if (cinfo.isPresent()) {
-
-					final ContentletVersionInfo versionInfo = cinfo.get();
+				if (versionInfoOpt.isPresent()) {
+					final ContentletVersionInfo versionInfo = versionInfoOpt.get();
 					final Contentlet contentlet = APILocator.getContentletAPI()
 							.find(live ? versionInfo.getLiveInode() : versionInfo.getWorkingInode(),
 									APILocator.systemUser(), false);
+					if (null == contentlet) {
+						Logger.warn(this, String.format("%s version of File '%s' under Site " +
+								"'%s' was not found. You may try to publish it first", live ? "Live" : "Working", uri, site));
+						return null;
+					}
 					if (contentlet.getContentType().baseType() == BaseContentType.FILEASSET) {
-
 						fileAsset = fromContentlet(contentlet);
 					}
 				}
-			} catch (DotDataException | DotSecurityException e) {
-
-				Logger.error(this, "Error getting the fileasset for the path: "
-						+ uri + " for host: " + site.getHostname() + ", msg: " + e.getMessage(), e);
-				throw new DotRuntimeException(e.getMessage(), e);
+			} catch (final DotDataException | DotSecurityException e) {
+				final String errorMsg = String.format("Failed to retrieve %s version of File '%s' with Language ID " +
+								"'%s' under Site '%s': %s", live ? "live" : "working", uri, languageId, site,
+						ExceptionUtil.getErrorMessage(e));
+				Logger.error(this, errorMsg, e);
+				throw new DotRuntimeException(errorMsg, e);
 			}
         }
-
 		return fileAsset;
 	}
+
 }
