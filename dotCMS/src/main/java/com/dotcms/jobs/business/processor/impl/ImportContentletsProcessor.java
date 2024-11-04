@@ -154,11 +154,10 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
             progressTracker.updateProgress(Math.min(1.0f, Math.max(0.0f, progressPercentage)));
         };
 
-        if (CMD_PREVIEW.equals(command)) {
-            handlePreview(job, language, fileToImport, charset, user, progressCallback);
-        } else if (CMD_PUBLISH.equals(command)) {
-            handlePublish(job, language, fileToImport, charset, user, progressCallback);
-        }
+        // Handle the import operation based on the command, by default any command that is not
+        // "publish" is considered preview.
+        final boolean isPublish = CMD_PUBLISH.equals(command);
+        handleImport(!isPublish, job, fileToImport, charset, user, progressCallback);
 
         if (!cancellationRequested.get()) {
             // Ensure the progress is at 100% when the job is done
@@ -200,76 +199,34 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
     }
 
     /**
-     * Handles the preview phase of content import. This method analyzes the CSV file and provides
-     * information about potential issues without actually importing the content.
+     * Handles the content import. Depending on the preview flag, this method will either analyze
+     * the content for potential issues or perform the actual import operation.
      *
+     * @param preview          Flag indicating whether the operation is a preview or publish
      * @param job              The import job configuration
-     * @param language         The target language for import
      * @param fileToImport     The CSV file to be imported
      * @param charset          The character encoding of the import file
      * @param user             The user performing the import
      * @param progressCallback Callback for tracking import progress
      */
-    private void handlePreview(final Job job, long language, final File fileToImport,
+    private void handleImport(final boolean preview, final Job job, final File fileToImport,
             final Charset charset, final User user, final LongConsumer progressCallback) {
 
-        try {
-            try (Reader reader = new BufferedReader(
-                    new InputStreamReader(new FileInputStream(fileToImport), charset))) {
-
-                CsvReader csvReader = createCsvReader(reader);
-                CsvHeaderInfo headerInfo = processHeadersBasedOnLanguage(job, language, csvReader);
-
-                final var previewResult = generatePreview(job, user,
-                        headerInfo.headers, csvReader, headerInfo.languageCodeColumn,
-                        headerInfo.countryCodeColumn, progressCallback);
-                resultMetadata = new HashMap<>(previewResult);
-            }
-        } catch (Exception e) {
-
-            try {
-                HibernateUtil.rollbackTransaction();
-            } catch (DotHibernateException he) {
-                Logger.error(this, he.getMessage(), he);
-            }
-
-            final var errorMessage = "An error occurred when analyzing the CSV file.";
-            Logger.error(this, errorMessage, e);
-            throw new JobProcessingException(job.id(), errorMessage, e);
+        if (!preview) {
+            AdminLogger.log(
+                    ImportContentletsProcessor.class, "process",
+                    "Importing Contentlets", user
+            );
         }
-    }
 
-    /**
-     * Handles the publish phase of content import. This method performs the actual content import
-     * operation, creating or updating content based on the CSV file.
-     *
-     * @param job              The import job configuration
-     * @param language         The target language for import
-     * @param fileToImport     The CSV file to be imported
-     * @param charset          The character encoding of the import file
-     * @param user             The user performing the import
-     * @param progressCallback Callback for tracking import progress
-     */
-    private void handlePublish(final Job job, long language, final File fileToImport,
-            final Charset charset, final User user, final LongConsumer progressCallback) {
+        try (Reader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(fileToImport), charset))) {
 
-        AdminLogger.log(
-                ImportContentletsProcessor.class, "process",
-                "Importing Contentlets", user
-        );
+            CsvReader csvReader = createCsvReader(reader);
 
-        try {
-            try (Reader reader = new BufferedReader(
-                    new InputStreamReader(new FileInputStream(fileToImport), charset))) {
-
-                CsvReader csvReader = createCsvReader(reader);
-                CsvHeaderInfo headerInfo = readPublishHeaders(language, csvReader);
-
-                final var importResults = processFile(job, user, headerInfo.headers, csvReader,
-                        headerInfo.languageCodeColumn, headerInfo.countryCodeColumn,
-                        progressCallback);
-                resultMetadata = new HashMap<>(importResults);
-            }
+            final var importResults = processImport(preview, job, user, csvReader,
+                    progressCallback);
+            resultMetadata = new HashMap<>(importResults);
         } catch (Exception e) {
 
             try {
@@ -278,7 +235,8 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
                 Logger.error(this, he.getMessage(), he);
             }
 
-            final var errorMessage = "An error occurred when importing the CSV file.";
+            final var errorMessage = String.format("An error occurred when %s the CSV file.",
+                    preview ? "analyzing" : "importing");
             Logger.error(this, errorMessage, e);
             throw new JobProcessingException(job.id(), errorMessage, e);
         } finally {
@@ -288,59 +246,21 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
     }
 
     /**
-     * Reads and analyzes the content of the CSV import file to determine potential errors,
-     * inconsistencies or warnings, and provide the user with useful information regarding the
-     * contents of the file.
+     * Executes the content import for a preview or publish operation. This method processes the
+     * CSV file and imports the content into dotCMS or reviews the content for potential issues.
      *
+     * @param preview                  - Flag indicating whether the operation is a preview or publish
      * @param job                      - The {@link Job} being processed.
      * @param user                     - The {@link User} performing this action.
-     * @param csvHeaders               - The headers that make up the CSV file.
      * @param csvReader                - The actual data contained in the CSV file.
-     * @param languageCodeHeaderColumn - The column name containing the language code.
-     * @param countryCodeHeaderColumn  - The column name containing the country code.
-     * @param progressCallback         - The callback function to update the progress of the job.
-     * @throws DotDataException An error occurred when analyzing the CSV file.
-     */
-    private Map<String, List<String>> generatePreview(final Job job, final User user,
-            final String[] csvHeaders, final CsvReader csvReader,
-            final int languageCodeHeaderColumn, int countryCodeHeaderColumn,
-            final LongConsumer progressCallback) throws DotDataException {
-
-        final var currentSiteId = getSiteIdentifier(job);
-        final var currentSiteName = getSiteName(job);
-        final var contentType = getContentType(job);
-        final var fields = getFields(job);
-        final var language = getLanguage(job);
-        final var workflowActionId = getWorkflowActionId(job);
-        final var httpReq = JobUtil.generateMockRequest(user, currentSiteName);
-
-        Logger.info(this, "-------- Starting Content Import Preview -------- ");
-        Logger.info(this, String.format("-> Content Type ID: %s", contentType));
-
-        return ImportUtil.importFile(0L, currentSiteId, contentType, fields, true,
-                (language == -1), user, language, csvHeaders, csvReader, languageCodeHeaderColumn,
-                countryCodeHeaderColumn, workflowActionId, httpReq, progressCallback);
-    }
-
-    /**
-     * Executes the content import process after the review process has been run and displayed to
-     * the user.
-     *
-     * @param job                      - The {@link Job} being processed.
-     * @param user                     - The {@link User} performing this action.
-     * @param csvHeaders               - The headers that make up the CSV file.
-     * @param csvReader                - The actual data contained in the CSV file.
-     * @param languageCodeHeaderColumn - The column name containing the language code.
-     * @param countryCodeHeaderColumn  - The column name containing the country code.
      * @param progressCallback         - The callback function to update the progress of the job.
      * @return The status of the content import performed by dotCMS. This provides information
      * regarding inconsistencies, errors, warnings and/or precautions to the user.
      * @throws DotDataException An error occurred when importing the CSV file.
      */
-    private Map<String, List<String>> processFile(final Job job, final User user,
-            final String[] csvHeaders, final CsvReader csvReader,
-            final int languageCodeHeaderColumn, final int countryCodeHeaderColumn,
-            final LongConsumer progressCallback) throws DotDataException {
+    private Map<String, List<String>> processImport(final boolean preview, final Job job,
+            final User user, final CsvReader csvReader, final LongConsumer progressCallback)
+            throws DotDataException, IOException {
 
         final var currentSiteId = getSiteIdentifier(job);
         final var currentSiteName = getSiteName(job);
@@ -351,12 +271,17 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
         final var httpReq = JobUtil.generateMockRequest(user, currentSiteName);
         final var importId = jobIdToLong(job.id());
 
-        Logger.info(this, "-------- Starting Content Import Process -------- ");
+        // Read headers and process language columns for multilingual imports
+        CsvHeaderInfo headerInfo = readHeaders(job, language, csvReader);
+
+        Logger.info(this, String.format("-------- Starting Content Import %s -------- ",
+                preview ? "Preview" : "Process"));
         Logger.info(this, String.format("-> Content Type ID: %s", contentType));
 
-        return ImportUtil.importFile(importId, currentSiteId, contentType, fields, false,
-                (language == -1), user, language, csvHeaders, csvReader, languageCodeHeaderColumn,
-                countryCodeHeaderColumn, workflowActionId, httpReq, progressCallback);
+        return ImportUtil.importFile(importId, currentSiteId, contentType, fields, preview,
+                (language == -1), user, language, headerInfo.headers, csvReader,
+                headerInfo.languageCodeColumn, headerInfo.countryCodeColumn, workflowActionId,
+                httpReq, progressCallback);
     }
 
     /**
@@ -487,6 +412,16 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
         } else if (getWorkflowActionId(job) != null && getWorkflowActionId(job).isEmpty()) {
             Logger.error(this.getClass(), "Workflow action type is required");
             throw new JobValidationException(job.id(), "Workflow action type is required");
+        } else if (getLanguage(job) == 0) {
+            final var errorMessage = "Please select a valid Language.";
+            Logger.error(this, errorMessage);
+            throw new JobValidationException(job.id(), errorMessage);
+        } else if (getLanguage(job) == -1 && getFields(job).length == 0) {
+            final var errorMessage =
+                    "A key identifying the different Language versions of the same "
+                            + "content must be defined when importing multilingual files.";
+            Logger.error(this, errorMessage);
+            throw new JobValidationException(job.id(), errorMessage);
         }
 
         // Security measure to prevent invalid attempts to import a host.
@@ -547,129 +482,33 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
     }
 
     /**
-     * Reads and processes headers for publishing operation.
+     * Reads and processes headers from the CSV file. Handles both single and multilingual content
+     * imports.
      *
+     * @param job      The current import job
      * @param language  The target language for import
-     * @param csvreader The CSV reader containing the file data
+     * @param csvReader The CSV reader containing the file data
      * @return CsvHeaderInfo containing processed header information
      * @throws IOException if an error occurs reading the CSV file
      */
-    private CsvHeaderInfo readPublishHeaders(long language, CsvReader csvreader)
+    private CsvHeaderInfo readHeaders(final Job job, long language, CsvReader csvReader)
             throws IOException {
-        if (language == -1 && csvreader.readHeaders()) {
-            return findLanguageColumnsInHeaders(csvreader.getHeaders());
+
+        if (language == -1) {
+            return processMultilingualHeaders(job, csvReader);
         }
+
         return new CsvHeaderInfo(null, -1, -1);
     }
 
     /**
      * Locates language-related columns in CSV headers.
      *
+     * @param job     The current import job
      * @param headers Array of CSV header strings
      * @return CsvHeaderInfo containing the positions of language and country code columns
      */
-    private CsvHeaderInfo findLanguageColumnsInHeaders(String[] headers) {
-
-        int languageCodeColumn = -1;
-        int countryCodeColumn = -1;
-
-        for (int column = 0; column < headers.length; ++column) {
-            if (headers[column].equals(LANGUAGE_CODE_HEADER)) {
-                languageCodeColumn = column;
-            }
-            if (headers[column].equals(COUNTRY_CODE_HEADER)) {
-                countryCodeColumn = column;
-            }
-            if (languageCodeColumn != -1 && countryCodeColumn != -1) {
-                break;
-            }
-        }
-
-        return new CsvHeaderInfo(headers, languageCodeColumn, countryCodeColumn);
-    }
-
-    /**
-     * Creates a CSV reader with appropriate configuration for import operations.
-     *
-     * @param reader The source reader for CSV content
-     * @return A configured CsvReader instance
-     */
-    private CsvReader createCsvReader(final Reader reader) {
-        CsvReader csvreader = new CsvReader(reader);
-        csvreader.setSafetySwitch(false);
-        return csvreader;
-    }
-
-    /**
-     * Processes CSV headers based on the specified language configuration.
-     *
-     * @param job       The current import job
-     * @param language  The target language for import
-     * @param csvReader The CSV reader to process headers from
-     * @return CsvHeaderInfo containing processed header information
-     * @throws IOException if an error occurs reading the CSV file
-     */
-    private CsvHeaderInfo processHeadersBasedOnLanguage(final Job job, final long language,
-            final CsvReader csvReader) throws IOException {
-        if (language != -1) {
-            validateLanguage(job, language);
-            return new CsvHeaderInfo(null, -1, -1);
-        }
-
-        return processMultilingualHeaders(job, csvReader);
-    }
-
-    /**
-     * Validates the language configuration for import operations.
-     *
-     * @param job      The current import job
-     * @param language The language identifier to validate
-     */
-    private void validateLanguage(Job job, long language) {
-        if (language == 0) {
-            final var errorMessage = "Please select a valid Language.";
-            Logger.error(this, errorMessage);
-            throw new JobValidationException(job.id(), errorMessage);
-        }
-    }
-
-    /**
-     * Processes headers for multilingual content imports.
-     *
-     * @param job       The current import job
-     * @param csvReader The CSV reader to process headers from
-     * @return CsvHeaderInfo containing processed multilingual header information
-     * @throws IOException if an error occurs reading the CSV file
-     */
-    private CsvHeaderInfo processMultilingualHeaders(final Job job, final CsvReader csvReader)
-            throws IOException {
-
-        if (getFields(job).length == 0) {
-            final var errorMessage =
-                    "A key identifying the different Language versions of the same "
-                            + "content must be defined when importing multilingual files.";
-            Logger.error(this, errorMessage);
-            throw new JobValidationException(job.id(), errorMessage);
-        }
-
-        if (!csvReader.readHeaders()) {
-            final var errorMessage = "An error occurred when attempting to read the CSV file headers.";
-            Logger.error(this, errorMessage);
-            throw new JobProcessingException(job.id(), errorMessage);
-        }
-
-        String[] headers = csvReader.getHeaders();
-        return findLanguageColumns(job, headers);
-    }
-
-    /**
-     * Locates language-related columns in CSV headers.
-     *
-     * @param headers Array of CSV header strings
-     * @return CsvHeaderInfo containing the positions of language and country code columns
-     */
-    private CsvHeaderInfo findLanguageColumns(Job job, String[] headers)
-            throws JobProcessingException {
+    private CsvHeaderInfo findLanguageColumnsInHeaders(Job job, String[] headers) {
 
         int languageCodeColumn = -1;
         int countryCodeColumn = -1;
@@ -688,6 +527,39 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
 
         validateLanguageColumns(job, languageCodeColumn, countryCodeColumn);
         return new CsvHeaderInfo(headers, languageCodeColumn, countryCodeColumn);
+    }
+
+    /**
+     * Creates a CSV reader with appropriate configuration for import operations.
+     *
+     * @param reader The source reader for CSV content
+     * @return A configured CsvReader instance
+     */
+    private CsvReader createCsvReader(final Reader reader) {
+        CsvReader csvreader = new CsvReader(reader);
+        csvreader.setSafetySwitch(false);
+        return csvreader;
+    }
+
+    /**
+     * Processes headers for multilingual content imports.
+     *
+     * @param job       The current import job
+     * @param csvReader The CSV reader to process headers from
+     * @return CsvHeaderInfo containing processed multilingual header information
+     * @throws IOException if an error occurs reading the CSV file
+     */
+    private CsvHeaderInfo processMultilingualHeaders(final Job job, final CsvReader csvReader)
+            throws IOException {
+
+        if (!csvReader.readHeaders()) {
+            final var errorMessage = "An error occurred when attempting to read the CSV file headers.";
+            Logger.error(this, errorMessage);
+            throw new JobProcessingException(job.id(), errorMessage);
+        }
+
+        String[] headers = csvReader.getHeaders();
+        return findLanguageColumnsInHeaders(job, headers);
     }
 
     /**
