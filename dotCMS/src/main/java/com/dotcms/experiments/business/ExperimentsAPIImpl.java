@@ -1132,9 +1132,22 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
-    public boolean isAnyExperimentRunning() throws DotDataException {
+    public boolean isAnyExperimentRunning(final Host host) throws DotDataException {
         return ConfigExperimentUtil.INSTANCE.isExperimentEnabled() &&
-                !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
+                !APILocator.getExperimentsAPI().getRunningExperiments(host).isEmpty();
+    }
+
+    @Override
+    public List<Experiment> getRunningExperiments(final Host host) throws DotDataException {
+        return getRunningExperiments().stream().filter(experiment -> {
+            try {
+                final HTMLPageAsset  htmlPageAsset = getHtmlPageAsset(experiment);
+                return host.getIdentifier().equals(htmlPageAsset.getHost());
+            } catch (DotDataException e) {
+                return false;
+            }
+
+        }).collect(Collectors.toList());
     }
 
     /**

@@ -5,6 +5,7 @@ import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.model.Rule;
@@ -199,7 +200,7 @@ public interface ExperimentsAPI {
      * @see ConfigExperimentUtil#isExperimentEnabled()
      *
      */
-    boolean isAnyExperimentRunning() throws DotDataException;
+    boolean isAnyExperimentRunning(final Host host) throws DotDataException;
 
     /**
      * Return the Experiment partial or total result.
@@ -248,5 +249,14 @@ public interface ExperimentsAPI {
      * @throws DotDataException
      */
     Optional<Experiment> getRunningExperimentPerPage(final String pageId) throws DotDataException;
+
+    /**
+     * Return a list of the current RUNNING Experiments on the specific {@link Host}.
+     *
+     * @return
+     */
+    List<Experiment> getRunningExperiments(final Host host) throws DotDataException;
+
+
 
 }

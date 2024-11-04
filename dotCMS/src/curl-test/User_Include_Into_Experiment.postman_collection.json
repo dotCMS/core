@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "9b8f29de-1b74-4542-a2e4-59d838ff7adb",
+		"_postman_id": "e84a7e3f-d26c-4dac-a202-1c3fa7bc0bd3",
 		"name": "User Include Into Experiment",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "1549189"
+		"_exporter_id": "30436704"
 	},
 	"item": [
 		{
@@ -24,6 +24,23 @@
 									"});",
 									"",
 									"pm.collectionVariables.set(\"page_id\", jsonData.entity.identifier);",
+									"",
+									"",
+									"pm.test(\"Verify response includes expected security fields\", function () {",
+									"    const responseData = pm.response.json();",
+									"    ",
+									"    pm.expect(responseData).to.be.an('object');",
+									"    pm.expect(responseData).to.include.all.keys('entity', 'errors', 'i18nMessagesMap', 'messages', 'permissions');",
+									"    pm.expect(responseData.entity).to.include.all.keys('canEdit', 'canLock', 'canRead', 'locked');",
+									"});",
+									"",
+									"",
+									"pm.test(\"ModUser and ModUserName fields should not be empty\", function () {",
+									"    const responseData = pm.response.json();",
+									"    ",
+									"    pm.expect(responseData.entity.modUser).to.not.be.empty;",
+									"    pm.expect(responseData.entity.modUserName).to.not.be.empty;",
+									"});",
 									"",
 									""
 								],
@@ -307,7 +324,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded",
+							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -316,6 +333,12 @@
 								"v1",
 								"experiments",
 								"isUserIncluded"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								}
 							]
 						}
 					},
@@ -749,7 +772,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded?Testing=Testing",
+							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded?Testing=Testing&host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -763,6 +786,10 @@
 								{
 									"key": "Testing",
 									"value": "Testing"
+								},
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
 								}
 							]
 						}
@@ -801,7 +828,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded",
+							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -812,6 +839,10 @@
 								"isUserIncluded"
 							],
 							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
 								{
 									"key": "",
 									"value": "",
@@ -1435,7 +1466,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded",
+							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1444,6 +1475,12 @@
 								"v1",
 								"experiments",
 								"isUserIncluded"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								}
 							]
 						}
 					},
@@ -1753,7 +1790,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded",
+							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1762,6 +1799,12 @@
 								"v1",
 								"experiments",
 								"isUserIncluded"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								}
 							]
 						}
 					},
