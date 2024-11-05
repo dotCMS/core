@@ -147,7 +147,7 @@ describe('useDotcmsEditor', () => {
                 );
 
                 expect(sdkClient.postMessageToEditor).toHaveBeenCalledWith({
-                    action: sdkClient.CUSTOMER_ACTIONS.CLIENT_READY,
+                    action: sdkClient.CLIENT_ACTIONS.CLIENT_READY,
                     payload: editor
                 });
             });

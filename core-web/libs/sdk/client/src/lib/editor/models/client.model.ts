@@ -1,10 +1,22 @@
+import { editContentlet } from '../sdk-editor';
+declare global {
+    interface Window {
+        dotUVE: DotUVE;
+    }
+}
+
+export const INITIAL_DOT_UVE: DotUVE = {
+    editContentlet,
+    lastScrollYPosition: 0
+};
+
 /**
  * Actions send to the dotcms editor
  *
  * @export
  * @enum {number}
  */
-export enum CUSTOMER_ACTIONS {
+export enum CLIENT_ACTIONS {
     /**
      * Tell the dotcms editor that page change
      */
@@ -55,6 +67,10 @@ export enum CUSTOMER_ACTIONS {
      */
     CLIENT_READY = 'client-ready',
     /**
+     * Tell the editor to edit a contentlet
+     */
+    EDIT_CONTENTLET = 'edit-contentlet',
+    /**
      * Tell the editor to do nothing
      */
     NOOP = 'noop'
@@ -68,7 +84,7 @@ export enum CUSTOMER_ACTIONS {
  * @interface PostMessageProps
  */
 type PostMessageProps<T> = {
-    action: CUSTOMER_ACTIONS;
+    action: CLIENT_ACTIONS;
     payload?: T;
 };
 
@@ -81,4 +97,9 @@ type PostMessageProps<T> = {
  */
 export function postMessageToEditor<T = unknown>(message: PostMessageProps<T>) {
     window.parent.postMessage(message, '*');
+}
+
+export interface DotUVE {
+    editContentlet: typeof editContentlet;
+    lastScrollYPosition: number;
 }

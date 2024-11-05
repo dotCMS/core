@@ -453,8 +453,15 @@
          * This is beacuse we may need to redirect the user to the new URLMap contentlet.
          * We need to wait until the re-index process is done to avoid a 404 error.
          * More info: https://github.com/dotCMS/core/issues/21818
+         *
+         * We also need to wait for the reindex when we edit in order to reload the page when editing using the
+         * #editContentlet() macro
+         * More info: https://github.com/dotCMS/core/issues/30218
+         *
+         * Maybe we can avoid this after this is merged: https://github.com/dotCMS/core/pull/30110
+         *
          */
-        const newSaveContentCallBack = isURLMapContent ? (data) => setTimeout(() => saveContentCallback(data), 1800) : saveContentCallback;
+        const newSaveContentCallBack = (data) => setTimeout(() => saveContentCallback(data), 1800);
 
         ContentletAjax.saveContent(fmData, isAutoSave, isCheckin, publish, newSaveContentCallBack);
     }

@@ -3,6 +3,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",
+    "module": "es2020",
     "baseUrl": "./",
     "paths": {
       "@utils/*": ["src/utils/*"],
