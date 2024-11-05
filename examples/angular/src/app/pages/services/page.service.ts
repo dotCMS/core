@@ -75,13 +75,13 @@ export class PageService {
     route: ActivatedRoute,
     config: any
   ): Observable<PageAndNavResponse> {
-    const queryParams = route.snapshot.queryParamMap;
+    const params = route.snapshot.queryParams;
     const url = route.snapshot.url.map((segment) => segment.path).join('/');
     const path = url || '/';
 
     const pageParams = getPageRequestParams({
       path,
-      params: queryParams,
+      params
     });
 
     return from(this.client.page.get({ ...pageParams, ...config.params })).pipe(
