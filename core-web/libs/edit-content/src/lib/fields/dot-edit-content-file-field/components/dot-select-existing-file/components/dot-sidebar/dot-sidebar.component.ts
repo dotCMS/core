@@ -1,3 +1,5 @@
+import { faker } from '@faker-js/faker';
+
 import { SlicePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -79,6 +81,6 @@ export class DotSideBarComponent {
      * @returns A random integer between min and max (both inclusive).
      */
     getRandomRange(max: number, min: number) {
-        return Math.floor(Math.random() * (max - min + 1) + min);
+        return faker.number.int({ max, min });
     }
 }
