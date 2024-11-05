@@ -57,4 +57,9 @@ public @interface Actionlet {
      * Set this to true if the actionlet is runnable only on batches
      */
     boolean onlyBatch() default false;
+
+    /**
+     * Set this to true if the actionlet is commentable
+     */
+    boolean comment() default false;
 }
