@@ -28,6 +28,7 @@ import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.analytics.metrics.QueryParameter;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -64,6 +65,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.network.IPUtils;
 import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.VariantAPIImpl;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -134,7 +136,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#start(long, User)}
+     * Method to test: {@link ExperimentsAPIImpl#start(String, User)} 
      * When: The experiment is started
      * Should: Generate a new Running Experiment ID
      */
@@ -181,8 +183,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#start(long, User)}
-     * When: The experiment is started but using {@link ExperimentsAPIImpl#startScheduled(long, User)}
+     * Method to test: {@link ExperimentsAPIImpl#start(String, User)} 
+     * When: The experiment is started but using {@link ExperimentsAPIImpl#startScheduled(String, User)} 
      * Should: Generate a new Running Experiment ID
      */
     @Test
@@ -237,7 +239,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#start(long, User)}
+     * Method to test: {@link ExperimentsAPIImpl#start(String, User)} 
      * When: The experiment is started twice
      * Should: Generate two Running Experiment ID different
      */
@@ -2717,7 +2719,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#start(String, String, User)}
+     * Method to test: {@link ExperimentsAPIImpl#start(String, User)} 
      * When: A User without permission on the Experiment's Page and Publish rights for Template-Layouts on the site
      * try to start the Experiment
      * Should: thrown a {@link DotSecurityException}
@@ -2987,7 +2989,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#end(String, String, User)}
+     * Method to test: {@link ExperimentsAPIImpl#end(String, User)} 
      * When: A User with EDIT permission on the Experiment's Page and Publish rights for Template-Layouts on the site
      * try to end the Experiment
      * Should: thrown a {@link DotSecurityException}
@@ -3032,7 +3034,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#end(String, String, User)}
+     * Method to test: {@link ExperimentsAPIImpl#end(String, User)} 
      * When: A User with PUBLISH permission on the Experiment's Page and not Publish rights for Template-Layouts on the site
      * try to end the Experiment
      * Should: thrown a {@link DotSecurityException}
@@ -3079,7 +3081,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#end(String, String, User)}
+     * Method to test: {@link ExperimentsAPIImpl#end(String, User)} 
      * When: A Not Admin User with PUBLISH permission on the Experiment's Page and Publish rights for Template-Layouts on the site
      * try to end the Experiment
      * Should: End the Experiment

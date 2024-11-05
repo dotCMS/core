@@ -180,3 +180,4 @@ This maintenance release includes the following code fixes:
 173. https://github.com/dotCMS/core/issues/28238 : Orphan running experiments breaking other API calls #28238
 174. https://github.com/dotCMS/core/issues/28514 : Running Experiment Cache is not working right #28514
 175. https://github.com/dotCMS/core/issues/28507 : Refresh Running Experiment Cache after abort one Experiment #28507
+176. https://github.com/dotCMS/core/issues/28588 : Make MultiTree Multi variant cache cluster aware #28588

@@ -58,6 +58,8 @@ import java.sql.SQLException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+import com.dotcms.experiments.model.ExperimentVariant;
 
 /**
  * This class provides utility routines to interact with the Multi-Tree structures in the system. A
@@ -947,8 +949,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
-    private void refreshPageInCache(final String pageIdentifier) {
-        CacheLocator.getMultiTreeCache().getVariantsInCache(pageIdentifier).stream()
+    private void refreshPageInCache(final String pageIdentifier) throws DotDataException {
+
+        Stream.concat(getPageVariants(pageIdentifier).stream(), Stream.of(DEFAULT_VARIANT.name()))
+                .distinct()
                 .forEach(variantName -> {
                     try {
                         refreshPageInCacheInner(pageIdentifier, variantName);
@@ -956,6 +960,21 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                         Logger.error(this, e.getMessage(), e);
                     }
                 });
+    }
+
+    private Collection<String> getPageVariants(final String pageIdentifier) throws DotDataException {
+        try{
+            final Contentlet pageAsContent = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguageAnyVariant(pageIdentifier);
+
+            return APILocator.getExperimentsAPI().listActive(pageAsContent.getHost()).stream()
+                    .flatMap(experiment -> experiment.trafficProportion().variants().stream())
+                    .map(ExperimentVariant::id)
+                    .collect(Collectors.toSet());
+        } catch (DotContentletStateException e) {
+            Logger.warn(this.getClass(), e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     private void refreshPageInCache(final String pageIdentifier, final String variantName) throws DotDataException {
