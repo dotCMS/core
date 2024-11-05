@@ -8,7 +8,6 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { SelectExisingFileStore } from './select-existing-file.store';
 
-
 import { DotEditContentService } from '../../../../../services/dot-edit-content.service';
 import { TREE_SELECT_MOCK, TREE_SELECT_SITES_MOCK } from '../../../../../utils/mocks';
 
@@ -18,8 +17,8 @@ describe('SelectExisingFileStore', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [SelectExisingFileStore, mockProvider(DotEditContentService)],
-          });
+            providers: [SelectExisingFileStore, mockProvider(DotEditContentService)]
+        });
 
         store = TestBed.inject(SelectExisingFileStore);
         service = TestBed.inject(DotEditContentService) as SpyObject<DotEditContentService>;
@@ -29,10 +28,7 @@ describe('SelectExisingFileStore', () => {
         expect(store).toBeTruthy();
     });
 
-    
-
     describe('Method: loadFolders', () => {
-        
         it('should set folders status to LOADING and then to LOADED with data', fakeAsync(() => {
             service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
 
@@ -43,8 +39,6 @@ describe('SelectExisingFileStore', () => {
             expect(store.folders().status).toBe(ComponentStatus.LOADED);
             expect(store.folders().data).toEqual(TREE_SELECT_SITES_MOCK);
         }));
-
-        
 
         it('should set folders status to ERROR on service error', fakeAsync(() => {
             service.getSitesTreePath.mockReturnValue(throwError('error'));
@@ -59,9 +53,7 @@ describe('SelectExisingFileStore', () => {
     });
 
     describe('Method: loadChildren', () => {
-        
         it('should load children for a node', fakeAsync(() => {
-
             const mockChildren = [...TREE_SELECT_SITES_MOCK];
 
             service.getFoldersTreeNode.mockReturnValue(of(mockChildren));
@@ -70,7 +62,7 @@ describe('SelectExisingFileStore', () => {
 
             const mockItem = {
                 originalEvent: createFakeEvent('click'),
-                node,
+                node
             };
             store.loadChildren(mockItem);
 
@@ -84,14 +76,13 @@ describe('SelectExisingFileStore', () => {
         }));
 
         it('should handle error when loading children', fakeAsync(() => {
-
             service.getFoldersTreeNode.mockReturnValue(throwError('error'));
 
             const node = { ...TREE_SELECT_MOCK[0], children: [] };
 
             const mockItem = {
                 originalEvent: createFakeEvent('click'),
-                node,
+                node
             };
             store.loadChildren(mockItem);
 
@@ -100,7 +91,5 @@ describe('SelectExisingFileStore', () => {
             expect(node.children).toEqual([]);
             expect(node.loading).toBe(false);
         }));
-       
     });
-    
 });

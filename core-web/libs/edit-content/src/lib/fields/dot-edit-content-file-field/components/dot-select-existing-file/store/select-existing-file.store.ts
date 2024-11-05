@@ -137,9 +137,11 @@ export const SelectExisingFileStore = signalStore(
                                     node.leaf = true;
                                     node.icon = 'pi pi-folder-open';
                                     node.children = [...children];
-    
+
                                     const folders = store.folders();
-                                    patchState(store, { folders: { ...folders, nodeExpaned: node } });
+                                    patchState(store, {
+                                        folders: { ...folders, nodeExpaned: node }
+                                    });
                                 },
                                 error: () => {
                                     node.loading = false;

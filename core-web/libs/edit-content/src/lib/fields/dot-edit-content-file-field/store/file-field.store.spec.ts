@@ -16,8 +16,8 @@ describe('FileFieldStore', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [FileFieldStore, mockProvider(DotFileFieldUploadService)],
-          });
+            providers: [FileFieldStore, mockProvider(DotFileFieldUploadService)]
+        });
 
         store = TestBed.inject(FileFieldStore);
         service = TestBed.inject(DotFileFieldUploadService) as SpyObject<DotFileFieldUploadService>;
