@@ -81,7 +81,7 @@
             <p-skeleton height="14px"></p-skeleton>
         } @else {
             <span class="sidebar-card__subtitle" data-testid="references-count">
-                @if (referencesPageCount) {
+                @if (referencesPageCount && referencesPageCount !== '0') {
                     {{
                         'edit.content.sidebar.information.references-with.pages.tooltip'
                             | dm: [referencesPageCount]

@@ -9,7 +9,6 @@ import { DotEditContentSidebarWorkflowComponent } from './dot-edit-content-sideb
 
 import { EXISTING_WORKFLOW_MOCK, NEW_WORKFLOW_MOCK } from '../../../../utils/mocks';
 
-
 describe('DotEditContentSidebarWorkflowComponent', () => {
     let spectator: Spectator<DotEditContentSidebarWorkflowComponent>;
 

@@ -6,7 +6,7 @@ import { Chip, ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotFormatDateService } from '@dotcms/data-access';
+import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
