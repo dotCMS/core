@@ -34,7 +34,8 @@ import {
     DotSeoMetaTagsUtilService,
     DotContentletService,
     DotTempFileUploadService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotEventsService
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -65,6 +66,7 @@ import {
     UpdatedContentlet
 } from './components/ema-page-dropzone/types';
 
+import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-editing/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
@@ -114,14 +116,16 @@ import {
         EmaContentletToolsComponent,
         DotEmaBookmarksComponent,
         ProgressBarModule,
-        DotResultsSeoToolComponent
+        DotResultsSeoToolComponent,
+        DotBlockEditorSidebarComponent
     ],
     providers: [
         DotCopyContentModalService,
         DotCopyContentService,
         DotHttpErrorManagerService,
         DotContentletService,
-        DotTempFileUploadService
+        DotTempFileUploadService,
+        DotEventsService
     ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
@@ -146,6 +150,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly dotPageApiService = inject(DotPageApiService);
+    readonly #dotEventsService = inject(DotEventsService);
 
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
@@ -998,6 +1003,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [CLIENT_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
+            },
+            'editor-inline-editing': ({ dataset }) => {
+                this.#dotEventsService.notify('edit-block-editor', dataset);
             }
         };
         const actionToExecute = CLIENT_ACTIONS_FUNC_MAP[action];

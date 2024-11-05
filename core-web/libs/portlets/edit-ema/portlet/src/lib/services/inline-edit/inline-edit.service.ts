@@ -67,13 +67,17 @@ export class InlineEditService {
 
         this.$isInlineEditingEnable.set(true);
 
-        if (!doc.querySelector('script[data-inline="true"]')) {
-            const script = doc.createElement('script');
-            script.dataset.inline = 'true';
-            script.src = '/html/js/tinymce/js/tinymce/tinymce.min.js';
+        if (doc.querySelector('script[data-inline="true"]')) {
+            return;
+        }
 
-            const style = doc.createElement('style');
-            style.innerHTML = `
+        const script = doc.createElement('script');
+        script.dataset.inline = 'true';
+        script.src = '/html/js/tinymce/js/tinymce/tinymce.min.js';
+
+        const style = doc.createElement('style');
+
+        style.innerHTML = `
             [data-inode][data-field-name][data-mode] {
                 cursor: text;
                 border: 1px solid #53c2f9 !important;
@@ -81,9 +85,33 @@ export class InlineEditService {
             }
         `;
 
-            doc.body?.appendChild(script);
-            doc.body?.appendChild(style);
-        }
+        // This should be a file in `/html/js/` folder
+        const scriptBlockEditor = doc.createElement('script');
+        scriptBlockEditor.innerHTML = `
+        document.addEventListener('DOMContentLoaded', () => {
+            const editBlockEditorNodes = document.querySelectorAll('[data-block-editor-content]');
+            if (!editBlockEditorNodes.length) {
+                return;
+            }
+            editBlockEditorNodes.forEach((node) => {
+                node.classList.add('dotcms__inline-edit-field');
+                node.addEventListener('click', (event) => {
+                    const dataset = Object.assign({}, node.dataset);
+                     window.parent.postMessage(
+                        {
+                            action: 'editor-inline-editing',
+                            payload: { dataset }
+                        },
+                        '*'
+                    );
+                });
+            });
+        });
+        `;
+
+        doc.body?.appendChild(script);
+        doc.body?.appendChild(scriptBlockEditor);
+        doc.body?.appendChild(style);
     }
 
     removeInlineEdit(iframe: ElementRef<HTMLIFrameElement>) {
