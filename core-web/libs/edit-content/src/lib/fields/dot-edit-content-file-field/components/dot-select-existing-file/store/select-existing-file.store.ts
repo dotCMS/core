@@ -18,7 +18,7 @@ import {
 } from '../../../../../models/dot-edit-content-host-folder-field.interface';
 import { DotEditContentService } from '../../../../../services/dot-edit-content.service';
 
-export const PEER_PAGE_LIMIT = 7000;
+export const PEER_PAGE_LIMIT = 500;
 
 export interface Content {
     id: string;
@@ -32,12 +32,12 @@ export interface SelectExisingFileState {
     folders: {
         data: TreeNodeItem[];
         status: ComponentStatus;
+        nodeExpaned: TreeNodeSelectItem['node'] | null;
     };
     content: {
         data: Content[];
         status: ComponentStatus;
     };
-    nodeExpaned: TreeNodeSelectItem['node'] | null;
     selectedFolder: TreeNode | null;
     selectedFile: DotCMSContentlet | null;
     searchQuery: string;
@@ -47,13 +47,13 @@ export interface SelectExisingFileState {
 const initialState: SelectExisingFileState = {
     folders: {
         data: [],
-        status: ComponentStatus.INIT
+        status: ComponentStatus.INIT,
+        nodeExpaned: null
     },
     content: {
         data: [],
         status: ComponentStatus.INIT
     },
-    nodeExpaned: null,
     selectedFolder: null,
     selectedFile: null,
     searchQuery: '',
@@ -98,16 +98,24 @@ export const SelectExisingFileStore = signalStore(
                     ),
                     switchMap(() => {
                         return dotEditContentService
-                            .getSitesTreePath({ perPage: PEER_PAGE_LIMIT, filter: '*' })
+                            .getSitesTreePath({ perPage: PEER_PAGE_LIMIT, filter: '*', page: 0 })
                             .pipe(
                                 tapResponse({
                                     next: (data) =>
                                         patchState(store, {
-                                            folders: { data, status: ComponentStatus.LOADED }
+                                            folders: {
+                                                data,
+                                                status: ComponentStatus.LOADED,
+                                                nodeExpaned: null
+                                            }
                                         }),
                                     error: () =>
                                         patchState(store, {
-                                            folders: { data: [], status: ComponentStatus.ERROR }
+                                            folders: {
+                                                data: [],
+                                                status: ComponentStatus.ERROR,
+                                                nodeExpaned: null
+                                            }
                                         })
                                 })
                             );
@@ -128,7 +136,9 @@ export const SelectExisingFileStore = signalStore(
                                 node.leaf = true;
                                 node.icon = 'pi pi-folder-open';
                                 node.children = [...children];
-                                patchState(store, { nodeExpaned: node });
+
+                                const folders = store.folders();
+                                patchState(store, { folders: { ...folders, nodeExpaned: node } });
                             })
                         );
                     })

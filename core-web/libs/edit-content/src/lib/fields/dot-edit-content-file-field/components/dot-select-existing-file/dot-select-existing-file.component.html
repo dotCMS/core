@@ -1,7 +1,10 @@
 <div class="file-selector flex flex-column gap-3">
     <div class="file-selector__main grid grid-nogutter flex-grow-1 overflow-hidden">
         <div class="col-3 file-selector__sidebar h-full">
-            <dot-sidebar />
+            <dot-sidebar
+                [folders]="store.folders().data"
+                [loading]="store.foldersIsLoading()"
+                (onNodeExpand)="store.loadChildren($event)" />
         </div>
         <div class="col h-full">
             <dot-dataview [data]="store.content().data" [loading]="store.contentIsLoading()" />

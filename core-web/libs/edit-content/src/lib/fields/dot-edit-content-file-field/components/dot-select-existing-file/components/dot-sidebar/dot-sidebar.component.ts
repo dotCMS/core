@@ -4,64 +4,44 @@ import {
     ChangeDetectorRef,
     Component,
     inject,
-    OnInit
+    input,
+    output,
+    signal,
+    viewChild
 } from '@angular/core';
 
-import { TreeModule } from 'primeng/tree';
+import { TreeNode } from 'primeng/api';
+import { SkeletonModule } from 'primeng/skeleton';
+import { Tree, TreeModule, TreeNodeExpandEvent } from 'primeng/tree';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
-
-import {
-    TreeNodeItem,
-    TreeNodeSelectItem
-} from '../../../../../../models/dot-edit-content-host-folder-field.interface';
 import { TruncatePathPipe } from '../../../../../../pipes/truncate-path.pipe';
-import { DotEditContentService } from '../../../../../../services/dot-edit-content.service';
-
-export const PEER_PAGE_LIMIT = 7000;
 
 @Component({
     selector: 'dot-sidebar',
     standalone: true,
-    imports: [TreeModule, TruncatePathPipe, SlicePipe],
+    imports: [TreeModule, SlicePipe, TruncatePathPipe, SkeletonModule],
     templateUrl: './dot-sidebar.component.html',
     styleUrls: ['./dot-sidebar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotSideBarComponent implements OnInit {
-    readonly #dotEditContentService = inject(DotEditContentService);
-    folders: TreeNodeItem[] = [];
-    status: ComponentStatus = ComponentStatus.INIT;
+export class DotSideBarComponent {
+    $folders = input.required<TreeNode[]>({ alias: 'folders' });
+    $loading = input.required<boolean>({ alias: 'loading' });
 
-    readonly #changeRef = inject(ChangeDetectorRef);
+    $fakeColumns = signal<string[]>(
+        Array.from({ length: 50 }).map((_) => `${this.getRandomRange(75, 100)}%`)
+    );
 
-    ngOnInit() {
-        this.loadFolders();
+    onNodeExpand = output<TreeNodeExpandEvent>();
+
+    readonly #cd = inject(ChangeDetectorRef);
+    $tree = viewChild.required(Tree);
+
+    detectChanges() {
+        this.#cd.detectChanges();
     }
 
-    loadFolders() {
-        this.status = ComponentStatus.INIT;
-        this.#dotEditContentService
-            .getSitesTreePath({ perPage: PEER_PAGE_LIMIT, filter: '*' })
-            .subscribe((folders: TreeNodeItem[]) => {
-                this.folders = folders;
-                this.status = ComponentStatus.LOADED;
-                this.#changeRef.detectChanges();
-            });
-    }
-
-    onNodeExpand(event: TreeNodeSelectItem) {
-        const { node } = event;
-        const { hostname, path } = node.data;
-
-        node.loading = true;
-
-        this.#dotEditContentService.getFoldersTreeNode(hostname, path).subscribe((children) => {
-            node.loading = false;
-            node.leaf = true;
-            node.icon = 'pi pi-folder-open';
-            node.children = [...children];
-            this.#changeRef.detectChanges();
-        });
+    getRandomRange(max: number, min: number) {
+        return Math.floor(Math.random() * (max - min + 1) + min);
     }
 }
