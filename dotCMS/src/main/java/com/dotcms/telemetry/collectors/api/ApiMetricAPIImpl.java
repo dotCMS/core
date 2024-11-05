@@ -47,7 +47,7 @@ public class ApiMetricAPIImpl implements ApiMetricAPI {
             this.apiMetricFactory.saveStartEvent();
         } catch (final Exception e) {
             Logger.debug(this, "Error saving start event", e);
-            throw new RuntimeException(e);
+            throw new DotRuntimeException(e);
         }
     }
 

@@ -6,7 +6,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.templates.model.Template;
 
-import javax.inject.Inject;
 import java.util.Collection;
 
 /**
@@ -48,4 +47,3 @@ public abstract class TotalContainersInLivePageDatabaseMetricType extends TotalC
     }
 
 }
-
