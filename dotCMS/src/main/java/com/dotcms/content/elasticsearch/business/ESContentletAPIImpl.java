@@ -323,13 +323,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private static UniqueFieldValidationStrategyResolver getUniqueFieldValidationStrategyResolver() {
-        final Optional<UniqueFieldValidationStrategyResolver> uniqueFieldValidationStrategyResolver =
-                CDIUtils.getBean(UniqueFieldValidationStrategyResolver.class);
-
-        if (!uniqueFieldValidationStrategyResolver.isPresent()) {
-            throw new DotRuntimeException("Could not instance UniqueFieldValidationStrategyResolver");
-        }
-        return uniqueFieldValidationStrategyResolver.get();
+        return CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
     }
 
     public ESContentletAPIImpl() {
