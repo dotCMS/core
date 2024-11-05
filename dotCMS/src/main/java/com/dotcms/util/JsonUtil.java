@@ -85,50 +85,7 @@ public class JsonUtil {
         return json;
     }
 
-    /**
-     * Converts the JSON object into a Map.
-     * @param jsonObject
-     * @return
-     */
-    public static Map<String, Object> jsonToMap(final JSONObject jsonObject) {
 
-        final Map<String, Object> map = new HashMap<>();
-        final Iterator<String> keys = jsonObject.keys();
 
-        while (keys.hasNext()) {
-            final String key = keys.next();
-            final Object value = jsonObject.get(key);
 
-            if (value instanceof JSONObject) {
-                map.put(key, jsonToMap((JSONObject) value));
-            } else if (value instanceof JSONArray) {
-                map.put(key, jsonToList((JSONArray) value));
-            } else {
-                map.put(key, value);
-            }
-        }
-        return map;
-    }
-
-    /**
-     * Converts the JSON array into a List.
-     * @param jsonArray
-     * @return
-     */
-    public static List<Object> jsonToList(final JSONArray jsonArray) {
-
-        final List<Object> list = new ArrayList<>();
-        for (int i = 0; i < jsonArray.length(); i++) {
-            final Object value = jsonArray.get(i);
-
-            if (value instanceof JSONObject) {
-                list.add(jsonToMap((JSONObject) value));
-            } else if (value instanceof JSONArray) {
-                list.add(jsonToList((JSONArray) value));
-            } else {
-                list.add(value);
-            }
-        }
-        return list;
-    }
 }

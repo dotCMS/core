@@ -815,7 +815,7 @@ public class ContentUtils {
 						new JSONObject(), null, languageId, mode.showLive, false,
 						true);
 
-				final Map<String,Object> relationshipsMap = JsonUtil.jsonToMap(jsonWithRelationShips);
+				final Map<String,Object> relationshipsMap = jsonWithRelationShips;
 
 				if (UtilMethods.isSet(relationshipsMap)) {
 					contentlet.getMap().putAll(relationshipsMap);

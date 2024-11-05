@@ -68,7 +68,7 @@ import org.apache.commons.lang.WordUtils;
  * @version 2010-05-17
  */
 
-public class JSONObject implements Serializable, Map {
+public class JSONObject implements Serializable, Map<String,Object> {
 	
     /**
      * JSONObject.NULL is equivalent to the value that JavaScript calls null,
@@ -111,7 +111,7 @@ public class JSONObject implements Serializable, Map {
      * The map where the JSONObject's properties are kept.
      */
 
-    private final Map map;
+    private final Map<String,Object> map;
 
     /**
      * It is sometimes more convenient and less ambiguous to have a
@@ -216,15 +216,9 @@ public class JSONObject implements Serializable, Map {
     }
 
 
-    /**
-     * Construct a JSONObject from a Map.
-     *
-     * @param map A map object that can be used to initialize the contents of
-     *  the JSONObject.
-     * @throws JSONException 
-     */
 
-    public JSONObject(Map incomingMap) {
+
+    public JSONObject(Map<String,Object> incomingMap) {
 
         this();
         if (incomingMap != null) {
@@ -1080,7 +1074,7 @@ public class JSONObject implements Serializable, Map {
     public JSONObject put(String key, Object value)  {
         return _put(key, wrap(value));
     }
-    
+
     
     private JSONObject _put(String key, Object value)  {
         if (key == null) {
@@ -1659,10 +1653,6 @@ public class JSONObject implements Serializable, Map {
     }
 
 
-    @Override
-    public Object put(Object key, Object value) {
-        return this.map.put(key, wrap(value));
-    }
 
 
     @Override
@@ -1692,19 +1682,19 @@ public class JSONObject implements Serializable, Map {
 
 
     @Override
-    public Set keySet() {
+    public Set<String> keySet() {
         return this.map.keySet();
     }
 
 
     @Override
-    public Collection values() {
+    public Collection<Object> values() {
         return this.map.values();
     }
 
 
     @Override
-    public Set entrySet() {
+    public Set<Map.Entry<String, Object>> entrySet() {
         return this.map.entrySet();
     }
 

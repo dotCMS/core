@@ -3,6 +3,8 @@ package com.dotcms.rendering.js.proxy;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rendering.js.JsHeaders;
 import com.dotmarketing.util.json.JSONObject;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 import org.apache.http.Header;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.proxy.ProxyHashMap;
@@ -56,7 +58,13 @@ public class JsFetchResponse implements Serializable, JsProxyObject<CircuitBreak
     public ProxyHashMap getJson() {
 
         final JSONObject json = new JSONObject(this.getBody());
-        return ProxyHashMap.from(json);
+        Map<Object, Object> convertedMap = new HashMap<>();
+
+        for (Map.Entry<String, Object> entry : json.entrySet()) {
+            convertedMap.put(entry.getKey(), entry.getValue());
+        }
+
+        return ProxyHashMap.from(convertedMap);
     }
 
     @HostAccess.Export
