@@ -242,6 +242,15 @@ public class RealTimeJobMonitor {
     }
 
     /**
+     * Handles the job cancel request event.
+     *
+     * @param event The JobCancelRequestEvent.
+     */
+    public void onJobCancelRequest(@Observes JobCancelRequestEvent event) {
+        updateWatchers(event.getJob());
+    }
+
+    /**
      * Handles the job cancelling event.
      *
      * @param event The JobCancellingEvent.

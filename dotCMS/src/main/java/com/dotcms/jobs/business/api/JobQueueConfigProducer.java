@@ -18,7 +18,7 @@ public class JobQueueConfigProducer {
 
     // The interval in milliseconds to poll for job updates.
     static final int DEFAULT_POLL_JOB_UPDATES_INTERVAL_MILLISECONDS = Config.getIntProperty(
-            "JOB_QUEUE_POLL_JOB_UPDATES_INTERVAL_MILLISECONDS", 1000
+            "JOB_QUEUE_POLL_JOB_UPDATES_INTERVAL_MILLISECONDS", 3000
     );
 
     /**
