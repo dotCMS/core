@@ -354,7 +354,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             lang: newLanguage.toString(),
             populateaccept: 'true',
             reuseLastLang: 'true',
-            variantName: this.uveStore.params().variantName // not sure about this one though
+            variantName: this.uveStore.params().variantName
         });
 
         return `${LAYOUT_URL}?${queryParams.toString()}`;
