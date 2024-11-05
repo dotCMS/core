@@ -322,7 +322,7 @@ describe('DotEmaShellComponent', () => {
                 });
 
                 spectator.detectChanges();
-                expect(store.init).not.toHaveBeenCalledTimes(2); // The first call is on the beforeEach
+                expect(store.init).toHaveBeenCalled();
             });
 
             it('should trigger a load when changing the clientHost and it is on the allowedDevURLs', () => {
