@@ -7,6 +7,7 @@ import com.dotcms.content.elasticsearch.util.PaginationUtil;
 import com.dotcms.rest.ContentResource;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.JsonUtil;
 import com.dotcms.util.TimeMachineUtil;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -36,6 +37,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -813,7 +815,7 @@ public class ContentUtils {
 						new JSONObject(), null, languageId, mode.showLive, false,
 						true);
 
-				final HashMap<String,Object> relationshipsMap = jsonToMap(jsonWithRelationShips);
+				final Map<String,Object> relationshipsMap = JsonUtil.jsonToMap(jsonWithRelationShips);
 
 				if (UtilMethods.isSet(relationshipsMap)) {
 					contentlet.getMap().putAll(relationshipsMap);
@@ -830,23 +832,4 @@ public class ContentUtils {
 		}
 	}
 
-	public static HashMap<String, Object> jsonToMap(final JSONObject jsonObject) {
-
-		final HashMap<String, Object> map = new HashMap<>();
-		final Iterator<String> keys = jsonObject.keys();
-
-		while (keys.hasNext()) {
-
-			final String key = keys.next();
-			final Object value = jsonObject.get(key);
-
-			if (value instanceof JSONObject) {
-				map.put(key, jsonToMap((JSONObject) value));
-			} else {
-				map.put(key, value);
-			}
-		}
-		return map;
-	}
-		
 }
