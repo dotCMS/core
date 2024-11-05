@@ -7,9 +7,15 @@ import {
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 
-import { DotAnalyticsSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { AnalyticsQueryType, ComponentStatus } from '@dotcms/dotcms-models';
+import {
+    DotAnalyticsSearchService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { AnalyticsQueryType, ComponentStatus, HealthStatusTypes } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAnalyticsSearchStore } from './dot-analytics-search.store';
 
@@ -34,37 +40,85 @@ describe('DotAnalyticsSearchStore', () => {
     let store: InstanceType<typeof DotAnalyticsSearchStore>;
     let dotAnalyticsSearchService: SpyObject<DotAnalyticsSearchService>;
     let dotHttpErrorManagerService: SpyObject<DotHttpErrorManagerService>;
+
     const createService = createServiceFactory({
         service: DotAnalyticsSearchStore,
         providers: [
             mockProvider(DotAnalyticsSearchService),
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'analytics.search.no.configured': 'No configuration found',
+                    'analytics.search.no.configured.subtitle':
+                        'Please configure the analytics search',
+                    'analytics.search.config.error': 'Configuration error',
+                    'analytics.search.config.error.subtitle':
+                        'There was an error in the configuration',
+                    'analytics.search.no.licence': 'No license found',
+                    'analytics.search.no.license.subtitle': 'Please provide a valid license',
+                    'analytics.search.no.results': 'No results',
+                    'analytics.search.execute.results': 'Execute a query to get results'
+                })
+            }
         ]
     });
 
-    beforeEach(() => {
-        spectator = createService();
-        store = spectator.service;
-        dotAnalyticsSearchService = spectator.inject(DotAnalyticsSearchService);
-        dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
-    });
+    describe('initial state', () => {
+        beforeEach(() => {
+            spectator = createService({
+                providers: [
+                    {
+                        provide: ActivatedRoute,
+                        useValue: {
+                            snapshot: {
+                                data: {
+                                    isEnterprise: true,
+                                    healthCheck: HealthStatusTypes.OK
+                                }
+                            }
+                        }
+                    }
+                ]
+            });
+            store = spectator.service;
+        });
 
-    afterEach(() => {
-        jest.resetAllMocks();
-    });
-
-    it('should initialize with default state', () => {
-        expect(store.isEnterprise()).toEqual(false);
-        expect(store.results()).toEqual(null);
-        expect(store.query()).toEqual({ value: null, type: AnalyticsQueryType.CUBE });
-        expect(store.state()).toEqual(ComponentStatus.INIT);
-        expect(store.errorMessage()).toEqual('');
+        it('should initialize with default state', () => {
+            expect(store.isEnterprise()).toEqual(true);
+            expect(store.results()).toEqual(null);
+            expect(store.query()).toEqual({ value: null, type: AnalyticsQueryType.CUBE });
+            expect(store.state()).toEqual(ComponentStatus.INIT);
+            expect(store.healthCheck()).toEqual(HealthStatusTypes.OK);
+            expect(store.wallEmptyConfig()).toEqual(null);
+            expect(store.emptyResultsConfig()).toEqual({
+                icon: 'pi-search',
+                subtitle: 'Execute a query to get results',
+                title: 'No results'
+            });
+        });
     });
 
     describe('withMethods', () => {
-        it('should set initial state', () => {
-            store.initLoad(true);
-            expect(store.isEnterprise()).toEqual(true);
+        beforeEach(() => {
+            spectator = createService({
+                providers: [
+                    {
+                        provide: ActivatedRoute,
+                        useValue: {
+                            snapshot: {
+                                data: {
+                                    isEnterprise: true,
+                                    healthCheck: HealthStatusTypes.OK
+                                }
+                            }
+                        }
+                    }
+                ]
+            });
+            store = spectator.service;
+            dotAnalyticsSearchService = spectator.inject(DotAnalyticsSearchService);
+            dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
         });
 
         it('should perform a POST request to the base URL and return results', () => {
@@ -88,6 +142,97 @@ describe('DotAnalyticsSearchStore', () => {
             store.getResults({ query: 'test' });
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
+        });
+    });
+
+    describe('onInit', () => {
+        describe('when isEnterprise is true', () => {
+            describe('and healthCheck is "NOT_CONFIGURED"', () => {
+                beforeEach(() => {
+                    spectator = createService({
+                        providers: [
+                            {
+                                provide: ActivatedRoute,
+                                useValue: {
+                                    snapshot: {
+                                        data: {
+                                            isEnterprise: true,
+                                            healthCheck: HealthStatusTypes.NOT_CONFIGURED
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    });
+                    store = spectator.service;
+                });
+
+                it('should initialize with default state', () => {
+                    expect(store.wallEmptyConfig()).toEqual({
+                        icon: 'pi-search',
+                        subtitle: 'Please configure the analytics search',
+                        title: 'No configuration found'
+                    });
+                });
+            });
+
+            describe('and healthCheck is "CONFIGURATION_ERROR"', () => {
+                beforeEach(() => {
+                    spectator = createService({
+                        providers: [
+                            {
+                                provide: ActivatedRoute,
+                                useValue: {
+                                    snapshot: {
+                                        data: {
+                                            isEnterprise: true,
+                                            healthCheck: HealthStatusTypes.CONFIGURATION_ERROR
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    });
+                    store = spectator.service;
+                });
+
+                it('should set the wall empty configuration', () => {
+                    expect(store.wallEmptyConfig()).toEqual({
+                        icon: 'pi-search',
+                        subtitle: 'There was an error in the configuration',
+                        title: 'Configuration error'
+                    });
+                });
+            });
+        });
+
+        describe('when isEnterprise is false', () => {
+            beforeEach(() => {
+                spectator = createService({
+                    providers: [
+                        {
+                            provide: ActivatedRoute,
+                            useValue: {
+                                snapshot: {
+                                    data: {
+                                        isEnterprise: false,
+                                        healthCheck: HealthStatusTypes.NOT_CONFIGURED
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                });
+                store = spectator.service;
+            });
+
+            it('should set the wall empty configuration', () => {
+                expect(store.wallEmptyConfig()).toEqual({
+                    icon: 'pi-search',
+                    subtitle: 'Please provide a valid license',
+                    title: 'No license found'
+                });
+            });
         });
     });
 });
