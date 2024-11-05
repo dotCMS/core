@@ -24,7 +24,7 @@
         @if (isLoading) {
             <p-skeleton />
         } @else {
-            {{ step?.name || 'New' }}
+            {{ step?.name || 'New' | dm }}
         }
     </dd>
 

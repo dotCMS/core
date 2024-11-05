@@ -12,9 +12,9 @@ import { computed } from '@angular/core';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { EditContentState } from './edit-content.store';
+import { getPersistSidebarState, setPersistSidebarState } from '../../../../utils/functions.util';
+import { EditContentState } from '../edit-content.store';
 
-import { getPersistSidebarState, setPersistSidebarState } from '../../../utils/functions.util';
 
 interface AsideState {
     showSidebar: boolean;

@@ -18,9 +18,9 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { EditContentState } from './edit-content.store';
+import { DotEditContentService } from '../../../../services/dot-edit-content.service';
+import { EditContentState } from '../edit-content.store';
 
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
 
 interface InformationState {
     information: {

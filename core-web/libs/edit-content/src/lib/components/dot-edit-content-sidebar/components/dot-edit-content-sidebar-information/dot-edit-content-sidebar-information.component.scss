@@ -1,6 +1,10 @@
 @use "variables" as *;
 @import "mixins";
 
+$information-min-height: 60px;
+$information-row-min-height: 76px;
+$skeleton-min-height: 14px;
+
 .content-aside__information {
     display: flex;
     flex-direction: column;
@@ -27,7 +31,7 @@ a.sidebar-card {
 
 .sidebar-card__content-type {
     transition: background-color $basic-speed ease;
-    min-height: 60px;
+    min-height: $information-min-height;
 
     &:hover {
         background-color: $color-palette-primary-100;
@@ -73,7 +77,7 @@ a.sidebar-card {
         flex: 1;
         position: relative;
         padding: $spacing-1;
-        min-height: 76px;
+        min-height: $information-row-min-height;
 
         .sidebar-card__title {
             margin-bottom: $spacing-0;
@@ -95,9 +99,9 @@ a.sidebar-card {
 .sidebar-references {
     display: flex;
     width: 100%;
-    min-height: 60px;
+    min-height: $information-min-height;
 }
 
 :host ::ng-deep p-skeleton {
-    min-height: 14px;
+    min-height: $skeleton-min-height;
 }

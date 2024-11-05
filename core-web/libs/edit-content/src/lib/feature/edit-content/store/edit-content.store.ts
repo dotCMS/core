@@ -32,9 +32,9 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
-import { withInformation } from './edit-content-information.feature';
-import { withSidebar } from './edit-content-sidebar.feature';
-import { withWorkflow } from './edit-content-workflow.feature';
+import { withInformation } from './features/information.feature';
+import { withSidebar } from './features/sidebar.feature';
+import { withWorkflow } from './features/workflow.feature';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { transformFormDataFn } from '../../../utils/functions.util';
