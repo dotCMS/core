@@ -6,14 +6,12 @@ import {
     SpyObject
 } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
-import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
-import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
-
-import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
-import { DotEditContentService } from '../../services/dot-edit-content.service';
-import { DotEditContentSidebarComponent } from './dot-edit-content-sidebar.component';
+import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
+
+import { TabView } from 'primeng/tabview';
+
 import {
     DotContentTypeService,
     DotHttpErrorManagerService,
@@ -22,8 +20,13 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { TabView } from 'primeng/tabview';
-import { of } from 'rxjs';
+
+import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
+import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
+import { DotEditContentSidebarComponent } from './dot-edit-content-sidebar.component';
+
+import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
+import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { MockResizeObserver } from '../../utils/mocks';
 
 describe('DotEditContentSidebarComponent', () => {

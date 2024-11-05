@@ -41,6 +41,7 @@ export class DotEditContentSidebarComponent {
             if (inode) {
                 this.store.getWorkflowStatus(inode);
             }
+
             if (contentTypeId) {
                 this.store.getNewContentStatus(contentTypeId);
             }

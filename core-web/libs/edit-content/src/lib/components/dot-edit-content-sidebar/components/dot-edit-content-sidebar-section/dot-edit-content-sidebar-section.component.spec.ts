@@ -1,6 +1,8 @@
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
 import { Component, ViewChild } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
 import { DotEditContentSidebarSectionComponent } from './dot-edit-content-sidebar-section.component';
 
 @Component({

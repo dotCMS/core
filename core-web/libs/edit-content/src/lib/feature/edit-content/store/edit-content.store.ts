@@ -34,10 +34,10 @@ import {
 
 import { withInformation } from './edit-content-information.feature';
 import { withSidebar } from './edit-content-sidebar.feature';
+import { withWorkflow } from './edit-content-workflow.feature';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { transformFormDataFn } from '../../../utils/functions.util';
-import { withWorkflow } from './edit-content-workflow.feature';
 
 export interface EditContentState {
     actions: DotCMSWorkflowAction[];

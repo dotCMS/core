@@ -2,10 +2,13 @@ import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngne
 
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { DotMessageService } from '../../../../../../../data-access/src';
-import { DotMessagePipe } from '../../../../../../../utils-testing/src/lib/dot-message-mock.pipe';
-import { EXISTING_WORKFLOW_MOCK, NEW_WORKFLOW_MOCK } from '../../../../utils/mocks';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/utils-testing';
+
 import { DotEditContentSidebarWorkflowComponent } from './dot-edit-content-sidebar-workflow.component';
+
+import { EXISTING_WORKFLOW_MOCK, NEW_WORKFLOW_MOCK } from '../../../../utils/mocks';
+
 
 describe('DotEditContentSidebarWorkflowComponent', () => {
     let spectator: Spectator<DotEditContentSidebarWorkflowComponent>;

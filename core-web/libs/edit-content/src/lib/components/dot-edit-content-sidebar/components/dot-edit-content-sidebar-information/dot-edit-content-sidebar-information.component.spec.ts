@@ -1,18 +1,19 @@
-import { RouterTestingModule } from '@angular/router/testing';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+
+import { RouterTestingModule } from '@angular/router/testing';
+
 import { Chip, ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotFormatDateService } from '../../../../../../../data-access/src/lib/dot-format-date/dot-format-date.service';
-import { DotMessageService } from '../../../../../../../data-access/src/lib/dot-messages/dot-messages.service';
+import { DotFormatDateService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { MockDotMessageService } from '../../../../../../../utils-testing/src';
+import { DotEditContentSidebarInformationComponent } from './dot-edit-content-sidebar-information.component';
 
-import { DotMessagePipe } from '../../../../../../../ui/src/lib/dot-message/dot-message.pipe';
 import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 import { DotNameFormatPipe } from '../../../../pipes/name-format.pipe';
-import { DotEditContentSidebarInformationComponent } from './dot-edit-content-sidebar-information.component';
 
 const messageServiceMock = new MockDotMessageService({
     'edit.content.sidebar.information.references-with.pages.not.used': 'No References'

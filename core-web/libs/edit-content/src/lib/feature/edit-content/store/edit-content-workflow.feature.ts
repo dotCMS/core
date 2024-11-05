@@ -121,7 +121,6 @@ export function withWorkflow() {
                         ),
                         switchMap((inode: string) => {
                             return dotWorkflowService.getWorkflowStatus(inode).pipe(
-                                tap((response) => console.log(response)),
                                 tapResponse({
                                     next: (response) => {
                                         const { scheme, step, task } = response;
