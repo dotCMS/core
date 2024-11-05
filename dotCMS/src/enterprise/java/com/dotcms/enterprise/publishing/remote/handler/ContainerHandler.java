@@ -224,8 +224,7 @@ public class ContainerHandler implements IHandler {
             }
           }
 
-
-          //info.setWorkingInode(container.getInode());
+          
           if (info.isLocked() && info.getLockedBy() != null) {
             final User user = Try.of(()-> APILocator.getUserAPI().loadUserById(info.getLockedBy())).getOrElse(systemUser);
             info.setLockedBy(user.getUserId());
