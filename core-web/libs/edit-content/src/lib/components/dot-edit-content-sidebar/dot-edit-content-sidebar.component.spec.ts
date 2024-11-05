@@ -19,7 +19,8 @@ import {
     DotHttpErrorManagerService,
     DotMessageService,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWorkflowService
 } from '@dotcms/data-access';
 import { TabView } from 'primeng/tabview';
 import { of } from 'rxjs';
@@ -44,6 +45,7 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotMessageService),
             mockProvider(Router),
+            mockProvider(DotWorkflowService),
             {
                 provide: ActivatedRoute,
                 useValue: {

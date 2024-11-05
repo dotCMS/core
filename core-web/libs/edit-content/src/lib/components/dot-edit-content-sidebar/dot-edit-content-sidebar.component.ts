@@ -1,5 +1,5 @@
 import { SlicePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, untracked } from '@angular/core';
 
 import { TabViewModule } from 'primeng/tabview';
 
@@ -29,11 +29,31 @@ import { DotEditContentStore } from '../../feature/edit-content/store/edit-conte
         SlicePipe
     ]
 })
-export class DotEditContentSidebarComponent implements OnInit {
+export class DotEditContentSidebarComponent {
     readonly store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
     readonly $identifier = this.store.getCurrentContentIdentifier;
 
-    ngOnInit(): void {
-        this.store.getReferencePages(this.$identifier());
-    }
+    #workflowEffect = effect(() => {
+        const inode = this.store.contentlet()?.inode;
+        const contentTypeId = this.store.contentType()?.id;
+
+        untracked(() => {
+            if (inode) {
+                this.store.getWorkflowStatus(inode);
+            }
+            if (contentTypeId) {
+                this.store.getNewContentStatus(contentTypeId);
+            }
+        });
+    });
+
+    #informationEffect = effect(() => {
+        const identifier = this.$identifier();
+
+        untracked(() => {
+            if (identifier) {
+                this.store.getReferencePages(identifier);
+            }
+        });
+    });
 }

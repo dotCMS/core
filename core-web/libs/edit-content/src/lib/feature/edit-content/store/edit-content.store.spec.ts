@@ -16,7 +16,8 @@ import {
     DotHttpErrorManagerService,
     DotRenderMode,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWorkflowService
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -53,7 +54,8 @@ describe('DotEditContentStore', () => {
             DotContentTypeService,
             DotEditContentService,
             DotHttpErrorManagerService,
-            DotWorkflowsActionsService
+            DotWorkflowsActionsService,
+            DotWorkflowService
         ],
         providers: [
             {

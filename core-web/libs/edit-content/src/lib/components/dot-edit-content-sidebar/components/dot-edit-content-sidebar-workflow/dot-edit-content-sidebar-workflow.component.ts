@@ -1,72 +1,44 @@
-import { Observable } from 'rxjs';
-
-import { Component, Input, OnChanges, OnInit, SimpleChanges, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { map } from 'rxjs/operators';
-
 import { DotWorkflowService } from '@dotcms/data-access';
-import { DotCMSContentType, DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
+import { DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+/**
+ * Component that displays the workflow status of a content item.
+ *
+ * @export
+ * @class DotEditContentSidebarWorkflowComponent
+ */
 @Component({
     selector: 'dot-edit-content-sidebar-workflow',
     standalone: true,
-    imports: [DotMessagePipe, SkeletonModule],
+    imports: [DotMessagePipe, SkeletonModule, SkeletonModule],
     providers: [DotWorkflowService],
     templateUrl: './dot-edit-content-sidebar-workflow.component.html',
-    styleUrl: './dot-edit-content-sidebar-workflow.component.scss'
+    styleUrl: './dot-edit-content-sidebar-workflow.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentSidebarWorkflowComponent implements OnInit, OnChanges {
-    @Input() inode: string;
-    @Input() contentType: DotCMSContentType;
-
-    private readonly workflowService = inject(DotWorkflowService);
-    protected readonly $workflowStatus = signal<DotCMSWorkflowStatus>(null);
-
-    ngOnInit() {
-        this.setContentStatus();
-    }
-
-    ngOnChanges(SimpleChanges: SimpleChanges) {
-        if (SimpleChanges.inode?.currentValue) {
-            this.setContentStatus();
-        }
-    }
-
-    private setContentStatus() {
-        const obs$ = this.inode ? this.getWorkflowStatus() : this.getNewContentStatus();
-        obs$.subscribe((workflowStatus) => this.$workflowStatus.set(workflowStatus));
-    }
+export class DotEditContentSidebarWorkflowComponent {
+    /**
+     * The workflow status of the content item.
+     *
+     * @type {DotCMSWorkflowStatus}
+     * @memberof DotEditContentSidebarWorkflowComponent
+     */
+    $workflow = input<DotCMSWorkflowStatus>({} as DotCMSWorkflowStatus, {
+        alias: 'workflow'
+    });
 
     /**
-     * Get the current workflow status
+     * Whether the workflow status is loading.
      *
-     * @private
-     * @return {*}
-     * @memberof DotContentSidebarWorkflowComponent
+     * @type {boolean}
+     * @memberof DotEditContentSidebarWorkflowComponent
      */
-    private getWorkflowStatus(): Observable<DotCMSWorkflowStatus> {
-        return this.workflowService.getWorkflowStatus(this.inode);
-    }
-
-    /**
-     * Get the new content status
-     *
-     * @private
-     * @return {*}
-     * @memberof DotContentSidebarWorkflowComponent
-     */
-    private getNewContentStatus() {
-        return this.workflowService.getSchemaContentType(this.contentType.id).pipe(
-            map(({ contentTypeSchemes }) => {
-                return {
-                    scheme: contentTypeSchemes[0],
-                    step: null,
-                    task: null
-                };
-            })
-        );
-    }
+    $isLoading = input<boolean>(true, {
+        alias: 'isLoading'
+    });
 }

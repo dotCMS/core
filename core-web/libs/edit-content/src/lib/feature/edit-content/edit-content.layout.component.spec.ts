@@ -22,7 +22,8 @@ import {
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWorkflowService
 } from '@dotcms/data-access';
 import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
@@ -56,7 +57,8 @@ describe('EditContentLayoutComponent', () => {
             mockProvider(DotWorkflowsActionsService),
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(DotEditContentService),
-            mockProvider(DotContentTypeService)
+            mockProvider(DotContentTypeService),
+            mockProvider(DotWorkflowService)
         ],
         providers: [
             mockProvider(DotHttpErrorManagerService),

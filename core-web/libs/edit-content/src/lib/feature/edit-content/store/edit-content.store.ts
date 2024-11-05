@@ -37,6 +37,7 @@ import { withSidebar } from './edit-content-sidebar.feature';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { transformFormDataFn } from '../../../utils/functions.util';
+import { withWorkflow } from './edit-content-workflow.feature';
 
 export interface EditContentState {
     actions: DotCMSWorkflowAction[];
@@ -131,6 +132,7 @@ export const DotEditContentStore = signalStore(
             dotContentTypeService = inject(DotContentTypeService),
             dotEditContentService = inject(DotEditContentService),
             dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
+
             router = inject(Router)
         ) => ({
             /**
@@ -277,6 +279,7 @@ export const DotEditContentStore = signalStore(
     ),
     withSidebar(),
     withInformation(),
+    withWorkflow(),
     withHooks({
         onInit(store) {
             const activatedRoute = inject(ActivatedRoute);

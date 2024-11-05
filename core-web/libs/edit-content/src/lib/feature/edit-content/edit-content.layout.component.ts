@@ -7,7 +7,11 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
-import { DotWorkflowActionsFireService, DotWorkflowsActionsService } from '@dotcms/data-access';
+import {
+    DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
+    DotWorkflowService
+} from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentStore } from './store/edit-content.store';
@@ -34,6 +38,7 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         DotWorkflowActionsFireService,
         DotEditContentService,
         MessageService,
+        DotWorkflowService,
         DotEditContentStore
     ],
 

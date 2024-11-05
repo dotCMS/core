@@ -2,6 +2,9 @@
 @let contentType = store.contentType();
 @let isLoadingInformation = store.isLoadingInformation();
 @let referencePagesCount = store.information.relatedContent();
+<!-- Workflow -->
+@let workflow = store.workflow;
+@let isLoadingWorkflow = store.isLoadingWorkflow;
 
 <aside class="content-sidebar">
     <p-tabView>
@@ -33,8 +36,8 @@
             <!-- Workflow section -->
             <dot-edit-content-sidebar-section [title]="'Workflow' | dm">
                 <dot-edit-content-sidebar-workflow
-                    [inode]="contentlet?.inode"
-                    [contentType]="contentType"
+                    [workflow]="workflow()"
+                    [isLoading]="isLoadingWorkflow()"
                     data-testId="workflow" />
             </dot-edit-content-sidebar-section>
         </p-tabPanel>
