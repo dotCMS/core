@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -51,11 +52,13 @@ import java.util.Date;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.Trigger;
 
+import javax.enterprise.context.Dependent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +84,8 @@ import static org.mockito.Mockito.when;
  * @author Jorge Urdaneta
  * @since Sep 5, 2013
  */
+@Dependent
+@RunWith(JUnit4WeldRunner.class)
 public class HostAPITest extends IntegrationTestBase  {
 
     @BeforeClass
@@ -1010,8 +1015,7 @@ public class HostAPITest extends IntegrationTestBase  {
         final User systemUser = APILocator.systemUser();
         final HostAPI hostAPI = APILocator.getHostAPI();
         final List<Host> allFromDB1 = hostAPI.findAllFromDB(systemUser,
-                new HostSearchOptions().withIncludeSystemHost(true)
-                        .withRespectFrontendRoles(false));
+                HostAPI.SearchType.INCLUDE_SYSTEM_HOST);
         final List<Host> allFromCache1 = hostAPI.findAllFromCache(systemUser, false);
         Assert.assertTrue( allFromDB1.size() == allFromCache1.size() &&
                 allFromDB1.containsAll(allFromCache1) && allFromCache1.containsAll(allFromDB1));
@@ -1832,7 +1836,7 @@ public class HostAPITest extends IntegrationTestBase  {
 
     /**
      * <ul>
-     *     <li><b>Method to test: </b>{@link HostAPI#findAllFromDB(User, HostSearchOptions)}</li>
+     *     <li><b>Method to test: </b>{@link HostAPI#findAllFromDB(User, HostAPI.SearchType...)}</li>
      *     <li><b>Given Scenario: </b>Create a test Site and call the {@findAllFromDB} method that allows you to include
      *     or exclude the System Host.</li>
      *     <li><b>Expected Result: </b>When calling the method with the {@code includeSystemHost} parameter as
@@ -1846,12 +1850,9 @@ public class HostAPITest extends IntegrationTestBase  {
         final User systemUser = APILocator.systemUser();
 
         // Test data generation
-        final List<Host> siteList = hostAPI.findAllFromDB(systemUser,
-                new HostSearchOptions().withIncludeSystemHost(false)
-                        .withRespectFrontendRoles(false));
+        final List<Host> siteList = hostAPI.findAllFromDB(systemUser);
         final List<Host> siteListWithSystemHost = hostAPI.findAllFromDB(systemUser,
-                new HostSearchOptions().withIncludeSystemHost(true)
-                        .withRespectFrontendRoles(false));
+                HostAPI.SearchType.INCLUDE_SYSTEM_HOST);
 
         // Assertions
         assertEquals("The size difference between both Site lists MUST be 1", 1,

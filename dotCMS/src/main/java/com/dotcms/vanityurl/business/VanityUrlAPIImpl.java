@@ -24,7 +24,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
-import com.dotmarketing.portlets.contentlet.business.HostSearchOptions;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -117,8 +117,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   @Override
   public void populateAllVanityURLsCache() throws DotDataException {
     for (final Host site : Try.of(() -> APILocator.getHostAPI().findAllFromDB(APILocator.systemUser(),
-            new HostSearchOptions().withIncludeSystemHost(true)
-                    .withRespectFrontendRoles(false))).getOrElse(List.of())) {
+            HostAPI.SearchType.INCLUDE_SYSTEM_HOST)).getOrElse(List.of())) {
       populateVanityURLsCacheBySite(site);
     }
     populateVanityURLsCacheBySite(APILocator.getHostAPI().findSystemHost());

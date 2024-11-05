@@ -2,13 +2,11 @@ package com.dotmarketing.business.ajax;
 
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -17,7 +15,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.business.HostSearchOptions;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -127,10 +124,11 @@ public class HostAjax {
     public Map<String, Object> findHostsPaginated(final String filter, final boolean showArchived, int offset, int count) throws DotDataException, DotSecurityException, PortalException, SystemException {
 		final User user = this.getLoggedInUser();
 		final boolean respectFrontend = !this.userWebAPI.isLoggedToBackend(this.getHttpRequest());
+		final List<HostAPI.SearchType> searchTypes = respectFrontend ?
+				List.of(HostAPI.SearchType.RESPECT_FRONT_END_ROLES, HostAPI.SearchType.LIVE_ONLY) :
+				List.of(HostAPI.SearchType.LIVE_ONLY);
 		final List<Host> sitesFromDb = this.hostAPI.findAllFromDB(user,
-				new HostSearchOptions().withIncludeSystemHost(false)
-						.withRetrieveLiveVersion(true)
-						.withRespectFrontendRoles(respectFrontend));
+				searchTypes.toArray(new HostAPI.SearchType[0]));
 		final List<Field> fields = FieldsCache.getFieldsByStructureVariableName(Host.HOST_VELOCITY_VAR_NAME);
         final List<Field> searchableFields = fields.stream().filter(field -> field.isListed() && field
                 .getFieldType().startsWith("text")).collect(Collectors.toList());
