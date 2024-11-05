@@ -38,8 +38,6 @@
     // We define this variable when we load this page from an iframe in the ng edit page
     var ngEditContentletEvents;
 
-    console.log(variantName)
-
     var tabsArray=new Array();
 
     dojo.require("dijit.Dialog");
@@ -366,9 +364,6 @@
             }
 
         }
-
-        console.log('variantName from EDIT CONTENTLET', variantName, "REMOVE");
-
 
 		if (variantName) {
 			formData[formData.length] = '<%=VariantAPI.VARIANT_KEY%>' + nameValueSeparator + variantName;

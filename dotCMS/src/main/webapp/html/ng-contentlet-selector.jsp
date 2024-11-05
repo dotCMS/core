@@ -139,9 +139,6 @@
     }
 
         function addNewContentlet(iNode, contentType) {
-
-console.log('variantName FROM SELECT CONTENTLET', '<%=variantName%>', "REMOVE");
-
             var href = "/c/portal/layout?p_l_id=<%=contentLayout.getId()%>&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view";
             href += "&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=new";
             href += "&selectedStructure=" + (iNode || _dotSelectedStructure) + "&lang=" + getCurrentUrlLanguageId() + "&variantName=" + '<%=variantName%>';
