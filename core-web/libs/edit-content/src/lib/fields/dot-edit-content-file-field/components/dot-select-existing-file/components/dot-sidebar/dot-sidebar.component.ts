@@ -52,9 +52,7 @@ export class DotSideBarComponent {
      *
      * @returns {string[]} An array of 50 percentage strings.
      */
-    $fakeColumns = signal<string[]>(
-        Array.from({ length: 50 }).map((_) => `${this.getRandomRange(75, 100)}%`)
-    );
+    $fakeColumns = signal<string[]>(Array.from({ length: 50 }).map((_) => this.getPercentage()));
 
     /**
      * Event emitter for when a tree node is expanded.
@@ -72,15 +70,14 @@ export class DotSideBarComponent {
     detectChanges() {
         this.#cd.detectChanges();
     }
-
     /**
-     * Generates a random integer within a specified range.
+     * Generates a random percentage string between 75% and 100%.
      *
-     * @param max - The maximum value of the range (inclusive).
-     * @param min - The minimum value of the range (inclusive).
-     * @returns A random integer between min and max (both inclusive).
+     * @returns {string} A string representing a percentage between 75% and 100%.
      */
-    getRandomRange(max: number, min: number) {
-        return faker.number.int({ max, min });
+    getPercentage(): string {
+        const number = faker.number.int({ max: 100, min: 75 });
+
+        return `${number}%`;
     }
 }
