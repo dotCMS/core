@@ -15,7 +15,6 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import { getPersistSidebarState, setPersistSidebarState } from '../../../../utils/functions.util';
 import { EditContentState } from '../edit-content.store';
 
-
 interface AsideState {
     showSidebar: boolean;
     state: ComponentStatus;

@@ -21,7 +21,6 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
 import { EditContentState } from '../edit-content.store';
 
-
 interface InformationState {
     information: {
         status: ComponentStatus;
