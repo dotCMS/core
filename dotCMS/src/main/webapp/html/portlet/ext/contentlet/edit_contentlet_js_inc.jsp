@@ -9,7 +9,7 @@
 
 	String catCount = (String) request.getAttribute("counter");
 	String isURLMap = (String) request.getParameter("isURLMap");
-    String variantName = request.getParameter("variantName") != null ? request.getParameter("variantName") : "DEFAULT";
+    String variantNameParam = request.getParameter("variantName") != null ? request.getParameter("variantName") : "DEFAULT";
 %>
 
 <script language='javascript' type='text/javascript'>
@@ -23,8 +23,22 @@
     var isContentSaving = false;
     var doesUserCancelledEdit = false;
 
+    let variantNameParam = "<%=variantNameParam%>";
+    let contentletVariantId = "<%=contentlet.getVariantId()%>";
+
+    // If the contentlet variantName is not default, it doesn't matter if we are in a variant or not,
+    // we use the contentlet variantName to keep the consistency in the actions (false && short-circuit)
+
+    // If we are in a variant and the contentlet variantName is DEFAULT, we need to use the param variantName,
+    // in this case, the param and the contentlet variantName are different and the current editing variant takes precedence (true && true)
+
+    // If we are in default variant and the contentlet is from default variant, we use whatever is in the contentlet, since they are the same is indifferent (true && false)
+    var variantName = contentletVariantId == "DEFAULT" && variantNameParam !== contentletVariantId ? variantNameParam : contentletVariantId;
+
     // We define this variable when we load this page from an iframe in the ng edit page
     var ngEditContentletEvents;
+
+    console.log(variantName)
 
     var tabsArray=new Array();
 
@@ -33,7 +47,6 @@
     var assignToDialog = new dijit.Dialog({
         id:"assignToDialog"
     });
-
 
     //Tabs manipulation
     function displayProperties(id) {
@@ -107,7 +120,7 @@
     }
 
     function getVersionBack(inode) {
-        window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="<%= formAction %>" /></portlet:actionURL>&cmd=getversionback&inode=' + inode + '&inode_version=' + inode  + '&referer=' + referer;
+        window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="<%= formAction %>" /></portlet:actionURL>&cmd=getversionback&inode=' + inode + '&inode_version=' + inode  + '&referer=' + referer + '&variantName=' + variantName;
         setTimeout(() => {
             ngEditContentletEvents?.next({
                 name: 'save',
@@ -121,7 +134,7 @@
     }
 
     function editVersion(objId) {
-        window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="<%= formAction %>" /></portlet:actionURL>&cmd=edit&inode=' + objId  + '&referer=' + referer;
+        window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="<%= formAction %>" /></portlet:actionURL>&cmd=edit&inode=' + objId  + '&referer=' + referer + '&variantName=' + variantName;
     }
 
     function emmitCompareEvent(inode, identifier, language) {
@@ -234,7 +247,7 @@
         if (copyAsset) {
             disableButtons(myForm);
             var parent = document.getElementById("parent").value;
-            self.location = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="copy" /><portlet:param name="inode" value="<%=String.valueOf(contentlet.getInode())%>" /></portlet:actionURL>&parent=' + parent + '&referer=' + referer;
+            self.location = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="copy" /><portlet:param name="inode" value="<%=String.valueOf(contentlet.getInode())%>" /></portlet:actionURL>&parent=' + parent + '&referer=' + referer + '&variantName=' + variantName;
         }
 
         //WYSIWYG_CALLBACKS
@@ -354,9 +367,8 @@
 
         }
 
-        console.log('variantName from EDIT CONTENTLET', '<%=variantName%>', "REMOVE");
+        console.log('variantName from EDIT CONTENTLET', variantName, "REMOVE");
 
-		var variantName = '<%=variantName%>';
 
 		if (variantName) {
 			formData[formData.length] = '<%=VariantAPI.VARIANT_KEY%>' + nameValueSeparator + variantName;
@@ -771,9 +783,6 @@
     function refreshVersionCp(){
         var x = dijit.byId("versions");
         var y =Math.floor(Math.random()*1123213213);
-
-		const variantName = '<%=variantName%>';
-
         var myCp = dijit.byId("contentletVersionsCp");
         if (myCp) {
             myCp.attr("href", "/html/portlet/ext/contentlet/contentlet_versions_inc.jsp?variantName=" +  variantName + "&contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y);
