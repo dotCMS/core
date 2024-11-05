@@ -21,7 +21,7 @@ interface ContentSidebarInformation {
     contentlet: DotCMSContentlet;
     contentType: DotCMSContentType;
     loading: boolean;
-    referencesPageCount: number;
+    referencesPageCount: string;
 }
 
 /**

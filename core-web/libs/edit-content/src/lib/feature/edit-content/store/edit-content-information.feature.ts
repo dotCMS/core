@@ -26,7 +26,7 @@ interface InformationState {
     information: {
         status: ComponentStatus;
         error: string | null;
-        relatedContent: number;
+        relatedContent: string;
     };
 }
 
@@ -34,7 +34,7 @@ const initialState: InformationState = {
     information: {
         status: ComponentStatus.INIT,
         error: null,
-        relatedContent: 0
+        relatedContent: '0'
     }
 };
 
@@ -79,7 +79,7 @@ export function withInformation() {
                                         patchState(store, {
                                             information: {
                                                 ...store.information(),
-                                                relatedContent: Number(value),
+                                                relatedContent: value.toString(),
                                                 status: ComponentStatus.LOADED
                                             }
                                         }),
