@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPIImpl.ContentletVersionInfo;
@@ -14,7 +15,6 @@ import com.dotcms.datagen.PersonaDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TagDataGen;
 import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -37,14 +37,18 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import javax.enterprise.context.ApplicationScoped;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * Here we test the {@link ContentTypeDestroyAPIImpl}
  * @author Fabrizzio
  */
+@ApplicationScoped
+@RunWith(JUnit4WeldRunner.class)
 public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
 
     @BeforeClass
@@ -140,7 +144,7 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
         Assert.assertNull(deletedContentType);
 
         //Test no copy structure is left hang around
-        final String likeName =  String.format("%s_disposed_*", name);
+        final String likeName =  String.format("%s_disposed_*", getTestName());
         int count = new DotConnect().setSQL("select count(*) as x from structure where velocity_var_name like ? ").addParam(likeName).getInt("x");
         Assert.assertEquals(0, count);
 
