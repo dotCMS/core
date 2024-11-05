@@ -44,6 +44,12 @@ export class DotSelectExistingFileComponent implements OnInit {
      */
     readonly #dialogRef = inject(DynamicDialogRef);
 
+    /**
+     * Reference to the DotSideBarComponent instance.
+     * This is used to interact with the sidebar component within the template.
+     *
+     * @type {DotSideBarComponent}
+     */
     $sideBarRef = viewChild.required(DotSideBarComponent);
 
     constructor() {

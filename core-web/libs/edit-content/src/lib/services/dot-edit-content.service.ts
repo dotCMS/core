@@ -77,8 +77,8 @@ export class DotEditContentService {
      */
     getSitesTreePath(data: {
         filter: string;
-        perPage: number;
-        page: number;
+        perPage?: number;
+        page?: number;
     }): Observable<TreeNodeItem[]> {
         const { filter, perPage, page } = data;
 

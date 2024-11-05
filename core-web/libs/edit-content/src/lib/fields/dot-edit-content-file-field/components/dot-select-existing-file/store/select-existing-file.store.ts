@@ -18,7 +18,7 @@ import {
 } from '../../../../../models/dot-edit-content-host-folder-field.interface';
 import { DotEditContentService } from '../../../../../services/dot-edit-content.service';
 
-export const PEER_PAGE_LIMIT = 500;
+export const PEER_PAGE_LIMIT = 1000;
 
 export interface Content {
     id: string;
@@ -98,7 +98,7 @@ export const SelectExisingFileStore = signalStore(
                     ),
                     switchMap(() => {
                         return dotEditContentService
-                            .getSitesTreePath({ perPage: PEER_PAGE_LIMIT, filter: '*', page: 0 })
+                            .getSitesTreePath({ perPage: PEER_PAGE_LIMIT, filter: '*' })
                             .pipe(
                                 tapResponse({
                                     next: (data) =>
