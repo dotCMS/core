@@ -1,5 +1,6 @@
 package com.dotcms.analytics.track.collectors;
 
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.analytics.app.AnalyticsApp;
@@ -45,6 +46,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import javax.enterprise.context.ApplicationScoped;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -76,7 +78,8 @@ import static org.mockito.Mockito.when;
  * @author Jose Castro
  * @since Oct 3rd, 2024
  */
-@RunWith(DataProviderRunner.class)
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
 public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
 
     private static final String PARENT_FOLDER_1_NAME = "parent-folder";

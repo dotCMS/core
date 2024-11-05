@@ -196,7 +196,6 @@
         <docker.skip.clean.after>false</docker.skip.clean.after>
         <debug.suspend.flag>n</debug.suspend.flag>
         <debug.port>5005</debug.port>
-        <docker.glowroot.enabled>false</docker.glowroot.enabled>
 
         <!-- Default debug port -->
         <debug.args.default>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${debug.suspend.flag},address=*:${debug.port}</debug.args.default>
@@ -1478,14 +1477,24 @@
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
-                                    <target>
+                                    <target xmlns:ac="antlib:net.sf.antcontrib">
                                         <!-- Here is where you define your Ant tasks -->
                                         <!--suppress UnresolvedMavenProperty -->
-                                        <echo message="DotCMS started on     : http://localhost:${tomcat.port}/dotAdmin"/>
+                                        <echo message="DotCMS started on (use fixed with -Dtomcat.port=8080)    : http://localhost:${tomcat.port}/dotAdmin"/>
+
                                         <!--suppress UnresolvedMavenProperty -->
-                                        <echo message="Postgres started on   : jdbc:postgresql://localhost:${db.port}/dotcms user = postgres pass = postgres"/>
+                                        <echo message="Postgres started on  (use fixed with -Ddb.port=5423) : jdbc:postgresql://localhost:${db.port}/dotcms user = postgres pass = postgres"/>
                                         <!--suppress UnresolvedMavenProperty -->
-                                        <echo message="OpenSearch started on : http://localhost:${es.port}"/>
+                                        <echo message="OpenSearch started on (use fixed with -Des.port=9200) : http://localhost:${es.port}"/>
+
+
+                                        <!-- Check if the glowroot profile is enabled and output the glowroot.port -->
+                                        <ac:if>
+                                            <ac:isset property="glowroot.port"/>
+                                            <then>
+                                                <echo message="Glowroot started on (use fixed with -Dglowroot.port=4000) : http://localhost:${glowroot.port}"/>
+                                            </then>
+                                        </ac:if>
                                     </target>
                                 </configuration>
                             </execution>
@@ -1584,8 +1593,7 @@
                     <value>true</value>
                 </property>
             </activation>
-            <properties>
-            </properties>
+
             <build>
                 <plugins>
                     <plugin>

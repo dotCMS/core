@@ -1993,6 +1993,10 @@
                                             <todir>glowroot/local-web</todir>
                                         </configfile>
                                         <configfile>
+                                            <file>${tomcat9-overrides}/glowroot/glowroot.logback.xml</file>
+                                            <todir>glowroot</todir>
+                                        </configfile>
+                                        <configfile>
                                             <file>${tomcat9-overrides}/bin/build.conf</file>
                                             <todir>bin</todir>
                                         </configfile>
