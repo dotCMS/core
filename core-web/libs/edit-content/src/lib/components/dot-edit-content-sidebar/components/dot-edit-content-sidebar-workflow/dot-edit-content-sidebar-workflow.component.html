@@ -1,10 +1,19 @@
-<dl class="content-aside__workflow">
+@let scheme = $workflow().scheme;
+@let step = $workflow().step;
+@let task = $workflow().task;
+@let isLoading = $isLoading();
+
+<dl class="workflow-list">
     <dt class="workflow-column__title" id="workflow-title">{{ 'Workflow' | dm }}</dt>
     <dd
         class="workflow-column__description"
         aria-labelledby="workflow-title"
         data-testId="workflow-name">
-        {{ $workflowStatus()?.scheme?.name }}
+        @if (isLoading) {
+            <p-skeleton />
+        } @else {
+            {{ scheme?.name }}
+        }
     </dd>
 
     <dt class="workflow-column__title" id="step-title">{{ 'Step' | dm }}</dt>
@@ -12,24 +21,24 @@
         class="workflow-column__description"
         aria-labelledby="step-title"
         data-testId="workflow-step">
-        {{ $workflowStatus()?.step?.name || 'New' }}
+        @if (isLoading) {
+            <p-skeleton />
+        } @else {
+            {{ step?.name || 'New' | dm }}
+        }
     </dd>
 
-    <dt class="workflow-column__title" id="content-type-title">{{ 'Content-Type' | dm }}</dt>
-    <dd
-        class="workflow-column__description"
-        aria-labelledby="content-type-title"
-        data-testId="workflow-content-type">
-        {{ contentType.name }}
-    </dd>
-
-    @if ($workflowStatus()?.task) {
+    @if (task) {
         <dt class="workflow-column__title" id="assignee-title">{{ 'Assignee' | dm }}</dt>
         <dd
             class="workflow-column__description"
             aria-labelledby="assignee-title"
             data-testId="workflow-assigned">
-            {{ $workflowStatus().task.assignedTo }}
+            @if (isLoading) {
+                <p-skeleton />
+            } @else {
+                {{ task.assignedTo }}
+            }
         </dd>
     }
 </dl>
