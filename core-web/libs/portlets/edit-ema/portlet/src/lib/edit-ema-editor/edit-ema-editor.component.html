@@ -81,4 +81,4 @@
         data-testId="confirm-dialog"></p-confirmDialog>
 }
 
-<dot-block-editor-editing />
+<dot-block-editor-editing (onSaved)="uveStore.reload()" />
