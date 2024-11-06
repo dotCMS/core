@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.job;
 
+import static com.dotcms.jobs.business.util.JobUtil.roundedProgress;
+
 import com.dotcms.jobs.business.api.JobProcessorScanner;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
@@ -376,10 +378,10 @@ public class JobQueueHelper {
     public Map<String, Object> getJobStatusInfo(Job job) {
         final DateTimeFormatter isoFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
         return Map.of(
-                "startedAt", job.startedAt().map(isoFormatter::format).orElse("N/A"),
-                "finishedAt", job.completedAt().map(isoFormatter::format).orElse("N/A"),
                 "state", job.state(),
-                "progress", job.progress()
+                "progress", roundedProgress(job.progress()),
+                "startedAt", job.startedAt().map(isoFormatter::format).orElse("N/A"),
+                "finishedAt", job.completedAt().map(isoFormatter::format).orElse("N/A")
         );
     }
 

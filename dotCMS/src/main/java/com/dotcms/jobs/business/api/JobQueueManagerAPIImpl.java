@@ -401,6 +401,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      *
      * @param event The event that triggers the job cancellation request.
      */
+    @WrapInTransaction
     private void onCancelRequestJob(final JobCancelRequestEvent event) {
 
         try {
@@ -499,6 +500,24 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     }
 
     /**
+     * Fetches the state of a job from the job queue using the provided job ID.
+     *
+     * @param jobId the unique identifier of the job whose state is to be fetched
+     * @return the current state of the job
+     * @throws DotDataException if there is an error accessing the job state data
+     */
+    @CloseDBIfOpened
+    private JobState getJobState(final String jobId) throws DotDataException {
+        try {
+            return jobQueue.getJobState(jobId);
+        } catch (JobNotFoundException e) {
+            throw new DoesNotExistException(e);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching job state", e);
+        }
+    }
+
+    /**
      * Updates the progress of a job and notifies its watchers.
      *
      * @param job             The job whose progress to update.
@@ -517,7 +536,11 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 // Only update progress if it has changed
                 if (progress > previousProgress) {
 
-                    Job updatedJob = job.withProgress(progress);
+                    // Make sure we have the latest state, the job of the running processor won't
+                    // be updated with changes on the state, like a cancel request.
+                    final var latestState = getJobState(job.id());
+
+                    Job updatedJob = job.withProgress(progress).withState(latestState);
 
                     jobQueue.updateJobProgress(job.id(), updatedJob.progress());
                     eventProducer.getEvent(JobProgressUpdatedEvent.class).fire(
@@ -747,13 +770,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 // Process the job
                 processor.process(runningJob);
 
-                if (jobQueue.hasJobBeenInState(runningJob.id(), JobState.CANCELLING)) {
-                    handleJobCancellation(runningJob, processor);
-                } else {
-                    handleJobCompletion(runningJob, processor);
-                }
-                //Free up resources
-                removeInstanceRef(runningJob.id());
+                // The job finished processing
+                handleJobCompletion(runningJob, processor);
             } catch (Exception e) {
 
                 Logger.error(this,
@@ -762,6 +780,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 handleJobFailure(
                         runningJob, processor, e, "Job execution"
                 );
+            } finally {
+                //Free up resources
+                removeInstanceRef(runningJob.id());
             }
         } else {
 
@@ -841,11 +862,20 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         final float progress = getJobProgress(job);
 
-        final Job completedJob = job.markAsCompleted(jobResult).withProgress(progress);
-        updateJobStatus(completedJob);
-        eventProducer.getEvent(JobCompletedEvent.class).fire(
-                new JobCompletedEvent(completedJob, LocalDateTime.now())
-        );
+        final var latestState = getJobState(job.id());
+        if (latestState == JobState.CANCELLING) {
+            Job canceledJob = job.markAsCanceled(jobResult).withProgress(progress);
+            updateJobStatus(canceledJob);
+            eventProducer.getEvent(JobCanceledEvent.class).fire(
+                    new JobCanceledEvent(canceledJob, LocalDateTime.now())
+            );
+        } else {
+            final Job completedJob = job.markAsCompleted(jobResult).withProgress(progress);
+            updateJobStatus(completedJob);
+            eventProducer.getEvent(JobCompletedEvent.class).fire(
+                    new JobCompletedEvent(completedJob, LocalDateTime.now())
+            );
+        }
     }
 
     /**
@@ -901,32 +931,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             Logger.error(this, error);
             throw error;
         }
-    }
-
-    /**
-     * Handles the cancellation of a job.
-     *
-     * @param job       The job that was canceled.
-     * @param processor The processor that handled the job.
-     */
-    @WrapInTransaction
-    private void handleJobCancellation(final Job job, final JobProcessor processor)
-            throws DotDataException {
-
-        final var resultMetadata = processor.getResultMetadata(job);
-
-        JobResult jobResult = null;
-        if (resultMetadata != null && !resultMetadata.isEmpty()) {
-            jobResult = JobResult.builder().metadata(resultMetadata).build();
-        }
-
-        final float progress = getJobProgress(job);
-
-        Job canceledJob = job.markAsCanceled(jobResult).withProgress(progress);
-        updateJobStatus(canceledJob);
-        eventProducer.getEvent(JobCanceledEvent.class).fire(
-                new JobCanceledEvent(canceledJob, LocalDateTime.now())
-        );
     }
 
     /**
