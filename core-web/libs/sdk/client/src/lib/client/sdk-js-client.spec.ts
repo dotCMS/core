@@ -264,6 +264,30 @@ describe('DotCmsClient', () => {
             });
         });
 
+        describe('page.getDraft', () => {
+            it('should fetch draft page data successfully', async () => {
+                const mockResponse = { content: 'Draft Page data' };
+                mockFetchResponse({ entity: mockResponse });
+
+                const data = await client.page.getDraft({ path: '/home' });
+
+                expect(fetch).toHaveBeenCalledTimes(1);
+                expect(fetch).toHaveBeenCalledWith(
+                    'http://localhost/api/v1/page/json/home?mode=EDIT_MODE&host_id=123456',
+                    {
+                        headers: { Authorization: 'Bearer ABC' }
+                    }
+                );
+                expect(data).toEqual(mockResponse);
+            });
+
+            it('should throw an error if the path is not provided', async () => {
+                await expect(client.page.getDraft({} as any)).rejects.toThrowError(
+                    `The 'path' parameter is required for the Page API`
+                );
+            });
+        });
+
         describe('editor.on', () => {
             it('should listen to FETCH_PAGE_ASSET_FROM_UVE event', () => {
                 isInsideEditorSpy.mockReturnValue(true);

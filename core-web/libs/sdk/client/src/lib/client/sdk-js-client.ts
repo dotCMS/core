@@ -289,6 +289,28 @@ export class DotCmsClient {
             }
 
             return response.json().then((data) => data.entity);
+        },
+
+        /**
+         * `page.getDraft` is an asynchronous method of the `DotCmsClient` class that retrieves the draft version of any Page in your dotCMS system in JSON format.
+         * It takes a `PageApiOptions` object as a parameter and returns a Promise that resolves to the response from the DotCMS API.
+         *
+         * The Page API enables you to retrieve the draft version of any Page in your dotCMS system.
+         * The elements may be retrieved in JSON format.
+         *
+         * @link https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas
+         * @async
+         * @param {PageApiOptions} options - The options for the Page API call.
+         * @returns {Promise<unknown>} - A Promise that resolves to the response from the DotCMS API.
+         * @throws {Error} - Throws an error if the options are not valid.
+         * @example
+         * ```ts
+         * const client = new DotCmsClient({ dotcmsUrl: 'https://your.dotcms.com', authToken: 'your-auth-token', siteId: 'your-site-id' });
+         * client.page.getDraft({ path: '/about-us' }).then(response => console.log(response));
+         * ```
+         */
+        getDraft: async (options: PageApiOptions): Promise<unknown> => {
+            return this.page.get({ ...options, mode: 'EDIT_MODE' });
         }
     };
 
