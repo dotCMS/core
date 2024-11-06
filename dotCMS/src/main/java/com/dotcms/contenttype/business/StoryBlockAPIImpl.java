@@ -47,7 +47,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
     private static final int MAX_RECURSION_LEVEL = 2;
     private static final Lazy<String> MAX_RELATIONSHIP_DEPTH = Lazy.of(() -> Config.getStringProperty(
-            "STORY_BLOCK_MAX_RELATIONSHIP_DEPTH", "2"));
+            "STORY_BLOCK_MAX_RELATIONSHIP_DEPTH", "0"));
 
     @Override
     @CloseDBIfOpened
