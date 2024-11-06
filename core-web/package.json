@@ -215,7 +215,7 @@
         "fetch-mock": "^9.11.0",
         "flatpickr": "^4.5.7",
         "gh-pages": "^6.1.1",
-        "happy-dom": "^15.7.4",
+        "happy-dom": "^15.10.1",
         "html-webpack-plugin": "^5.5.0",
         "http-proxy-middleware": "^2.0.6",
         "husky": "^7.0.0",
