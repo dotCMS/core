@@ -1,5 +1,6 @@
 package com.dotcms.jobs.business.processor.impl;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.JobProcessingException;
@@ -260,11 +261,11 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
      */
     private Map<String, List<String>> processImport(final boolean preview, final Job job,
             final User user, final CsvReader csvReader, final LongConsumer progressCallback)
-            throws DotDataException, IOException {
+            throws DotDataException, IOException, DotSecurityException {
 
         final var currentSiteId = getSiteIdentifier(job);
         final var currentSiteName = getSiteName(job);
-        final var contentType = getContentType(job);
+        final var contentType = findContentType(job);
         final var fields = getFields(job);
         final var language = getLanguage(job);
         final var workflowActionId = getWorkflowActionId(job);
@@ -276,9 +277,9 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
 
         Logger.info(this, String.format("-------- Starting Content Import %s -------- ",
                 preview ? "Preview" : "Process"));
-        Logger.info(this, String.format("-> Content Type ID: %s", contentType));
+        Logger.info(this, String.format("-> Content Type: %s", contentType.variable()));
 
-        return ImportUtil.importFile(importId, currentSiteId, contentType, fields, preview,
+        return ImportUtil.importFile(importId, currentSiteId, contentType.id(), fields, preview,
                 (language == -1), user, language, headerInfo.headers, csvReader,
                 headerInfo.languageCodeColumn, headerInfo.countryCodeColumn, workflowActionId,
                 httpReq, progressCallback);
@@ -407,11 +408,13 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
     private void validate(final Job job) {
 
         if (getContentType(job) != null && getContentType(job).isEmpty()) {
-            Logger.error(this.getClass(), "A Content Type is required");
-            throw new JobValidationException(job.id(), "A Content Type is required");
+            final var errorMessage = "A Content Type id or variable is required";
+            Logger.error(this.getClass(), errorMessage);
+            throw new JobValidationException(job.id(), errorMessage);
         } else if (getWorkflowActionId(job) != null && getWorkflowActionId(job).isEmpty()) {
-            Logger.error(this.getClass(), "Workflow action type is required");
-            throw new JobValidationException(job.id(), "Workflow action type is required");
+            final var errorMessage = "A Workflow Action id is required";
+            Logger.error(this.getClass(), errorMessage);
+            throw new JobValidationException(job.id(), errorMessage);
         } else if (getLanguage(job) == 0) {
             final var errorMessage = "Please select a valid Language.";
             Logger.error(this, errorMessage);
@@ -424,15 +427,19 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
             throw new JobValidationException(job.id(), errorMessage);
         }
 
-        // Security measure to prevent invalid attempts to import a host.
         try {
+
+            // Make sure the content type exist (will throw an exception if it doesn't)
+            final var contentTypeFound = findContentType(job);
+
+            // Security measure to prevent invalid attempts to import a host.
             final ContentType hostContentType = APILocator.getContentTypeAPI(
-                    APILocator.systemUser()).find(Host.HOST_VELOCITY_VAR_NAME
-            );
-            final boolean isHost = (hostContentType.id().equals(getContentType(job)));
+                    APILocator.systemUser()).find(Host.HOST_VELOCITY_VAR_NAME);
+            final boolean isHost = (hostContentType.id().equals(contentTypeFound.id()));
             if (isHost) {
-                Logger.error(this, "Invalid attempt to import a host.");
-                throw new JobValidationException(job.id(), "Invalid attempt to import a host.");
+                final var errorMessage = "Invalid attempt to import a host.";
+                Logger.error(this, errorMessage);
+                throw new JobValidationException(job.id(), errorMessage);
             }
         } catch (DotSecurityException | DotDataException e) {
             throw new JobProcessingException(job.id(), "Error validating content type", e);
@@ -577,6 +584,46 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
                     + "file when importing multilingual content.";
             Logger.error(this, errorMessage);
             throw new JobValidationException(job.id(), errorMessage);
+        }
+    }
+
+    /**
+     * Retrieves the existing content type based on the id or variable of the given content type.
+     *
+     * @param job The current import job.
+     * @return The existing content type if found, otherwise fails with an exception.
+     * @throws DotSecurityException If there are security restrictions preventing the evaluation.
+     */
+    private ContentType findContentType(final Job job)
+            throws DotSecurityException {
+
+        final var contentTypeIdOrVar = getContentType(job);
+        final User user;
+
+        // Retrieving the user requesting the import
+        try {
+            user = getUser(job);
+        } catch (DotDataException e) {
+            final var errorMessage = "Error retrieving user.";
+            Logger.error(this.getClass(), errorMessage);
+            throw new JobProcessingException(job.id(), errorMessage, e);
+        }
+
+        try {
+            return APILocator.getContentTypeAPI(user, true)
+                    .find(contentTypeIdOrVar);
+        } catch (NotFoundInDbException e) {
+            final var errorMessage = String.format(
+                    "Content Type [%s] not found.", contentTypeIdOrVar
+            );
+            Logger.error(this.getClass(), errorMessage);
+            throw new JobValidationException(job.id(), errorMessage);
+        } catch (DotDataException e) {
+            final var errorMessage = String.format(
+                    "Error finding Content Type [%s].", contentTypeIdOrVar
+            );
+            Logger.error(this.getClass(), errorMessage);
+            throw new JobProcessingException(job.id(), errorMessage, e);
         }
     }
 
