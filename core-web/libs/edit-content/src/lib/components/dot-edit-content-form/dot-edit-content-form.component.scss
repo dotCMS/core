@@ -1,5 +1,7 @@
 @use "variables" as *;
 
+$tab-min-height: 52px;
+
 :host {
     min-width: 0;
     overflow: auto;
@@ -47,6 +49,9 @@
     opacity: 1;
     transform: translateX(0);
     overflow: hidden;
+    min-height: $tab-min-height;
+    display: flex;
+    align-items: center;
 }
 
 .dot-edit-content-actions__sidebar-toggle--hidden {
@@ -71,6 +76,11 @@
 
 // PrimeNG Tabview Overrides
 ::ng-deep {
+    .tabview-append-content {
+        min-height: $tab-min-height;
+        display: flex;
+        align-items: center;
+    }
     .dot-edit-content-tabview {
         .p-tabview-nav-container {
             padding: 0 0 0 $spacing-4;
@@ -84,7 +94,7 @@
             border: none;
             border-left: solid 1px $color-palette-gray-300;
             padding-left: $spacing-3;
-            min-height: 52px;
+            min-height: $tab-min-height;
             min-width: auto;
         }
 
