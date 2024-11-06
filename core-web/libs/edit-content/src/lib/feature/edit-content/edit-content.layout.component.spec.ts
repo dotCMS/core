@@ -22,15 +22,16 @@ import {
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWorkflowService
 } from '@dotcms/data-access';
 import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
 import { DotEditContentStore } from './store/edit-content.store';
 
-import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
+import { DotEditContentSidebarComponent } from '../../components/dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import * as utils from '../../utils/functions.util';
 import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
@@ -49,14 +50,15 @@ describe('EditContentLayoutComponent', () => {
 
             MockModule(MessagesModule),
             MockComponent(DotEditContentFormComponent),
-            MockComponent(DotEditContentAsideComponent)
+            MockComponent(DotEditContentSidebarComponent)
         ],
         componentProviders: [
             DotEditContentStore, // Usign the real DotEditContentStore
             mockProvider(DotWorkflowsActionsService),
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(DotEditContentService),
-            mockProvider(DotContentTypeService)
+            mockProvider(DotContentTypeService),
+            mockProvider(DotWorkflowService)
         ],
         providers: [
             mockProvider(DotHttpErrorManagerService),

@@ -18,7 +18,8 @@ import {
     DotHttpErrorManagerService,
     DotMessageService,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWorkflowService
 } from '@dotcms/data-access';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
@@ -60,6 +61,7 @@ describe('DotFormComponent', () => {
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotMessageService),
             mockProvider(Router),
+            mockProvider(DotWorkflowService),
             {
                 provide: ActivatedRoute,
                 useValue: {
