@@ -120,6 +120,7 @@ import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
@@ -218,7 +219,7 @@ public class ContentHandler implements IHandler {
 		List<File> contents = isHost?FileUtil.listFilesRecursively(bundleFolder, new HostBundler().getFileFilter()):
 				FileUtil.listFilesRecursively(bundleFolder, new ContentBundler().getFileFilter());
 		Collections.sort(contents);
-
+		contents = contents.stream().filter(File::isFile).collect(Collectors.toList());
 		handleContents(contents, bundleFolder, isHost);
 		HandlerUtil.setExistingContent(config.getId(), existingContentMap);
 
@@ -241,11 +242,22 @@ public class ContentHandler implements IHandler {
 		}
 	}
 
+
+
+	private boolean ignoreContent(Contentlet contentlet){
+
+		// if a host does not exist on target, skip content
+		Host localHost = Try.of(()->APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser(), false)).getOrNull();
+		return UtilMethods.isEmpty(()->localHost.getIdentifier());
+
+	}
+
+
 	/**
 	 * Reads the information of the contentlets contained in the bundle and
 	 * saves them in the destination server.
 	 * 
-	 * @param contents
+	 * @param contentsIn
 	 *            The list of data files containing the contentlet information.
 	 * @param folderOut
 	 *            - The location of the bundle in the file system.
@@ -257,7 +269,7 @@ public class ContentHandler implements IHandler {
 	 * @throws DotDataException
 	 *             An error occurred when interacting with the database.
 	 */
-	private void handleContents(final Collection<File> contents, final File folderOut, final Boolean isHost) throws DotPublishingException, DotDataException{
+	private void handleContents(final Collection<File> contentsIn, final File folderOut, final Boolean isHost) throws DotPublishingException, DotDataException{
 	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
 			throw new RuntimeException("need an enterprise pro license to run this");
 		}
@@ -265,15 +277,14 @@ public class ContentHandler implements IHandler {
         File workingOn=null;
         Contentlet content = null;
 		ContentWrapper wrapper = null;
+		final Collection<File> contents = contentsIn.stream().filter(File::isFile).collect(Collectors.toList());
     	try{
 	        final XStream xstream = XStreamHandler.newXStreamInstance();
 			final Set<Pair<String,Long>> pushedIdsToIgnore = new HashSet<>();
             for (final File contentFile : contents) {
                 workingOn=contentFile;
                 content = null;
-                if ( contentFile.isDirectory() ) {
-                    continue;
-                }
+
                 try(final InputStream input = Files.newInputStream(contentFile.toPath())){
                     wrapper = (ContentWrapper) xstream.fromXML(input);
                 }
@@ -310,6 +321,15 @@ public class ContentHandler implements IHandler {
                             content.get(PAGE_FRIENDLY_NAME_FIELD_VAR.toLowerCase()));
                     content.getMap().remove(PAGE_FRIENDLY_NAME_FIELD_VAR.toLowerCase());
                 }
+
+
+				// if a host does not exist on target, skip content
+				if(ignoreContent(content)){
+					Contentlet finalContent = content;
+					Logger.warn(this.getClass(), "Ignoring contentlet:" + content.getIdentifier() + " | " + Try.of(
+                            finalContent::getTitle).getOrElse("unknown")  + " . Unable to find referenced host id:" + content.getHost());
+					continue;
+				}
 
 				content.setVariantId(wrapper.getContent().getVariantId());
 
@@ -386,6 +406,16 @@ public class ContentHandler implements IHandler {
 					// get the local language and assign it to the version info, and the content, since the id's might be different
 					final Language remoteLang = wrapper.getLanguage();
 					final Pair<Long,Long> remoteLocalLanguages = this.existingContentMap.getRemoteLocalLanguages(wrapper);
+
+
+					// if a host does not exist on target, skip content
+					if(ignoreContent(content)){
+						Contentlet finalContent = content;
+						Logger.warn(this.getClass(), "Ignoring contentlet:" + content.getIdentifier() + " | " + Try.of(
+                                finalContent::getTitle).getOrElse("unknown")  + " . Unable to find referenced host id:" + content.getHost());
+						continue;
+					}
+
 
 					if(UtilMethods.isSet(remoteLang) && remoteLang.getId() > 0) {
 						// This should take care of solving any existing conflicts. Previously solved by the Language Handler.
@@ -781,6 +811,7 @@ public class ContentHandler implements IHandler {
                 }
             } );
         }
+
         //Saving the content
         if (content.isArchived()){
             this.contentletAPI.unarchive(content, userToUse, !RESPECT_FRONTEND_ROLES);

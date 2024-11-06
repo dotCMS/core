@@ -13,6 +13,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
     DotCMSTempFile,
+    DotCMSWorkflowStatus,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -1548,4 +1549,71 @@ export const TEMP_FILE_MOCK: DotCMSTempFile = {
     referenceUrl: '/dA/temp_1e8021f973/tmp/enterprise-angular.pdf',
     thumbnailUrl:
         '/contentAsset/image/temp_1e8021f973/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/enterprise-angular.pdf'
+};
+
+/**
+ * Mock for existing workflow
+ */
+export const EXISTING_WORKFLOW_MOCK: DotCMSWorkflowStatus = {
+    step: {
+        creationDate: 1730740464988,
+        enableEscalation: false,
+        escalationAction: null,
+        escalationTime: 0,
+        id: 'd95caaa6-1ece-42b2-8663-fb01e804a149',
+        myOrder: 1,
+        name: 'QA',
+        resolved: false,
+        schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'
+    },
+    scheme: {
+        archived: false,
+        creationDate: new Date(1730734538827),
+        defaultScheme: false,
+        description: '',
+        entryActionId: null,
+        id: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+        mandatory: false,
+        modDate: new Date(1730233225948),
+        name: 'Blogs',
+        system: false,
+        variableName: 'Blogs'
+    },
+    task: {
+        assignedTo: 'Admin User',
+        belongsTo: null,
+        createdBy: 'e7d4e34e-5127-45fc-8123-d48b62d510e3',
+        creationDate: 1562955598469,
+        description: '',
+        dueDate: null,
+        id: 'b6bca0fe-1b79-4071-84e9-b5c222fe4aef',
+        inode: 'b6bca0fe-1b79-4071-84e9-b5c222fe4aef',
+        languageId: 1,
+        modDate: 1730740522231,
+        new: false,
+        status: 'd95caaa6-1ece-42b2-8663-fb01e804a149',
+        title: '5 Snow Sports to Try This Winter',
+        webasset: '0edfee78-2a75-4f3d-bf20-813aae15d4e9'
+    }
+};
+
+/**
+ * Mock for new workflow
+ */
+export const NEW_WORKFLOW_MOCK: DotCMSWorkflowStatus = {
+    scheme: {
+        archived: false,
+        creationDate: new Date(1730822086263),
+        defaultScheme: false,
+        description: '',
+        entryActionId: null,
+        id: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+        mandatory: false,
+        modDate: new Date(1730233225948),
+        name: 'Blogs',
+        system: false,
+        variableName: 'Blogs'
+    },
+    step: null,
+    task: null
 };
