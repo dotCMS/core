@@ -1,6 +1,7 @@
 package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -23,6 +24,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.API;
+import javax.enterprise.context.ApplicationScoped;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -31,6 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -43,6 +46,8 @@ import static org.mockito.Mockito.mock;
  * @author Jose Castro
  * @since Oct 9th, 2024
  */
+@ApplicationScoped
+@RunWith(JUnit4WeldRunner.class)
 public class PagesCollectorTest extends IntegrationTestBase {
 
     private static final String TEST_PAGE_NAME = "index";
