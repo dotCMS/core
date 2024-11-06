@@ -15,7 +15,11 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
     const createComponent = createComponentFactory({
         component: DotEditContentSidebarWorkflowComponent,
         imports: [DotMessagePipe, SkeletonModule],
-        providers: [mockProvider(DotMessageService)]
+        providers: [
+            mockProvider(DotMessageService, {
+                get: (key: string) => key
+            })
+        ]
     });
 
     beforeEach(() => {
