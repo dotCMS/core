@@ -3,7 +3,7 @@ iconUrl: "https://static.dotcms.com/assets/icons/apps/chatgpt_logo.svg"
 allowExtraParameters: true
 description: |
   Credentials and options for using OpenAI/ChatGPT with dotCMS. There are a number of config 
-  properties that can be set in the extra parameter fields. Please see the "config" tab of the [dotAI tool](#/c/dotAI) to see what can be configured. We recommend you have a single config for all your sites, 
+  properties that can be set in the extra parameter fields. Please see the "config" tab of the [dotAI tool](#/c/dotai) to see what can be configured. We recommend you have a single config for all your sites, 
   by placing all config on the SYSTEM_HOST or provide a configuration PER site. 
 
 params:

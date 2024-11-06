@@ -125,7 +125,7 @@ export const DotAnalyticsSearchStore = signalStore(
                 },
                 [HealthStatusTypes.OK]: null,
                 ['noLicense']: {
-                    title: dotMessageService.get('analytics.search.no.licence'),
+                    title: dotMessageService.get('analytics.search.no.license'),
                     icon: 'pi-search',
                     subtitle: dotMessageService.get('analytics.search.no.license.subtitle')
                 }
