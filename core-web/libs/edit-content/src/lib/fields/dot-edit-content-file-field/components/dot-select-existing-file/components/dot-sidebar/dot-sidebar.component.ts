@@ -15,7 +15,7 @@ import { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TreeModule, TreeNodeExpandEvent } from 'primeng/tree';
 
-import { TruncatePathPipe } from '../../../../../../pipes/truncate-path.pipe';
+import { TruncatePathPipe } from '@dotcms/edit-content/pipes/truncate-path.pipe';
 
 @Component({
     selector: 'dot-sidebar',

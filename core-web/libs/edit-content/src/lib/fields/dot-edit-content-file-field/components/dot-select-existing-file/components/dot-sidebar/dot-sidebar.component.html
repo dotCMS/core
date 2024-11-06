@@ -10,7 +10,7 @@
         loadingMode="icon"
         (onNodeExpand)="onNodeExpand.emit($event)">
         <ng-template let-node pTemplate="default">
-            <span>{{ node.label | truncatePath | slice: 0 : 19 }}</span>
+            <span>{{ node.label | truncatePath | slice: 0 : 18 }}</span>
         </ng-template>
     </p-tree>
 } @else {
