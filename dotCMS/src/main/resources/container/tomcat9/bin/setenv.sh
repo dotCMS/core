@@ -62,10 +62,14 @@ fi
 # GLOWROOT_AGENT_ID: If set, specifies the agent ID for Glowroot and enables multi-directory mode.
 # GLOWROOT_COLLECTOR_ADDRESS: If set, specifies the collector address for Glowroot.
 
+if [ -z "$CATALINA_TMPDIR" ]; then
+      CATALINA_TMPDIR="$CATALINA_HOME/temp"
+fi
+
 add_glowroot_agent() {
     if ! echo "$CATALINA_OPTS" | grep -q '\-javaagent:.*glowroot\.jar'; then
-        echo "Adding Glowroot agent to CATALINA_OPTS"
         if [ "$GLOWROOT_ENABLED" = "true" ]; then
+          echo "Adding Glowroot agent to CATALINA_OPTS"
           export CATALINA_OPTS="$CATALINA_OPTS -javaagent:$CATALINA_HOME/glowroot/glowroot.jar"
 
           export GLOWROOT_SHARED_FOLDER="/data/shared/glowroot"
@@ -76,8 +80,8 @@ add_glowroot_agent() {
           fi
           CATALINA_OPTS="$CATALINA_OPTS -Dglowroot.conf.dir=$GLOWROOT_CONF_DIR"
           # We may want to modify these defaults
-          CATALINA_OPTS="$CATALINA_OPTS -Dglowroot.log.dir=${GLOWROOT_LOG_DIR:=$GLOWROOT_CONF_DIR/logs}"
-          CATALINA_OPTS="$CATALINA_OPTS -Dglowroot.tmp.dir=${GLOWROOT_TMP_DIR:=$GLOWROOT_CONF_DIR/tmp}"
+          CATALINA_OPTS="$CATALINA_OPTS -Dglowroot.tmp.dir=${GLOWROOT_TMP_DIR:=$CATALINA_TMPDIR}"
+          # Only used if when not using a collector
           CATALINA_OPTS="$CATALINA_OPTS -Dglowroot.data.dir=${GLOWROOT_DATA_DIR:=$GLOWROOT_SHARED_FOLDER/data}"
 
           # Set GLOWROOT_AGENT_ID and enable multi-directory mode if defined
