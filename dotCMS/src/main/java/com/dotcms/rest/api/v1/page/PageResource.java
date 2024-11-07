@@ -1394,7 +1394,7 @@ public class PageResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Deprecated
+    @Deprecated(since = "Nov 7th, 24", forRemoval = true)
     public Response checkPageLanguageVersions(@Context final HttpServletRequest request,
                                               @Context final HttpServletResponse response,
                                               @PathParam("pageId") final String pageId) throws DotDataException {

@@ -571,7 +571,7 @@ public class PageResourceHelper implements Serializable {
      *
      * @deprecated This method is deprecated and will be removed in future versions.
      */
-    @Deprecated
+    @Deprecated(since = "Nov 7th, 24", forRemoval = true)
     public List<ExistingLanguagesForPageView> getExistingLanguagesForPage(final String pageId, final User user) throws DotDataException {
         DotPreconditions.checkNotNull(pageId, "Page ID cannot be null");
         DotPreconditions.checkNotNull(user, "User cannot be null");
