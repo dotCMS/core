@@ -29,8 +29,7 @@ import java.util.Optional;
 public class MetricsAPIImpl implements MetricsAPI {
 
     private final Lazy<String> endPointUrl = Lazy.of(() -> Config.getStringProperty(
-            "TELEMETRY_PERSISTENCE_ENDPOINT",
-            "https://dotcms-prod-1.analytics.dotcms.cloud/m"));
+            "TELEMETRY_PERSISTENCE_ENDPOINT", null));
 
     private final Lazy<String> customCategory = Lazy.of(() -> Config.getStringProperty(
             "TELEMETRY_CLIENT_CATEGORY", null));
