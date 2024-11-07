@@ -32,8 +32,8 @@ export const INLINE_CONTENT_STYLES = `
 })
 export class InlineEditService {
     $iframeWindow = signal<Window | null>(null);
-    private $inlineEditingTargetDataset = signal<InlineEditingContentletDataset | null>(null);
     $isInlineEditingEnable = signal(true);
+    private $inlineEditingTargetDataset = signal<InlineEditingContentletDataset | null>(null);
 
     private readonly DEFAULT_TINYMCE_CONFIG = {
         menubar: false,
@@ -43,7 +43,7 @@ export class InlineEditService {
         },
         powerpaste_word_import: 'clean',
         powerpaste_html_import: 'clean',
-        setup: this.handleInlineEditEvents
+        setup: this.#handleInlineEditEvents
     };
 
     private readonly TINYCME_CONFIG = {
@@ -168,6 +168,26 @@ export class InlineEditService {
     }
 
     /**
+     * Sets the target inline contentlet dataset.
+     *
+     * @param {InlineEditingContentletDataset} dataset
+     * @memberof InlineEditService
+     */
+    setTargetInlineMCEDataset(dataset: InlineEditingContentletDataset) {
+        this.$inlineEditingTargetDataset.set(dataset);
+    }
+
+    /**
+     * Sets the iframe window.
+     *
+     * @param {Window} iframeWindow
+     * @memberof InlineEditService
+     */
+    setIframeWindow(iframeWindow: Window) {
+        this.$iframeWindow.set(iframeWindow);
+    }
+
+    /**
      * Adds the inline content styles to the document.
      *
      * @private
@@ -192,7 +212,7 @@ export class InlineEditService {
      *
      * @param {Editor} editor - The editor instance.
      */
-    private handleInlineEditEvents(editor) {
+    #handleInlineEditEvents(editor) {
         editor.on('blur', (e) => {
             const { target: ed, type: eventType } = e;
             const dataset = ed.targetElm.dataset;
@@ -254,13 +274,5 @@ export class InlineEditService {
         const contentlet = targetElement.closest('[data-dot-object="contentlet"]') as HTMLElement;
 
         return Number(contentlet.dataset.dotOnNumberOfPages || 0) > 1;
-    }
-
-    setTargetInlineMCEDataset(dataset: InlineEditingContentletDataset) {
-        this.$inlineEditingTargetDataset.set(dataset);
-    }
-
-    setIframeWindow(iframeWindow: Window) {
-        this.$iframeWindow.set(iframeWindow);
     }
 }
