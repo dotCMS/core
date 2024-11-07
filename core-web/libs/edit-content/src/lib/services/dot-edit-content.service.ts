@@ -7,8 +7,8 @@ import { map, pluck } from 'rxjs/operators';
 
 import {
     DotContentTypeService,
-    DotWorkflowActionsFireService,
-    DotSiteService
+    DotSiteService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -207,5 +207,16 @@ export class DotEditContentService {
                 leaf: false
             }))
         );
+    }
+
+    /**
+     * Get the number of reference pages for a contentlet
+     * @param identifier - The identifier of the contentlet
+     * @returns An observable that emits the number of reference pages
+     */
+    getReferencePages(identifier: string): Observable<number> {
+        return this.#http
+            .get<{ entity: { count: number } }>(`/api/v1/content/${identifier}/references/count`)
+            .pipe(map((response) => response.entity.count));
     }
 }

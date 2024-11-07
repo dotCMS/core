@@ -26,7 +26,8 @@ import {
     DotPropertiesService,
     DotUploadFileService,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWorkflowService
 } from '@dotcms/data-access';
 import { DotMessagePipe, mockMatchMedia, monacoMock } from '@dotcms/utils-testing';
 
@@ -137,6 +138,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             mockProvider(DotEditContentService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(ActivatedRoute),
+            mockProvider(DotWorkflowService),
             provideHttpClient(),
             provideHttpClientTesting(),
             ConfirmationService,
