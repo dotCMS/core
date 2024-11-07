@@ -82,3 +82,4 @@ This maintenance release includes the following code fixes:
 76. https://github.com/dotCMS/core/issues/30156 : Create Notifications for LTS already EOL or upcoming EOL #30156
 77. https://github.com/dotCMS/core/issues/30243 : Intermittent 404 issues for customers who came from another DB engine #30243
 78. https://github.com/dotCMS/core/issues/28514 : Running Experiment Cache is not working right #28514
+79. https://github.com/dotCMS/core/issues/28507 : Refresh Running Experiment Cache after abort one Experiment #28507
