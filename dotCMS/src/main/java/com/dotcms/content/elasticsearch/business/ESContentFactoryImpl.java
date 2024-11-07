@@ -866,12 +866,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     @Override
     protected Contentlet find(final String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
+        return find(inode, false);
+    }
+
+    protected Contentlet find(final String inode, final boolean ignoreStoryBlock) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
         Contentlet contentlet = contentletCache.get(inode);
         if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
                 return null;
             }
-            return processCachedContentlet(contentlet);
+            if (ignoreStoryBlock) {
+                return processCachedContentlet(contentlet);
+            }
         }
 
         final Optional<Contentlet> dbContentlet = this.findInDb(inode);
@@ -887,11 +893,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
     @Override
     protected Contentlet find(final String inode, String variant) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
+        return find(inode, variant, false);
+    }
+
+    protected Contentlet find(final String inode, final String variant, final boolean ignoreStoryBlock) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
         Contentlet contentlet = contentletCache.get(inode);
         if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
                 return null;
             }
+            /*if (!ignoreStoryBlock) {
+                return processCachedContentlet(contentlet);
+            }*/
             return processCachedContentlet(contentlet);
         }
 
@@ -1216,6 +1229,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     @Override
     protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException, DotSecurityException {
+        return findContentletByIdentifierAnyLanguage(identifier, includeDeleted, true);
+    }
+
+    /*
+    contenlet con story block
+             -> otro contentlet = final String identifier
+   */
+    protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted, final boolean ignoreStoryBlock) throws DotDataException, DotSecurityException {
         final Optional<ContentletVersionInfo> contentVersionDeleted = FactoryLocator.getVersionableFactory()
                 .findAnyContentletVersionInfo(identifier, true);
 
@@ -1223,7 +1244,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 .findAnyContentletVersionInfo(identifier, false);
 
         if (contentVersionNotDeleted.isPresent()) {
-            return find(contentVersionNotDeleted.get().getWorkingInode(), contentVersionNotDeleted.get().getVariant());
+            // parar la cadena en este metodo find
+            return find(contentVersionNotDeleted.get().getWorkingInode(), contentVersionNotDeleted.get().getVariant(), ignoreStoryBlock);
         } else if (contentVersionDeleted.isPresent() && includeDeleted) {
             return find(contentVersionDeleted.get().getWorkingInode());
         } else if (contentVersionDeleted.isPresent() && !includeDeleted) {

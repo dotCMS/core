@@ -729,8 +729,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public Contentlet findContentletByIdentifierAnyLanguage(final String identifier,
             final boolean includeDeleted) throws DotDataException {
+        return findContentletByIdentifierAnyLanguage(identifier, includeDeleted, false);
+    }
+
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier,
+                                                            final boolean includeDeleted, final boolean ignoreStoryBlock) throws DotDataException {
         try {
-            return contentFactory.findContentletByIdentifierAnyLanguage(identifier, includeDeleted);
+            return contentFactory.findContentletByIdentifierAnyLanguage(identifier, includeDeleted, ignoreStoryBlock);
 
         } catch (Exception e) {
             throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
@@ -2152,7 +2157,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     relatedIdentifiers.stream().forEach(child -> {
                         try {
                             final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(
-                                    child, true);
+                                    child, true, true);
                             if (null != mappedContentlet && UtilMethods.isSet(
                                     mappedContentlet.getIdentifier())) {
                                 result.add(mappedContentlet);
