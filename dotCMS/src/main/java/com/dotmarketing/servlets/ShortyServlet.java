@@ -533,16 +533,18 @@ public class ShortyServlet extends HttpServlet {
 
             if (contentletVersionInfo.isEmpty() && shouldFallbackToDefaultLanguage(contentlet)) {
                 // Try finding the contentlet version with the default language ID
+                Logger.info(this, "No contentlet version found for identifier " + relatedImageId + " in language " + contentlet.getLanguageId() + ", trying default language.");
                 contentletVersionInfo = this.versionableAPI.getContentletVersionInfo(relatedImageId,APILocator.getLanguageAPI().getDefaultLanguage().getId());
             }
 
             if (contentletVersionInfo.isPresent()) {
+                Logger.debug(this, "Contentlet version found for identifier: " + relatedImageId);
                 final Contentlet imageContentlet = getImageContentlet(contentletVersionInfo.get(), live);
                 validateContentlet(imageContentlet, live, imageContentlet.getInode());
                 final String fieldVar = imageContentlet.isDotAsset() ? DotAssetContentType.ASSET_FIELD_VAR : FILE_ASSET_DEFAULT;
                 return buildFieldPath(imageContentlet, fieldVar);
             }
-
+            Logger.debug(this, "No contentlet version found for identifier: " + relatedImageId + ", returning path based on original contentlet inode: " + contentlet.getInode());
         }
         return buildFieldPath(contentlet, field.variable());
     }
@@ -556,7 +558,7 @@ public class ShortyServlet extends HttpServlet {
      * @return true if the system should attempt to use the default language, false otherwise
      */
     private boolean shouldFallbackToDefaultLanguage(final Contentlet contentlet) {
-        return APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage() &&
+        return APILocator.getLanguageAPI().canDefaultFileToDefaultLanguage() &&
                 APILocator.getLanguageAPI().getDefaultLanguage().getId() != contentlet.getLanguageId();
     }
 
