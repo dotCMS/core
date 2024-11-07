@@ -79,6 +79,7 @@ import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
+import { INLINE_EDIT_BLOCK_EDITOR_EVENT } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
@@ -334,6 +335,7 @@ describe('EditEmaEditorComponent', () => {
         let dotHttpErrorManagerService: DotHttpErrorManagerService;
         let dotTempFileUploadService: DotTempFileUploadService;
         let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
+        let dotEventsService: DotEventsService;
         let router: Router;
         let dotPageApiService: DotPageApiService;
 
@@ -360,6 +362,7 @@ describe('EditEmaEditorComponent', () => {
             store = spectator.inject(UVEStore, true);
             confirmationService = spectator.inject(ConfirmationService, true);
             messageService = spectator.inject(MessageService, true);
+            dotEventsService = spectator.inject(DotEventsService, true);
             dotCopyContentModalService = spectator.inject(DotCopyContentModalService, true);
             dotCopyContentService = spectator.inject(DotCopyContentService, true);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService, true);
@@ -643,6 +646,24 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     spectator.detectChanges();
+                });
+
+                it('should notify block-editor-sidebar to enable editing', () => {
+                    const spy = jest.spyOn(dotEventsService, 'notify');
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING,
+                                payload: {}
+                            }
+                        })
+                    );
+
+                    spectator.detectComponentChanges();
+
+                    expect(spy).toHaveBeenCalledWith(INLINE_EDIT_BLOCK_EDITOR_EVENT, {});
                 });
 
                 describe('reorder navigation', () => {

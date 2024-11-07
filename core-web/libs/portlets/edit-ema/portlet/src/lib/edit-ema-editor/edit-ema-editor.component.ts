@@ -1007,7 +1007,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CLIENT_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             },
-            [CLIENT_ACTIONS.BLOCK_EDITOR_INLINE_EDITING]: (payload) => {
+            [CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING]: (payload) => {
                 this.#dotEventsService.notify(INLINE_EDIT_BLOCK_EDITOR_EVENT, payload);
             }
         };

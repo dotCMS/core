@@ -73,7 +73,7 @@ export enum CLIENT_ACTIONS {
     /**
      * Tell the editor to open the block editor sidebar
      */
-    BLOCK_EDITOR_INLINE_EDITING = 'editor-inline-editing',
+    INIT_BLOCK_EDITOR_INLINE_EDITING = 'init-editor-inline-editing',
     /**
      * Tell the editor to do nothing
      */

@@ -17,16 +17,18 @@
         }
         <footer>
             <button
+                pButton
                 (click)="close()"
                 [label]="'Cancel' | dm"
+                [disabled]="loading()"
                 class="p-button-outlined"
-                pButton
                 data-testId="cancel-btn"></button>
             <button
-                (click)="saveEditorChanges()"
-                [disabled]="!value()"
-                [label]="'Save' | dm"
                 pButton
+                (click)="saveEditorChanges()"
+                [disabled]="!value() || loading()"
+                [label]="'Save' | dm"
+                [loading]="loading()"
                 data-testId="save-btn"></button>
         </footer>
     </div>

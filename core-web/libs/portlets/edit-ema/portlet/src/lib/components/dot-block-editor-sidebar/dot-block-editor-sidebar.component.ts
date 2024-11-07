@@ -60,6 +60,7 @@ export class DotBlockEditorSidebarComponent implements OnInit {
 
     protected readonly contentlet = signal<BlockEditorData>(null);
     protected readonly value = signal<JSONContent>(null);
+    protected readonly loading = signal<boolean>(false);
 
     /**
      * Emit when the editor changes are saved
@@ -75,14 +76,13 @@ export class DotBlockEditorSidebarComponent implements OnInit {
                 takeUntilDestroyed(this.#destroyRef),
                 map((event) => event.data),
                 switchMap(({ fieldName, contentType, inode, language, blockEditorContent }) => {
-                    return this.getEditorField({ fieldName, contentType }).pipe(
+                    return this.#getEditorField({ fieldName, contentType }).pipe(
                         map((field) => ({
                             inode,
                             field,
                             fieldName,
                             languageId: parseInt(language),
-                            // Add Try/Catch to handle JSON.parse error
-                            content: JSON.parse(blockEditorContent)
+                            content: this.#getJsonContent(blockEditorContent)
                         }))
                     );
                 })
@@ -100,6 +100,7 @@ export class DotBlockEditorSidebarComponent implements OnInit {
      */
     saveEditorChanges(): void {
         const { fieldName, inode } = this.contentlet();
+        this.loading.set(true);
         this.#dotWorkflowActionsFireService
             .saveContentlet({
                 inode,
@@ -133,6 +134,7 @@ export class DotBlockEditorSidebarComponent implements OnInit {
     protected close() {
         this.contentlet.set(null);
         this.value.set(null);
+        this.loading.set(false);
     }
 
     /**
@@ -143,12 +145,26 @@ export class DotBlockEditorSidebarComponent implements OnInit {
      * @return {*}  {Observable<DotCMSContentTypeField>}
      * @memberof DotBlockEditorSidebarComponent
      */
-    private getEditorField({
-        fieldName,
-        contentType
-    }: DOMStringMap): Observable<DotCMSContentTypeField> {
+    #getEditorField({ fieldName, contentType }: DOMStringMap): Observable<DotCMSContentTypeField> {
         return this.#dotContentTypeService
             .getContentType(contentType)
             .pipe(map(({ fields }) => fields.find(({ variable }) => variable === fieldName)));
+    }
+
+    /**
+     * Parse the content to JSON
+     *
+     * @param {string} content
+     * @return {*}  {JSONContent}
+     * @memberof DotBlockEditorSidebarComponent
+     */
+    #getJsonContent(content: string): JSONContent {
+        try {
+            return JSON.parse(content);
+        } catch (e) {
+            console.error('Error parsing JSON content ', e);
+
+            return {};
+        }
     }
 }
