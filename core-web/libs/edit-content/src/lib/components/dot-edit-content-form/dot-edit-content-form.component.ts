@@ -37,7 +37,6 @@ import {
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
 import { getFinalCastedValue, isFilteredType } from '../../utils/functions.util';
-import { DotEditContentAsideComponent } from '../dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
 /**
@@ -72,7 +71,6 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         DotEditContentFieldComponent,
         ButtonModule,
         DotMessagePipe,
-        DotEditContentAsideComponent,
         TabViewModule,
         DotWorkflowActionsComponent,
         TabViewInsertDirective,

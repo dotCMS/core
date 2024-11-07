@@ -82,7 +82,6 @@ import net.bytebuddy.dynamic.loading.ClassReloadingStrategy;
 public abstract class GenericBundleActivator implements BundleActivator {
 
     private static final String MANIFEST_HEADER_OVERRIDE_CLASSES = "Override-Classes";
-
     private static final String INIT_PARAM_VIEW_JSP = "view-jsp";
     private static final String INIT_PARAM_VIEW_TEMPLATE = "view-template";
     public static final String BYTEBUDDY_CLASS_RELOADING_STRATEGY_NOT_SET_JAVA_AGENT_NOT_SET = "bytebuddy ClassReloadingStrategy not set [java agent not set?]";
@@ -90,8 +89,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
     public static final String COM_LIFERAY_PORTLET_VELOCITY_PORTLET = "com.liferay.portlet.VelocityPortlet";
 
     private BundleContext context;
-
-
     private PrimitiveToolboxManager toolboxManager;
     private CacheOSGIService cacheOSGIService;
     private ConditionletOSGIService conditionletOSGIService;
@@ -108,7 +105,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private final Collection<String> preHooks = new ArrayList<>();
     private final Collection<String> postHooks = new ArrayList<>();
     private final Collection<String> overriddenClasses = new HashSet<>();
-
 
     protected ClassLoader getBundleClassloader () {
         return this.getClass().getClassLoader();
@@ -563,21 +559,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param context
      * @param actionlet
      */
-    protected void registerActionlet ( BundleContext context, WorkFlowActionlet actionlet ) {
-
-        //Getting the service to register our Actionlet
-        ServiceReference<?> serviceRefSelected = context.getServiceReference( WorkflowAPIOsgiService.class.getName() );
-        if ( serviceRefSelected == null ) {
-            return;
-        }
-
-
-        OSGIUtil.getInstance().workflowOsgiService = (WorkflowAPIOsgiService) context.getService( serviceRefSelected );
-        OSGIUtil.getInstance().workflowOsgiService.addActionlet( actionlet.getClass() );
-        actionlets.add( actionlet );
-
-        Logger.info( this, "Added actionlet: " + actionlet.getName() );
-        OSGIUtil.getInstance().actionletsStopped.remove(actionlet.getClass().getCanonicalName());
+    protected void registerActionlet(final BundleContext context, final WorkFlowActionlet actionlet) {
+        OSGIUtil.getInstance().registerActionlet(context, actionlet, actionlets);
     }
 
     /**
@@ -831,7 +814,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unregisterActionlets () {
 
-        if (OSGIUtil.getInstance().workflowOsgiService != null) {
+        if (OSGIUtil.getInstance().getWorkflowOsgiService() != null) {
             for ( WorkFlowActionlet actionlet : actionlets ) {
                 if(!OSGIUtil.getInstance().actionletsStopped.contains(actionlet.getClass().getCanonicalName())){
                     OSGIUtil.getInstance().actionletsStopped.add(actionlet.getClass().getCanonicalName());

@@ -55,7 +55,7 @@ describe('DotAnalyticsSearchStore', () => {
                     'analytics.search.config.error': 'Configuration error',
                     'analytics.search.config.error.subtitle':
                         'There was an error in the configuration',
-                    'analytics.search.no.licence': 'No license found',
+                    'analytics.search.no.license': 'No license found',
                     'analytics.search.no.license.subtitle': 'Please provide a valid license',
                     'analytics.search.no.results': 'No results',
                     'analytics.search.execute.results': 'Execute a query to get results'
