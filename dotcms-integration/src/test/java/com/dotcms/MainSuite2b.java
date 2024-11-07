@@ -38,6 +38,7 @@ import com.dotcms.enterprise.publishing.remote.handler.ContentWorkflowHandlerTes
 import com.dotcms.enterprise.publishing.remote.handler.HandlerUtilTest;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3PublisherTest;
 import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
+import com.dotcms.experiments.business.ExperimentFactoryIntegrationTest;
 import com.dotcms.experiments.business.IndexRegexUrlPatterStrategyIntegrationTest;
 import com.dotcms.experiments.business.RootIndexRegexUrlPatterStrategyIntegrationTest;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
@@ -299,7 +300,8 @@ import org.junit.runners.Suite.SuiteClasses;
         EmbeddingsToolTest.class,
         CompletionsToolTest.class,
         EmbeddingContentListenerTest.class,
-        Task241013RemoveFullPathLcColumnFromIdentifierTest.class
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
+        ExperimentFactoryIntegrationTest.class
 })
 
 public class MainSuite2b {

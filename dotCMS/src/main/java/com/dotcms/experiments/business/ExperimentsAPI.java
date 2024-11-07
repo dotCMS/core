@@ -12,6 +12,8 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
+
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -255,5 +257,17 @@ public interface ExperimentsAPI {
      * @throws DotDataException
      */
     Optional<Experiment> getRunningExperimentPerPage(final String pageId) throws DotDataException;
+
+    /**
+     * Return the collection of experiments that are active on this Page. This includes all the experiments
+     * currently active on the Page. It means all experiments with the status DRAFT, SCHEDULED or
+     * RUNNING Experiment on this Page
+     *
+     * @param pageIdentifier to Filter the Experiments.
+     *
+     * @return
+     * @throws DotDataException
+     */
+    Collection<Experiment> listActive(final String pageIdentifier) throws DotDataException;
 
 }

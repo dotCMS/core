@@ -83,3 +83,4 @@ This maintenance release includes the following code fixes:
 77. https://github.com/dotCMS/core/issues/30243 : Intermittent 404 issues for customers who came from another DB engine #30243
 78. https://github.com/dotCMS/core/issues/28514 : Running Experiment Cache is not working right #28514
 79. https://github.com/dotCMS/core/issues/28507 : Refresh Running Experiment Cache after abort one Experiment #28507
+80. https://github.com/dotCMS/core/issues/28588 : Make MultiTree Multi variant cache cluster aware #28588
