@@ -1385,12 +1385,16 @@ public class PageResource {
      * whether the page is available in such a language or not.
      *
      * @throws DotDataException An error occurred when interacting with the database.
+     * @deprecated This method is deprecated and will be removed in future versions. Please use the
+     * more generic REST Endpoint
+     * {@link com.dotcms.rest.api.v1.content.ContentResource#getExistingLanguagesForContent(String, User)} instead.
      */
     @GET
     @Path("/{pageId}/languages")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Deprecated
     public Response checkPageLanguageVersions(@Context final HttpServletRequest request,
                                               @Context final HttpServletResponse response,
                                               @PathParam("pageId") final String pageId) throws DotDataException {

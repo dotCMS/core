@@ -13,7 +13,10 @@ import java.util.Map;
  *
  * @author Jose Castro
  * @since Jan 5th, 2023
+ *
+ * @deprecated This class is deprecated and will be removed in a future version of dotCMS.
  */
+@Deprecated
 public class ExistingLanguagesForPageView extends HashMap<String, Object> implements Serializable {
 
     public ExistingLanguagesForPageView(final Language language, final boolean translated) {
