@@ -5,30 +5,59 @@ import time
 import requests
 from requests.auth import HTTPBasicAuth
 import sys 
+from configparser import ConfigParser, NoOptionError, NoSectionError
+
 
 config = configparser.ConfigParser()
 config.read('./properties/config.properties')
 
 # Read properties from the config file
-def get_variables(config_section):
-    docker_tag_from = config.get(config_section, 'docker_tag_from')
-    docker_tag_to = config.get(config_section, 'docker_tag_to')
-    custom_starter = config.get(config_section, 'custom_starter')
-    expected_db_version = config.get(config_section, 'expected_db_version')
-    serverURL = config.get('PLAYWRIGHT', 'BASE_URL')
+def get_variables(config: ConfigParser, config_section: str):
+    try:
+        docker_tag_from = config.get(config_section, 'docker_tag_from')
+    except (NoOptionError, NoSectionError):
+        docker_tag_from = None
+
+    try:
+        docker_tag_to = config.get(config_section, 'docker_tag_to')
+    except (NoOptionError, NoSectionError):
+        docker_tag_to = None
+
+    try:
+        custom_starter = config.get(config_section, 'custom_starter')
+    except (NoOptionError, NoSectionError):
+        custom_starter = None
+
+    try:
+        expected_db_version = config.get(config_section, 'expected_db_version')
+    except (NoOptionError, NoSectionError):
+        expected_db_version = None
+
+    try:
+        serverURL = config.get('PLAYWRIGHT', 'BASE_URL')
+    except (NoOptionError, NoSectionError):
+        serverURL = None
 
     return docker_tag_from, docker_tag_to, custom_starter, expected_db_version, serverURL
 
+
 # Function to set environment variables for docker-compose
 def set_env_variables(docker_tag, starter):
-    os.environ['docker_tag'] = docker_tag
-    os.environ['custom_starter'] = starter
+    try:
+        os.environ['docker_tag'] = docker_tag
+        os.environ['custom_starter'] = starter
+    except Exception as e:
+        print(f"Error setting environment variables: {e}")
 
-
+    
 # Function to start dotCMS using docker-compose
 def start_dotcms_with_compose():
     print("- Starting dotCMS using docker-compose...")
-    subprocess.run(["docker-compose", "up", "-d"], check=True)
+    try:
+        subprocess.run(["docker-compose", "up", "-d"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while starting dotCMS: {e}")
+        sys.exit(e.returncode)
 
 
 # Function to validate if dotCMS is running
@@ -54,10 +83,15 @@ def check_system_status(server_url):
         username = config.get('PLAYWRIGHT', 'username')
         password = config.get('PLAYWRIGHT', 'password')
 
+        if not username or not password:
+            logging.error("Username or password not found in configuration.")
+            return False
+
         # Construct the full URL
         url = f"{server_url}/api/v1/system-status?extended=true"
         
         # Make the request
+        print("- Validating system status... Calling the monitoring API...")
         response = requests.get(url, auth=HTTPBasicAuth(username, password))
         
         # Check if the status code is 200
@@ -75,38 +109,38 @@ def check_system_status(server_url):
 
 
 # Function to run the Playwright test script in js
-def runTests(testFile):
-    js_test_path = testFile
+def runTests(testFile, tag):
     print(f"- Running Playwright...Validating dotCMS is ready to use...")
     try:
-        result = subprocess.run(['npx', 'playwright', 'test',
-                                 js_test_path],
-                                capture_output=True, text=True)
-        print(result.stdout)  # Show Playwright test result
-        if result.returncode != 0:
-            print(f"Playwright test failed: {result.stderr}")
-        else:
-            print("- Playwright test passed successfully.")
+        # Run the subprocess
+        result = subprocess.run(['npx', 'playwright', 'test', 
+                                testFile, '--grep', rf'{tag}'],
+                                capture_output=True, text=True
+        )
+                                
+       # Show Playwright test result
+        print(result.stdout)
+        print("- Playwright test passed successfully.")
     except subprocess.CalledProcessError as e:
-        print(f"- Error running the Playwright test: {e.stderr}") 
+        print(f"Playwright test failed: {e.stderr}")
+        sys.exit(e.returncode)
+    except Exception as e:
+        print(f"- Unexpected error: {str(e)}")
+        sys.exit(1)
 
 
 # Function to get the last dotCMS database version
-def get_last_db_version():
-    # Define the container name
-    container_name = "upgrade_project-db-1"
-
+def get_last_db_version(container):
     try:        
         # Step 1: Check if the container is running
         result = subprocess.run(
-            ["docker", "ps", "--filter", f"name={container_name}",
-             "--format", "{{.Status}}"],
+            ["docker", "ps", "--filter", f"name={container}", "--format", "{{.Status}}"],
             capture_output=True, 
             text=True
-            )
+        )
         
         if "Up" not in result.stdout:
-            raise Exception(f"Container {container_name} is not running")
+            raise Exception(f"Container {container} is not running")
         
         # Step 2: Execute the SQL query 
         query = "SELECT * FROM db_version ORDER BY date_update DESC LIMIT 1;"
@@ -116,20 +150,17 @@ def get_last_db_version():
         # Run the command in the Docker container
         print("- Getting the db version from the dotCMS instance...")
         result = subprocess.run(
-            ["docker", "exec", container_name, "bash", "-c", command],
+            ["docker", "exec", container, "bash", "-c", command],
             capture_output=True,
             text=True,
             check=True
         )
         
-        #print("Command output:")
-        #print(result.stdout)  
-
         lines = result.stdout.strip().split('\n')
         if len(lines) > 2:  # Check if we have results
             db_version_line = lines[2]  # First data line
-            # Get the first field and strip whitespace
             db_version = db_version_line.split('|')[0].strip()
+
             print("dotCMS db Version:", db_version) 
             return db_version 
         else:
@@ -141,62 +172,63 @@ def get_last_db_version():
         print(e.stderr)
     except Exception as error:
         print(f"Error: {error}")        
+        return None
 
 
 # Function to compare the database version with the expected version
-def compare_versions(db_version, expected_version):
+def compare_versions(db_version: str, expected_version: str) -> bool:
     print("- Comparing the database version with the expected version.")
     if db_version is None:
         print("Cannot compare versions: no database version retrieved.")
-        return None
+        return False
 
     # Compare and print result
     if db_version == expected_version:
-        print("DB Version matches the expected version.")
         return True
     else:
         print(" - ** ERROR: DB Version does not match the expected version.")
         print(f"   * Retrieved Version: {db_version}")
         print(f"   * Expected Version: {expected_version}")
         return False
-
+        
 
 # Function to stop dotCMS using docker-compose
-def stop_dotcms_with_compose():
-    print("- Stopping dotCMS using docker-compose...")
-    subprocess.run(['docker', 'kill', '$(docker ps -q)'], shell=True,
-                   check=True, text=True, capture_output=True)
+def stop_containers():
+    print("- Stopping dotCMS...")
+    try:
+        # Get the list of running container IDs
+        result = subprocess.run(['docker', 'ps', '-q'], check=True, text=True, capture_output=True)
+        container_ids = result.stdout.split()
+        
+        # Stop each container
+        for container_id in container_ids:
+            subprocess.run(['docker', 'stop', container_id], check=True)
+        
+        print("All containers stopped.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error stopping containers: {e}")
+        sys.exit(1)
 
 
 # Function to clean dotCMS using docker-compose
 def clean_dotcms_with_compose():
     print("- Cleaning dotCMS using docker-compose...")
-    subprocess.run(["docker-compose", "down"], check=True)
-
-# Function to cleanup Docker containers and volumes
-def cleanup():
     try:
-        # Remove all stopped containers
-        subprocess.run("docker rm -f $(docker ps -a -q)",
-                       shell=True,
-                       check=True)
-        print("- Successfully removed all stopped containers.")
-
-        # Remove all Docker volumes
-        subprocess.run("docker volume rm $(docker volume ls -q)",
-                       shell=True,
-                       check=True)
-        print("- Successfully removed all Docker volumes.")
-        
+        subprocess.run(["docker-compose", "down"], check=True)
+        print("dotCMS cleaned successfully.")
     except subprocess.CalledProcessError as e:
-        print(f"An error occurred while cleaning up: {e}")
+        print(f"An error occurred while cleaning dotCMS: {e}")
+        sys.exit(e.returncode)
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        sys.exit(1)
 
 
 # Function to perform the upgrade
 def upgrade_dotcms():
     try:
         # Get variables from the config file
-        docker_tag_from, docker_tag_to, custom_starter, expected_db_version, serverURL = get_variables("TEST1")
+        docker_tag_from, docker_tag_to, custom_starter, expected_db_version, serverURL = get_variables(config , "TEST1")
 
         print(f"---------------------------------------------------------------------------------------------------------------")
         print(f"      Upgrading dotCMS from {docker_tag_from} to {docker_tag_to}...   ")
@@ -212,25 +244,22 @@ def upgrade_dotcms():
         # Start the 'from' version
         start_dotcms_with_compose()
 
-        # Function to validate if dotCMS is running
-        is_running = validate_dotcms_isRunning(15)
-        print("- Is dotCMS running?", is_running)
-        if not is_running:
-            raise Exception(f"dotCMS {docker_tag_from} version is not running properly.")
 
-        # Validate if dotCMS is ready to use according the monitoring API
-        is_status_ok = check_system_status(serverURL)
+        # Validate if dotCMS is running
+        print("- Is dotCMS running?")
+        if not validate_dotcms_isRunning(15):
+            raise RuntimeError(f"dotCMS {docker_tag_from} version is not running properly.")
 
-        if not is_status_ok:
-            raise Exception(f"System status check failed for {docker_tag_from} version.")
-        else:
-            print("Proceeding with further steps.")
+        # Validate system status (monitor API)
+        if not check_system_status(serverURL):
+            raise RuntimeError(f"System status check failed for {docker_tag_from} version.")
+        print("Proceeding with further steps.")
 
         # Run the Playwright test script
-        runTests("./playwrightTests/validateStatus.spec.js")
+        runTests("./playwrightTests/pw_e2e.spec.js", "@beforeUpgrade")
 
         # Stop the 'from' version
-        stop_dotcms_with_compose()
+        stop_containers()
 
         # Set environment variables for 'to' release
         set_env_variables(docker_tag_to, custom_starter)
@@ -241,26 +270,23 @@ def upgrade_dotcms():
         # Start the 'to' version
         start_dotcms_with_compose()
 
-        # Function to validate if dotCMS is running
-        is_running = validate_dotcms_isRunning(100)
-        print("- Is dotCMS running?", is_running)
-        if not is_running:
-            raise Exception(f"dotCMS {docker_tag_to} version is not running properly.")
+        # Validate if dotCMS is running
+        print("- Is dotCMS running?")
+        if not validate_dotcms_isRunning(15):
+            raise RuntimeError(f"dotCMS {docker_tag_from} version is not running properly.")
 
-        # Validate if dotCMS is ready to use according the monitoring API
-        is_status_ok = check_system_status(serverURL)
+        # Validate system status (monitor API)
+        if not check_system_status(serverURL):
+            raise RuntimeError(f"System status check failed for {docker_tag_from} version.")
+        print("Proceeding with further steps.")
 
-        if not is_status_ok:
-            raise Exception(f"System status check failed for {docker_tag_to} version.")
-        else:
-            print("Proceeding with further steps.")
-
-        # Validate if the database version is in correct version
-        if not compare_versions(get_last_db_version(), expected_db_version):
+        # Validate database version
+        if not compare_versions(get_last_db_version("upgrade_project-db-1"), expected_db_version):
             raise Exception("Database version is incorrect.")
+        print("Database version is correct.")
 
         # Run the Playwright test script
-        runTests("./playwrightTests/upgradeStatus.spec.js")
+        runTests("./playwrightTests/pw_e2e.spec.js", "@afterUpgrade")
 
         # Stop the 'to' version
         clean_dotcms_with_compose()
@@ -273,7 +299,6 @@ def upgrade_dotcms():
         print(f"*************** ERROR during the upgrade process: {error} *************** ")
         print(f"Rolling back changes and stopping the process.")
         clean_dotcms_with_compose()  # Make sure dotCMS is stopped if an error occurs
-        #cleanup()  # Clean up Docker containers and volumes
         sys.exit(1)  # Exit the function early if any step fails
 
 # Main execution flow

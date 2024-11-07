@@ -27,6 +27,7 @@ services:
 
   dotcms:
     image: ${docker_tag}
+    pull_policy: always
     environment:
       "CATALINA_OPTS": ' -Xms1g -Xmx1g '
       "DB_BASE_URL": "jdbc:postgresql://db/dotcms"

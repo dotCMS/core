@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test';
 import * as dotenv from 'dotenv';
 
-
 dotenv.config({ path: 'properties/config.properties' });  
 
 const serverURL = process.env.BASE_URL; 
-async function login(page) {
+async function login(page, username, password) {
     test.setTimeout(40000);
 
     await page.goto(`${serverURL}/c`);
@@ -13,8 +12,8 @@ async function login(page) {
     let title = await page.title();
     expect(title).toBe('dotCMS Content Management Platform');
     await page.getByTestId('header').isVisible();
-    await page.fill('input[id="inputtext"]', 'admin@dotcms.com');
-    await page.fill('input[id="password"]', 'admin');
+    await page.fill('input[id="inputtext"]', username);
+    await page.fill('input[id="password"]', password);
     await page.getByTestId('submitButton').click();
     await page.waitForURL(`${serverURL}/dotAdmin/#/starter`);
 
@@ -23,17 +22,25 @@ async function login(page) {
     expect(title).toBe('Welcome - dotCMS Content Management Platform');
 }
 
-test('Verify dotCMS UI is running and ready', async ({ page }) => {
-    await login(page);  
+test('Login: Verify dotCMS UI is running and ready', {tag: '@afterUpgrade @beforeUpgrade'}, async ({ page }) => {
+    const username = process.env.username;
+    const password = process.env.password; 
+    await login(page, username, password );  
 });
 
-// Second test that makes a reindex after logging in
-test('Make a reindex', async ({ page }) => {
-    test.setTimeout(60000);
-    await login(page);  
 
+// Second test that makes a reindex after logging in
+test('Make a reindex', {tag: '@afterUpgrade'}, async ({ page }) => {
+    const username = process.env.username;
+    const password = process.env.password; 
+    
+    test.setTimeout(60000);
+
+    // Login
+    await login(page,username, password);  
     // Open the settings menu
-    await page.getByText('settingsSettingsarrow_drop_up').click(); 
+    await page.getByText('settingsSettingsarrow_drop_up').click();
+    //await page.getByText('Settings', { exact: true }).click();
     await page.getByRole('link', { name: 'Maintenance' }).click();
     
     // Switch to the relevant frame and click the 'Index' tab
