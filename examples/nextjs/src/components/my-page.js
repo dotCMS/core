@@ -25,7 +25,7 @@ const experimentConfig = {
 // Mapping of components to DotCMS content types
 const componentsMap = {
     webPageContent: WebPageContent,
-    // Banner: Banner,
+    Banner: Banner,
     Activity: Activity,
     Product: Product,
     Image: ImageComponent,
