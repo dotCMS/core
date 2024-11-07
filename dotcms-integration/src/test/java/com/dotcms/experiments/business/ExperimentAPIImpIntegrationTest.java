@@ -134,7 +134,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#start(long, User)}
+     * Method to test: {@link ExperimentsAPIImpl#start(String, User)}
      * When: The experiment is started
      * Should: Generate a new Running Experiment ID
      */
@@ -181,8 +181,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#start(long, User)}
-     * When: The experiment is started but using {@link ExperimentsAPIImpl#startScheduled(long, User)}
+     * Method to test: {@link ExperimentsAPIImpl#start(String, User)}
+     * When: The experiment is started but using {@link ExperimentsAPIImpl#startScheduled(String, User)}
      * Should: Generate a new Running Experiment ID
      */
     @Test
@@ -237,7 +237,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#start(long, User)}
+     * Method to test: {@link ExperimentsAPIImpl#start(String, User)}
      * When: The experiment is started twice
      * Should: Generate two Running Experiment ID different
      */
@@ -346,8 +346,16 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * Method to test: {@link ExperimentsAPI#getRunningExperiments()}
      * When: You have tree Experiment:
      * - First one in DRAFT state, it has never been running.
-     * - Second one in RUNNING state, it was already started and it was not stopped yet
-     * - Finally one in STOP State, it was started, but it was stopped already
+     * - Second and third are started.
+     *
+     * Should : The method return the second and third Experiment,
+     * Also before called the method the Running Experiment cache must be empty and after called the method the cache
+     * must include the two Running Experiment.
+     *
+     * later Stop the third Experiment, and called the method again, now the method
+     * must return just the Second Experiment.
+     * Also, the Running Experiment Cache must ve empty before called the methos and include just the second Experiment
+     * after call it.
      */
     @Test
     public void getRunningExperiment() throws DotDataException, DotSecurityException {
@@ -358,6 +366,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final Experiment stoppedExperiment = new ExperimentDataGen().nextPersisted();
         ExperimentDataGen.start(stoppedExperiment);
+
+        assertCachedRunningExperiments(Collections.emptyList());
 
         try {
             List<Experiment> experimentRunning = APILocator.getExperimentsAPI()
@@ -372,6 +382,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             assertCachedRunningExperiments(experimentIds);
 
             ExperimentDataGen.end(stoppedExperiment);
+
+            assertCachedRunningExperiments(Collections.emptyList());
 
             experimentRunning = APILocator.getExperimentsAPI()
                     .getRunningExperiments();
@@ -454,9 +466,12 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
 
     private static void assertCachedRunningExperiments(final List<String> experimentIds) {
-        CacheLocator.getExperimentsCache()
-                .getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY)
-                .forEach(experiment -> assertTrue(experimentIds.contains(experiment.getIdentifier())));
+        final List<Experiment> runningExperimentsCached = CacheLocator.getExperimentsCache()
+                .getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
+
+        if (runningExperimentsCached != null) {
+            runningExperimentsCached.forEach(experiment -> assertTrue(experimentIds.contains(experiment.getIdentifier())));
+        }
     }
 
     /**
@@ -2758,7 +2773,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#start(String, String, User)}
+     * Method to test: {@link ExperimentsAPIImpl#start(String, User)}
      * When: A User without permission on the Experiment's Page and Publish rights for Template-Layouts on the site
      * try to start the Experiment
      * Should: thrown a {@link DotSecurityException}
@@ -3028,7 +3043,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#end(String, String, User)}
+     * Method to test: {@link ExperimentsAPIImpl#end(String, User)}
      * When: A User with EDIT permission on the Experiment's Page and Publish rights for Template-Layouts on the site
      * try to end the Experiment
      * Should: thrown a {@link DotSecurityException}
@@ -3073,7 +3088,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#end(String, String, User)}
+     * Method to test: {@link ExperimentsAPIImpl#end(String, User)}
      * When: A User with PUBLISH permission on the Experiment's Page and not Publish rights for Template-Layouts on the site
      * try to end the Experiment
      * Should: thrown a {@link DotSecurityException}
@@ -3120,7 +3135,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#end(String, String, User)}
+     * Method to test: {@link ExperimentsAPIImpl#end(String, User)}
      * When: A Not Admin User with PUBLISH permission on the Experiment's Page and Publish rights for Template-Layouts on the site
      * try to end the Experiment
      * Should: End the Experiment
@@ -3208,7 +3223,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * Method to test: {@link VariantAPI#promote(Variant, User)}
      * When:
      * - Crate an Experiment with two {@link Variant}.
      * - Create two {@link Contentlet} and create a version into the NO DEFAULT Experiment's  {@link Variant} also
@@ -3408,7 +3423,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
 
     /**
-     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#delete(Contentlet, User, boolean)}
      * When Try to archive a Page with a Running Experiment
      * Should: Throw a {@link DotDataException}
      *
@@ -3526,7 +3541,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#delete(Contentlet, User, boolean)}
      * When Try to archive a Page with a DRAFT Experiment
      * Should: Archive the page and keep the Experiment on DRAFT
      *
@@ -3557,7 +3572,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#delete(Contentlet, User, boolean)}
      * When Try to delete an Experiment
      * Should: Delete the Experiment and the Variants
      * Also must delete the Variants and the COntentlets' version inside the Variants
@@ -3638,7 +3653,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#delete(Contentlet, User, boolean)}
      * When Try to delete a Page with two Experiments: one Draft and the other Ended
      * Should: Delete the Page and the experiments too
      * Also must delete the Variants and the COntentlets' version inside the Variants
@@ -3717,7 +3732,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
 
     /**
-     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#delete(Contentlet, User, boolean)}
      * When A Not Admin user but with the follow permission:
      * - Not Edit Permission on the Page
      * - Edit Template/Layout Permission on the site.
@@ -3789,7 +3804,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#delete(Contentlet, User, boolean)}
      * When A Not Admin user but with the follow permission:
      * - Edit Permission on the Page
      * - Not Edit Template/Layout Permission on the site.
@@ -3862,7 +3877,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentletAPIImpl#delete(Contentlet, User, boolean)}
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#delete(Contentlet, User, boolean)}
      * When A Not Admin user but with the follow permission:
      * - Edit Permission on the Page
      * - Edit Template/Layout Permission on the site.

@@ -50,6 +50,6 @@ public interface ExperimentsCache extends Cachable {
      *
      * @return
      */
-    void removeList();
+    void removeList(final String key);
 
 }

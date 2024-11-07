@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business;
 
+import static com.dotcms.experiments.business.ExperimentsCache.CACHED_EXPERIMENTS_KEY;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ARCHIVED;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
@@ -764,7 +765,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 : persistedExperiment;
 
         final Experiment running = save(experimentToSave, user);
-        cacheRunningExperiments();
+        cleanRunningExperimentsCache();
         publishExperimentPage(running, user);
         publishContentOnExperimentVariants(user, running);
 
@@ -841,7 +842,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
             archivedAllVariants(saved);
 
-            cacheRunningExperiments();
+            cleanRunningExperimentsCache();
 
             SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been ended by User" +
                     " ID '%s'", saved.name(), saved.id(), user.getUserId()));
@@ -1116,7 +1117,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     public List<Experiment> getRunningExperiments() throws DotDataException {
-        final List<Experiment> cached = experimentsCache.getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
+        final List<Experiment> cached = experimentsCache.getList(CACHED_EXPERIMENTS_KEY);
         if (Objects.nonNull(cached)) {
             return cached;
         }
@@ -1255,14 +1256,30 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return Long.parseLong(resultSetItem.get(successesAttributeName).orElseThrow().toString());
     }
 
+    /**
+     * Get the Running Experiment from Database and put them on the cache
+     *
+     * @return
+     * @throws DotDataException
+     */
     @CloseDBIfOpened
-    @Override
-    public List<Experiment> cacheRunningExperiments() throws DotDataException {
+    private List<Experiment> cacheRunningExperiments() throws DotDataException {
         final List<Experiment> experiments = FactoryLocator
             .getExperimentsFactory()
             .list(ExperimentFilter.builder().statuses(set(Status.RUNNING)).build());
-        experimentsCache.putList(ExperimentsCache.CACHED_EXPERIMENTS_KEY, experiments);
+        experimentsCache.putList(CACHED_EXPERIMENTS_KEY, experiments);
         return experiments;
+    }
+
+    /**
+     * Clean the Running Experiment List up from cache
+     *
+     * @return
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    private void cleanRunningExperimentsCache() throws DotDataException {
+        experimentsCache.removeList(CACHED_EXPERIMENTS_KEY);
     }
 
     /**
