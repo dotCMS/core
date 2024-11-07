@@ -33,6 +33,8 @@ export interface BlockEditorData {
     languageId: number;
 }
 
+export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
+
 @Component({
     selector: 'dot-block-editor-editing',
     standalone: true,
@@ -68,7 +70,7 @@ export class DotBlockEditorSidebarComponent implements OnInit {
 
     ngOnInit(): void {
         this.#dotEventsService
-            .listen<{ [key: string]: string }>('edit-block-editor')
+            .listen<{ [key: string]: string }>(INLINE_EDIT_BLOCK_EDITOR_EVENT)
             .pipe(
                 takeUntilDestroyed(this.#destroyRef),
                 map((event) => event.data),

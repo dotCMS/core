@@ -1,4 +1,5 @@
 // Autoexecuted script that listens for clicks on block editor content and sends a message to the parent window to open the inline editor.
+// TODO: This should be part of the sdk-editor-vtl.js but we need to figure out how to know when client has enterpise license
 (() => {
   const listenBlockEditorClick = () => {
     const editBlockEditorNodes = document.querySelectorAll(
@@ -10,11 +11,11 @@
     editBlockEditorNodes.forEach((node) => {
       node.classList.add("dotcms__inline-edit-field");
       node.addEventListener("click", () => {
-        const dataset = Object.assign({}, node.dataset);
+        const payload = Object.assign({}, node.dataset);
         window.parent.postMessage(
           {
-            action: "editor-inline-editing",
-            payload: { dataset },
+            payload,
+            action: "editor-inline-editing"
           },
           "*"
         );

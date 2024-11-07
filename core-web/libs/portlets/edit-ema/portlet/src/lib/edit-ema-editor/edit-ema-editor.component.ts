@@ -66,7 +66,10 @@ import {
     UpdatedContentlet
 } from './components/ema-page-dropzone/types';
 
-import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-editing/dot-block-editor-sidebar.component';
+import {
+    DotBlockEditorSidebarComponent,
+    INLINE_EDIT_BLOCK_EDITOR_EVENT
+} from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
@@ -468,7 +471,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addEditorPageScript(rendered = ''): string {
-        // Set if client has enterprise license
         const scriptString = `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`;
         const bodyExists = rendered.includes('</body>');
 
@@ -1005,8 +1007,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CLIENT_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             },
-            'editor-inline-editing': ({ dataset }) => {
-                this.#dotEventsService.notify('edit-block-editor', dataset);
+            [CLIENT_ACTIONS.BLOCK_EDITOR_INLINE_EDITING]: (payload) => {
+                this.#dotEventsService.notify(INLINE_EDIT_BLOCK_EDITOR_EVENT, payload);
             }
         };
         const actionToExecute = CLIENT_ACTIONS_FUNC_MAP[action];
