@@ -15,7 +15,7 @@
         window.parent.postMessage(
           {
             payload,
-            action: "editor-inline-editing"
+            action: "init-editor-inline-editing"
           },
           "*"
         );
