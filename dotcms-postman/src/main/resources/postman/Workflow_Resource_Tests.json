@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "59e77c16-a6f7-4e48-9485-a7d7fcfd8497",
+		"_postman_id": "679e6657-065b-41a2-b666-672f59b9e95c",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -17849,7 +17849,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/comments/{{identifier}}",
+							"raw": "{{serverURL}}/api/v1/workflow/{{identifier}}/comments",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -17857,8 +17857,8 @@
 								"api",
 								"v1",
 								"workflow",
-								"comments",
-								"{{identifier}}"
+								"{{identifier}}",
+								"comments"
 							]
 						}
 					},
