@@ -35,7 +35,8 @@ import {
     DotContentletService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService,
-    DotEventsService
+    DotEventsService,
+    DotAlertConfirmService
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -154,6 +155,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly dotPageApiService = inject(DotPageApiService);
     readonly #dotEventsService = inject(DotEventsService);
+    readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
 
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
@@ -1009,7 +1011,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING]: (payload) => {
                 if (!this.uveStore.isEnterprise()) {
-                    // Show an alert here
+                    this.#dotAlertConfirmService.alert({
+                        header: this.dotMessageService.get(
+                            'dot.common.license.enterprise.only.error'
+                        ),
+                        message: this.dotMessageService.get('editpage.not.lincese.error')
+                    });
 
                     return;
                 }

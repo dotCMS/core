@@ -113,7 +113,10 @@ const messagesMock = {
     'dot.common.dialog.accept': 'Accept',
     'dot.common.dialog.reject': 'Reject',
     'editpage.content.add.already.title': 'Content already added',
-    'editpage.content.add.already.message': 'This content is already added to this container'
+    'editpage.content.add.already.message': 'This content is already added to this container',
+    'editpage.not.lincese.error':
+        'Inline editing is available only with an enterprise license. Please contact support to upgrade your license.',
+    'dot.common.license.enterprise.only.error': 'Enterprise Only'
 };
 
 const IFRAME_MOCK = {
@@ -154,7 +157,8 @@ const createRouting = () =>
             {
                 provide: DotAlertConfirmService,
                 useValue: {
-                    confirm: () => of({})
+                    confirm: () => of({}),
+                    alert: () => of({})
                 }
             },
             {
@@ -227,6 +231,7 @@ const createRouting = () =>
             DotCopyContentModalService,
             DotWorkflowActionsFireService,
             DotTempFileUploadService,
+            DotAlertConfirmService,
             {
                 provide: DotHttpErrorManagerService,
                 useValue: new MockDotHttpErrorManagerService()
@@ -332,9 +337,11 @@ describe('EditEmaEditorComponent', () => {
         let confirmationService: ConfirmationService;
         let messageService: MessageService;
         let addMessageSpy: jest.SpyInstance;
+        let dotLicenseService: DotLicenseService;
         let dotCopyContentModalService: DotCopyContentModalService;
         let dotCopyContentService: DotCopyContentService;
         let dotContentletService: DotContentletService;
+        let dotAlertConfirmService: DotAlertConfirmService;
         let dotHttpErrorManagerService: DotHttpErrorManagerService;
         let dotTempFileUploadService: DotTempFileUploadService;
         let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
@@ -366,16 +373,19 @@ describe('EditEmaEditorComponent', () => {
             confirmationService = spectator.inject(ConfirmationService, true);
             messageService = spectator.inject(MessageService, true);
             dotEventsService = spectator.inject(DotEventsService, true);
+            dotLicenseService = spectator.inject(DotLicenseService, true);
             dotCopyContentModalService = spectator.inject(DotCopyContentModalService, true);
             dotCopyContentService = spectator.inject(DotCopyContentService, true);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService, true);
             dotContentletService = spectator.inject(DotContentletService, true);
+            dotAlertConfirmService = spectator.inject(DotAlertConfirmService, true);
             dotTempFileUploadService = spectator.inject(DotTempFileUploadService, true);
             dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
             router = spectator.inject(Router, true);
             dotPageApiService = spectator.inject(DotPageApiService, true);
 
             addMessageSpy = jest.spyOn(messageService, 'add');
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
 
             store.init({
                 clientHost: 'http://localhost:3000',
@@ -674,6 +684,41 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectComponentChanges();
 
                     expect(spy).toHaveBeenCalledWith(INLINE_EDIT_BLOCK_EDITOR_EVENT, {});
+                });
+
+                it('should show a message and not notify the event if there is not enterprise lincese', () => {
+                    const spy = jest.spyOn(dotEventsService, 'notify');
+                    const spyAlert = jest.spyOn(dotAlertConfirmService, 'alert');
+
+                    jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
+
+                    store.init({
+                        clientHost: 'http://localhost:3000',
+                        url: 'index',
+                        language_id: '1',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    });
+
+                    spectator.detectChanges();
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING,
+                                payload: {}
+                            }
+                        })
+                    );
+
+                    spectator.detectComponentChanges();
+
+                    expect(spyAlert).toHaveBeenCalledWith({
+                        header: 'Enterprise Only',
+                        message:
+                            'Inline editing is available only with an enterprise license. Please contact support to upgrade your license.'
+                    });
+                    expect(spy).not.toHaveBeenCalledWith(INLINE_EDIT_BLOCK_EDITOR_EVENT, {});
                 });
 
                 describe('reorder navigation', () => {
@@ -2916,4 +2961,6 @@ describe('EditEmaEditorComponent', () => {
             });
         });
     });
+
+    afterEach(() => jest.clearAllMocks());
 });
