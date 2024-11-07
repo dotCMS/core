@@ -84,3 +84,4 @@ This maintenance release includes the following code fixes:
 78. https://github.com/dotCMS/core/issues/28514 : Running Experiment Cache is not working right #28514
 79. https://github.com/dotCMS/core/issues/28507 : Refresh Running Experiment Cache after abort one Experiment #28507
 80. https://github.com/dotCMS/core/issues/28588 : Make MultiTree Multi variant cache cluster aware #28588
+81. https://github.com/dotCMS/core/issues/30045 : Aligment not correct in A/B testing - Edit traffic split #30045
