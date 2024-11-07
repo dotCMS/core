@@ -28,6 +28,7 @@ import {
     DotCurrentUserService,
     DotDevicesService,
     DotESContentService,
+    DotEventsService,
     DotExperimentsService,
     DotFavoritePageService,
     DotHttpErrorManagerService,
@@ -145,6 +146,7 @@ const createRouting = () =>
             UVEStore,
             DotFavoritePageService,
             DotESContentService,
+            DotEventsService,
             {
                 provide: DotAlertConfirmService,
                 useValue: {

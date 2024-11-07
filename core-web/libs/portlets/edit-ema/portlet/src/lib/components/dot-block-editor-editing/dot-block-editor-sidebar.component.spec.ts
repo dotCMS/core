@@ -159,11 +159,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         spectator.detectChanges();
 
         expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Blog');
-        expect(spyWorkflowService).toHaveBeenCalledWith({
-            testName: JSON.stringify(newValue),
-            inode: EVENT_DATA.inode,
-            indexPolicy: 'WAIT_FOR'
-        });
+        expect(spyWorkflowService).toHaveBeenCalledWith({ testName: JSON.stringify(newValue) });
     });
 
     it('should close the sidebar', () => {

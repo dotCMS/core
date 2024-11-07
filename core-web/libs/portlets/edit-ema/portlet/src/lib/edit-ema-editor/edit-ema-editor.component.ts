@@ -468,6 +468,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addEditorPageScript(rendered = ''): string {
+        // Set if client has enterprise license
         const scriptString = `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`;
         const bodyExists = rendered.includes('</body>');
 

@@ -8,6 +8,25 @@ declare global {
         tinymce: any;
     }
 }
+
+export const INLINE_CONTENT_STYLES = `
+    [data-inode][data-field-name][data-mode] {
+        cursor: text;
+        border: 1px solid #53c2f9 !important;
+        display: block;
+    }
+            
+    [data-inode][data-field-name].dotcms__inline-edit-field {
+        cursor: text;
+        border: 1px solid #53c2f9 !important;
+        display: block;
+    }
+
+    [data-inode][data-field-name][data-block-editor-content].dotcms__inline-edit-field {
+        cursor: pointer;
+    }    
+`;
+
 @Injectable({
     providedIn: 'root'
 })
@@ -57,6 +76,7 @@ export class InlineEditService {
 
     /**
      * Injects the inline edit functionality into the specified iframe.
+     * TODO: Do a research to see if this "Injections" can be part of the `sdk-editor-vtl.js` file.
      *
      * @param {ElementRef<HTMLIFrameElement>} iframe - The ElementRef of the HTMLIFrameElement to inject the inline edit into.
      * @memberof InlineEditService
@@ -64,60 +84,21 @@ export class InlineEditService {
     injectInlineEdit(iframe: ElementRef<HTMLIFrameElement>): void {
         const doc = iframe.nativeElement.contentDocument;
         this.$iframeWindow.set(iframe.nativeElement.contentWindow);
-
         this.$isInlineEditingEnable.set(true);
 
         if (doc.querySelector('script[data-inline="true"]')) {
             return;
         }
 
-        const script = doc.createElement('script');
-        script.dataset.inline = 'true';
-        script.src = '/html/js/tinymce/js/tinymce/tinymce.min.js';
-
-        const style = doc.createElement('style');
-
-        style.innerHTML = `
-            [data-inode][data-field-name][data-mode] {
-                cursor: text;
-                border: 1px solid #53c2f9 !important;
-                display: block;
-            }
-        `;
-
-        // This should be a file in `/html/js/` folder
-        const scriptBlockEditor = doc.createElement('script');
-        scriptBlockEditor.innerHTML = `
-        document.addEventListener('DOMContentLoaded', () => {
-            const editBlockEditorNodes = document.querySelectorAll('[data-block-editor-content]');
-            if (!editBlockEditorNodes.length) {
-                return;
-            }
-            editBlockEditorNodes.forEach((node) => {
-                node.classList.add('dotcms__inline-edit-field');
-                node.addEventListener('click', (event) => {
-                    const dataset = Object.assign({}, node.dataset);
-                     window.parent.postMessage(
-                        {
-                            action: 'editor-inline-editing',
-                            payload: { dataset }
-                        },
-                        '*'
-                    );
-                });
-            });
-        });
-        `;
-
-        doc.body?.appendChild(script);
-        doc.body?.appendChild(scriptBlockEditor);
-        doc.body?.appendChild(style);
+        this.#addStyles(doc);
+        this.#addScript(doc, '/html/js/tinymce/js/tinymce/tinymce.min.js');
+        this.#addScript(doc, '/html/js/inline-editor-handler.js');
     }
 
     removeInlineEdit(iframe: ElementRef<HTMLIFrameElement>) {
         const doc = iframe.nativeElement.contentDocument;
 
-        doc.querySelector('script[data-inline="true"]')?.remove();
+        doc.querySelectorAll('script[data-inline="true"]').forEach((script) => script.remove());
         doc.querySelectorAll('style').forEach((style) => {
             if (style.textContent.includes('[data-inode][data-field-name][data-mode]')) {
                 style.remove();
@@ -184,6 +165,26 @@ export class InlineEditService {
             .then(([ed]) => {
                 ed?.editorCommands.execCommand('mceFocus');
             });
+    }
+
+    /**
+     * Adds the inline content styles to the document.
+     *
+     * @private
+     * @param {Document} doc
+     * @memberof InlineEditService
+     */
+    #addStyles(doc: Document) {
+        const style = doc.createElement('style');
+        style.innerHTML = INLINE_CONTENT_STYLES;
+        doc.body?.appendChild(style);
+    }
+
+    #addScript(doc: Document, src: string) {
+        const script = doc.createElement('script');
+        script.dataset.inline = 'true';
+        script.src = src;
+        doc.body?.appendChild(script);
     }
 
     /**
