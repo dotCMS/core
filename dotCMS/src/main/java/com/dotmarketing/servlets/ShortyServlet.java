@@ -556,9 +556,8 @@ public class ShortyServlet extends HttpServlet {
      * @return true if the system should attempt to use the default language, false otherwise
      */
     private boolean shouldFallbackToDefaultLanguage(final Contentlet contentlet) {
-        final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        return defaultLanguageId != contentlet.getLanguageId() &&
-                APILocator.getLanguageAPI().canDefaultFileToDefaultLanguage();
+        return APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage() &&
+                APILocator.getLanguageAPI().getDefaultLanguage().getId() != contentlet.getLanguageId();
     }
 
     /**
