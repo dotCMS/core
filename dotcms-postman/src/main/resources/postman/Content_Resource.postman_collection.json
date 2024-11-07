@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "dc526187-a3a3-4be4-ad40-328b4edf7d7c",
+		"_postman_id": "61a1f0d8-6805-4a09-b780-6d43fa491ab4",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "31066048"
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -3025,10 +3025,11 @@
 											"pm.test(\"Relationship Field data in Contentlet inside Block Editor is correct\", function () {",
 											"    const entity = pm.response.json().contentlets[0];",
 											"    pm.expect(entity.description.content[0].attrs.data.relatedData).to.not.equal(undefined, \"The 'relatedData' property MUST be present\");",
-											"    const relatedContentlet = entity.description.content[0].attrs.data.relatedData[0];",
+											"",
 											"    const relatedTestContentId = pm.collectionVariables.get(\"relatedTestContentId\");",
-											"    pm.expect(relatedContentlet.title).to.be.equal(\"Test Content\", \"The 'title' value is NOT the expected one\");",
-											"    pm.expect(relatedContentlet.identifier).to.be.equal(relatedTestContentId, \"The 'identifier' value is NOT the expected one\");",
+											"",
+											"    const relatedTestContentIdFromResponse = entity.description.content[0].attrs.data.relatedData[0];",
+											"     pm.expect(relatedTestContentIdFromResponse).to.be.equal(relatedTestContentId, \"The 'identifier' value is NOT the expected one\");",
 											"});",
 											""
 										],
