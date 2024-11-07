@@ -196,5 +196,15 @@ describe('DotBlockEditorSidebarComponent', () => {
         expect(dotAletConfirmServiceSpy).toHaveBeenCalled();
     });
 
+    it('should call event.stopPropagation on escape keydown', () => {
+        const event = new KeyboardEvent('keydown', { key: 'Escape' });
+        jest.spyOn(event, 'stopPropagation');
+
+        const container = spectator.query('[data-testId="dot-container"]');
+        container.dispatchEvent(event);
+
+        expect(event.stopPropagation).toHaveBeenCalled();
+    });
+
     afterEach(() => jest.clearAllMocks());
 });

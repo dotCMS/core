@@ -79,7 +79,10 @@ import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
-import { INLINE_EDIT_BLOCK_EDITOR_EVENT } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
+import {
+    DotBlockEditorSidebarComponent,
+    INLINE_EDIT_BLOCK_EDITOR_EVENT
+} from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
@@ -470,6 +473,13 @@ describe('EditEmaEditorComponent', () => {
                 spectator.component.ngOnDestroy();
 
                 expect(store.isClientReady()).toBe(false);
+            });
+
+            it('should relaod when Block editor is saved', () => {
+                const blockEditorSidebar = spectator.query(DotBlockEditorSidebarComponent);
+                const spy = jest.spyOn(store, 'reload');
+                blockEditorSidebar.onSaved.emit();
+                expect(spy).toHaveBeenCalled();
             });
         });
 
