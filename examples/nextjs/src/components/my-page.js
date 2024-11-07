@@ -1,5 +1,4 @@
 "use client";
-
 import WebPageContent from "./content-types/webPageContent";
 import Banner from "./content-types/banner";
 import Activity from "./content-types/activity";
@@ -7,7 +6,6 @@ import CallToAction from "./content-types/callToAction";
 import CalendarEvent from "./content-types/calendarEvent";
 import Product from "./content-types/product";
 import ImageComponent from "./content-types/image";
-
 import Header from "./layout/header";
 import Footer from "./layout/footer/footer";
 import Navigation from "./layout/navigation";
@@ -15,11 +13,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { DotcmsLayout } from "@dotcms/react";
 import { withExperiments } from "@dotcms/experiments";
 import { CustomNoComponent } from "./content-types/empty";
-
-import { usePageAsset } from "../hooks/usePageAsset";
-import BlogWithBlockEditor from "./content-types/blog";
-import NotFound from "@/app/not-found";
-
 /**
  * Configure experiment settings below. If you are not using experiments,
  * you can ignore or remove the experiment-related code and imports.
@@ -29,24 +22,20 @@ const experimentConfig = {
     server: process.env.NEXT_PUBLIC_DOTCMS_HOST, // DotCMS server endpoint
     debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG, // Debug mode for additional logging
 };
-
 // Mapping of components to DotCMS content types
 const componentsMap = {
     webPageContent: WebPageContent,
-    Banner: Banner,
+    // Banner: Banner,
     Activity: Activity,
     Product: Product,
     Image: ImageComponent,
     calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
     CustomNoComponent: CustomNoComponent,
-    BlockEditorItem: BlogWithBlockEditor,
 };
-
 export function MyPage({ pageAsset, nav }) {
-    const { replace } = useRouter();
+    const { refresh, replace } = useRouter();
     const pathname = usePathname();
-
     /**
      * If using experiments, `DotLayoutComponent` is `withExperiments(DotcmsLayout)`.
      * If not using experiments:
@@ -59,37 +48,23 @@ export function MyPage({ pageAsset, nav }) {
               redirectFn: replace,
           })
         : DotcmsLayout;
-
-    pageAsset = usePageAsset(pageAsset);
-
-    if (!pageAsset) {
-        return <NotFound />;
-    }
-
     return (
-        <div className="flex flex-col gap-6 min-h-screen bg-lime-50">
-            {pageAsset?.layout.header && (
-                <Header>{!!nav && <Navigation items={nav} />}</Header>
+        <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
+            {pageAsset.entity.layout.header && (
+                <Header>
+                    <Navigation items={nav} />
+                </Header>
             )}
-
-            <main className="flex flex-col gap-8 m-auto">
+            <main className="container flex flex-col gap-8 m-auto">
                 <DotLayoutComponent
                     pageContext={{
-                        pageAsset,
-                        components: componentsMap
+                        components: componentsMap,
+                        pageAsset: pageAsset.entity,
                     }}
-                    config={{
-                        pathname,
-                        editor: {
-                            params: {
-                                depth: 3
-                            }
-                        }
-                    }}
+                    config={{ onReload: refresh, pathname }}
                 />
             </main>
-
-            {pageAsset?.layout.footer && <Footer />}
+            {pageAsset.entity.layout.footer && <Footer />}
         </div>
     );
 }

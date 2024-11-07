@@ -11,13 +11,13 @@ export const usePageAsset = (currentPageAsset) => {
             return;
         }
 
-        client.editor.on('changes', (page) => {
-            if (!page) {
-                return;
-            }
+        // client.editor.on('changes', (page) => {
+        //     if (!page) {
+        //         return;
+        //     }
 
-            setPageAsset(page);
-        });
+        //     setPageAsset(page);
+        // });
 
         // If the page is not found, let the editor know
         if (!currentPageAsset) {
@@ -27,7 +27,7 @@ export const usePageAsset = (currentPageAsset) => {
         }
 
         return () => {
-            client.editor.off('changes');
+            // client.editor.off('changes');
         };
     }, [currentPageAsset]);
 
