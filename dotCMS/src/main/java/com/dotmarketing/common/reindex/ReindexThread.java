@@ -213,8 +213,7 @@ public class ReindexThread {
                     bulkProcessor = finalizeReIndex(bulkProcessor);
                 }
 
-                if (!workingRecords.isEmpty() && !ElasticReadOnlyCommand.getInstance()
-                        .isIndexOrClusterReadOnly()) {
+                if (!workingRecords.isEmpty()) {
                     Logger.debug(this,
                             "Found  " + workingRecords + " index items to process");
 
@@ -235,15 +234,19 @@ public class ReindexThread {
             } finally {
                 DbConnectionFactory.closeSilently();
             }
-            while (state.get() == ThreadState.PAUSED) {
-                ThreadUtils.sleep(SLEEP);
-                //Logs every 60 minutes
-                Logger.infoEvery(ReindexThread.class, "--- ReindexThread Paused",
-                        Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 60) * 60000);
-                Long restartTime = (Long) cache.get().get(REINDEX_THREAD_PAUSED);
-                if (restartTime == null || restartTime < System.currentTimeMillis()) {
-                    state.set(ThreadState.RUNNING);
-                }
+            sleep();
+        }
+    }
+
+    private void sleep() {
+        while (state.get() == ThreadState.PAUSED) {
+            ThreadUtils.sleep(SLEEP);
+            //Logs every 60 minutes
+            Logger.infoEvery(ReindexThread.class, "--- ReindexThread Paused",
+                    Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 60) * 60000);
+            Long restartTime = (Long) cache.get().get(REINDEX_THREAD_PAUSED);
+            if (restartTime == null || restartTime < System.currentTimeMillis()) {
+                state.set(ThreadState.RUNNING);
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Map;
@@ -254,9 +255,10 @@ public class BinaryMap {
 	}
 	
 	/**
-	 * This is the underneath Java File.  Becareful when working with this object as you can manipulate it. 
+	 * This is the underneath Java File.  Be careful when working with this object as you can manipulate it.
 	 * @return the file
 	 */
+	@JsonIgnore
 	public File getFile() {
 		return Sneaky.sneak(()->content.getBinary(field.variable()));
 	}
