@@ -5,8 +5,10 @@ import {
     scrollHandler,
     subscriptions
 } from './listeners/listeners';
-import { CUSTOMER_ACTIONS, postMessageToEditor } from './models/client.model';
+import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from './models/client.model';
 import { DotCMSPageEditorConfig } from './models/editor.model';
+
+import { Contentlet } from '../client/content/shared/types';
 
 /**
  * Updates the navigation in the editor.
@@ -18,10 +20,26 @@ import { DotCMSPageEditorConfig } from './models/editor.model';
  */
 export function updateNavigation(pathname: string): void {
     postMessageToEditor({
-        action: CUSTOMER_ACTIONS.NAVIGATION_UPDATE,
+        action: CLIENT_ACTIONS.NAVIGATION_UPDATE,
         payload: {
             url: pathname === '/' ? 'index' : pathname?.replace('/', '')
         }
+    });
+}
+
+/**
+ * You can use this function to edit a contentlet in the editor.
+ *
+ * Calling this function inside the editor, will prompt the UVE to open a dialog to edit the contentlet.
+ *
+ * @export
+ * @template T
+ * @param {Contentlet<T>} contentlet - The contentlet to edit.
+ */
+export function editContentlet<T>(contentlet: Contentlet<T>) {
+    postMessageToEditor({
+        action: CLIENT_ACTIONS.EDIT_CONTENTLET,
+        payload: contentlet
     });
 }
 
@@ -46,6 +64,10 @@ export function isInsideEditor(): boolean {
     return window.parent !== window;
 }
 
+export function initDotUVE() {
+    window.dotUVE = INITIAL_DOT_UVE;
+}
+
 /**
  * Initializes the DotCMS page editor.
  *
@@ -57,6 +79,7 @@ export function isInsideEditor(): boolean {
  * ```
  */
 export function initEditor(config: DotCMSPageEditorConfig): void {
+    initDotUVE();
     fetchPageDataFromInsideUVE(config.pathname);
     listenEditorMessages();
     listenHoveredContentlet();

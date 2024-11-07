@@ -323,13 +323,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private static UniqueFieldValidationStrategyResolver getUniqueFieldValidationStrategyResolver() {
-        final Optional<UniqueFieldValidationStrategyResolver> uniqueFieldValidationStrategyResolver =
-                CDIUtils.getBean(UniqueFieldValidationStrategyResolver.class);
-
-        if (!uniqueFieldValidationStrategyResolver.isPresent()) {
-            throw new DotRuntimeException("Could not instance UniqueFieldValidationStrategyResolver");
-        }
-        return uniqueFieldValidationStrategyResolver.get();
+        return CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
     }
 
     public ESContentletAPIImpl() {
@@ -5310,13 +5304,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if (!isCheckInSafe(contentRelationships)) {
-
-            if (contentlet.getBoolProperty(Contentlet.IS_TEST_MODE)) {
-                this.elasticReadOnlyCommand.executeCheck();
-            } else {
-                DotConcurrentFactory.getInstance().getSingleSubmitter()
-                        .submit(() -> this.elasticReadOnlyCommand.executeCheck());
-            }
 
             final String contentletIdentifier =
                     null != contentlet && null != contentlet.getIdentifier()

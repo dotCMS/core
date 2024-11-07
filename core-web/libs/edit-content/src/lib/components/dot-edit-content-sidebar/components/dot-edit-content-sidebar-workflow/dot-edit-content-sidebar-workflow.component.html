@@ -1,0 +1,44 @@
+@let scheme = $workflow().scheme;
+@let step = $workflow().step;
+@let task = $workflow().task;
+@let isLoading = $isLoading();
+
+<dl class="workflow-list">
+    <dt class="workflow-column__title" id="workflow-title">{{ 'Workflow' | dm }}</dt>
+    <dd
+        class="workflow-column__description"
+        aria-labelledby="workflow-title"
+        data-testId="workflow-name">
+        @if (isLoading) {
+            <p-skeleton />
+        } @else {
+            {{ scheme?.name }}
+        }
+    </dd>
+
+    <dt class="workflow-column__title" id="step-title">{{ 'Step' | dm }}</dt>
+    <dd
+        class="workflow-column__description"
+        aria-labelledby="step-title"
+        data-testId="workflow-step">
+        @if (isLoading) {
+            <p-skeleton />
+        } @else {
+            {{ step?.name || 'New' | dm }}
+        }
+    </dd>
+
+    @if (task) {
+        <dt class="workflow-column__title" id="assignee-title">{{ 'Assignee' | dm }}</dt>
+        <dd
+            class="workflow-column__description"
+            aria-labelledby="assignee-title"
+            data-testId="workflow-assigned">
+            @if (isLoading) {
+                <p-skeleton />
+            } @else {
+                {{ task.assignedTo }}
+            }
+        </dd>
+    }
+</dl>
