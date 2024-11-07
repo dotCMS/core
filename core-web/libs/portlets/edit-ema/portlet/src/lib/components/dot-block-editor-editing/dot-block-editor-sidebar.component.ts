@@ -101,6 +101,7 @@ export class DotBlockEditorSidebarComponent implements OnInit {
         this.#dotWorkflowActionsFireService
             .saveContentlet({
                 inode,
+                indexPolicy: 'WAIT_FOR',
                 [fieldName]: JSON.stringify(this.value())
             })
             .pipe(take(1))
@@ -129,6 +130,7 @@ export class DotBlockEditorSidebarComponent implements OnInit {
      */
     protected close() {
         this.contentlet.set(null);
+        this.value.set(null);
     }
 
     /**

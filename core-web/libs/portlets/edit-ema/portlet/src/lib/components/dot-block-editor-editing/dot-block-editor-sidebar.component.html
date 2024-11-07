@@ -4,7 +4,7 @@
     [dismissible]="false"
     [showCloseIcon]="false"
     [visible]="!!contentlet()"
-    data-testid="sidebar"
+    data-testId="sidebar"
     position="right">
     <div class="container" (keydown.escape)="$event.stopPropagation()">
         @if (contentlet(); as contentlet) {
@@ -12,19 +12,22 @@
                 [field]="contentlet.field"
                 [value]="contentlet.content"
                 [languageId]="contentlet.languageId"
-                (valueChange)="value.set($event)"></dot-block-editor>
+                (valueChange)="value.set($event)"
+                data-testId="dot-block-editor" />
         }
         <footer>
             <button
                 (click)="close()"
                 [label]="'Cancel' | dm"
                 class="p-button-outlined"
-                pButton></button>
+                pButton
+                data-testId="cancel-btn"></button>
             <button
                 (click)="saveEditorChanges()"
                 [disabled]="!value()"
-                [label]="'Update' | dm"
-                pButton></button>
+                [label]="'Save' | dm"
+                pButton
+                data-testId="save-btn"></button>
         </footer>
     </div>
 </p-sidebar>
