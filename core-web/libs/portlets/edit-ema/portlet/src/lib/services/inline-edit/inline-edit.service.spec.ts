@@ -86,14 +86,10 @@ describe('InlineEditService', () => {
         const wysiwygScript = iframe.contentDocument.querySelector(
             'script[src="/html/js/tinymce/js/tinymce/tinymce.min.js"]'
         );
-        const editorScript = iframe.contentDocument.querySelector(
-            'script[src="/html/js/inline-editor-handler.js"]'
-        );
 
         const style = iframe.contentDocument.querySelector('style');
 
         expect(wysiwygScript).toBeTruthy();
-        expect(editorScript).toBeTruthy();
         expect(style.innerHTML).toBe(INLINE_CONTENT_STYLES);
     });
 

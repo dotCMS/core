@@ -1008,6 +1008,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 /* Do Nothing because is not the origin we are expecting */
             },
             [CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING]: (payload) => {
+                if (!this.uveStore.isEnterprise()) {
+                    // Show an alert here
+
+                    return;
+                }
+
                 this.#dotEventsService.notify(INLINE_EDIT_BLOCK_EDITOR_EVENT, payload);
             }
         };
