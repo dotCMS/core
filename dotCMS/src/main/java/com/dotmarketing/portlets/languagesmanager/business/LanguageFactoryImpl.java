@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Implementation class for the {@link LanguageFactory}.
@@ -135,7 +136,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		}
 
 		// if we have a number
-		if(!languageId.contains("_")){
+		if (StringUtils.isNumeric(languageId)) {
 			try {
 				final long parsedLangId = Long.parseLong(languageId);
 				return getLanguage(parsedLangId);

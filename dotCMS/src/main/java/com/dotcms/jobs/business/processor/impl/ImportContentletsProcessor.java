@@ -21,8 +21,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.hash.Hashing;
@@ -139,11 +139,8 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
         // Validate the job has the required data
         validate(job);
 
-        final var language = getLanguage(job);
         final var fileToImport = tempFile.get().file;
         final long totalLines = totalLines(job, fileToImport);
-        final Charset charset = language == -1 ?
-                Charset.defaultCharset() : FileUtil.detectEncodeType(fileToImport);
 
         // Create a progress callback function
         final var progressTracker = job.progressTracker().orElseThrow(
@@ -158,7 +155,7 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
         // Handle the import operation based on the command, by default any command that is not
         // "publish" is considered preview.
         final boolean isPublish = CMD_PUBLISH.equals(command);
-        handleImport(!isPublish, job, fileToImport, charset, user, progressCallback);
+        handleImport(!isPublish, job, fileToImport, user, progressCallback);
 
         if (!cancellationRequested.get()) {
             // Ensure the progress is at 100% when the job is done
@@ -206,12 +203,11 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
      * @param preview          Flag indicating whether the operation is a preview or publish
      * @param job              The import job configuration
      * @param fileToImport     The CSV file to be imported
-     * @param charset          The character encoding of the import file
      * @param user             The user performing the import
      * @param progressCallback Callback for tracking import progress
      */
     private void handleImport(final boolean preview, final Job job, final File fileToImport,
-            final Charset charset, final User user, final LongConsumer progressCallback) {
+            final User user, final LongConsumer progressCallback) {
 
         if (!preview) {
             AdminLogger.log(
@@ -221,7 +217,8 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
         }
 
         try (Reader reader = new BufferedReader(
-                new InputStreamReader(new FileInputStream(fileToImport), charset))) {
+                new InputStreamReader(new FileInputStream(fileToImport),
+                        Charset.defaultCharset()))) {
 
             CsvReader csvReader = createCsvReader(reader);
 
@@ -267,22 +264,22 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
         final var currentSiteName = getSiteName(job);
         final var contentType = findContentType(job);
         final var fields = getFields(job);
-        final var language = getLanguage(job);
+        final var language = findLanguage(job);
         final var workflowActionId = getWorkflowActionId(job);
         final var httpReq = JobUtil.generateMockRequest(user, currentSiteName);
         final var importId = jobIdToLong(job.id());
 
         // Read headers and process language columns for multilingual imports
-        CsvHeaderInfo headerInfo = readHeaders(job, language, csvReader);
+        CsvHeaderInfo headerInfo = readHeaders(job, language == null, csvReader);
 
         Logger.info(this, String.format("-------- Starting Content Import %s -------- ",
                 preview ? "Preview" : "Process"));
         Logger.info(this, String.format("-> Content Type: %s", contentType.variable()));
 
         return ImportUtil.importFile(importId, currentSiteId, contentType.id(), fields, preview,
-                (language == -1), user, language, headerInfo.headers, csvReader,
-                headerInfo.languageCodeColumn, headerInfo.countryCodeColumn, workflowActionId,
-                httpReq, progressCallback);
+                language == null, user, language == null ? -1 : language.getId(),
+                headerInfo.headers, csvReader, headerInfo.languageCodeColumn,
+                headerInfo.countryCodeColumn, workflowActionId, httpReq, progressCallback);
     }
 
     /**
@@ -354,26 +351,19 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
     }
 
     /**
-     * Retrieves the language setting from the job parameters. Handles both string and long
-     * parameter types.
+     * Retrieves the language from the job parameters.
      *
      * @param job The job containing the parameters
-     * @return The language ID as a long, or -1 if not specified
+     * @return The language ID or ISO code
      */
-    private long getLanguage(final Job job) {
+    private String getLanguage(final Job job) {
 
         if (!job.parameters().containsKey(PARAMETER_LANGUAGE)
                 || job.parameters().get(PARAMETER_LANGUAGE) == null) {
-            return -1;
+            return null;
         }
 
-        final Object language = job.parameters().get(PARAMETER_LANGUAGE);
-
-        if (language instanceof String) {
-            return Long.parseLong((String) language);
-        }
-
-        return (long) language;
+        return (String) job.parameters().get(PARAMETER_LANGUAGE);
     }
 
     /**
@@ -407,6 +397,9 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
      */
     private void validate(final Job job) {
 
+        // Validating the language (will throw an exception if it doesn't)
+        final Language language = findLanguage(job);
+
         if (getContentType(job) != null && getContentType(job).isEmpty()) {
             final var errorMessage = "A Content Type id or variable is required";
             Logger.error(this.getClass(), errorMessage);
@@ -415,11 +408,7 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
             final var errorMessage = "A Workflow Action id is required";
             Logger.error(this.getClass(), errorMessage);
             throw new JobValidationException(job.id(), errorMessage);
-        } else if (getLanguage(job) == 0) {
-            final var errorMessage = "Please select a valid Language.";
-            Logger.error(this, errorMessage);
-            throw new JobValidationException(job.id(), errorMessage);
-        } else if (getLanguage(job) == -1 && getFields(job).length == 0) {
+        } else if (language == null && getFields(job).length == 0) {
             final var errorMessage =
                     "A key identifying the different Language versions of the same "
                             + "content must be defined when importing multilingual files.";
@@ -492,16 +481,16 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
      * Reads and processes headers from the CSV file. Handles both single and multilingual content
      * imports.
      *
-     * @param job      The current import job
-     * @param language  The target language for import
-     * @param csvReader The CSV reader containing the file data
+     * @param job            The current import job
+     * @param isMultilingual Flag indicating whether the import is multilingual
+     * @param csvReader      The CSV reader containing the file data
      * @return CsvHeaderInfo containing processed header information
      * @throws IOException if an error occurs reading the CSV file
      */
-    private CsvHeaderInfo readHeaders(final Job job, long language, CsvReader csvReader)
+    private CsvHeaderInfo readHeaders(final Job job, boolean isMultilingual, CsvReader csvReader)
             throws IOException {
 
-        if (language == -1) {
+        if (isMultilingual) {
             return processMultilingualHeaders(job, csvReader);
         }
 
@@ -588,7 +577,7 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
     }
 
     /**
-     * Retrieves the existing content type based on the id or variable of the given content type.
+     * Retrieves the existing content type based on an id or variable.
      *
      * @param job The current import job.
      * @return The existing content type if found, otherwise fails with an exception.
@@ -625,6 +614,33 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
             Logger.error(this.getClass(), errorMessage);
             throw new JobProcessingException(job.id(), errorMessage, e);
         }
+    }
+
+    /**
+     * Retrieves the existing language based on an id or ISO code.
+     *
+     * @param job The current import job.
+     * @return The existing language if found, otherwise fails with an exception.
+     */
+    private Language findLanguage(final Job job) {
+
+        // Read the language from the job parameters
+        final var languageIsoOrId = getLanguage(job);
+        if (languageIsoOrId == null || languageIsoOrId.equals("-1")) {
+            return null;
+        }
+
+        // Retrieve the language based on the provided ISO code or ID
+        final Language language = APILocator.getLanguageAPI().getLanguage(languageIsoOrId);
+        if (language != null && language.getId() > 0) {
+            return language;
+        }
+
+        final var errorMessage = String.format(
+                "Language [%s] not found.", languageIsoOrId
+        );
+        Logger.error(this.getClass(), errorMessage);
+        throw new JobValidationException(job.id(), errorMessage);
     }
 
     /**
