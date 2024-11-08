@@ -1657,6 +1657,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         boolean isPushPublish = false;
 		boolean isMove        = false;
 		boolean isMoveHasPath = false;
+		boolean isComment     = false;
 		boolean isReset       = false;
 
         for (final WorkflowActionClass actionClass : actionClasses) {
@@ -1672,6 +1673,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			    isDelete      |= (null != actionlet) && actionlet.delete();
 			    isDestroy     |= (null != actionlet) && actionlet.destroy();
                 isPushPublish |= (null != actionlet) && actionlet.pushPublish();
+			    isComment     |= (null != actionlet) && actionlet.comment();
 				isReset       |= (null != actionlet) && actionlet.reset();
 
 			/*
@@ -1699,6 +1701,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         action.setPushPublishActionlet(isPushPublish);
         action.setMoveActionlet(isMove);
         action.setMoveActionletHashPath(isMoveHasPath);
+		action.setCommentActionlet(isComment);
 		action.setResetable(isReset);
     }
 

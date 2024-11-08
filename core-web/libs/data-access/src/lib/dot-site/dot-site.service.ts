@@ -17,6 +17,8 @@ export const BASE_SITE_URL = '/api/v1/site';
 
 export const DEFAULT_PER_PAGE = 10;
 
+export const DEFAULT_PAGE = 1;
+
 @Injectable({
     providedIn: 'root'
 })
@@ -41,16 +43,17 @@ export class DotSiteService {
      * @return {*}  {Observable<Site[]>}
      * @memberof DotSiteService
      */
-    getSites(filter = '*', perPage?: number): Observable<Site[]> {
+    getSites(filter = '*', perPage?: number, page?: number): Observable<Site[]> {
         return this.#http
-            .get<{ entity: Site[] }>(this.getSiteURL(filter, perPage))
+            .get<{ entity: Site[] }>(this.getSiteURL(filter, perPage, page))
             .pipe(pluck('entity'));
     }
 
-    private getSiteURL(filter: string, perPage?: number): string {
+    private getSiteURL(filter: string, perPage?: number, page?: number): string {
         const searchParams = new URLSearchParams({
             filter,
             per_page: `${perPage || DEFAULT_PER_PAGE}`,
+            page: `${page || DEFAULT_PAGE}`,
             archived: `${this.#defaultParams.archived}`,
             live: `${this.#defaultParams.live}`,
             system: `${this.#defaultParams.system}`
