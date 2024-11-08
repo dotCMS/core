@@ -71,7 +71,7 @@ public class FilesCollector implements Collector {
         return collectorPayloadBean;
     }
 
-    private Optional<Contentlet> getFileAsset(String uri, Host host, Long languageId) {
+    protected Optional<Contentlet> getFileAsset(String uri, Host host, Long languageId) {
         try {
             if (uri.endsWith(".dotsass")) {
                 final String actualUri = uri.substring(0, uri.lastIndexOf('.')) + ".scss";
