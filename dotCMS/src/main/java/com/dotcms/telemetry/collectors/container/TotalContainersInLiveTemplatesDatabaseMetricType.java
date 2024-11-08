@@ -13,17 +13,17 @@ import java.util.stream.Stream;
 
 /**
  * This class count the amount of containers used in LIVE templates, in this case no matter the
- * pages so this templates can be used or not on a page, this class extends from
- * TotalContainersIntemplateDatabaseMetricType because it is a counter of the containers used in
- * templates and it override the follow behavior:
+ * pages so this templates can be used or not on a page. This class extends from
+ * {@link TotalContainersInTemplateDatabaseMetricType} because it is a counter of the containers
+ * used in templates, and it overrides the follow behavior:
  * <ul>
  *     <li>Searching Templates: Override the getTemplatesIds method to return only the Template
  *     IDs for the LIVE templates. This is achieved using a SQL UNION query. The first part of the
- *     query retrieves standard templates from the template_version_info table, identifying those
- *     that have LIVE versions. The second part of the query retrieves file templates from the
- *     contenlet_version_info table, also focusing on those with live versions.</li>
- *     <li>Retrieve the Template Version: Override the getTemplate method to get the last LIVE
- *     version of the Template.</li>
+ *     query retrieves standard templates from the {@code template_version_info} table, identifying
+ *     those that have LIVE versions. The second part of the query retrieves file templates from the
+ *     {@code contenlet_version_info} table, also focusing on those with live versions.</li>
+ *     <li>Retrieve the Template Version: Override the {@code getTemplate} method to get the last
+ *     LIVE version of the Template.</li>
  * </ul>
  */
 public abstract class TotalContainersInLiveTemplatesDatabaseMetricType extends TotalContainersInTemplateDatabaseMetricType {
@@ -40,13 +40,12 @@ public abstract class TotalContainersInLiveTemplatesDatabaseMetricType extends T
             "WHERE id.parent_path LIKE '/application/templates/%' AND id.asset_name = 'body.vtl' " +
             "AND deleted = false AND live_inode is not null";
 
+    protected MetricsAPI metricsAPI;
+
     @Override
     Collection<String> getTemplatesIds() {
-
-        final List<String> dataBaseTemplateInode =
-                MetricsAPI.INSTANCE.getList(LIVE_TEMPLATES_INODES_QUERY);
-        final List<String> dataBaseFileTemplateInode =
-                MetricsAPI.INSTANCE.getList(LIVE_FILE_TEMPLATES_INODES_QUERY);
+        final List<String> dataBaseTemplateInode = metricsAPI.getList(LIVE_TEMPLATES_INODES_QUERY);
+        final List<String> dataBaseFileTemplateInode = metricsAPI.getList(LIVE_FILE_TEMPLATES_INODES_QUERY);
 
         return Stream.concat(dataBaseTemplateInode.stream(),
                 dataBaseFileTemplateInode.stream()).collect(Collectors.toSet());
