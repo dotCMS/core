@@ -96,8 +96,9 @@ query = Xss.strip(query);
 	}
 
 	function setContentletItem(contentlet, index) {
+
 		return `<tr><th><strong>${index}.</th><th><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>
-				<th><a onclick="return openContent(event, '${contentlet.inode}')" href="/dotAdmin/#/c/content/${contentlet.inode}">
+				<th><a onclick="return openContent(event, '${contentlet.inode}', '${contentlet.variant}')" href="/dotAdmin/#/c/content/${contentlet.inode}&variantName=${contentlet.variant ?? 'DEFAULT'}">
 				${contentlet.title}</a></th></tr><tr><td></td>
 				<td><strong><%= LanguageUtil.get(pageContext, "ContentType") %>:</strong></td>
 				<td width="90%">${contentlet.contentType}</td>
@@ -159,9 +160,9 @@ query = Xss.strip(query);
 		luceneResultTable.innerHTML = `<tr><td><div style="text-align:center; padding: 40px;"><%= LanguageUtil.get(pageContext, "No-Results") %></div></td></tr>`;
 	}
 
-	function openContent(event, inode)	{
+	function openContent(event, inode, variantName)	{
 		if (! hastModifiers(event)){
-			window.parent.location = `/dotAdmin/#/c/content/${inode}`;
+			window.parent.location = `/dotAdmin/#/c/content/${inode}&variantName=${variantName ?? 'DEFAULT'}`;
 			return false;
 		}
 		return true;
