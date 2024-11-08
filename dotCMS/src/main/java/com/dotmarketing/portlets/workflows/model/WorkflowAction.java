@@ -77,9 +77,12 @@ public class WorkflowAction implements Permissionable, Serializable{
 	private boolean destroyActionlet;
 	private boolean moveActionlet;
 	private boolean moveActionletHasPath;
+	private boolean commentActionlet;
+
 	private Set<WorkflowState> showOn = Collections.emptySet();
 	private Map<String, Object> metadata = new HashMap<>();
 	private boolean resetable;
+
 
 	public WorkflowAction() {
 	}
@@ -259,6 +262,16 @@ public class WorkflowAction implements Permissionable, Serializable{
 		return this.moveActionletHasPath;
 	}
 
+
+	/**
+	 * Returns true if the action has comment sub action
+	 * @return Boolean true if has a comment action
+	 */
+	@JsonProperty("hasCommentActionlet")
+	public boolean hasCommentActionlet() {
+		return this.commentActionlet;
+	}
+
 	/**
 	 * Returns true if the action has at least one action let that unpublish
 	 * @return Boolean true if has unpublish action
@@ -337,6 +350,10 @@ public class WorkflowAction implements Permissionable, Serializable{
 
 	public void setArchiveActionlet(final boolean archiveActionlet) {
 		this.archiveActionlet = archiveActionlet;
+	}
+
+	public void setCommentActionlet(final boolean isComment) {
+		this.commentActionlet = isComment;
 	}
 
 	public void setUnarchiveActionlet(final boolean unarchiveActionlet) {
@@ -579,6 +596,5 @@ public class WorkflowAction implements Permissionable, Serializable{
 
 		return Objects.hash(id);
 	}
-
 
 }
