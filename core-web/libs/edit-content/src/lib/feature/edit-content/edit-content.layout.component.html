@@ -2,9 +2,7 @@
 @if ($store.isLoaded()) {
     @let contentType = $store.contentType();
     @let variable = contentType.variable;
-    @let contentlet = $store.contentlet();
     @let showSidebar = $store.showSidebar();
-    @let isLoading = $store.isLoading();
 
     @if ($store.isEnabledNewContentEditor()) {
         <p-messages
@@ -33,11 +31,7 @@
 
     @if (showSidebar) {
         @defer (when showSidebar) {
-            <dot-edit-content-aside
-                [loading]="isLoading"
-                [contentlet]="contentlet"
-                [contentType]="contentType"
-                (toggle)="$store.toggleSidebar()"
+            <dot-edit-content-sidebar
                 data-testId="edit-content-layout__sidebar"
                 class="edit-content-layout__sidebar" />
         }

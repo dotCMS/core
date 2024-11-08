@@ -9,6 +9,7 @@ export interface DotCMSWorkflow {
     modDate: Date;
     name: string;
     system: boolean;
+    variableName?: string;
 }
 
 export interface DotWorkflowPayload {
