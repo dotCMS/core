@@ -37,8 +37,7 @@ import { CONTENT_TYPE_MOCK } from '../../../utils/mocks';
 
 const messageServiceMock = new MockDotMessageService({
     'edit.content.success.workflow.message': 'Your changes have being applied.',
-    success: 'Success',
-    error: 'Error'
+    success: 'Success'
 });
 
 describe('DotEditContentStore', () => {

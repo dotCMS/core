@@ -7,7 +7,6 @@ import {
     DestroyRef,
     effect,
     inject,
-    Injector,
     OnInit,
     output
 } from '@angular/core';
@@ -147,8 +146,6 @@ export class DotEditContentFormComponent implements OnInit {
             this.initializeFormListener();
         }
     }
-
-    injector = inject(Injector);
 
     constructor() {
         effect(() => {
