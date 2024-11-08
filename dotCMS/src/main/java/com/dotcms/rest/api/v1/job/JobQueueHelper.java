@@ -21,6 +21,7 @@ import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.time.format.DateTimeFormatter;
@@ -34,7 +35,10 @@ import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.sse.EventOutput;
+import org.glassfish.jersey.media.sse.OutboundEvent;
 
 /**
  * Helper class for interacting with the job queue system. This class provides methods for creating, cancelling, and listing jobs.
@@ -365,9 +369,9 @@ public class JobQueueHelper {
      * @param job The job
      * @return true if the job is watchable, false otherwise
      */
-    public boolean isNotWatchable(Job job){
+    boolean isNotWatchable(Job job) {
         return JobState.PENDING != job.state() && JobState.RUNNING != job.state()
-                && JobState.CANCELLING != job.state();
+                && JobState.CANCEL_REQUESTED != job.state() && JobState.CANCELLING != job.state();
     }
 
     /**
@@ -375,7 +379,7 @@ public class JobQueueHelper {
      * @param job The job
      * @return The status info
      */
-    public Map<String, Object> getJobStatusInfo(Job job) {
+    Map<String, Object> getJobStatusInfo(Job job) {
         final DateTimeFormatter isoFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
         return Map.of(
                 "state", job.state(),
@@ -383,6 +387,74 @@ public class JobQueueHelper {
                 "startedAt", job.startedAt().map(isoFormatter::format).orElse("N/A"),
                 "finishedAt", job.completedAt().map(isoFormatter::format).orElse("N/A")
         );
+    }
+
+    /**
+     * Get the job for the given ID
+     *
+     * @param jobId The ID of the job
+     * @return The job or null if it doesn't exist
+     */
+    Job getJobForSSE(final String jobId) throws DotDataException {
+
+        Job job = null;
+
+        try {
+            job = getJob(jobId);
+        } catch (DoesNotExistException e) {
+            // ignore
+        }
+
+        return job;
+    }
+
+    /**
+     * Send an error event and close the connection
+     *
+     * @param errorName   The name of the error event
+     * @param errorCode   The error code
+     * @param eventOutput The event output
+     */
+    void sendErrorAndClose(final String errorName, final String errorCode,
+            final EventOutput eventOutput) {
+
+        try {
+            OutboundEvent event = new OutboundEvent.Builder()
+                    .mediaType(MediaType.TEXT_HTML_TYPE)
+                    .name(errorName)
+                    .data(String.class, errorCode)
+                    .build();
+            eventOutput.write(event);
+            closeSSEConnection(eventOutput);
+        } catch (IOException e) {
+            Logger.error(this, "Error sending error event", e);
+            closeSSEConnection(eventOutput);
+        }
+    }
+
+    /**
+     * Close the SSE connection
+     *
+     * @param eventOutput The event output
+     */
+    void closeSSEConnection(final EventOutput eventOutput) {
+        try {
+            eventOutput.close();
+        } catch (IOException e) {
+            Logger.error(this, "Error closing SSE connection", e);
+        }
+    }
+
+    /**
+     * Check if a job is in a terminal state
+     *
+     * @param state The state of the job
+     * @return true if the job is in a terminal state, false otherwise
+     */
+    boolean isTerminalState(final JobState state) {
+        return state == JobState.COMPLETED ||
+                state == JobState.FAILED ||
+                state == JobState.CANCELED;
     }
 
 }
