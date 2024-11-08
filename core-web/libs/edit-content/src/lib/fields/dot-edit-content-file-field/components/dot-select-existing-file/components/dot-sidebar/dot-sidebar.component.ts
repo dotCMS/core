@@ -5,7 +5,6 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
-    computed,
     inject,
     input,
     model,
@@ -56,18 +55,7 @@ export class DotSideBarComponent {
      */
     $fakeColumns = signal<string[]>(Array.from({ length: 50 }).map((_) => this.getPercentage()));
 
-    $state = computed(() => {
-        const folders = this.$folders();
-
-        console.log(folders);
-
-        return {
-            folders,
-            defaultFile: folders.find((folder) => folder.data.identifier === 'SYSTEM_HOST')
-        };
-    });
-
-    $selectedFile = model<TreeNode | null>(this.$state().defaultFile);
+    $selectedFile = model<TreeNode | null>(null);
 
     /**
      * Event emitter for when a tree node is expanded.
