@@ -81,6 +81,10 @@ export class DotSelectExistingFileComponent implements OnInit {
         this.#dialogRef.close();
     }
 
+    /**
+     * Retrieves the selected content from the store, fetches it by ID using the upload service,
+     * and closes the dialog with the retrieved content.
+     */
     addContent(): void {
         const content = this.store.selectedContent();
         this.#uploadService.getContentById(content.identifier).subscribe((content) => {

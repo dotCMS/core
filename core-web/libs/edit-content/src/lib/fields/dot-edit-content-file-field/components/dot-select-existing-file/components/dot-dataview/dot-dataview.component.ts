@@ -54,9 +54,21 @@ export class DotDataViewComponent {
      */
     $loading = input.required<boolean>({ alias: 'loading' });
 
+    /**
+     * Signal representing the number of rows per page in the data view.
+     *
+     * @type {number}
+     */
     $rowsPerPage = signal<number>(9);
 
+    /**
+     * Reactive model holding the currently selected product.
+     * Can be a `DotCMSContentlet` or `null`.
+     */
     $selectedProduct = model<DotCMSContentlet | null>(null);
 
+    /**
+     * Emits the selected `DotCMSContentlet` when a row is selected.
+     */
     onRowSelect = output<DotCMSContentlet>();
 }
