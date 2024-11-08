@@ -10,6 +10,7 @@ import { of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
 import { MessageService } from 'primeng/api';
@@ -42,6 +43,7 @@ import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-ac
 import { FormStatus, NG_CUSTOM_EVENTS } from '../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS, PAYLOAD_MOCK } from '../../shared/mocks';
 import { DotPage } from '../../shared/models';
+import { UVEStore } from '../../store/dot-uve.store';
 
 describe('DotEmaDialogComponent', () => {
     let spectator: Spectator<DotEmaDialogComponent>;
@@ -85,6 +87,14 @@ describe('DotEmaDialogComponent', () => {
             HttpClient,
             DotWorkflowActionsFireService,
             MessageService,
+            {
+                provide: UVEStore,
+                useValue: {
+                    params: signal({
+                        variantName: 'DEFAULT' // Is the only thing we need to test the component
+                    })
+                }
+            },
             {
                 provide: DotcmsConfigService,
                 useValue: new DotcmsConfigServiceMock()

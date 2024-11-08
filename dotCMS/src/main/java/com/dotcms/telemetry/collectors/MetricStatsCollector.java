@@ -1,9 +1,11 @@
 package com.dotcms.telemetry.collectors;
 
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.telemetry.MetricCalculationError;
 import com.dotcms.telemetry.MetricType;
 import com.dotcms.telemetry.MetricValue;
 import com.dotcms.telemetry.MetricsSnapshot;
+import com.dotcms.telemetry.business.MetricsAPI;
 import com.dotcms.telemetry.collectors.api.ApiMetricAPI;
 import com.dotcms.telemetry.collectors.api.ApiMetricTypes;
 import com.dotcms.telemetry.collectors.container.TotalFileContainersInLivePageDatabaseMetricType;
@@ -17,33 +19,33 @@ import com.dotcms.telemetry.collectors.content.LiveNotDefaultLanguageContentsDat
 import com.dotcms.telemetry.collectors.content.RecentlyEditedContentDatabaseMetricType;
 import com.dotcms.telemetry.collectors.content.TotalContentsDatabaseMetricType;
 import com.dotcms.telemetry.collectors.content.WorkingNotDefaultLanguageContentsDatabaseMetricType;
+import com.dotcms.telemetry.collectors.contenttype.CountOfBinaryFieldsMetricType;
+import com.dotcms.telemetry.collectors.contenttype.CountOfBlockEditorFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfCategoryFieldsMetricType;
+import com.dotcms.telemetry.collectors.contenttype.CountOfCheckboxFieldsMetricType;
+import com.dotcms.telemetry.collectors.contenttype.CountOfColumnsFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfConstantFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfDateFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfDateTimeFieldsMetricType;
-import com.dotcms.telemetry.collectors.contenttype.CountOfHiddenFieldsMetricType;
-import com.dotcms.telemetry.collectors.contenttype.CountOfPermissionsFieldsMetricType;
-import com.dotcms.telemetry.collectors.contenttype.CountOfRelationshipFieldsMetricType;
-import com.dotcms.telemetry.collectors.contenttype.CountOfSiteOrFolderFieldsMetricType;
-import com.dotcms.telemetry.collectors.contenttype.CountOfTagFieldsMetricType;
-import com.dotcms.telemetry.collectors.contenttype.CountOfTextAreaFieldsMetricType;
-import com.dotcms.telemetry.collectors.contenttype.CountOfTextFieldsMetricType;
-import com.dotcms.telemetry.collectors.contenttype.CountOfTimeFieldsMetricType;
-import com.dotcms.telemetry.collectors.contenttype.CountOfWYSIWYGFieldsMetricType;
-import com.dotcms.telemetry.collectors.contenttype.CountOfBinaryFieldsMetricType;
-import com.dotcms.telemetry.collectors.contenttype.CountOfBlockEditorFieldsMetricType;
-import com.dotcms.telemetry.collectors.contenttype.CountOfCheckboxFieldsMetricType;
-import com.dotcms.telemetry.collectors.contenttype.CountOfColumnsFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfFileFieldsMetricType;
+import com.dotcms.telemetry.collectors.contenttype.CountOfHiddenFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfImageFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfJSONFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfKeyValueFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfLineDividersFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfMultiselectFieldsMetricType;
+import com.dotcms.telemetry.collectors.contenttype.CountOfPermissionsFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfRadioFieldsMetricType;
+import com.dotcms.telemetry.collectors.contenttype.CountOfRelationshipFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfRowsFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfSelectFieldsMetricType;
+import com.dotcms.telemetry.collectors.contenttype.CountOfSiteOrFolderFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfTabFieldsMetricType;
+import com.dotcms.telemetry.collectors.contenttype.CountOfTagFieldsMetricType;
+import com.dotcms.telemetry.collectors.contenttype.CountOfTextAreaFieldsMetricType;
+import com.dotcms.telemetry.collectors.contenttype.CountOfTextFieldsMetricType;
+import com.dotcms.telemetry.collectors.contenttype.CountOfTimeFieldsMetricType;
+import com.dotcms.telemetry.collectors.contenttype.CountOfWYSIWYGFieldsMetricType;
 import com.dotcms.telemetry.collectors.language.HasChangeDefaultLanguagesDatabaseMetricType;
 import com.dotcms.telemetry.collectors.language.OldStyleLanguagesVarialeMetricType;
 import com.dotcms.telemetry.collectors.language.TotalLanguagesDatabaseMetricType;
@@ -108,7 +110,7 @@ import java.util.Optional;
  */
 public final class MetricStatsCollector {
 
-    public static final ApiMetricAPI apiStatAPI = new ApiMetricAPI();
+    public static final ApiMetricAPI apiStatAPI = CDIUtils.getBeanThrows(ApiMetricAPI.class);
     static final Collection<MetricType> metricStatsCollectors;
 
     private MetricStatsCollector() {
@@ -180,13 +182,18 @@ public final class MetricStatsCollector {
         metricStatsCollectors.add(new TotalLiveContainerDatabaseMetricType());
         metricStatsCollectors.add(new TotalWorkingContainerDatabaseMetricType());
 
-        metricStatsCollectors.add(new TotalStandardContainersInLivePageDatabaseMetricType());
-        metricStatsCollectors.add(new TotalFileContainersInLivePageDatabaseMetricType());
-        metricStatsCollectors.add(new TotalStandardContainersInWorkingPageDatabaseMetricType());
-        metricStatsCollectors.add(new TotalFileContainersInWorkingPageDatabaseMetricType());
+        if (CDIUtils.getBean(MetricsAPI.class).isPresent()) {
+            final MetricsAPI metricsAPI = CDIUtils.getBean(MetricsAPI.class).get();
+            metricStatsCollectors.add(new TotalStandardContainersInLivePageDatabaseMetricType(metricsAPI));
+            metricStatsCollectors.add(new TotalFileContainersInLivePageDatabaseMetricType(metricsAPI));
+            metricStatsCollectors.add(new TotalStandardContainersInWorkingPageDatabaseMetricType(metricsAPI));
+            metricStatsCollectors.add(new TotalFileContainersInWorkingPageDatabaseMetricType(metricsAPI));
 
-        metricStatsCollectors.add(new TotalFileContainersInLiveTemplatesDatabaseMetricType());
-        metricStatsCollectors.add(new TotalStandardContainersInLiveTemplatesDatabaseMetricType());
+            metricStatsCollectors.add(new TotalFileContainersInLiveTemplatesDatabaseMetricType(metricsAPI));
+            metricStatsCollectors.add(new TotalStandardContainersInLiveTemplatesDatabaseMetricType(metricsAPI));
+        } else {
+            Logger.debug(MetricStatsCollector.class, () -> "MetricsAPI could not be injected via CDI");
+        }
 
         metricStatsCollectors.add(new CountOfCategoryFieldsMetricType());
         metricStatsCollectors.add(new CountOfConstantFieldsMetricType());
@@ -222,7 +229,7 @@ public final class MetricStatsCollector {
     public static MetricsSnapshot getStatsAndCleanUp() {
         final MetricsSnapshot stats = getStats();
 
-        apiStatAPI.flushTemporalTable();
+        apiStatAPI.flushTemporaryTable();
         return stats;
     }
 
