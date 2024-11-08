@@ -1,11 +1,24 @@
 import { faker } from '@faker-js/faker';
+import { tapResponse } from '@ngrx/component-store';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { pipe } from 'rxjs';
 
-import { computed } from '@angular/core';
+import { computed, inject } from '@angular/core';
 
 import { TreeNode } from 'primeng/api';
 
+import { exhaustMap, switchMap, tap } from 'rxjs/operators';
+
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+
+import {
+    TreeNodeItem,
+    TreeNodeSelectItem
+} from '../../../../../models/dot-edit-content-host-folder-field.interface';
+import { DotEditContentService } from '../../../../../services/dot-edit-content.service';
+
+export const PEER_PAGE_LIMIT = 1000;
 
 export interface Content {
     id: string;
@@ -17,8 +30,9 @@ export interface Content {
 
 export interface SelectExisingFileState {
     folders: {
-        data: TreeNode[];
+        data: TreeNodeItem[];
         status: ComponentStatus;
+        nodeExpaned: TreeNodeSelectItem['node'] | null;
     };
     content: {
         data: Content[];
@@ -33,7 +47,8 @@ export interface SelectExisingFileState {
 const initialState: SelectExisingFileState = {
     folders: {
         data: [],
-        status: ComponentStatus.INIT
+        status: ComponentStatus.INIT,
+        nodeExpaned: null
     },
     content: {
         data: [],
@@ -52,6 +67,8 @@ export const SelectExisingFileStore = signalStore(
         contentIsLoading: computed(() => state.content().status === ComponentStatus.LOADING)
     })),
     withMethods((store) => {
+        const dotEditContentService = inject(DotEditContentService);
+
         return {
             loadContent: () => {
                 const mockContent = faker.helpers.multiple(
@@ -72,44 +89,68 @@ export const SelectExisingFileStore = signalStore(
                     }
                 });
             },
-            loadFolders: () => {
-                const mockFolders = [
-                    {
-                        label: 'demo.dotcms.com',
-                        expandedIcon: 'pi pi-folder-open',
-                        collapsedIcon: 'pi pi-folder',
-                        children: [
-                            {
-                                label: 'demo.dotcms.com',
-                                expandedIcon: 'pi pi-folder-open',
-                                collapsedIcon: 'pi pi-folder',
-                                children: [
-                                    {
-                                        label: 'documents'
-                                    }
-                                ]
-                            },
-                            {
-                                label: 'demo.dotcms.com',
-                                expandedIcon: 'pi pi-folder-open',
-                                collapsedIcon: 'pi pi-folder'
-                            }
-                        ]
-                    },
-                    {
-                        label: 'nico.dotcms.com',
-                        expandedIcon: 'pi pi-folder-open',
-                        collapsedIcon: 'pi pi-folder'
-                    }
-                ];
+            loadFolders: rxMethod<void>(
+                pipe(
+                    tap(() =>
+                        patchState(store, {
+                            folders: { ...store.folders(), status: ComponentStatus.LOADING }
+                        })
+                    ),
+                    switchMap(() => {
+                        return dotEditContentService
+                            .getSitesTreePath({ perPage: PEER_PAGE_LIMIT, filter: '*' })
+                            .pipe(
+                                tapResponse({
+                                    next: (data) =>
+                                        patchState(store, {
+                                            folders: {
+                                                data,
+                                                status: ComponentStatus.LOADED,
+                                                nodeExpaned: null
+                                            }
+                                        }),
+                                    error: () =>
+                                        patchState(store, {
+                                            folders: {
+                                                data: [],
+                                                status: ComponentStatus.ERROR,
+                                                nodeExpaned: null
+                                            }
+                                        })
+                                })
+                            );
+                    })
+                )
+            ),
+            loadChildren: rxMethod<TreeNodeSelectItem>(
+                pipe(
+                    exhaustMap((event: TreeNodeSelectItem) => {
+                        const { node } = event;
+                        const { hostname, path } = node.data;
 
-                patchState(store, {
-                    folders: {
-                        data: mockFolders,
-                        status: ComponentStatus.LOADED
-                    }
-                });
-            }
+                        node.loading = true;
+
+                        return dotEditContentService.getFoldersTreeNode(hostname, path).pipe(
+                            tapResponse({
+                                next: (children) => {
+                                    node.loading = false;
+                                    node.leaf = true;
+                                    node.icon = 'pi pi-folder-open';
+                                    node.children = [...children];
+
+                                    const folders = store.folders();
+                                    patchState(store, {
+                                        folders: { ...folders, nodeExpaned: node }
+                                    });
+                                },
+                                error: () => {
+                                    node.loading = false;
+                                }
+                            })
+                        );
+                    })
+                )
+            )
         };
     })
 );
