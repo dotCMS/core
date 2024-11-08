@@ -771,13 +771,13 @@ public class ContentUtils {
 	 * @param languageId
 	 */
 	public static void addRelationships(final Contentlet contentlet, final User user, final PageMode mode, final long languageId) {
-
 		final HttpServletRequest  request  = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 		final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
 		if (addRelationshipsOnPage &&
 				Objects.nonNull(response) &&
 				Objects.nonNull(request) &&
 				Objects.nonNull(user)) {
+
 			final String depthParam =
 					Objects.nonNull(request.getParameter(WebKeys.HTMLPAGE_DEPTH)) ?
 							request.getParameter(WebKeys.HTMLPAGE_DEPTH) :
@@ -788,6 +788,19 @@ public class ContentUtils {
 			}
 		}
 	}
+	public static void addRelationships(final Contentlet contentlet, final User user, final PageMode mode,
+										final long languageId, final int depth) {
+
+		final HttpServletRequest  request  = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+		if (addRelationshipsOnPage &&
+				Objects.nonNull(response) &&
+				Objects.nonNull(request) &&
+				Objects.nonNull(user)) {
+
+			addRelationships(contentlet, user, mode, languageId, depth, request, response);
+		}
+ 	}
 
 	/**
 	 * Adds the relationships to the contentlet based on depth argument

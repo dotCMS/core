@@ -3,6 +3,7 @@ package com.dotcms.contenttype.business;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonHelper;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.exception.ExceptionUtil;
@@ -30,12 +31,7 @@ import io.vavr.control.Try;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Implementation class for the {@link StoryBlockAPI}.
@@ -56,11 +52,6 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         final boolean inTransaction = DbConnectionFactory.inTransaction();
         if (!inTransaction && null != contentlet && null != contentlet.getContentType() &&
                 contentlet.getContentType().hasStoryBlockFields()) {
-            if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(), "refreshReferences", MAX_RECURSION_LEVEL)) {
-                Logger.debug(this, () -> "This method has been called more than " + MAX_RECURSION_LEVEL +
-                        " times in the same thread. This could be a sign of circular reference in the Story Block field. Data will NOT be refreshed.");
-                return new StoryBlockReferenceResult(false, contentlet);
-            }
 
             contentlet.getContentType().fields(StoryBlockField.class)
                     .forEach(field -> {
@@ -364,10 +355,55 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     private void addContentletRelationships(final Contentlet contentlet) {
         final HttpServletRequest httpRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final PageMode currentPageMode = PageMode.get(httpRequest);
-        if (null != httpRequest && null == httpRequest.getAttribute(WebKeys.HTMLPAGE_DEPTH)) {
-            httpRequest.setAttribute(WebKeys.HTMLPAGE_DEPTH, MAX_RELATIONSHIP_DEPTH.get());
+
+        final int beginningDepthValue = getBeginningDepthValue();
+        int depth = -1;
+
+        if (isInsideAnotherBlockEditorAndRelatedContent()) {
+            depth = decreaseDepthValue(beginningDepthValue);
+        } else if (null != httpRequest && null == httpRequest.getAttribute(WebKeys.HTMLPAGE_DEPTH)) {
+            depth = beginningDepthValue;
         }
-        ContentUtils.addRelationships(contentlet, APILocator.systemUser(), currentPageMode, contentlet.getLanguageId());
+
+        ContentUtils.addRelationships(contentlet, APILocator.systemUser(), currentPageMode, contentlet.getLanguageId(), depth);
+    }
+
+    private int decreaseDepthValue(int depthValue) {
+        if (depthValue == 2) {
+            return 0;
+        }
+
+        if (depthValue == 3) {
+            return 1;
+        }
+
+        return depthValue;
+    }
+
+    public int getBeginningDepthValue(){
+        final HttpServletRequest httpRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        String value = null;
+
+        if ((null != httpRequest && null != httpRequest.getAttribute(WebKeys.HTMLPAGE_DEPTH)) ) {
+
+            value = Objects.nonNull(httpRequest.getParameter(WebKeys.HTMLPAGE_DEPTH)) ?
+                            httpRequest.getParameter(WebKeys.HTMLPAGE_DEPTH) :
+                            (String) httpRequest.getAttribute(WebKeys.HTMLPAGE_DEPTH);
+        } else {
+            value = MAX_RELATIONSHIP_DEPTH.get();
+        }
+
+        return ConversionUtils.toInt(value, -1);
+    }
+
+    private boolean isInsideAnotherBlockEditorAndRelatedContent(){
+        boolean insideAnotherBlockEditor =
+                ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(), "refreshReferences", 2);
+
+        boolean insideContentRelated =
+                ThreadUtils.isMethodCallCountEqualThan(ESContentletAPIImpl.class.getName(), "getRelated", 1);
+
+        return insideAnotherBlockEditor && insideContentRelated;
     }
 
     /**
