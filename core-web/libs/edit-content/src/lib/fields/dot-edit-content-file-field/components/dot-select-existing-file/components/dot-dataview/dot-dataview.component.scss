@@ -6,8 +6,13 @@
 }
 ::ng-deep {
     p-table {
-        .p-datatable .p-datatable-header {
-            background-color: $color-palette-gray-100;
+        .p-datatable {
+            .p-datatable-header {
+                background-color: $color-palette-gray-100;
+            }
+            .p-datatable-wrapper {
+                height: 100%;
+            }
         }
     }
 }
@@ -20,7 +25,7 @@
 
 .dataview-thumbnail {
     width: 100%;
-    max-height: 4rem;
+    max-height: 3rem;
     overflow: hidden;
     position: relative;
 }

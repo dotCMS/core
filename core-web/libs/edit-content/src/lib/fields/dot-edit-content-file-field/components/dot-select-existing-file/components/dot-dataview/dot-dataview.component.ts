@@ -57,7 +57,7 @@ export class DotDataViewComponent {
      */
     $loading = input.required<boolean>({ alias: 'loading' });
 
-    $rowsPerPage = signal<number>(7);
+    $rowsPerPage = signal<number>(9);
 
     $selectedProduct = model<DotCMSContentlet | null>(null);
 

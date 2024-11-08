@@ -5,6 +5,7 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    computed,
     inject,
     input,
     model,
@@ -17,6 +18,8 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TreeModule, TreeNodeExpandEvent } from 'primeng/tree';
 
 import { TruncatePathPipe } from '@dotcms/edit-content/pipes/truncate-path.pipe';
+
+import { SYSTEM_HOST_ID } from '../../store/select-existing-file.store';
 
 @Component({
     selector: 'dot-sidebar',
@@ -38,7 +41,7 @@ export class DotSideBarComponent {
      * @type {Observable<TreeNode[]>}
      * @alias folders
      */
-    $folders = input<TreeNode[]>([], { alias: 'folders' });
+    $folders = input.required<TreeNode[]>({ alias: 'folders' });
     /**
      * A boolean observable that indicates the loading state.
      *
@@ -72,6 +75,17 @@ export class DotSideBarComponent {
      * @type {TreeNodeExpandEvent}
      */
     onNodeSelect = output<TreeNodeExpandEvent>();
+
+    $state = computed(() => {
+        const folders = this.$folders();
+
+        const selectedFile = folders.find((f) => f.data.identifier === SYSTEM_HOST_ID);
+
+        return {
+            folders,
+            selectedFile: signal(selectedFile)
+        };
+    });
 
     /**
      * Triggers change detection manually.

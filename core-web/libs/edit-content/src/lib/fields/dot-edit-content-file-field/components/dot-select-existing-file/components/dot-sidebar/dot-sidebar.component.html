@@ -2,10 +2,10 @@
 
 @if (!loading) {
     <p-tree
-        [value]="$folders()"
+        [value]="$state().folders"
         [loading]="loading"
         selectionMode="single"
-        [(selection)]="$selectedFile"
+        [(selection)]="$state().selectedFile"
         loadingMode="icon"
         class="w-full h-full"
         styleClass="w-full h-full"

@@ -3,6 +3,7 @@
 @let rowsPerPage = $rowsPerPage();
 
 <p-table
+    #datatable
     [value]="data"
     [loading]="loading"
     [paginator]="data.length >= rowsPerPage"
@@ -11,7 +12,8 @@
     dataKey="identifier"
     [(selection)]="$selectedProduct"
     (onRowSelect)="onRowSelect.emit($event.data)"
-    styleClass="p-datatable-lg flex flex-column h-full">
+    [globalFilterFields]="['title', 'modUserName']"
+    styleClass="flex flex-column h-full justify-content-between">
     <ng-template pTemplate="emptymessage">
         <tr>
             <td colspan="4">
@@ -23,7 +25,12 @@
         <div class="flex">
             <p-iconField iconPosition="left">
                 <p-inputIcon styleClass="pi pi-search" />
-                <input pInputText type="text" placeholder="Search keyword" />
+                <input
+                    #searchInput
+                    pInputText
+                    type="text"
+                    placeholder="Search keyword"
+                    (input)="datatable.filterGlobal(searchInput.value, 'contains')" />
             </p-iconField>
         </div>
     </ng-template>
@@ -42,7 +49,7 @@
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-content>
-        <tr class="h-4rem" [pSelectableRow]="content">
+        <tr class="h-3rem" [pSelectableRow]="content">
             <td class="max-w-2rem">
                 <div class="dataview-thumbnail">
                     <dot-contentlet-thumbnail
