@@ -28,8 +28,8 @@
                 <input
                     #searchInput
                     pInputText
-                    type="text"
-                    placeholder="Search keyword"
+                    type="search"
+                    [placeholder]="'dot.file.field.dialog.select.existing.file.table.search' | dm"
                     (input)="datatable.filterGlobal(searchInput.value, 'contains')" />
             </p-iconField>
         </div>
@@ -60,7 +60,7 @@
                 </div>
             </td>
             <td class="max-w-12rem">
-                <p class="truncate">{{ content.title }}</p>
+                <p class="truncate-text">{{ content.title }}</p>
             </td>
             <td>{{ content.modUserName }}</td>
             <td>{{ content.modDate | date }}</td>

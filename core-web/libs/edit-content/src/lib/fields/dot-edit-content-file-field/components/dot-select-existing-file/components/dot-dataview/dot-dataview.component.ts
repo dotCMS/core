@@ -1,4 +1,4 @@
-import { DatePipe, SlicePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -11,7 +11,6 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { IconFieldModule } from 'primeng/iconfield';
-import { ImageModule } from 'primeng/image';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -30,10 +29,8 @@ import { DotMessagePipe } from '@dotcms/ui';
         InputIconModule,
         InputTextModule,
         SkeletonModule,
-        ImageModule,
         DatePipe,
-        DotMessagePipe,
-        SlicePipe
+        DotMessagePipe
     ],
     templateUrl: './dot-dataview.component.html',
     styleUrls: ['./dot-dataview.component.scss'],

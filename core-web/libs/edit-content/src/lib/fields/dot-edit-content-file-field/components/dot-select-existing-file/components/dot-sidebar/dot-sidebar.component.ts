@@ -1,6 +1,5 @@
 import { faker } from '@faker-js/faker';
 
-import { SlicePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -24,7 +23,7 @@ import { SYSTEM_HOST_ID } from '../../store/select-existing-file.store';
 @Component({
     selector: 'dot-sidebar',
     standalone: true,
-    imports: [TreeModule, SlicePipe, TruncatePathPipe, SkeletonModule],
+    imports: [TreeModule, TruncatePathPipe, SkeletonModule],
     templateUrl: './dot-sidebar.component.html',
     styleUrls: ['./dot-sidebar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
