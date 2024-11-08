@@ -1,26 +1,29 @@
-import { DatePipe, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { DatePipe, SlicePipe } from '@angular/common';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    CUSTOM_ELEMENTS_SCHEMA,
+    input,
+    model,
+    output,
+    signal
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { DataViewModule } from 'primeng/dataview';
 import { IconFieldModule } from 'primeng/iconfield';
 import { ImageModule } from 'primeng/image';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
-import { TagModule } from 'primeng/tag';
 
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
-
-import { Content } from '../../store/select-existing-file.store';
 
 @Component({
     selector: 'dot-dataview',
     standalone: true,
     imports: [
-        DataViewModule,
-        TagModule,
         ButtonModule,
         TableModule,
         IconFieldModule,
@@ -28,23 +31,24 @@ import { Content } from '../../store/select-existing-file.store';
         InputTextModule,
         SkeletonModule,
         ImageModule,
-        NgOptimizedImage,
         DatePipe,
-        DotMessagePipe
+        DotMessagePipe,
+        SlicePipe
     ],
     templateUrl: './dot-dataview.component.html',
     styleUrls: ['./dot-dataview.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotDataViewComponent {
     /**
      * Represents an observable stream of content data.
      *
-     * @type {Observable<Content[]>}
+     * @type {Observable<DotCMSContentlet[]>}
      * @alias data
      * @required
      */
-    $data = input.required<Content[]>({ alias: 'data' });
+    $data = input.required<DotCMSContentlet[]>({ alias: 'data' });
     /**
      * A boolean observable that indicates the loading state.
      * This is typically used to show or hide a loading indicator in the UI.
@@ -52,4 +56,10 @@ export class DotDataViewComponent {
      * @type {boolean}
      */
     $loading = input.required<boolean>({ alias: 'loading' });
+
+    $rowsPerPage = signal<number>(7);
+
+    $selectedProduct = model<DotCMSContentlet | null>(null);
+
+    onRowSelect = output<DotCMSContentlet>();
 }

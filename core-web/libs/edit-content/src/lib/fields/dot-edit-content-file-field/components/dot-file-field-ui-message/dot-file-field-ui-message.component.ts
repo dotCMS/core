@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { UIMessage } from '../../models';
+import { UIMessage } from '../../../../models/dot-edit-content-file.model';
 
 @Component({
     selector: 'dot-file-field-ui-message',

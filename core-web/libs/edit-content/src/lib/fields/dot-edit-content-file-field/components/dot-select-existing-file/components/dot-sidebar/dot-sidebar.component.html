@@ -4,10 +4,13 @@
     <p-tree
         [value]="$folders()"
         [loading]="loading"
+        selectionMode="single"
+        [(selection)]="$selectedFile"
         loadingMode="icon"
         class="w-full h-full"
-        styleClass="flex h-full"
+        styleClass="w-full h-full"
         loadingMode="icon"
+        (onNodeSelect)="onNodeSelect.emit($event)"
         (onNodeExpand)="onNodeExpand.emit($event)">
         <ng-template let-node pTemplate="default">
             <span>{{ node.label | truncatePath | slice: 0 : 18 }}</span>

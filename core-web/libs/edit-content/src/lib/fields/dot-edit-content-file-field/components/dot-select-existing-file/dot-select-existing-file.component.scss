@@ -3,13 +3,13 @@
 .file-selector {
     height: 43rem;
     .file-selector__sidebar {
+        min-width: 16rem;
+        width: 25%;
         border-right: $field-border-size solid $color-palette-gray-400;
         ::ng-deep {
             .p-tree {
                 border: 0px;
-                padding-right: 0px;
-                padding-top: 0px;
-                padding-bottom: 0px;
+                padding: 0px;
             }
         }
     }

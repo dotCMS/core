@@ -26,7 +26,10 @@ import {
     DotCopyButtonComponent
 } from '@dotcms/ui';
 
-import { DotPreviewResourceLink, UploadedFile } from '../../models';
+import {
+    DotPreviewResourceLink,
+    UploadedFile
+} from '../../../../models/dot-edit-content-file.model';
 import { getFileMetadata } from '../../utils';
 
 @Component({

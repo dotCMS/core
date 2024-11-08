@@ -5,8 +5,10 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    computed,
     inject,
     input,
+    model,
     output,
     signal
 } from '@angular/core';
@@ -37,7 +39,7 @@ export class DotSideBarComponent {
      * @type {Observable<TreeNode[]>}
      * @alias folders
      */
-    $folders = input.required<TreeNode[]>({ alias: 'folders' });
+    $folders = input<TreeNode[]>([], { alias: 'folders' });
     /**
      * A boolean observable that indicates the loading state.
      *
@@ -54,6 +56,19 @@ export class DotSideBarComponent {
      */
     $fakeColumns = signal<string[]>(Array.from({ length: 50 }).map((_) => this.getPercentage()));
 
+    $state = computed(() => {
+        const folders = this.$folders();
+
+        console.log(folders);
+
+        return {
+            folders,
+            defaultFile: folders.find((folder) => folder.data.identifier === 'SYSTEM_HOST')
+        };
+    });
+
+    $selectedFile = model<TreeNode | null>(this.$state().defaultFile);
+
     /**
      * Event emitter for when a tree node is expanded.
      *
@@ -61,6 +76,14 @@ export class DotSideBarComponent {
      * It emits an event of type `TreeNodeExpandEvent`.
      */
     onNodeExpand = output<TreeNodeExpandEvent>();
+
+    /**
+     * Event emitter for when a node is selected in the tree.
+     *
+     * @event onNodeSelect
+     * @type {TreeNodeExpandEvent}
+     */
+    onNodeSelect = output<TreeNodeExpandEvent>();
 
     /**
      * Triggers change detection manually.

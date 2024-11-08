@@ -12,6 +12,19 @@
     }
 }
 
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dataview-thumbnail {
+    width: 100%;
+    max-height: 4rem;
+    overflow: hidden;
+    position: relative;
+}
+
 .file-selector__table_header {
     th {
         font-weight: $font-weight-bold;

@@ -14,7 +14,7 @@ import { DotFormImportUrlComponent } from './dot-form-import-url.component';
 import { FormImportUrlStore } from './store/form-import-url.store';
 
 import { NEW_FILE_MOCK } from '../../../../utils/mocks';
-import { UploadedFile } from '../../models';
+import { UploadedFile } from '../../../../models/dot-edit-content-file.model';
 import { DotFileFieldUploadService } from '../../services/upload-file/upload-file.service';
 
 describe('DotFormImportUrlComponent', () => {

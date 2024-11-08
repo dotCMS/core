@@ -21,7 +21,7 @@ import { DotMessagePipe, DotFieldValidationMessageComponent } from '@dotcms/ui';
 
 import { FormFileEditorStore } from './store/form-file-editor.store';
 
-import { UploadedFile } from '../../models';
+import { UploadedFile } from '../../../../models/dot-edit-content-file.model';
 
 type DialogProps = {
     allowFileNameEdit: boolean;
