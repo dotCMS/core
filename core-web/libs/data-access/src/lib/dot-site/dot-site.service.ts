@@ -89,6 +89,12 @@ export class DotSiteService {
             .pipe(pluck('entity'));
     }
 
+    /**
+     * Retrieves contentlets from a specified folder.
+     *
+     * @param params - Parameters defining the folder and retrieval options.
+     * @returns An observable emitting an array of `DotCMSContentlet` items.
+     */
     getContentByFolder(params: ContentByFolderParams) {
         return this.#http
             .post<{ entity: { list: DotCMSContentlet[] } }>('/api/v1/browser', params)
