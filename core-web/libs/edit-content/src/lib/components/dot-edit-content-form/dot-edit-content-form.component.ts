@@ -5,7 +5,9 @@ import {
     Component,
     computed,
     DestroyRef,
+    effect,
     inject,
+    Injector,
     OnInit,
     output
 } from '@angular/core';
@@ -142,8 +144,21 @@ export class DotEditContentFormComponent implements OnInit {
     ngOnInit(): void {
         if (this.$store.tabs().length) {
             this.initializeForm();
-            this.initializeFormListenter();
+            this.initializeFormListener();
         }
+    }
+
+    injector = inject(Injector);
+
+    constructor() {
+        effect(() => {
+            const isLoading = this.$store.isLoading();
+            if (isLoading) {
+                this.form.disable();
+            } else {
+                this.form.enable();
+            }
+        });
     }
 
     /**
@@ -154,7 +169,7 @@ export class DotEditContentFormComponent implements OnInit {
      * @private
      * @memberof DotEditContentFormComponent
      */
-    private initializeFormListenter() {
+    private initializeFormListener() {
         this.form.valueChanges.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((value) => {
             const processedValue = this.processFormValue(value);
             this.changeValue.emit(processedValue);
