@@ -2,7 +2,7 @@ package com.dotcms.telemetry.collectors;
 
 import com.dotcms.telemetry.MetricType;
 import com.dotcms.telemetry.MetricValue;
-import com.dotcms.telemetry.business.MetricsAPI;
+import com.dotmarketing.business.APILocator;
 
 import java.util.Optional;
 
@@ -17,14 +17,12 @@ public interface DBMetricType extends MetricType {
 
     @Override
     default Optional<Object> getValue() {
-        return MetricsAPI.INSTANCE.getValue(getSqlQuery());
+        return APILocator.getMetricsAPI().getValue(getSqlQuery());
     }
 
     @Override
     default Optional<MetricValue> getStat() {
-        return getValue()
-                .map(value -> new MetricValue(this.getMetric(), value));
-
+        return getValue().map(value -> new MetricValue(this.getMetric(), value));
     }
 
 }
