@@ -1,4 +1,3 @@
-import { faker } from '@faker-js/faker';
 import { tapResponse } from '@ngrx/component-store';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
@@ -6,19 +5,18 @@ import { pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { TreeNode } from 'primeng/api';
-
 import { exhaustMap, switchMap, tap } from 'rxjs/operators';
 
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
-
 import {
     TreeNodeItem,
     TreeNodeSelectItem
-} from '../../../../../models/dot-edit-content-host-folder-field.interface';
-import { DotEditContentService } from '../../../../../services/dot-edit-content.service';
+} from '@dotcms/edit-content/models/dot-edit-content-host-folder-field.interface';
+import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
 export const PEER_PAGE_LIMIT = 1000;
+
+export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
 
 export interface Content {
     id: string;
@@ -35,11 +33,11 @@ export interface SelectExisingFileState {
         nodeExpaned: TreeNodeSelectItem['node'] | null;
     };
     content: {
-        data: Content[];
+        data: DotCMSContentlet[];
         status: ComponentStatus;
     };
-    selectedFolder: TreeNode | null;
-    selectedFile: DotCMSContentlet | null;
+    currentSite: TreeNodeItem | null;
+    selectedContent: DotCMSContentlet | null;
     searchQuery: string;
     viewMode: 'list' | 'grid';
 }
@@ -54,8 +52,8 @@ const initialState: SelectExisingFileState = {
         data: [],
         status: ComponentStatus.INIT
     },
-    selectedFolder: null,
-    selectedFile: null,
+    currentSite: null,
+    selectedContent: null,
     searchQuery: '',
     viewMode: 'list'
 };
@@ -70,25 +68,43 @@ export const SelectExisingFileStore = signalStore(
         const dotEditContentService = inject(DotEditContentService);
 
         return {
-            loadContent: () => {
-                const mockContent = faker.helpers.multiple(
-                    () => ({
-                        id: faker.string.uuid(),
-                        image: faker.image.url(),
-                        title: faker.commerce.productName(),
-                        modifiedBy: faker.internet.displayName(),
-                        lastModified: faker.date.recent()
-                    }),
-                    { count: 100 }
-                );
-
+            setSelectedContent: (selectedContent: DotCMSContentlet) => {
                 patchState(store, {
-                    content: {
-                        data: mockContent,
-                        status: ComponentStatus.LOADED
-                    }
+                    selectedContent
                 });
             },
+            loadContent: rxMethod<TreeNodeSelectItem | void>(
+                pipe(
+                    tap(() =>
+                        patchState(store, {
+                            content: { ...store.content(), status: ComponentStatus.LOADING }
+                        })
+                    ),
+                    switchMap((event) => {
+                        const content = store.content();
+
+                        let identifier = SYSTEM_HOST_ID;
+
+                        if (event) {
+                            identifier = event.node.data.identifier;
+                        }
+
+                        return dotEditContentService.getContentByFolder(identifier).pipe(
+                            tapResponse({
+                                next: (data) => {
+                                    patchState(store, {
+                                        content: { data, status: ComponentStatus.LOADED }
+                                    });
+                                },
+                                error: () =>
+                                    patchState(store, {
+                                        content: { ...content, status: ComponentStatus.ERROR }
+                                    })
+                            })
+                        );
+                    })
+                )
+            ),
             loadFolders: rxMethod<void>(
                 pipe(
                     tap(() =>

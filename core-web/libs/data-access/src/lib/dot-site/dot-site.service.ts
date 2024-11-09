@@ -6,11 +6,26 @@ import { Injectable, inject } from '@angular/core';
 import { pluck } from 'rxjs/operators';
 
 import { Site } from '@dotcms/dotcms-js';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 export interface SiteParams {
     archived: boolean;
     live: boolean;
     system: boolean;
+}
+
+export interface ContentByFolderParams {
+    hostFolderId: string;
+    showLinks?: boolean;
+    showDotAssets?: boolean;
+    showArchived?: boolean;
+    sortByDesc?: boolean;
+    showPages?: boolean;
+    showFiles?: boolean;
+    showFolders?: boolean;
+    showWorking?: boolean;
+    extensions?: string[];
+    mimeTypes?: string[];
 }
 
 export const BASE_SITE_URL = '/api/v1/site';
@@ -72,5 +87,17 @@ export class DotSiteService {
         return this.#http
             .get<{ entity: Site }>(`${BASE_SITE_URL}/currentSite`)
             .pipe(pluck('entity'));
+    }
+
+    /**
+     * Retrieves contentlets from a specified folder.
+     *
+     * @param params - Parameters defining the folder and retrieval options.
+     * @returns An observable emitting an array of `DotCMSContentlet` items.
+     */
+    getContentByFolder(params: ContentByFolderParams) {
+        return this.#http
+            .post<{ entity: { list: DotCMSContentlet[] } }>('/api/v1/browser', params)
+            .pipe(pluck('entity', 'list'));
     }
 }
