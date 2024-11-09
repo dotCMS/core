@@ -1303,6 +1303,7 @@ export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
         key: 'demo.dotcms.com',
         label: 'demo.dotcms.com',
         data: {
+            identifier: 'demo.dotcms.com',
             hostname: 'demo.dotcms.com',
             path: '',
             type: 'site'
@@ -1314,6 +1315,7 @@ export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
         key: 'nico.dotcms.com',
         label: 'nico.dotcms.com',
         data: {
+            identifier: 'nico.dotcms.com',
             hostname: 'nico.dotcms.com',
             path: '',
             type: 'site'
@@ -1325,6 +1327,7 @@ export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
         key: 'System Host',
         label: 'System Host',
         data: {
+            identifier: 'System Host',
             hostname: 'System Host',
             path: '',
             type: 'site'
@@ -1339,6 +1342,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
         key: 'demo.dotcms.com',
         label: 'demo.dotcms.com',
         data: {
+            identifier: 'demo.dotcms.com',
             hostname: 'demo.dotcms.com',
             path: '',
             type: 'site'
@@ -1350,6 +1354,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
                 key: 'demo.dotcms.comlevel1',
                 label: 'demo.dotcms.com/level1/',
                 data: {
+                    identifier: 'demo.dotcms.comlevel1',
                     hostname: 'demo.dotcms.com',
                     path: '/level1/',
                     type: 'folder'
@@ -1361,6 +1366,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
                         key: 'demo.dotcms.comlevel1child1',
                         label: 'demo.dotcms.com/level1/child1/',
                         data: {
+                            identifier: 'demo.dotcms.comlevel1child1',
                             hostname: 'demo.dotcms.com',
                             path: '/level1/child1/',
                             type: 'folder'
@@ -1374,6 +1380,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
                 key: 'demo.dotcms.comlevel2',
                 label: 'demo.dotcms.com/level2/',
                 data: {
+                    identifier: 'demo.dotcms.comlevel2',
                     hostname: 'demo.dotcms.com',
                     path: '/level2/',
                     type: 'folder'
@@ -1387,6 +1394,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
         key: 'nico.dotcms.com',
         label: 'nico.dotcms.com',
         data: {
+            identifier: 'nico.dotcms.com',
             hostname: 'nico.dotcms.com',
             path: '',
             type: 'site'
