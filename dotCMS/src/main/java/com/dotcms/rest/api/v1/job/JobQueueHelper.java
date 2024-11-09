@@ -10,7 +10,6 @@ import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.Queue;
-import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.business.APILocator;
@@ -247,7 +246,7 @@ public class JobQueueHelper {
     JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getActiveJobs(queueName, page, pageSize);
-        } catch (JobQueueDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching active jobs", e);
         }
         return JobPaginatedResult.builder().build();
@@ -279,7 +278,7 @@ public class JobQueueHelper {
     JobPaginatedResult getActiveJobs(int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getActiveJobs(page, pageSize);
-        } catch (JobQueueDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching active jobs", e);
         }
         return JobPaginatedResult.builder().build();
@@ -295,7 +294,7 @@ public class JobQueueHelper {
     JobPaginatedResult getCompletedJobs(int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getCompletedJobs(page, pageSize);
-        } catch (JobQueueDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching completed jobs", e);
         }
         return JobPaginatedResult.builder().build();
@@ -311,7 +310,7 @@ public class JobQueueHelper {
     JobPaginatedResult getCanceledJobs(int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getCanceledJobs(page, pageSize);
-        } catch (JobQueueDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching canceled jobs", e);
         }
         return JobPaginatedResult.builder().build();
@@ -327,7 +326,7 @@ public class JobQueueHelper {
     JobPaginatedResult getFailedJobs(int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getFailedJobs(page, pageSize);
-        } catch (JobQueueDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching failed jobs", e);
         }
         return JobPaginatedResult.builder().build();

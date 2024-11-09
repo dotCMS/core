@@ -316,11 +316,11 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     @CloseDBIfOpened
     @Override
     public JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize)
-            throws JobQueueDataException {
+            throws DotDataException {
         try {
             return jobQueue.getActiveJobs(queueName, page, pageSize);
         } catch (JobQueueDataException e) {
-            throw new JobQueueDataException("Error fetching active jobs", e);
+            throw new DotDataException("Error fetching active jobs", e);
         }
     }
 
@@ -336,45 +336,41 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getActiveJobs(int page, int pageSize)
-            throws JobQueueDataException {
+    public JobPaginatedResult getActiveJobs(int page, int pageSize) throws DotDataException {
         try {
             return jobQueue.getActiveJobs(page, pageSize);
         } catch (JobQueueDataException e) {
-            throw new JobQueueDataException("Error fetching active jobs", e);
+            throw new DotDataException("Error fetching active jobs", e);
         }
     }
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getCompletedJobs(int page, int pageSize)
-            throws JobQueueDataException {
+    public JobPaginatedResult getCompletedJobs(int page, int pageSize) throws DotDataException {
         try {
             return jobQueue.getCompletedJobs(page, pageSize);
         } catch (JobQueueDataException e) {
-            throw new JobQueueDataException("Error fetching completed jobs", e);
+            throw new DotDataException("Error fetching completed jobs", e);
         }
     }
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getCanceledJobs(int page, int pageSize)
-            throws JobQueueDataException {
+    public JobPaginatedResult getCanceledJobs(int page, int pageSize) throws DotDataException {
         try {
             return jobQueue.getCanceledJobs(page, pageSize);
         } catch (JobQueueDataException e) {
-            throw new JobQueueDataException("Error fetching canceled jobs", e);
+            throw new DotDataException("Error fetching canceled jobs", e);
         }
     }
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getFailedJobs(int page, int pageSize)
-            throws JobQueueDataException {
+    public JobPaginatedResult getFailedJobs(int page, int pageSize) throws DotDataException {
         try {
             return jobQueue.getFailedJobs(page, pageSize);
         } catch (JobQueueDataException e) {
-            throw new JobQueueDataException("Error fetching failed jobs", e);
+            throw new DotDataException("Error fetching failed jobs", e);
         }
     }
 
@@ -401,8 +397,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      *
      * @param event The event that triggers the job cancellation request.
      */
+    @VisibleForTesting
     @WrapInTransaction
-    private void onCancelRequestJob(final JobCancelRequestEvent event) {
+    void onCancelRequestJob(final JobCancelRequestEvent event) {
 
         try {
 
@@ -862,19 +859,24 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         final float progress = getJobProgress(job);
 
-        final var latestState = getJobState(job.id());
-        if (latestState == JobState.CANCELLING) {
-            Job canceledJob = job.markAsCanceled(jobResult).withProgress(progress);
-            updateJobStatus(canceledJob);
-            eventProducer.getEvent(JobCanceledEvent.class).fire(
-                    new JobCanceledEvent(canceledJob, LocalDateTime.now())
-            );
-        } else {
-            final Job completedJob = job.markAsCompleted(jobResult).withProgress(progress);
-            updateJobStatus(completedJob);
-            eventProducer.getEvent(JobCompletedEvent.class).fire(
-                    new JobCompletedEvent(completedJob, LocalDateTime.now())
-            );
+        try {
+            if (jobQueue.hasJobBeenInState(job.id(), JobState.CANCELLING)) {
+                Job canceledJob = job.markAsCanceled(jobResult).withProgress(progress);
+                updateJobStatus(canceledJob);
+                eventProducer.getEvent(JobCanceledEvent.class).fire(
+                        new JobCanceledEvent(canceledJob, LocalDateTime.now())
+                );
+            } else {
+                final Job completedJob = job.markAsCompleted(jobResult).withProgress(progress);
+                updateJobStatus(completedJob);
+                eventProducer.getEvent(JobCompletedEvent.class).fire(
+                        new JobCompletedEvent(completedJob, LocalDateTime.now())
+                );
+            }
+        } catch (JobQueueDataException e) {
+            final var errorMessage = "Error updating job status";
+            Logger.error(this, errorMessage, e);
+            throw new DotDataException(errorMessage, e);
         }
     }
 
