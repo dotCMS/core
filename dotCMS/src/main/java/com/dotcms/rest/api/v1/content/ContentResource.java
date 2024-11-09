@@ -619,16 +619,19 @@ public class ContentResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response checkContentLanguageVersions(@Context final HttpServletRequest request,
-                                              @Context final HttpServletResponse response,
-                                              @PathParam("identifier") final String identifier) throws DotDataException {
+    public ResponseEntityView<List<ExistingLanguagesForContentletView>> checkContentLanguageVersions(@Context final HttpServletRequest request,
+                                                                                                     @Context final HttpServletResponse response,
+                                                                                                     @PathParam("identifier") final String identifier) throws DotDataException {
+        Logger.debug(this, () -> String.format("Check the languages that Contentlet '%s' is " +
+                "available on", identifier));
         final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .requiredBackendUser(true)
-                .init().getUser();
-        Logger.debug(this, () -> String.format("Check the languages that the Contentlet '%s' is available on", identifier));
-        final List<ExistingLanguagesForContentletView> languagesForContent = this.getExistingLanguagesForContent(identifier, user);
-        return Response.ok(new ResponseEntityView<>(languagesForContent)).build();
+                .requiredBackendUser(false)
+                .init()
+                .getUser();
+        final List<ExistingLanguagesForContentletView> languagesForContent =
+                this.getExistingLanguagesForContent(identifier, user);
+        return new ResponseEntityView<>(languagesForContent);
     }
 
     /**

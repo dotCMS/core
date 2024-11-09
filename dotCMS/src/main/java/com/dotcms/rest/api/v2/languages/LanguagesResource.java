@@ -653,10 +653,10 @@ public class LanguagesResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response getDefaultLanguage(@Context final HttpServletRequest request,
+    public ResponseEntityView<Language> getDefaultLanguage(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response) throws DotDataException {
         Logger.debug(this, () -> "Retrieving the current default Language");
-        return Response.ok(new ResponseEntityView<>(this.languageAPI.getDefaultLanguage())).build();
+        return new ResponseEntityView<>(this.languageAPI.getDefaultLanguage());
     }
 
 }
