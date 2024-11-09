@@ -92,6 +92,14 @@ export const FileFieldStore = signalStore(
                 });
             },
             /**
+             * setAcceptedFiles is used to set accepted files
+             */
+            setMaxSizeFile: (maxFileSize: number) => {
+                patchState(store, {
+                    maxFileSize
+                });
+            },
+            /**
              * setUIMessage is used to set uiMessage
              * @param uiMessage
              */

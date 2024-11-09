@@ -2,6 +2,8 @@ import { expect, it, describe } from '@jest/globals';
 import { SpectatorService, createServiceFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { signal } from '@angular/core';
+
 import { CLIENT_ACTIONS } from '@dotcms/client';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -13,6 +15,9 @@ import { LAYOUT_URL } from '../../../shared/consts';
 import { DialogStatus, FormStatus } from '../../../shared/enums';
 import { PAYLOAD_MOCK } from '../../../shared/mocks';
 import { DotPage } from '../../../shared/models';
+import { UVEStore } from '../../../store/dot-uve.store';
+
+const TEST_VARIANT = 'my-test-variant';
 
 describe('DotEmaDialogStoreService', () => {
     let spectator: SpectatorService<DotEmaDialogStore>;
@@ -21,6 +26,15 @@ describe('DotEmaDialogStoreService', () => {
         service: DotEmaDialogStore,
         mocks: [DotActionUrlService],
         providers: [
+            {
+                provide: UVEStore,
+                useValue: {
+                    params: signal({
+                        variantName: TEST_VARIANT // Is the only thing we need to test the component
+                    })
+                }
+            },
+
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
@@ -108,7 +122,8 @@ describe('DotEmaDialogStoreService', () => {
             p_p_mode: 'view',
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
-            inode: '123'
+            inode: '123',
+            variantName: TEST_VARIANT
         });
 
         spectator.service.dialogState$.subscribe((state) => {
@@ -141,7 +156,8 @@ describe('DotEmaDialogStoreService', () => {
             p_p_mode: 'view',
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
-            inode: '123'
+            inode: '123',
+            variantName: TEST_VARIANT
         });
 
         spectator.service.dialogState$.subscribe((state) => {
@@ -173,7 +189,8 @@ describe('DotEmaDialogStoreService', () => {
             p_p_mode: 'view',
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
-            inode: '123'
+            inode: '123',
+            variantName: TEST_VARIANT
         });
 
         spectator.service.dialogState$.subscribe((state) => {
@@ -202,7 +219,9 @@ describe('DotEmaDialogStoreService', () => {
 
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
-                url: '/html/ng-contentlet-selector.jsp?ng=true&container_id=1234&add=test&language_id=1',
+                url:
+                    '/html/ng-contentlet-selector.jsp?ng=true&container_id=1234&add=test&language_id=1&' +
+                    new URLSearchParams({ variantName: TEST_VARIANT }).toString(),
                 header: 'Search Content',
                 type: 'content',
                 status: DialogStatus.LOADING,
@@ -246,7 +265,9 @@ describe('DotEmaDialogStoreService', () => {
 
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
-                url: 'some/really/long/url',
+                url:
+                    'http://localhost/some/really/long/url?' +
+                    new URLSearchParams({ variantName: TEST_VARIANT }).toString(),
                 status: DialogStatus.LOADING,
                 header: 'Create test',
                 type: 'content',
@@ -271,7 +292,10 @@ describe('DotEmaDialogStoreService', () => {
         spectator.service.dialogState$.subscribe((state) => {
             expect(state.header).toBe('Create Blog Posts');
             expect(state.status).toBe(DialogStatus.LOADING);
-            expect(state.url).toBe('some/really/long/url');
+            expect(state.url).toBe(
+                'http://localhost/some/really/long/url?' +
+                    new URLSearchParams({ variantName: TEST_VARIANT }).toString()
+            );
             expect(state.type).toBe('content');
             expect(state.actionPayload).toEqual(PAYLOAD_MOCK);
             done();
@@ -294,7 +318,10 @@ describe('DotEmaDialogStoreService', () => {
             expect(state.header).toBe('Create Blog');
             expect(state.status).toBe(DialogStatus.LOADING);
 
-            expect(state.url).toBe('https://demo.dotcms.com/jsp.jsp');
+            expect(state.url).toBe(
+                'https://demo.dotcms.com/jsp.jsp?' +
+                    new URLSearchParams({ variantName: TEST_VARIANT }).toString()
+            );
             expect(state.type).toBe('content');
             expect(state.actionPayload).toEqual(PAYLOAD_MOCK);
             done();
@@ -370,7 +397,8 @@ describe('DotEmaDialogStoreService', () => {
                 inode: '',
                 lang: '2',
                 populateaccept: 'true',
-                reuseLastLang: 'true'
+                reuseLastLang: 'true',
+                variantName: TEST_VARIANT
             });
 
             spectator.service.dialogState$.subscribe((state) => {
@@ -415,7 +443,8 @@ describe('DotEmaDialogStoreService', () => {
                 inode: '',
                 lang: '2',
                 populateaccept: 'true',
-                reuseLastLang: 'true'
+                reuseLastLang: 'true',
+                variantName: TEST_VARIANT
             });
 
             spectator.service.dialogState$.subscribe((state) => {

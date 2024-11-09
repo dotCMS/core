@@ -1,1 +1,22 @@
-<p-tree [value]="$folders()" class="w-full h-full" styleClass="flex h-full" />
+@let loading = $loading();
+
+@if (!loading) {
+    <p-tree
+        [value]="$folders()"
+        [loading]="loading"
+        loadingMode="icon"
+        class="w-full h-full"
+        styleClass="flex h-full"
+        loadingMode="icon"
+        (onNodeExpand)="onNodeExpand.emit($event)">
+        <ng-template let-node pTemplate="default">
+            <span>{{ node.label | truncatePath | slice: 0 : 18 }}</span>
+        </ng-template>
+    </p-tree>
+} @else {
+    <div class="flex w-full h-full flex-column p-2">
+        @for (col of $fakeColumns(); track $index) {
+            <p-skeleton styleClass="mb-3" [width]="col" />
+        }
+    </div>
+}
