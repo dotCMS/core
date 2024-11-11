@@ -31,6 +31,14 @@ export interface BlockEditorData {
     languageId: number;
 }
 
+export interface BlockEditorPayload {
+    fieldName: string;
+    contentType: string;
+    inode: string;
+    language: string;
+    blockEditorContent: string;
+}
+
 export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
 
 @Component({
@@ -73,12 +81,18 @@ export class DotBlockEditorSidebarComponent {
     onClose = output();
 
     /**
+     * Open the sidebar with the block editor content
      *
-     *
-     * @param {*} { fieldName, contentType, inode, language, blockEditorContent }
+     * @param {BlockEditorPayload} { fieldName, contentType, inode, language, blockEditorContent }
      * @memberof DotBlockEditorSidebarComponent
      */
-    open({ fieldName, contentType, inode, language, blockEditorContent }): void {
+    open({
+        fieldName,
+        contentType,
+        inode,
+        language,
+        blockEditorContent
+    }: BlockEditorPayload): void {
         this.#getEditorField({ fieldName, contentType }).subscribe({
             next: (field) =>
                 this.contentlet.set({
@@ -98,10 +112,20 @@ export class DotBlockEditorSidebarComponent {
      * @memberof DotBlockEditorSidebarComponent
      */
     close() {
+        this.resetState();
+        this.onClose.emit();
+    }
+
+    /**
+     * Reset the state of the sidebar
+     *
+     * @protected
+     * @memberof DotBlockEditorSidebarComponent
+     */
+    protected resetState(): void {
         this.value.set(null);
         this.loading.set(false);
         this.contentlet.set(null);
-        this.onClose.emit();
     }
 
     /**
