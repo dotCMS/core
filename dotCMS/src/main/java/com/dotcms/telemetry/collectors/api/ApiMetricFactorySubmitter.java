@@ -1,8 +1,9 @@
 package com.dotcms.telemetry.collectors.api;
 
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
-import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 
@@ -50,10 +51,11 @@ public enum ApiMetricFactorySubmitter {
         submitter.submit(() -> save(metricAPIRequest));
     }
 
+    @WrapInTransaction
     private void save(final ApiMetricRequest metricAPIRequest) {
         try {
-            LocalTransaction.wrap(() -> ApiMetricFactory.INSTANCE.save(metricAPIRequest));
-        } catch (Exception e) {
+            CDIUtils.getBeanThrows(ApiMetricFactory.class).save(metricAPIRequest);
+        } catch (final Exception e) {
             throw new DotRuntimeException(e);
         }
     }
