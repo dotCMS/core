@@ -5209,7 +5209,7 @@ public class WorkflowResource {
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
-    public final Response findAvailableDefaultActionsByContentType(@Context final HttpServletRequest request,
+    public final ResponseEntityDefaultWorkflowActionsView findAvailableDefaultActionsByContentType(@Context final HttpServletRequest request,
                                                                    @Context final HttpServletResponse response,
                                                                    @PathParam("contentTypeId") @Parameter(
                                                                            required = true,
@@ -5220,18 +5220,11 @@ public class WorkflowResource {
                                                                    ) final String contentTypeId) {
         final InitDataObject initDataObject = this.webResource.init
                 (null, request, response, true, null);
-        try {
             Logger.debug(this,
                     () -> "Getting the available workflow schemes default action for the ContentType: "
                             + contentTypeId );
             final List<WorkflowDefaultActionView> actions = this.workflowHelper.findAvailableDefaultActionsByContentType(contentTypeId, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView<>(actions)).build(); // 200
-        } catch (Exception e) {
-            Logger.error(this.getClass(),
-                    "Exception on find Available Default Actions exception message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
-
+            return new ResponseEntityDefaultWorkflowActionsView(actions);
     } // findAvailableDefaultActionsByContentType.
 
     /**
