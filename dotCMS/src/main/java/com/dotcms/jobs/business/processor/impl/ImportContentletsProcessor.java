@@ -354,16 +354,16 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
      * Retrieves the language from the job parameters.
      *
      * @param job The job containing the parameters
-     * @return The language ID or ISO code
+     * @return An optional containing the language string, or an empty optional if not present
      */
-    private String getLanguage(final Job job) {
+    private Optional<String> getLanguage(final Job job) {
 
         if (!job.parameters().containsKey(PARAMETER_LANGUAGE)
                 || job.parameters().get(PARAMETER_LANGUAGE) == null) {
-            return null;
+            return Optional.empty();
         }
 
-        return (String) job.parameters().get(PARAMETER_LANGUAGE);
+        return Optional.of((String) job.parameters().get(PARAMETER_LANGUAGE));
     }
 
     /**
@@ -625,8 +625,13 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
     private Language findLanguage(final Job job) {
 
         // Read the language from the job parameters
-        final var languageIsoOrId = getLanguage(job);
-        if (languageIsoOrId == null || languageIsoOrId.equals("-1")) {
+        final var languageIsoOrIdOptional = getLanguage(job);
+        if (languageIsoOrIdOptional.isEmpty()) {
+            return null;
+        }
+
+        final var languageIsoOrId = languageIsoOrIdOptional.get();
+        if (languageIsoOrId.equals("-1")) {
             return null;
         }
 

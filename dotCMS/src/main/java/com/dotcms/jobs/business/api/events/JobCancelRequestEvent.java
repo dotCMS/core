@@ -9,17 +9,17 @@ import java.time.LocalDateTime;
 public class JobCancelRequestEvent {
 
     private final Job job;
-    private final LocalDateTime canceledAt;
+    private final LocalDateTime canceledOn;
 
     /**
      * Constructs a new JobCancelRequestEvent.
      *
      * @param job        The job to cancel.
-     * @param canceledAt The timestamp when the cancel request was made.
+     * @param canceledOn The timestamp when the cancel request was made.
      */
-    public JobCancelRequestEvent(Job job, LocalDateTime canceledAt) {
+    public JobCancelRequestEvent(Job job, LocalDateTime canceledOn) {
         this.job = job;
-        this.canceledAt = canceledAt;
+        this.canceledOn = canceledOn;
     }
 
     /**
@@ -32,7 +32,7 @@ public class JobCancelRequestEvent {
     /**
      * @return The timestamp when the cancel request was made.
      */
-    public LocalDateTime getCanceledAt() {
-        return canceledAt;
+    public LocalDateTime getCanceledOn() {
+        return canceledOn;
     }
 }
