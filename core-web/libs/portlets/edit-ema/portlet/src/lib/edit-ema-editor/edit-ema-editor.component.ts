@@ -1006,7 +1006,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
 
                 this.dialog.openDialogOnUrl(
-                    urlObject.toString(),
+                    urlObject,
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
