@@ -94,13 +94,27 @@ public interface ContentletAPIPreHook {
 	
 	/**
 	 * Retrieves a contentlet from the database based on its identifier
-	 * @param identifier 
+	 * @param identifier
 	 * @param live Retrieves the live version if false retrieves the working version
 	 * @return
 	 */
 	public default boolean findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles){
       return true;
     }
+
+	/**
+	 * Retrieves a contentlet from the database based on its identifier
+	 * @param identifier
+	 * @param languageId
+	 * @param variantId
+	 * @param user
+	 * @param timeMachineDate
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	public default boolean findContentletByIdentifier(String identifier, long languageId, String variantId, User user, Date timeMachineDate, boolean respectFrontendRoles){
+		return true;
+	}
 
 	/**
 	 * Retrieves a contentlet from the database based on its identifier

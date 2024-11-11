@@ -1,5 +1,10 @@
 package com.dotcms.rendering.velocity.services;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -10,6 +15,7 @@ import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
@@ -50,22 +56,19 @@ import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.apache.velocity.context.Context;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.apache.velocity.context.Context;
 
 /**
  * Utility class that provides commonly used methods for rendering HTML Pages in dotCMS.
@@ -248,7 +251,8 @@ public class PageRenderUtil implements Serializable {
     private List<ContainerRaw> populateContainers() throws DotDataException, DotSecurityException {
 
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        final boolean live               = this.isLive(request);
+        final Date timeMachineDate    = timeMachineDate(request).orElseGet(()->null);
+        final boolean live            = this.isLive(request);
         final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
         final Table<String, String, Set<PersonalizedContentlet>> pageContents = this.multiTreeAPI
                 .getPageMultiTrees(htmlPage, currentVariantId, live);
@@ -284,8 +288,7 @@ public class PageRenderUtil implements Serializable {
 
                 for (final PersonalizedContentlet personalizedContentlet : personalizedContentletSet) {
 
-                    final Contentlet nonHydratedContentlet = getContentletByVariantFallback(currentVariantId,
-                            personalizedContentlet);
+                    final Contentlet nonHydratedContentlet = getContentletByVariantFallback(currentVariantId, personalizedContentlet, timeMachineDate);
 
                     if (nonHydratedContentlet == null) {
                         continue;
@@ -340,6 +343,41 @@ public class PageRenderUtil implements Serializable {
         }
 
     /**
+     * Retrieves the Time Machine Date from the current HTTP Request, if available.
+     * @param request
+     * @return
+     */
+    private Optional<Date> timeMachineDate(final HttpServletRequest request) {
+        // EDIT mode should always override time machine date
+        // EDIT mode should continue to work as it does now, without the time machine date
+        // And guaranty that we will only get working content in EDIT mode
+        // therefore EDIT mode nullifies the time machine date
+        if (request == null || this.mode == PageMode.EDIT_MODE) {
+            return Optional.empty();
+        }
+
+        final HttpSession session = request.getSession(false);
+        if (session == null) {
+            return Optional.empty();
+        }
+
+        final String millisAsString = (String) session.getAttribute(PageResource.TM_DATE);
+        if (!UtilMethods.isSet(millisAsString)) {
+            return Optional.empty();
+        }
+
+        try {
+            long milliseconds = Long.parseLong(millisAsString);
+            return milliseconds > 0
+                    ? Optional.of(Date.from(Instant.ofEpochMilli(milliseconds)))
+                    : Optional.empty();
+        } catch (NumberFormatException e) {
+            Logger.error(this, "Invalid timestamp format: " + millisAsString, e);
+            return Optional.empty();
+        }
+    }
+
+    /**
      * When <b>in Edit Mode only</b>, we can determine the number of Containers in any HTML Page in
      * the repository that are referencing a given Contentlet. This piece of information will be
      * added to the Contentlet's data map so that the UI can provide the editing User two choices:
@@ -369,13 +407,12 @@ public class PageRenderUtil implements Serializable {
     }
 
     private Contentlet getContentletByVariantFallback(final String currentVariantId,
-            final PersonalizedContentlet personalizedContentlet) {
+            final PersonalizedContentlet personalizedContentlet, final Date timeMachineDate) {
 
-        final Contentlet contentlet = this.getContentlet(personalizedContentlet,
-                currentVariantId);
+        final Contentlet contentlet = this.getContentlet(personalizedContentlet, currentVariantId, timeMachineDate);
 
         if (!UtilMethods.isSet(contentlet)) {
-            return this.getContentlet(personalizedContentlet, VariantAPI.DEFAULT_VARIANT.name());
+            return this.getContentlet(personalizedContentlet, VariantAPI.DEFAULT_VARIANT.name(), timeMachineDate);
         }
 
         return contentlet;
@@ -392,7 +429,7 @@ public class PageRenderUtil implements Serializable {
      */
     private boolean isLive(final HttpServletRequest request) {
 
-        return request != null && request.getSession(false) != null && request.getSession(false).getAttribute("tm_date") != null ?
+        return request != null && request.getSession(false) != null && request.getSession(false).getAttribute(PageResource.TM_DATE) != null ?
                 false :
                 mode.showLive;
     }
@@ -497,12 +534,12 @@ public class PageRenderUtil implements Serializable {
      * Personalized Contentlet object.
      */
     private Contentlet getContentlet(final PersonalizedContentlet personalizedContentlet,
-            final String variantName) {
+            final String variantName, final Date timeMachineDate) {
 
         try {
             return Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false) ?
-                    getContentletOrFallback(personalizedContentlet, variantName) :
-                    getSpecificContentlet(personalizedContentlet, variantName);
+                    getContentletOrFallback(personalizedContentlet, variantName, timeMachineDate) :
+                    getSpecificContentlet(personalizedContentlet, variantName, timeMachineDate);
         } catch (final DotSecurityException se) {
             if (this.mode == PageMode.EDIT_MODE || this.mode == PageMode.PREVIEW_MODE) {
                 // In Edit Mode, allow Users who cannot edit a specific piece of content to be able to edit the HTML
@@ -554,9 +591,22 @@ public class PageRenderUtil implements Serializable {
      *                              specified Content
      */
     private Contentlet getSpecificContentlet(final PersonalizedContentlet personalizedContentlet,
-            final String variantName) throws
+            final String variantName, final Date timeMachineDate) throws
             DotSecurityException {
         try {
+            if(null != timeMachineDate){
+                final Contentlet futureContentlet = contentletAPI.findContentletByIdentifier(
+                        personalizedContentlet.getContentletId(),
+                        this.resolveLanguageId(),
+                        variantName, user, timeMachineDate, mode.respectAnonPerms
+                );
+                if(null != futureContentlet){
+                    return futureContentlet;
+                }
+                Logger.info(this, "Contentlet not found with the future Time Machine date provided, trying to find regular contentlet");
+                // if no time machine match has been found, will try to find the latest LIVE contentlet
+            }
+
             return contentletAPI.findContentletByIdentifier
                     (personalizedContentlet.getContentletId(), mode.showLive, this.resolveLanguageId(),
                             variantName, user, mode.respectAnonPerms);
@@ -609,8 +659,12 @@ public class PageRenderUtil implements Serializable {
      * Personalized Contentlet object.
      */
     private Contentlet getContentletOrFallback(final PersonalizedContentlet personalizedContentlet,
-            String variantName) {
+            String variantName, final Date timeMachineDate) {
         try {
+            if(null != timeMachineDate){
+               //Handle Time Machine date. if tm has been passed here we should look for a match using default lang
+
+            }
             final Optional<Contentlet> contentletOpt = contentletAPI.findContentletByIdentifierOrFallback
                     (personalizedContentlet.getContentletId(), mode.showLive, languageId, user, true);
             return contentletOpt.isPresent()

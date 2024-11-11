@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.analytics.content.ContentAnalyticsAPI;
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -623,7 +622,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } catch (DotContentletStateException dcs) {
             Logger.debug(this, () -> String.format(
                     "No working contentlet found for language: %d and identifier: %s ", languageId,
-                    null != contentletId ? contentletId.getId() : "Unkown"));
+                    contentletId.getId()));
         }
         return null;
     }
@@ -658,6 +657,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException(
                     "Can't find contentlet: " + identifier + " lang:" + languageId + " live:"
                             + live, e);
+        }
+    }
+
+    @Override
+    public Contentlet findContentletByIdentifier(final String identifier, final long languageId, final String variantId, final User user, final Date timeMachineDate, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException{
+        final Contentlet contentlet = contentFactory.findContentletByIdentifier(identifier, languageId, variantId, timeMachineDate);
+        if (permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+            return contentlet;
+        } else {
+            final String userId = (user == null) ? "Unknown" : user.getUserId();
+            throw new DotSecurityException(
+                    String.format("User '%s' does not have READ permissions on %s", userId,
+                            ContentletUtil
+                                    .toShortString(contentlet)));
         }
     }
 

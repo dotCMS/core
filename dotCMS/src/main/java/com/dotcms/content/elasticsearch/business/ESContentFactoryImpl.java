@@ -1197,6 +1197,36 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 .getOrElseThrow(DotRuntimeException::new);
 	}
 
+    protected Contentlet findContentletByIdentifier(final String identifier, final long languageId, final String variantId, final Date timeMachineDate)
+            throws DotDataException {
+
+        final String variant = UtilMethods.isSet(variantId) ? variantId : DEFAULT_VARIANT.name();
+
+        final String query = "SELECT c.*, ci.owner \n"
+                + "FROM contentlet c\n"
+                + "INNER JOIN identifier i ON i.id = c.identifier\n"
+                + "INNER JOIN contentlet_version_info cvi ON cvi.identifier = c.identifier\n"
+                + "INNER JOIN inode ci ON ci.inode = c.inode\n"
+                + "WHERE i.syspublish_date <= ? \n"
+                + "   and (i.sysexpire_date IS NULL OR i.sysexpire_date <= ?)\n"
+                + "   and cvi.working_inode = c.inode \n"
+                + "   and cvi.lang  = ?\n"
+                + "   and cvi.deleted = false\n"
+                + "   and c.identifier = ?\n"
+                + "   and cvi.variant_id = ?\n"
+                + ";";
+
+        final DotConnect dotConnect = new DotConnect().setSQL(query)
+                .addParam(timeMachineDate)
+                .addParam(timeMachineDate)
+                .addParam(languageId)
+                .addParam(identifier)
+                .addParam(variant);
+
+        List<Contentlet> con = TransformerLocator.createContentletTransformer(dotConnect.loadObjectResults()).asList();
+                return con.isEmpty() ? null : con.get(0);
+    }
+
 	@Override
     protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException, DotSecurityException {
 	    

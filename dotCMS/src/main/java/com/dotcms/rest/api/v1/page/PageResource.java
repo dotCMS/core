@@ -83,6 +83,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -296,7 +299,8 @@ public class PageResource {
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
             @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
             @QueryParam("device_inode") final String deviceInode,
-            @QueryParam(TM_DATE) final String timeMachineDateAsISO8601    ) throws DotSecurityException, DotDataException {
+            @QueryParam(TM_DATE) final String timeMachineDateAsISO8601
+    ) throws DotSecurityException, DotDataException {
         if (Boolean.TRUE.equals(HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, false))
                 && !this.includeRenderedAttrFromEMA(originalRequest, uri)) {
             final String depth = HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.DEPTH_PARAM, null);
@@ -430,12 +434,6 @@ public class PageResource {
                         request, response
                 );
             } else {
-                final HttpSession session = request.getSession(false);
-                if (null != session) {
-                    // Time Machine-Date affects the logic on the VTLs that conform parts of the
-                    // rendered pages. So, we better get rid of it
-                    session.removeAttribute(TM_DATE);
-                }
                 pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
                         pageContextBuilder.build(), request, response
                 );

@@ -223,6 +223,23 @@ public interface ContentletAPI {
 	 */
 	public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, String variantId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
+
+	/**
+	 * Retrieves a contentlet from the Lucene index + cache first, then falls back
+	 *
+	 * @param identifier
+	 * @param languageId
+	 * @param variantId
+	 * @param user
+	 * @param timeMachineDate
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws DotContentletStateException
+	 */
+	Contentlet findContentletByIdentifier(String identifier, long languageId, String variantId, User user, Date timeMachineDate, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+
 	/**
      * Retrieves a contentlet from the database by its identifier and the working version.
      * It includes archive content if includeDeleted is true

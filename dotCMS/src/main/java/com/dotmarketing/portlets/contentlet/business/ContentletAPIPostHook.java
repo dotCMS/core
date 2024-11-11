@@ -93,6 +93,17 @@ public interface ContentletAPIPostHook {
 	/**
 	 * Retrieves a contentlet from the database based on its identifier
 	 * @param identifier
+	 * @param languageId
+	 * @param variantId
+	 * @param user
+	 * @param timeMachineDate
+	 * @param respectFrontendRoles
+	 */
+	public default void findContentletByIdentifier(String identifier, long languageId, String variantId, User user, Date timeMachineDate, boolean respectFrontendRoles){}
+
+	/**
+	 * Retrieves a contentlet from the database based on its identifier
+	 * @param identifier
 	 */
 	public default void findContentletByIdentifierAnyLanguage (String identifier) { }
 
