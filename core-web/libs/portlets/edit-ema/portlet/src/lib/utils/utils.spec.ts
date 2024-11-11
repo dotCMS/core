@@ -15,7 +15,8 @@ import {
     areContainersEquals,
     compareUrlPaths,
     createFullURL,
-    getDragItemData
+    getDragItemData,
+    addMissingParamsToReorderMenuURL
 } from '.';
 
 import { dotPageContainerStructureMock } from '../shared/mocks';
@@ -709,4 +710,20 @@ describe('utils functions', () => {
             expect(result).toBeNull();
         });
     });
+
+    describe('addMissingParamsToReorderMenuURL', () => {
+        it('should add the missing params', () => {
+            const url = "some-url?language_id=1";
+            const result = addMissingParamsToReorderMenuURL({url, pagePath: '123', hostId: '456'});
+
+            expect(result).toEqual("http://localhost/some-url?language_id=1&pagePath=123&hostId=456");
+        })
+
+        it('should not add the missing params', () => {
+            const url = "some-url?language_id=1&pagePath=111&hostId=333";
+            const result = addMissingParamsToReorderMenuURL({url, pagePath: '123', hostId: '456'});
+
+            expect(result).toEqual("http://localhost/some-url?language_id=1&pagePath=111&hostId=333");
+        })
+    })
 });

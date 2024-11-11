@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { reorderMenu } from '@dotcms/client';
 
 function Header({ children }) {
     return (
@@ -8,9 +9,47 @@ function Header({ children }) {
                     <Link href="/">TravelLux in NextJS</Link>
                 </h2>
             </div>
+            <ReorderButton />
             {children}
         </header>
     );
 }
+
+function ReorderButton() {
+    const buttonStyles = {
+        backgroundColor: '#426BF0',
+        borderRadius: '3px',
+        display: 'flex',
+        flexDirection: 'row',
+        cursor: 'pointer',
+        border: 'none'
+    };
+
+    const iconStyles = {
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'contain',
+        display: 'block',
+        height: '36px',
+        width: '36px'
+    };
+
+    const firstIconStyle = {
+        ...iconStyles,
+        backgroundImage: 'url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CgogPGc+CiAgPHRpdGxlPmJhY2tncm91bmQ8L3RpdGxlPgogIDxyZWN0IGZpbGw9Im5vbmUiIGlkPSJjYW52YXNfYmFja2dyb3VuZCIgaGVpZ2h0PSI0MDIiIHdpZHRoPSI1ODIiIHk9Ii0xIiB4PSItMSIvPgogPC9nPgogPGc+CiAgPHRpdGxlPkxheWVyIDE8L3RpdGxlPgogIDxwYXRoIGZpbGw9IiNmZmZmZmYiIGlkPSJzdmdfMSIgZD0ibTE0LjgzLDMwLjgzbDkuMTcsLTkuMTdsOS4xNyw5LjE3bDIuODMsLTIuODNsLTEyLC0xMmwtMTIsMTJsMi44MywyLjgzeiIvPgogIDxwYXRoIGlkPSJzdmdfMiIgZmlsbD0ibm9uZSIgZD0ibS0zMC42OTQ1NTcsOS40MjU4ODdsNDgsMGwwLDQ4bC00OCwwbDAsLTQ4eiIvPgogPC9nPgo8L3N2Zz4=)'
+    };
+
+    const secondIconStyle = {
+        ...iconStyles,
+        backgroundImage: 'url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CgogPGc+CiAgPHRpdGxlPmJhY2tncm91bmQ8L3RpdGxlPgogIDxyZWN0IGZpbGw9Im5vbmUiIGlkPSJjYW52YXNfYmFja2dyb3VuZCIgaGVpZ2h0PSI0MDIiIHdpZHRoPSI1ODIiIHk9Ii0xIiB4PSItMSIvPgogPC9nPgogPGc+CiAgPHRpdGxlPkxheWVyIDE8L3RpdGxlPgogIDxwYXRoIGZpbGw9IiNmZmZmZmYiIGlkPSJzdmdfMSIgZD0ibTE0LjgzLDE2LjQybDkuMTcsOS4xN2w5LjE3LC05LjE3bDIuODMsMi44M2wtMTIsMTJsLTEyLC0xMmwyLjgzLC0yLjgzeiIvPgogIDxwYXRoIGlkPSJzdmdfMiIgZmlsbD0ibm9uZSIgZD0ibS0xOC4zOTk4OTksMTcuMDc4NDczbDQ4LDBsMCw0OGwtNDgsMGwwLC00OHoiLz4KIDwvZz4KPC9zdmc+)'
+    };
+
+    return (
+        <button onClick={() => reorderMenu()} style={buttonStyles} title="Reorder Menu">
+            <span style={firstIconStyle}></span>
+            <span style={secondIconStyle}></span>
+        </button>
+    );
+}
+
 
 export default Header;

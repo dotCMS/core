@@ -87,6 +87,7 @@ import { ClientRequestProps } from '../store/features/client/withClient';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
+    addMissingParamsToReorderMenuURL,
     compareUrlPaths,
     deleteContentletFromContainer,
     getDragItemData,
@@ -796,6 +797,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 this.uveStore.reload();
                 this.dialog.resetDialog();
+
+                this.contentWindow?.postMessage(
+                    {
+                        name: NOTIFY_CLIENT.UVE_RELOAD_PAGE
+                    },
+                    this.host
+                );
             },
             [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
                 this.messageService.add({
@@ -991,8 +999,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.dialog.editContentlet({ ...contentlet, clientAction: action });
             },
             [CLIENT_ACTIONS.REORDER_MENU]: ({ reorderUrl }: ReorderPayload) => {
+                const urlObject = addMissingParamsToReorderMenuURL({
+                    url: reorderUrl,
+                    pagePath: this.uveStore.params().url,
+                    hostId: this.uveStore.pageAPIResponse().site.identifier
+                });
+
                 this.dialog.openDialogOnUrl(
-                    reorderUrl,
+                    urlObject.toString(),
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },

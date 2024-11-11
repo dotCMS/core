@@ -510,3 +510,28 @@ export const getDragItemData = ({ type, item }: DOMStringMap) => {
         return null;
     }
 };
+
+/**
+ * Adds missing query parameters `pagePath` and `hostId` to the given URL if they are not already present.
+ *
+ * @param {Object} params - The parameters object.
+ * @param {string} params.url - The URL to which the parameters will be added.
+ * @param {string} params.pagePath - The page path to be added as a query parameter if missing.
+ * @param {string} params.hostId - The host ID to be added as a query parameter if missing.
+ * @returns {string} - The updated URL with the missing parameters added.
+ */
+export const addMissingParamsToReorderMenuURL = ({url, pagePath, hostId}: {url: string, pagePath: string, hostId: string}) => {
+    const urlObject = new URL(url, window.location.origin);
+
+    const params = urlObject.searchParams;
+
+    if (!params.has('pagePath')) {
+        params.set('pagePath', pagePath);
+    }
+
+    if (!params.has('hostId')) {
+        params.set('hostId', hostId);
+    }
+
+    return urlObject.toString();
+}
