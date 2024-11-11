@@ -1,8 +1,8 @@
 package com.dotcms.telemetry.rest;
 
-import com.dotcms.telemetry.collectors.MetricStatsCollector;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.telemetry.collectors.MetricStatsCollector;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
@@ -37,6 +37,7 @@ public class TelemetryResource {
                                             ResponseEntityMetricsSnapshotView.class)))})
     public final Response getData(@Context final HttpServletRequest request,
                                   @Context final HttpServletResponse response) {
+        Logger.debug(this, () -> "Generating dotCMS Telemetry data");
         new WebResource.InitBuilder(new WebResource())
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)

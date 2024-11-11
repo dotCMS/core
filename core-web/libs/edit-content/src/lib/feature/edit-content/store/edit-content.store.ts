@@ -14,6 +14,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
+
 import { switchMap, tap } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/angular';
@@ -23,7 +25,8 @@ import {
     DotHttpErrorManagerService,
     DotRenderMode,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotMessageService
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -32,19 +35,19 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
-import {
-    getPersistSidebarState,
-    setPersistSidebarState,
-    transformFormDataFn
-} from '../../../utils/functions.util';
+import { withInformation } from './features/information.feature';
+import { withSidebar } from './features/sidebar.feature';
+import { withWorkflow } from './features/workflow.feature';
 
-interface EditContentState {
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { transformFormDataFn } from '../../../utils/functions.util';
+
+export interface EditContentState {
     actions: DotCMSWorkflowAction[];
     contentType: DotCMSContentType | null;
     contentlet: DotCMSContentlet | null;
-    status: ComponentStatus;
-    showSidebar: boolean;
+    state: ComponentStatus;
+
     error: string | null;
 }
 
@@ -52,8 +55,7 @@ const initialState: EditContentState = {
     contentType: null,
     contentlet: null,
     actions: [],
-    status: ComponentStatus.INIT,
-    showSidebar: false,
+    state: ComponentStatus.INIT,
     error: null
 };
 
@@ -87,8 +89,8 @@ export const DotEditContentStore = signalStore(
          */
         isLoading: computed(
             () =>
-                store.status() === ComponentStatus.LOADING ||
-                store.status() === ComponentStatus.SAVING
+                store.state() === ComponentStatus.LOADING ||
+                store.state() === ComponentStatus.SAVING
         ),
 
         /**
@@ -96,7 +98,12 @@ export const DotEditContentStore = signalStore(
          *
          * @returns {boolean} - Returns true if the store's status is LOADED, otherwise false.
          */
-        isLoaded: computed(() => store.status() === ComponentStatus.LOADED),
+        isLoaded: computed(() => store.state() === ComponentStatus.LOADED),
+
+        /**
+         * Computed property that determines if the store's status is equal to ComponentStatus.SAVING.
+         */
+        isSaving: computed(() => store.state() === ComponentStatus.SAVING),
 
         /**
          * A computed property that checks if an error exists in the store.
@@ -133,6 +140,9 @@ export const DotEditContentStore = signalStore(
             dotContentTypeService = inject(DotContentTypeService),
             dotEditContentService = inject(DotEditContentService),
             dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
+            messageService = inject(MessageService),
+            dotMessageService = inject(DotMessageService),
+
             router = inject(Router)
         ) => ({
             /**
@@ -145,7 +155,7 @@ export const DotEditContentStore = signalStore(
             initializeNewContent: rxMethod<string>(
                 pipe(
                     switchMap((contentType) => {
-                        patchState(store, { status: ComponentStatus.LOADING });
+                        patchState(store, { state: ComponentStatus.LOADING });
 
                         return forkJoin({
                             contentType: dotContentTypeService.getContentType(contentType),
@@ -156,13 +166,13 @@ export const DotEditContentStore = signalStore(
                                     patchState(store, {
                                         contentType,
                                         actions,
-                                        status: ComponentStatus.LOADED,
+                                        state: ComponentStatus.LOADED,
                                         error: null
                                     });
                                 },
                                 error: (error: HttpErrorResponse) => {
                                     patchState(store, {
-                                        status: ComponentStatus.ERROR,
+                                        state: ComponentStatus.ERROR,
                                         error: 'Error initializing content'
                                     });
                                     dotHttpErrorManagerService.handle(error);
@@ -182,7 +192,7 @@ export const DotEditContentStore = signalStore(
             initializeExistingContent: rxMethod<string>(
                 pipe(
                     switchMap((inode: string) => {
-                        patchState(store, { status: ComponentStatus.LOADING });
+                        patchState(store, { state: ComponentStatus.LOADING });
 
                         return dotEditContentService.getContentById(inode).pipe(
                             switchMap((contentlet) => {
@@ -203,12 +213,12 @@ export const DotEditContentStore = signalStore(
                                         contentType,
                                         actions,
                                         contentlet,
-                                        status: ComponentStatus.LOADED
+                                        state: ComponentStatus.LOADED
                                     });
                                 },
                                 error: (error: HttpErrorResponse) => {
                                     patchState(store, {
-                                        status: ComponentStatus.ERROR,
+                                        state: ComponentStatus.ERROR,
                                         error: 'Error initializing content'
                                     });
                                     dotHttpErrorManagerService.handle(error);
@@ -232,7 +242,7 @@ export const DotEditContentStore = signalStore(
              */
             fireWorkflowAction: rxMethod<DotFireActionOptions<{ [key: string]: string | object }>>(
                 pipe(
-                    tap(() => patchState(store, { status: ComponentStatus.SAVING })),
+                    tap(() => patchState(store, { state: ComponentStatus.SAVING })),
                     switchMap((options) => {
                         return workflowActionsFireService.fireTo(options).pipe(
                             tap((contentlet) => {
@@ -259,13 +269,20 @@ export const DotEditContentStore = signalStore(
                                     patchState(store, {
                                         contentlet,
                                         actions,
-                                        status: ComponentStatus.LOADED,
+                                        state: ComponentStatus.LOADED,
                                         error: null
+                                    });
+                                    messageService.add({
+                                        severity: 'success',
+                                        summary: dotMessageService.get('success'),
+                                        detail: dotMessageService.get(
+                                            'edit.content.success.workflow.message'
+                                        )
                                     });
                                 },
                                 error: (error: HttpErrorResponse) => {
                                     patchState(store, {
-                                        status: ComponentStatus.ERROR,
+                                        state: ComponentStatus.LOADED,
                                         error: 'Error firing workflow action'
                                     });
                                     dotHttpErrorManagerService.handle(error);
@@ -274,27 +291,12 @@ export const DotEditContentStore = signalStore(
                         );
                     })
                 )
-            ),
-
-            /**
-             * Toggles the visibility of the sidebar by updating the application state
-             * and persists the sidebar's state to ensure consistency across sessions.
-             */
-            toggleSidebar: () => {
-                const newSidebarState = !store.showSidebar();
-                patchState(store, { showSidebar: newSidebarState });
-                setPersistSidebarState(newSidebarState.toString());
-            },
-
-            /**
-             * Fetches the persistence data from the local storage and updates the application state.
-             * Utilizes the `patchState` function to update the global store with the persisted sidebar state.
-             */
-            getPersistenceDataFromLocalStore: () => {
-                patchState(store, { showSidebar: getPersistSidebarState() });
-            }
+            )
         })
     ),
+    withSidebar(),
+    withInformation(),
+    withWorkflow(),
     withHooks({
         onInit(store) {
             const activatedRoute = inject(ActivatedRoute);
@@ -311,8 +313,6 @@ export const DotEditContentStore = signalStore(
                     store.initializeNewContent(contentType);
                 }
             }
-
-            store.getPersistenceDataFromLocalStore();
         }
     })
 );

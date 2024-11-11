@@ -1,11 +1,19 @@
 package com.dotcms.telemetry.collectors.container;
 
+import com.dotcms.telemetry.business.MetricsAPI;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+
+import javax.inject.Inject;
 
 /**
  * Total of FILE containers used in LIVE pages
  */
-public  class TotalFileContainersInLivePageDatabaseMetricType extends TotalContainersInLivePageDatabaseMetricType {
+public class TotalFileContainersInLivePageDatabaseMetricType extends TotalContainersInLivePageDatabaseMetricType {
+
+    @Inject
+    public TotalFileContainersInLivePageDatabaseMetricType(final MetricsAPI metricsAPI) {
+        super.metricsAPI = metricsAPI;
+    }
 
     @Override
     public String getName() {
@@ -21,5 +29,5 @@ public  class TotalFileContainersInLivePageDatabaseMetricType extends TotalConta
     boolean filterContainer(final String containerId) {
         return FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId);
     }
-}
 
+}

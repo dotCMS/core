@@ -1,19 +1,44 @@
+@let loading = $loading();
+@let data = $data();
+@let rowsPerPage = $rowsPerPage();
+
 <p-table
-    [value]="$data()"
-    [loading]="$loading()"
-    [paginator]="true"
-    [rows]="7"
-    styleClass="p-datatable-lg flex flex-column h-full justify-content-between">
+    #datatable
+    [value]="data"
+    [loading]="loading"
+    [paginator]="data.length >= rowsPerPage"
+    [rows]="rowsPerPage"
+    selectionMode="single"
+    dataKey="identifier"
+    [(selection)]="$selectedProduct"
+    (onRowSelect)="onRowSelect.emit($event.data)"
+    [globalFilterFields]="['title', 'modUserName']"
+    styleClass="flex flex-column h-full justify-content-between">
+    <ng-template pTemplate="emptymessage">
+        <tr>
+            <td colspan="4">
+                {{ 'dot.file.field.dialog.select.existing.file.table.emptymessage' | dm }}
+            </td>
+        </tr>
+    </ng-template>
     <ng-template pTemplate="caption">
         <div class="flex">
             <p-iconField iconPosition="left">
                 <p-inputIcon styleClass="pi pi-search" />
-                <input pInputText type="text" placeholder="Search keyword" />
+                <input
+                    #searchInput
+                    pInputText
+                    type="search"
+                    [placeholder]="'dot.file.field.dialog.select.existing.file.table.search' | dm"
+                    (input)="datatable.filterGlobal(searchInput.value, 'contains')" />
             </p-iconField>
         </div>
     </ng-template>
     <ng-template pTemplate="header">
         <tr class="file-selector__table_header">
+            <th scope="col">
+                {{ 'dot.file.field.dialog.select.existing.file.table.thumbnail' | dm }}
+            </th>
             <th scope="col">{{ 'dot.file.field.dialog.select.existing.file.table.title' | dm }}</th>
             <th scope="col">
                 {{ 'dot.file.field.dialog.select.existing.file.table.modified.by' | dm }}
@@ -24,31 +49,21 @@
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-content>
-        <tr class="h-4rem">
-            <td>
-                <div class="flex gap-1 align-items-center">
-                    <p-image
-                        loading="lazy"
-                        [preview]="true"
-                        styleClass="image"
-                        [src]="content.image"
-                        [alt]="content.title"
-                        width="40" />
-
-                    <p class="m-0">{{ content.title }}</p>
+        <tr class="h-3rem" [pSelectableRow]="content">
+            <td class="max-w-2rem">
+                <div class="dataview-thumbnail">
+                    <dot-contentlet-thumbnail
+                        [iconSize]="'48px'"
+                        [contentlet]="content"
+                        [playableVideo]="false"
+                        data-testId="contentlet-thumbnail" />
                 </div>
             </td>
-            <td>{{ content.modifiedBy }}</td>
-            <td>{{ content.lastModified | date }}</td>
-        </tr>
-    </ng-template>
-    <ng-template pTemplate="loadingbody" let-columns="columns">
-        <tr class="h-4rem">
-            @for (col of columns; track $index) {
-                <td>
-                    <p-skeleton />
-                </td>
-            }
+            <td class="max-w-12rem">
+                <p class="truncate-text">{{ content.title }}</p>
+            </td>
+            <td>{{ content.modUserName }}</td>
+            <td>{{ content.modDate | date }}</td>
         </tr>
     </ng-template>
 </p-table>

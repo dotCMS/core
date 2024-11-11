@@ -57,4 +57,15 @@ public @interface Actionlet {
      * Set this to true if the actionlet is runnable only on batches
      */
     boolean onlyBatch() default false;
+
+    /**
+     * Set this to true if the actionlet is commentable
+     */
+    boolean comment() default false;
+
+    /**
+     * Set this to true if the sub actionlet is a reset content
+     * @return
+     */
+    boolean reset() default false;
 }
