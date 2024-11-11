@@ -2,15 +2,18 @@
 
 @if (!loading) {
     <p-tree
-        [value]="$folders()"
+        [value]="$state().folders"
         [loading]="loading"
+        selectionMode="single"
+        [(selection)]="$state().selectedFile"
         loadingMode="icon"
         class="w-full h-full"
-        styleClass="flex h-full"
+        styleClass="w-full h-full"
         loadingMode="icon"
+        (onNodeSelect)="onNodeSelect.emit($event)"
         (onNodeExpand)="onNodeExpand.emit($event)">
         <ng-template let-node pTemplate="default">
-            <span>{{ node.label | truncatePath | slice: 0 : 18 }}</span>
+            <span>{{ node.label | truncatePath }}</span>
         </ng-template>
     </p-tree>
 } @else {

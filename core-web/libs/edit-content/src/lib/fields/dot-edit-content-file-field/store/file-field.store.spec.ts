@@ -5,8 +5,8 @@ import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import { FileFieldStore } from './file-field.store';
 
+import { UIMessage } from '../../../models/dot-edit-content-file.model';
 import { NEW_FILE_MOCK } from '../../../utils/mocks';
-import { UIMessage } from '../models';
 import { DotFileFieldUploadService } from '../services/upload-file/upload-file.service';
 import { getUiMessage } from '../utils/messages';
 

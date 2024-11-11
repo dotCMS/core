@@ -10,7 +10,7 @@ import { switchMap, tap } from 'rxjs/operators';
 
 import { ComponentStatus, DotHttpErrorResponse } from '@dotcms/dotcms-models';
 
-import { UPLOAD_TYPE, UploadedFile } from '../../../models';
+import { UPLOAD_TYPE, UploadedFile } from '../../../../../models/dot-edit-content-file.model';
 import { DotFileFieldUploadService } from '../../../services/upload-file/upload-file.service';
 import { extractFileExtension, getInfoByLang } from '../../../utils/editor';
 import { DEFAULT_MONACO_CONFIG } from '../dot-form-file-editor.conts';

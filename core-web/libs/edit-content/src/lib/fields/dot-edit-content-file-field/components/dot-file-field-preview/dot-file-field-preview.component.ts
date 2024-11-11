@@ -20,13 +20,16 @@ import { catchError } from 'rxjs/operators';
 import { DotResourceLinksService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
+    DotPreviewResourceLink,
+    UploadedFile
+} from '@dotcms/edit-content/models/dot-edit-content-file.model';
+import {
     DotTempFileThumbnailComponent,
     DotFileSizeFormatPipe,
     DotMessagePipe,
     DotCopyButtonComponent
 } from '@dotcms/ui';
 
-import { DotPreviewResourceLink, UploadedFile } from '../../models';
 import { getFileMetadata } from '../../utils';
 
 @Component({

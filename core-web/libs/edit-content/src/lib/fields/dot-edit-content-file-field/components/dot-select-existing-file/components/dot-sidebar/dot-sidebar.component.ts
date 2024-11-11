@@ -1,12 +1,13 @@
 import { faker } from '@faker-js/faker';
 
-import { SlicePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    computed,
     inject,
     input,
+    model,
     output,
     signal
 } from '@angular/core';
@@ -17,10 +18,12 @@ import { TreeModule, TreeNodeExpandEvent } from 'primeng/tree';
 
 import { TruncatePathPipe } from '@dotcms/edit-content/pipes/truncate-path.pipe';
 
+import { SYSTEM_HOST_ID } from '../../store/select-existing-file.store';
+
 @Component({
     selector: 'dot-sidebar',
     standalone: true,
-    imports: [TreeModule, SlicePipe, TruncatePathPipe, SkeletonModule],
+    imports: [TreeModule, TruncatePathPipe, SkeletonModule],
     templateUrl: './dot-sidebar.component.html',
     styleUrls: ['./dot-sidebar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -55,12 +58,43 @@ export class DotSideBarComponent {
     $fakeColumns = signal<string[]>(Array.from({ length: 50 }).map((_) => this.getPercentage()));
 
     /**
+     * Reactive model representing the currently selected file.
+     */
+    $selectedFile = model<TreeNode | null>(null);
+
+    /**
      * Event emitter for when a tree node is expanded.
      *
      * This event is triggered when a user expands a node in the tree structure.
      * It emits an event of type `TreeNodeExpandEvent`.
      */
     onNodeExpand = output<TreeNodeExpandEvent>();
+
+    /**
+     * Event emitter for when a node is selected in the tree.
+     *
+     * @event onNodeSelect
+     * @type {TreeNodeExpandEvent}
+     */
+    onNodeSelect = output<TreeNodeExpandEvent>();
+
+    /**
+     * Computed property representing the component's state.
+     *
+     * @returns An object containing:
+     * - `folders`: An array of folders obtained from `$folders()`.
+     * - `selectedFile`: A signal of the selected file, initialized to the file whose `data.identifier` matches `SYSTEM_HOST_ID`.
+     */
+    $state = computed(() => {
+        const folders = this.$folders();
+
+        const selectedFile = folders.find((f) => f.data.identifier === SYSTEM_HOST_ID);
+
+        return {
+            folders,
+            selectedFile: signal(selectedFile)
+        };
+    });
 
     /**
      * Triggers change detection manually.

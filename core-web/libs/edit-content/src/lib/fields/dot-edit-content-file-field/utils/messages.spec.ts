@@ -1,6 +1,6 @@
 import { getUiMessage, UiMessageMap } from './messages';
 
-import { MESSAGES_TYPES } from '../models';
+import { MESSAGES_TYPES } from '../../../models/dot-edit-content-file.model';
 
 describe('getUiMessage function', () => {
     it('should return the correct uiMessage for a valid key', () => {
