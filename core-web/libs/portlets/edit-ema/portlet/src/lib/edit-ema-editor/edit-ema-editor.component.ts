@@ -35,7 +35,6 @@ import {
     DotContentletService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService,
-    DotEventsService,
     DotAlertConfirmService
 } from '@dotcms/data-access';
 import {
@@ -67,10 +66,7 @@ import {
     UpdatedContentlet
 } from './components/ema-page-dropzone/types';
 
-import {
-    DotBlockEditorSidebarComponent,
-    INLINE_EDIT_BLOCK_EDITOR_EVENT
-} from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
+import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
@@ -128,13 +124,13 @@ import {
         DotCopyContentService,
         DotHttpErrorManagerService,
         DotContentletService,
-        DotTempFileUploadService,
-        DotEventsService
+        DotTempFileUploadService
     ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
+    @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
 
     protected readonly uveStore = inject(UVEStore);
 
@@ -154,7 +150,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly dotPageApiService = inject(DotPageApiService);
-    readonly #dotEventsService = inject(DotEventsService);
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
 
     readonly destroy$ = new Subject<boolean>();
@@ -1021,7 +1016,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                this.#dotEventsService.notify(INLINE_EDIT_BLOCK_EDITOR_EVENT, payload);
+                this.blockSidebar?.open(payload);
             }
         };
         const actionToExecute = CLIENT_ACTIONS_FUNC_MAP[action];
@@ -1079,6 +1074,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     protected handleEditContentlet(payload: ActionPayload) {
         const { contentlet, container } = payload;
         const { onNumberOfPages = '1', title } = contentlet;
+
+        // console.log("LLAMADO", this.$editorProps().showDialogs);
 
         if (Number(onNumberOfPages) <= 1) {
             this.dialog?.editContentlet(contentlet);
@@ -1256,9 +1253,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Reloads the component from the dialog.
+     * Reloads the component from the dialog/sidebar.
      */
-    reloadFromDialog() {
+    reloadPage() {
         this.uveStore.reload();
     }
 

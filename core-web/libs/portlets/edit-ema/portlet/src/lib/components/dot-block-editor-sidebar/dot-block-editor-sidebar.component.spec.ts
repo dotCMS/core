@@ -9,7 +9,6 @@ import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor
 import {
     DotAlertConfirmService,
     DotContentTypeService,
-    DotEventsService,
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
@@ -87,7 +86,6 @@ const contentTypeMock: DotCMSContentType = {
 
 describe('DotBlockEditorSidebarComponent', () => {
     let spectator: Spectator<DotBlockEditorSidebarComponent>;
-    let dotEventsService: DotEventsService;
     let dotContentTypeService: DotContentTypeService;
     let dotAlertConfirmService: DotAlertConfirmService;
     let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
@@ -97,7 +95,6 @@ describe('DotBlockEditorSidebarComponent', () => {
         imports: [BlockEditorModule],
         declarations: [MockComponent(DotBlockEditorComponent)],
         providers: [
-            DotEventsService,
             DotAlertConfirmService,
             { provide: DotMessageService, useValue: messageServiceMock },
             {
@@ -117,11 +114,10 @@ describe('DotBlockEditorSidebarComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
-        dotEventsService = spectator.inject(DotEventsService, true);
         dotContentTypeService = spectator.inject(DotContentTypeService, true);
         dotAlertConfirmService = spectator.inject(DotAlertConfirmService, true);
         dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
-        dotEventsService.notify('edit-block-editor', EVENT_DATA);
+        spectator.component.open(EVENT_DATA);
         spectator.detectChanges();
     });
 

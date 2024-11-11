@@ -1,10 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import {
-    SpectatorRouting,
-    createRoutingFactory,
-    byTestId,
-    mockProvider
-} from '@ngneat/spectator/jest';
+import { SpectatorRouting, createRoutingFactory, byTestId } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 
@@ -28,7 +23,6 @@ import {
     DotCurrentUserService,
     DotDevicesService,
     DotESContentService,
-    DotEventsService,
     DotExperimentsService,
     DotFavoritePageService,
     DotHttpErrorManagerService,
@@ -79,10 +73,7 @@ import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
-import {
-    DotBlockEditorSidebarComponent,
-    INLINE_EDIT_BLOCK_EDITOR_EVENT
-} from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
+import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
@@ -153,7 +144,6 @@ const createRouting = () =>
             UVEStore,
             DotFavoritePageService,
             DotESContentService,
-            DotEventsService,
             {
                 provide: DotAlertConfirmService,
                 useValue: {
@@ -320,7 +310,14 @@ const createRouting = () =>
                 provide: DotPersonalizeService,
                 useValue: new DotPersonalizeServiceMock()
             },
-            mockProvider(DotContentTypeService),
+            {
+                provide: DotContentTypeService,
+                useValue: {
+                    filterContentTypes: () => of([CONTENT_TYPE_MOCK]),
+                    getContentTypes: () => of([CONTENT_TYPE_MOCK]),
+                    getContentType: () => of(CONTENT_TYPE_MOCK)
+                }
+            },
             {
                 provide: DotContentletLockerService,
                 useValue: {
@@ -345,7 +342,6 @@ describe('EditEmaEditorComponent', () => {
         let dotHttpErrorManagerService: DotHttpErrorManagerService;
         let dotTempFileUploadService: DotTempFileUploadService;
         let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
-        let dotEventsService: DotEventsService;
         let router: Router;
         let dotPageApiService: DotPageApiService;
 
@@ -372,7 +368,6 @@ describe('EditEmaEditorComponent', () => {
             store = spectator.inject(UVEStore, true);
             confirmationService = spectator.inject(ConfirmationService, true);
             messageService = spectator.inject(MessageService, true);
-            dotEventsService = spectator.inject(DotEventsService, true);
             dotLicenseService = spectator.inject(DotLicenseService, true);
             dotCopyContentModalService = spectator.inject(DotCopyContentModalService, true);
             dotCopyContentService = spectator.inject(DotCopyContentService, true);
@@ -669,7 +664,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('should notify block-editor-sidebar to enable editing', () => {
-                    const spy = jest.spyOn(dotEventsService, 'notify');
+                    const spy = jest.spyOn(spectator.component.blockSidebar, 'open');
 
                     window.dispatchEvent(
                         new MessageEvent('message', {
@@ -683,14 +678,15 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    expect(spy).toHaveBeenCalledWith(INLINE_EDIT_BLOCK_EDITOR_EVENT, {});
+                    expect(spy).toHaveBeenCalledWith({});
                 });
 
                 it('should show a message and not notify the event if there is not enterprise lincese', () => {
-                    const spy = jest.spyOn(dotEventsService, 'notify');
                     const spyAlert = jest.spyOn(dotAlertConfirmService, 'alert');
 
                     jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
+
+                    spectator.detectChanges();
 
                     store.init({
                         clientHost: 'http://localhost:3000',
@@ -718,7 +714,6 @@ describe('EditEmaEditorComponent', () => {
                         message:
                             'Inline editing is available only with an enterprise license. Please contact support to upgrade your license.'
                     });
-                    expect(spy).not.toHaveBeenCalledWith(INLINE_EDIT_BLOCK_EDITOR_EVENT, {});
                 });
 
                 describe('reorder navigation', () => {
@@ -834,6 +829,8 @@ describe('EditEmaEditorComponent', () => {
 
                         expect(pDialog.attributes['ng-reflect-visible']).toBe('false');
                     });
+
+                    afterEach(() => jest.clearAllMocks());
                 });
 
                 xdescribe('reload', () => {

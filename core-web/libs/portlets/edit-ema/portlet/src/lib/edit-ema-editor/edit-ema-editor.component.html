@@ -68,9 +68,9 @@
 @if ($editorProps().showDialogs) {
     <dot-edit-ema-dialog
         (action)="onCustomEvent($event)"
-        (reloadFromDialog)="reloadFromDialog()"
+        (reloadFromDialog)="reloadPage()"
         #dialog
-        data-testId="ema-dialog"></dot-edit-ema-dialog>
+        data-testId="ema-dialog" />
     <p-confirmDialog
         [style]="{
             width: '400px'
@@ -78,7 +78,9 @@
         rejectIcon="hidden"
         acceptIcon="hidden"
         rejectButtonStyleClass="p-button-outlined"
-        data-testId="confirm-dialog"></p-confirmDialog>
+        data-testId="confirm-dialog" />
 }
 
-<dot-block-editor-editing (onSaved)="uveStore.reload()" />
+@if ($editorProps().showBlockEditorSidebar) {
+    <dot-block-editor-sidebar #blockSidebar (onSaved)="reloadPage()" />
+}

@@ -2,15 +2,14 @@ import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, inject, OnInit, output, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { SidebarModule } from 'primeng/sidebar';
 
-import { map, switchMap, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { JSONContent } from '@tiptap/core';
 
@@ -18,7 +17,6 @@ import { BlockEditorModule } from '@dotcms/block-editor';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
-    DotEventsService,
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
@@ -36,7 +34,7 @@ export interface BlockEditorData {
 export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
 
 @Component({
-    selector: 'dot-block-editor-editing',
+    selector: 'dot-block-editor-sidebar',
     standalone: true,
     templateUrl: './dot-block-editor-sidebar.component.html',
     styleUrls: ['./dot-block-editor-sidebar.component.scss'],
@@ -50,9 +48,7 @@ export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
         ConfirmDialogModule
     ]
 })
-export class DotBlockEditorSidebarComponent implements OnInit {
-    readonly #destroyRef = inject(DestroyRef);
-    readonly #dotEventsService = inject(DotEventsService);
+export class DotBlockEditorSidebarComponent {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotContentTypeService = inject(DotContentTypeService);
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
@@ -69,28 +65,43 @@ export class DotBlockEditorSidebarComponent implements OnInit {
      */
     onSaved = output();
 
-    ngOnInit(): void {
-        this.#dotEventsService
-            .listen<{ [key: string]: string }>(INLINE_EDIT_BLOCK_EDITOR_EVENT)
-            .pipe(
-                takeUntilDestroyed(this.#destroyRef),
-                map((event) => event.data),
-                switchMap(({ fieldName, contentType, inode, language, blockEditorContent }) => {
-                    return this.#getEditorField({ fieldName, contentType }).pipe(
-                        map((field) => ({
-                            inode,
-                            field,
-                            fieldName,
-                            languageId: parseInt(language),
-                            content: this.#getJsonContent(blockEditorContent)
-                        }))
-                    );
-                })
-            )
-            .subscribe({
-                next: (contentlet) => this.contentlet.set(contentlet as BlockEditorData),
-                error: (err) => console.error('Error processing event contentlet ', err)
-            });
+    /**
+     * Emit when the sidebar is closed
+     *
+     * @memberof DotBlockEditorSidebarComponent
+     */
+    onClose = output();
+
+    /**
+     *
+     *
+     * @param {*} { fieldName, contentType, inode, language, blockEditorContent }
+     * @memberof DotBlockEditorSidebarComponent
+     */
+    open({ fieldName, contentType, inode, language, blockEditorContent }): void {
+        this.#getEditorField({ fieldName, contentType }).subscribe({
+            next: (field) =>
+                this.contentlet.set({
+                    inode,
+                    field,
+                    fieldName,
+                    languageId: parseInt(language),
+                    content: this.#getJsonContent(blockEditorContent)
+                }),
+            error: (err) => console.error('Error getting contentlet ', err)
+        });
+    }
+    /**
+     * Remove the contentlet data and close the sidebar
+     *
+     * @protected
+     * @memberof DotBlockEditorSidebarComponent
+     */
+    close() {
+        this.value.set(null);
+        this.loading.set(false);
+        this.contentlet.set(null);
+        this.onClose.emit();
     }
 
     /**
@@ -98,7 +109,7 @@ export class DotBlockEditorSidebarComponent implements OnInit {
      *
      * @memberof DotBlockEditorSidebarComponent
      */
-    saveEditorChanges(): void {
+    protected saveEditorChanges(): void {
         const { fieldName, inode } = this.contentlet();
         this.loading.set(true);
         this.#dotWorkflowActionsFireService
@@ -123,18 +134,6 @@ export class DotBlockEditorSidebarComponent implements OnInit {
                 },
                 () => this.close()
             );
-    }
-
-    /**
-     * Remove the contentlet data and close the sidebar
-     *
-     * @protected
-     * @memberof DotBlockEditorSidebarComponent
-     */
-    protected close() {
-        this.contentlet.set(null);
-        this.value.set(null);
-        this.loading.set(false);
     }
 
     /**
