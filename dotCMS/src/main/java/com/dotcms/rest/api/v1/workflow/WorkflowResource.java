@@ -691,6 +691,7 @@ public class WorkflowResource {
         workflowActionView.setShowOn(workflowAction.getShowOn());
         workflowActionView.setActionInputs(createActionInputViews(workflowAction));
         workflowActionView.setMetadata(workflowAction.getMetadata());
+        workflowActionView.setCommentActionlet(workflowAction.hasCommentActionlet());
         workflowActionView.setResetable(workflowAction.hasResetActionlet());
         return workflowActionView;
     }
