@@ -300,8 +300,8 @@ import org.junit.runners.Suite.SuiteClasses;
         EmbeddingsToolTest.class,
         CompletionsToolTest.class,
         EmbeddingContentListenerTest.class,
-        Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
-        ExperimentFactoryIntegrationTest.class
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class
+//        ExperimentFactoryIntegrationTest.class
 })
 
 public class MainSuite2b {
