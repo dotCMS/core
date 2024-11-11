@@ -176,7 +176,7 @@ public class VanityUrlFilterTest {
             String content = FileUtil.read(tmp);
             assert (content != null);
             assert (content.contains("All rights reserved"));
-            assert (content.contains("<meta property=\"og:url\" content=\"https://www.dotcms.com/\">"));
+            assert (content.contains("content=\"dotCMS\""));
         }
     }
 
@@ -239,7 +239,7 @@ public class VanityUrlFilterTest {
         filtersUtil.publishVanityUrl(contentlet1);
 
         final String resource = "/test redirect 301".replaceAll(" ", "%20");
-        final String queryWithFragment = "?param1=value 1&param2=value 2#test-fragment"
+        final String queryWithFragment = "?param1=value 1&param2=value 2#test/fragment"
                 .replaceAll(" ", "+");
         final String testURI = baseURI + resource + queryWithFragment;
         final HttpServletRequest request = new MockHttpRequestIntegrationTest(defaultHost.getHostname(), testURI).request();

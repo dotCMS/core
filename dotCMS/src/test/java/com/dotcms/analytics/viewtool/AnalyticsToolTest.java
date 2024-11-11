@@ -80,7 +80,7 @@ public class AnalyticsToolTest {
                 "\t\"limit\":100,\n" +
                 "\t\"offset\":1,\n" +
                 "\t\"timeDimensions\":Events.day day\",\n" + // here is a sintax error
-                "\t\"orders\":\"Events.day ASC\"\n" +
+                "\t\"order\":\"Events.day ASC\"\n" +
                 "}");
     }
 
@@ -115,7 +115,7 @@ public class AnalyticsToolTest {
                 "\t\"limit\":100,\n" +
                 "\t\"offset\":1,\n" +
                 "\t\"timeDimensions\":\"Events.day day\",\n" +
-                "\t\"orders\":\"Events.day ASC\"\n" +
+                "\t\"order\":\"Events.day ASC\"\n" +
                 "}");
 
         Assert.assertNotNull(reportResponse);
@@ -181,7 +181,7 @@ public class AnalyticsToolTest {
         queryMap.put("limit", 100);
         queryMap.put("offset", 1);
         queryMap.put("timeDimensions", "Events.day day");
-        queryMap.put("orders", "Events.day ASC");
+        queryMap.put("order", "Events.day ASC");
         final ReportResponse reportResponse = analyticsTool.runReportFromMap(queryMap);
 
         Assert.assertNotNull(reportResponse);

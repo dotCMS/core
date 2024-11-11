@@ -1,6 +1,6 @@
 # @dotcms/angular
 
-`@dotcms/angular` is the official Angular library designed to work seamlessly with dotCMS. This library simplifies the process of rendering dotCMS pages and integrating with the [Universal Visual Editor](dotcms.com/docs/latest/universal-visual-editor) in your Angular applications.
+`@dotcms/angular` is the official Angular library designed to work seamlessly with dotCMS. This library simplifies the process of rendering dotCMS pages and integrating with the [Universal Visual Editor](https://www.dotcms.com/docs/latest/universal-visual-editor) in your Angular applications.
 
 ## Table of Contents
 
@@ -18,7 +18,7 @@
 
 ## Features
 
-- A set of Angular components developer for dotCMS page rendering and editor integration.
+- A set of Angular components developed for dotCMS page rendering and editor integration.
 - Enhanced development workflow with full TypeScript support.
 - Optimized performance for efficient rendering of dotCMS pages in Angular applications.
 - Flexible customization options to adapt to various project requirements.
@@ -37,7 +37,7 @@ Or using Yarn:
 yarn add @dotcms/angular
 ```
 
-## Configutarion
+## Configuration
 ### Provider Setup
 We need to provide the information of our dotCMS instance
 
@@ -51,10 +51,11 @@ const DOTCMS_CLIENT_CONFIG: ClientConfig = {
     siteId: environment.siteId
 };
 ```
-And add this config in the Angular app ApplicationConfig.
+
+Add this configuration to `ApplicationConfig` in your Angular app.
 
 `src/app/app.config.ts`
-```javascript
+```typescript
 import { InjectionToken } from '@angular/core';
 import { ClientConfig, DotCmsClient } from '@dotcms/client';
 
@@ -70,36 +71,40 @@ export const appConfig: ApplicationConfig = {
     ],
 };
 ```
+
 This way, we will have access to `DOTCMS_CLIENT_TOKEN` from anywhere in our application.
 
 ### Client Usage
 To interact with the client and obtain information from, for example, our pages
 
-```javascript
-private readonly client = inject(DOTCMS_CLIENT_TOKEN);
+```typescript
+export class YourComponent {
+    private readonly client = inject(DOTCMS_CLIENT_TOKEN);
 
-this.client.page
-    .get({ ...pageParams })
-    .then((response) => {
-        // Use your response
-    })
-    .catch((e) => {
-      const error: PageError = {
-        message: e.message,
-        status: e.status,
-      };
-      // Use the error response
-    })
+    this.client.page
+        .get({ ...pageParams })
+        .then((response) => {
+            // Use your response
+        })
+        .catch((e) => {
+            const error: PageError = {
+                message: e.message,
+                status: e.status,
+            };
+            // Use the error response
+        })
+}
 ```
-For more information to how to use DotCms Client, you can visit the [documentation](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/client/README.md)
+
+For more information on how to use the dotCMS Client, you can visit the [documentation](https://www.github.com/dotCMS/core/blob/main/core-web/libs/sdk/client/README.md)
 
 ## DotCMS Page API
 
 The `DotcmsLayoutComponent` requires a `DotCMSPageAsset` object to be passed in to it. This object represents a dotCMS page and can be fetched using the `@dotcms/client` library.
 
-- [DotCMS Official Angular Example](https://github.com/dotCMS/core/tree/main/examples/angular)
+- [DotCMS Official Angular Example](https://www.github.com/dotCMS/core/tree/main/examples/angular)
 - [`@dotcms/client` documentation](https://www.npmjs.com/package/@dotcms/client)
-- [Page API documentation](https://dotcms.com/docs/latest/page-api)
+- [Page API documentation](https://www.dotcms.com/docs/latest/page-api)
 
 ## Components
 
@@ -167,17 +172,58 @@ This setup allows for dynamic rendering of different content types on your dotCM
 
 ## Troubleshooting
 
-If you encounter issues:
+If you encounter issues while using `@dotcms/angular`, here are some common problems and their solutions:
 
-1. Ensure all dependencies are correctly installed and up to date.
-2. Verify that your dotCMS configuration (URL, auth token, site ID) is correct.
-3. Check the browser console for any error messages.
-4. Refer to the [dotCMS documentation](https://dotcms.com/docs/) for additional guidance.
+1. **Dependency Issues**:
+   - Ensure that all dependencies, such as `@dotcms/client`, `@angular/core`, and `rxjs`, are correctly installed and up-to-date. You can verify installed versions by running:
+     ```bash
+     npm list @dotcms/client @angular/core rxjs
+     ```
+   - If there are any missing or incompatible versions, reinstall dependencies by running:
+     ```bash
+     npm install
+     ```
+     or
+     ```bash
+     npm install --force
+     ```
+
+2. **Configuration Errors**:
+   - **DotCMS Configuration**: Double-check that your `DOTCMS_CLIENT_CONFIG` settings (URL, auth token, site ID) are correct and aligned with the environment variables. For example:
+     ```typescript
+     const DOTCMS_CLIENT_CONFIG: ClientConfig = {
+         dotcmsUrl: environment.dotcmsUrl,  // Ensure this is a valid URL
+         authToken: environment.authToken,  // Ensure auth token has the correct permissions
+         siteId: environment.siteId         // Ensure site ID is valid and accessible
+     };
+     ```
+   - **Injection Issues**: Ensure that `DOTCMS_CLIENT_TOKEN` is provided globally. Errors like `NullInjectorError` usually mean the token hasn’t been properly added to the `ApplicationConfig`. Verify by checking `src/app/app.config.ts`.
+
+3. **Network and API Errors**:
+   - **dotCMS API Connectivity**: If API calls are failing, check your browser’s Network tab to ensure requests to `dotcmsUrl` are successful. For CORS-related issues, ensure that your dotCMS server allows requests from your application’s domain.
+   - **Auth Token Permissions**: If you’re seeing `401 Unauthorized` errors, make sure the auth token used in `DOTCMS_CLIENT_CONFIG` has appropriate permissions in dotCMS for accessing pages and content.
+
+4. **Page and Component Rendering**:
+   - **Dynamic Imports**: If you’re encountering issues with lazy-loaded components, make sure dynamic imports are correctly set up, as in:
+     ```typescript
+      const DYNAMIC_COMPONENTS: DotCMSPageComponent = {
+        Activity: import('../pages/content-types/activity/activity.component').then(
+            (c) => c.ActivityComponent
+        )
+      };
+     ```
+   - **Invalid Page Assets**: Ensure that `pageAsset` objects are correctly formatted. Missing fields in `pageAsset` can cause errors in `DotcmsLayoutComponent`. Validate the structure by logging `pageAsset` before passing it in.
+
+5. **Common Angular Errors**:
+   - **Change Detection**: Angular sometimes fails to detect changes with dynamic content. If `DotcmsLayoutComponent` isn’t updating as expected, you may need to call `ChangeDetectorRef.detectChanges()` manually.
+   - **TypeScript Type Errors**: Ensure all types (e.g., `DotCMSPageAsset`, `DotCMSPageComponent`) are imported correctly from `@dotcms/angular`. Type mismatches can often be resolved by verifying imports.
+
+6. **Consult Documentation**: Refer to the official [dotCMS documentation](https://dotcms.com/docs/) and the [@dotcms/angular GitHub repository](https://github.com/dotCMS/core). These sources often provide updates and additional usage examples.
 
 ## Contributing
 
-GitHub pull requests are the preferred method to contribute code to dotCMS. Before any pull requests can be accepted, an automated tool will ask you to agree to the [dotCMS Contributor's Agreement](https://gist.github.com/wezell/85ef45298c48494b90d92755b583acb3).
+GitHub pull requests are the preferred method to contribute code to dotCMS. Before any pull requests can be accepted, an automated tool will ask you to agree to the [dotCMS Contributor's Agreement](https://www.gist.github.com/wezell/85ef45298c48494b90d92755b583acb3).
 
 ## Licensing
 
-dotCMS comes in multiple editions and as such is dual licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://dotcms.com/cms-platform/features).
+dotCMS comes in multiple editions and as such is dual licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).

@@ -76,7 +76,7 @@
         <docker.jacoco.skip>true</docker.jacoco.skip>
         <!-- starter -->
         <starter.download.folder>${project.build.directory}/starter</starter.download.folder>
-        <starter.deploy.version>empty_20240719</starter.deploy.version>
+        <starter.deploy.version>empty_20241105</starter.deploy.version>
         <starter.deploy.filename>starter.zip</starter.deploy.filename>
         <starter.run.version>${starter.deploy.version}</starter.run.version>
         <starter.run.filename>starter-${starter.run.version}.zip</starter.run.filename>
@@ -196,6 +196,7 @@
         <docker.skip.clean.after>false</docker.skip.clean.after>
         <debug.suspend.flag>n</debug.suspend.flag>
         <debug.port>5005</debug.port>
+
         <!-- Default debug port -->
         <debug.args.default>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${debug.suspend.flag},address=*:${debug.port}</debug.args.default>
         <debug.args/>
@@ -206,6 +207,7 @@
         <environment.properties.folder>${maven.multiModuleProjectDirectory}/environments</environment.properties.folder>
         <environment.properties.defaults>${environment.properties.folder}/environment.properties</environment.properties.defaults>
         <spotless.skip>true</spotless.skip>
+        <glowroot.version>0.14.2</glowroot.version>
     </properties>
 
     <build>
@@ -1475,14 +1477,24 @@
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
-                                    <target>
+                                    <target xmlns:ac="antlib:net.sf.antcontrib">
                                         <!-- Here is where you define your Ant tasks -->
                                         <!--suppress UnresolvedMavenProperty -->
-                                        <echo message="DotCMS started on     : http://localhost:${tomcat.port}/dotAdmin"/>
+                                        <echo message="DotCMS started on (use fixed with -Dtomcat.port=8080)    : http://localhost:${tomcat.port}/dotAdmin"/>
+
                                         <!--suppress UnresolvedMavenProperty -->
-                                        <echo message="Postgres started on   : jdbc:postgresql://localhost:${db.port}/dotcms user = postgres pass = postgres"/>
+                                        <echo message="Postgres started on  (use fixed with -Ddb.port=5423) : jdbc:postgresql://localhost:${db.port}/dotcms user = postgres pass = postgres"/>
                                         <!--suppress UnresolvedMavenProperty -->
-                                        <echo message="OpenSearch started on : http://localhost:${es.port}"/>
+                                        <echo message="OpenSearch started on (use fixed with -Des.port=9200) : http://localhost:${es.port}"/>
+
+
+                                        <!-- Check if the glowroot profile is enabled and output the glowroot.port -->
+                                        <ac:if>
+                                            <ac:isset property="glowroot.port"/>
+                                            <then>
+                                                <echo message="Glowroot started on (use fixed with -Dglowroot.port=4000) : http://localhost:${glowroot.port}"/>
+                                            </then>
+                                        </ac:if>
                                     </target>
                                 </configuration>
                             </execution>
@@ -1569,6 +1581,39 @@
                                 <phase>process-resources</phase>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>glowroot</id>
+            <activation>
+                <property>
+                    <name>docker.glowroot.enabled</name>
+                    <value>true</value>
+                </property>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <ports combine.children="append">
+                                            <port>glowroot.port:4000</port>
+                                        </ports>
+                                        <env>
+                                            <GLOWROOT_ENABLED>true</GLOWROOT_ENABLED>
+                                            <GLOWROOT_WEB_UI_ENABLED>true</GLOWROOT_WEB_UI_ENABLED>
+                                        </env>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

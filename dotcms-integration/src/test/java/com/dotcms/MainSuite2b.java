@@ -10,6 +10,13 @@ import com.dotcms.ai.viewtool.CompletionsToolTest;
 import com.dotcms.ai.viewtool.EmbeddingsToolTest;
 import com.dotcms.ai.viewtool.SearchToolTest;
 import com.dotcms.ai.workflow.OpenAIContentPromptActionletTest;
+import com.dotcms.analytics.track.collectors.AsyncVanitiesCollectorTest;
+import com.dotcms.analytics.track.collectors.BasicProfileCollectorTest;
+import com.dotcms.analytics.track.collectors.FilesCollectorTest;
+import com.dotcms.analytics.track.collectors.PageDetailCollectorTest;
+import com.dotcms.analytics.track.collectors.PagesCollectorTest;
+import com.dotcms.analytics.track.collectors.SyncVanitiesCollectorTest;
+import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceImplTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.bayesian.BayesianAPIImplIT;
@@ -18,15 +25,17 @@ import com.dotcms.business.SystemTableFactoryTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
 import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
+import com.dotcms.cdi.SimpleDataProviderWeldRunnerInjectionIT;
 import com.dotcms.cdi.SimpleInjectionIT;
+import com.dotcms.cdi.SimpleJUnit4InjectionIT;
 import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.business.json.ContentletJsonAPITest;
 import com.dotcms.content.business.json.LegacyJSONObjectRenderTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
-import com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest;
-import com.dotcms.contenttype.business.ContentTypeInitializerTest;
-import com.dotcms.contenttype.business.StoryBlockAPITest;
+import com.dotcms.contenttype.business.*;
+import com.dotcms.contenttype.business.uniquefields.extratable.DBUniqueFieldValidationStrategyTest;
+import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtilTest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
@@ -102,7 +111,7 @@ import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
-import com.dotmarketing.osgi.GenericBundleActivatorTest;
+import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.browser.BrowserUtilTest;
 import com.dotmarketing.portlets.browser.ajax.BrowserAjaxTest;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
@@ -122,7 +131,66 @@ import com.dotmarketing.quartz.job.PruneTimeMachineBackupJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorDataTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
-import com.dotmarketing.startup.runonce.*;
+import com.dotmarketing.startup.runonce.Task05370AddAppsPortletToLayoutTest;
+import com.dotmarketing.startup.runonce.Task05380ChangeContainerPathToAbsoluteTest;
+import com.dotmarketing.startup.runonce.Task05390MakeRoomForLongerJobDetailTest;
+import com.dotmarketing.startup.runonce.Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest;
+import com.dotmarketing.startup.runonce.Task201013AddNewColumnsToIdentifierTableTest;
+import com.dotmarketing.startup.runonce.Task201014UpdateColumnsValuesInIdentifierTableTest;
+import com.dotmarketing.startup.runonce.Task201102UpdateColumnSitelicTableTest;
+import com.dotmarketing.startup.runonce.Task210218MigrateUserProxyTableTest;
+import com.dotmarketing.startup.runonce.Task210319CreateStorageTableTest;
+import com.dotmarketing.startup.runonce.Task210321RemoveOldMetadataFilesTest;
+import com.dotmarketing.startup.runonce.Task210506UpdateStorageTableTest;
+import com.dotmarketing.startup.runonce.Task210510UpdateStorageTableDropMetadataColumnTest;
+import com.dotmarketing.startup.runonce.Task210520UpdateAnonymousEmailTest;
+import com.dotmarketing.startup.runonce.Task210527DropReviewFieldsFromContentletTableTest;
+import com.dotmarketing.startup.runonce.Task210719CleanUpTitleFieldTest;
+import com.dotmarketing.startup.runonce.Task210802UpdateStructureTableTest;
+import com.dotmarketing.startup.runonce.Task210805DropUserProxyTableTest;
+import com.dotmarketing.startup.runonce.Task210816DeInodeRelationshipTest;
+import com.dotmarketing.startup.runonce.Task210901UpdateDateTimezonesTest;
+import com.dotmarketing.startup.runonce.Task211007RemoveNotNullConstraintFromCompanyMXColumnTest;
+import com.dotmarketing.startup.runonce.Task211012AddCompanyDefaultLanguageTest;
+import com.dotmarketing.startup.runonce.Task211101AddContentletAsJsonColumnTest;
+import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabelTest;
+import com.dotmarketing.startup.runonce.Task220202RemoveFKStructureFolderConstraintTest;
+import com.dotmarketing.startup.runonce.Task220203RemoveFolderInodeConstraintTest;
+import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
+import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
+import com.dotmarketing.startup.runonce.Task220330ChangeVanityURLSiteFieldTypeTest;
+import com.dotmarketing.startup.runonce.Task220401CreateClusterLockTableTest;
+import com.dotmarketing.startup.runonce.Task220402UpdateDateTimezonesTest;
+import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdColTest;
+import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
+import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest;
+import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
+import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariantTest;
+import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
+import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
+import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropertyTest;
+import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
+import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
+import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
+import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
+import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
+import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentletIntegrationTest;
+import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
+import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
+import com.dotmarketing.startup.runonce.Task230707CreateSystemTableTest;
+import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
+import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVersionInfoTest;
+import com.dotmarketing.startup.runonce.Task240102AlterVarcharLengthOfRelationTypeTest;
+import com.dotmarketing.startup.runonce.Task240111AddInodeAndIdentifierLeftIndexesTest;
+import com.dotmarketing.startup.runonce.Task240112AddMetadataColumnToStructureTableTest;
+import com.dotmarketing.startup.runonce.Task240513UpdateContentTypesSystemFieldTest;
+import com.dotmarketing.startup.runonce.Task240530AddDotAIPortletToLayoutTest;
+import com.dotmarketing.startup.runonce.Task240606AddVariableColumnToWorkflowTest;
+import com.dotmarketing.startup.runonce.Task241007CreateUniqueFieldsTableTest;
+import com.dotmarketing.startup.runonce.Task241009CreatePostgresJobQueueTablesTest;
+import com.dotmarketing.startup.runonce.Task241013RemoveFullPathLcColumnFromIdentifierTest;
+import com.dotmarketing.startup.runonce.Task241015ReplaceLanguagesWithLocalesPortletTest;
+import com.dotmarketing.startup.runonce.Task241016AddCustomLanguageVariablesPortletToLayoutTest;
 import com.dotmarketing.util.ConfigUtilsTest;
 import com.dotmarketing.util.ITConfigTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -138,6 +206,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        Task241007CreateUniqueFieldsTableTest.class,
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
@@ -166,7 +235,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task201102UpdateColumnSitelicTableTest.class,
         DependencyManagerTest.class,
         com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
-        GenericBundleActivatorTest.class,
+        GenericBundleActivatorIntegrationTest.class,
         SAMLHelperTest.class,
         PermissionHelperTest.class,
         ResetPasswordTokenUtilTest.class,
@@ -325,7 +394,25 @@ import org.junit.runners.Suite.SuiteClasses;
         JobQueueManagerAPITest.class,
         ConfigUtilsTest.class,
         SimpleInjectionIT.class,
-        LegacyJSONObjectRenderTest.class
+        SimpleDataProviderWeldRunnerInjectionIT.class,
+        SimpleJUnit4InjectionIT.class,
+        LegacyJSONObjectRenderTest.class,
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
+        Task241009CreatePostgresJobQueueTablesTest.class,
+
+        UniqueFieldDataBaseUtilTest.class,
+        DBUniqueFieldValidationStrategyTest.class,
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
+        Task241015ReplaceLanguagesWithLocalesPortletTest.class,
+        Task241016AddCustomLanguageVariablesPortletToLayoutTest.class,
+        WebEventsCollectorServiceImplTest.class,
+        BasicProfileCollectorTest.class,
+        PagesCollectorTest.class,
+        PageDetailCollectorTest.class,
+        FilesCollectorTest.class,
+        SyncVanitiesCollectorTest.class,
+        AsyncVanitiesCollectorTest.class
 })
 
 public class MainSuite2b {

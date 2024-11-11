@@ -66,19 +66,21 @@ public class VariantWebAPIImpl implements VariantWebAPI{
             }
         }
 
-        setSessionAttribute(request, currentVariantName);
+        setSessionAttributeIfNeeded(request, currentVariantName);
         return currentVariantName;
     }
 
-    private static void setSessionAttribute(final HttpServletRequest request,
+    private static void setSessionAttributeIfNeeded(final HttpServletRequest request,
             final String currentVariantName) {
 
-        final HttpSession session = request.getSession(true);
+        boolean buildSessionIfNeeded = !"DEFAULT".equals(currentVariantName);
+
+        final HttpSession session = request.getSession(buildSessionIfNeeded);
 
         if (!UtilMethods.isSet(session)) {
             return;
         }
-        
+
         final Object attribute = session.getAttribute(VariantAPI.VARIANT_KEY);
 
         if (mustOverwrite(attribute, currentVariantName)) {
@@ -251,7 +253,7 @@ public class VariantWebAPIImpl implements VariantWebAPI{
     }
 
     private static boolean isFileFallback(ContentType type) {
-        return type.baseType() == BaseContentType.FILEASSET
+        return (type.baseType() == BaseContentType.FILEASSET || type.baseType() == BaseContentType.DOTASSET)
                 && APILocator.getLanguageAPI().canDefaultFileToDefaultLanguage();
     }
 

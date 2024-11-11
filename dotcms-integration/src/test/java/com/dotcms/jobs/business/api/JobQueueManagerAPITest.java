@@ -28,6 +28,7 @@ import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.JobProcessingException;
+import com.dotcms.jobs.business.error.RetryPolicyProcessor;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
@@ -67,9 +68,74 @@ import org.mockito.InOrder;
 
 public class JobQueueManagerAPITest {
 
+    /**
+     * A simple job processor that does nothing.
+     */
+    static class SimpleCancellableJobProcessor implements JobProcessor, Cancellable {
+
+        @Override
+        public void process(Job job) throws JobProcessingException {
+            // Do nothing
+        }
+
+        @Override
+        public void cancel(Job job) {
+            // Do nothing
+        }
+
+        @Override
+        public Map<String, Object> getResultMetadata(Job job) {
+            return null;
+        }
+    }
+
+    /**
+     * A complex cancellable job processor that simulates work and waits for cancellation.
+     */
+    static class ComplexCancellableJobProcessor implements JobProcessor, Cancellable {
+
+        private final AtomicBoolean cancellationRequested = new AtomicBoolean(false);
+        private final CountDownLatch processingStarted = new CountDownLatch(1);
+        private final CountDownLatch processingCompleted = new CountDownLatch(1);
+
+        @Override
+        public void process(Job job) throws JobProcessingException {
+            processingStarted.countDown();
+            // Simulate work and wait for cancellation
+            Awaitility.await()
+                    .pollInterval(100, TimeUnit.MILLISECONDS)
+                    .atMost(30, TimeUnit.SECONDS)
+                    .until(cancellationRequested::get);
+
+            processingCompleted.countDown();
+        }
+
+        @Override
+        public void cancel(Job job) {
+            cancellationRequested.set(true);
+        }
+
+        @Override
+        public Map<String, Object> getResultMetadata(Job job) {
+            return null;
+        }
+
+        public boolean awaitProcessingStart(long timeout, TimeUnit unit)
+                throws InterruptedException {
+            return processingStarted.await(timeout, unit);
+        }
+
+        public boolean awaitProcessingCompleted(long timeout, TimeUnit unit)
+                throws InterruptedException {
+            return processingCompleted.await(timeout, unit);
+        }
+    }
+
     private JobQueue mockJobQueue;
 
     private JobProcessor mockJobProcessor;
+
+    private SimpleCancellableJobProcessor mockCancellableProcessor;
 
     private RetryStrategy mockRetryStrategy;
 
@@ -79,21 +145,45 @@ public class JobQueueManagerAPITest {
 
     private EventProducer eventProducer;
 
+    private RetryPolicyProcessor retryPolicyProcessor;
+
+    /**
+     * Factory to create mock JobProcessor instances for testing.
+     * This is how we instruct the JobQueueManagerAPI to use our mock processors.
+     */
+    JobProcessorFactory jobProcessorFactory = new JobProcessorFactory(){
+        @Override
+        JobProcessor newInstance(Class<? extends JobProcessor> processorClass) {
+            //Cancellable mock processor
+            if(SimpleCancellableJobProcessor.class.equals(processorClass)){
+                return mockCancellableProcessor;
+            }
+            //For this we need the real deal
+            if(ComplexCancellableJobProcessor.class.equals(processorClass)){
+                return new ComplexCancellableJobProcessor();
+            }
+            //Default mock processor
+            return mockJobProcessor;
+        }
+    };
+
     @Before
     public void setUp() {
 
         mockJobQueue = mock(JobQueue.class);
         mockJobProcessor = mock(JobProcessor.class);
+        mockCancellableProcessor = mock(SimpleCancellableJobProcessor.class);
         mockRetryStrategy = mock(RetryStrategy.class);
         mockCircuitBreaker = mock(CircuitBreaker.class);
         eventProducer = mock(EventProducer.class);
+        retryPolicyProcessor = mock(RetryPolicyProcessor.class);
 
         jobQueueManagerAPI = newJobQueueManagerAPI(
-                mockJobQueue, mockCircuitBreaker, mockRetryStrategy, eventProducer,
-                1, 10
+                mockJobQueue, mockCircuitBreaker, mockRetryStrategy, eventProducer, jobProcessorFactory,
+                retryPolicyProcessor, 1, 10
         );
 
-        jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
+        jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
         jobQueueManagerAPI.setRetryStrategy("testQueue", mockRetryStrategy);
 
         var event = mock(Event.class);
@@ -908,11 +998,11 @@ public class JobQueueManagerAPITest {
 
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
         JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
-                mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer,
-                1, 1000
+                mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer, jobProcessorFactory,
+                retryPolicyProcessor, 1, 1000
         );
 
-        jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
+        jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
 
         // Start the job queue
         jobQueueManagerAPI.start();
@@ -993,10 +1083,10 @@ public class JobQueueManagerAPITest {
 
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
         JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
-                mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer,
-                1, 1000
+                mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer, jobProcessorFactory,
+                retryPolicyProcessor, 1, 1000
         );
-        jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
+        jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
 
         // Start the job queue
         jobQueueManagerAPI.start();
@@ -1056,10 +1146,10 @@ public class JobQueueManagerAPITest {
 
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
         JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
-                mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer,
-                1, 1000
+                mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer, jobProcessorFactory,
+                retryPolicyProcessor, 1, 1000
         );
-        jobQueueManagerAPI.registerProcessor("testQueue", mockJobProcessor);
+        jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
 
         // Start the job queue
         jobQueueManagerAPI.start();
@@ -1090,40 +1180,27 @@ public class JobQueueManagerAPITest {
      */
     @Test
     public void test_simple_cancelJob2()
-            throws DotDataException, JobQueueDataException, JobNotFoundException, JobCancellationException {
-
-        class TestJobProcessor implements JobProcessor, Cancellable {
-
-            @Override
-            public void process(Job job) throws JobProcessingException {
-            }
-
-            @Override
-            public void cancel(Job job) {
-            }
-
-            @Override
-            public Map<String, Object> getResultMetadata(Job job) {
-                return null;
-            }
-        }
-
-        // Create a mock job
-        Job mockJob = mock(Job.class);
-        when(mockJobQueue.getJob("job123")).thenReturn(mockJob);
-        when(mockJob.queueName()).thenReturn("testQueue");
-        when(mockJob.id()).thenReturn("job123");
-        when(mockJob.withState(any())).thenReturn(mockJob);
-
-        // Create a mock CancellableJobProcessor
-        TestJobProcessor mockCancellableProcessor = mock(TestJobProcessor.class);
+            throws DotDataException, JobQueueException, JobCancellationException {
 
         // Set up the job queue manager to return our mock cancellable processor
-        jobQueueManagerAPI.registerProcessor("testQueue", mockCancellableProcessor);
+        final String testQueue = "CancellableTestQueue";
 
+        // Create a mock cancellable processor
+        final String jobIdIn = "job2";
+        when(mockJobQueue.createJob(anyString(), anyMap())).thenReturn(jobIdIn);
+        // Create a mock job
+        Job mockJob = mock(Job.class);
+        when(mockJobQueue.getJob(jobIdIn)).thenReturn(mockJob);
+        when(mockJob.queueName()).thenReturn(testQueue);
+        when(mockJob.id()).thenReturn(jobIdIn);
+        when(mockJob.withState(any())).thenReturn(mockJob);
+
+        jobQueueManagerAPI.registerProcessor(testQueue, SimpleCancellableJobProcessor.class);
+        // Create a job so we can cancel it
+        final String jobIdOut = jobQueueManagerAPI.createJob(testQueue, Map.of());
+        assertEquals(jobIdIn, jobIdOut);
         // Perform the cancellation
-        jobQueueManagerAPI.cancelJob("job123");
-
+        jobQueueManagerAPI.cancelJob(jobIdOut);
         // Verify that the cancel method was called on our mock processor
         verify(mockCancellableProcessor).cancel(mockJob);
     }
@@ -1136,57 +1213,18 @@ public class JobQueueManagerAPITest {
     @Test
     public void test_complex_cancelJob() throws Exception {
 
-        class TestJobProcessor implements JobProcessor, Cancellable {
-
-            private final AtomicBoolean cancellationRequested = new AtomicBoolean(false);
-            private final CountDownLatch processingStarted = new CountDownLatch(1);
-            private final CountDownLatch processingCompleted = new CountDownLatch(1);
-
-            @Override
-            public void process(Job job) throws JobProcessingException {
-                processingStarted.countDown();
-                // Simulate work and wait for cancellation
-                Awaitility.await()
-                        .pollInterval(100, TimeUnit.MILLISECONDS)
-                        .atMost(30, TimeUnit.SECONDS)
-                        .until(cancellationRequested::get);
-
-                processingCompleted.countDown();
-            }
-
-            @Override
-            public void cancel(Job job) {
-                cancellationRequested.set(true);
-            }
-
-            @Override
-            public Map<String, Object> getResultMetadata(Job job) {
-                return null;
-            }
-
-            public boolean awaitProcessingStart(long timeout, TimeUnit unit)
-                    throws InterruptedException {
-                return processingStarted.await(timeout, unit);
-            }
-
-            public boolean awaitProcessingCompleted(long timeout, TimeUnit unit)
-                    throws InterruptedException {
-                return processingCompleted.await(timeout, unit);
-            }
-        }
-
         // Create a mock job
         Job mockJob = mock(Job.class);
-        when(mockJob.id()).thenReturn("job123");
-        when(mockJob.queueName()).thenReturn("testQueue");
-
-        // Use our TestJobProcessor
-        TestJobProcessor testJobProcessor = new TestJobProcessor();
+        final String jobId = "job5644";
+        when(mockJob.id()).thenReturn(jobId);
+        final String testQueue = "myTestQueue";
+        when(mockJob.queueName()).thenReturn(testQueue);
 
         // Configure JobQueue
-        when(mockJobQueue.getJob("job123")).thenReturn(mockJob);
+        when(mockJobQueue.getJob(jobId)).thenReturn(mockJob);
         when(mockJobQueue.nextJob()).thenReturn(mockJob).thenReturn(null);
         when(mockJobQueue.hasJobBeenInState(any(), eq(JobState.CANCELLING))).thenReturn(true);
+        when(mockJobQueue.createJob(anyString(), anyMap())).thenReturn(jobId);
 
         // List to capture job state updates
         List<JobState> stateUpdates = new CopyOnWriteArrayList<>();
@@ -1219,7 +1257,7 @@ public class JobQueueManagerAPITest {
                 .thenAnswer(invocation -> Collections.singletonList(mockJob));
 
         // Register the test processor
-        jobQueueManagerAPI.registerProcessor("testQueue", testJobProcessor);
+        jobQueueManagerAPI.registerProcessor(testQueue, ComplexCancellableJobProcessor.class);
 
         // Configure circuit breaker
         when(mockCircuitBreaker.allowRequest()).thenReturn(true);
@@ -1227,13 +1265,20 @@ public class JobQueueManagerAPITest {
         // Start the job queue manager
         jobQueueManagerAPI.start();
 
+        final String jobIdOut = jobQueueManagerAPI.createJob(testQueue, Map.of());
+
+        final Optional<JobProcessor> instance = jobQueueManagerAPI.getInstance(jobIdOut);
+        assertTrue(instance.isPresent());
+        // Use our TestJobProcessor
+        final ComplexCancellableJobProcessor testJobProcessor = (ComplexCancellableJobProcessor) instance.get();
+
         // Wait for the job to start processing
         Awaitility.await()
                 .atMost(5, TimeUnit.SECONDS)
                 .until(() -> testJobProcessor.awaitProcessingStart(100, TimeUnit.MILLISECONDS));
 
         // Cancel the job
-        jobQueueManagerAPI.cancelJob("job123");
+        jobQueueManagerAPI.cancelJob(jobId);
 
         // Wait for the job to complete (which should be due to cancellation)
         Awaitility.await()
@@ -1247,6 +1292,26 @@ public class JobQueueManagerAPITest {
 
         // Clean up
         jobQueueManagerAPI.close();
+    }
+
+    /**
+     * Method to test: calculateBackoffTime in JobQueueManagerAPI
+     * Given Scenario: Various empty queue counts and maximum empty queue count
+     * ExpectedResult: Correct backoff times are calculated
+     */
+    @Test
+    public void test_calculateBackoffTime() {
+
+        JobQueueManagerAPIImpl jobQueueManager = (JobQueueManagerAPIImpl) jobQueueManagerAPI;
+
+        assertEquals(1000L, jobQueueManager.calculateBackoffTime(0, 30));
+        assertEquals(2000L, jobQueueManager.calculateBackoffTime(1, 30));
+        assertEquals(4000L, jobQueueManager.calculateBackoffTime(2, 30));
+        assertEquals(8000L, jobQueueManager.calculateBackoffTime(3, 30));
+        assertEquals(16000L, jobQueueManager.calculateBackoffTime(4, 30));
+        assertEquals(30000L, jobQueueManager.calculateBackoffTime(5, 30));
+        assertEquals(30000L, jobQueueManager.calculateBackoffTime(6, 30));
+        assertEquals(30000L, jobQueueManager.calculateBackoffTime(30, 30));
     }
 
     /**
@@ -1265,13 +1330,16 @@ public class JobQueueManagerAPITest {
             CircuitBreaker circuitBreaker,
             RetryStrategy retryStrategy,
             EventProducer eventProducer,
+            JobProcessorFactory jobProcessorFactory,
+            RetryPolicyProcessor retryPolicyProcessor,
             int threadPoolSize, int pollJobUpdatesIntervalMilliseconds) {
 
         final var realTimeJobMonitor = new RealTimeJobMonitor();
 
         return new JobQueueManagerAPIImpl(
                 jobQueue, new JobQueueConfig(threadPoolSize, pollJobUpdatesIntervalMilliseconds),
-                circuitBreaker, retryStrategy, realTimeJobMonitor, eventProducer
+                circuitBreaker, retryStrategy, realTimeJobMonitor, eventProducer,
+                jobProcessorFactory, retryPolicyProcessor
         );
     }
 

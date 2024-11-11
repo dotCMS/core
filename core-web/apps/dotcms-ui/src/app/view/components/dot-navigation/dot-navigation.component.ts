@@ -1,6 +1,5 @@
-import { Observable } from 'rxjs';
-
-import { Component, HostBinding, HostListener, OnInit } from '@angular/core';
+import { Component, HostBinding, HostListener, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
@@ -13,20 +12,46 @@ import { DotNavigationService } from './services/dot-navigation.service';
     styleUrls: ['./dot-navigation.component.scss'],
     templateUrl: 'dot-navigation.component.html'
 })
-export class DotNavigationComponent implements OnInit {
-    menu$: Observable<DotMenu[]>;
+export class DotNavigationComponent {
+    /**
+     * A private readonly instance of `DotNavigationService` injected into the component.
+     * This service is used to manage the navigation logic within the application.
+     */
+    readonly #dotNavigationService = inject(DotNavigationService);
+
+    /**
+     * A readonly instance of the IframeOverlayService injected into the component.
+     * This service is used to manage the iframe overlay functionality within the application.
+     */
+    readonly #iframeOverlayService = inject(IframeOverlayService);
+
+    /**
+     * Signal representing the menu items from the DotNavigationService.
+     *
+     * This signal is synchronized with the `items$` observable from the `DotNavigationService`.
+     * The `requireSync` option ensures that the signal is updated synchronously with the observable.
+     *
+     * @type {Signal<MenuItem[]>}
+     */
+    $menu = toSignal(this.#dotNavigationService.items$, {
+        requireSync: true
+    });
+
+    /**
+     * Signal indicating whether the navigation is collapsed.
+     *
+     * This signal is synchronized with the `collapsed$` observable from the
+     * `DotNavigationService`. It ensures that the state of the navigation
+     * (collapsed or expanded) is kept in sync with the service.
+     *
+     * @type {Signal<boolean>}
+     */
+    $isCollapsed = toSignal(this.#dotNavigationService.collapsed$, {
+        requireSync: true
+    });
 
     @HostBinding('style.overflow-y') get overFlow() {
-        return this.dotNavigationService.collapsed$.getValue() ? '' : 'auto';
-    }
-
-    constructor(
-        public dotNavigationService: DotNavigationService,
-        public iframeOverlayService: IframeOverlayService
-    ) {}
-
-    ngOnInit() {
-        this.menu$ = this.dotNavigationService.items$;
+        return this.$isCollapsed() ? '' : 'auto';
     }
 
     /**
@@ -40,8 +65,8 @@ export class DotNavigationComponent implements OnInit {
         $event.originalEvent.stopPropagation();
 
         if (!$event.originalEvent.ctrlKey && !$event.originalEvent.metaKey) {
-            this.dotNavigationService.reloadCurrentPortlet($event.data.id);
-            this.iframeOverlayService.hide();
+            this.#dotNavigationService.reloadCurrentPortlet($event.data.id);
+            this.#iframeOverlayService.hide();
         }
     }
 
@@ -53,10 +78,10 @@ export class DotNavigationComponent implements OnInit {
      * @memberof DotNavigationComponent
      */
     onMenuClick(event: { originalEvent: MouseEvent; data: DotMenu }): void {
-        if (this.dotNavigationService.collapsed$.getValue()) {
-            this.dotNavigationService.goTo(event.data.menuItems[0].menuLink);
+        if (this.$isCollapsed()) {
+            this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
         } else {
-            this.dotNavigationService.setOpen(event.data.id);
+            this.#dotNavigationService.setOpen(event.data.id);
         }
     }
 
@@ -67,8 +92,8 @@ export class DotNavigationComponent implements OnInit {
      */
     @HostListener('document:click')
     handleDocumentClick(): void {
-        if (this.dotNavigationService.collapsed$.getValue()) {
-            this.dotNavigationService.closeAllSections();
+        if (this.$isCollapsed()) {
+            this.#dotNavigationService.closeAllSections();
         }
     }
 }

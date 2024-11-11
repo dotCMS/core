@@ -1,5 +1,3 @@
-import { of } from 'rxjs';
-
 import {
     ChangeDetectionStrategy,
     Component,
@@ -11,11 +9,9 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
-import { AutoCompleteModule } from 'primeng/autocomplete';
+import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-
-import { catchError, map, shareReplay, tap } from 'rxjs/operators';
 
 import { DotMessagePipe, DotSelectItemDirective } from '@dotcms/ui';
 
@@ -49,73 +45,28 @@ export class AddStyleClassesDialogComponent implements OnInit {
      * @memberof AddStyleClassesDialogComponent
      */
     readonly #dialogRef = inject(DynamicDialogRef);
+    readonly #dynamicDialogConfig = inject(DynamicDialogConfig<{ selectedClasses: string[] }>);
     /**
      * Selected classes to be added
      * @memberof AddStyleClassesDialogComponent
      */
     $selectedClasses = signal<string[]>([]);
     /**
-     * Classes to be displayed
+     * Check if the JSON file has classes
      *
      * @memberof AddStyleClassesDialogComponent
      */
-    $classes = signal<string[]>([]);
-    /**
-     * Query to filter the classes
-     *
-     * @memberof AddStyleClassesDialogComponent
-     */
-    $query = signal<string | null>(null);
+    $classes = toSignal(this.#jsonClassesService.getClasses(), {
+        initialValue: []
+    });
     /**
      * Filtered suggestions based on the query
      *
      * @memberof AddStyleClassesDialogComponent
      */
-    $filteredSuggestions = computed(() => {
-        const classes = this.$classes();
-        const query = this.$query();
+    $filteredSuggestions = signal<string[]>(this.$classes());
 
-        if (!query) {
-            return classes;
-        }
-
-        return classes.filter((item) => item.includes(query));
-    });
-    /**
-     * Check if there are classes in the JSON file
-     *
-     * @memberof AddStyleClassesDialogComponent
-     */
-    isJsonClasses$ = this.#jsonClassesService.getClasses().pipe(
-        tap(({ classes }) => {
-            if (classes?.length) {
-                this.$classes.set(classes);
-            } else {
-                this.$classes.set([]);
-            }
-        }),
-        map(({ classes }) => !!classes?.length),
-        catchError(() => {
-            this.$classes.set([]);
-
-            return of(false);
-        }),
-        shareReplay(1)
-    );
-    /**
-     * Check if the JSON file has classes
-     *
-     * @memberof AddStyleClassesDialogComponent
-     */
-    $isJsonClasses = toSignal(this.isJsonClasses$, {
-        initialValue: false
-    });
-
-    constructor(
-        public dynamicDialogConfig: DynamicDialogConfig<{
-            selectedClasses: string[];
-        }>
-    ) {}
+    $hasClasses = computed(() => this.$classes().length > 0);
 
     /**
      * Set the selected classes
@@ -123,10 +74,7 @@ export class AddStyleClassesDialogComponent implements OnInit {
      * @memberof AddStyleClassesDialogComponent
      */
     ngOnInit() {
-        const data = this.dynamicDialogConfig.data;
-        if (data) {
-            this.$selectedClasses.set(data.selectedClasses);
-        }
+        this.$selectedClasses.set(this.#dynamicDialogConfig?.data?.selectedClasses || []);
     }
 
     /**
@@ -136,15 +84,14 @@ export class AddStyleClassesDialogComponent implements OnInit {
      * @return {*}
      * @memberof AddStyleClassesDialogComponent
      */
-    filterClasses({ query }: { query: string }): void {
+    filterClasses({ query }: AutoCompleteCompleteEvent): void {
         /*
-            https://github.com/primefaces/primeng/blob/master/src/app/components/autocomplete/autocomplete.ts#L739
-
+            https://github.com/primefaces/primeng/blob/master/src/app/components/autocomplete/autocomplete.ts#L541
             Sadly we need to pass suggestions all the time, even if they are empty because on the set is where the primeng remove the loading icon
         */
-
-        // PrimeNG autocomplete doesn't support async pipe in the suggestions
-        this.$query.set(query);
+        const classes = this.$classes();
+        const filteredClasses = query ? classes.filter((item) => item.includes(query)) : classes;
+        this.$filteredSuggestions.set([...filteredClasses]);
     }
 
     /**

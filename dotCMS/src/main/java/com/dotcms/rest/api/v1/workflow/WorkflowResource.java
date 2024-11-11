@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import com.dotcms.api.system.user.UserException;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -76,6 +75,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.Config;
@@ -86,7 +86,6 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
-import com.liferay.portal.UserIdException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -335,7 +334,7 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(operationId = "getWorkflowActionlets", summary = "Find all workflow actionlets",
-            description = "Returns a list of all workflow actionlets, a.k.a. [workflow sub-actions]" +
+            description = "Returns a list of all workflow actionlets — a.k.a. [workflow sub-actions]" +
                             "(https://www.dotcms.com/docs/latest/workflow-sub-actions). " +
                           "The returned list is complete and does not use pagination.",
             tags = {"Workflow"},
@@ -380,13 +379,47 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(operationId = "getWorkflowActionletsByActionId", summary = "Find workflow actionlets by workflow action",
-            description = "Returns a list of the workflow actionlets, a.k.a. [workflow sub-actions](https://www.dotcms." +
-                            "com/docs/latest/workflow-sub-actions), associated with a specified workflow action.",
+            description = "Returns a list of the workflow actionlets — a.k.a. [workflow sub-actions](https://www.dotcms." +
+                            "com/docs/latest/workflow-sub-actions) — associated with a specified workflow action.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Workflow actionlets returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityWorkflowActionClassesView.class)
+                                    schema = @Schema(implementation = ResponseEntityWorkflowActionClassesView.class),
+                                    examples = @ExampleObject(
+                                            value = "{\n" +
+                                                    "  \"entity\": [\n" +
+                                                    "    {\n" +
+                                                    "      \"actionId\": \"string\",\n" +
+                                                    "      \"actionlet\": {\n" +
+                                                    "        \"actionClass\": \"string\",\n" +
+                                                    "        \"howTo\": \"string\",\n" +
+                                                    "        \"localizedHowto\": \"string\",\n" +
+                                                    "        \"localizedName\": \"string\",\n" +
+                                                    "        \"name\": \"string\",\n" +
+                                                    "        \"nextStep\": null,\n" +
+                                                    "        \"parameters\": [\n" +
+                                                    "          {\n" +
+                                                    "            \"displayName\": \"string\",\n" +
+                                                    "            \"key\": \"string\",\n" +
+                                                    "            \"defaultValue\": \"string\",\n" +
+                                                    "            \"required\": true\n" +
+                                                    "          }\n" +
+                                                    "        ]\n" +
+                                                    "      },\n" +
+                                                    "      \"clazz\": \"string\",\n" +
+                                                    "      \"id\": \"string\",\n" +
+                                                    "      \"name\": \"string\",\n" +
+                                                    "      \"order\": 0\n" +
+                                                    "    }\n" +
+                                                    "  ],\n" +
+                                                    "  \"errors\": [],\n" +
+                                                    "  \"i18nMessagesMap\": {},\n" +
+                                                    "  \"messages\": [],\n" +
+                                                    "  \"pagination\": null,\n" +
+                                                    "  \"permissions\": []\n" +
+                                                    "}"
+                                    )
                             )
                     ),
                     @ApiResponse(responseCode = "401", description = "Invalid User"),
@@ -398,8 +431,7 @@ public class WorkflowResource {
     public final Response findActionletsByAction(@Context final HttpServletRequest request,
                                                  @PathParam("actionId") @Parameter(
                                                          required = true,
-                                                         description = "Identifier of workflow action to examine for " +
-                                                                       "actionlets.\n\n" +
+                                                         description = "Identifier of workflow action to examine for actionlets.\n\n" +
                                                                        "Example value: `b9d89c80-3d88-4311-8365-187323c96436` " +
                                                                        "(Default system workflow \"Publish\" action)",
                                                          schema = @Schema(type = "string")
@@ -657,6 +689,8 @@ public class WorkflowResource {
         workflowActionView.setShowOn(workflowAction.getShowOn());
         workflowActionView.setActionInputs(createActionInputViews(workflowAction));
         workflowActionView.setMetadata(workflowAction.getMetadata());
+        workflowActionView.setCommentActionlet(workflowAction.hasCommentActionlet());
+        workflowActionView.setResetable(workflowAction.hasResetActionlet());
         return workflowActionView;
     }
 
@@ -902,6 +936,7 @@ public class WorkflowResource {
                                 eventBuilder.name("failure");
                                 eventBuilder.data(Map.class,
                                         Map.of("failure", inode));
+                                eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
                                 final OutboundEvent event = eventBuilder.build();
                                 try {
                                     eventOutput.write(event);
@@ -1649,7 +1684,8 @@ public class WorkflowResource {
                                                                                                         "(https://www.dotcms.com/docs/latest/managing-workflows#ActionShow) the " +
                                                                                                         "action is visible. States must be specified uppercase, such as `NEW` or " +
                                                                                                         "`LOCKED`. There is no single state for ALL; each state must be listed. |\n" +
-                                                                              "| `actionNextStep` | String | The identifier of the step to enter after performing the action. |\n" +
+                                                                              "| `actionNextStep` | String | The identifier of the step to enter after performing the action; " +
+                                                                                                            "`currentstep` is also a valid value. |\n" +
                                                                               "| `actionNextAssign` | String | A user identifier or role key (such as `CMS Anonymous`) to serve as the " +
                                                                                                         " default entry in the assignment dropdown. |\n" +
                                                                               "| `actionCondition` | String | [Custom Velocity code](https://www.dotcms.com/docs/latest/managing-workflows#" +
@@ -1723,24 +1759,19 @@ public class WorkflowResource {
                                        ) final String actionId,
                                        @RequestBody(
                                                description = "Body consists of a JSON object containing " +
-                                                       "a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
-                                                       "form. This includes the following properties:\n\n" +
+                                                       "the same form data as used above in `POST /v1/workflow/actions`. However, " +
+                                                       "this endpoint uses the form's properties differently, as noted below:\n\n" +
                                                        "| Property | Type | Description |\n" +
                                                        "|-|-|-|\n" +
-                                                       "| `actionId` | String | The identifier of the workflow action to be updated. " +
-                                                       "If left blank, a new workflow action will be created. |\n" +
                                                        "| `schemeId` | String | The [workflow scheme](https://www.dotcms.com/docs/latest" +
                                                        "/managing-workflows#Schemes) under which the action will be created. |\n" +
-                                                       "| `stepId` | String |  The [workflow step](https://www.dotcms.com/docs/latest" +
-                                                       "/managing-workflows#Steps) with which to associate the action. |\n" +
                                                        "| `actionName` | String | The name of the workflow action. Multiple actions of the " +
                                                        "same name can coexist with different identifiers.  |\n" +
                                                        "| `whoCanUse` | List of Strings | A list of identifiers representing [users]" +
                                                        "(https://www.dotcms.com/docs/latest/user-management), " +
                                                        "[role keys](https://www.dotcms.com/docs/latest/adding-roles), " +
                                                        "or [other user categories](https://www.dotcms.com" +
-                                                       "                             /docs/latest/managing-workflows#ActionWho)  " +
-                                                       "allowed to use this action. This list can be empty. |\n" +
+                                                       "/docs/latest/managing-workflows#ActionWho) allowed to use this action. This list can be empty. |\n" +
                                                        "| `actionIcon` | String | The icon to associate with the action. Example: `workflowIcon`.  |\n" +
                                                        "| `actionCommentable` | Boolean | Whether this action supports comments.  |\n" +
                                                        /* "| `requiresCheckout` | Boolean |   |\n" + // This is a deprecated, unnecessary, and broadly unused property. */
@@ -1748,14 +1779,17 @@ public class WorkflowResource {
                                                        "(https://www.dotcms.com/docs/latest/managing-workflows#ActionShow) the " +
                                                        "action is visible. States must be specified uppercase, such as `NEW` or " +
                                                        "`LOCKED`. There is no single state for ALL; each state must be listed. |\n" +
-                                                       "| `actionNextStep` | String | The identifier of the step to enter after performing the action. |\n" +
+                                                       "| `actionNextStep` | String | The identifier of the step to enter after performing the action; " +
+                                                                                    "`currentstep` is also a valid value. |\n" +
                                                        "| `actionNextAssign` | String | A user identifier or role key (such as `CMS Anonymous`) to serve as the " +
                                                        " default entry in the assignment dropdown. |\n" +
                                                        "| `actionCondition` | String | [Custom Velocity code](https://www.dotcms.com/docs/latest/managing-workflows#" +
                                                        "ActionAssign) to be executed along with the action. |\n" +
                                                        "| `actionAssignable` | Boolean | Whether this action can be assigned.  |\n" +
                                                        "| `actionRoleHierarchyForAssign` | Boolean | If true, non-administrators cannot assign tasks to administrators.  |\n" +
-                                                       "| `metadata` | Object | Additional metadata to include in the action definition. |\n\n",
+                                                       "| `metadata` | Object | Optional. Additional metadata to include in the action definition. |\n" +
+                                                       "| `actionId` | String | Omit; not used in this endpoint. |\n" +
+                                                       "| `stepId` | String | Omit; not used in this endpoint. |\n\n",
                                                required = true,
                                                content = @Content(schema = @Schema(implementation = WorkflowActionForm.class))
                                        ) final WorkflowActionForm workflowActionForm) {
@@ -1892,7 +1926,7 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes({MediaType.APPLICATION_JSON})
     @Operation(operationId = "postAddActionletToActionById", summary = "Adds an actionlet to a workflow action",
-            description = "Adds an actionlet — also known as a [workflow sub-action]" +
+            description = "Adds an actionlet — a.k.a. a [workflow sub-action]" +
                     "(https://www.dotcms.com/docs/latest/workflow-sub-actions) — to a [workflow action]" +
                     "(https://www.dotcms.com/docs/latest/managing-workflows#Actions).\n\n" +
                     "Returns \"Ok\" on success.",
@@ -2164,7 +2198,7 @@ public class WorkflowResource {
             description = "Removes an [actionlet](https://www.dotcms.com/docs/latest/workflow-sub-actions), or sub-action, " +
                     "from a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions). This deletes " +
                     "only the actionlet's binding to the action utilizing it, and leaves the actionlet category intact.\n\n" +
-                    "To find the identifier, you can call `GET /workflow/actions/{actionId}/actionlets`." +
+                    "To find the identifier, you can call `GET /workflow/actions/{actionId}/actionlets`.\n\n" +
                     "Returns \"Ok\" on success.\n\n",
             tags = {"Workflow"},
             responses = {
@@ -2322,7 +2356,7 @@ public class WorkflowResource {
                                                                                 "with `0` being the first. |\n" +
                                                      "| `stepName` | String | The name of the workflow step. |\n" +
                                                      "| `enableEscalation` | Boolean | Determines whether a step is capable of automatic escalation " +
-                                                                                    "to the next step.\n\n(Read more about [schedule-enabled workflows]" +
+                                                                                    "to the next step. (Read more about [schedule-enabled workflows]" +
                                                                                     "(https://www.dotcms.com/docs/latest/schedule-enabled-workflow).) |\n" +
                                                      "| `escalationAction` | String | The identifier of the workflow action to execute on automatic escalation. |\n" +
                                                      "| `escalationTime` | String | The time, in seconds, before the workflow automatically escalates. |\n" +
@@ -2386,12 +2420,12 @@ public class WorkflowResource {
                                                                             "/latest/managing-workflows#Schemes) to which the step will be added. |\n" +
                                                   "| `stepName` | String | The name of the workflow step. |\n" +
                                                   "| `enableEscalation` | Boolean | Determines whether a step is capable of automatic escalation " +
-                                                  "to the next step.\n\n(Read more about [schedule-enabled workflows]" +
-                                                  "(https://www.dotcms.com/docs/latest/schedule-enabled-workflow).) |\n" +
+                                                                            "to the next step. (Read more about [schedule-enabled workflows]" +
+                                                                            "(https://www.dotcms.com/docs/latest/schedule-enabled-workflow).) |\n" +
                                                   "| `escalationAction` | String | The identifier of the workflow action to execute on automatic escalation. |\n" +
                                                   "| `escalationTime` | String | The time, in seconds, before the workflow automatically escalates. |\n" +
                                                   "| `stepResolved` | Boolean | If true, any content which enters this workflow step will be considered resolved.\n" +
-                                                  "Content in a resolved step will not appear in the workflow queues of any users.\n |\n\n",
+                                                                            "Content in a resolved step will not appear in the workflow queues of any users.\n |\n\n",
                                           required = true,
                                           content = @Content(
                                                   schema = @Schema(implementation = WorkflowStepAddForm.class)
@@ -5346,7 +5380,7 @@ public class WorkflowResource {
     public final Response saveScheme(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response,
                                      @RequestBody(
-                                             description = "The request body consists of the following three properties:" +
+                                             description = "The request body consists of the following three properties:\n\n" +
                                                      "| Property | Type | Description |\n" +
                                                      "|-|-|-|\n" +
                                                      "| `schemeName` | String | The workflow scheme's name. |\n" +
@@ -5409,7 +5443,7 @@ public class WorkflowResource {
                                                schema = @Schema(type = "string")
                                        ) final String schemeId,
                                        @RequestBody(
-                                               description = "The request body consists of the following three properties:" +
+                                               description = "The request body consists of the following three properties:\n\n" +
                                                        "| Property | Type | Description |\n" +
                                                        "|-|-|-|\n" +
                                                        "| `schemeName` | String | The workflow scheme's name. |\n" +
@@ -5561,6 +5595,107 @@ public class WorkflowResource {
         }
         return new ResponseContentletWorkflowStatusView(new ContentletWorkflowStatusView(scheme,
                 wfStep, wfTask));
+    }
+
+    /**
+     * Returns the status of a specific piece of Content in the Workflow it is assigned to. In
+     * summary:
+     * <ul>
+     *     <li>The Workflow Scheme that the Contentlet is in.</li>
+     *     <li>The Step that the Contentlet is in.</li>
+     *     <li>The User assigned to such a Step.</li>
+     * </ul>
+     * Here's an example of how to use this endpoint:
+     * <pre>
+     *     http://localhost:8080/api/v1/workflow/status/{contentletInode}
+     * </pre>
+     *
+     * @param request         The current instance of the {@link HttpServletRequest}.
+     * @param response        The current instance of the {@link HttpServletResponse}.
+     * @param contentletIdentifier The inode of the Contentlet whose status will be checked.
+     *
+     * @return The status information of the Contentlet in the Workflow it is assigned to.
+     *
+     * @throws DotDataException          The specified Contentlet Inode was not found.
+     * @throws DotSecurityException      The User calling this endpoint does not have required
+     *                                   permissions to do so.
+     * @throws InvocationTargetException Failed to transform the {@link WorkflowTask} data for this
+     *                                   view.
+     * @throws IllegalAccessException    Failed to transform the {@link WorkflowTask} data for this
+     *                                   view.
+     */
+    @GET
+    @Path("/tasks/history/comments/{contentletIdentifier}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "getWorkflowTasksHistoryComments", summary = "Find workflow tasks history and comments of content",
+            description = "Retrieve the workflow tasks comments of a contentlet by its [id]" +
+                    "(https://www.dotcms.com/docs/latest/content-versions#IdentifiersInodes).\n\n" +
+                    "Returns an object containing the associated [workflow history or comments]" +
+                    "https://www2.dotcms.com/docs/latest/workflow-tasks, [workflow task]",
+            tags = {"Workflow"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Action(s) returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityWorkflowHistoryCommentsView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad Requesy"),
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error") // includes when inode not found
+            }
+    )
+    public final ResponseEntityWorkflowHistoryCommentsView getWorkflowTasksHistoryComments(@Context final HttpServletRequest request,
+                                                                                         @Context final HttpServletResponse response,
+                                                                                         @PathParam("contentletIdentifier") @Parameter(
+                                                                                     required = true,
+                                                                                     description = "Id of content  to inspect for workflow tasks.\n\n",
+                                                                                     schema = @Schema(type = "string")
+                                                                             ) final String contentletIdentifier,
+                                                                                         @DefaultValue("-1") @QueryParam("language") @Parameter(
+                                                                               description = "Language version of target content.",
+                                                                               schema = @Schema(type = "string")) final String language
+                                                                       )
+            throws DotDataException, DotSecurityException, InvocationTargetException, IllegalAccessException {
+
+        Logger.debug(this, String.format("Retrieving Workflow tasks for Contentlet with identifier " +
+                "'%s'", contentletIdentifier));
+        final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredBackendUser(true).requiredFrontendUser(false).init();
+
+        final User user = initDataObject.getUser();
+        final long languageId = LanguageUtil.getLanguageId(language);
+        final PageMode mode = PageMode.get(request);
+
+        final Optional<Contentlet> currentContentlet =  languageId <= 0?
+                this.workflowHelper.getContentletByIdentifier(contentletIdentifier, mode, initDataObject.getUser(),
+                        ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId()):
+                this.contentletAPI.findContentletByIdentifierOrFallback
+                        (contentletIdentifier, mode.showLive, languageId, initDataObject.getUser(), mode.respectAnonPerms);
+
+
+        if (currentContentlet.isPresent()) {
+
+            final WorkflowTask currentWorkflowTask = this.workflowAPI.findTaskByContentlet(currentContentlet.get());
+            final List<WorkflowTimelineItem> workflowComments = this.workflowAPI.getCommentsAndChangeHistory(currentWorkflowTask);
+            final List<WorkflowTimelineItemView> workflowTimelineItemViews = workflowComments.stream()
+                    .map(this::toWorkflowTimelineItemView)
+                    .collect(Collectors.toList());
+            return new ResponseEntityWorkflowHistoryCommentsView(workflowTimelineItemViews);
+        }
+
+        throw new DoesNotExistException("Contentlet with identifier " + contentletIdentifier + " does not exist.");
+    }
+
+    private WorkflowTimelineItemView toWorkflowTimelineItemView(final WorkflowTimelineItem wfTimeLine) {
+
+        final String postedBy = this.workflowHelper.getPostedBy(wfTimeLine.roleId());
+        return new WorkflowTimelineItemView(wfTimeLine.createdDate(), wfTimeLine.roleId(), postedBy,
+                wfTimeLine.commentDescription(), wfTimeLine.taskId(), wfTimeLine.type());
     }
 
 } // E:O:F:WorkflowResource.

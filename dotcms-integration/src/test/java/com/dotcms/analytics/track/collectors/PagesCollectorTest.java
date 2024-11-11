@@ -1,0 +1,186 @@
+package com.dotcms.analytics.track.collectors;
+
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.JUnit4WeldRunner;
+import com.dotcms.LicenseTestUtil;
+import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.visitor.filter.characteristics.CharacterWebAPI;
+import com.dotcms.visitor.filter.characteristics.GDPRCharacter;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
+import io.vavr.API;
+import javax.enterprise.context.ApplicationScoped;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.Map;
+import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+
+/**
+ * Verifies that the {@link PagesCollector} is able to collect the necessary data.
+ *
+ * @author Jose Castro
+ * @since Oct 9th, 2024
+ */
+@ApplicationScoped
+@RunWith(JUnit4WeldRunner.class)
+public class PagesCollectorTest extends IntegrationTestBase {
+
+    private static final String TEST_PAGE_NAME = "index";
+    private static final String TEST_PAGE_URL = "/" + TEST_PAGE_NAME;
+
+    private static final String PARENT_FOLDER_1_NAME = "news";
+    private static final String TEST_URL_MAP_PAGE_NAME = "news-detail";
+    private static final String URL_MAP_PATTERN = "/testpattern/";
+    private static final String TEST_URL_MAP_DETAIL_PAGE_URL = URL_MAP_PATTERN + "mynews";
+
+    private static Host testSite = null;
+
+    @BeforeClass
+    public static void prepare() throws Exception {
+        // Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+        LicenseTestUtil.getLicense();
+
+        final long millis = System.currentTimeMillis();
+        final String siteName = "www.myTestSite-" + millis + ".com";
+        testSite = new SiteDataGen().name(siteName).nextPersisted();
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link PagesCollector#collect(CollectorContextMap, CollectorPayloadBean)}</li>
+     *     <li><b>Given Scenario: </b> Calls the collector for an HTML Page.</li>
+     *     <li><b>Expected Result: </b> The returned data must be equal to the expected
+     *     parameters.</li>
+     * </ul>
+     */
+    @Test
+    public void collectPageData() throws DotDataException, UnknownHostException {
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final String requestId = UUIDUtil.uuid();
+        final HttpServletRequest request = Util.mockHttpRequestObj(response, TEST_PAGE_URL,
+                requestId, APILocator.getUserAPI().getAnonymousUser());
+
+        final HTMLPageAsset testPage = Util.createTestHTMLPage(testSite, TEST_PAGE_NAME);
+
+        final Map<String, Object> expectedDataMap = Map.of(
+                "event_type", EventType.PAGE_REQUEST.getType(),
+                "host", testSite.getIdentifier(),
+                "language", APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
+                "url", TEST_PAGE_URL,
+                "object", Map.of(
+                        "id", testPage.getIdentifier(),
+                        "title", testPage.getTitle(),
+                        "url", testPage.getURI())
+        );
+
+        final Collector collector = new PagesCollector();
+        final Map<String, Object> contextMap = Map.of(
+                "uri", testPage.getURI(),
+                "pageMode", PageMode.LIVE,
+                "currentHost", testSite,
+                "requestId", requestId);
+        final CollectorPayloadBean collectedData = Util.getCollectorPayloadBean(request,
+                collector, new PagesAndUrlMapsRequestMatcher(), contextMap);
+
+        assertTrue("Collected data map cannot be null or empty", UtilMethods.isSet(collectedData));
+
+        Util.validateExpectedEntries(expectedDataMap, collectedData);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link PagesCollector#collect(CollectorContextMap, CollectorPayloadBean)}</li>
+     *     <li><b>Given Scenario: </b> Calls the collector for a URL Mapped HTML Page.</li>
+     *     <li><b>Expected Result: </b>The collected data for a URL Mapped page must be equal to
+     *     the expected attributes.</li>
+     * </ul>
+     */
+    @Test
+    public void collectUrlMapPageData() throws DotDataException, UnknownHostException {
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final String requestId = UUIDUtil.uuid();
+        final HttpServletRequest request = Util.mockHttpRequestObj(response,
+                TEST_URL_MAP_DETAIL_PAGE_URL, requestId,
+                APILocator.getUserAPI().getAnonymousUser());
+
+        final HTMLPageAsset testDetailPage = Util.createTestHTMLPage(testSite,
+                TEST_URL_MAP_PAGE_NAME, PARENT_FOLDER_1_NAME);
+
+        final String urlTitle = "mynews";
+        final String urlMapPatternToUse = URL_MAP_PATTERN + "{urlTitle}";
+        final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+        final ContentType urlMappedContentType = Util.getUrlMapLikeContentType(
+                "News_" + System.currentTimeMillis(),
+                testSite,
+                testDetailPage.getIdentifier(),
+                urlMapPatternToUse);
+
+        assertNotNull("The test URL Map Content Type cannot be null", urlMappedContentType);
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(urlMappedContentType.id())
+                .languageId(langId)
+                .host(testSite)
+                .setProperty("hostfolder", testSite)
+                .setProperty("urlTitle", urlTitle)
+                .setPolicy(IndexPolicy.WAIT_FOR);
+        final Contentlet newsTestContent = contentletDataGen.nextPersisted();
+        ContentletDataGen.publish(newsTestContent);
+
+        final Map<String, Object> expectedDataMap = Map.of(
+                "event_type", EventType.URL_MAP.getType(),
+                "host", testSite.getIdentifier(),
+                "language", APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
+                "url", TEST_URL_MAP_DETAIL_PAGE_URL,
+                "object", Map.of(
+                        "content_type_var_name", urlMappedContentType.variable(),
+                        "content_type_id", urlMappedContentType.id(),
+                        "id", newsTestContent.getIdentifier(),
+                        "content_type_name", urlMappedContentType.name(),
+                        "title", urlTitle,
+                        "url", TEST_URL_MAP_DETAIL_PAGE_URL)
+        );
+
+        final Collector collector = new PagesCollector();
+        final Map<String, Object> contextMap = new HashMap<>(Map.of(
+                "uri", testDetailPage.getURI(),
+                "pageMode", PageMode.LIVE,
+                "currentHost", testSite,
+                "requestId", requestId));
+        final CollectorPayloadBean collectedData = Util.getCollectorPayloadBean(request,
+                collector, new PagesAndUrlMapsRequestMatcher(), contextMap);
+
+        assertTrue("Collected data map cannot be null or empty", UtilMethods.isSet(collectedData));
+
+        Util.validateExpectedEntries(expectedDataMap, collectedData);
+    }
+
+}

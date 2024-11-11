@@ -1,4 +1,4 @@
-import { INPUT_TYPES } from './models';
+import { INPUT_TYPES } from '../../models/dot-edit-content-file.model';
 
 type Actions = {
     allowExistingFile: boolean;
@@ -6,7 +6,7 @@ type Actions = {
     allowCreateFile: boolean;
     allowGenerateImg: boolean;
     acceptedFiles: string[];
-    maxFileSize: number;
+    maxFileSize: number | null;
 };
 
 type ConfigActions = Record<INPUT_TYPES, Actions>;

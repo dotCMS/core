@@ -77,6 +77,36 @@ public interface JobQueue {
     JobPaginatedResult getJobs(int page, int pageSize) throws JobQueueDataException;
 
     /**
+     * Retrieves a list of active jobs, meaning jobs that are currently being processed.
+     *
+     * @param page     The page number (for pagination).
+     * @param pageSize The number of items per page.
+     * @return A result object containing the list of active jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getActiveJobs(int page, int pageSize) throws JobQueueDataException;
+
+    /**
+     * Retrieves a list of completed jobs.
+     *
+     * @param page     The page number (for pagination).
+     * @param pageSize The number of items per page.
+     * @return A result object containing the list of completed jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getCompletedJobs(int page, int pageSize) throws JobQueueDataException;
+
+    /**
+     * Retrieves a list of canceled jobs.
+     *
+     * @param page     The page number (for pagination).
+     * @param pageSize The number of items per page.
+     * @return A result object containing the list of canceled jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getCanceledJobs(int page, int pageSize) throws JobQueueDataException;
+
+    /**
      * Retrieves a list of failed jobs.
      *
      * @param page     The page number (for pagination).

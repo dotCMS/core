@@ -13,13 +13,14 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
     DotCMSTempFile,
+    DotCMSWorkflowStatus,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { WYSIWYG_MOCK } from '../fields/dot-edit-content-wysiwyg-field/mocks/dot-edit-content-wysiwyg-field.mock';
 import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
-import { EditContentPayload } from '../models/dot-edit-content-form.interface';
+import { DotFormData } from '../models/dot-edit-content-form.interface';
 import {
     CustomTreeNode,
     TreeNodeItem
@@ -34,11 +35,11 @@ export const TEXT_FIELD_MOCK: DotCMSContentTypeField = {
     fieldTypeLabel: 'Text',
     fieldVariables: [],
     fixed: false,
+    hint: 'A helper text',
     iDate: 1696896882000,
     id: 'c3b928bc2b59fc22c67022de4dd4b5c4',
     indexed: false,
     listed: false,
-    hint: 'A helper text',
     modDate: 1696896882000,
     name: 'testVariable',
     readOnly: false,
@@ -83,8 +84,8 @@ export const SELECT_FIELD_TEXT_MOCK = {
     fieldVariables: [],
     fixed: false,
     forceIncludeInApi: false,
-    iDate: 1697579843000,
     hint: 'A hint Text',
+    iDate: 1697579843000,
     id: 'a6f33b8941b6c06c8ab36e44c4bf6500',
     indexed: false,
     listed: false,
@@ -107,8 +108,8 @@ export const SELECT_FIELD_BOOLEAN_MOCK = {
     fieldTypeLabel: 'Select',
     fieldVariables: [],
     fixed: false,
-    hint: 'A hint Text',
     forceIncludeInApi: false,
+    hint: 'A hint Text',
     iDate: 1697661273000,
     id: '8c5648fe4dedc06baf314f362c00431b',
     indexed: false,
@@ -130,10 +131,10 @@ export const SELECT_FIELD_FLOAT_MOCK = {
     dataType: 'FLOAT',
     fieldType: 'Select',
     fieldTypeLabel: 'Select',
-    hint: 'A hint Text',
     fieldVariables: [],
     fixed: false,
     forceIncludeInApi: false,
+    hint: 'A hint Text',
     iDate: 1697661848000,
     id: '8c2edc3ee461fa50041a9e5831f1a86a',
     indexed: false,
@@ -158,6 +159,7 @@ export const SELECT_FIELD_INTEGER_MOCK = {
     fieldVariables: [],
     fixed: false,
     forceIncludeInApi: false,
+    hint: 'A hint Text',
     iDate: 1697662296000,
     id: '89bdd8e525ef9a4c923f4b54d9a0e4f8',
     indexed: false,
@@ -167,7 +169,6 @@ export const SELECT_FIELD_INTEGER_MOCK = {
     readOnly: false,
     required: false,
     searchable: false,
-    hint: 'A hint Text',
     sortOrder: 6,
     unique: false,
     values: 'One hundred|100\r\nOne thousand|1000\r\nTen thousand|10000',
@@ -183,6 +184,7 @@ export const RADIO_FIELD_TEXT_MOCK = {
     fieldVariables: [],
     fixed: false,
     forceIncludeInApi: false,
+    hint: 'A hint Text',
     iDate: 1697598313000,
     id: '824b4e9907fe4f450ced438598cc0ce8',
     indexed: false,
@@ -191,7 +193,6 @@ export const RADIO_FIELD_TEXT_MOCK = {
     name: 'radio',
     readOnly: false,
     required: false,
-    hint: 'A hint Text',
     searchable: false,
     sortOrder: 8,
     unique: false,
@@ -208,6 +209,7 @@ export const RADIO_FIELD_BOOLEAN_MOCK = {
     fieldVariables: [],
     fixed: false,
     forceIncludeInApi: false,
+    hint: 'A hint Text',
     iDate: 1697656862000,
     id: 'e4b3ef6a8cb50ff77fe2534c2b237d71',
     indexed: false,
@@ -218,7 +220,6 @@ export const RADIO_FIELD_BOOLEAN_MOCK = {
     required: false,
     searchable: false,
     sortOrder: 9,
-    hint: 'A hint Text',
     unique: false,
     values: 'Falsy|false\r\nTruthy|true',
     variable: 'radioTrueFalse'
@@ -234,6 +235,7 @@ export const RADIO_FIELD_FLOAT_MOCK = {
     fieldVariables: [],
     fixed: false,
     forceIncludeInApi: false,
+    hint: 'A hint Text',
     iDate: 1697656895000,
     id: 'b26138321e5a449cdf7b73f927643016',
     indexed: false,
@@ -241,7 +243,6 @@ export const RADIO_FIELD_FLOAT_MOCK = {
     modDate: 1697662296000,
     name: 'radioDecimal',
     readOnly: false,
-    hint: 'A hint Text',
     required: false,
     searchable: false,
     sortOrder: 10,
@@ -260,6 +261,7 @@ export const RADIO_FIELD_INTEGER_MOCK = {
     fieldVariables: [],
     fixed: false,
     forceIncludeInApi: false,
+    hint: 'A hint Text',
     iDate: 1697656956000,
     id: 'bdd0f00375e23b7a64608d78c8fcb2dc',
     indexed: false,
@@ -267,7 +269,6 @@ export const RADIO_FIELD_INTEGER_MOCK = {
     modDate: 1697662296000,
     name: 'radioWholeNumber',
     readOnly: false,
-    hint: 'A hint Text',
     required: true,
     searchable: false,
     sortOrder: 11,
@@ -284,10 +285,10 @@ export const DATE_FIELD_MOCK: DotCMSContentTypeField = {
     fieldTypeLabel: 'Date',
     fieldVariables: [],
     fixed: false,
+    hint: 'A hint text',
     iDate: 1698250833000,
     id: '55b4fdcf51eddf01b0f462384e8b3439',
     indexed: false,
-    hint: 'A hint text',
     listed: false,
     modDate: 1698250833000,
     name: 'date',
@@ -308,11 +309,11 @@ export const DATE_AND_TIME_FIELD_MOCK: DotCMSContentTypeField = {
     fieldTypeLabel: 'Date and Time',
     fieldVariables: [],
     fixed: false,
+    hint: 'A hint text',
     iDate: 1698250840000,
     id: '9e669bacc84ce6530bba5f295becc76c',
     indexed: false,
     listed: false,
-    hint: 'A hint text',
     modDate: 1698250840000,
     name: 'date and time',
     readOnly: false,
@@ -324,6 +325,7 @@ export const DATE_AND_TIME_FIELD_MOCK: DotCMSContentTypeField = {
 };
 
 export const TIME_FIELD_MOCK: DotCMSContentTypeField = {
+    id: '1005cde03b962dd0ce7bb4c4ec97f89c',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableTimeField',
     contentTypeId: '4d22214338844b4aed0367933e9bf500',
     dataType: 'DATE',
@@ -333,7 +335,6 @@ export const TIME_FIELD_MOCK: DotCMSContentTypeField = {
     fixed: false,
     hint: 'A hint text',
     iDate: 1698250847000,
-    id: '1005cde03b962dd0ce7bb4c4ec97f89c',
     indexed: false,
     listed: false,
     modDate: 1698250847000,
@@ -347,6 +348,7 @@ export const TIME_FIELD_MOCK: DotCMSContentTypeField = {
 };
 
 export const TAG_FIELD_MOCK: DotCMSContentTypeField = {
+    id: '1ba4927b83aae5b17921679053b0b5fe',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableTagField',
     contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
     dataType: 'SYSTEM',
@@ -357,7 +359,6 @@ export const TAG_FIELD_MOCK: DotCMSContentTypeField = {
     fixed: false,
     hint: 'Some hint',
     iDate: 1698346136000,
-    id: '1ba4927b83aae5b17921679053b0b5fe',
     indexed: true,
     listed: false,
     modDate: 1698346136000,
@@ -371,6 +372,7 @@ export const TAG_FIELD_MOCK: DotCMSContentTypeField = {
 };
 
 export const CHECKBOX_FIELD_MOCK: DotCMSContentTypeField = {
+    id: '96909fa20a00497ce3b766b52edac0ec',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableCheckboxField',
     contentTypeId: '93ebaff75f3e3887bea73eca04588dc9',
     dataType: 'TEXT',
@@ -380,7 +382,6 @@ export const CHECKBOX_FIELD_MOCK: DotCMSContentTypeField = {
     fixed: false,
     hint: 'A hint text',
     iDate: 1698291913000,
-    id: '96909fa20a00497ce3b766b52edac0ec',
     indexed: false,
     listed: false,
     modDate: 1698291913000,
@@ -395,6 +396,7 @@ export const CHECKBOX_FIELD_MOCK: DotCMSContentTypeField = {
 };
 
 export const MULTI_SELECT_FIELD_MOCK: DotCMSContentTypeField = {
+    id: '535a6de288e3fe91fad2679e8d7d966b',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableMultiSelectField',
     contentTypeId: '93ebaff75f3e3887bea73eca04588dc9',
     dataType: 'LONG_TEXT',
@@ -404,7 +406,6 @@ export const MULTI_SELECT_FIELD_MOCK: DotCMSContentTypeField = {
     fixed: false,
     hint: 'A hint text',
     iDate: 1698264695000,
-    id: '535a6de288e3fe91fad2679e8d7d966b',
     indexed: false,
     listed: false,
     modDate: 1698291913000,
@@ -419,6 +420,7 @@ export const MULTI_SELECT_FIELD_MOCK: DotCMSContentTypeField = {
 };
 
 export const BLOCK_EDITOR_FIELD_MOCK: DotCMSContentTypeField = {
+    id: '71fe962eb681c5ffd6cd1623e5fc575a',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
     contentTypeId: '799f176a-d32e-4844-a07c-1b5fcd107578',
     dataType: 'LONG_TEXT',
@@ -435,7 +437,6 @@ export const BLOCK_EDITOR_FIELD_MOCK: DotCMSContentTypeField = {
     ],
     fixed: false,
     iDate: 1649791703000,
-    id: '71fe962eb681c5ffd6cd1623e5fc575a',
     indexed: false,
     listed: false,
     hint: 'A helper text',
@@ -450,6 +451,7 @@ export const BLOCK_EDITOR_FIELD_MOCK: DotCMSContentTypeField = {
 };
 
 export const BINARY_FIELD_MOCK: DotCMSContentTypeField = {
+    id: '5df3f8fc49177c195740bcdc02ec2db7',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
     contentTypeId: 'd1901a41d38b6686dd5ed8f910346d7a',
     dataType: 'SYSTEM',
@@ -475,7 +477,6 @@ export const BINARY_FIELD_MOCK: DotCMSContentTypeField = {
     fixed: false,
     forceIncludeInApi: false,
     iDate: 1698153564000,
-    id: '5df3f8fc49177c195740bcdc02ec2db7',
     indexed: false,
     listed: false,
     modDate: 1698153564000,
@@ -489,6 +490,7 @@ export const BINARY_FIELD_MOCK: DotCMSContentTypeField = {
 };
 
 export const IMAGE_FIELD_MOCK: DotCMSContentTypeField = {
+    id: 'fec3e11696cf9b0f99139c160a598e02',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableImageField',
     contentTypeId: 'a8f941d835e4b4f3e4e71b45add34c60',
     dataType: 'TEXT',
@@ -498,7 +500,6 @@ export const IMAGE_FIELD_MOCK: DotCMSContentTypeField = {
     fixed: false,
     forceIncludeInApi: false,
     iDate: 1726517012000,
-    id: 'fec3e11696cf9b0f99139c160a598e02',
     indexed: false,
     listed: false,
     modDate: 1726517012000,
@@ -513,6 +514,7 @@ export const IMAGE_FIELD_MOCK: DotCMSContentTypeField = {
 };
 
 export const FILE_FIELD_MOCK: DotCMSContentTypeField = {
+    id: 'f90afb1384e04507ba03e8701f7e4000',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableFileField',
     contentTypeId: 'a8f941d835e4b4f3e4e71b45add34c60',
     dataType: 'TEXT',
@@ -522,7 +524,6 @@ export const FILE_FIELD_MOCK: DotCMSContentTypeField = {
     fixed: false,
     forceIncludeInApi: false,
     iDate: 1726507692000,
-    id: 'f90afb1384e04507ba03e8701f7e4000',
     indexed: false,
     listed: false,
     modDate: 1726517016000,
@@ -537,6 +538,7 @@ export const FILE_FIELD_MOCK: DotCMSContentTypeField = {
 };
 
 export const CUSTOM_FIELD_MOCK: DotCMSContentTypeField = {
+    id: '64d5c84f04df900c79a94e087c6fed05',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableCustomField',
     contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
     dataType: 'LONG_TEXT',
@@ -545,7 +547,6 @@ export const CUSTOM_FIELD_MOCK: DotCMSContentTypeField = {
     fieldVariables: [],
     fixed: false,
     iDate: 1700516848000,
-    id: '64d5c84f04df900c79a94e087c6fed05',
     indexed: false,
     listed: false,
     modDate: 1700622670000,
@@ -561,6 +562,7 @@ export const CUSTOM_FIELD_MOCK: DotCMSContentTypeField = {
 };
 
 export const JSON_FIELD_MOCK: DotCMSContentTypeField = {
+    id: '96909fa20a00497cd3b766b52edac0ec',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableJSONField',
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
     dataType: 'TEXT',
@@ -570,7 +572,6 @@ export const JSON_FIELD_MOCK: DotCMSContentTypeField = {
     fixed: false,
     hint: 'A hint text',
     iDate: 1698291913000,
-    id: '96909fa20a00497cd3b766b52edac0ec',
     indexed: false,
     listed: false,
     modDate: 1698291913000,
@@ -585,6 +586,7 @@ export const JSON_FIELD_MOCK: DotCMSContentTypeField = {
 };
 
 export const KEY_VALUE_MOCK: DotCMSContentTypeField = {
+    id: '96909fa20a00497cd3b766b52edac0ec',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableJSONField',
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
     dataType: 'TEXT',
@@ -594,7 +596,6 @@ export const KEY_VALUE_MOCK: DotCMSContentTypeField = {
     fixed: false,
     hint: 'A hint text',
     iDate: 1698291913000,
-    id: '96909fa20a00497cd3b766b52edac0ec',
     indexed: false,
     listed: false,
     modDate: 1698291913000,
@@ -609,6 +610,7 @@ export const KEY_VALUE_MOCK: DotCMSContentTypeField = {
 };
 
 export const HOST_FOLDER_TEXT_MOCK = {
+    id: 'b7c41ffd6b6bc1250f2fc85a3637471b',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableHostFolderField',
     contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
     dataType: 'SYSTEM',
@@ -619,7 +621,6 @@ export const HOST_FOLDER_TEXT_MOCK = {
     hint: 'A hint text',
     forceIncludeInApi: false,
     iDate: 1717083750000,
-    id: 'b7c41ffd6b6bc1250f2fc85a3637471b',
     indexed: true,
     listed: false,
     modDate: 1717088310000,
@@ -633,6 +634,7 @@ export const HOST_FOLDER_TEXT_MOCK = {
 };
 
 export const CATEGORY_MOCK: DotCMSContentTypeField = {
+    id: '96909fa20a00497cd3b766b52edac0ec',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableWYSIWYGField',
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
     dataType: 'TEXT',
@@ -642,7 +644,6 @@ export const CATEGORY_MOCK: DotCMSContentTypeField = {
     fixed: false,
     hint: 'A hint text',
     iDate: 1698291913000,
-    id: '96909fa20a00497cd3b766b52edac0ec',
     indexed: false,
     listed: false,
     modDate: 1698291913000,
@@ -657,6 +658,7 @@ export const CATEGORY_MOCK: DotCMSContentTypeField = {
 };
 
 export const CONSTANT_FIELD_MOCK: DotCMSContentTypeField = {
+    id: '666817fcecef5c10cb520c1866baa411',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableConstantField',
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
     dataType: 'SYSTEM',
@@ -667,7 +669,6 @@ export const CONSTANT_FIELD_MOCK: DotCMSContentTypeField = {
     forceIncludeInApi: false,
     hint: 'this is a hint',
     iDate: 1725491385000,
-    id: '666817fcecef5c10cb520c1866baa411',
     indexed: false,
     listed: false,
     modDate: 1725491385000,
@@ -739,52 +740,52 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
 
 export const BINARY_FIELD_CONTENTLET: DotCMSContentlet = {
+    archived: false,
+    baseType: 'CONTENT',
     binaryField:
         '/dA/39de8193694d96c2a6bab783ba9c85b5/binaryField/Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png',
-    publishDate: '2023-11-07 16:49:24.787',
-    inode: 'd135b73a-8c8f-42ce-bd4e-deb3c067cedd',
-    BinaryContentAsset: '39de8193694d96c2a6bab783ba9c85b5/binaryField',
-    host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-    locked: false,
-    stInode: 'd1901a41d38b6686dd5ed8f910346d7a',
-    contentType: 'Binary',
-    BinaryMetaData: {
-        modDate: 1699375764242,
-        sha256: '7b4e1c307518ea00e503469e690e4abe42fe1b13aef43cbcbf6eafd9aa532057',
-        length: 136168,
-        title: 'Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png',
-        version: 20220201,
-        isImage: true,
-        fileSize: 136168,
-        name: 'Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png',
-        width: 645,
-        contentType: 'image/png',
-        height: 547
-    },
-    identifier: '39de8193694d96c2a6bab783ba9c85b5',
-    folder: 'SYSTEM_FOLDER',
-    hasTitleImage: true,
-    sortOrder: 0,
-    hostName: 'demo.dotcms.com',
-    modDate: '2023-11-07 16:49:24.787',
-    title: '39de8193694d96c2a6bab783ba9c85b5',
-    baseType: 'CONTENT',
-    archived: false,
-    working: true,
-    live: true,
-    owner: 'dotcms.org.1',
-    languageId: 1,
-    url: '/content.d135b73a-8c8f-42ce-bd4e-deb3c067cedd',
-    titleImage: 'binaryField',
-    modUserName: 'Admin User',
-    hasLiveVersion: true,
-    modUser: 'dotcms.org.1',
     binaryFieldVersion:
         '/dA/d135b73a-8c8f-42ce-bd4e-deb3c067cedd/binaryField/Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png',
-    __icon__: 'contentIcon',
+    BinaryContentAsset: '39de8193694d96c2a6bab783ba9c85b5/binaryField',
+    BinaryMetaData: {
+        contentType: 'image/png',
+        fileSize: 136168,
+        height: 547,
+        isImage: true,
+        length: 136168,
+        modDate: 1699375764242,
+        name: 'Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png',
+        sha256: '7b4e1c307518ea00e503469e690e4abe42fe1b13aef43cbcbf6eafd9aa532057',
+        title: 'Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png',
+        version: 20220201,
+        width: 645
+    },
+    contentType: 'Binary',
     contentTypeIcon: 'event_note',
+    folder: 'SYSTEM_FOLDER',
+    hasLiveVersion: true,
+    hasTitleImage: true,
+    host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+    hostName: 'demo.dotcms.com',
+    __icon__: 'contentIcon',
+    identifier: '39de8193694d96c2a6bab783ba9c85b5',
+    inode: 'd135b73a-8c8f-42ce-bd4e-deb3c067cedd',
+    languageId: 1,
+    live: true,
+    locked: false,
+    modDate: '2023-11-07 16:49:24.787',
+    modUser: 'dotcms.org.1',
+    modUserName: 'Admin User',
+    owner: 'dotcms.org.1',
+    publishDate: '2023-11-07 16:49:24.787',
+    sortOrder: 0,
+    stInode: 'd1901a41d38b6686dd5ed8f910346d7a',
+    title: '39de8193694d96c2a6bab783ba9c85b5',
+    titleImage: 'binaryField',
+    url: '/content.d135b73a-8c8f-42ce-bd4e-deb3c067cedd',
+    value: '/dA/39de8193694d96c2a6bab783ba9c85b5/binaryField/Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png',
     variant: 'DEFAULT',
-    value: '/dA/39de8193694d96c2a6bab783ba9c85b5/binaryField/Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png'
+    working: true
 };
 
 /* HELPER FUNCTIONS */
@@ -844,6 +845,7 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
             fieldTypeLabel: 'Row',
             fieldVariables: [],
             fixed: false,
+            forceIncludeInApi: false,
             iDate: 1697051073000,
             id: 'a31ea895f80eb0a3754e4a2292e09a52',
             indexed: false,
@@ -867,6 +869,7 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
                     fieldTypeLabel: 'Column',
                     fieldVariables: [],
                     fixed: false,
+                    forceIncludeInApi: false,
                     iDate: 1697051073000,
                     id: 'd4c32b4b9fb5b11c58c245d4a02bef47',
                     indexed: false,
@@ -890,6 +893,7 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
                         fieldTypeLabel: 'Text',
                         fieldVariables: [],
                         fixed: false,
+                        forceIncludeInApi: false,
                         hint: 'A hint Text',
                         iDate: 1697051093000,
                         id: '1d1505a4569681b923769acb785fd093',
@@ -912,6 +916,7 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
                         fieldTypeLabel: 'Text',
                         fieldVariables: [],
                         fixed: false,
+                        forceIncludeInApi: false,
                         iDate: 1697051107000,
                         id: 'fc776c45044f2d043f5e98eaae36c9ff',
                         indexed: false,
@@ -938,6 +943,7 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
                     fieldTypeLabel: 'Column',
                     fieldVariables: [],
                     fixed: false,
+                    forceIncludeInApi: false,
                     iDate: 1697051077000,
                     id: '848fc78a11e7290efad66eb39333ae2b',
                     indexed: false,
@@ -960,6 +966,7 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
                         fieldTypeLabel: 'Text',
                         fieldVariables: [],
                         fixed: false,
+                        forceIncludeInApi: false,
                         hint: 'A hint text2',
                         iDate: 1697051118000,
                         id: '1f6765de8d4ad069ff308bfca56b9255',
@@ -991,6 +998,7 @@ export const TAB_SINGLE_ROW_MOCK: DotCMSContentTypeLayoutRow = {
         fieldTypeLabel: 'Row',
         fieldVariables: [],
         fixed: false,
+        forceIncludeInApi: false,
         iDate: 1697051073000,
         id: 'a31ea895f80eb0a3754e4a2292e09a52',
         indexed: false,
@@ -1016,6 +1024,7 @@ export const TAB_DIVIDER_MOCK: DotCMSContentTypeLayoutRow = {
         fieldTypeLabel: 'Tab_divider',
         fieldVariables: [],
         fixed: false,
+        forceIncludeInApi: false,
         iDate: 1697051073000,
         id: 'a31ea895f80eb0a3754e4a2292e09a52',
         indexed: false,
@@ -1052,8 +1061,7 @@ export const LAYOUT_FIELDS_VALUES_MOCK = {
 const metadata = {};
 metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = false;
 
-export const CONTENT_FORM_DATA_MOCK: EditContentPayload = {
-    actions: [],
+export const CONTENT_FORM_DATA_MOCK: DotFormData = {
     contentType: {
         metadata,
         layout: LAYOUT_MOCK,
@@ -1062,42 +1070,48 @@ export const CONTENT_FORM_DATA_MOCK: EditContentPayload = {
     } as unknown as DotCMSContentType,
     contentlet: {
         // This contentlet is some random mock, if you need you can change the properties
-        date: MOCK_DATE, // To add the value to the date field, defaultValue is string and I don't think we should change the whole type just for this
-        publishDate: '2023-11-07 16:49:24.787',
-        inode: 'd135b73a-8c8f-42ce-bd4e-deb3c067cedd',
-        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-        locked: false,
-        stInode: 'd1901a41d38b6686dd5ed8f910346d7a',
-        contentType: 'Binary',
-        identifier: '39de8193694d96c2a6bab783ba9c85b5',
-        folder: 'SYSTEM_FOLDER',
-        hasTitleImage: true,
-        sortOrder: 0,
-        hostName: 'demo.dotcms.com',
-        modDate: '2023-11-07 16:49:24.787',
-        title: '39de8193694d96c2a6bab783ba9c85b5',
-        baseType: 'CONTENT',
         archived: false,
-        working: true,
-        live: true,
-        owner: 'dotcms.org.1',
+        baseType: 'CONTENT',
+        binaryFieldVersion:
+            '/dA/d135b73a-8c8f-42ce-bd4e-deb3c067cedd/binaryField/Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png',
+        contentType: 'Binary',
+        contentTypeIcon: 'event_note',
+        date: MOCK_DATE, // To add the value to the date field, defaultValue is string and I don't think we should change the whole type just for this
+        folder: 'SYSTEM_FOLDER',
+        hasLiveVersion: true,
+        hasTitleImage: true,
+        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        hostName: 'demo.dotcms.com',
+        __icon__: 'contentIcon',
+        identifier: '39de8193694d96c2a6bab783ba9c85b5',
+        inode: 'd135b73a-8c8f-42ce-bd4e-deb3c067cedd',
         languageId: 1,
+        live: true,
+        locked: false,
+        modDate: '2023-11-07 16:49:24.787',
+        modUser: 'dotcms.org.1',
+        stInode: 'd1901a41d38b6686dd5ed8f910346d7a',
+        sortOrder: 0,
+        title: '39de8193694d96c2a6bab783ba9c85b5',
+
+        working: true,
+        owner: 'dotcms.org.1',
+
         url: '/content.d135b73a-8c8f-42ce-bd4e-deb3c067cedd',
         titleImage: 'binaryField',
         modUserName: 'Admin User',
-        hasLiveVersion: true,
-        modUser: 'dotcms.org.1',
-        binaryFieldVersion:
-            '/dA/d135b73a-8c8f-42ce-bd4e-deb3c067cedd/binaryField/Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png',
-        __icon__: 'contentIcon',
-        contentTypeIcon: 'event_note',
+
         variant: 'DEFAULT'
     },
-    loading: false,
-    layout: {
-        showSidebar: true
-    }
+    tabs: []
 };
+
+export const TABS_MOCK = [
+    {
+        title: 'Content',
+        layout: CONTENT_FORM_DATA_MOCK.contentType.layout
+    }
+];
 
 /* CONTENT TYPE MOCKS */
 
@@ -1265,32 +1279,31 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             system: true
         }
     ],
-    nEntries: 0
+    nEntries: 0,
+    metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
 };
 
-export const MockResizeObserver = class {
-    constructor() {
-        //
-    }
-
+/**
+ * Mock for ResizeObserver
+ */
+export class MockResizeObserver {
     observe() {
         //
     }
-
     unobserve() {
         //
     }
-
     disconnect() {
         //
     }
-};
+}
 
 export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
     {
         key: 'demo.dotcms.com',
         label: 'demo.dotcms.com',
         data: {
+            identifier: 'demo.dotcms.com',
             hostname: 'demo.dotcms.com',
             path: '',
             type: 'site'
@@ -1302,6 +1315,7 @@ export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
         key: 'nico.dotcms.com',
         label: 'nico.dotcms.com',
         data: {
+            identifier: 'nico.dotcms.com',
             hostname: 'nico.dotcms.com',
             path: '',
             type: 'site'
@@ -1313,6 +1327,7 @@ export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
         key: 'System Host',
         label: 'System Host',
         data: {
+            identifier: 'System Host',
             hostname: 'System Host',
             path: '',
             type: 'site'
@@ -1327,6 +1342,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
         key: 'demo.dotcms.com',
         label: 'demo.dotcms.com',
         data: {
+            identifier: 'demo.dotcms.com',
             hostname: 'demo.dotcms.com',
             path: '',
             type: 'site'
@@ -1338,6 +1354,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
                 key: 'demo.dotcms.comlevel1',
                 label: 'demo.dotcms.com/level1/',
                 data: {
+                    identifier: 'demo.dotcms.comlevel1',
                     hostname: 'demo.dotcms.com',
                     path: '/level1/',
                     type: 'folder'
@@ -1349,6 +1366,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
                         key: 'demo.dotcms.comlevel1child1',
                         label: 'demo.dotcms.com/level1/child1/',
                         data: {
+                            identifier: 'demo.dotcms.comlevel1child1',
                             hostname: 'demo.dotcms.com',
                             path: '/level1/child1/',
                             type: 'folder'
@@ -1362,6 +1380,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
                 key: 'demo.dotcms.comlevel2',
                 label: 'demo.dotcms.com/level2/',
                 data: {
+                    identifier: 'demo.dotcms.comlevel2',
                     hostname: 'demo.dotcms.com',
                     path: '/level2/',
                     type: 'folder'
@@ -1375,6 +1394,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
         key: 'nico.dotcms.com',
         label: 'nico.dotcms.com',
         data: {
+            identifier: 'nico.dotcms.com',
             hostname: 'nico.dotcms.com',
             path: '',
             type: 'site'
@@ -1537,4 +1557,71 @@ export const TEMP_FILE_MOCK: DotCMSTempFile = {
     referenceUrl: '/dA/temp_1e8021f973/tmp/enterprise-angular.pdf',
     thumbnailUrl:
         '/contentAsset/image/temp_1e8021f973/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/enterprise-angular.pdf'
+};
+
+/**
+ * Mock for existing workflow
+ */
+export const EXISTING_WORKFLOW_MOCK: DotCMSWorkflowStatus = {
+    step: {
+        creationDate: 1730740464988,
+        enableEscalation: false,
+        escalationAction: null,
+        escalationTime: 0,
+        id: 'd95caaa6-1ece-42b2-8663-fb01e804a149',
+        myOrder: 1,
+        name: 'QA',
+        resolved: false,
+        schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'
+    },
+    scheme: {
+        archived: false,
+        creationDate: new Date(1730734538827),
+        defaultScheme: false,
+        description: '',
+        entryActionId: null,
+        id: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+        mandatory: false,
+        modDate: new Date(1730233225948),
+        name: 'Blogs',
+        system: false,
+        variableName: 'Blogs'
+    },
+    task: {
+        assignedTo: 'Admin User',
+        belongsTo: null,
+        createdBy: 'e7d4e34e-5127-45fc-8123-d48b62d510e3',
+        creationDate: 1562955598469,
+        description: '',
+        dueDate: null,
+        id: 'b6bca0fe-1b79-4071-84e9-b5c222fe4aef',
+        inode: 'b6bca0fe-1b79-4071-84e9-b5c222fe4aef',
+        languageId: 1,
+        modDate: 1730740522231,
+        new: false,
+        status: 'd95caaa6-1ece-42b2-8663-fb01e804a149',
+        title: '5 Snow Sports to Try This Winter',
+        webasset: '0edfee78-2a75-4f3d-bf20-813aae15d4e9'
+    }
+};
+
+/**
+ * Mock for new workflow
+ */
+export const NEW_WORKFLOW_MOCK: DotCMSWorkflowStatus = {
+    scheme: {
+        archived: false,
+        creationDate: new Date(1730822086263),
+        defaultScheme: false,
+        description: '',
+        entryActionId: null,
+        id: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+        mandatory: false,
+        modDate: new Date(1730233225948),
+        name: 'Blogs',
+        system: false,
+        variableName: 'Blogs'
+    },
+    step: null,
+    task: null
 };

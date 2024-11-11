@@ -29,7 +29,6 @@ export * from './lib/components/add-to-bundle/dot-add-to-bundle.component';
 export * from './lib/components/dot-menu/dot-menu.component';
 export * from './lib/components/dot-action-menu-button/dot-action-menu-button.component';
 export * from './lib/components/dot-ai-image-prompt/ai-image-prompt.component';
-export * from './lib/components/dot-ai-image-prompt/ai-image-prompt.store';
 export * from './lib/components/dot-collapse-breadcrumb/dot-collapse-breadcrumb.component';
 
 // Directives
@@ -65,6 +64,7 @@ export * from './lib/pipes/dot-diff/dot-diff.pipe';
 export * from './lib/resolvers/dot-portlet-have-license.resolver';
 export * from './lib/resolvers/dot-enterprise-license-resolver.service';
 export * from './lib/resolvers/dot-push-publish-enviroments-resolver.service';
+export * from './lib/resolvers/dot-analytics-health-check.resolver.service';
 
 // Validators
 export * from './lib/validators/dotValidators';

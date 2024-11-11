@@ -1,8 +1,8 @@
 package com.dotcms.ai.client;
 
 import com.dotcms.ai.domain.AIResponse;
+import com.dotcms.ai.domain.AIResponseData;
 
-import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Optional;
@@ -73,13 +73,11 @@ public class AIProxiedClient {
      * @return the AI response
      */
     public <T extends Serializable> AIResponse sendToAI(final AIRequest<T> request, final OutputStream output) {
-        final OutputStream finalOutput = Optional.ofNullable(output).orElseGet(ByteArrayOutputStream::new);
-
-        strategy.applyStrategy(client, responseEvaluator, request, finalOutput);
+        final AIResponseData responseData = strategy.applyStrategy(client, responseEvaluator, request, output);
 
         return Optional.ofNullable(output)
                 .map(out -> AIResponse.EMPTY)
-                .orElseGet(() -> AIResponse.builder().withResponse(finalOutput.toString()).build());
+                .orElseGet(() -> AIResponse.builder().withResponse(responseData.getOutput().toString()).build());
     }
 
 }
