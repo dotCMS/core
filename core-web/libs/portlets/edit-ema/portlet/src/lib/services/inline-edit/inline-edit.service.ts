@@ -9,7 +9,6 @@ declare global {
     }
 }
 
-// TODO: Should this be moved to a separate file?
 // And added the way we add the `sdk-editor-vtl.js` file.
 export const INLINE_CONTENT_STYLES = `
     [data-inode][data-field-name][data-mode] {
@@ -78,7 +77,6 @@ export class InlineEditService {
 
     /**
      * Injects the inline edit functionality into the specified iframe.
-     * TODO: Move the `tinymce.min.js` injections to the `sdk-editor-vtl.js` file.
      *
      * @param {ElementRef<HTMLIFrameElement>} iframe - The ElementRef of the HTMLIFrameElement to inject the inline edit into.
      * @memberof InlineEditService

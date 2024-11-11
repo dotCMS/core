@@ -14,7 +14,7 @@ export const listenBlockEditorInlineEvent = () => {
         editBlockEditorNodes.forEach((node) => {
             node.classList.add('dotcms__inline-edit-field');
             node.addEventListener('click', () => {
-                const payload = Object.assign({}, (node as HTMLElement).dataset);
+                const payload = { ...(node as HTMLElement).dataset };
                 window.parent.postMessage(
                     {
                         payload,
