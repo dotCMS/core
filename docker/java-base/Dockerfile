@@ -22,7 +22,7 @@ RUN apt update && \
     wget -O - https://get.sdkman.io | bash && \
     bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install java ${SDKMAN_JAVA_VERSION} && sdk flush archives" && \
     apt update && \
-    apt install -y --no-install-recommends libjemalloc2 postgresql-common && \
+    apt install -y --no-install-recommends postgresql-common && \
     /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
     apt install -y --no-install-recommends postgresql-client-16 && \
     apt purge -y postgresql-common gnupg && \
