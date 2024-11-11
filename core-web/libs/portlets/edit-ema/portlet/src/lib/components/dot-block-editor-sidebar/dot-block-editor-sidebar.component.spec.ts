@@ -74,7 +74,7 @@ const messageServiceMock = new MockDotMessageService({
 const EVENT_DATA = {
     fieldName: 'testName',
     contentType: 'Blog',
-    language: 2,
+    language: '2',
     inode: 'testInode',
     blockEditorContent: '{"field":"field value"}'
 };
@@ -135,7 +135,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         const blockEditor = spectator.query(DotBlockEditorComponent);
 
         expect(blockEditor.field).toEqual(BLOCK_EDITOR_FIELD);
-        expect(blockEditor.languageId).toEqual(EVENT_DATA.language);
+        expect(blockEditor.languageId).toBe(parseInt(EVENT_DATA.language));
         expect(blockEditor.value).toEqual(JSON.parse(EVENT_DATA.blockEditorContent));
         expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Blog');
     });
