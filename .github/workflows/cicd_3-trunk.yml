@@ -97,6 +97,8 @@ jobs:
     needs: [ initialize, test ]
     if: always() && !failure() && !cancelled() && vars.DISABLE_SEMGREP != 'true'
     uses: ./.github/workflows/cicd_comp_semgrep-phase.yml
+    with:
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
     secrets:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
