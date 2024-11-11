@@ -713,17 +713,29 @@ describe('utils functions', () => {
 
     describe('addMissingParamsToReorderMenuURL', () => {
         it('should add the missing params', () => {
-            const url = "some-url?language_id=1";
-            const result = addMissingParamsToReorderMenuURL({url, pagePath: '123', hostId: '456'});
+            const url = 'some-url?language_id=1';
+            const result = addMissingParamsToReorderMenuURL({
+                url,
+                pagePath: '123',
+                hostId: '456'
+            });
 
-            expect(result).toEqual("http://localhost/some-url?language_id=1&pagePath=123&hostId=456");
-        })
+            expect(result).toEqual(
+                'http://localhost/some-url?language_id=1&pagePath=123&hostId=456'
+            );
+        });
 
         it('should not add the missing params', () => {
-            const url = "some-url?language_id=1&pagePath=111&hostId=333";
-            const result = addMissingParamsToReorderMenuURL({url, pagePath: '123', hostId: '456'});
+            const url = 'some-url?language_id=1&pagePath=111&hostId=333';
+            const result = addMissingParamsToReorderMenuURL({
+                url,
+                pagePath: '123',
+                hostId: '456'
+            });
 
-            expect(result).toEqual("http://localhost/some-url?language_id=1&pagePath=111&hostId=333");
-        })
-    })
+            expect(result).toEqual(
+                'http://localhost/some-url?language_id=1&pagePath=111&hostId=333'
+            );
+        });
+    });
 });
