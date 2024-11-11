@@ -631,9 +631,16 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
         }
 
         // Retrieve the language based on the provided ISO code or ID
-        final Language language = APILocator.getLanguageAPI().getLanguage(languageIsoOrId);
-        if (language != null && language.getId() > 0) {
-            return language;
+        Language foundLanguage;
+        if (!languageIsoOrId.contains("-")) {
+            foundLanguage = APILocator.getLanguageAPI().getLanguage(languageIsoOrId);
+        } else {
+            final String[] codes = languageIsoOrId.split("[_|-]");
+            foundLanguage = APILocator.getLanguageAPI().getLanguage(codes[0], codes[1]);
+        }
+
+        if (foundLanguage != null && foundLanguage.getId() > 0) {
+            return foundLanguage;
         }
 
         final var errorMessage = String.format(
