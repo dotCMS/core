@@ -64,6 +64,7 @@ export * from './lib/pipes/dot-diff/dot-diff.pipe';
 export * from './lib/resolvers/dot-portlet-have-license.resolver';
 export * from './lib/resolvers/dot-enterprise-license-resolver.service';
 export * from './lib/resolvers/dot-push-publish-enviroments-resolver.service';
+export * from './lib/resolvers/dot-analytics-health-check.resolver.service';
 
 // Validators
 export * from './lib/validators/dotValidators';

@@ -1,4 +1,4 @@
-import { INPUT_TYPES } from './models';
+import { INPUT_TYPES } from '../../models/dot-edit-content-file.model';
 
 type Actions = {
     allowExistingFile: boolean;
