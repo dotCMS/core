@@ -16,7 +16,7 @@ import {
     compareUrlPaths,
     createFullURL,
     getDragItemData,
-    addMissingParamsToReorderMenuURL
+    createReorderMenuURL
 } from '.';
 
 import { dotPageContainerStructureMock } from '../shared/mocks';
@@ -711,10 +711,10 @@ describe('utils functions', () => {
         });
     });
 
-    describe('addMissingParamsToReorderMenuURL', () => {
+    describe('createReorderMenuURL', () => {
         it('should add the missing params', () => {
             const url = 'some-url?language_id=1';
-            const result = addMissingParamsToReorderMenuURL({
+            const result = createReorderMenuURL({
                 url,
                 pagePath: '123',
                 hostId: '456'
@@ -727,7 +727,7 @@ describe('utils functions', () => {
 
         it('should not add the missing params', () => {
             const url = 'some-url?language_id=1&pagePath=111&hostId=333';
-            const result = addMissingParamsToReorderMenuURL({
+            const result = createReorderMenuURL({
                 url,
                 pagePath: '123',
                 hostId: '456'

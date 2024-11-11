@@ -520,7 +520,7 @@ export const getDragItemData = ({ type, item }: DOMStringMap) => {
  * @param {string} params.hostId - The host ID to be added as a query parameter if missing.
  * @returns {string} - The updated URL with the missing parameters added.
  */
-export const addMissingParamsToReorderMenuURL = ({
+export const createReorderMenuURL = ({
     url,
     pagePath,
     hostId
