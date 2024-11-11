@@ -188,14 +188,14 @@ export class DotWorkflowActionsFireService {
         const params = new URLSearchParams({});
 
         // It's not best approach but this legacy code
-        if (data['inode']) {
-            params.append('inode', data['inode']);
-            delete data['inode'];
+        if (contentlet['inode']) {
+            params.append('inode', contentlet['inode']);
+            delete contentlet['inode'];
         }
 
-        if (data['indexPolicy']) {
-            params.append('indexPolicy', data['indexPolicy']);
-            delete data['indexPolicy'];
+        if (contentlet['indexPolicy']) {
+            params.append('indexPolicy', contentlet['indexPolicy']);
+            delete contentlet['indexPolicy'];
         }
 
         if (params.toString()) {
