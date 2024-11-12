@@ -803,6 +803,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.uveStore.reload();
                 this.dialog.resetDialog();
 
+                // This is a temporary solution to "reload" the content by reloading the window
+                // we should change this with a new SDK reload strategy
                 this.contentWindow?.postMessage(
                     {
                         name: NOTIFY_CLIENT.UVE_RELOAD_PAGE
