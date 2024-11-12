@@ -1,41 +1,16 @@
 package com.dotcms.contenttype.test;
 
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.ImageField;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.CategoryDataGen;
-import com.dotcms.datagen.CompanyDataGen;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.RoleDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.datagen.TestWorkflowUtils;
-import com.dotcms.datagen.UserDataGen;
-import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -47,13 +22,9 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -76,22 +47,18 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
@@ -107,17 +74,24 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import org.glassfish.jersey.internal.util.Base64;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 
 @ApplicationScoped
 @RunWith(DataProviderWeldRunner.class)
@@ -1610,5 +1584,110 @@ public class ContentResourceTest extends IntegrationTestBase {
         final JSONObject grandChildJSONContentlet = (JSONObject) jsonArrayChildRelationships.get(0);
         assertEquals(grandChild.getIdentifier(), grandChildJSONContentlet.get(IDENTIFIER));
         assertEquals("grandChild", grandChildJSONContentlet.get("title"));
+    }
+
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: The method is invoked for a widget
+     * Expected result: The response should override the URL with the one provided in the contentlet
+     */
+    @Test
+    public void testGetContentShouldReturnUrlOverridden() throws Exception {
+
+        final ContentType type = getWidgetLikeContentTypeUrlField("WidgetType", null, null);
+
+
+        ContentletDataGen contentletDataGen = new ContentletDataGen(type.id())
+                .languageId(1L)
+                .host(APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
+                .setProperty("widgetTitle", "titleContent")
+                .setProperty("code", "Widget code")
+                .setProperty("url", "somevalue");
+
+
+        final Contentlet contentlet = contentletDataGen.nextPersisted();
+
+        // Build request and response
+        final HttpServletRequest request = createHttpRequest(null, null);
+        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+
+        // Send request
+        final ContentResource contentResource = new ContentResource();
+
+
+        Response endpointResponse = contentResource.getContent(request, response,
+                "/query/+identifier:" + contentlet.getIdentifier() + "/type/xml");
+
+        // Verify XML result
+        final DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        final DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+
+        final InputSource inputSource = new InputSource();
+        inputSource.setCharacterStream(
+                new StringReader(endpointResponse.getEntity().toString().replaceAll("\\n", "")));
+        final Document doc = dBuilder.parse(inputSource);
+        doc.getDocumentElement().normalize();
+
+        final Element contentletFromXML = (Element) doc.getFirstChild().getFirstChild();
+
+        assertEquals("somevalue", contentletFromXML.getElementsByTagName("url").item(0).getTextContent());
+
+    }
+
+    @WrapInTransaction
+    public static ContentType getWidgetLikeContentTypeUrlField(final String contentTypeName,
+                                                       final Set<String> workflowIds, final Supplier<String> widgetCode) {
+
+        ContentType simpleWidgetContentType = null;
+        try {
+            try {
+                simpleWidgetContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find(contentTypeName);
+            } catch (NotFoundInDbException e) {
+                //Do nothing...
+            }
+            if (simpleWidgetContentType == null) {
+
+                List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+                fields.add(
+                        new FieldDataGen()
+                                .name("Code")
+                                .velocityVarName("code")
+                                .required(true)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("url")
+                                .velocityVarName("url")
+                                .required(true)
+                                .next()
+                );
+                if(null != widgetCode){ //If the widgetCode is not null, then add the field
+                    fields.add(
+                            new FieldDataGen()
+                                    .name("WidgetCode")
+                                    .velocityVarName("widgetCode")
+                                    .type(ConstantField.class)
+                                    .required(false)
+                                    .values(widgetCode.get())
+                                    .next()
+                    );
+                }
+
+                simpleWidgetContentType = new ContentTypeDataGen()
+                        .baseContentType(BaseContentType.WIDGET)
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .fields(fields)
+                        .workflowId(workflowIds)
+                        .nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return simpleWidgetContentType;
     }
 }
