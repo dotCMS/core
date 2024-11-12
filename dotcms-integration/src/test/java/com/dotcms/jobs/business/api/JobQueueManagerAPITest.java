@@ -1264,7 +1264,8 @@ public class JobQueueManagerAPITest {
             // Configure JobQueue
             when(mockJobQueue.getJob(jobId)).thenReturn(mockJob);
             when(mockJobQueue.nextJob()).thenReturn(mockJob).thenReturn(null);
-            when(mockJobQueue.hasJobBeenInState(any(), eq(JobState.CANCELLING))).thenReturn(true);
+            when(mockJobQueue.hasJobBeenInState(any(), eq(JobState.CANCEL_REQUESTED),
+                    eq(JobState.CANCELLING))).thenReturn(true);
             when(mockJobQueue.createJob(anyString(), anyMap())).thenReturn(jobId);
 
             // List to capture job state updates
