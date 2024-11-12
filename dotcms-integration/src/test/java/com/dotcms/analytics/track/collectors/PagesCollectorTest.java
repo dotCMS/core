@@ -6,36 +6,28 @@ import com.dotcms.LicenseTestUtil;
 import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.visitor.filter.characteristics.CharacterWebAPI;
-import com.dotcms.visitor.filter.characteristics.GDPRCharacter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
-import io.vavr.API;
-import javax.enterprise.context.ApplicationScoped;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -91,7 +83,7 @@ public class PagesCollectorTest extends IntegrationTestBase {
 
         final Map<String, Object> expectedDataMap = Map.of(
                 "event_type", EventType.PAGE_REQUEST.getType(),
-                "host", testSite.getIdentifier(),
+                "host", testSite.getHostname(),
                 "language", APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
                 "url", TEST_PAGE_URL,
                 "object", Map.of(
@@ -157,7 +149,7 @@ public class PagesCollectorTest extends IntegrationTestBase {
 
         final Map<String, Object> expectedDataMap = Map.of(
                 "event_type", EventType.URL_MAP.getType(),
-                "host", testSite.getIdentifier(),
+                "host", testSite.getHostname(),
                 "language", APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
                 "url", TEST_URL_MAP_DETAIL_PAGE_URL,
                 "object", Map.of(

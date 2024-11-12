@@ -63,7 +63,7 @@ public class FilesCollector implements Collector {
 
         collectorPayloadBean.put("object",  fileObject);
         collectorPayloadBean.put("url", uri);
-        collectorPayloadBean.put("host", host);
+        collectorPayloadBean.put("host", Objects.nonNull(site)?site.getHostname():host);
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("site", null != site?site.getIdentifier():"unknown");
         collectorPayloadBean.put("event_type", EventType.FILE_REQUEST.getType());
@@ -71,7 +71,7 @@ public class FilesCollector implements Collector {
         return collectorPayloadBean;
     }
 
-    private Optional<Contentlet> getFileAsset(String uri, Host host, Long languageId) {
+    protected Optional<Contentlet> getFileAsset(String uri, Host host, Long languageId) {
         try {
             if (uri.endsWith(".dotsass")) {
                 final String actualUri = uri.substring(0, uri.lastIndexOf('.')) + ".scss";
