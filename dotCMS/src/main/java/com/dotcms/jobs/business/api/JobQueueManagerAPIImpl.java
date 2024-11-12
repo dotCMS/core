@@ -860,7 +860,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         final float progress = getJobProgress(job);
 
         try {
-            if (jobQueue.hasJobBeenInState(job.id(), JobState.CANCELLING)) {
+            if (jobQueue.hasJobBeenInState(job.id(), JobState.CANCEL_REQUESTED, JobState.CANCELLING)) {
                 Job canceledJob = job.markAsCanceled(jobResult).withProgress(progress);
                 updateJobStatus(canceledJob);
                 eventProducer.getEvent(JobCanceledEvent.class).fire(
