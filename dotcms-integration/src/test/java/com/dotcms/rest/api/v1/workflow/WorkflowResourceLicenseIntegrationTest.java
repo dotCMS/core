@@ -30,6 +30,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.LocalTransaction;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -614,17 +615,16 @@ public class WorkflowResourceLicenseIntegrationTest {
     public void Find_Available_Default_Actions_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();// Uses the System Workflow by default
-        final Response response = nonLicenseWorkflowResource.findAvailableDefaultActionsByContentType(request,  new EmptyHttpResponse(), contentType.id());
-        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
-        List<WorkflowDefaultActionView> actions = List.class.cast(ev.getEntity());
+        final ResponseEntityDefaultWorkflowActionsView response = nonLicenseWorkflowResource.findAvailableDefaultActionsByContentType(request,  new EmptyHttpResponse(), contentType.id());
+        assertNotNull(response);
+        List<WorkflowDefaultActionView> actions = response.getEntity();
         for(WorkflowDefaultActionView av:actions){
           assertTrue(av.getScheme().isSystem());
         }
     }
 
     @SuppressWarnings("unchecked")
-    @Test
+    @Test(expected = DotSecurityException.class)
     public void Find_Available_Default_Actions_No_Read_Permission_Invalid_License()
             throws Exception {
 
@@ -637,10 +637,8 @@ public class WorkflowResourceLicenseIntegrationTest {
                     BaseContentType.CONTENT, editPermission, role.getId());
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
-            final Response findResponse = nonLicenseWorkflowResource
+            final ResponseEntityDefaultWorkflowActionsView findResponse = nonLicenseWorkflowResource
                     .findAvailableDefaultActionsByContentType(request,  new EmptyHttpResponse(), contentType.id());
-            assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
-            assertEquals(ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION, findResponse.getHeaderString("access-control"));
         } finally {
             if(contentType != null){
                 APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
