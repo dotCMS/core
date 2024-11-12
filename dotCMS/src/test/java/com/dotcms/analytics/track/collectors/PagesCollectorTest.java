@@ -2,7 +2,9 @@ package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.analytics.track.matchers.RequestMatcher;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -26,7 +28,7 @@ public class PagesCollectorTest {
     @Test
     public void test_collect_easy_path() throws IOException {
 
-        final PagesCollector pagesCollector = new PagesCollector();
+        final PagesCollector pagesCollector = new PagesCollector(Mockito.mock(HTMLPageAssetAPI.class), Mockito.mock(URLMapAPIImpl.class));
         final Host host = new Host();
         host.setIdentifier("1");
         host.setHostname("www.dotcms.com");

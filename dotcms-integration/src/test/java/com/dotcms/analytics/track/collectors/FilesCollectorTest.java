@@ -70,8 +70,8 @@ public class FilesCollectorTest extends IntegrationTestBase {
                 APILocator.getUserAPI().getAnonymousUser());
 
         final Map<String, Object> expectedDataMap = Map.of(
-                "host", "localhost:8080",
-                "site", testSite.getHostname(),
+                "host", testSite.getHostname(),
+                "site", testSite.getIdentifier(),
                 "language", APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
                 "event_type", EventType.FILE_REQUEST.getType(),
                 "url", testFileAsset.getURI(),

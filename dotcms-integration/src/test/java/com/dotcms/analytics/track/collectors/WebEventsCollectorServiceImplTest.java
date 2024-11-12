@@ -406,7 +406,7 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
                 ".txt","Sample content for my test file", "parent-folder-for-file", testSite);
 
         final Map<String, Object> expectedDataMap = Map.of(
-                "host", "localhost:8080",
+                "host", testSite.getHostname(),
                 "site", testSite.getIdentifier(),
                 "language", APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
                 "event_type", EventType.FILE_REQUEST.getType(),
