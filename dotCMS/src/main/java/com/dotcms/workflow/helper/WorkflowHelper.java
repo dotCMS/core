@@ -1773,7 +1773,7 @@ public class WorkflowHelper {
      * @return List<WorkflowDefaultActionView>
      */
     @CloseDBIfOpened
-    public List<WorkflowDefaultActionView> findAvailableDefaultActionsByContentType(final String contentTypeId, final User user) {
+    public List<WorkflowDefaultActionView> findAvailableDefaultActionsByContentType(final String contentTypeId, final User user) throws NotFoundInDbException {
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
         final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
         final Map<String, WorkflowStep> steps = new HashMap<>();
@@ -1789,7 +1789,12 @@ public class WorkflowHelper {
                 results.add(value);
             }
 
-        } catch (DotDataException | DotSecurityException e) {
+        } catch (NotFoundInDbException e) {
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw e;
+        }
+        catch (DotDataException | DotSecurityException e) {
 
             Logger.error(this, e.getMessage());
             Logger.debug(this, e.getMessage(), e);

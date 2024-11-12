@@ -5217,7 +5217,7 @@ public class WorkflowResource {
                                                                                    "Example ID: `c541abb1-69b3-4bc5-8430-5e09e5239cc8` (Default page content type)\n\n" +
                                                                                    "Example Variable: `htmlpageasset` (Default page content type)",
                                                                            schema = @Schema(type = "string")
-                                                                   ) final String contentTypeId) {
+                                                                   ) final String contentTypeId) throws NotFoundInDbException {
         final InitDataObject initDataObject = this.webResource.init
                 (null, request, response, true, null);
             Logger.debug(this,
