@@ -70,7 +70,15 @@ describe('withFlags', () => {
             expect(store.flags()).toEqual(MOCK_RESPONSE);
         });
     });
+    describe('methods', () => {
+        describe('setFlags', () => {
+            it('should patch state with flags', () => {
+                store.setFlags(MOCK_RESPONSE);
 
+                expect(store.flags()).toEqual(MOCK_RESPONSE);
+            });
+        });
+    });
     describe('computed', () => {
         it('should return $previewMode', () => {
             expect(store.$previewMode()).toEqual(

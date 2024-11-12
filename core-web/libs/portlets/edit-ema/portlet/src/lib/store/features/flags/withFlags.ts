@@ -4,6 +4,7 @@ import {
     type,
     withComputed,
     withHooks,
+    withMethods,
     withState
 } from '@ngrx/signals';
 
@@ -14,7 +15,7 @@ import { take } from 'rxjs/operators';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 
-import { WithFlagsState } from './models';
+import { UVEFlags, WithFlagsState } from './models';
 
 import { UVEState } from '../../models';
 
@@ -36,10 +37,15 @@ export function withFlags(flags: FeaturedFlags[]) {
                 $previewMode: computed(() => {
                     const currentFlags = flags();
 
-                    return currentFlags[FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE];
+                    return Boolean(currentFlags[FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]);
                 })
             };
         }),
+        withMethods((store) => ({
+            setFlags: (flags: UVEFlags) => {
+                patchState(store, { flags: { ...flags } });
+            }
+        })),
         withHooks({
             onInit: (store) => {
                 const propertiesService = inject(DotPropertiesService);
@@ -48,7 +54,7 @@ export function withFlags(flags: FeaturedFlags[]) {
                     .getFeatureFlags(flags)
                     .pipe(take(1))
                     .subscribe((flags) => {
-                        patchState(store, { flags: { ...flags } });
+                        store.setFlags(flags);
                     });
             }
         })

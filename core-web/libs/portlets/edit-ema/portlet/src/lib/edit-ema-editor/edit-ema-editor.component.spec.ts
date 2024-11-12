@@ -36,6 +36,7 @@ import {
     DotLicenseService,
     DotMessageService,
     DotPersonalizeService,
+    DotPropertiesService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
     DotTempFileUploadService,
@@ -72,6 +73,7 @@ import {
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { CONTENT_TYPE_MOCK } from './components/edit-ema-palette/components/edit-ema-palette-content-type/edit-ema-palette-content-type.component.spec';
 import { CONTENTLETS_MOCK } from './components/edit-ema-palette/edit-ema-palette.component.spec';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
@@ -91,7 +93,8 @@ import {
     newContentlet,
     PAYLOAD_MOCK,
     UVE_PAGE_RESPONSE_MAP,
-    EMA_DRAG_ITEM_CONTENTLET_MOCK
+    EMA_DRAG_ITEM_CONTENTLET_MOCK,
+    dotPropertiesServiceMock
 } from '../shared/mocks';
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
@@ -145,6 +148,13 @@ const createRouting = () =>
             UVEStore,
             DotFavoritePageService,
             DotESContentService,
+            {
+                provide: DotPropertiesService,
+                useValue: {
+                    ...dotPropertiesServiceMock,
+                    getKeyAsList: () => of([])
+                }
+            },
             {
                 provide: DotAlertConfirmService,
                 useValue: {
@@ -366,7 +376,6 @@ describe('EditEmaEditorComponent', () => {
             dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
             router = spectator.inject(Router, true);
             dotPageApiService = spectator.inject(DotPageApiService, true);
-
             addMessageSpy = jest.spyOn(messageService, 'add');
 
             store.init({
@@ -406,6 +415,23 @@ describe('EditEmaEditorComponent', () => {
                 componentsToHide.forEach((testId) => {
                     expect(spectator.query(byTestId(testId))).toBeNull();
                 });
+            });
+
+            it('should show the old toolbar when FEATURE_FLAG_UVE_PREVIEW_MODE is false', () => {
+                const toolbar = spectator.query(EditEmaToolbarComponent);
+
+                expect(toolbar).not.toBeNull();
+            });
+
+            it('should show the new toolbar when FEATURE_FLAG_UVE_PREVIEW_MODE is true', () => {
+                store.setFlags({
+                    FEATURE_FLAG_UVE_PREVIEW_MODE: true
+                });
+                spectator.detectChanges();
+
+                const toolbar = spectator.query(DotUveToolbarComponent);
+
+                expect(toolbar).not.toBeNull();
             });
 
             it('should hide components when the store changes for a variant', () => {
