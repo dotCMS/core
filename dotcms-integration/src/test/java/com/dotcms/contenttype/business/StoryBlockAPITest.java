@@ -6,12 +6,19 @@ import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,6 +28,8 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -430,7 +439,39 @@ public class StoryBlockAPITest extends IntegrationTestBase {
     }
 
     @Test
-    public void aaa() throws DotDataException, DotSecurityException {
+    public void aaa() throws Exception {
+        final String storyBlockJSON = "{" +
+            "\"type\": \"doc\"," +
+            "\"content\": [" +
+                "{" +
+                    "\"type\": \"dotContent\"," +
+                    "\"attrs\": {" +
+                        "\"data\": {" +
+                            "\"identifier\": \"%s\"," +
+                            "\"languageId\": %s" +
+                        "}" +
+                    "}" +
+                "}," +
+                "{" +
+                    "\"type\": \"dotContent\"," +
+                    "\"attrs\": {" +
+                        "\"data\": {" +
+                            "\"identifier\": \"%s\"," +
+                            "\"languageId\": %s" +
+                        "}" +
+                    "}" +
+                "}," +
+                "{" +
+                    "\"type\": \"paragraph\"," +
+                    "\"attrs\": {" +
+                        "\"textAlign\": \"left\"" +
+                    "}" +
+                "}" +
+            "]" +
+        "}";
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
         ContentType contentType = new ContentTypeDataGen().nextPersisted();
         
         final Field storyBlockField = new FieldDataGen()
@@ -438,7 +479,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                 .contentTypeId(contentType.id())
                 .nextPersisted();
         
-        final Field reationshipField = APILocator.getContentTypeFieldAPI().save(
+        final Field relationshipField = APILocator.getContentTypeFieldAPI().save(
                 FieldBuilder.builder(RelationshipField.class)
                     .name("rel")
                     .contentTypeId(contentType.id())
@@ -449,49 +490,39 @@ public class StoryBlockAPITest extends IntegrationTestBase {
 
         contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentType.id());
 
-        final Contentlet contentA = new ContentletDataGen(contentType).setProperty(titleField.variable(), "A").nextPersisted();
-        final Contentlet contentB = new ContentletDataGen(contentType).setProperty(titleField.variable(), "B").nextPersisted();;
-        final Contentlet contentC = new ContentletDataGen(contentType).setProperty(titleField.variable(), "C").nextPersisted();;
+        Contentlet contentA = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "A").nextPersisted();
+        Contentlet contentB = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "B").nextPersisted();
+        Contentlet contentC = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "C").nextPersisted();
 
-        ContentletDataGen.checkout(contentA).setProperty(reationshipField.variable(), list(contentB));
-        ContentletDataGen.checkout(contentB).setProperty(reationshipField.variable(), list(contentC));
-        ContentletDataGen.checkout(contentC).setProperty(reationshipField.variable(), list(contentA));
+        contentA = ContentletDataGen.checkout(contentA);
 
-        ContentUtils.addRelationships(contentA, APILocator.systemUser(), PageMode.PREVIEW_MODE, contentA.getLanguageId());
+        final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(relationshipField, APILocator.systemUser());
+        //Relate contentlets
+        final ContentletRelationships contentletRelationships = new ContentletRelationships(contentA);
 
-        final StoryBlockReferenceResult storyBlockReferenceResult = APILocator.getStoryBlockAPI().refreshReferences(contentA);
+        final ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords =
+                contentletRelationships.new ContentletRelationshipRecords(relationship, true);
+        contentletRelationshipRecords.setRecords(CollectionsUtils.list(contentC));
+        contentletRelationships.getRelationshipsRecords().add(contentletRelationshipRecords);
 
-        System.out.println("storyBlockReferenceResult = " + storyBlockReferenceResult);
+        contentA.setProperty(storyBlockField.variable(), String.format(storyBlockJSON, contentB.getIdentifier(),
+                contentB.getLanguageId(), contentC.getIdentifier(), contentC.getLanguageId()));
+        //Checkin of the parent to validate Relationships
+        final Contentlet contentAComplete = APILocator.getContentletAPI().checkin(contentA, contentletRelationships, null, null, APILocator.systemUser(), false);
+        final Contentlet  contentACompleteANdPublish = ContentletDataGen.publish(contentAComplete);
 
-        /*{
-            type: "doc",
-                    content: [
-            {
-                type: "dotContent",
-                        attrs: {
-                data: {
-                    identifier: "b384864fb261a419b3933a38e9cbfb96",
-                            languageId: 1
-                }
-            }
-            },
-            {
-                type: "dotContent",
-                        attrs: {
-                data: {
-                    identifier: "cda5c59be66f9c82eb87ea554cd820bf",
-                            languageId: 1
-                }
-            }
-            },
-            {
-                type: "paragraph",
-                        attrs: {
-                textAlign: "left"
-            }
-            }
-]
-        }*/
+        Contentlet contentAFromAPI = APILocator.getContentletAPI()
+                .find(contentACompleteANdPublish.getInode(), APILocator.systemUser(), false);
+
+        final HttpServletRequest request  = new MockHttpRequestIntegrationTest("localhost", "/api/v1/test").request();
+        final HttpServletResponse response = new MockHttpResponse().response();
+
+        ContentUtils.addRelationships(contentA, APILocator.systemUser(), PageMode.EDIT_MODE,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(), 1, request, response);
+
+        System.out.println("contentAFromAPI = " + contentAFromAPI);
+
+
 
     }
     
