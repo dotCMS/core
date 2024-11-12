@@ -2446,6 +2446,24 @@ public interface ContentletAPI {
     Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
             boolean respectFrontendRoles);
 
+	/**
+	 * This will find the live/working version of a piece of content for the language passed in.  If
+	 * the content is not found in the language passed in
+	 *
+	 * @param identifier
+	 * @param incomingLangId
+	 * @param user
+	 * @param variantId
+	 * @param timeMachine
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	Optional<Contentlet> findContentletByIdentifierOrFallback(final String identifier,
+			final long incomingLangId, final User user, String variantId, final Date timeMachine,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
     /**
      * System function for finding a contentlet by inode via the database
      * @param inode

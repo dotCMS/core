@@ -412,7 +412,7 @@ public class PageRenderUtil implements Serializable {
         final Contentlet contentlet = this.getContentlet(personalizedContentlet, currentVariantId, timeMachineDate);
 
         if (!UtilMethods.isSet(contentlet)) {
-            return this.getContentlet(personalizedContentlet, VariantAPI.DEFAULT_VARIANT.name(), timeMachineDate);
+            return this.getContentlet(personalizedContentlet, VariantAPI.DEFAULT_VARIANT.name(), null);
         }
 
         return contentlet;
@@ -659,17 +659,25 @@ public class PageRenderUtil implements Serializable {
      * Personalized Contentlet object.
      */
     private Contentlet getContentletOrFallback(final PersonalizedContentlet personalizedContentlet,
-            String variantName, final Date timeMachineDate) {
+            final String variantName, final Date timeMachineDate) {
         try {
             if(null != timeMachineDate){
                //Handle Time Machine date. if tm has been passed here we should look for a match using default lang
-
+                final Optional<Contentlet> contentlet = contentletAPI.findContentletByIdentifierOrFallback(
+                        personalizedContentlet.getContentletId(), languageId, user, variantName,
+                        timeMachineDate, false);
+                if(contentlet.isPresent()){
+                    return contentlet.get();
+                }
             }
             final Optional<Contentlet> contentletOpt = contentletAPI.findContentletByIdentifierOrFallback
                     (personalizedContentlet.getContentletId(), mode.showLive, languageId, user, true);
+
             return contentletOpt.isPresent()
-                    ? contentletOpt.get() : contentletAPI.findContentletByIdentifierAnyLanguage(personalizedContentlet.getContentletId(),
+                    ? contentletOpt.get() : contentletAPI.findContentletByIdentifierAnyLanguage(
+                    personalizedContentlet.getContentletId(),
                     variantName);
+
         } catch (final DotContentletStateException e) {
             // Expected behavior, DotContentletState Exception is used for flow control
             return null;

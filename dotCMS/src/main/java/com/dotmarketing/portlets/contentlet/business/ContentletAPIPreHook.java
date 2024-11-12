@@ -24,6 +24,7 @@ import com.liferay.portal.model.User;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -2035,6 +2036,21 @@ public interface ContentletAPIPreHook {
     public default boolean findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,   boolean respectFrontendRoles) {
         return true;
     }
+
+	/**
+	 *
+	 * @param identifier
+	 * @param incomingLangId
+	 * @param user
+	 * @param timeMachine
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	default boolean findContentletByIdentifierOrFallback(String identifier, long incomingLangId, User user, String variantId, Date timeMachine,
+			boolean respectFrontendRoles) {
+		return true;
+	}
+
     public default boolean findInDb(String inode) {
         return true;
     }
