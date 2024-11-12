@@ -2,7 +2,10 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 
 import { computed } from '@angular/core';
 
+import { FeaturedFlags } from '@dotcms/dotcms-models';
+
 import { withEditor } from './features/editor/withEditor';
+import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
 import { ShellProps, TranslateProps, UVEState } from './models';
@@ -145,5 +148,6 @@ export const UVEStore = signalStore(
     }),
     withLoad(),
     withLayout(),
-    withEditor()
+    withEditor(),
+    withFlags([FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE])
 );
