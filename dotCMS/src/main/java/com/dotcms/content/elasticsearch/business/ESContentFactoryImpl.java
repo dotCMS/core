@@ -837,8 +837,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 	}
 
+
     @Override
-    public Optional<Contentlet> findInDb(final String inode)  {
+    public Optional<Contentlet> findInDb(final String inode) {
         try {
             if (inode != null) {
                 final DotConnect dotConnect = new DotConnect();
@@ -864,13 +865,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 
     @Override
-    protected Contentlet find(final String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException  {
+    protected Contentlet find(final String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
         Contentlet contentlet = contentletCache.get(inode);
         if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
                 return null;
             }
-
             return processCachedContentlet(contentlet);
         }
 
@@ -885,9 +885,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
     }
-
+    @Override
     protected Contentlet find(final String inode, String variant) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
-
         Contentlet contentlet = contentletCache.get(inode);
         if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {

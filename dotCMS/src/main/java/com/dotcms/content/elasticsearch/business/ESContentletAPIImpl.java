@@ -385,9 +385,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return false;
     }
 
+    @CloseDBIfOpened
     @Override
-    public Contentlet find(String inode, User user, boolean respectFrontendRoles)
-            throws DotDataException, DotSecurityException  {
+    public Contentlet find(final String inode, final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
         final Contentlet contentlet = contentFactory.find(inode);
         if (contentlet == null) {
             return null;

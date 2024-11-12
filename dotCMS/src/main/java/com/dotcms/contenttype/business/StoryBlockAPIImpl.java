@@ -3,12 +3,10 @@ package com.dotcms.contenttype.business;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonHelper;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.rest.WebResource;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
@@ -358,7 +356,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         final HttpServletRequest httpRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final PageMode currentPageMode = PageMode.get(httpRequest);
 
-        final int beginningDepthValue = getBeginningDepthValue();
+        final int beginningDepthValue = getInitialDepthValue();
         int depth = 0;
 
         if (isInsideAnotherBlockEditorAndRelatedContent()) {
@@ -382,7 +380,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         return depthValue;
     }
 
-    public int getBeginningDepthValue(){
+    public int getInitialDepthValue(){
         final HttpServletRequest httpRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         String value = null;
 
