@@ -618,6 +618,7 @@ describe('withEditor', () => {
                 expect(store.$editorProps()).toEqual({
                     showDialogs: true,
                     showEditorContent: true,
+                    showBlockEditorSidebar: true,
                     iframe: {
                         opacity: '0.5',
                         pointerEvents: 'auto',
