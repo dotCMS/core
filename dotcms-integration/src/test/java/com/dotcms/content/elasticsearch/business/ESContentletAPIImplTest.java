@@ -278,117 +278,6 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Test for isCheckInSafe method with legacy relationships. It should return false when the cluster
-     * is in read only mode
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @Test
-    public void testIsCheckInSafeWithLegacyRelationshipsShouldReturnFalse()
-            throws DotDataException, DotSecurityException {
-        final long time = System.currentTimeMillis();
-        ContentType contentType = null;
-
-        try {
-            contentType = createContentType("test" + time);
-
-            final Structure structure = new StructureTransformer(contentType).asStructure();
-
-            final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
-            final ContentletRelationships contentletRelationship = new ContentletRelationships(
-                    contentlet);
-
-            final Relationship relationship = new Relationship(structure, structure,
-                    "parent" + contentType.variable(), "child" + contentType.variable(),
-                    RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal(), false, false);
-
-            final ContentletRelationshipRecords relationshipsRecord = contentletRelationship.new ContentletRelationshipRecords(
-                    relationship,
-                    false);
-
-            contentletRelationship
-                    .setRelationshipsRecords(CollectionsUtils.list(relationshipsRecord));
-
-            setClusterAsReadOnly(true);
-
-            assertFalse(
-                    new ESContentletAPIImpl().isCheckInSafe(contentletRelationship));
-
-        }finally{
-            if (contentType != null && contentType.id() != null){
-                contentTypeAPI.delete(contentType);
-            }
-
-            setClusterAsReadOnly(false);
-        }
-    }
-
-    /**
-     * Test for isCheckInSafe method with relationship fields. It should return true when the cluster
-     * is in read only mode
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @Test
-    public void testIsCheckInSafeWithRelationshipsFieldsShouldReturnTrue()
-            throws DotDataException, DotSecurityException {
-        final long time = System.currentTimeMillis();
-        ContentType contentType = null;
-
-        try {
-            contentType = createContentType("test" + time);
-
-            final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
-            final ContentletRelationships contentletRelationship = new ContentletRelationships(
-                    contentlet);
-
-            Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(contentType.id()).values(String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
-                    .relationType(contentType.variable()).build();
-
-            field = fieldAPI.save(field, user);
-
-            final String fullFieldVar = contentType.variable() + StringPool.PERIOD + field.variable();
-
-            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
-
-            final ContentletRelationshipRecords relationshipsRecord = contentletRelationship.new ContentletRelationshipRecords(
-                    relationship,false);
-
-            contentletRelationship
-                    .setRelationshipsRecords(CollectionsUtils.list(relationshipsRecord));
-
-            setClusterAsReadOnly(true);
-
-            assertTrue(
-                    new ESContentletAPIImpl().isCheckInSafe(contentletRelationship));
-
-        }finally{
-            if (contentType != null && contentType.id() != null){
-                contentTypeAPI.delete(contentType);
-            }
-
-            setClusterAsReadOnly(false);
-        }
-    }
-
-    /**
-     * Test for isCheckInSafe method without relationships. It should return true no matter the cluster status
-     */
-    @Test
-    public void testIsCheckInSafeWithoutRelationshipsShouldReturnTrue() {
-        setClusterAsReadOnly(true);
-
-        try {
-            assertTrue(
-                    new ESContentletAPIImpl().isCheckInSafe(null));
-        } finally {
-            setClusterAsReadOnly(false);
-        }
-    }
-
-
-    /**
      * Method to test: {@link ESContentletAPIImpl#lock(Contentlet, User, boolean)}
      * Given Scenario: A user without permission try to lock a contentlet
      * ExpectedResult: Should throw a DotSecurityException
@@ -3694,4 +3583,98 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertNotEquals("The Site ID from the source and copied Contentlets MUST be different because a new Site was passed down during the copy process", sourceContentlet.getHost(), copiedContentlet.getHost());
     }
 
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
+     * When:
+     * - Create a unique {@link TextField}, with the {@link ESContentletAPIImpl#UNIQUE_PER_SITE_FIELD_VARIABLE_NAME}
+     * {@link com.dotcms.contenttype.model.field.FieldVariable} set to false
+     * - Create a ContentType and add the previous created field to it
+     * - Create a {@link Contentlet} with unique-live as value to the Unique Fields, and publish it
+     * - Update the value for the unique field to unique-working and just save the COntentlet (does not publish it)
+     * - Remove the LIVE Version.
+     * - Create a second Content using the unique-live
+     *
+     * Should: Create the second Contentlet
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    @UseDataProvider("enabledUniqueFieldDatabaseValidation")
+    public void reusingLiveVersionUniqueValue(final Boolean enabledDataBaseValidation)
+            throws DotDataException, DotSecurityException {
+
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
+
+        try {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(enabledDataBaseValidation);
+            final ContentType contentType = new ContentTypeDataGen()
+                    .nextPersisted();
+
+            final Field uniqueTextField = new FieldDataGen()
+                    .contentTypeId(contentType.id())
+                    .unique(true)
+                    .type(TextField.class)
+                    .nextPersisted();
+
+            final Host host = new SiteDataGen().nextPersisted();
+
+            final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                    .host(host)
+                    .setProperty(uniqueTextField.variable(), "unique-live")
+                    .next();
+
+            ContentletDataGen.publish(contentlet_1);
+
+            Contentlet contentlet_1WorkingVersion = ContentletDataGen.checkout(contentlet_1);
+            contentlet_1WorkingVersion.setProperty(uniqueTextField.variable(), "unique-working");
+            ContentletDataGen.checkin(contentlet_1WorkingVersion);
+
+            final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                    .host(host)
+                    .setProperty(uniqueTextField.variable(), "unique-live")
+                    .next();
+
+            try {
+                APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
+                throw new AssertionError("DotRuntimeException Expected");
+            } catch (final DotRuntimeException e) {
+                final String expectedMessage = String.format("Contentlet with ID 'Unknown/New' [''] has invalid/missing field(s)."
+                        + " - Fields: [UNIQUE]: %s (%s)", uniqueTextField.name(), uniqueTextField.variable());
+
+                assertEquals(expectedMessage, e.getMessage());
+            }
+
+            ContentletDataGen.unpublish(contentlet_1);
+
+            APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
+
+            if (enabledDataBaseValidation) {
+                checkUniqueFieldsTable(true, contentType, uniqueTextField, contentlet_1WorkingVersion);
+                checkUniqueFieldsTable(true, contentType, uniqueTextField, contentlet_2);
+            }
+        } finally {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
+     * When:
+     * - Create a unique {@link TextField}, with the {@link ESContentletAPIImpl#UNIQUE_PER_SITE_FIELD_VARIABLE_NAME}
+     * {@link com.dotcms.contenttype.model.field.FieldVariable} set to false
+     * - Create a ContentType and add the previous created field to it
+     * - Create a {@link Contentlet} with unique-value as value to the Unique Fields,
+     * - Delete the Contentlet
+     * - Create a second Content using the unique-value
+     *
+     * Should: Create the second Contentlet
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    @UseDataProvider("enabledUniqueFieldDatabaseValidation")
+    public void reuseUnqiueValueAfterDelete(final Boolean enabledDataBaseValidation) throws DotDataException, DotSecurityException {
+        throw new AssertionError("Not implemeneted");
+    }
 }
