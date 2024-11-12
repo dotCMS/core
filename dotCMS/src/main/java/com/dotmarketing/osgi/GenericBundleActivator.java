@@ -560,7 +560,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param actionlet
      */
     protected void registerActionlet(final BundleContext context, final WorkFlowActionlet actionlet) {
-        OSGIUtil.getInstance().registerActionlet(context, actionlet, actionlets);
+        OSGIUtil.getInstance().tryToRegisterAction(context, actionlet, actionlets);
     }
 
     /**

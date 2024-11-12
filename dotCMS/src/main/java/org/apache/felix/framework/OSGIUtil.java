@@ -133,13 +133,11 @@ public class OSGIUtil {
     // Indicates the job were already started, so next restart of the OSGI framework won't create a new one job.
     private final AtomicBoolean isStartedOsgiRestartSchedule = new AtomicBoolean(false);
     private final long delay = Config.getLongProperty("OSGI_UPLOAD_DEBOUNCE_DELAY_MILLIS", 5000);
-    private final List<Tuple2<BundleContext, WorkFlowActionlet>> actionletsToRegister =
-            Collections.synchronizedList(new ArrayList<>());
-    private final Object osgiLock = new Object();
     private Framework felixFramework;
     private String felixExtraPackagesFile;
     private WorkflowAPIOsgiService workflowOsgiService;
     private Boolean osgiStarted = false;
+    private OSGIActionletLateRegistration osgiActionletLateRegistration = new OSGIActionletLateRegistration();
 
     //List of jar prefixes of the jars to be included in the osgi-extra.conf file
     public final List<String> portletIDsStopped = Collections.synchronizedList(new ArrayList<>());
@@ -405,11 +403,9 @@ public class OSGIUtil {
         }
 
         setOsgiStarted(true);
-        System.setProperty(WebKeys.OSGI_ENABLED, osgiStarted + "");
+        System.setProperty(WebKeys.OSGI_ENABLED, osgiStarted.toString());
         System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_OSGI,
                 String.valueOf(System.currentTimeMillis() - start));
-
-        registerActionlets();
 
         return felixFramework;
     }
@@ -417,42 +413,52 @@ public class OSGIUtil {
     public void registerActionlet(final BundleContext context,
                                   final WorkFlowActionlet actionlet,
                                   final Collection<WorkFlowActionlet> actionlets) {
-        actionlets.add(actionlet);
-
-        synchronized (osgiLock) {
-            if (!osgiStarted) {
-                actionletsToRegister.add(Tuple.of(context, actionlet));
-                return;
-            }
-
-            registerActionlet(context, actionlet);
-        }
-    }
-
-    private void setOsgiStarted(final boolean osgiStarted) {
-        synchronized (osgiLock) {
-            this.osgiStarted = osgiStarted;
-        }
-    }
-
-    private void registerActionlet(final BundleContext context, final WorkFlowActionlet actionlet) {
         //Getting the service to register our Actionlet
         final ServiceReference<?> serviceRefSelected =
                 context.getServiceReference(WorkflowAPIOsgiService.class.getName());
         if (serviceRefSelected == null) {
+            Logger.info(this, "Selected service reference is null, skipping...");
             return;
         }
 
         setWorkflowOsgiService((WorkflowAPIOsgiService) context.getService(serviceRefSelected));
         getWorkflowOsgiService().addActionlet(actionlet.getClass());
+        actionlets.add(actionlet);
 
-
-        Logger.info(this, "Added actionlet: " + actionlet.getName());
+        Logger.info(this, String.format("Registered actionlet: [%s]", actionlet.getName()));
         OSGIUtil.getInstance().actionletsStopped.remove(actionlet.getClass().getCanonicalName());
     }
 
-    private void registerActionlets() {
+    public boolean isReadyToRegisterActionlet(final BundleContext context) {
+        return osgiStarted && context.getServiceReference(WorkflowAPIOsgiService.class.getName()) != null;
+    }
+
+    public void tryToRegisterAction(final BundleContext context,
+                                    final WorkFlowActionlet actionlet,
+                                    final Collection<WorkFlowActionlet> actionlets) {
+        if (isReadyToRegisterActionlet(context)) {
+            registerActionlet(context, actionlet, actionlets);
+        } else {
+            osgiActionletLateRegistration.addActionlet(context, actionlet, actionlets);
+        }
+    }
+
+    public void addActionletForLater(final BundleContext context,
+                                     final WorkFlowActionlet actionlet,
+                                     final Collection<WorkFlowActionlet> actionlets) {
+
+    }
+
+    /*public void registerLateActionlets() {
+        Logger.info(this, String.format("Registering [%d] pending actionlets", actionletsToRegister.size()));
         actionletsToRegister.forEach(tuple -> registerActionlet(tuple._1, tuple._2));
+        actionletsToRegister.clear();
+    }*/
+
+
+
+    private void setOsgiStarted(final boolean osgiStarted) {
+        this.osgiStarted = osgiStarted;
     }
 
     private void startWatchingUploadFolder(final String uploadFolder) {
