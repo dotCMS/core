@@ -131,11 +131,11 @@ public class TransformerLocator {
      * @param initList List of DB results to be transformed
      * @return
      */
-    public static ContentletTransformer createContentletTransformer(
-            List<Map<String, Object>> initList) {
+    public static ContentletTransformer createContentletTransformer(List<Map<String, Object>> initList) {
 
         return new ContentletTransformer(initList);
     }
+
 
     /**
      * Creates a DBTransformer for MultiTree objects

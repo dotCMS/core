@@ -116,7 +116,9 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
            if(!hasJsonFields) {
                populateFields(contentlet, map);
            }
-            refreshStoryBlockReferences(contentlet);
+
+
+           refreshStoryBlockReferences(contentlet);
             populateWysiwyg(map, contentlet);
             populateFolderAndHost(contentlet, contentletId, contentTypeId);
         } catch (final Exception e) {

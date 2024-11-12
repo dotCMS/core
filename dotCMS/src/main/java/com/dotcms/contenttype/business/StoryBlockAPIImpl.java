@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
+import com.dotcms.rest.WebResource;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
@@ -53,10 +54,17 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         if (!inTransaction && null != contentlet && null != contentlet.getContentType() &&
                 contentlet.getContentType().hasStoryBlockFields()) {
 
+            if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(), "refreshReferences", MAX_RECURSION_LEVEL)) {
+                Logger.debug(this, () -> "This method has been called more than " + MAX_RECURSION_LEVEL +
+                        " times in the same thread. This could be a sign of circular reference in the Story Block field. Data will NOT be refreshed.");
+                return new StoryBlockReferenceResult(false, contentlet);
+            }
+
             contentlet.getContentType().fields(StoryBlockField.class)
                     .forEach(field -> {
 
                         final Object storyBlockValue = contentlet.get(field.variable());
+
                         if (null != storyBlockValue) {
                             final StoryBlockReferenceResult result =
                                     this.refreshStoryBlockValueReferences(storyBlockValue, contentlet.getIdentifier());
@@ -77,12 +85,6 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier) {
         boolean refreshed = false;
         if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
-            if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(),
-                    "refreshStoryBlockValueReferences", MAX_RECURSION_LEVEL)) {
-                Logger.debug(this, () -> "This method has been called more than " + MAX_RECURSION_LEVEL +
-                        " times in the same thread. This could be a sign of circular reference in the Story Block field. Data will NOT be refreshed.");
-                return new StoryBlockReferenceResult(false, storyBlockValue);
-            }
             try {
                 final LinkedHashMap<String, Object> blockEditorMap = this.toMap(storyBlockValue);
                 final Object contentsMap = blockEditorMap.get(CONTENT_KEY);
@@ -357,7 +359,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         final PageMode currentPageMode = PageMode.get(httpRequest);
 
         final int beginningDepthValue = getBeginningDepthValue();
-        int depth = -1;
+        int depth = 0;
 
         if (isInsideAnotherBlockEditorAndRelatedContent()) {
             depth = decreaseDepthValue(beginningDepthValue);
@@ -384,16 +386,14 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         final HttpServletRequest httpRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         String value = null;
 
-        if ((null != httpRequest && null != httpRequest.getAttribute(WebKeys.HTMLPAGE_DEPTH)) ) {
-
-            value = Objects.nonNull(httpRequest.getParameter(WebKeys.HTMLPAGE_DEPTH)) ?
-                            httpRequest.getParameter(WebKeys.HTMLPAGE_DEPTH) :
-                            (String) httpRequest.getAttribute(WebKeys.HTMLPAGE_DEPTH);
+        if (null != httpRequest && null != httpRequest.getAttribute(WebKeys.HTMLPAGE_DEPTH))  {
+            value = (String) httpRequest.getAttribute(WebKeys.HTMLPAGE_DEPTH);
         } else {
             value = MAX_RELATIONSHIP_DEPTH.get();
         }
 
-        return ConversionUtils.toInt(value, -1);
+        int depth = ConversionUtils.toInt(value, 0);
+        return depth < 0 || depth > 3 ? 0 : depth;
     }
 
     private boolean isInsideAnotherBlockEditorAndRelatedContent(){
@@ -401,7 +401,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(), "refreshReferences", 2);
 
         boolean insideContentRelated =
-                ThreadUtils.isMethodCallCountEqualThan(ESContentletAPIImpl.class.getName(), "getRelated", 1);
+                ThreadUtils.isMethodCallCountEqualThan(Contentlet.class.getName(), "getRelated", 1);
 
         return insideAnotherBlockEditor && insideContentRelated;
     }

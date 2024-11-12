@@ -3,14 +3,17 @@ package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.business.json.ContentletJsonHelper;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -23,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -422,6 +426,72 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         StoryBlockReferenceResult result = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson1, "xxx");
         assertNotNull(result);
         assertFalse(result.isRefreshed());
+
+    }
+
+    @Test
+    public void aaa() throws DotDataException, DotSecurityException {
+        ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        
+        final Field storyBlockField = new FieldDataGen()
+                .type(StoryBlockField.class)
+                .contentTypeId(contentType.id())
+                .nextPersisted();
+        
+        final Field reationshipField = APILocator.getContentTypeFieldAPI().save(
+                FieldBuilder.builder(RelationshipField.class)
+                    .name("rel")
+                    .contentTypeId(contentType.id())
+                    .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                    .relationType(contentType.variable()).build(), APILocator.systemUser());
+
+        final Field titleField = new FieldDataGen().contentTypeId(contentType.id()).type(TextField.class).nextPersisted();
+
+        contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentType.id());
+
+        final Contentlet contentA = new ContentletDataGen(contentType).setProperty(titleField.variable(), "A").nextPersisted();
+        final Contentlet contentB = new ContentletDataGen(contentType).setProperty(titleField.variable(), "B").nextPersisted();;
+        final Contentlet contentC = new ContentletDataGen(contentType).setProperty(titleField.variable(), "C").nextPersisted();;
+
+        ContentletDataGen.checkout(contentA).setProperty(reationshipField.variable(), list(contentB));
+        ContentletDataGen.checkout(contentB).setProperty(reationshipField.variable(), list(contentC));
+        ContentletDataGen.checkout(contentC).setProperty(reationshipField.variable(), list(contentA));
+
+        ContentUtils.addRelationships(contentA, APILocator.systemUser(), PageMode.PREVIEW_MODE, contentA.getLanguageId());
+
+        final StoryBlockReferenceResult storyBlockReferenceResult = APILocator.getStoryBlockAPI().refreshReferences(contentA);
+
+        System.out.println("storyBlockReferenceResult = " + storyBlockReferenceResult);
+
+        /*{
+            type: "doc",
+                    content: [
+            {
+                type: "dotContent",
+                        attrs: {
+                data: {
+                    identifier: "b384864fb261a419b3933a38e9cbfb96",
+                            languageId: 1
+                }
+            }
+            },
+            {
+                type: "dotContent",
+                        attrs: {
+                data: {
+                    identifier: "cda5c59be66f9c82eb87ea554cd820bf",
+                            languageId: 1
+                }
+            }
+            },
+            {
+                type: "paragraph",
+                        attrs: {
+                textAlign: "left"
+            }
+            }
+]
+        }*/
 
     }
     
