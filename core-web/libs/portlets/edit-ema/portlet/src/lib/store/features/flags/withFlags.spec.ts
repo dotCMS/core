@@ -33,7 +33,7 @@ export const uveStoreMock = signalStore(
 );
 
 const MOCK_RESPONSE = UVE_FEATURE_FLAGS.reduce((acc, flag) => {
-    acc[flag] = Math.random() * 10 > 4.5; // This way we have a 65% chance of having true
+    acc[flag] = true;
 
     return acc;
 }, {});
