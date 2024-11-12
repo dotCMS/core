@@ -48,6 +48,7 @@ public class LargeFileReader implements JobProcessor, Cancellable {
 
         if (!working) {
             Logger.info(this.getClass(), "Job cancelled: " + job.id());
+            // Adding some delay to simulate some cancellation processing, this demo is too fast
             delay(3000);
         }
     }
