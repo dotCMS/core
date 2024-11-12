@@ -5211,7 +5211,7 @@ public class WorkflowResource {
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
-    public final Response findAvailableDefaultActionsByContentType(@Context final HttpServletRequest request,
+    public final ResponseEntityDefaultWorkflowActionsView findAvailableDefaultActionsByContentType(@Context final HttpServletRequest request,
                                                                    @Context final HttpServletResponse response,
                                                                    @PathParam("contentTypeId") @Parameter(
                                                                            required = true,
@@ -5219,21 +5219,14 @@ public class WorkflowResource {
                                                                                    "Example ID: `c541abb1-69b3-4bc5-8430-5e09e5239cc8` (Default page content type)\n\n" +
                                                                                    "Example Variable: `htmlpageasset` (Default page content type)",
                                                                            schema = @Schema(type = "string")
-                                                                   ) final String contentTypeId) {
+                                                                   ) final String contentTypeId) throws NotFoundInDbException {
         final InitDataObject initDataObject = this.webResource.init
                 (null, request, response, true, null);
-        try {
             Logger.debug(this,
                     () -> "Getting the available workflow schemes default action for the ContentType: "
                             + contentTypeId );
             final List<WorkflowDefaultActionView> actions = this.workflowHelper.findAvailableDefaultActionsByContentType(contentTypeId, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView<>(actions)).build(); // 200
-        } catch (Exception e) {
-            Logger.error(this.getClass(),
-                    "Exception on find Available Default Actions exception message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
-
+            return new ResponseEntityDefaultWorkflowActionsView(actions);
     } // findAvailableDefaultActionsByContentType.
 
     /**
