@@ -72,6 +72,7 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
@@ -139,6 +140,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -2641,6 +2643,7 @@ public class WorkflowResource {
             return ResponseUtil.mapExceptionResponse(e);
         }
     }
+
     /**
      * Fires a workflow action by name, if the contentlet exists could use inode or identifier and optional language.
      * @param request    {@link HttpServletRequest}
@@ -3702,7 +3705,6 @@ public class WorkflowResource {
                 new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(2).maxPoolSize(5).queueCapacity(CONTENTLETS_LIMIT).build());
         final CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(dotSubmitter);
         final List<Future<Map<String, Object>>> futures = new ArrayList<>();
-        // todo: add the mock request
         final HttpServletRequest statelessRequest = RequestUtil.INSTANCE.createStatelessRequest(request);
 
 
@@ -5677,7 +5679,6 @@ public class WorkflowResource {
                 this.contentletAPI.findContentletByIdentifierOrFallback
                         (contentletIdentifier, mode.showLive, languageId, initDataObject.getUser(), mode.respectAnonPerms);
 
-
         if (currentContentlet.isPresent()) {
 
             final WorkflowTask currentWorkflowTask = this.workflowAPI.findTaskByContentlet(currentContentlet.get());
@@ -5698,4 +5699,85 @@ public class WorkflowResource {
                 wfTimeLine.commentDescription(), wfTimeLine.taskId(), wfTimeLine.type());
     }
 
+    /**
+     * Creates a new workflow comment
+     *
+     * @param request HttpServletRequest
+     * @param workflowSchemeForm WorkflowSchemeForm
+     * @return Response
+     */
+    @POST
+    @Path("/{contentletId}/comments")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "postSaveScheme", summary = "Create a workflow comment",
+            description = "Create a [workflow comment].\n\n " +
+                    "Returns created workflow comment on success.",
+            tags = {"Workflow"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Copied workflow comment successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityWorkflowCommentView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
+    public final ResponseEntityWorkflowCommentView saveComment(@Context final HttpServletRequest request,
+                                     @Context final HttpServletResponse response,
+                                     @PathParam("contentletId") @Parameter(
+                                             required = true,
+                                             description = "Identifier of contentlet to add comment.",
+                                             schema = @Schema(type = "string")
+                                     ) final String contentletId,
+                                     @DefaultValue("-1") @QueryParam("language") @Parameter(
+                                           description = "Language version of target content.",
+                                           schema = @Schema(type = "string")) final String language,
+                                     @RequestBody(
+                                             description = "The request body consists of the following three properties:\n\n" +
+                                                     "| Property | Type | Description |\n" +
+                                                     "|-|-|-|\n" +
+                                                     "| `comment` | String | The workflow comment. |\n",
+                                             content = @Content(
+                                                     schema = @Schema(implementation = WorkflowCommentForm.class)
+                                             )
+                                     ) final WorkflowCommentForm workflowCommentForm) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredBackendUser(true).requiredFrontendUser(false).init();
+
+        DotPreconditions.notNull(workflowCommentForm,"Expected Request body was empty.");
+        Logger.debug(this, ()->"Saving a workflow comment for the contentletId: " + contentletId);
+
+        final User user = initDataObject.getUser();
+        final long languageId = LanguageUtil.getLanguageId(language);
+        final PageMode mode = PageMode.get(request);
+
+        final Optional<Contentlet> currentContentlet =  languageId <= 0?
+                this.workflowHelper.getContentletByIdentifier(contentletId, mode, initDataObject.getUser(),
+                        ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId()):
+                this.contentletAPI.findContentletByIdentifierOrFallback
+                        (contentletId, mode.showLive, languageId, initDataObject.getUser(), mode.respectAnonPerms);
+        if (currentContentlet.isPresent()) {
+
+            final WorkflowTask task = this.workflowAPI.findTaskByContentlet(currentContentlet.get());
+            final WorkflowComment taskComment = new WorkflowComment();
+            taskComment.setComment(workflowCommentForm.getComment());
+            taskComment.setCreationDate(new Date());
+            taskComment.setPostedBy(user.getUserId());
+            taskComment.setWorkflowtaskId(task.getId());
+            this.workflowAPI.saveComment(taskComment);
+            return new ResponseEntityWorkflowCommentView(
+                    toWorkflowTimelineItemView(taskComment));
+        }
+
+        throw new DoesNotExistException("Contentlet with identifier " + contentletId + " does not exist.");
+    }
 } // E:O:F:WorkflowResource.
