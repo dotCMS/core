@@ -11,7 +11,8 @@ import {
     editContentlet,
     initEditor,
     isInsideEditor,
-    updateNavigation
+    updateNavigation,
+    initInlineEditing
 } from './lib/editor/sdk-editor';
 import { getPageRequestParams, graphqlToPageEntity } from './lib/utils';
 
@@ -30,5 +31,6 @@ export {
     initEditor,
     updateNavigation,
     destroyEditor,
-    ClientConfig
+    ClientConfig,
+    initInlineEditing
 };

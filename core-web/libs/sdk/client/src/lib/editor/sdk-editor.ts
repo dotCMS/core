@@ -126,3 +126,38 @@ export function addClassToEmptyContentlets(): void {
         contentlet.classList.add('empty-contentlet');
     });
 }
+
+const INLINE_EDITING_EVENT: Record<string, CLIENT_ACTIONS> = {
+    blockEditor: CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING
+};
+
+/**
+ * Initializes the block editor inline editing.
+ *
+ * @export
+ * @param {*} { inode, language_id, blockEditorContent }
+ */
+export function initInlineEditing(
+    type: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    { inode, languageId, contentType, fieldName, content }: any // Any for now
+) {
+    const action = INLINE_EDITING_EVENT[type];
+
+    if (!action) {
+        return;
+    }
+
+    const contentString = typeof content === 'string' ? content : JSON.stringify(content ?? {});
+
+    postMessageToEditor({
+        action,
+        payload: {
+            inode,
+            fieldName,
+            contentType,
+            languageId,
+            blockEditorContent: contentString
+        }
+    });
+}
