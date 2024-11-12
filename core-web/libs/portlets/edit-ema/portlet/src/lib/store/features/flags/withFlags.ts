@@ -32,6 +32,7 @@ export function withFlags(flags: FeaturedFlags[]) {
         withState<WithFlagsState>({ flags: {} }),
         withComputed(({ flags }) => {
             return {
+                // You can add here more computed properties if needed
                 $previewMode: computed(() => {
                     const currentFlags = flags();
 
