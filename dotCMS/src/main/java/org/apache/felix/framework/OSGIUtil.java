@@ -136,8 +136,7 @@ public class OSGIUtil {
     private Framework felixFramework;
     private String felixExtraPackagesFile;
     private WorkflowAPIOsgiService workflowOsgiService;
-    private Boolean osgiStarted = false;
-    private OSGIActionletLateRegistration osgiActionletLateRegistration = new OSGIActionletLateRegistration();
+    private OSGIActionletLateRegistration osgiLateRegistration = new OSGIActionletLateRegistration();
 
     //List of jar prefixes of the jars to be included in the osgi-extra.conf file
     public final List<String> portletIDsStopped = Collections.synchronizedList(new ArrayList<>());
@@ -400,10 +399,11 @@ public class OSGIUtil {
             felixFramework = null;
             Logger.error(this, "Could not create framework: " + ex);
             throw new RuntimeException(ex);
+        } finally {
+            registerLateActionlets();
         }
 
-        setOsgiStarted(true);
-        System.setProperty(WebKeys.OSGI_ENABLED, osgiStarted.toString());
+        System.setProperty(WebKeys.OSGI_ENABLED, Boolean.TRUE.toString());
         System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_OSGI,
                 String.valueOf(System.currentTimeMillis() - start));
 
@@ -430,7 +430,7 @@ public class OSGIUtil {
     }
 
     public boolean isReadyToRegisterActionlet(final BundleContext context) {
-        return osgiStarted && context.getServiceReference(WorkflowAPIOsgiService.class.getName()) != null;
+        return context.getServiceReference(WorkflowAPIOsgiService.class.getName()) != null;
     }
 
     public void tryToRegisterAction(final BundleContext context,
@@ -439,26 +439,26 @@ public class OSGIUtil {
         if (isReadyToRegisterActionlet(context)) {
             registerActionlet(context, actionlet, actionlets);
         } else {
-            osgiActionletLateRegistration.addActionlet(context, actionlet, actionlets);
+            osgiLateRegistration.addActionlet(context, actionlet, actionlets);
         }
     }
 
-    public void addActionletForLater(final BundleContext context,
-                                     final WorkFlowActionlet actionlet,
-                                     final Collection<WorkFlowActionlet> actionlets) {
+    public void registerLateActionlets() {
+        final List<OSGIRegistrationCheck> registrationChecks;
+        try {
+            registrationChecks = osgiLateRegistration.waitForRegistrationChecks();
+        } catch (Exception e) {
+            Logger.warn(this, "Could not get late registration checks for actionlets", e);
+            return;
+        }
 
-    }
+        Logger.info(this, String.format("Registering [%d] pending actionlets", registrationChecks.size()));
 
-    /*public void registerLateActionlets() {
-        Logger.info(this, String.format("Registering [%d] pending actionlets", actionletsToRegister.size()));
-        actionletsToRegister.forEach(tuple -> registerActionlet(tuple._1, tuple._2));
-        actionletsToRegister.clear();
-    }*/
+        registrationChecks.stream()
+                .filter(OSGIRegistrationCheck::isReadyToRegister)
+                .forEach(check -> registerActionlet(check.getContext(), check.getActionlet(), check.getActionlets()));
 
-
-
-    private void setOsgiStarted(final boolean osgiStarted) {
-        this.osgiStarted = osgiStarted;
+        registrationChecks.clear();
     }
 
     private void startWatchingUploadFolder(final String uploadFolder) {
