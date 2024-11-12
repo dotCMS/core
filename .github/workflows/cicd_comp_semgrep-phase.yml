@@ -33,7 +33,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Prepare Maven environment and run SonarQube analysis
+      # Create dependency files for semgrep analysis
       - name: Build Dependency Tre
         uses: ./.github/actions/core-cicd/maven-job
         with:
@@ -41,6 +41,8 @@ jobs:
           artifacts-from: ${{ inputs.artifact-run-id }}
           require-main: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          require-graalvm: false
+          requires-node: false
           maven-args: dependency:tree -DoutputFile=maven_dep_tree.txt
       - name: Create Zip File
         run: find . -type f -name 'maven_dep_tree.txt' -exec zip -r dependency-tree.zip {} +
