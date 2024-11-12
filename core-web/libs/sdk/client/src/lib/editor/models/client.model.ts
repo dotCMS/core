@@ -1,4 +1,4 @@
-import { editContentlet } from '../sdk-editor';
+import { editContentlet, reorderMenu } from '../sdk-editor';
 declare global {
     interface Window {
         dotUVE: DotUVE;
@@ -7,6 +7,7 @@ declare global {
 
 export const INITIAL_DOT_UVE: DotUVE = {
     editContentlet,
+    reorderMenu,
     lastScrollYPosition: 0
 };
 
@@ -101,5 +102,6 @@ export function postMessageToEditor<T = unknown>(message: PostMessageProps<T>) {
 
 export interface DotUVE {
     editContentlet: typeof editContentlet;
+    reorderMenu: typeof reorderMenu;
     lastScrollYPosition: number;
 }

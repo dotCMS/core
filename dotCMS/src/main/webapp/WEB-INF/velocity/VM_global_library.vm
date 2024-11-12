@@ -172,29 +172,18 @@
     #if ($EDIT_MODE && $PUBLISH_HTMLPAGE_PERMISSION)
         #set($menuLevel = $VTLSERVLET_URI.split('/').size() - 1)
 
-        <a href="#" onclick="openReorderDialog(event)" class="btn btn-primary btn-xs normaltip" data-original-title="Reorder Menu">
+        <a href="#" onclick="window.dotUVE.reorderMenu($menuLevel)" class="btn btn-primary btn-xs normaltip" data-original-title="Reorder Menu">
             <i class="fa fa-arrow-up"></i>
             <i class="fa fa-arrow-down"></i>
         </a>
-        <script>
-            function openReorderDialog(event) {
-                event.preventDefault();
-                var reorderUrl = "${directorURL}&startLevel=${menuLevel}&depth=2&pagePath=${VTLSERVLET_URI}&hostId=${host.identifier}";
-                var customEvent = window.top.document.createEvent("CustomEvent");
-                customEvent.initCustomEvent("ng-event", false, false,  {
-                    name: "reorder-menu",
-                    data: reorderUrl
-                });
-                window.top.document.dispatchEvent(customEvent);
-            }
-        </script>
     #end
 #end
 
 #macro(sortNavigation)
     #if ($EDIT_MODE && $PUBLISH_HTMLPAGE_PERMISSION)
+      #set($menuLevel = $VTLSERVLET_URI.split('/').size() - 1)
       <button
-    onclick="openReorderDialog(event)"
+    onclick='window.dotUVE.reorderMenu($menuLevel)'
     style="
         background-color: #426BF0;
         border-radius: 3px;
@@ -223,27 +212,6 @@
             width: 36px;
         "></span>
 </button>
-<script>
-    function openReorderDialog(event) {
-        event.preventDefault();
-        var reorderUrl =
-            '${directorURL}&startLevel=1&depth=2&pagePath=${VTLSERVLET_URI}&hostId=${host.identifier}';
-
-        window.parent.postMessage(
-            {
-                action: 'reorder-menu',
-                payload: { reorderUrl }
-            },
-            '*'
-        );
-        var customEvent = window.top.document.createEvent('CustomEvent');
-        customEvent.initCustomEvent('ng-event', false, false, {
-            name: 'reorder-menu',
-            data: reorderUrl
-        });
-        window.top.document.dispatchEvent(customEvent);
-    }
-</script>
 
     #end
 #end

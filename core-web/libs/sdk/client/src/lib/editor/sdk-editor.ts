@@ -44,17 +44,17 @@ export function editContentlet<T>(contentlet: Contentlet<T>) {
 }
 
 /**
- * You can use this function to reorder the menu in the editor.
+ * Reorders the menu starting from a specified level.
  *
- * Calling this function inside the editor, will prompt the UVE to open the reorder menu page.
+ * @param {number} [startLevel=1] - The level from which to start reordering the menu. Defaults to 1.
  *
- * @export
+ * This function constructs a URL for the reorder menu page with the given start level and a fixed depth of 2.
+ * It then sends a message to the editor with the action to reorder the menu and the constructed URL as the payload.
  */
-export function reorderMenu() {
+export function reorderMenu(startLevel = 1) {
     // This is the URL for the reorder menu page
     // All params are hardcoded on the jsp, so here we just need to send the same URL
-    const reorderUrl =
-        '/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=1&depth=2';
+    const reorderUrl = `/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=${startLevel}&depth=2`;
 
     postMessageToEditor({
         action: CLIENT_ACTIONS.REORDER_MENU,
