@@ -9,20 +9,13 @@ import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
 import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
 import com.dotcms.analytics.track.matchers.RequestMatcher;
 import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
-import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.jitsu.AnalyticsEventsPayload;
 import com.dotcms.jitsu.EventLogRunnable;
 import com.dotcms.jitsu.EventLogSubmitter;
 import com.dotcms.jitsu.EventsPayload;
 import com.dotcms.security.apps.AppSecrets;
-import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
@@ -35,42 +28,27 @@ import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import javax.enterprise.context.ApplicationScoped;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.Serializable;
-import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import static com.dotcms.analytics.app.AnalyticsApp.ANALYTICS_APP_CONFIG_URL_KEY;
 import static com.dotcms.analytics.app.AnalyticsApp.ANALYTICS_APP_READ_URL_KEY;
 import static com.dotcms.analytics.app.AnalyticsApp.ANALYTICS_APP_WRITE_URL_KEY;
-import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Verifies that the {@link WebEventsCollectorService} class is working as expected.
@@ -157,7 +135,7 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
 
         final Map<String, Object> expectedDataMap = Map.of(
                 "event_type", EventType.PAGE_REQUEST.getType(),
-                "host", testSite.getIdentifier(),
+                "host", testSite.getHostname(),
                 "url", TEST_PAGE_URL,
                 "language", APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
                 "object", Map.of(
@@ -202,7 +180,7 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
 
         final Map<String, Object> expectedDataMap = Map.of(
                 "event_type", EventType.PAGE_REQUEST.getType(),
-                "host", testSite.getIdentifier(),
+                "host", testSite.getHostname(),
                 "url", TEST_PAGE_URL,
                 "language", APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
                 "object", Map.of(
@@ -266,7 +244,7 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
         ContentletDataGen.publish(newsTestContent);
         final Map<String, Object> expectedDataMap = Map.of(
                 "event_type", EventType.PAGE_REQUEST.getType(),
-                "host", testSite.getIdentifier(),
+                "host", testSite.getHostname(),
                 "language", language.getIsoCode(),
                 "url", TEST_URL_MAP_DETAIL_PAGE_URL,
                 "object", Map.of(
@@ -375,7 +353,7 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
 
         final Map<String, Object> expectedDataMap = Map.of(
                 "event_type", EventType.PAGE_REQUEST.getType(),
-                "host", testSite.getIdentifier(),
+                "host", testSite.getHostname(),
                 "comeFromVanityURL", true,
                 "language", defaultLanguage.getIsoCode(),
                 "url", TEST_PAGE_URL,
@@ -428,7 +406,7 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
                 ".txt","Sample content for my test file", "parent-folder-for-file", testSite);
 
         final Map<String, Object> expectedDataMap = Map.of(
-                "host", "localhost:8080",
+                "host", testSite.getHostname(),
                 "site", testSite.getIdentifier(),
                 "language", APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
                 "event_type", EventType.FILE_REQUEST.getType(),
