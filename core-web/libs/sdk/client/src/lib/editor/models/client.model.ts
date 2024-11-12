@@ -72,6 +72,10 @@ export enum CLIENT_ACTIONS {
      */
     EDIT_CONTENTLET = 'edit-contentlet',
     /**
+     * Tell the editor to open the block editor sidebar
+     */
+    INIT_BLOCK_EDITOR_INLINE_EDITING = 'init-editor-inline-editing',
+    /**
      * Tell the editor to do nothing
      */
     NOOP = 'noop'

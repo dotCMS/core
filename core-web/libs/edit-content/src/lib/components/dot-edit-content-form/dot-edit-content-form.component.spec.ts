@@ -5,11 +5,13 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
+import { patchState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
 import { TabPanel, TabView } from 'primeng/tabview';
 
 import {
@@ -21,6 +23,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
 
@@ -40,7 +43,7 @@ import { MockResizeObserver } from '../../utils/mocks';
 describe('DotFormComponent', () => {
     let spectator: Spectator<DotEditContentFormComponent>;
     let component: DotEditContentFormComponent;
-    let store: SpyObject<InstanceType<typeof DotEditContentStore>>;
+    let store: InstanceType<typeof DotEditContentStore>;
     let dotContentTypeService: SpyObject<DotContentTypeService>;
     let workflowActionsService: SpyObject<DotWorkflowsActionsService>;
     let workflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
@@ -62,6 +65,7 @@ describe('DotFormComponent', () => {
             mockProvider(DotMessageService),
             mockProvider(Router),
             mockProvider(DotWorkflowService),
+            mockProvider(MessageService),
             {
                 provide: ActivatedRoute,
                 useValue: {
@@ -124,6 +128,21 @@ describe('DotFormComponent', () => {
             expect(component.form.get('modUser')).toBeFalsy();
             expect(component.form.get('modUserName')).toBeFalsy();
             expect(component.form.get('publishDate')).toBeFalsy();
+        });
+
+        it('should disable the form when loading and enable it when not loading', () => {
+            spectator.detectChanges();
+
+            // // Initially, the form should be enabled
+            expect(component.form.enabled).toBe(true);
+
+            patchState(store, {
+                state: ComponentStatus.SAVING
+            });
+
+            spectator.flushEffects();
+
+            expect(component.form.enabled).toBe(false);
         });
     });
 
