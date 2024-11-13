@@ -8,12 +8,13 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+import { UploadedFile } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 
 import { DotFormImportUrlComponent } from './dot-form-import-url.component';
 import { FormImportUrlStore } from './store/form-import-url.store';
 
 import { NEW_FILE_MOCK } from '../../../../utils/mocks';
-import { UploadedFile } from '../../models';
 import { DotFileFieldUploadService } from '../../services/upload-file/upload-file.service';
 
 describe('DotFormImportUrlComponent', () => {
@@ -64,7 +65,7 @@ describe('DotFormImportUrlComponent', () => {
 
             patchState(store, {
                 file: mockPreviewFile,
-                status: 'done'
+                status: ComponentStatus.LOADED
             });
 
             spectator.flushEffects();
@@ -78,7 +79,7 @@ describe('DotFormImportUrlComponent', () => {
             const enableSpy = jest.spyOn(spectator.component.form, 'enable');
 
             patchState(store, {
-                status: 'uploading'
+                status: ComponentStatus.LOADING
             });
 
             spectator.flushEffects();
@@ -86,7 +87,7 @@ describe('DotFormImportUrlComponent', () => {
             expect(disableSpy).toHaveBeenCalled();
 
             patchState(store, {
-                status: 'done'
+                status: ComponentStatus.LOADED
             });
 
             spectator.flushEffects();

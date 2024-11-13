@@ -44,6 +44,7 @@
                 }
                 @if (store.allowExistingFile()) {
                     <p-button
+                        (click)="showSelectExistingFileDialog()"
                         [label]="'dot.file.field.action.select.existing.file' | dm"
                         data-testId="action-existing-file"
                         icon="pi pi-file"
@@ -51,6 +52,7 @@
                 }
                 @if (store.allowCreateFile()) {
                     <p-button
+                        (click)="showFileEditorDialog()"
                         [label]="'dot.file.field.action.create.new.file' | dm"
                         data-testId="action-new-file"
                         icon="pi pi-code"
@@ -92,10 +94,11 @@
             <dot-spinner data-testId="loading" />
         }
         @case ('preview') {
-            @if (store.uploadedFile()) {
+            @let uploadedFile = store.uploadedFile();
+            @if (uploadedFile) {
                 <dot-file-field-preview
                     (removeFile)="store.removeFile()"
-                    [previewFile]="store.uploadedFile()" />
+                    [previewFile]="uploadedFile" />
             }
         }
     }

@@ -7,14 +7,14 @@ import { computed, inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotHttpErrorResponse } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotHttpErrorResponse } from '@dotcms/dotcms-models';
 
-import { UploadedFile, UPLOAD_TYPE } from '../../../models';
+import { UploadedFile, UPLOAD_TYPE } from '../../../../../models/dot-edit-content-file.model';
 import { DotFileFieldUploadService } from '../../../services/upload-file/upload-file.service';
 
 export interface FormImportUrlState {
     file: UploadedFile | null;
-    status: 'init' | 'uploading' | 'done' | 'error';
+    status: ComponentStatus;
     error: string | null;
     uploadType: UPLOAD_TYPE;
     acceptedFiles: string[];
@@ -22,7 +22,7 @@ export interface FormImportUrlState {
 
 const initialState: FormImportUrlState = {
     file: null,
-    status: 'init',
+    status: ComponentStatus.INIT,
     error: null,
     uploadType: 'temp',
     acceptedFiles: []
@@ -31,8 +31,8 @@ const initialState: FormImportUrlState = {
 export const FormImportUrlStore = signalStore(
     withState(initialState),
     withComputed((state) => ({
-        isLoading: computed(() => state.status() === 'uploading'),
-        isDone: computed(() => state.status() === 'done'),
+        isLoading: computed(() => state.status() === ComponentStatus.LOADING),
+        isDone: computed(() => state.status() === ComponentStatus.LOADED && state.file),
         allowFiles: computed(() => state.acceptedFiles().join(', '))
     })),
     withMethods((store, uploadService = inject(DotFileFieldUploadService)) => ({
@@ -45,7 +45,7 @@ export const FormImportUrlStore = signalStore(
             abortSignal: AbortSignal;
         }>(
             pipe(
-                tap(() => patchState(store, { status: 'uploading' })),
+                tap(() => patchState(store, { status: ComponentStatus.LOADING })),
                 switchMap(({ fileUrl, abortSignal }) => {
                     return uploadService
                         .uploadFile({
@@ -58,7 +58,7 @@ export const FormImportUrlStore = signalStore(
                         .pipe(
                             tapResponse({
                                 next: (file) => {
-                                    patchState(store, { file, status: 'done' });
+                                    patchState(store, { file, status: ComponentStatus.LOADED });
                                 },
                                 error: (error: DotHttpErrorResponse) => {
                                     let errorMessage = error?.message || '';
@@ -72,7 +72,7 @@ export const FormImportUrlStore = signalStore(
 
                                     patchState(store, {
                                         error: errorMessage,
-                                        status: 'error'
+                                        status: ComponentStatus.ERROR
                                     });
                                 }
                             })

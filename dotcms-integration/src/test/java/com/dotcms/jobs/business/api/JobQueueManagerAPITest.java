@@ -13,9 +13,11 @@ import static org.mockito.Mockito.anyMap;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
@@ -23,11 +25,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.jobs.business.api.events.EventProducer;
+import com.dotcms.jobs.business.api.events.JobCancelRequestEvent;
 import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.JobProcessingException;
+import com.dotcms.jobs.business.error.RetryPolicyProcessor;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
@@ -42,6 +46,8 @@ import com.dotcms.jobs.business.queue.error.JobLockingException;
 import com.dotcms.jobs.business.queue.error.JobNotFoundException;
 import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotcms.jobs.business.queue.error.JobQueueException;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -64,6 +70,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.mockito.MockedStatic;
 
 public class JobQueueManagerAPITest {
 
@@ -144,6 +151,8 @@ public class JobQueueManagerAPITest {
 
     private EventProducer eventProducer;
 
+    private RetryPolicyProcessor retryPolicyProcessor;
+
     /**
      * Factory to create mock JobProcessor instances for testing.
      * This is how we instruct the JobQueueManagerAPI to use our mock processors.
@@ -173,10 +182,11 @@ public class JobQueueManagerAPITest {
         mockRetryStrategy = mock(RetryStrategy.class);
         mockCircuitBreaker = mock(CircuitBreaker.class);
         eventProducer = mock(EventProducer.class);
+        retryPolicyProcessor = mock(RetryPolicyProcessor.class);
 
         jobQueueManagerAPI = newJobQueueManagerAPI(
                 mockJobQueue, mockCircuitBreaker, mockRetryStrategy, eventProducer, jobProcessorFactory,
-                1, 10
+                retryPolicyProcessor, 1, 10
         );
 
         jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
@@ -995,7 +1005,7 @@ public class JobQueueManagerAPITest {
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
         JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
                 mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer, jobProcessorFactory,
-                1, 1000
+                retryPolicyProcessor, 1, 1000
         );
 
         jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
@@ -1080,7 +1090,7 @@ public class JobQueueManagerAPITest {
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
         JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
                 mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer, jobProcessorFactory,
-                1, 1000
+                retryPolicyProcessor, 1, 1000
         );
         jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
 
@@ -1143,7 +1153,7 @@ public class JobQueueManagerAPITest {
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
         JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
                 mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer, jobProcessorFactory,
-                1, 1000
+                retryPolicyProcessor, 1, 1000
         );
         jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
 
@@ -1178,27 +1188,57 @@ public class JobQueueManagerAPITest {
     public void test_simple_cancelJob2()
             throws DotDataException, JobQueueException, JobCancellationException {
 
-        // Set up the job queue manager to return our mock cancellable processor
-        final String testQueue = "CancellableTestQueue";
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class)) {
 
-        // Create a mock cancellable processor
-        final String jobIdIn = "job2";
-        when(mockJobQueue.createJob(anyString(), anyMap())).thenReturn(jobIdIn);
-        // Create a mock job
-        Job mockJob = mock(Job.class);
-        when(mockJobQueue.getJob(jobIdIn)).thenReturn(mockJob);
-        when(mockJob.queueName()).thenReturn(testQueue);
-        when(mockJob.id()).thenReturn(jobIdIn);
-        when(mockJob.withState(any())).thenReturn(mockJob);
+            // Set up the job queue manager to return our mock cancellable processor
+            final String testQueue = "CancellableTestQueue";
+            final String jobIdIn = "job2";
 
-        jobQueueManagerAPI.registerProcessor(testQueue, SimpleCancellableJobProcessor.class);
-        // Create a job so we can cancel it
-        final String jobIdOut = jobQueueManagerAPI.createJob(testQueue, Map.of());
-        assertEquals(jobIdIn, jobIdOut);
-        // Perform the cancellation
-        jobQueueManagerAPI.cancelJob(jobIdOut);
-        // Verify that the cancel method was called on our mock processor
-        verify(mockCancellableProcessor).cancel(mockJob);
+            // Create a mock job
+            Job mockJob = mock(Job.class);
+            when(mockJob.queueName()).thenReturn(testQueue);
+            when(mockJob.id()).thenReturn(jobIdIn);
+            when(mockJob.state()).thenReturn(JobState.RUNNING);
+            when(mockJob.withState(any(JobState.class))).thenReturn(mockJob);
+
+            // Mock job queue operations
+            when(mockJobQueue.createJob(anyString(), anyMap())).thenReturn(jobIdIn);
+            when(mockJobQueue.getJob(anyString())).thenReturn(mockJob);
+            doNothing().when(mockJobQueue).updateJobStatus(any(Job.class));
+
+            // Create Mock Job Event
+            JobCancelRequestEvent mockEvent = mock(JobCancelRequestEvent.class);
+            when(mockEvent.getJob()).thenReturn(mockJob);
+
+            // Mock system events
+            LocalSystemEventsAPI localSystemEventsAPI = mock(LocalSystemEventsAPI.class);
+            apiLocator.when(APILocator::getLocalSystemEventsAPI).thenReturn(localSystemEventsAPI);
+
+            // Handle the event notification
+            doAnswer(invocation -> {
+                JobCancelRequestEvent event = invocation.getArgument(0);
+                ((JobQueueManagerAPIImpl) jobQueueManagerAPI).onCancelRequestJob(event);
+                return null;
+            }).when(localSystemEventsAPI).notify(any(JobCancelRequestEvent.class));
+
+            jobQueueManagerAPI.registerProcessor(testQueue, SimpleCancellableJobProcessor.class);
+
+            // Create a job so we can cancel it
+            final String jobIdOut = jobQueueManagerAPI.createJob(testQueue, Map.of());
+            assertEquals(jobIdIn, jobIdOut);
+
+            // Perform the cancellation
+            jobQueueManagerAPI.cancelJob(jobIdOut);
+
+            // Verify that the cancel method was called on our mock processor
+            Awaitility.await()
+                    .atMost(10, TimeUnit.SECONDS)
+                    .pollInterval(100, TimeUnit.MILLISECONDS)
+                    .untilAsserted(() -> {
+                        verify(mockCancellableProcessor).cancel(mockJob);
+                    });
+
+        }
     }
 
     /**
@@ -1209,85 +1249,109 @@ public class JobQueueManagerAPITest {
     @Test
     public void test_complex_cancelJob() throws Exception {
 
-        // Create a mock job
-        Job mockJob = mock(Job.class);
-        final String jobId = "job5644";
-        when(mockJob.id()).thenReturn(jobId);
-        final String testQueue = "myTestQueue";
-        when(mockJob.queueName()).thenReturn(testQueue);
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class)) {
 
-        // Configure JobQueue
-        when(mockJobQueue.getJob(jobId)).thenReturn(mockJob);
-        when(mockJobQueue.nextJob()).thenReturn(mockJob).thenReturn(null);
-        when(mockJobQueue.hasJobBeenInState(any(), eq(JobState.CANCELLING))).thenReturn(true);
-        when(mockJobQueue.createJob(anyString(), anyMap())).thenReturn(jobId);
+            final String testQueue = "myTestQueue";
+            final String jobId = "job5644";
 
-        // List to capture job state updates
-        List<JobState> stateUpdates = new CopyOnWriteArrayList<>();
+            // Create a mock job
+            Job mockJob = mock(Job.class);
+            when(mockJob.queueName()).thenReturn(testQueue);
+            when(mockJob.id()).thenReturn(jobId);
+            when(mockJob.state()).thenReturn(JobState.RUNNING);
+            when(mockJob.withState(any(JobState.class))).thenReturn(mockJob);
 
-        when(mockJob.withState(any())).thenAnswer(inv -> {
-            stateUpdates.add(inv.getArgument(0));
-            return mockJob;
-        });
-        when(mockJob.markAsRunning()).thenAnswer(inv -> {
-            stateUpdates.add(JobState.RUNNING);
-            return mockJob;
-        });
-        when(mockJob.markAsCanceled(any())).thenAnswer(inv -> {
-            stateUpdates.add(JobState.CANCELED);
-            return mockJob;
-        });
-        when(mockJob.markAsCompleted(any())).thenAnswer(inv -> {
-            stateUpdates.add(JobState.COMPLETED);
-            return mockJob;
-        });
-        when(mockJob.markAsFailed(any())).thenAnswer(inv -> {
-            stateUpdates.add(JobState.FAILED);
-            return mockJob;
-        });
-        when(mockJob.progress()).thenReturn(0f);
-        when(mockJob.withProgress(anyFloat())).thenReturn(mockJob);
-        when(mockJob.withProgressTracker(any(DefaultProgressTracker.class))).thenReturn(mockJob);
+            // Configure JobQueue
+            when(mockJobQueue.getJob(jobId)).thenReturn(mockJob);
+            when(mockJobQueue.nextJob()).thenReturn(mockJob).thenReturn(null);
+            when(mockJobQueue.hasJobBeenInState(any(), eq(JobState.CANCEL_REQUESTED),
+                    eq(JobState.CANCELLING))).thenReturn(true);
+            when(mockJobQueue.createJob(anyString(), anyMap())).thenReturn(jobId);
 
-        when(mockJobQueue.getUpdatedJobsSince(anySet(), any(LocalDateTime.class)))
-                .thenAnswer(invocation -> Collections.singletonList(mockJob));
+            // List to capture job state updates
+            List<JobState> stateUpdates = new CopyOnWriteArrayList<>();
 
-        // Register the test processor
-        jobQueueManagerAPI.registerProcessor(testQueue, ComplexCancellableJobProcessor.class);
+            when(mockJob.withState(any())).thenAnswer(inv -> {
+                stateUpdates.add(inv.getArgument(0));
+                return mockJob;
+            });
+            when(mockJob.markAsRunning()).thenAnswer(inv -> {
+                stateUpdates.add(JobState.RUNNING);
+                return mockJob;
+            });
+            when(mockJob.markAsCanceled(any())).thenAnswer(inv -> {
+                stateUpdates.add(JobState.CANCELED);
+                return mockJob;
+            });
+            when(mockJob.markAsCompleted(any())).thenAnswer(inv -> {
+                stateUpdates.add(JobState.COMPLETED);
+                return mockJob;
+            });
+            when(mockJob.markAsFailed(any())).thenAnswer(inv -> {
+                stateUpdates.add(JobState.FAILED);
+                return mockJob;
+            });
+            when(mockJob.progress()).thenReturn(0f);
+            when(mockJob.withProgress(anyFloat())).thenReturn(mockJob);
+            when(mockJob.withProgressTracker(any(DefaultProgressTracker.class))).thenReturn(
+                    mockJob);
 
-        // Configure circuit breaker
-        when(mockCircuitBreaker.allowRequest()).thenReturn(true);
+            when(mockJobQueue.getUpdatedJobsSince(anySet(), any(LocalDateTime.class)))
+                    .thenAnswer(invocation -> Collections.singletonList(mockJob));
 
-        // Start the job queue manager
-        jobQueueManagerAPI.start();
+            // Create Mock Job Event
+            JobCancelRequestEvent mockEvent = mock(JobCancelRequestEvent.class);
+            when(mockEvent.getJob()).thenReturn(mockJob);
 
-        final String jobIdOut = jobQueueManagerAPI.createJob(testQueue, Map.of());
+            // Mock system events
+            LocalSystemEventsAPI localSystemEventsAPI = mock(LocalSystemEventsAPI.class);
+            apiLocator.when(APILocator::getLocalSystemEventsAPI).thenReturn(localSystemEventsAPI);
 
-        final Optional<JobProcessor> instance = jobQueueManagerAPI.getInstance(jobIdOut);
-        assertTrue(instance.isPresent());
-        // Use our TestJobProcessor
-        final ComplexCancellableJobProcessor testJobProcessor = (ComplexCancellableJobProcessor) instance.get();
+            // Handle the event notification
+            doAnswer(invocation -> {
+                JobCancelRequestEvent event = invocation.getArgument(0);
+                ((JobQueueManagerAPIImpl) jobQueueManagerAPI).onCancelRequestJob(event);
+                return null;
+            }).when(localSystemEventsAPI).notify(any(JobCancelRequestEvent.class));
 
-        // Wait for the job to start processing
-        Awaitility.await()
-                .atMost(5, TimeUnit.SECONDS)
-                .until(() -> testJobProcessor.awaitProcessingStart(100, TimeUnit.MILLISECONDS));
+            // Register the test processor
+            jobQueueManagerAPI.registerProcessor(testQueue, ComplexCancellableJobProcessor.class);
 
-        // Cancel the job
-        jobQueueManagerAPI.cancelJob(jobId);
+            // Configure circuit breaker
+            when(mockCircuitBreaker.allowRequest()).thenReturn(true);
 
-        // Wait for the job to complete (which should be due to cancellation)
-        Awaitility.await()
-                .atMost(10, TimeUnit.SECONDS)
-                .until(() -> testJobProcessor.awaitProcessingCompleted(100, TimeUnit.MILLISECONDS));
+            // Start the job queue manager
+            jobQueueManagerAPI.start();
 
-        Awaitility.await()
-                .atMost(10, TimeUnit.SECONDS)
-                .pollInterval(100, TimeUnit.MILLISECONDS)
-                .until(() -> stateUpdates.contains(JobState.CANCELED));
+            final String jobIdOut = jobQueueManagerAPI.createJob(testQueue, Map.of());
 
-        // Clean up
-        jobQueueManagerAPI.close();
+            final Optional<JobProcessor> instance = jobQueueManagerAPI.getInstance(jobIdOut);
+            assertTrue(instance.isPresent());
+            // Use our TestJobProcessor
+            final ComplexCancellableJobProcessor testJobProcessor = (ComplexCancellableJobProcessor) instance.get();
+
+            // Wait for the job to start processing
+            Awaitility.await()
+                    .atMost(5, TimeUnit.SECONDS)
+                    .until(() -> testJobProcessor.awaitProcessingStart(100, TimeUnit.MILLISECONDS));
+
+            // Cancel the job
+            jobQueueManagerAPI.cancelJob(jobId);
+
+            // Wait for the job to complete (which should be due to cancellation)
+            Awaitility.await()
+                    .atMost(10, TimeUnit.SECONDS)
+                    .until(() -> testJobProcessor.awaitProcessingCompleted(100,
+                            TimeUnit.MILLISECONDS));
+
+            Awaitility.await()
+                    .atMost(10, TimeUnit.SECONDS)
+                    .pollInterval(100, TimeUnit.MILLISECONDS)
+                    .until(() -> stateUpdates.contains(JobState.CANCELED));
+
+            // Clean up
+            jobQueueManagerAPI.close();
+        }
     }
 
     /**
@@ -1327,13 +1391,15 @@ public class JobQueueManagerAPITest {
             RetryStrategy retryStrategy,
             EventProducer eventProducer,
             JobProcessorFactory jobProcessorFactory,
+            RetryPolicyProcessor retryPolicyProcessor,
             int threadPoolSize, int pollJobUpdatesIntervalMilliseconds) {
 
         final var realTimeJobMonitor = new RealTimeJobMonitor();
 
         return new JobQueueManagerAPIImpl(
                 jobQueue, new JobQueueConfig(threadPoolSize, pollJobUpdatesIntervalMilliseconds),
-                circuitBreaker, retryStrategy, realTimeJobMonitor, eventProducer, jobProcessorFactory
+                circuitBreaker, retryStrategy, realTimeJobMonitor, eventProducer,
+                jobProcessorFactory, retryPolicyProcessor
         );
     }
 

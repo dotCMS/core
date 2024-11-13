@@ -1,18 +1,16 @@
-import { Spectator, SpyObject, createComponentFactory } from '@ngneat/spectator/jest';
+import { createFakeEvent } from '@ngneat/spectator';
+import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
-import { signal } from '@angular/core';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 
+import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 import { mockMatchMedia } from '@dotcms/utils-testing';
 
 import { DotEditContentHostFolderFieldComponent } from './dot-edit-content-host-folder-field.component';
 import { HostFolderFiledStore } from './store/host-folder-field.store';
 
-import {
-    TreeNodeItem,
-    TreeNodeSelectItem
-} from '../../models/dot-edit-content-host-folder-field.interface';
-import { newFakeRxMethod, getRxMethodFake } from '../../utils/fake-rx-method';
 import {
     HOST_FOLDER_TEXT_MOCK,
     TREE_SELECT_SITES_MOCK,
@@ -20,47 +18,30 @@ import {
     createFormGroupDirectiveMock
 } from '../../utils/mocks';
 
-class MockHostFolderFiledStore {
-    nodeSelected = signal<TreeNodeItem | null>(null);
-    nodeExpaned = signal<TreeNodeSelectItem['node'] | null>(null);
-    tree = signal<TreeNodeItem[]>([]);
-    status = signal<'idle' | 'pending' | 'fulfilled' | { error: string }>('idle');
-
-    iconClasses = signal(['']);
-
-    loadSites = newFakeRxMethod();
-    loadChildren = newFakeRxMethod();
-    chooseNode = newFakeRxMethod();
-}
-
-type TypeMock = SpyObject<MockHostFolderFiledStore>;
-
 describe('DotEditContentHostFolderFieldComponent', () => {
     let spectator: Spectator<DotEditContentHostFolderFieldComponent>;
-    let component: DotEditContentHostFolderFieldComponent;
-    let store: TypeMock;
+    let store: InstanceType<typeof HostFolderFiledStore>;
 
     const createComponent = createComponentFactory({
         component: DotEditContentHostFolderFieldComponent,
         componentViewProviders: [
             { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
         ],
-        componentProviders: [
-            {
-                provide: HostFolderFiledStore,
-                useClass: MockHostFolderFiledStore
-            }
+        componentProviders: [HostFolderFiledStore],
+        providers: [
+            FormGroupDirective,
+            mockProvider(DotEditContentService, {
+                getSitesTreePath: jest.fn(() => of(TREE_SELECT_SITES_MOCK))
+            })
         ],
-        providers: [FormGroupDirective],
         detectChanges: false
     });
 
     beforeEach(() => {
         spectator = createComponent();
         spectator.setInput('field', { ...HOST_FOLDER_TEXT_MOCK });
-        store = spectator.inject(HostFolderFiledStore, true) as unknown as TypeMock;
-        component = spectator.component;
-        component.formControl.setValue(null);
+        store = spectator.inject(HostFolderFiledStore, true);
+        spectator.component.formControl.setValue(null);
         mockMatchMedia();
     });
 
@@ -71,15 +52,13 @@ describe('DotEditContentHostFolderFieldComponent', () => {
     });
 
     it('should show options', () => {
-        store.tree.set(TREE_SELECT_SITES_MOCK);
-        const spyloadSites = getRxMethodFake(store.loadSites);
-        spectator.detectChanges();
+        const loadSitesSpy = jest.spyOn(store, 'loadSites');
 
-        const options = component.store.tree();
+        spectator.component.ngOnInit();
 
-        expect(options).toBe(TREE_SELECT_SITES_MOCK);
-        expect(component.$treeSelect().options).toBe(TREE_SELECT_SITES_MOCK);
-        expect(spyloadSites).toHaveBeenCalled();
+        expect(store.tree()).toBe(TREE_SELECT_SITES_MOCK);
+        expect(spectator.component.$treeSelect().options).toBe(TREE_SELECT_SITES_MOCK);
+        expect(loadSitesSpy).toHaveBeenCalled();
     });
 
     it('should tree selection height and virtual scroll height be the same', async () => {
@@ -98,43 +77,42 @@ describe('DotEditContentHostFolderFieldComponent', () => {
     });
 
     describe('The init value with the root path', () => {
-        it('should show a root path', () => {
-            store.tree.set(TREE_SELECT_SITES_MOCK);
+        it('should show a root path', fakeAsync(() => {
             const nodeSelected = TREE_SELECT_SITES_MOCK[0];
-            store.nodeSelected.set(nodeSelected);
-            component.formControl.setValue(nodeSelected.key);
-            spectator.detectChanges();
-            expect(component.formControl.value).toBe('demo.dotcms.com');
-            expect(component.pathControl.value.key).toBe(nodeSelected.key);
-            expect(component.$treeSelect().value.label).toBe(nodeSelected.label);
-        });
-    });
-
-    describe('The init value with the one levels', () => {
-        it('should show a path selected', () => {
-            store.tree.set(TREE_SELECT_MOCK);
-            const nodeSelected = TREE_SELECT_MOCK[0].children[0];
-            store.nodeSelected.set(nodeSelected);
-            component.formControl.setValue(nodeSelected.label);
+            spectator.component.formControl.setValue(nodeSelected.key);
             spectator.detectChanges();
 
-            expect(component.formControl.value).toBe('demo.dotcms.com/level1/');
-            expect(component.pathControl.value.key).toBe(nodeSelected.key);
-            expect(component.$treeSelect().value.label).toBe(nodeSelected.label);
-        });
-    });
+            tick(50);
 
-    describe('The init value with the two levels', () => {
-        it('should show a path selected', () => {
-            store.tree.set(TREE_SELECT_MOCK);
+            store.chooseNode({
+                originalEvent: createFakeEvent('click'),
+                node: nodeSelected
+            });
+
+            tick(50);
+
+            expect(spectator.component.formControl.value).toBe('demo.dotcms.com:/');
+            expect(spectator.component.pathControl.value.key).toBe(nodeSelected.key);
+            expect(spectator.component.$treeSelect().value.label).toBe(nodeSelected.label);
+        }));
+
+        it('should show a path selected with the two levels', fakeAsync(() => {
             const nodeSelected = TREE_SELECT_MOCK[0].children[0].children[0];
-            store.nodeSelected.set(nodeSelected);
-            component.formControl.setValue(nodeSelected.label);
+            spectator.component.formControl.setValue(nodeSelected.label);
             spectator.detectChanges();
 
-            expect(component.formControl.value).toBe('demo.dotcms.com/level1/child1/');
-            expect(component.pathControl.value.key).toBe(nodeSelected.key);
-            expect(component.$treeSelect().value.label).toBe(nodeSelected.label);
-        });
+            tick(50);
+
+            store.chooseNode({
+                originalEvent: createFakeEvent('click'),
+                node: nodeSelected
+            });
+
+            tick(50);
+
+            expect(spectator.component.formControl.value).toBe('demo.dotcms.com:/level1/child1/');
+            expect(spectator.component.pathControl.value.key).toBe(nodeSelected.key);
+            expect(spectator.component.$treeSelect().value.label).toBe(nodeSelected.label);
+        }));
     });
 });

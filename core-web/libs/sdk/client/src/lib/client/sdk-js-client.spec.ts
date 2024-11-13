@@ -3,6 +3,7 @@
 import { Content } from './content/content-api';
 import { ClientConfig, DotCmsClient } from './sdk-js-client';
 
+import { NOTIFY_CLIENT } from '../editor/models/listeners.model';
 import * as dotcmsEditor from '../editor/sdk-editor';
 
 global.fetch = jest.fn();
@@ -272,7 +273,7 @@ describe('DotCmsClient', () => {
 
                 const mockMessageEvent = {
                     data: {
-                        name: 'SET_PAGE_DATA',
+                        name: NOTIFY_CLIENT.UVE_SET_PAGE_DATA,
                         payload: { some: 'test' }
                     }
                 };

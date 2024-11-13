@@ -71,6 +71,40 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageDeletedEvent;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.LargeMessageActionlet;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
+import com.dotmarketing.portlets.workflows.actionlet.AnalyticsFireUserEventActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.AsyncEmailActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.BatchAction;
+import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CopyActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.DestroyContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyUsersActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ReindexContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetApproversActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SendFormEmailActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.*;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -258,7 +292,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				DotEmbeddingsActionlet.class,
 				OpenAIContentPromptActionlet.class,
 				OpenAIGenerateImageActionlet.class,
-				OpenAIAutoTagActionlet.class
+				OpenAIAutoTagActionlet.class,
+				AnalyticsFireUserEventActionlet.class
 		));
 
 		refreshWorkFlowActionletMap();
@@ -1604,7 +1639,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         return workflowActions;
     }
 
-    private void fillActionInfo(final WorkflowAction action,
+	/*
+	 * This method will fill the action info based on the action classes
+	 * @param action
+	 * @param actionClasses
+	 */
+    protected void fillActionInfo(final WorkflowAction action,
                                 final List<WorkflowActionClass> actionClasses) {
 
 	    boolean isSave        = false;
@@ -1617,6 +1657,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         boolean isPushPublish = false;
 		boolean isMove        = false;
 		boolean isMoveHasPath = false;
+		boolean isComment     = false;
+		boolean isReset       = false;
 
         for (final WorkflowActionClass actionClass : actionClasses) {
 
@@ -1631,6 +1673,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			    isDelete      |= (null != actionlet) && actionlet.delete();
 			    isDestroy     |= (null != actionlet) && actionlet.destroy();
                 isPushPublish |= (null != actionlet) && actionlet.pushPublish();
+			    isComment     |= (null != actionlet) && actionlet.comment();
+				isReset       |= (null != actionlet) && actionlet.reset();
 
 			/*
 			 * In order to determine if an action is moveable, it needs to have a MoveContentActionlet assigned AND
@@ -1657,6 +1701,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         action.setPushPublishActionlet(isPushPublish);
         action.setMoveActionlet(isMove);
         action.setMoveActionletHashPath(isMoveHasPath);
+		action.setCommentActionlet(isComment);
+		action.setResetable(isReset);
     }
 
 

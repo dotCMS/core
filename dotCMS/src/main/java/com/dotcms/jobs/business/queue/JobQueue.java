@@ -41,6 +41,20 @@ public interface JobQueue {
     Job getJob(String jobId) throws JobNotFoundException, JobQueueDataException;
 
     /**
+     * Retrieves the current state of a specific job.
+     * <p>
+     * If only the status is required, this method has better performance than
+     * {@link #getJob(String)} as it uses a cache that is only cleared on status changes, whereas
+     * {@link #getJob(String)} uses a cache that is cleared on any job change.
+     *
+     * @param jobId The ID of the job whose state is being queried.
+     * @return The current state of the job as a JobState enum.
+     * @throws JobNotFoundException  if the job with the given ID is not found.
+     * @throws JobQueueDataException if there's a data storage error while fetching the job state.
+     */
+    JobState getJobState(final String jobId) throws JobNotFoundException, JobQueueDataException;
+
+    /**
      * Retrieves a list of active jobs for a specific queue.
      *
      * @param queueName The name of the queue.
@@ -75,6 +89,36 @@ public interface JobQueue {
      * @throws JobQueueDataException if there's a data storage error while fetching the jobs
      */
     JobPaginatedResult getJobs(int page, int pageSize) throws JobQueueDataException;
+
+    /**
+     * Retrieves a list of active jobs, meaning jobs that are currently being processed.
+     *
+     * @param page     The page number (for pagination).
+     * @param pageSize The number of items per page.
+     * @return A result object containing the list of active jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getActiveJobs(int page, int pageSize) throws JobQueueDataException;
+
+    /**
+     * Retrieves a list of completed jobs.
+     *
+     * @param page     The page number (for pagination).
+     * @param pageSize The number of items per page.
+     * @return A result object containing the list of completed jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getCompletedJobs(int page, int pageSize) throws JobQueueDataException;
+
+    /**
+     * Retrieves a list of canceled jobs.
+     *
+     * @param page     The page number (for pagination).
+     * @param pageSize The number of items per page.
+     * @return A result object containing the list of canceled jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getCanceledJobs(int page, int pageSize) throws JobQueueDataException;
 
     /**
      * Retrieves a list of failed jobs.
@@ -146,10 +190,10 @@ public interface JobQueue {
      * Checks if a job has ever been in a specific state.
      *
      * @param jobId The ID of the job to check.
-     * @param state The state to check for.
+     * @param states The states to check for.
      * @return true if the job has been in the specified state, false otherwise.
      * @throws JobQueueDataException if there's an error accessing the job data.
      */
-    boolean hasJobBeenInState(String jobId, JobState state) throws JobQueueDataException;
+    boolean hasJobBeenInState(String jobId, JobState... states) throws JobQueueDataException;
 
 }

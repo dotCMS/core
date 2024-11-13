@@ -39,6 +39,9 @@ build-test:
 build-quick:
     ./mvnw -DskipTests install
 
+build-quicker:
+    ./mvnw -pl :dotcms-core -DskipTests install
+
 # Builds the project for production, skipping tests
 build-prod:
     ./mvnw -DskipTests clean install -Pprod
@@ -56,10 +59,12 @@ build-select-module-deps module=":dotcms-core":
     ./mvnw install -pl {{ module }} --am -DskipTests=true
 
 # Development Commands
+dev-run:
+    ./mvnw -pl :dotcms-core -Pdocker-start -Ddocker.glowroot.enabled=true
 
 # Starts the dotCMS application in a Docker container on a dynamic port, running in the foreground
-dev-run:
-    ./mvnw -pl :dotcms-core -Pdocker-start,debug-suspend
+dev-run-debug:
+    ./mvnw -pl :dotcms-core -Pdocker-start,debug
 
 # Maps paths in the docker container to local paths, useful for development
 dev-run-map-dev-paths:
@@ -68,10 +73,6 @@ dev-run-map-dev-paths:
 # Starts the dotCMS application in debug mode with suspension, useful for troubleshooting
 dev-run-debug-suspend port="8082":
     ./mvnw -pl :dotcms-core -Pdocker-start,debug-suspend -Dtomcat.port={{ port }}
-
-# Starts the dotCMS Docker container in the background, running on random port
-dev-start:
-    ./mvnw -pl :dotcms-core -Pdocker-start
 
 # Starts the dotCMS Docker container in the background
 dev-start-on-port port="8082":
@@ -85,7 +86,7 @@ dev-stop:
 dev-clean-volumes:
     ./mvnw -pl :dotcms-core -Pdocker-clean-volumes
 
-# Starts the dotCMS application in a Tomcat container on port 8080, running in the foreground
+# Starts the dotCMS application in a Tomcat container on port 8087, running in the foreground
 dev-tomcat-run port="8087":
     ./mvnw -pl :dotcms-core -Ptomcat-run -Pdebug -Dservlet.port={{ port }}
 

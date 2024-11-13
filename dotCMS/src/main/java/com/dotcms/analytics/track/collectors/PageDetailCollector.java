@@ -77,7 +77,7 @@ public class PageDetailCollector implements Collector {
             pageObject.put("id", detailPageContent.getIdentifier());
             pageObject.put("title", detailPageContent.getTitle());
             pageObject.put("url", uri);
-            pageObject.put("detail_page_url", urlMapContentType.detailPage());
+            pageObject.put("detail_page_url", Try.of(detailPageContent::getURI).getOrElse(""));
             collectorPayloadBean.put("object",  pageObject);
         }
 
@@ -86,7 +86,7 @@ public class PageDetailCollector implements Collector {
         collectorPayloadBean.put("language", language);
 
         if (Objects.nonNull(site)) {
-            collectorPayloadBean.put("host", site.getIdentifier());
+            collectorPayloadBean.put("host", site.getHostname());
         }
         return collectorPayloadBean;
     }

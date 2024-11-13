@@ -22,24 +22,23 @@ import {
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWorkflowService
 } from '@dotcms/data-access';
 import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
 import { DotEditContentStore } from './store/edit-content.store';
 
-import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
-import { DotEditContentToolbarComponent } from '../../components/dot-edit-content-toolbar/dot-edit-content-toolbar.component';
-import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
+import { DotEditContentSidebarComponent } from '../../components/dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import * as utils from '../../utils/functions.util';
 import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
 
 describe('EditContentLayoutComponent', () => {
     let spectator: Spectator<EditContentLayoutComponent>;
-    let component: EditContentLayoutComponent;
+
     let store: SpyObject<InstanceType<typeof DotEditContentStore>>;
     let dotContentTypeService: SpyObject<DotContentTypeService>;
     let workflowActionsService: SpyObject<DotWorkflowsActionsService>;
@@ -51,20 +50,19 @@ describe('EditContentLayoutComponent', () => {
 
             MockModule(MessagesModule),
             MockComponent(DotEditContentFormComponent),
-            MockComponent(DotEditContentAsideComponent),
-            MockComponent(DotEditContentToolbarComponent)
+            MockComponent(DotEditContentSidebarComponent)
         ],
         componentProviders: [
             DotEditContentStore, // Usign the real DotEditContentStore
             mockProvider(DotWorkflowsActionsService),
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(DotEditContentService),
-            mockProvider(DotContentTypeService)
+            mockProvider(DotContentTypeService),
+            mockProvider(DotWorkflowService)
         ],
         providers: [
             mockProvider(DotHttpErrorManagerService),
             mockProvider(MessageService),
-
             {
                 provide: ActivatedRoute,
                 useValue: {
@@ -91,7 +89,6 @@ describe('EditContentLayoutComponent', () => {
             detectChanges: false
         });
 
-        component = spectator.component;
         spectator.detectChanges();
 
         store = spectator.inject(DotEditContentStore, true);
@@ -126,7 +123,6 @@ describe('EditContentLayoutComponent', () => {
             expect(store.showSidebar()).toBe(true);
 
             expect(spectator.query(byTestId('edit-content-layout__topBar'))).toBeTruthy();
-            expect(spectator.query(byTestId('edit-content-layout__header'))).toBeTruthy();
             expect(spectator.query(byTestId('edit-content-layout__body'))).toBeTruthy();
             expect(spectator.query(byTestId('edit-content-layout__sidebar'))).toBeTruthy();
 
@@ -148,94 +144,6 @@ describe('EditContentLayoutComponent', () => {
             spectator.detectChanges();
             expect(store.isEnabledNewContentEditor()).toBe(false);
             expect(spectator.query(byTestId('edit-content-layout__topBar'))).toBeNull();
-        });
-    });
-
-    describe('Sidebar', () => {
-        it('should toggle sidebar visibility when toggle button is clicked', fakeAsync(() => {
-            // Setup
-            dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
-            workflowActionsService.getDefaultActions.mockReturnValue(of(mockWorkflowsActions));
-            store.initializeNewContent('contentTypeName');
-            spectator.detectChanges();
-            tick(); // Wait for the defer to load
-
-            expect(spectator.query(byTestId('edit-content-layout__sidebar'))).toBeTruthy();
-            expect(spectator.element).toHaveClass('edit-content--with-sidebar');
-
-            // hide sidebar
-            const sidebarToggle = spectator.query(byTestId('sidebar-toggle'));
-            spectator.click(sidebarToggle);
-            tick(); // Wait for the defer to load
-
-            expect(spectator.query(byTestId('edit-content-layout__sidebar'))).toBeNull();
-            expect(spectator.element).not.toHaveClass('edit-content--with-sidebar');
-
-            // show sidebar again
-            spectator.click(sidebarToggle);
-            tick(); // Wait for the defer to load
-
-            expect(spectator.query(byTestId('edit-content-layout__sidebar'))).toBeTruthy();
-            expect(spectator.element).toHaveClass('edit-content--with-sidebar');
-        }));
-    });
-
-    describe('fireWorkflowAction', () => {
-        it('should call store.fireWorkflowAction with correct parameters for new content', () => {
-            const formValue = { field1: 'value1', field2: 'value2' };
-            component.setFormValue(formValue);
-
-            const mockFireWorkflowAction = jest.fn();
-            jest.spyOn(store, 'fireWorkflowAction').mockImplementation(mockFireWorkflowAction);
-
-            const actionParams: DotWorkflowActionParams = {
-                actionId: 'action1',
-                inode: '',
-                contentType: 'contentType1'
-            };
-
-            component.fireWorkflowAction(actionParams);
-
-            expect(mockFireWorkflowAction).toHaveBeenCalledWith({
-                actionId: 'action1',
-                inode: '',
-                data: {
-                    contentlet: {
-                        ...formValue,
-                        contentType: 'contentType1'
-                    }
-                }
-            });
-        });
-
-        it('should call store.fireWorkflowAction with correct parameters for existing content', () => {
-            // Create a mock for fireWorkflowAction
-            const mockFireWorkflowAction = jest.fn();
-
-            // Replace the real method with the mock
-            jest.spyOn(store, 'fireWorkflowAction').mockImplementation(mockFireWorkflowAction);
-
-            const formValue = { field1: 'value1', field2: 'value2' };
-            component.setFormValue(formValue);
-
-            const actionParams: DotWorkflowActionParams = {
-                actionId: 'action1',
-                inode: 'existingInode',
-                contentType: 'contentType1'
-            };
-
-            component.fireWorkflowAction(actionParams);
-
-            expect(mockFireWorkflowAction).toHaveBeenCalledWith({
-                actionId: 'action1',
-                inode: 'existingInode',
-                data: {
-                    contentlet: {
-                        ...formValue,
-                        contentType: 'contentType1'
-                    }
-                }
-            });
         });
     });
 });

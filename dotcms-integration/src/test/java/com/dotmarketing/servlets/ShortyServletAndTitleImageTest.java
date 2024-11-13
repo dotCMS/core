@@ -9,12 +9,12 @@ import java.util.Base64;
 
 import java.util.Optional;
 
-import com.dotcms.concurrent.DotSubmitter;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.image.focalpoint.FocalPoint;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.datagen.*;
+import com.dotcms.junit.CustomDataProviderRunner;
+
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -23,9 +23,6 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableImageField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -38,10 +35,12 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@RunWith(DataProviderRunner.class)
+@ApplicationScoped
+@RunWith(CustomDataProviderRunner.class)
 public class ShortyServletAndTitleImageTest {
     
 
@@ -266,8 +265,6 @@ public class ShortyServletAndTitleImageTest {
                 path.contains("/" + cvi.get().getLiveInode()));
         assertTrue(path.contains("/fileAsset"));
 
-
-
         
         
         // null out image field
@@ -284,14 +281,73 @@ public class ShortyServletAndTitleImageTest {
 
         assertTrue("shorty points to the inode", path.contains("/" + contentlet.getInode()));
         assertTrue("titleImage points to binary3", path.contains("/" + binary3.variable()));
-        
-        
-        
-        
-        
-        
-        
-        
+    }
+
+
+
+
+
+    /**
+     * Method to test: {@link ShortyServlet#inodePath(Contentlet, String, boolean)}
+     * Given Scenario: A contentlet with an image field referencing a dot asset is created in a secondary language,
+     *                 while the actual asset only exists in the default language
+     * ExpectedResult: The servlet should:
+     *                 - Detect that the asset doesn't exist in the secondary language
+     *                 - Fall back to the default language version
+     *                 - Return the correct path for both live and working versions
+     *                 - Include the correct field variable (DotAssetContentType.ASSET_FIELD_VAR)
+     */
+    @Test
+    public void test_inodePath_ImageField_ShouldFallbackToDefaultLanguage() throws Exception {
+        // Initialize servlet
+        final ShortyServlet servlet = new ShortyServlet();
+
+        // Create and publish dot asset in default language
+        Contentlet dotAssset = TestDataUtils.getDotAssetLikeContentlet(true, 
+                APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        APILocator.getContentletAPI().publish(dotAssset, user, false);
+
+        // Create content type with image field
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        Field imageField = ImmutableImageField.builder()
+                .contentTypeId(contentType.id())
+                .name("image")
+                .variable("image").build();
+        imageField = APILocator.getContentTypeFieldAPI().save(imageField, user);
+
+        // Setup languages
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language language2 = new LanguageDataGen().nextPersisted();
+
+        // Create contentlet in secondary language
+        Contentlet contentlet = new Contentlet();
+        contentlet.setContentTypeId(contentType.id());
+        contentlet.setStringProperty(imageField, dotAssset.getIdentifier());
+        contentlet.setLanguageId(language2.getId());
+        contentlet = APILocator.getContentletAPI().checkin(contentlet, user, false);
+
+        // Verify asset doesn't exist in secondary language
+        Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(contentlet.getStringProperty(imageField.variable()),
+                        language2.getId());
+        assertTrue(cvi.isEmpty());
+
+        // Verify asset exists in default language
+        Optional<ContentletVersionInfo> cvi2 = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(contentlet.getStringProperty(imageField.variable()),
+                        defaultLanguage.getId());
+        assertTrue(cvi2.isPresent());
+        assertEquals(cvi2.get().getLang(), defaultLanguage.getId());
+
+        // Verify live version path resolution
+        String path = servlet.inodePath(contentlet, imageField.variable(), true);
+        assertTrue("shorty points to the asset live inode", path.contains("/" + cvi2.get().getLiveInode()));
+        assertTrue(path.contains("/" + DotAssetContentType.ASSET_FIELD_VAR));
+
+        // Verify working version path resolution
+        path = servlet.inodePath(contentlet, imageField.variable(), false);
+        assertTrue("shorty points to the asset working inode", path.contains("/" + cvi2.get().getWorkingInode()));
+        assertTrue(path.contains("/" + DotAssetContentType.ASSET_FIELD_VAR));
     }
 
     /**

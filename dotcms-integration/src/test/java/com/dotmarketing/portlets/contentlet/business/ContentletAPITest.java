@@ -207,7 +207,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     @Test
     public void testDotAsset_Checkin() throws DotDataException, DotSecurityException, IOException {
-
         // 1) creates a dotasset for test
         final String variable = "testDotAsset" + System.currentTimeMillis();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());

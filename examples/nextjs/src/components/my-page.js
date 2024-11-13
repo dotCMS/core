@@ -20,6 +20,8 @@ import { usePageAsset } from "../hooks/usePageAsset";
 import BlogWithBlockEditor from "./content-types/blog";
 import { SimpleWidget } from "./content-types/SimpleWidget";
 import { Video } from "./content-types/Video";
+import NotFound from "@/app/not-found";
+
 /**
  * Configure experiment settings below. If you are not using experiments,
  * you can ignore or remove the experiment-related code and imports.
@@ -64,32 +66,34 @@ export function MyPage({ pageAsset, nav }) {
 
     pageAsset = usePageAsset(pageAsset);
 
+    if (!pageAsset) {
+        return <NotFound />;
+    }
+
     return (
-        <div className="min-h-screen bg-lime-50">
-            {pageAsset.layout.header && (
-                <Header>
-                    <Navigation items={nav} />
-                </Header>
+        <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
+            {pageAsset?.layout.header && (
+                <Header>{!!nav && <Navigation items={nav} />}</Header>
             )}
 
             <main>
                 <DotLayoutComponent
                     pageContext={{
-                        components: componentsMap,
-                        pageAsset: pageAsset,
+                        pageAsset,
+                        components: componentsMap
                     }}
                     config={{
                         pathname,
                         editor: {
                             params: {
-                                depth: 3,
-                            },
-                        },
+                                depth: 3
+                            }
+                        }
                     }}
                 />
             </main>
 
-            {pageAsset.layout.footer && <Footer />}
+            {pageAsset?.layout.footer && <Footer />}
         </div>
     );
 }

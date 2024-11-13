@@ -1,5 +1,4 @@
-import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
@@ -8,30 +7,30 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
-import { DotWorkflowActionsFireService, DotWorkflowsActionsService } from '@dotcms/data-access';
+import {
+    DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
+    DotWorkflowService
+} from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentStore } from './store/edit-content.store';
 
-import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
-import { DotEditContentToolbarComponent } from '../../components/dot-edit-content-toolbar/dot-edit-content-toolbar.component';
-import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
+import { DotEditContentSidebarComponent } from '../../components/dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 
 @Component({
     selector: 'dot-edit-content-form-layout',
     standalone: true,
     imports: [
-        AsyncPipe,
         DotMessagePipe,
         ButtonModule,
         ToastModule,
         MessagesModule,
         RouterLink,
         DotEditContentFormComponent,
-        DotEditContentAsideComponent,
-        DotEditContentToolbarComponent,
+        DotEditContentSidebarComponent,
         ConfirmDialogModule
     ],
     providers: [
@@ -39,6 +38,7 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         DotWorkflowActionsFireService,
         DotEditContentService,
         MessageService,
+        DotWorkflowService,
         DotEditContentStore
     ],
 
@@ -51,35 +51,4 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 })
 export class EditContentLayoutComponent {
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
-
-    formValue = signal<Record<string, string>>({});
-
-    /**
-     * Set the form value to be saved.
-     *
-     * @param {Record<string, string>} formValue - An object containing the key-value pairs of the contentlet to be saved.
-     * @memberof EditContentLayoutComponent
-     */
-    setFormValue(formValue: Record<string, string>) {
-        this.formValue.set(formValue);
-    }
-
-    /**
-     * Fire the workflow action.
-     *
-     * @param {DotCMSWorkflowAction} action
-     * @memberof EditContentLayoutComponent
-     */
-    fireWorkflowAction({ actionId, inode, contentType }: DotWorkflowActionParams): void {
-        this.$store.fireWorkflowAction({
-            actionId,
-            inode,
-            data: {
-                contentlet: {
-                    ...this.formValue(),
-                    contentType
-                }
-            }
-        });
-    }
 }

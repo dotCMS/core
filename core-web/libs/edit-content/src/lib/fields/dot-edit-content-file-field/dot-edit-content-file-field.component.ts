@@ -21,6 +21,7 @@ import { filter, map } from 'rxjs/operators';
 
 import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotGeneratedAIImage } from '@dotcms/dotcms-models';
+import { INPUT_TYPES, UploadedFile } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import {
     DotDropZoneComponent,
     DotMessagePipe,
@@ -32,8 +33,9 @@ import {
 
 import { DotFileFieldPreviewComponent } from './components/dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from './components/dot-file-field-ui-message/dot-file-field-ui-message.component';
+import { DotFormFileEditorComponent } from './components/dot-form-file-editor/dot-form-file-editor.component';
 import { DotFormImportUrlComponent } from './components/dot-form-import-url/dot-form-import-url.component';
-import { INPUT_TYPES, UploadedFile } from './models';
+import { DotSelectExistingFileComponent } from './components/dot-select-existing-file/dot-select-existing-file.component';
 import { DotFileFieldUploadService } from './services/upload-file/upload-file.service';
 import { FileFieldStore } from './store/file-field.store';
 import { getUiMessage } from './utils/messages';
@@ -132,21 +134,19 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             return this.#dotMessageService.get('dot.file.field.action.generate.with.tooltip');
         }
 
-        return null;
+        return '';
     });
 
-    private onChange: (value: string) => void;
-    private onTouched: () => void;
+    private onChange: ((value: string) => void) | null = null;
+    private onTouched: (() => void) | null = null;
 
     constructor() {
         effect(() => {
-            if (!this.onChange && !this.onTouched) {
-                return;
+            if (this.onChange && this.onTouched) {
+                const value = this.store.value();
+                this.onChange(value);
+                this.onTouched();
             }
-
-            const value = this.store.value();
-            this.onChange(value);
-            this.onTouched();
         });
     }
 
@@ -234,7 +234,11 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
      *
      * @return {void}
      */
-    fileSelected(files: FileList) {
+    fileSelected(files: FileList | null) {
+        if (!files || files.length === 0) {
+            return;
+        }
+
         const file = files[0];
 
         if (!file) {
@@ -343,6 +347,75 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             )
             .subscribe((file) => {
                 this.store.setPreviewFile(file);
+            });
+    }
+
+    /**
+     * Opens the file editor dialog with specific configurations and handles the file upload process.
+     *
+     * This method performs the following actions:
+     * - Retrieves the header message for the dialog.
+     * - Opens the `DotFormFileEditorComponent` dialog with various options such as header, appendTo, closeOnEscape, draggable, keepInViewport, maskStyleClass, resizable, modal, width, and style.
+     * - Passes data to the dialog, including the uploaded file and a flag to allow file name editing.
+     * - Subscribes to the dialog's onClose event to handle the uploaded file and update the store with the preview file.
+     *
+     */
+    showFileEditorDialog() {
+        const header = this.#dotMessageService.get('dot.file.field.dialog.create.new.file.header');
+
+        this.#dialogRef = this.#dialogService.open(DotFormFileEditorComponent, {
+            header,
+            appendTo: 'body',
+            closeOnEscape: false,
+            draggable: false,
+            keepInViewport: false,
+            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            resizable: false,
+            modal: true,
+            width: '90%',
+            style: { 'max-width': '1040px' },
+            data: {
+                uploadedFile: this.store.uploadedFile(),
+                allowFileNameEdit: true
+            }
+        });
+
+        this.#dialogRef.onClose
+            .pipe(
+                filter((file) => !!file),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((file) => {
+                this.store.setPreviewFile(file);
+            });
+    }
+
+    showSelectExistingFileDialog() {
+        const header = this.#dotMessageService.get(
+            'dot.file.field.dialog.select.existing.file.header'
+        );
+
+        this.#dialogRef = this.#dialogService.open(DotSelectExistingFileComponent, {
+            header,
+            appendTo: 'body',
+            closeOnEscape: false,
+            draggable: false,
+            keepInViewport: false,
+            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            resizable: false,
+            modal: true,
+            width: '90%',
+            style: { 'max-width': '1040px' },
+            data: {}
+        });
+
+        this.#dialogRef.onClose
+            .pipe(
+                filter((file) => !!file),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((file) => {
+                this.store.setPreviewFile({ source: 'contentlet', file });
             });
     }
 

@@ -15,7 +15,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
-import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DEFAULT_VARIANT_NAME,
@@ -85,7 +85,6 @@ export class DotExperimentsConfigurationVariantsComponent {
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
         private readonly confirmationService: ConfirmationService,
-        private readonly dotSessionStorageService: DotSessionStorageService,
         private readonly dotMessageService: DotMessageService,
         private readonly router: Router,
         private readonly route: ActivatedRoute
@@ -157,7 +156,6 @@ export class DotExperimentsConfigurationVariantsComponent {
      * @memberof DotExperimentsConfigurationVariantsComponent
      */
     goToEditPageVariant(variant: Variant, mode: DotPageMode) {
-        this.dotSessionStorageService.setVariationId(variant.id);
         this.router.navigate(['edit-page/content'], {
             queryParams: {
                 variantName: variant.id,
