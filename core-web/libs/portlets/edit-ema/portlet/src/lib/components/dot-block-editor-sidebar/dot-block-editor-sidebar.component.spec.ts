@@ -76,7 +76,10 @@ const EVENT_DATA = {
     contentType: 'Blog',
     language: '2',
     inode: 'testInode',
-    blockEditorContent: '{"field":"field value"}'
+    content: {
+        conent: [],
+        type: 'doc'
+    }
 };
 
 const contentTypeMock: DotCMSContentType = {
@@ -136,7 +139,7 @@ describe('DotBlockEditorSidebarComponent', () => {
 
         expect(blockEditor.field).toEqual(BLOCK_EDITOR_FIELD);
         expect(blockEditor.languageId).toBe(parseInt(EVENT_DATA.language));
-        expect(blockEditor.value).toEqual(JSON.parse(EVENT_DATA.blockEditorContent));
+        expect(blockEditor.value).toEqual(EVENT_DATA.content);
         expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Blog');
     });
 
