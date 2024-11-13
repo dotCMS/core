@@ -1004,7 +1004,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CLIENT_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             },
-            [CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING]: (payload) => {
+            [CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING]: ({ type, data }) => {
                 if (!this.uveStore.isEnterprise()) {
                     this.#dotAlertConfirmService.alert({
                         header: this.dotMessageService.get(
@@ -1016,7 +1016,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                this.blockSidebar?.open(payload);
+                if (type === 'blockEditor') {
+                    this.blockSidebar?.open(data);
+                }
             }
         };
         const actionToExecute = CLIENT_ACTIONS_FUNC_MAP[action];

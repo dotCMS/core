@@ -127,9 +127,19 @@ export function addClassToEmptyContentlets(): void {
     });
 }
 
-const INLINE_EDITING_EVENT: Record<string, CLIENT_ACTIONS> = {
+// MOVE THIS TO ANOTHER FILE
+type INLINE_EDITING_EVENT_KEY = 'blockEditor';
+const INLINE_EDITING_EVENT: Record<INLINE_EDITING_EVENT_KEY, CLIENT_ACTIONS> = {
     blockEditor: CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING
 };
+
+export interface InlineEditingData {
+    inode: string;
+    languageId: string | number;
+    contentType: string;
+    fieldName: string;
+    content: string | Record<string, unknown>;
+}
 
 /**
  * Initializes the block editor inline editing.
@@ -138,9 +148,8 @@ const INLINE_EDITING_EVENT: Record<string, CLIENT_ACTIONS> = {
  * @param {*} { inode, language_id, blockEditorContent }
  */
 export function initInlineEditing(
-    type: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    { inode, languageId, contentType, fieldName, content }: any // Any for now
+    type: INLINE_EDITING_EVENT_KEY,
+    { inode, languageId, contentType, fieldName, content }: InlineEditingData
 ) {
     const action = INLINE_EDITING_EVENT[type];
 
@@ -149,15 +158,19 @@ export function initInlineEditing(
     }
 
     const contentString = typeof content === 'string' ? content : JSON.stringify(content ?? {});
+    const data = {
+        inode,
+        fieldName,
+        contentType,
+        languageId,
+        content: contentString
+    };
 
     postMessageToEditor({
         action,
         payload: {
-            inode,
-            fieldName,
-            contentType,
-            languageId,
-            blockEditorContent: contentString
+            type,
+            data
         }
     });
 }

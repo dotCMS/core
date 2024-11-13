@@ -19,13 +19,13 @@ const ActivityBlock = (props) => {
     );
 };
 
-function Blog({ blockEditorItem, ...contentlet }) {
+function Blog({ blogContent, ...contentlet }) {
     return (
         <BlockEditorRenderer
             editable={true}
             contentlet={contentlet}
-            blocks={blockEditorItem}
-            fieldName="blockEditorItem"
+            blocks={blogContent}
+            fieldName="blogContent"
             customRenderers={{
                 Activity: ActivityBlock,
                 paragraph: CustomParagraph,

@@ -1,8 +1,11 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 
+import * as client from '@dotcms/client';
+
 import { BlockEditorRenderer } from './BlockEditorRenderer';
 
+import { dotcmsContentletMock } from '../../mocks/mockPageContext';
 import { Block } from '../../models/blocks.interface';
 
 describe('BlockEditorRenderer', () => {
@@ -47,5 +50,43 @@ describe('BlockEditorRenderer', () => {
         );
         expect(container.firstChild).toHaveClass('test-class');
         expect(container.firstChild).toHaveStyle('color: red');
+    });
+
+    describe('when the editable prop is true', () => {
+        beforeEach(() => {
+            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => true);
+        });
+
+        it("should receive the 'editable' prop and render the BlockEditorBlock component", () => {
+            const { getByText } = render(
+                <BlockEditorRenderer
+                    blocks={blocks}
+                    editable
+                    contentlet={dotcmsContentletMock}
+                    fieldName="fieldName"
+                />
+            );
+            expect(getByText('Hello, World!')).toBeInTheDocument();
+        });
+
+        it('should call `initInlineEditing` when the component is clicked', () => {
+            const spy = jest.spyOn(client, 'initInlineEditing');
+            const { getByTestId } = render(
+                <BlockEditorRenderer
+                    blocks={blocks}
+                    editable
+                    contentlet={dotcmsContentletMock}
+                    fieldName="fieldName"
+                />
+            );
+            const blockEditorContainer = getByTestId('dot-block-editor-container');
+            blockEditorContainer.click();
+            expect(blockEditorContainer).toHaveTextContent('Hello, World!');
+            expect(spy).toHaveBeenCalledWith('blockEditor', {
+                ...dotcmsContentletMock,
+                fieldName: 'fieldName',
+                content: blocks.content
+            });
+        });
     });
 });

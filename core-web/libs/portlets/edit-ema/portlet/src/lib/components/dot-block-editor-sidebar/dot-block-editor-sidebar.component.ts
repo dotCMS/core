@@ -24,19 +24,19 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 export interface BlockEditorData {
-    content: { [key: string]: string };
-    field: DotCMSContentTypeField;
-    fieldName: string;
     inode: string;
+    fieldName: string;
     languageId: number;
+    content: JSONContent;
+    field: DotCMSContentTypeField;
 }
 
 export interface BlockEditorPayload {
+    inode: string;
+    content: string;
+    language: string;
     fieldName: string;
     contentType: string;
-    inode: string;
-    language: string;
-    blockEditorContent: string;
 }
 
 export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
@@ -86,13 +86,7 @@ export class DotBlockEditorSidebarComponent {
      * @param {BlockEditorPayload} { fieldName, contentType, inode, language, blockEditorContent }
      * @memberof DotBlockEditorSidebarComponent
      */
-    open({
-        fieldName,
-        contentType,
-        inode,
-        language,
-        blockEditorContent
-    }: BlockEditorPayload): void {
+    open({ inode, content, language, fieldName, contentType }: BlockEditorPayload): void {
         this.#getEditorField({ fieldName, contentType }).subscribe({
             next: (field) =>
                 this.contentlet.set({
@@ -100,7 +94,7 @@ export class DotBlockEditorSidebarComponent {
                     field,
                     fieldName,
                     languageId: parseInt(language),
-                    content: this.#getJsonContent(blockEditorContent)
+                    content: this.#getJsonContent(content)
                 }),
             error: (err) => console.error('Error getting contentlet ', err)
         });
