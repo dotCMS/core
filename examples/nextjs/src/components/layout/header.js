@@ -1,7 +1,5 @@
 import Link from 'next/link';
 import { reorderMenu } from '@dotcms/client';
-import Image from 'next/image';
-import PublicImageLoader from '@/utils/publicImageLoader';
 
 function Header({ children }) {
     return (
@@ -19,10 +17,13 @@ function Header({ children }) {
 
 function ReorderButton() {
 
+    const arrowUP = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CgogPGc+CiAgPHRpdGxlPmJhY2tncm91bmQ8L3RpdGxlPgogIDxyZWN0IGZpbGw9Im5vbmUiIGlkPSJjYW52YXNfYmFja2dyb3VuZCIgaGVpZ2h0PSI0MDIiIHdpZHRoPSI1ODIiIHk9Ii0xIiB4PSItMSIvPgogPC9nPgogPGc+CiAgPHRpdGxlPkxheWVyIDE8L3RpdGxlPgogIDxwYXRoIGZpbGw9IiNmZmZmZmYiIGlkPSJzdmdfMSIgZD0ibTE0LjgzLDMwLjgzbDkuMTcsLTkuMTdsOS4xNyw5LjE3bDIuODMsLTIuODNsLTEyLC0xMmwtMTIsMTJsMi44MywyLjgzeiIvPgogIDxwYXRoIGlkPSJzdmdfMiIgZmlsbD0ibm9uZSIgZD0ibS0zMC42OTQ1NTcsOS40MjU4ODdsNDgsMGwwLDQ4bC00OCwwbDAsLTQ4eiIvPgogPC9nPgo8L3N2Zz4=";
+    const arrowDown = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CgogPGc+CiAgPHRpdGxlPmJhY2tncm91bmQ8L3RpdGxlPgogIDxyZWN0IGZpbGw9Im5vbmUiIGlkPSJjYW52YXNfYmFja2dyb3VuZCIgaGVpZ2h0PSI0MDIiIHdpZHRoPSI1ODIiIHk9Ii0xIiB4PSItMSIvPgogPC9nPgogPGc+CiAgPHRpdGxlPkxheWVyIDE8L3RpdGxlPgogIDxwYXRoIGZpbGw9IiNmZmZmZmYiIGlkPSJzdmdfMSIgZD0ibTE0LjgzLDE2LjQybDkuMTcsOS4xN2w5LjE3LC05LjE3bDIuODMsMi44M2wtMTIsMTJsLTEyLC0xMmwyLjgzLC0yLjgzeiIvPgogIDxwYXRoIGlkPSJzdmdfMiIgZmlsbD0ibm9uZSIgZD0ibS0xOC4zOTk4OTksMTcuMDc4NDczbDQ4LDBsMCw0OGwtNDgsMGwwLC00OHoiLz4KIDwvZz4KPC9zdmc+";
+
     return (
         <button className="bg-[#426BF0] rounded-sm flex cursor-pointer border-none px-2 py-1 gap-2"  onClick={() => reorderMenu()} >
-            <Image src="/assets/icons/arrow-up.svg" width="0" height="0" className='w-6 h-6' alt="arrow up" loader={PublicImageLoader}/>
-            <Image src="/assets/icons/arrow-down.svg"  width="0" height="0" className='w-6 h-6' alt="arrow down" loader={PublicImageLoader}/>
+            <img src={arrowUP} alt="arrow up" className='w-6 h-6'/>
+            <img src={arrowDown} alt="arrow down" className='w-6 h-6'/>
         </button>
     );
 }

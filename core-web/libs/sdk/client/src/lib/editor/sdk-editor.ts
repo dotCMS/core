@@ -6,7 +6,7 @@ import {
     subscriptions
 } from './listeners/listeners';
 import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from './models/client.model';
-import { DotCMSPageEditorConfig } from './models/editor.model';
+import { DotCMSPageEditorConfig, ReorderMenuConfig } from './models/editor.model';
 
 import { Contentlet } from '../client/content/shared/types';
 
@@ -44,17 +44,21 @@ export function editContentlet<T>(contentlet: Contentlet<T>) {
 }
 
 /**
- * Reorders the menu starting from a specified level.
+ * Reorders the menu based on the provided configuration.
  *
- * @param {number} [startLevel=1] - The level from which to start reordering the menu. Defaults to 1.
+ * @param {ReorderMenuConfig} [config] - Optional configuration for reordering the menu.
+ * @param {number} [config.startLevel=1] - The starting level of the menu to reorder.
+ * @param {number} [config.depth=2] - The depth of the menu to reorder.
  *
- * This function constructs a URL for the reorder menu page with the given start level and a fixed depth of 2.
- * It then sends a message to the editor with the action to reorder the menu and the constructed URL as the payload.
+ * This function constructs a URL for the reorder menu page with the specified
+ * start level and depth, and sends a message to the editor to perform the reorder action.
  */
-export function reorderMenu(startLevel = 1) {
+export function reorderMenu(config?: ReorderMenuConfig): void {
+    const { startLevel = 1, depth = 2 } = config || {};
+
     // This is the URL for the reorder menu page
     // All params are hardcoded on the jsp, so here we just need to send the same URL
-    const reorderUrl = `/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=${startLevel}&depth=2`;
+    const reorderUrl = `/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=${startLevel}&depth=${depth}`;
 
     postMessageToEditor({
         action: CLIENT_ACTIONS.REORDER_MENU,
