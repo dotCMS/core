@@ -712,29 +712,16 @@ describe('utils functions', () => {
     });
 
     describe('createReorderMenuURL', () => {
-        it('should add the missing params', () => {
-            const url = 'some-url?language_id=1';
+        it('should create the correct URL', () => {
             const result = createReorderMenuURL({
-                url,
+                startLevel: 1,
+                depth: 1,
                 pagePath: '123',
                 hostId: '456'
             });
 
             expect(result).toEqual(
-                'http://localhost/some-url?language_id=1&pagePath=123&hostId=456'
-            );
-        });
-
-        it('should not add the missing params', () => {
-            const url = 'some-url?language_id=1&pagePath=111&hostId=333';
-            const result = createReorderMenuURL({
-                url,
-                pagePath: '123',
-                hostId: '456'
-            });
-
-            expect(result).toEqual(
-                'http://localhost/some-url?language_id=1&pagePath=111&hostId=333'
+                'http://localhost/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=1&depth=1&pagePath=123&hostId=456'
             );
         });
     });

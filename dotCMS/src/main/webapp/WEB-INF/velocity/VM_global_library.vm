@@ -172,10 +172,27 @@
     #if ($EDIT_MODE && $PUBLISH_HTMLPAGE_PERMISSION)
         #set($menuLevel = $VTLSERVLET_URI.split('/').size() - 1)
 
-        <a href="#" onclick="window.dotUVE.reorderMenu({startLevel: $menuLevel, depth: 2})" class="btn btn-primary btn-xs normaltip" data-original-title="Reorder Menu">
+        <a href="#" onclick="openReorderDialog(event)" class="btn btn-primary btn-xs normaltip" data-original-title="Reorder Menu">
             <i class="fa fa-arrow-up"></i>
             <i class="fa fa-arrow-down"></i>
         </a>
+
+        <script>
+            function openReorderDialog(event) {
+                event.preventDefault();
+                if(window.dotUVE){
+                  window.dotUVE.reorderMenu({startLevel: $menuLevel, depth: 2})
+                  return;
+                }
+                var reorderUrl = "${directorURL}&startLevel=${menuLevel}&depth=2&pagePath=${VTLSERVLET_URI}&hostId=${host.identifier}";
+                var customEvent = window.top.document.createEvent("CustomEvent");
+                customEvent.initCustomEvent("ng-event", false, false,  {
+                    name: "reorder-menu",
+                    data: reorderUrl
+                });
+                window.top.document.dispatchEvent(customEvent);
+            }
+        </script>
     #end
 #end
 
@@ -183,7 +200,7 @@
     #if ($EDIT_MODE && $PUBLISH_HTMLPAGE_PERMISSION)
       #set($menuLevel = $VTLSERVLET_URI.split('/').size() - 1)
       <button
-    onclick='window.dotUVE.reorderMenu({startLevel: $menuLevel, depth: 2})'
+    onclick='openReorderDialog(event)'
     style="
         background-color: #426BF0;
         border-radius: 3px;
@@ -212,6 +229,22 @@
             width: 36px;
         "></span>
 </button>
+        <script>
+            function openReorderDialog(event) {
+                event.preventDefault();
+                if(window.dotUVE){
+                  window.dotUVE.reorderMenu({startLevel: $menuLevel, depth: 2})
+                  return;
+                }
+                var reorderUrl = "${directorURL}&startLevel=${menuLevel}&depth=2&pagePath=${VTLSERVLET_URI}&hostId=${host.identifier}";
+                var customEvent = window.top.document.createEvent("CustomEvent");
+                customEvent.initCustomEvent("ng-event", false, false,  {
+                    name: "reorder-menu",
+                    data: reorderUrl
+                });
+                window.top.document.dispatchEvent(customEvent);
+            }
+        </script>
 
     #end
 #end
