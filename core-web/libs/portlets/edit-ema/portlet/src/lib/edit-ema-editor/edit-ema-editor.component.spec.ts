@@ -750,7 +750,8 @@ describe('EditEmaEditorComponent', () => {
                                 data: {
                                     action: CLIENT_ACTIONS.REORDER_MENU,
                                     payload: {
-                                        reorderUrl: 'http://localhost:3000/reorder-menu'
+                                        startLevel: 1,
+                                        depth: 2
                                     }
                                 }
                             })
@@ -825,7 +826,8 @@ describe('EditEmaEditorComponent', () => {
                                 data: {
                                     action: CLIENT_ACTIONS.REORDER_MENU,
                                     payload: {
-                                        reorderUrl: 'http://localhost:3000/reorder-menu'
+                                        startLevel: 1,
+                                        depth: 2
                                     }
                                 }
                             })
