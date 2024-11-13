@@ -1,5 +1,4 @@
 import { tapResponse } from '@ngrx/operators';
-import { ReorderMenuConfig } from 'libs/sdk/client/src/lib/editor/models/editor.model';
 import { EMPTY, Observable, Subject, fromEvent, of } from 'rxjs';
 
 import { NgClass, NgStyle } from '@angular/common';
@@ -1005,7 +1004,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CLIENT_ACTIONS.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
                 this.dialog.editContentlet({ ...contentlet, clientAction: action });
             },
-            [CLIENT_ACTIONS.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuConfig) => {
+            [CLIENT_ACTIONS.REORDER_MENU]: ({
+                startLevel,
+                depth
+            }: {
+                startLevel: number;
+                depth: number;
+            }) => {
                 const urlObject = createReorderMenuURL({
                     startLevel,
                     depth,
