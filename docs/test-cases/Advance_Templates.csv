@@ -1,0 +1,29 @@
+Name,Suite,Section,Estimated Time,Type,Steps (Instructions),Steps (Expected Result),Preconditions/Validadtion,,,,,,,,,,,,,,,,,,
+Add Basic HTML Code to the Template,Templates,Advance,10,Functional,"1. Enter basic HTML code (e.g., <div><h1>Hello World</h1></div>) into the code editor.
+2. Click the Save button.","The code is successfully saved without errors, and changes are reflected in the preview or live site.","- User has permission to edit templates.
+- The template is open in code mode.",,,,,,,,,,,,,,,,,,
+Insert a Container into the Template,Templates,Advance,10,Functional,"1. Click on the Add a Container dropdown.
+2. Select a predefined container (e.g., SYSTEM_CONTAINER).
+3. Click the Save button.","The container is inserted into the code and saved successfully, with no errors.","- User has access to predefined containers.
+- The template is open in code mode.",,,,,,,,,,,,,,,,,,
+Modify Existing Template Code,Templates,Advance,10,Functional,"1. Edit the existing code (e.g., change a header tag from <h1> to <h2>).
+2. Click the Save button.",Changes are saved and accurately reflected in the template's design.,- The template already contains code.,,,,,,,,,,,,,,,,,,
+Cancel Edits Before Saving,Templates,Advance,10,Functional,"1. Make changes to the template code.
+2. Click the Cancel button before clicking the Save button.","Changes are discarded, and the template reverts to its previous state.",- The template is open for editing in code mode.,,,,,,,,,,,,,,,,,,
+Add Velocity Script to the Template,Templates,Advance,10,Functional,"1. Enter a simple Velocity script (e.g., #set($greeting = ""Hello World!"") $greeting).
+2. Click the Save button.","The script is saved, and the template renders the Velocity output correctly.",- The user has knowledge of Velocity scripting.,,,,,,,,,,,,,,,,,,
+Enter Invalid HTML Code,Templates,Advance,10,Functional,"1. Enter invalid HTML code (e.g., <div><h1>Hello World</div> -- missing closing </h1>).
+2. Click the Save button.",The system displays an error message indicating the invalid HTML.,- The template is open for editing.,,,,,,,,,,,,,,,,,,
+Insert Multiple Containers in Different Positions,Templates,Advance,10,Functional,"1. Insert different containers (e.g., SYSTEM_CONTAINER, HEADER_CONTAINER) into various sections of the code.
+2. Click the Save button.","Each container is inserted at the correct location, saved successfully, and the changes are reflected in the templateÕs design.","- The template is open in the code editor.
+- Multiple containers are available to be inserted.",,,,,,,,,,,,,,,,,,
+Attempt to Edit Template Without Permissions,Templates,Advance,10,Functional,"1. Open the template in code mode.
+2. Attempt to make changes to the code.
+3. Click the Save button.",The system prevents the changes from being saved and displays a permission error.,- User does not have edit permissions.,,,,,,,,,,,,,,,,,,
+Long Template Name,Templates,Advance,10,Functional,"1. Enter a template name longer than 200 characters.
+2. Click the Save button.",The system either saves the template without truncating the name or displays a validation message if the name exceeds the allowed length.,- The user is logged in with permissions to create templates.,,,,,,,,,,,,,,,,,,
+Duplicate Template Name,Templates,Advance,10,Functional,"1. Create a new template with the same name as an existing one.
+2. Click the Save button.",The system displays an error message indicating that the template name is already in use and prevents saving.,- A template with the same name already exists in the system.,,,,,,,,,,,,,,,,,,
+API Tab Functionality for Large Template,Templates,Advance,10,Functional,"1. Make changes to the template code.
+2. Click the Save button.
+3. Click on the API tab to retrieve the API information for the template.","The API information should load quickly, and the template should be accurately saved before the API view is accessed.",- The template has a complex structure with many containers and rows.,,,,,,,,,,,,,,,,,,
