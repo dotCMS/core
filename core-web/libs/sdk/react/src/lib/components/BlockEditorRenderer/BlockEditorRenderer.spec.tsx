@@ -82,7 +82,7 @@ describe('BlockEditorRenderer', () => {
             const blockEditorContainer = getByTestId('dot-block-editor-container');
             blockEditorContainer.click();
             expect(blockEditorContainer).toHaveTextContent('Hello, World!');
-            expect(spy).toHaveBeenCalledWith('blockEditor', {
+            expect(spy).toHaveBeenCalledWith('block-editor', {
                 ...dotcmsContentletMock,
                 fieldName: 'fieldName',
                 content: blocks.content

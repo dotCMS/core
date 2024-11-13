@@ -7,6 +7,11 @@ import {
 } from './listeners/listeners';
 import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from './models/client.model';
 import { DotCMSPageEditorConfig } from './models/editor.model';
+import {
+    INLINE_EDITING_EVENT,
+    INLINE_EDITING_EVENT_KEY,
+    InlineEditingData
+} from './models/inline-event.model';
 
 import { Contentlet } from '../client/content/shared/types';
 
@@ -40,6 +45,50 @@ export function editContentlet<T>(contentlet: Contentlet<T>) {
     postMessageToEditor({
         action: CLIENT_ACTIONS.EDIT_CONTENTLET,
         payload: contentlet
+    });
+}
+
+/**
+ * Initializes the inline editing in the editor.
+ *
+ * @export
+ * @param {INLINE_EDITING_EVENT_KEY} type
+ * @param {InlineEditingData} eventData
+ * @return {*}
+ *
+ *  * @example
+ * ```html
+ * <div onclick="initInlineEditing('block-editor', { inode, languageId, contentType, fieldName, content })">
+ *      ${My Content}
+ * </div>
+ * ```
+ */
+export function initInlineEditing(
+    type: INLINE_EDITING_EVENT_KEY,
+    eventData: InlineEditingData
+): void {
+    const { inode, languageId, contentType, fieldName, content } = eventData;
+    const action = INLINE_EDITING_EVENT[type];
+
+    if (!action) {
+        return;
+    }
+
+    const contentString = typeof content === 'string' ? content : JSON.stringify(content ?? {});
+    const data = {
+        inode,
+        fieldName,
+        contentType,
+        languageId,
+        content: contentString
+    };
+
+    postMessageToEditor({
+        action,
+        payload: {
+            type,
+            data
+        }
     });
 }
 
@@ -124,53 +173,5 @@ export function addClassToEmptyContentlets(): void {
         }
 
         contentlet.classList.add('empty-contentlet');
-    });
-}
-
-// MOVE THIS TO ANOTHER FILE
-type INLINE_EDITING_EVENT_KEY = 'blockEditor';
-const INLINE_EDITING_EVENT: Record<INLINE_EDITING_EVENT_KEY, CLIENT_ACTIONS> = {
-    blockEditor: CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING
-};
-
-export interface InlineEditingData {
-    inode: string;
-    languageId: string | number;
-    contentType: string;
-    fieldName: string;
-    content: string | Record<string, unknown>;
-}
-
-/**
- * Initializes the block editor inline editing.
- *
- * @export
- * @param {*} { inode, language_id, blockEditorContent }
- */
-export function initInlineEditing(
-    type: INLINE_EDITING_EVENT_KEY,
-    { inode, languageId, contentType, fieldName, content }: InlineEditingData
-) {
-    const action = INLINE_EDITING_EVENT[type];
-
-    if (!action) {
-        return;
-    }
-
-    const contentString = typeof content === 'string' ? content : JSON.stringify(content ?? {});
-    const data = {
-        inode,
-        fieldName,
-        contentType,
-        languageId,
-        content: contentString
-    };
-
-    postMessageToEditor({
-        action,
-        payload: {
-            type,
-            data
-        }
     });
 }

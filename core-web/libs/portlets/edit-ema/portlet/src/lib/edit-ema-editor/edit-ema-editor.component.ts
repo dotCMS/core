@@ -1001,24 +1001,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
+            [CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING]: (payload) =>
+                this.#handleInlineEditingEvent(payload),
             [CLIENT_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
-            },
-            [CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING]: ({ type, data }) => {
-                if (!this.uveStore.isEnterprise()) {
-                    this.#dotAlertConfirmService.alert({
-                        header: this.dotMessageService.get(
-                            'dot.common.license.enterprise.only.error'
-                        ),
-                        message: this.dotMessageService.get('editpage.not.lincese.error')
-                    });
-
-                    return;
-                }
-
-                if (type === 'blockEditor') {
-                    this.blockSidebar?.open(data);
-                }
             }
         };
         const actionToExecute = CLIENT_ACTIONS_FUNC_MAP[action];
@@ -1366,5 +1352,35 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 this.placeItem(payload, dragItem);
             });
+    }
+
+    /**
+     * Handle the inline editing event
+     *
+     * @param {*} { type, data }
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    #handleInlineEditingEvent({ type, data }) {
+        if (!this.uveStore.isEnterprise()) {
+            this.#dotAlertConfirmService.alert({
+                header: this.dotMessageService.get('dot.common.license.enterprise.only.error'),
+                message: this.dotMessageService.get('editpage.not.lincese.error')
+            });
+
+            return;
+        }
+
+        // We need to add `WYSIWYG` here to centralize the logic inline editing
+        switch (type) {
+            case 'block-editor':
+                this.blockSidebar?.open(data);
+                break;
+
+            default:
+                console.warn('Unknown block editor type', type);
+
+                break;
+        }
     }
 }

@@ -71,7 +71,7 @@ export const BlockEditorRenderer = ({
         const content = blocks as unknown as Record<string, unknown>;
         const element = ref.current;
         const handleClickEvent = () => {
-            initInlineEditing('blockEditor', {
+            initInlineEditing('block-editor', {
                 inode,
                 languageId,
                 contentType,

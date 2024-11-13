@@ -24,16 +24,18 @@ const listenBlockEditorClick = (): void => {
     }
 
     editBlockEditorNodes.forEach((node: HTMLElement) => {
-        const {
-            inode = '',
-            languageId = '',
-            contentType = '',
-            fieldName = '',
-            blockEditorContent = ''
-        } = node.dataset;
+        const { inode, languageId, contentType, fieldName, blockEditorContent } = node.dataset;
+
+        if (!inode || !languageId || !contentType || !fieldName) {
+            console.error('Missing data attributes for block editor inline editing.');
+            console.warn('inode, languageId, contentType and fieldName are required.');
+
+            return;
+        }
+
         node.classList.add('dotcms__inline-edit-field');
         node.addEventListener('click', () => {
-            initInlineEditing('blockEditor', {
+            initInlineEditing('block-editor', {
                 inode,
                 content: blockEditorContent || '',
                 fieldName,
