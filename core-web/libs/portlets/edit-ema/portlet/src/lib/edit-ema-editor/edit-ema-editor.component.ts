@@ -81,7 +81,8 @@ import {
     DeletePayload,
     InsertPayloadFromDelete,
     DialogAction,
-    PostMessage
+    PostMessage,
+    ReorderMenuPayload
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { ClientRequestProps } from '../store/features/client/withClient';
@@ -1007,10 +1008,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CLIENT_ACTIONS.REORDER_MENU]: ({
                 startLevel,
                 depth
-            }: {
-                startLevel: number;
-                depth: number;
-            }) => {
+            }: ReorderMenuPayload) => {
                 const urlObject = createReorderMenuURL({
                     startLevel,
                     depth,
