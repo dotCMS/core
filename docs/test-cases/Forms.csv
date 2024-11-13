@@ -1,0 +1,32 @@
+Name,Suite,Section,Estimated Time,Type,Steps (Instructions),Steps (Expected Result),Preconditions/Validadtion,,Assigned to:,Status,Issue link,,,,,,,,,,,,,,
+Create a New Form,Forms,Forms,10,Functional,"1. Click the + icon to create a new form.
+2. Enter the required details (e.g., form name, variable, description).
+3. Save the new form.","The new form is added to the list and appears with the correct name, variable, and description.",User has appropriate permissions to create a form.,,,,,,,,,,,,,,,,,,
+View Form Submissions,Forms,Forms,10,Functional,"1. In the Entries column, click on the View link for a form that has submissions.",The user is taken to a page displaying all the entries for that form., The form has at least one submission.,,,,,,,,,,,,,,,,,,
+Edit an Existing Form,Forms,Forms,10,Functional,"1. Click the options menu (three dots) for a form.
+2. Select Edit.
+3. Make changes to the form (e.g., update the description).
+4. Save the changes.",The form is updated in the list with the new details.,A form is already present in the list.,,,,,,,,,,,,,,,,,,
+Sort Forms by Last Edit Date,Forms,Forms,10,Functional,1. Click on the Last Edit Date column header.,The list displays only the forms matching the filter criteria.,There are multiple forms with different edit dates.,,,,,,,,,,,,,,,,,,
+Filter Forms by Name,Forms,Forms,10,Functional,1. Type part or all of a form’s name into the Type to filter search bar.,"The script is saved, and the template renders the Velocity output correctly.",At least one form exists in the list.,,,,,,,,,,,,,,,,,,
+Delete a Form,Forms,Forms,10,Functional,"1. Click the options menu (three dots) for a form.
+2. Select Delete.
+3. Confirm the deletion.",The form is removed from the list and no longer appears in the interface.,The form exists in the list.,,,,,,,,,,,,,,,,,,
+Create a Form Without a Name,Forms,Forms,10,Functional,"1. Click the + icon to create a new form.
+2. Leave the form name field blank.
+3. Attempt to save the form.","The system displays an error message indicating that the form name is required, and the form is not created.",User is creating a new form.,,,,,,,,,,,,,,,,,,
+Attempt to Create a Form with a Duplicate Variable,Forms,Forms,10,Functional,"1. Click the + icon to create a new form.
+2. Enter a variable name that is already used by an existing form.
+3. Attempt to save the form.","The system displays an error message indicating that the variable name must be unique, and the form is not created.",A form with a specific variable name already exists.,,,,,,,,,,,,,,,,,,
+Attempt to Delete a Form With Entries,Forms,Forms,10,Functional,"1. Click the options menu (three dots) for the form.
+2. Select Delete.
+3. Confirm the deletion.",The system prompts a warning about the existing entries.,A form has one or more entries.,,,,,,,,,,,,,,,,,,
+Edit Form Without Permissions,Forms,Forms,10,Functional,"1. Click the options menu (three dots) for a form.
+2. Select Edit.
+3. Attempt to make changes and save.",The system displays a permission error and prevents any changes from being saved.,User does not have permissions to edit forms.,,,,,,,,,,,,,,,,,,
+Input Invalid Characters in the Variable Field,Forms,Forms,10,Functional,"1. Enter special characters (e.g., !@#$%^&*) in the Variable field.
+2. Attempt to save the form.",The system displays an error message indicating that only valid characters are allowed in the variable name.,User is creating or editing a form.,,,,,,,,,,,,,,,,,,
+Create a Form with a Very Long Name,Forms,Forms,10,Functional,"1. Enter a form name with a very large number of characters (e.g., 255 characters).
+2. Attempt to save the form.",The system should either truncate the name to the maximum allowed length or display an error message. The form should not break the layout of the list.,User is creating a new form.,,,,,,,,,,,,,,,,,,
+Navigate to Last Page with Large Number of Forms,Forms,Forms,10,Functional,"1. Use the pagination controls at the bottom of the interface.
+2. Navigate to the last page","The system navigates to the last page correctly, displaying the remaining forms without performance issues.","The system contains a large number of forms, spanning multiple pages.",,,,,,,,,,,,,,,,,,
