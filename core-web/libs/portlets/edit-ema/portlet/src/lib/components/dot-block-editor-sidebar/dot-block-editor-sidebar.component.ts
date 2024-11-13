@@ -31,9 +31,9 @@ export interface BlockEditorData {
     field: DotCMSContentTypeField;
 }
 
-export interface BlockEditorPayload {
+export interface InlineEventData {
     inode: string;
-    content: string;
+    content: JSONContent;
     language: string;
     fieldName: string;
     contentType: string;
@@ -83,18 +83,18 @@ export class DotBlockEditorSidebarComponent {
     /**
      * Open the sidebar with the block editor content
      *
-     * @param {BlockEditorPayload} { fieldName, contentType, inode, language, blockEditorContent }
+     * @param {InlineEventData} { fieldName, contentType, inode, language, blockEditorContent }
      * @memberof DotBlockEditorSidebarComponent
      */
-    open({ inode, content, language, fieldName, contentType }: BlockEditorPayload): void {
+    open({ inode, content, language, fieldName, contentType }: InlineEventData): void {
         this.#getEditorField({ fieldName, contentType }).subscribe({
             next: (field) =>
                 this.contentlet.set({
                     inode,
                     field,
+                    content,
                     fieldName,
-                    languageId: parseInt(language),
-                    content: this.#getJsonContent(content)
+                    languageId: parseInt(language)
                 }),
             error: (err) => console.error('Error getting contentlet ', err)
         });
@@ -166,22 +166,5 @@ export class DotBlockEditorSidebarComponent {
         return this.#dotContentTypeService
             .getContentType(contentType)
             .pipe(map(({ fields }) => fields.find(({ variable }) => variable === fieldName)));
-    }
-
-    /**
-     * Parse the content to JSON
-     *
-     * @param {string} content
-     * @return {*}  {JSONContent}
-     * @memberof DotBlockEditorSidebarComponent
-     */
-    #getJsonContent(content: string): JSONContent {
-        try {
-            return JSON.parse(content);
-        } catch (e) {
-            console.error('Error parsing JSON content ', e);
-
-            return {};
-        }
     }
 }

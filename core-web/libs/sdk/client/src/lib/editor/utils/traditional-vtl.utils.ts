@@ -25,6 +25,7 @@ const listenBlockEditorClick = (): void => {
 
     editBlockEditorNodes.forEach((node: HTMLElement) => {
         const { inode, languageId, contentType, fieldName, blockEditorContent } = node.dataset;
+        const content = JSON.parse(blockEditorContent || '');
 
         if (!inode || !languageId || !contentType || !fieldName) {
             console.error('Missing data attributes for block editor inline editing.');
@@ -37,7 +38,7 @@ const listenBlockEditorClick = (): void => {
         node.addEventListener('click', () => {
             initInlineEditing('block-editor', {
                 inode,
-                content: blockEditorContent || '',
+                content,
                 fieldName,
                 languageId,
                 contentType

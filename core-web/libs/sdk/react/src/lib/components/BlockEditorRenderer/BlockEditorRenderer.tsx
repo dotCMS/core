@@ -59,7 +59,7 @@ export const BlockEditorRenderer = ({
             return;
         }
 
-        // TypeScrip will throw an error if contentlet or fieldName are not provided
+        // TypeScript will throw an error if contentlet or fieldName are not provided when editable is true,
         // but we need to check them again to avoid runtime errors in Pure JavaScript
         if (!contentlet || !fieldName) {
             console.error('contentlet and fieldName are required to enable inline editing');

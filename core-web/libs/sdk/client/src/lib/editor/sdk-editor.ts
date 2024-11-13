@@ -7,11 +7,7 @@ import {
 } from './listeners/listeners';
 import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from './models/client.model';
 import { DotCMSPageEditorConfig } from './models/editor.model';
-import {
-    INLINE_EDITING_EVENT,
-    INLINE_EDITING_EVENT_KEY,
-    InlineEditingData
-} from './models/inline-event.model';
+import { INLINE_EDITING_EVENT_KEY, InlineEditingEventData } from './models/inline-event.model';
 
 import { Contentlet } from '../client/content/shared/types';
 
@@ -53,7 +49,7 @@ export function editContentlet<T>(contentlet: Contentlet<T>) {
  *
  * @export
  * @param {INLINE_EDITING_EVENT_KEY} type
- * @param {InlineEditingData} eventData
+ * @param {InlineEditingEventData} eventData
  * @return {*}
  *
  *  * @example
@@ -65,29 +61,13 @@ export function editContentlet<T>(contentlet: Contentlet<T>) {
  */
 export function initInlineEditing(
     type: INLINE_EDITING_EVENT_KEY,
-    eventData: InlineEditingData
+    eventData?: InlineEditingEventData
 ): void {
-    const { inode, languageId, contentType, fieldName, content } = eventData;
-    const action = INLINE_EDITING_EVENT[type];
-
-    if (!action) {
-        return;
-    }
-
-    const contentString = typeof content === 'string' ? content : JSON.stringify(content ?? {});
-    const data = {
-        inode,
-        fieldName,
-        contentType,
-        languageId,
-        content: contentString
-    };
-
     postMessageToEditor({
-        action,
+        action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
         payload: {
             type,
-            data
+            data: eventData
         }
     });
 }

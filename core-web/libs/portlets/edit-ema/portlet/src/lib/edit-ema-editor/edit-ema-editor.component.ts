@@ -863,12 +863,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CLIENT_ACTIONS.IFRAME_SCROLL_END]: () => {
                 this.uveStore.updateEditorOnScrollEnd();
             },
-            [CLIENT_ACTIONS.INIT_INLINE_EDITING]: () => {
-                // The iframe says that the editor is ready to start inline editing
-                // The dataset of the inline-editing contentlet is ready inside the service.
-                this.inlineEditingService.initEditor();
-                this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
-            },
             [CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING]: (payload: {
                 dataset: InlineEditingContentletDataset;
             }) => {
@@ -1001,7 +995,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
-            [CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING]: (payload) =>
+            [CLIENT_ACTIONS.INIT_INLINE_EDITING]: (payload) =>
                 this.#handleInlineEditingEvent(payload),
             [CLIENT_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
@@ -1371,10 +1365,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             return;
         }
 
-        // We need to add `WYSIWYG` here to centralize the logic inline editing
         switch (type) {
             case 'block-editor':
                 this.blockSidebar?.open(data);
+                break;
+
+            case 'WYSIWYG':
+                // The iframe says that the editor is ready to start inline editing
+                // The dataset of the inline-editing contentlet is ready inside the service.
+                this.inlineEditingService.initEditor();
+                this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
                 break;
 
             default:
