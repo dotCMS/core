@@ -172,7 +172,7 @@
     #if ($EDIT_MODE && $PUBLISH_HTMLPAGE_PERMISSION)
         #set($menuLevel = $VTLSERVLET_URI.split('/').size() - 1)
 
-        <a href="#" onclick="window.dotUVE.reorderMenu($menuLevel)" class="btn btn-primary btn-xs normaltip" data-original-title="Reorder Menu">
+        <a href="#" onclick="window.dotUVE.reorderMenu({startLevel: $menuLevel, depth: 2})" class="btn btn-primary btn-xs normaltip" data-original-title="Reorder Menu">
             <i class="fa fa-arrow-up"></i>
             <i class="fa fa-arrow-down"></i>
         </a>
@@ -183,7 +183,7 @@
     #if ($EDIT_MODE && $PUBLISH_HTMLPAGE_PERMISSION)
       #set($menuLevel = $VTLSERVLET_URI.split('/').size() - 1)
       <button
-    onclick='window.dotUVE.reorderMenu($menuLevel)'
+    onclick='window.dotUVE.reorderMenu({startLevel: $menuLevel, depth: 2})'
     style="
         background-color: #426BF0;
         border-radius: 3px;

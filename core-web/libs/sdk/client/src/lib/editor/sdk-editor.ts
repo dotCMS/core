@@ -56,13 +56,9 @@ export function editContentlet<T>(contentlet: Contentlet<T>) {
 export function reorderMenu(config?: ReorderMenuConfig): void {
     const { startLevel = 1, depth = 2 } = config || {};
 
-    // This is the URL for the reorder menu page
-    // All params are hardcoded on the jsp, so here we just need to send the same URL
-    const reorderUrl = `/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=${startLevel}&depth=${depth}`;
-
     postMessageToEditor({
         action: CLIENT_ACTIONS.REORDER_MENU,
-        payload: { reorderUrl }
+        payload: { startLevel, depth }
     });
 }
 

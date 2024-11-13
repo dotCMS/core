@@ -16,14 +16,95 @@ function Header({ children }) {
 }
 
 function ReorderButton() {
+    const ArrowDown = () => (
+        <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            xmlnsXlink="http://www.w3.org/1999/xlink" 
+            version="1.1" 
+            width="24" 
+            height="24" 
+            viewBox="0 0 256 256"
+            xmlSpace="preserve"
+        >
+            <g 
+                style={{
+                    stroke: "none",
+                    strokeWidth: 0,
+                    strokeDasharray: "none", 
+                    strokeLinecap: "butt",
+                    strokeLinejoin: "miter",
+                    strokeMiterlimit: 10,
+                    fill: "none",
+                    fillRule: "nonzero",
+                    opacity: 1
+                }}
+                transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)"
+            >
+                <path 
+                    d="M 90 24.25 c 0 -0.896 -0.342 -1.792 -1.025 -2.475 c -1.366 -1.367 -3.583 -1.367 -4.949 0 L 45 60.8 L 5.975 21.775 c -1.367 -1.367 -3.583 -1.367 -4.95 0 c -1.366 1.367 -1.366 3.583 0 4.95 l 41.5 41.5 c 1.366 1.367 3.583 1.367 4.949 0 l 41.5 -41.5 C 89.658 26.042 90 25.146 90 24.25 z"
+                    style={{
+                        stroke: "none",
+                        strokeWidth: 1,
+                        strokeDasharray: "none",
+                        strokeLinecap: "butt",
+                        strokeLinejoin: "miter", 
+                        strokeMiterlimit: 10,
+                        fill: "#FFFFFF",
+                        fillRule: "nonzero",
+                        opacity: 1
+                    }}
+                    transform="matrix(1 0 0 1 0 0)"
+                />
+            </g>
+        </svg>
+    )
 
-    const arrowUP = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CgogPGc+CiAgPHRpdGxlPmJhY2tncm91bmQ8L3RpdGxlPgogIDxyZWN0IGZpbGw9Im5vbmUiIGlkPSJjYW52YXNfYmFja2dyb3VuZCIgaGVpZ2h0PSI0MDIiIHdpZHRoPSI1ODIiIHk9Ii0xIiB4PSItMSIvPgogPC9nPgogPGc+CiAgPHRpdGxlPkxheWVyIDE8L3RpdGxlPgogIDxwYXRoIGZpbGw9IiNmZmZmZmYiIGlkPSJzdmdfMSIgZD0ibTE0LjgzLDMwLjgzbDkuMTcsLTkuMTdsOS4xNyw5LjE3bDIuODMsLTIuODNsLTEyLC0xMmwtMTIsMTJsMi44MywyLjgzeiIvPgogIDxwYXRoIGlkPSJzdmdfMiIgZmlsbD0ibm9uZSIgZD0ibS0zMC42OTQ1NTcsOS40MjU4ODdsNDgsMGwwLDQ4bC00OCwwbDAsLTQ4eiIvPgogPC9nPgo8L3N2Zz4=";
-    const arrowDown = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CgogPGc+CiAgPHRpdGxlPmJhY2tncm91bmQ8L3RpdGxlPgogIDxyZWN0IGZpbGw9Im5vbmUiIGlkPSJjYW52YXNfYmFja2dyb3VuZCIgaGVpZ2h0PSI0MDIiIHdpZHRoPSI1ODIiIHk9Ii0xIiB4PSItMSIvPgogPC9nPgogPGc+CiAgPHRpdGxlPkxheWVyIDE8L3RpdGxlPgogIDxwYXRoIGZpbGw9IiNmZmZmZmYiIGlkPSJzdmdfMSIgZD0ibTE0LjgzLDE2LjQybDkuMTcsOS4xN2w5LjE3LC05LjE3bDIuODMsMi44M2wtMTIsMTJsLTEyLC0xMmwyLjgzLC0yLjgzeiIvPgogIDxwYXRoIGlkPSJzdmdfMiIgZmlsbD0ibm9uZSIgZD0ibS0xOC4zOTk4OTksMTcuMDc4NDczbDQ4LDBsMCw0OGwtNDgsMGwwLC00OHoiLz4KIDwvZz4KPC9zdmc+";
-
+    const ArrowUp = () => (
+        <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            xmlnsXlink="http://www.w3.org/1999/xlink" 
+            version="1.1" 
+            width="24" 
+            height="24" 
+            viewBox="0 0 256 256"
+            xmlSpace="preserve"
+        >
+            <g
+                style={{
+                    stroke: "none", 
+                    strokeWidth: 0,
+                    strokeDasharray: "none",
+                    strokeLinecap: "butt",
+                    strokeLinejoin: "miter",
+                    strokeMiterlimit: 10,
+                    fill: "none",
+                    fillRule: "nonzero",
+                    opacity: 1
+                }}
+                transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)"
+            >
+                <path
+                    d="M 90 65.75 c 0 0.896 -0.342 1.792 -1.025 2.475 c -1.366 1.367 -3.583 1.367 -4.949 0 L 45 29.2 L 5.975 68.225 c -1.367 1.367 -3.583 1.367 -4.95 0 c -1.366 -1.367 -1.366 -3.583 0 -4.95 l 41.5 -41.5 c 1.366 -1.367 3.583 -1.367 4.949 0 l 41.5 41.5 C 89.658 63.958 90 64.854 90 65.75 z"
+                    style={{
+                        stroke: "none",
+                        strokeWidth: 1,
+                        strokeDasharray: "none", 
+                        strokeLinecap: "butt",
+                        strokeLinejoin: "miter",
+                        strokeMiterlimit: 10,
+                        fill: "#FFFFFF",
+                        fillRule: "nonzero",
+                        opacity: 1
+                    }}
+                    transform="matrix(1 0 0 1 0 0)"
+                />
+            </g>
+        </svg>
+    )
     return (
         <button className="bg-[#426BF0] rounded-sm flex cursor-pointer border-none px-2 py-1 gap-2"  onClick={() => reorderMenu()} >
-            <img src={arrowUP} alt="arrow up" className='w-6 h-6'/>
-            <img src={arrowDown} alt="arrow down" className='w-6 h-6'/>
+            <ArrowUp />
+            <ArrowDown />
         </button>
     );
 }

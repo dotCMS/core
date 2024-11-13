@@ -1,4 +1,5 @@
 import { tapResponse } from '@ngrx/operators';
+import { ReorderMenuConfig } from 'libs/sdk/client/src/lib/editor/models/editor.model';
 import { EMPTY, Observable, Subject, fromEvent, of } from 'rxjs';
 
 import { NgClass, NgStyle } from '@angular/common';
@@ -80,7 +81,6 @@ import {
     VTLFile,
     DeletePayload,
     InsertPayloadFromDelete,
-    ReorderPayload,
     DialogAction,
     PostMessage
 } from '../shared/models';
@@ -1005,9 +1005,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CLIENT_ACTIONS.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
                 this.dialog.editContentlet({ ...contentlet, clientAction: action });
             },
-            [CLIENT_ACTIONS.REORDER_MENU]: ({ reorderUrl }: ReorderPayload) => {
+            [CLIENT_ACTIONS.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuConfig) => {
                 const urlObject = createReorderMenuURL({
-                    url: reorderUrl,
+                    startLevel,
+                    depth,
                     pagePath: this.uveStore.params().url,
                     hostId: this.uveStore.pageAPIResponse().site.identifier
                 });

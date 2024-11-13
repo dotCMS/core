@@ -24,6 +24,9 @@ import {
 
 export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
 
+const REORDER_MENU_BASE_URL =
+    'c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu';
+
 export const TEMPORAL_DRAG_ITEM: EmaDragItem = {
     baseType: 'dotAsset',
     contentType: 'dotAsset',
@@ -521,17 +524,27 @@ export const getDragItemData = ({ type, item }: DOMStringMap) => {
  * @returns {string} - The updated URL with the missing parameters added.
  */
 export const createReorderMenuURL = ({
-    url,
+    startLevel,
+    depth,
     pagePath,
     hostId
 }: {
-    url: string;
+    startLevel: number;
+    depth: number;
     pagePath: string;
     hostId: string;
 }) => {
-    const urlObject = new URL(url, window.location.origin);
+    const urlObject = new URL(REORDER_MENU_BASE_URL, window.location.origin);
 
     const params = urlObject.searchParams;
+
+    if (!params.has('startLevel')) {
+        params.set('startLevel', startLevel.toString());
+    }
+
+    if (!params.has('depth')) {
+        params.set('depth', depth.toString());
+    }
 
     if (!params.has('pagePath')) {
         params.set('pagePath', pagePath);
