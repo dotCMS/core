@@ -8,9 +8,11 @@ import com.dotcms.jobs.business.queue.error.JobNotFoundException;
 import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotcms.jobs.business.queue.error.JobQueueException;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -148,7 +150,7 @@ public class PostgresJobQueue implements JobQueue {
                     + " WHERE id = ?";
 
     private static final String HAS_JOB_BEEN_IN_STATE_QUERY = "SELECT "
-            + "EXISTS (SELECT 1 FROM job_history WHERE job_id = ? AND state = ?)";
+            + "EXISTS (SELECT 1 FROM job_history WHERE job_id = ? AND state IN $??$)";
 
     private static final String COLUMN_TOTAL_COUNT = "total_count";
 
@@ -224,6 +226,12 @@ public class PostgresJobQueue implements JobQueue {
     @Override
     public Job getJob(final String jobId) throws JobNotFoundException, JobQueueDataException {
 
+        // Check cache first
+        Job job = CacheLocator.getJobCache().get(jobId);
+        if (UtilMethods.isSet(job)) {
+            return job;
+        }
+
         try {
             DotConnect dc = new DotConnect();
             dc.setSQL(SELECT_JOB_BY_ID_QUERY);
@@ -231,7 +239,13 @@ public class PostgresJobQueue implements JobQueue {
 
             List<Map<String, Object>> results = dc.loadObjectResults();
             if (!results.isEmpty()) {
-                return DBJobTransformer.toJob(results.get(0));
+
+                job = DBJobTransformer.toJob(results.get(0));
+
+                // Cache the job
+                CacheLocator.getJobCache().put(job);
+
+                return job;
             }
 
             Logger.warn(this, "Job with id: " + jobId + " not found");
@@ -240,6 +254,24 @@ public class PostgresJobQueue implements JobQueue {
             Logger.error(this, "Database error while fetching job", e);
             throw new JobQueueDataException("Database error while fetching job", e);
         }
+    }
+
+    @Override
+    public JobState getJobState(final String jobId)
+            throws JobNotFoundException, JobQueueDataException {
+
+        // Check cache first
+        JobState jobState = CacheLocator.getJobCache().getState(jobId);
+        if (UtilMethods.isSet(jobState)) {
+            return jobState;
+        }
+
+        final var job = getJob(jobId);
+
+        // Cache the job state
+        CacheLocator.getJobCache().putState(job.id(), job.state());
+
+        return job.state();
     }
 
     @Override
@@ -463,6 +495,11 @@ public class PostgresJobQueue implements JobQueue {
                     || job.state() == JobState.CANCELED) {
                 removeJobFromQueue(job.id());
             }
+
+            // Cleanup cache
+            CacheLocator.getJobCache().remove(job);
+            CacheLocator.getJobCache().removeState(job.id());
+
         } catch (DotDataException e) {
             Logger.error(this, "Database error while updating job status", e);
             throw new JobQueueDataException("Database error while updating job status", e);
@@ -554,6 +591,10 @@ public class PostgresJobQueue implements JobQueue {
             dc.addParam(Timestamp.valueOf(LocalDateTime.now()));
             dc.addParam(jobId);
             dc.loadResult();
+
+            // Cleanup cache
+            CacheLocator.getJobCache().remove(jobId);
+
         } catch (DotDataException e) {
             Logger.error(this, "Database error while updating job progress", e);
             throw new JobQueueDataException("Database error while updating job progress", e);
@@ -575,13 +616,25 @@ public class PostgresJobQueue implements JobQueue {
     }
 
     @Override
-    public boolean hasJobBeenInState(String jobId, JobState state) throws JobQueueDataException {
+    public boolean hasJobBeenInState(final String jobId, final JobState... states)
+            throws JobQueueDataException {
+
+        if (states.length == 0) {
+            return false;
+        }
+
+        String parameters = String.join(", ", Collections.nCopies(states.length, "?"));
+
+        var query = HAS_JOB_BEEN_IN_STATE_QUERY
+                .replace(REPLACE_TOKEN_PARAMETERS, "(" + parameters + ")");
 
         try {
             DotConnect dc = new DotConnect();
-            dc.setSQL(HAS_JOB_BEEN_IN_STATE_QUERY);
+            dc.setSQL(query);
             dc.addParam(jobId);
-            dc.addParam(state.name());
+            for (JobState state : states) {
+                dc.addParam(state.name());
+            }
             List<Map<String, Object>> results = dc.loadObjectResults();
 
             if (!results.isEmpty()) {
@@ -604,7 +657,7 @@ public class PostgresJobQueue implements JobQueue {
      * @return A JobPaginatedResult instance
      * @throws DotDataException If there is an error loading the query results
      */
-    private static JobPaginatedResult jobPaginatedResult(
+    private JobPaginatedResult jobPaginatedResult(
             int page, int pageSize, DotConnect dc) throws DotDataException {
 
         final var results = dc.loadObjectResults();

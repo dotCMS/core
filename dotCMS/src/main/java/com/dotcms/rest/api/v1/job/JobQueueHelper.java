@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.job;
 
+import static com.dotcms.jobs.business.util.JobUtil.roundedProgress;
+
 import com.dotcms.jobs.business.api.JobProcessorScanner;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
@@ -8,7 +10,6 @@ import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.Queue;
-import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.business.APILocator;
@@ -19,6 +20,7 @@ import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.time.format.DateTimeFormatter;
@@ -32,7 +34,10 @@ import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.sse.EventOutput;
+import org.glassfish.jersey.media.sse.OutboundEvent;
 
 /**
  * Helper class for interacting with the job queue system. This class provides methods for creating, cancelling, and listing jobs.
@@ -241,7 +246,7 @@ public class JobQueueHelper {
     JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getActiveJobs(queueName, page, pageSize);
-        } catch (JobQueueDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching active jobs", e);
         }
         return JobPaginatedResult.builder().build();
@@ -273,7 +278,7 @@ public class JobQueueHelper {
     JobPaginatedResult getActiveJobs(int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getActiveJobs(page, pageSize);
-        } catch (JobQueueDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching active jobs", e);
         }
         return JobPaginatedResult.builder().build();
@@ -289,7 +294,7 @@ public class JobQueueHelper {
     JobPaginatedResult getCompletedJobs(int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getCompletedJobs(page, pageSize);
-        } catch (JobQueueDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching completed jobs", e);
         }
         return JobPaginatedResult.builder().build();
@@ -305,7 +310,7 @@ public class JobQueueHelper {
     JobPaginatedResult getCanceledJobs(int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getCanceledJobs(page, pageSize);
-        } catch (JobQueueDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching canceled jobs", e);
         }
         return JobPaginatedResult.builder().build();
@@ -321,7 +326,7 @@ public class JobQueueHelper {
     JobPaginatedResult getFailedJobs(int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getFailedJobs(page, pageSize);
-        } catch (JobQueueDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching failed jobs", e);
         }
         return JobPaginatedResult.builder().build();
@@ -363,9 +368,9 @@ public class JobQueueHelper {
      * @param job The job
      * @return true if the job is watchable, false otherwise
      */
-    public boolean isNotWatchable(Job job){
+    boolean isNotWatchable(Job job) {
         return JobState.PENDING != job.state() && JobState.RUNNING != job.state()
-                && JobState.CANCELLING != job.state();
+                && JobState.CANCEL_REQUESTED != job.state() && JobState.CANCELLING != job.state();
     }
 
     /**
@@ -373,14 +378,82 @@ public class JobQueueHelper {
      * @param job The job
      * @return The status info
      */
-    public Map<String, Object> getJobStatusInfo(Job job) {
+    Map<String, Object> getJobStatusInfo(Job job) {
         final DateTimeFormatter isoFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
         return Map.of(
-                "startedAt", job.startedAt().map(isoFormatter::format).orElse("N/A"),
-                "finishedAt", job.completedAt().map(isoFormatter::format).orElse("N/A"),
                 "state", job.state(),
-                "progress", job.progress()
+                "progress", roundedProgress(job.progress()),
+                "startedAt", job.startedAt().map(isoFormatter::format).orElse("N/A"),
+                "finishedAt", job.completedAt().map(isoFormatter::format).orElse("N/A")
         );
+    }
+
+    /**
+     * Get the job for the given ID
+     *
+     * @param jobId The ID of the job
+     * @return The job or null if it doesn't exist
+     */
+    Job getJobForSSE(final String jobId) throws DotDataException {
+
+        Job job = null;
+
+        try {
+            job = getJob(jobId);
+        } catch (DoesNotExistException e) {
+            // ignore
+        }
+
+        return job;
+    }
+
+    /**
+     * Send an error event and close the connection
+     *
+     * @param errorName   The name of the error event
+     * @param errorCode   The error code
+     * @param eventOutput The event output
+     */
+    void sendErrorAndClose(final String errorName, final String errorCode,
+            final EventOutput eventOutput) {
+
+        try {
+            OutboundEvent event = new OutboundEvent.Builder()
+                    .mediaType(MediaType.TEXT_HTML_TYPE)
+                    .name(errorName)
+                    .data(String.class, errorCode)
+                    .build();
+            eventOutput.write(event);
+            closeSSEConnection(eventOutput);
+        } catch (IOException e) {
+            Logger.error(this, "Error sending error event", e);
+            closeSSEConnection(eventOutput);
+        }
+    }
+
+    /**
+     * Close the SSE connection
+     *
+     * @param eventOutput The event output
+     */
+    void closeSSEConnection(final EventOutput eventOutput) {
+        try {
+            eventOutput.close();
+        } catch (IOException e) {
+            Logger.error(this, "Error closing SSE connection", e);
+        }
+    }
+
+    /**
+     * Check if a job is in a terminal state
+     *
+     * @param state The state of the job
+     * @return true if the job is in a terminal state, false otherwise
+     */
+    boolean isTerminalState(final JobState state) {
+        return state == JobState.COMPLETED ||
+                state == JobState.FAILED ||
+                state == JobState.CANCELED;
     }
 
 }
