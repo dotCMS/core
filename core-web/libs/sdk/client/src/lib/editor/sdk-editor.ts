@@ -59,6 +59,7 @@ export function editContentlet<T>(contentlet: Contentlet<T>) {
  * </div>
  * ```
  */
+// Test this
 export function initInlineEditing(
     type: INLINE_EDITING_EVENT_KEY,
     eventData?: InlineEditingEventData

@@ -1,6 +1,6 @@
 import { listenBlockEditorInlineEvent } from './traditional-vtl.utils';
 
-import { CLIENT_ACTIONS } from '../models/client.model';
+import * as client from '../sdk-editor';
 
 describe('Traditional VTL utils', () => {
     describe('listenBlockEditorInlineEvent', () => {
@@ -11,30 +11,34 @@ describe('Traditional VTL utils', () => {
 
         it('should add event listeners to nodes with data-block-editor-content attribute', () => {
             document.body.innerHTML = `
-                <div data-block-editor-content="true"></div>
-                <div data-block-editor-content="true"></div>
+                <div data-inode="123" data-language-id="1" data-content-type="blog" data-field-name="Content" data-block-editor-content="true"></div>
+                <div data-inode="321" data-language-id="1" data-content-type="blog" data-field-name="Content" data-block-editor-content="true"></div>
             `;
 
-            const postMessageMock = jest.fn();
-            window.parent.postMessage = postMessageMock;
+            const spy = jest.spyOn(client, 'initInlineEditing');
 
             listenBlockEditorInlineEvent();
 
-            const nodes = document.querySelectorAll('[data-block-editor-content]');
+            const nodes: NodeListOf<HTMLElement> = document.querySelectorAll(
+                '[data-block-editor-content]'
+            );
             nodes.forEach((node) => {
                 expect(node.classList.contains('dotcms__inline-edit-field')).toBe(true);
                 node.dispatchEvent(new Event('click'));
             });
 
-            expect(postMessageMock).toHaveBeenCalledTimes(nodes.length);
-            nodes.forEach((node) => {
-                expect(postMessageMock).toHaveBeenCalledWith(
-                    {
-                        payload: Object.assign({}, (node as HTMLElement).dataset),
-                        action: CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING
-                    },
-                    '*'
-                );
+            expect(spy).toHaveBeenCalledTimes(nodes.length);
+            nodes.forEach(({ dataset }) => {
+                const { inode, languageId, contentType, fieldName, blockEditorContent } = dataset;
+                const content = JSON.parse(blockEditorContent || '');
+
+                expect(spy).toHaveBeenCalledWith('block-editor', {
+                    inode,
+                    languageId,
+                    contentType,
+                    fieldName,
+                    content
+                });
             });
         });
 
