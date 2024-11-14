@@ -11,7 +11,7 @@ import ImageComponent from "./content-types/image";
 import Header from "./layout/header";
 import Footer from "./layout/footer/footer";
 import Navigation from "./layout/navigation";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { DotcmsLayout } from "@dotcms/react";
 import { CustomNoComponent } from "./content-types/empty";
 
@@ -20,16 +20,6 @@ import BlogWithBlockEditor from "./content-types/blog";
 import { SimpleWidget } from "./content-types/SimpleWidget";
 import { Video } from "./content-types/Video";
 import NotFound from "@/app/not-found";
-
-/**
- * Configure experiment settings below. If you are not using experiments,
- * you can ignore or remove the experiment-related code and imports.
- */
-const experimentConfig = {
-    apiKey: process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY, // API key for experiments, should be securely stored
-    server: process.env.NEXT_PUBLIC_DOTCMS_HOST, // DotCMS server endpoint
-    debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG, // Debug mode for additional logging
-};
 
 // Mapping of components to DotCMS content types
 const componentsMap = {
@@ -47,7 +37,6 @@ const componentsMap = {
 };
 
 export function MyPage({ pageAsset, nav }) {
-    const { replace } = useRouter();
     const pathname = usePathname();
 
     pageAsset = usePageAsset(pageAsset);
