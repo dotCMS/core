@@ -71,15 +71,3 @@ export interface DotCMSWorkflowInput {
     id: string;
     body: any;
 }
-
-export interface DotCMSWorkflowStep {
-    creationDate: number;
-    enableEscalation: boolean;
-    escalationAction: null;
-    escalationTime: number;
-    id: string;
-    myOrder: number;
-    name: string;
-    resolved: boolean;
-    schemeId: string;
-}

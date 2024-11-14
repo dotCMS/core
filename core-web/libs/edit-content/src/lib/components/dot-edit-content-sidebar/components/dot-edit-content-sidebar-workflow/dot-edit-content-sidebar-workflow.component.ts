@@ -1,4 +1,3 @@
-import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -26,8 +25,7 @@ import { DotMessagePipe } from '@dotcms/ui';
         ButtonModule,
         DialogModule,
         DropdownModule,
-        FormsModule,
-        JsonPipe
+        FormsModule
     ],
 
     templateUrl: './dot-edit-content-sidebar-workflow.component.html',
