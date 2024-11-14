@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import ReorderButton from './components/reorderMenu';
 
 function Header({ children }) {
     return (
@@ -8,9 +9,13 @@ function Header({ children }) {
                     <Link href="/">TravelLux in NextJS</Link>
                 </h2>
             </div>
+            <ReorderButton />
             {children}
         </header>
     );
 }
+
+
+
 
 export default Header;

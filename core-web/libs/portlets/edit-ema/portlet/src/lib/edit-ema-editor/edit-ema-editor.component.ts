@@ -75,15 +75,16 @@ import {
     VTLFile,
     DeletePayload,
     InsertPayloadFromDelete,
-    ReorderPayload,
     DialogAction,
-    PostMessage
+    PostMessage,
+    ReorderMenuPayload
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { ClientRequestProps } from '../store/features/client/withClient';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
+    createReorderMenuURL,
     compareUrlPaths,
     deleteContentletFromContainer,
     getDragItemData,
@@ -796,6 +797,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 this.uveStore.reload();
                 this.dialog.resetDialog();
+
+                // This is a temporary solution to "reload" the content by reloading the window
+                // we should change this with a new SDK reload strategy
+                this.contentWindow?.postMessage(
+                    {
+                        name: NOTIFY_CLIENT.UVE_RELOAD_PAGE
+                    },
+                    this.host
+                );
             },
             [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
                 this.messageService.add({
@@ -990,9 +1000,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CLIENT_ACTIONS.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
                 this.dialog.editContentlet({ ...contentlet, clientAction: action });
             },
-            [CLIENT_ACTIONS.REORDER_MENU]: ({ reorderUrl }: ReorderPayload) => {
+            [CLIENT_ACTIONS.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuPayload) => {
+                const urlObject = createReorderMenuURL({
+                    startLevel,
+                    depth,
+                    pagePath: this.uveStore.params().url,
+                    hostId: this.uveStore.pageAPIResponse().site.identifier
+                });
+
                 this.dialog.openDialogOnUrl(
-                    reorderUrl,
+                    urlObject,
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
