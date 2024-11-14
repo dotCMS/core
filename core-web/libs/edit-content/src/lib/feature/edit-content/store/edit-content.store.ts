@@ -14,7 +14,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { MessageService, SelectItem } from 'primeng/api';
 
 import { switchMap, tap } from 'rxjs/operators';
 
@@ -31,8 +31,11 @@ import {
     ComponentStatus,
     DotCMSContentlet,
     DotCMSContentType,
+    DotCMSWorkflow,
     DotCMSWorkflowAction,
-    FeaturedFlags
+    FeaturedFlags,
+    WorkflowStep,
+    WorkflowTask
 } from '@dotcms/dotcms-models';
 
 import { withInformation } from './features/information.feature';
@@ -40,20 +43,36 @@ import { withSidebar } from './features/sidebar.feature';
 import { withWorkflow } from './features/workflow.feature';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
-import { transformFormDataFn } from '../../../utils/functions.util';
+import { parseWorkflows, transformFormDataFn } from '../../../utils/functions.util';
 
 export interface EditContentState {
-    actions: DotCMSWorkflowAction[];
+    /** Actions available for the content type */
+    actions: DotCMSWorkflowAction[]; // DELETE THIS GUY
+    /** ContentType full data */
     contentType: DotCMSContentType | null;
+    /** Contentlet full data */
     contentlet: DotCMSContentlet | null;
+    /** Schemas available for the content type */
+    schemes: {
+        [key: string]: {
+            scheme: DotCMSWorkflow;
+            actions: DotCMSWorkflowAction[];
+        };
+    };
+    currentSchemeId: string | null;
+    currentStep: WorkflowStep | null;
+    lastTask: WorkflowTask | null;
     state: ComponentStatus;
-
     error: string | null;
 }
 
 const initialState: EditContentState = {
     contentType: null,
     contentlet: null,
+    schemes: {},
+    currentSchemeId: null,
+    currentStep: null,
+    lastTask: null,
     actions: [],
     state: ComponentStatus.INIT,
     error: null
@@ -134,7 +153,40 @@ export const DotEditContentStore = signalStore(
          * Computed property that transforms the layout of the current content type
          * into tabs and returns them.
          */
-        tabs: computed(() => transformFormDataFn(store.contentType()))
+        tabs: computed(() => transformFormDataFn(store.contentType())),
+
+        /**
+         * Computed property that determines if the workflow selection warning should be shown.
+         * Shows warning when content is new AND no workflow scheme has been selected yet.
+         *
+         * @returns {boolean} True if warning should be shown, false otherwise
+         */
+        showSelectWorkflowWarning: computed(() => {
+            const isNew = !store.contentlet();
+            const hasNoSchemeSelected = !store.currentSchemeId();
+            const hasMultipleSchemas = Object.keys(store.schemes()).length > 1;
+
+            return isNew && hasMultipleSchemas && hasNoSchemeSelected;
+        }),
+
+        /**
+         * Computed property that transforms the workflow schemes into dropdown options
+         * @returns Array of options with value (scheme id) and label (scheme name)
+         */
+        workflowSchemeOptions: computed<SelectItem[]>(() =>
+            Object.entries(store.schemes()).map(([id, data]) => ({
+                value: id,
+                label: data.scheme.name
+            }))
+        ),
+
+        /**
+         * Computed property that determines if the content is new.
+         * Content is considered new when there is no contentlet in the store.
+         *
+         * @returns {boolean} True if content is new, false otherwise
+         */
+        isNew: computed(() => !store.contentlet())
     })),
     withMethods(
         (
@@ -163,13 +215,21 @@ export const DotEditContentStore = signalStore(
 
                         return forkJoin({
                             contentType: dotContentTypeService.getContentType(contentType),
-                            actions: workflowActionService.getDefaultActions(contentType)
+                            actions: workflowActionService.getDefaultActions(contentType),
+                            schemes: workflowActionService.getWorkFlowActions(contentType)
                         }).pipe(
                             tapResponse({
-                                next: ({ contentType, actions }) => {
+                                next: ({ contentType, actions, schemes }) => {
+                                    const parsedSchemes = parseWorkflows(schemes);
+                                    const schemeIds = Object.keys(parsedSchemes);
+                                    const defaultSchemeId =
+                                        schemeIds.length === 1 ? schemeIds[0] : null;
+
                                     patchState(store, {
                                         contentType,
                                         actions,
+                                        schemes: parsedSchemes,
+                                        currentSchemeId: defaultSchemeId,
                                         state: ComponentStatus.LOADED,
                                         error: null
                                     });
@@ -208,13 +268,16 @@ export const DotEditContentStore = signalStore(
                                         inode,
                                         DotRenderMode.EDITING
                                     ),
+                                    schemes: workflowActionService.getWorkFlowActions(contentType),
                                     contentlet: of(contentlet)
                                 });
                             }),
                             tapResponse({
-                                next: ({ contentType, actions, contentlet }) => {
+                                next: ({ contentType, actions, schemes, contentlet }) => {
+                                    const parsedSchemes = parseWorkflows(schemes);
                                     patchState(store, {
                                         contentType,
+                                        schemes: parsedSchemes,
                                         actions,
                                         contentlet,
                                         state: ComponentStatus.LOADED
@@ -301,6 +364,7 @@ export const DotEditContentStore = signalStore(
     withSidebar(),
     withInformation(),
     withWorkflow(),
+    // withDebug(),
     withHooks({
         onInit(store) {
             const activatedRoute = inject(ActivatedRoute);

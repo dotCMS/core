@@ -24,7 +24,11 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { mockWorkflowsActions } from '@dotcms/utils-testing';
+import {
+    MOCK_MULTIPLE_WORKFLOW_ACTIONS,
+    MOCK_SINGLE_WORKFLOW_ACTIONS,
+    mockWorkflowsActions
+} from '@dotcms/utils-testing';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
 import { DotEditContentStore } from './store/edit-content.store';
@@ -32,6 +36,7 @@ import { DotEditContentStore } from './store/edit-content.store';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
 import { DotEditContentSidebarComponent } from '../../components/dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { MOCK_CONTENTLET_1_TAB } from '../../utils/edit-content.mock';
 import * as utils from '../../utils/functions.util';
 import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
 
@@ -40,6 +45,7 @@ describe('EditContentLayoutComponent', () => {
 
     let store: SpyObject<InstanceType<typeof DotEditContentStore>>;
     let dotContentTypeService: SpyObject<DotContentTypeService>;
+    let dotEditContentService: SpyObject<DotEditContentService>;
     let workflowActionsService: SpyObject<DotWorkflowsActionsService>;
 
     const createComponent = createComponentFactory({
@@ -90,8 +96,8 @@ describe('EditContentLayoutComponent', () => {
 
         store = spectator.inject(DotEditContentStore, true);
         dotContentTypeService = spectator.inject(DotContentTypeService, true);
-
         workflowActionsService = spectator.inject(DotWorkflowsActionsService, true);
+        dotEditContentService = spectator.inject(DotEditContentService, true);
 
         // By default, the local storage is set to true
         jest.spyOn(utils, 'getPersistSidebarState').mockReturnValue(true);
@@ -105,6 +111,9 @@ describe('EditContentLayoutComponent', () => {
         it('should initialize new content, show layout components and dialogs when new content editor is enabled', fakeAsync(() => {
             dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
             workflowActionsService.getDefaultActions.mockReturnValue(of(mockWorkflowsActions));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
 
             store.initializeNewContent('contentTypeName');
 
@@ -130,12 +139,70 @@ describe('EditContentLayoutComponent', () => {
 
             dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK_NO_METADATA));
             workflowActionsService.getDefaultActions.mockReturnValue(of(mockWorkflowsActions));
-
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
             store.initializeNewContent('contentTypeName');
 
             spectator.detectChanges();
             expect(store.isEnabledNewContentEditor()).toBe(false);
-            expect(spectator.query(byTestId('edit-content-layout__topBar'))).toBeNull();
+            expect(spectator.query(byTestId('edit-content-layout__beta-message'))).toBeNull();
         });
+    });
+
+    describe('Warning Messages', () => {
+        beforeEach(() => {
+            dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            workflowActionsService.getDefaultActions.mockReturnValue(of(mockWorkflowsActions));
+            dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_TAB));
+        });
+
+        it('should show workflow warning message when multiple schemes are available for new content', fakeAsync(() => {
+            // Set up multiple workflow schemes
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_MULTIPLE_WORKFLOW_ACTIONS)
+            );
+
+            store.initializeNewContent('contentTypeName');
+            spectator.detectChanges();
+            tick();
+
+            const warningMessage = spectator.query(
+                byTestId('edit-content-layout__select-workflow-warning')
+            );
+            expect(warningMessage).toBeTruthy();
+        }));
+
+        it('should not show workflow warning message when only one scheme is available', fakeAsync(() => {
+            // Set up single workflow scheme
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+
+            store.initializeNewContent('contentTypeName');
+            spectator.detectChanges();
+            tick();
+
+            const warningMessage = spectator.query(
+                byTestId('edit-content-layout__select-workflow-warning')
+            );
+            expect(warningMessage).toBeNull();
+        }));
+
+        it('should not show workflow warning message for existing content', fakeAsync(() => {
+            // Even with multiple schemes, existing content shouldn't show warning
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_MULTIPLE_WORKFLOW_ACTIONS)
+            );
+
+            store.initializeExistingContent('123');
+            spectator.detectChanges();
+            tick();
+
+            const warningMessage = spectator.query(
+                byTestId('edit-content-layout__select-workflow-warning')
+            );
+            expect(warningMessage).toBeNull();
+        }));
     });
 });

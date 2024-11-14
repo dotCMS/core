@@ -23,7 +23,7 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
-import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
+import { DotFormatDateServiceMock, MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
@@ -102,8 +102,12 @@ describe('DotFormComponent', () => {
                 of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
             );
             dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
 
             store.initializeExistingContent(MOCK_CONTENTLET_1_OR_2_TABS.inode); // called with the inode of the contentlet
+
             spectator.detectChanges();
         });
 
@@ -134,6 +138,9 @@ describe('DotFormComponent', () => {
             dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
             workflowActionsService.getDefaultActions.mockReturnValue(
                 of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+            );
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
 
             store.initializeNewContent('TestMock');
@@ -172,6 +179,9 @@ describe('DotFormComponent', () => {
                 of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
             );
             workflowActionsFireService.fireTo.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
 
             store.initializeExistingContent(MOCK_CONTENTLET_1_OR_2_TABS.inode); // called with the inode of the contentlet
             spectator.detectChanges();

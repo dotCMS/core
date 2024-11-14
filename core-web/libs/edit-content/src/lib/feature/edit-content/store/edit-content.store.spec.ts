@@ -28,7 +28,11 @@ import {
     DotCMSContentType,
     DotCMSWorkflowAction
 } from '@dotcms/dotcms-models';
-import { MockDotMessageService, mockWorkflowsActions } from '@dotcms/utils-testing';
+import {
+    MOCK_SINGLE_WORKFLOW_ACTIONS,
+    MockDotMessageService,
+    mockWorkflowsActions
+} from '@dotcms/utils-testing';
 
 import { DotEditContentStore } from './edit-content.store';
 
@@ -117,12 +121,16 @@ describe('DotEditContentStore', () => {
 
             contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
             workflowActionsService.getDefaultActions.mockReturnValue(of(mockWorkflowsActions));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
 
             store.initializeNewContent(testContentType);
 
             // use the proper contentType for get the data
             expect(contentTypeService.getContentType).toHaveBeenCalledWith(testContentType);
             expect(workflowActionsService.getDefaultActions).toHaveBeenCalledWith(testContentType);
+            expect(workflowActionsService.getWorkFlowActions).toHaveBeenCalledWith(testContentType);
 
             expect(store.contentType()).toEqual(CONTENT_TYPE_MOCK);
             expect(store.actions()).toEqual(mockWorkflowsActions);
@@ -162,6 +170,9 @@ describe('DotEditContentStore', () => {
             dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
             contentTypeService.getContentType.mockReturnValue(of(mockContentType));
             workflowActionsService.getByInode.mockReturnValue(of(mockActions));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
 
             store.initializeExistingContent(testInode);
 

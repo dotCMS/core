@@ -3,7 +3,9 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
     DotCMSContentTypeLayoutRow,
-    DotCMSContentTypeLayoutTab
+    DotCMSContentTypeLayoutTab,
+    DotCMSWorkflow,
+    DotCMSWorkflowAction
 } from '@dotcms/dotcms-models';
 
 import {
@@ -292,4 +294,38 @@ export const transformFormDataFn = (contentType: DotCMSContentType): Tab[] => {
             }))
         }))
     }));
+};
+
+/**
+ * Parses an array of workflow data and returns a new object with key-value pairs.
+ *
+ * @param {Object[]} data - The array of workflow data to be parsed.
+ * @returns {Object} - The parsed object with key-value pairs.
+ */
+export const parseWorkflows = (
+    data: {
+        scheme: DotCMSWorkflow;
+        action: DotCMSWorkflowAction;
+    }[]
+) => {
+    if (!Array.isArray(data)) {
+        return {};
+    }
+
+    return data.reduce((acc, { scheme, action }) => {
+        if (!acc[scheme.id]) {
+            acc[scheme.id] = {
+                scheme: {
+                    ...scheme
+                },
+                actions: {}
+            };
+        }
+
+        acc[scheme.id].actions[action.id] = {
+            ...action
+        };
+
+        return acc;
+    }, {});
 };
