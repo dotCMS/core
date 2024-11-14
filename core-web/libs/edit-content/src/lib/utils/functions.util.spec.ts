@@ -2,7 +2,11 @@ import { describe, expect, it } from '@jest/globals';
 
 import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
 
-import { MOCK_CONTENTTYPE_2_TABS, MOCK_FORM_CONTROL_FIELDS } from './edit-content.mock';
+import {
+    MOCK_CONTENTTYPE_2_TABS,
+    MOCK_FORM_CONTROL_FIELDS,
+    MOCK_WORKFLOW_DATA
+} from './edit-content.mock';
 import * as functionsUtil from './functions.util';
 import {
     createPaths,
@@ -10,6 +14,7 @@ import {
     getPersistSidebarState,
     isFilteredType,
     isValidJson,
+    parseWorkflows,
     setPersistSidebarState,
     stringToJson
 } from './functions.util';
@@ -658,6 +663,43 @@ describe('Utils Functions', () => {
                 const fieldType = field.fieldType as NON_FORM_CONTROL_FIELD_TYPES;
                 expect(nonFormControlFieldTypes.includes(fieldType)).toBe(false);
             });
+        });
+    });
+
+    describe('parseWorkflows', () => {
+        it('should return empty object when input is not an array', () => {
+            expect(parseWorkflows(null)).toEqual({});
+            expect(parseWorkflows(undefined)).toEqual({});
+        });
+
+        it('should parse real workflow data correctly', () => {
+            const expected = {
+                [MOCK_WORKFLOW_DATA[0].scheme.id]: {
+                    actions: {
+                        [MOCK_WORKFLOW_DATA[0].action.id]: { ...MOCK_WORKFLOW_DATA[0].action }
+                    },
+                    scheme: { ...MOCK_WORKFLOW_DATA[0].scheme }
+                },
+                [MOCK_WORKFLOW_DATA[1].scheme.id]: {
+                    actions: {
+                        [MOCK_WORKFLOW_DATA[1].action.id]: { ...MOCK_WORKFLOW_DATA[1].action }
+                    },
+                    scheme: { ...MOCK_WORKFLOW_DATA[1].scheme }
+                }
+            };
+
+            expect(parseWorkflows(MOCK_WORKFLOW_DATA)).toEqual(expected);
+        });
+        it('should handle multiple schemes correctly', () => {
+            const result = parseWorkflows(MOCK_WORKFLOW_DATA);
+
+            expect(Object.keys(result)).toHaveLength(2);
+            expect(result[MOCK_WORKFLOW_DATA[0].scheme.id].scheme.name).toBe('System Workflow');
+            expect(result[MOCK_WORKFLOW_DATA[1].scheme.id].scheme.name).toBe('Blogs');
+        });
+
+        it('should handle empty array input', () => {
+            expect(parseWorkflows([])).toEqual({});
         });
     });
 });

@@ -1,6 +1,8 @@
 @let contentType = $store.contentType();
 @let contentlet = $store.contentlet();
 @let showSidebar = $store.showSidebar();
+@let showSelectWorkflowWarning = $store.showSelectWorkflowWarning();
+@let actions = $store.actions();
 
 <!-- TODO: Handle the error, no form -->
 @if (form) {
@@ -74,17 +76,19 @@
     <div
         class="dot-edit-content-actions"
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
-        <dot-workflow-actions
-            data-testId="workflow-actions"
-            (actionFired)="
-                fireWorkflowAction({
-                    actionId: $event.id,
-                    inode: contentlet?.inode,
-                    contentType: contentType.variable
-                })
-            "
-            [actions]="$store.actions()"
-            [groupActions]="true" />
+        @if (!showSelectWorkflowWarning) {
+            <dot-workflow-actions
+                data-testId="workflow-actions"
+                (actionFired)="
+                    fireWorkflowAction({
+                        actionId: $event.id,
+                        inode: contentlet?.inode,
+                        contentType: contentType.variable
+                    })
+                "
+                [actions]="actions"
+                [groupActions]="true" />
+        }
 
         <div
             class="dot-edit-content-actions__sidebar-toggle"

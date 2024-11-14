@@ -6,7 +6,7 @@ import { Injectable, inject } from '@angular/core';
 import { map, pluck } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-js';
-import { DotCMSWorkflowAction, DotCMSWorkflow } from '@dotcms/dotcms-models';
+import { DotCMSWorkflow, DotCMSWorkflowAction, DotCMSWorkflowStep } from '@dotcms/dotcms-models';
 
 export enum DotRenderMode {
     LISTING = 'LISTING',
@@ -51,7 +51,7 @@ export class DotWorkflowsActionsService {
 
     /**
      * Returns the workflow actions of the passed contentType
-     *
+     * @deprecated
      * @param {string} inode
      * @param {DotRenderMode} [renderMode]
      * @returns {Observable<DotCMSWorkflowAction[]>}
@@ -74,5 +74,28 @@ export class DotWorkflowsActionsService {
 
     private getWorkFlowId(workflow: DotCMSWorkflow): string {
         return workflow && workflow.id;
+    }
+
+    getWorkFlowActions(contentTypeName: string): Observable<
+        {
+            scheme: DotCMSWorkflow;
+            action: DotCMSWorkflowAction;
+            firstStep: DotCMSWorkflowStep;
+        }[]
+    > {
+        return this.httpClient
+            .get<
+                DotCMSResponse<
+                    {
+                        scheme: DotCMSWorkflow;
+                        action: DotCMSWorkflowAction;
+                        firstStep: DotCMSWorkflowStep;
+                    }[]
+                >
+            >(`${this.BASE_URL}/defaultactions/contenttype/${contentTypeName}`)
+            .pipe(
+                pluck('entity'),
+                map((res) => res || [])
+            );
     }
 }

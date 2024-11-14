@@ -24,6 +24,19 @@ export interface DotCMSWorkflowAction {
     showOn: string[];
     actionInputs: DotCMSWorkflowInput[];
     metadata?: Record<string, string>;
+    hasArchiveActionlet?: boolean;
+    hasCommentActionlet?: boolean;
+    hasDeleteActionlet?: boolean;
+    hasDestroyActionlet?: boolean;
+    hasMoveActionletActionlet?: boolean;
+    hasMoveActionletHasPathActionlet?: boolean;
+    hasOnlyBatchActionlet?: boolean;
+    hasPublishActionlet?: boolean;
+    hasPushPublishActionlet?: boolean;
+    hasResetActionlet?: boolean;
+    hasSaveActionlet?: boolean;
+    hasUnarchiveActionlet?: boolean;
+    hasUnpublishActionlet?: boolean;
 }
 
 export enum DotCMSSystemActionType {
@@ -57,4 +70,16 @@ export interface DotCMSSystemAction {
 export interface DotCMSWorkflowInput {
     id: string;
     body: any;
+}
+
+export interface DotCMSWorkflowStep {
+    creationDate: number;
+    enableEscalation: boolean;
+    escalationAction: null;
+    escalationTime: number;
+    id: string;
+    myOrder: number;
+    name: string;
+    resolved: boolean;
+    schemeId: string;
 }

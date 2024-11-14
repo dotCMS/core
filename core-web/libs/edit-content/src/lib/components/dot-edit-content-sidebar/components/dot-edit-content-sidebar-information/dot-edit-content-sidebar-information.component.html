@@ -29,67 +29,83 @@
         <div class="sidebar-card sidebar-card__row">
             <div class="sidebar-card__row-item">
                 <span class="sidebar-card__title">{{ 'Created' | dm }}</span>
-                <span class="sidebar-card__subtitle" [pTooltip]="contentlet?.ownerName">
-                    {{ (contentlet?.ownerName | dotNameFormat) || 'You' }}
-                </span>
                 <span
-                    class="sidebar-card__date"
-                    data-testid="created-date"
-                    [pTooltip]="contentlet?.createDate | date: 'MM/dd/yyyy HH:mm:ss'">
-                    {{ contentlet?.createDate }}
-                    {{ contentlet?.createDate | dotRelativeDate: 'MM/dd/yyyy' : null }}
+                    class="sidebar-card__subtitle"
+                    [tooltipPosition]="'left'"
+                    [pTooltip]="!contentlet?.creationDate ? ('Not created yet' | dm) : null">
+                    {{
+                        contentlet?.creationDate
+                            ? (contentlet?.ownerName | dotNameFormat) || 'You'
+                            : '-'
+                    }}
                 </span>
+                @if (contentlet?.creationDate) {
+                    <span
+                        class="sidebar-card__date"
+                        data-testid="created-date"
+                        [pTooltip]="contentlet?.creationDate | date: 'MM/dd/yyyy HH:mm:ss'">
+                        {{ contentlet?.creationDate | dotRelativeDate: 'MM/dd/yyyy' : null }}
+                    </span>
+                }
             </div>
 
             <div class="sidebar-card__row-item">
                 <span class="sidebar-card__title">{{ 'Modified' | dm }}</span>
-                <span class="sidebar-card__subtitle" [pTooltip]="contentlet?.modUserName">
-                    {{ contentlet?.modUserName | dotNameFormat }}
-                </span>
                 <span
-                    class="sidebar-card__date"
-                    data-testid="modified-date"
-                    [pTooltip]="contentlet?.modDate | date: 'MM/dd/yyyy HH:mm:ss'">
-                    {{ contentlet?.modDate | dotRelativeDate: 'MM/dd/yyyy' : null }}
+                    class="sidebar-card__subtitle"
+                    [tooltipPosition]="'left'"
+                    [pTooltip]="!contentlet?.modDate ? ('Not modified yet' | dm) : null">
+                    {{ contentlet?.modDate ? (contentlet?.modUserName | dotNameFormat) : '-' }}
                 </span>
+                @if (contentlet?.modDate) {
+                    <span
+                        class="sidebar-card__date"
+                        data-testid="modified-date"
+                        [pTooltip]="contentlet?.modDate | date: 'MM/dd/yyyy HH:mm:ss'">
+                        {{ contentlet?.modDate | dotRelativeDate: 'MM/dd/yyyy' : null }}
+                    </span>
+                }
             </div>
 
-            @if (contentlet?.publishDate) {
-                <div class="sidebar-card__row-item">
-                    <span class="sidebar-card__title">{{ 'Published' | dm }}</span>
-                    @if (contentlet?.publishUserName) {
-                        <span
-                            class="sidebar-card__subtitle"
-                            [pTooltip]="contentlet?.publishUserName">
-                            {{ contentlet?.publishUserName | dotNameFormat }}
-                        </span>
-                    }
+            <div class="sidebar-card__row-item">
+                <span class="sidebar-card__title">{{ 'Published' | dm }}</span>
+                <span
+                    class="sidebar-card__subtitle"
+                    [tooltipPosition]="'left'"
+                    [pTooltip]="!contentlet?.publishDate ? ('Not published yet' | dm) : null">
+                    {{
+                        contentlet?.publishDate
+                            ? (contentlet?.publishUserName | dotNameFormat)
+                            : '-'
+                    }}
+                </span>
+                @if (contentlet?.publishDate) {
                     <span
                         class="sidebar-card__date"
                         data-testid="published-date"
                         [pTooltip]="contentlet?.publishDate | date: 'MM/dd/yyyy HH:mm:ss'">
                         {{ contentlet?.publishDate | dotRelativeDate: 'MM/dd/yyyy' : null }}
                     </span>
-                </div>
-            }
+                }
+            </div>
         </div>
     </div>
+</div>
 
-    <div class="sidebar-references sidebar-card">
-        <span class="sidebar-card__title">{{ 'References' | dm }}</span>
-        @if (loading) {
-            <p-skeleton height="14px"></p-skeleton>
-        } @else {
-            <span class="sidebar-card__subtitle" data-testid="references-count">
-                @if (referencesPageCount && referencesPageCount !== '0') {
-                    {{
-                        'edit.content.sidebar.information.references-with.pages.tooltip'
-                            | dm: [referencesPageCount]
-                    }}
-                } @else {
-                    {{ 'edit.content.sidebar.information.references-with.pages.not.used' | dm }}
-                }
-            </span>
-        }
-    </div>
+<div class="sidebar-references sidebar-card">
+    <span class="sidebar-card__title">{{ 'References' | dm }}</span>
+    @if (loading) {
+        <p-skeleton height="14px"></p-skeleton>
+    } @else {
+        <span class="sidebar-card__subtitle" data-testid="references-count">
+            @if (referencesPageCount && referencesPageCount !== '0') {
+                {{
+                    'edit.content.sidebar.information.references-with.pages.tooltip'
+                        | dm: [referencesPageCount]
+                }}
+            } @else {
+                {{ 'edit.content.sidebar.information.references-with.pages.not.used' | dm }}
+            }
+        </span>
+    }
 </div>
