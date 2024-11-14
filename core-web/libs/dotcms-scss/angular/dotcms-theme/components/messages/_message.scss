@@ -133,9 +133,9 @@
     border-radius: 50%;
     background: transparent;
     transition:
-        background-color 0.2s,
-        color 0.2s,
-        box-shadow 0.2s;
+        background-color $basic-speed,
+        color $basic-speed,
+        box-shadow $basic-speed;
 
     &:hover {
         background: $color-palette-white-op-30;
@@ -156,7 +156,7 @@
 /* Text and details */
 .p-message {
     .p-message-summary {
-        font-weight: 700;
+        font-weight: $font-weight-bold;
     }
 
     .p-message-detail {
@@ -174,7 +174,7 @@
 .p-message .p-message-text a {
     color: var(--primary-color);
     text-decoration: none;
-    margin-left: 0.25rem;
+    margin-left: $spacing-0;
 
     &:hover {
         text-decoration: underline;
