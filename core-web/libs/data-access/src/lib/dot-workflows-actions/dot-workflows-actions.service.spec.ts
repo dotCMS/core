@@ -56,4 +56,57 @@ describe('DotWorkflowsActionsService', () => {
                 entity: mockResponse
             });
     });
+
+    it('should get workflow actions by content type name', (done) => {
+        const contentTypeName = 'Blog';
+        const mockWorkflowActionsResponse = [
+            {
+                scheme: mockWorkflows[0],
+                action: mockWorkflowsActions[0],
+                firstStep: {
+                    id: '123',
+                    name: 'First Step',
+                    creationDate: 0,
+                    enableEscalation: false,
+                    escalationAction: null,
+                    escalationTime: 0,
+                    resolved: false,
+                    schemeId: '123',
+                    myOrder: 0
+                }
+            }
+        ];
+
+        spectator.service.getWorkFlowActions(contentTypeName).subscribe((res) => {
+            expect(res).toEqual(mockWorkflowActionsResponse);
+            done();
+        });
+
+        spectator
+            .expectOne(
+                `/api/v1/workflow/defaultactions/contenttype/${contentTypeName}`,
+                HttpMethod.GET
+            )
+            .flush({
+                entity: mockWorkflowActionsResponse
+            });
+    });
+
+    it('should return empty array when workflow actions response is null', (done) => {
+        const contentTypeName = 'Blog';
+
+        spectator.service.getWorkFlowActions(contentTypeName).subscribe((res) => {
+            expect(res).toEqual([]);
+            done();
+        });
+
+        spectator
+            .expectOne(
+                `/api/v1/workflow/defaultactions/contenttype/${contentTypeName}`,
+                HttpMethod.GET
+            )
+            .flush({
+                entity: null
+            });
+    });
 });

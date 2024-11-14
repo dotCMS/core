@@ -13,6 +13,12 @@ export enum DotRenderMode {
     EDITING = 'EDITING'
 }
 
+export interface DotCMSWorkflowActions {
+    scheme: DotCMSWorkflow;
+    action: DotCMSWorkflowAction;
+    firstStep: DotCMSWorkflowStep;
+}
+
 @Injectable()
 export class DotWorkflowsActionsService {
     private readonly BASE_URL = '/api/v1/workflow';
@@ -76,22 +82,16 @@ export class DotWorkflowsActionsService {
         return workflow && workflow.id;
     }
 
-    getWorkFlowActions(contentTypeName: string): Observable<
-        {
-            scheme: DotCMSWorkflow;
-            action: DotCMSWorkflowAction;
-            firstStep: DotCMSWorkflowStep;
-        }[]
-    > {
+    /**
+     * Returns the workflow actions of the passed content type name
+     *
+     * @param {string} contentTypeName
+     * @returns {Observable<DotCMSWorkflowActions>}
+     */
+    getWorkFlowActions(contentTypeName: string): Observable<DotCMSWorkflowActions[]> {
         return this.httpClient
             .get<
-                DotCMSResponse<
-                    {
-                        scheme: DotCMSWorkflow;
-                        action: DotCMSWorkflowAction;
-                        firstStep: DotCMSWorkflowStep;
-                    }[]
-                >
+                DotCMSResponse<DotCMSWorkflowActions[]>
             >(`${this.BASE_URL}/defaultactions/contenttype/${contentTypeName}`)
             .pipe(
                 pluck('entity'),
