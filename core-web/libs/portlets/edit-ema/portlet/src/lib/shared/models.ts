@@ -240,3 +240,8 @@ export interface PostMessage {
     action: CLIENT_ACTIONS;
     payload: unknown;
 }
+
+export interface ReorderMenuPayload {
+    startLevel: number;
+    depth: number;
+}

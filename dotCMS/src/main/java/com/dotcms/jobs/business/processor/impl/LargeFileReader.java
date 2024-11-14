@@ -45,6 +45,12 @@ public class LargeFileReader implements JobProcessor, Cancellable {
         final DotTempFile dotTempFile = tempFile.get();
 
         doReadLargeFile(dotTempFile, nLines, maxLines, job);
+
+        if (!working) {
+            Logger.info(this.getClass(), "Job cancelled: " + job.id());
+            // Adding some delay to simulate some cancellation processing, this demo is too fast
+            delay(3000);
+        }
     }
 
     /**
@@ -77,7 +83,7 @@ public class LargeFileReader implements JobProcessor, Cancellable {
                     if (lineCount == nLines) {
                         lineCount = 0; // Reset the counter
                         Logger.debug(this.getClass(), line);
-                        delay();
+                        delay(1000);
                     }
                     final float progressPercentage = ((float) readCount / totalCount);
                     progressTracker.ifPresent(tracker -> tracker.updateProgress(progressPercentage));
@@ -112,9 +118,9 @@ public class LargeFileReader implements JobProcessor, Cancellable {
         return totalCount;
     }
 
-    private void delay() {
+    private void delay(final long millis) {
         Try.of(()->{
-            Thread.sleep(1000);
+            Thread.sleep(millis);
             return null;
         }).onFailure(e->Logger.error(this.getClass(), "Error during delay", e));
     }

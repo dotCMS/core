@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 import org.awaitility.Awaitility;
 import org.jboss.weld.junit5.EnableWeld;
-import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +37,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Integration tests for the JobQueueManagerAPI.
@@ -49,6 +47,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(Lifecycle.PER_CLASS)
 public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBaseTest {
+
+    private static int attempts = 0;
 
     @Inject
     JobQueueManagerAPI jobQueueManagerAPI;
@@ -85,6 +85,9 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
         if(null != jobQueueManagerAPI) {
             jobQueueManagerAPI.getCircuitBreaker().reset();
         }
+
+        // Reset retry attempts
+        attempts = 0;
     }
 
     /**
@@ -184,8 +187,6 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
                             "Job should have been attempted " + maxRetries + " times");
                 });
     }
-
-
 
     /**
      * Method to test: Job failure handling in JobQueueManagerAPI
@@ -473,7 +474,6 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
     static class RetryingJobProcessor implements JobProcessor {
 
         public static final int MAX_RETRIES = 3;
-        private int attempts = 0;
 
         public RetryingJobProcessor() {
              // needed for instantiation purposes
