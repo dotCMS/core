@@ -62,13 +62,13 @@ export function editContentlet<T>(contentlet: Contentlet<T>) {
 // Test this
 export function initInlineEditing(
     type: INLINE_EDITING_EVENT_KEY,
-    eventData?: InlineEditingEventData
+    data?: InlineEditingEventData
 ): void {
     postMessageToEditor({
         action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
         payload: {
             type,
-            data: eventData
+            data
         }
     });
 }
