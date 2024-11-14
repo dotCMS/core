@@ -14,23 +14,6 @@ function Contentlets({ contentlets }) {
         <ul className="flex flex-col gap-4">
             {contentlets.map((contentlet) => (
                 <li className="relative flex gap-7 min-h-16" key={contentlet.identifier}>
-                    <button
-                        onClick={() => editContentlet(contentlet)}
-                        style={{
-                            color: 'black',
-                            border: '1px solid black',
-                            position: 'absolute',
-                            bottom: 0,
-                            right: 0,
-                            width: '40px',
-                            height: '20px',
-                            zIndex: 1000,
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center'
-                        }}>
-                        Edit
-                    </button>
                     <a className="relative min-w-32" href={contentlet.urlMap || contentlet.url}>
                         {contentlet.image && (
                             <Image

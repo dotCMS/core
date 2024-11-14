@@ -22,7 +22,7 @@ import { Video } from "./content-types/Video";
 import NotFound from "@/app/not-found";
 
 // Mapping of components to DotCMS content types
-const componentsMap = {
+const components = {
     webPageContent: WebPageContent,
     Banner: Banner,
     Activity: Activity,
@@ -35,6 +35,12 @@ const componentsMap = {
     SimpleWidget: SimpleWidget,
     Video: Video
 };
+
+const componentsMap = new Proxy(components, {
+    get: (target, prop) =>
+        target[prop] ||
+        ((contentlet) => <div>{contentlet.contentType}</div>),
+});
 
 export function MyPage({ pageAsset, nav }) {
     const pathname = usePathname();
