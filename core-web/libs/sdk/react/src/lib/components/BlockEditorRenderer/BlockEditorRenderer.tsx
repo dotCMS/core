@@ -67,16 +67,18 @@ export const BlockEditorRenderer = ({
             return;
         }
 
-        const { inode, languageId, contentType } = contentlet;
+        const { inode, languageId: language, contentType } = contentlet;
+        // `ContentNode` lives on `@dotcms/react` that's why we can use it in `@dotcms/client`
+        // We need to move interfaces to external lib
         const content = blocks as unknown as Record<string, unknown>;
         const element = ref.current;
         const handleClickEvent = () => {
             initInlineEditing('BLOCK_EDITOR', {
                 inode,
-                languageId,
-                contentType,
+                content,
+                language,
                 fieldName,
-                content
+                contentType
             });
         };
 

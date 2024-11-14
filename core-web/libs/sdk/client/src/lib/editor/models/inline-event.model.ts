@@ -1,11 +1,11 @@
 export type INLINE_EDITING_EVENT_KEY = 'BLOCK_EDITOR' | 'WYSIWYG';
 
-export interface InlineEditingBlockEditorData {
+export interface InlineEditorData {
     inode: string;
-    languageId: string | number;
+    language: number;
     contentType: string;
     fieldName: string;
     content: Record<string, unknown>;
 }
 
-export type InlineEditingEventData = InlineEditingBlockEditorData;
+export type InlineEditEventData = InlineEditorData;

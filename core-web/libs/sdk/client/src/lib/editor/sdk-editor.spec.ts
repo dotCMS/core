@@ -131,7 +131,7 @@ describe('DotCMSPageEditor', () => {
             const type = 'BLOCK_EDITOR';
             const data = {
                 inode: '123',
-                languageId: 1,
+                language: 1,
                 contentType: 'text',
                 fieldName: 'body',
                 content: {}

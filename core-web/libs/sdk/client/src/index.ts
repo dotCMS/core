@@ -5,6 +5,11 @@ import {
     DotCMSPageEditorConfig,
     EditorConfig
 } from './lib/editor/models/editor.model';
+import {
+    InlineEditorData,
+    INLINE_EDITING_EVENT_KEY,
+    InlineEditEventData
+} from './lib/editor/models/inline-event.model';
 import { NOTIFY_CLIENT } from './lib/editor/models/listeners.model';
 import {
     destroyEditor,
@@ -32,5 +37,8 @@ export {
     updateNavigation,
     destroyEditor,
     ClientConfig,
-    initInlineEditing
+    initInlineEditing,
+    InlineEditEventData,
+    InlineEditorData,
+    INLINE_EDITING_EVENT_KEY
 };

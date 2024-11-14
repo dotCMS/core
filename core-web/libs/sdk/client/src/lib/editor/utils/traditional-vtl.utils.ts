@@ -24,12 +24,12 @@ const listenBlockEditorClick = (): void => {
     }
 
     editBlockEditorNodes.forEach((node: HTMLElement) => {
-        const { inode, languageId, contentType, fieldName, blockEditorContent } = node.dataset;
+        const { inode, language = '1', contentType, fieldName, blockEditorContent } = node.dataset;
         const content = JSON.parse(blockEditorContent || '');
 
-        if (!inode || !languageId || !contentType || !fieldName) {
+        if (!inode || !language || !contentType || !fieldName) {
             console.error('Missing data attributes for block editor inline editing.');
-            console.warn('inode, languageId, contentType and fieldName are required.');
+            console.warn('inode, language, contentType and fieldName are required.');
 
             return;
         }
@@ -39,8 +39,8 @@ const listenBlockEditorClick = (): void => {
             initInlineEditing('BLOCK_EDITOR', {
                 inode,
                 content,
+                language: parseInt(language),
                 fieldName,
-                languageId,
                 contentType
             });
         });

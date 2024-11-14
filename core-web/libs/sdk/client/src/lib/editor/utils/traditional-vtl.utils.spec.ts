@@ -11,8 +11,8 @@ describe('Traditional VTL utils', () => {
 
         it('should add event listeners to nodes with data-block-editor-content attribute', () => {
             document.body.innerHTML = `
-                <div data-inode="123" data-language-id="1" data-content-type="blog" data-field-name="Content" data-block-editor-content="true"></div>
-                <div data-inode="321" data-language-id="1" data-content-type="blog" data-field-name="Content" data-block-editor-content="true"></div>
+                <div data-inode="123" data-language="1" data-content-type="blog" data-field-name="Content" data-block-editor-content="true"></div>
+                <div data-inode="321" data-language="1" data-content-type="blog" data-field-name="Content" data-block-editor-content="true"></div>
             `;
 
             const spy = jest.spyOn(client, 'initInlineEditing');
@@ -29,15 +29,15 @@ describe('Traditional VTL utils', () => {
 
             expect(spy).toHaveBeenCalledTimes(nodes.length);
             nodes.forEach(({ dataset }) => {
-                const { inode, languageId, contentType, fieldName, blockEditorContent } = dataset;
+                const { inode, language, contentType, fieldName, blockEditorContent } = dataset;
                 const content = JSON.parse(blockEditorContent || '');
 
                 expect(spy).toHaveBeenCalledWith('BLOCK_EDITOR', {
                     inode,
-                    languageId,
-                    contentType,
+                    content,
+                    language: parseInt(language as string),
                     fieldName,
-                    content
+                    contentType
                 });
             });
         });

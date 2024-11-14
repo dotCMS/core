@@ -14,6 +14,7 @@ import { map, take } from 'rxjs/operators';
 import { JSONContent } from '@tiptap/core';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
+import { InlineEditorData } from '@dotcms/client';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -26,17 +27,9 @@ import { DotMessagePipe } from '@dotcms/ui';
 export interface BlockEditorData {
     inode: string;
     fieldName: string;
-    languageId: number;
+    language: number;
     content: JSONContent;
     field: DotCMSContentTypeField;
-}
-
-export interface InlineEventData {
-    inode: string;
-    content: JSONContent;
-    language: string;
-    fieldName: string;
-    contentType: string;
 }
 
 export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
@@ -83,18 +76,18 @@ export class DotBlockEditorSidebarComponent {
     /**
      * Open the sidebar with the block editor content
      *
-     * @param {InlineEventData} { fieldName, contentType, inode, language, blockEditorContent }
+     * @param {InlineEditorData} { fieldName, contentType, inode, language, blockEditorContent }
      * @memberof DotBlockEditorSidebarComponent
      */
-    open({ inode, content, language, fieldName, contentType }: InlineEventData): void {
+    open({ inode, content, language, fieldName, contentType }: InlineEditorData): void {
         this.#getEditorField({ fieldName, contentType }).subscribe({
             next: (field) =>
                 this.contentlet.set({
                     inode,
                     field,
                     content,
-                    fieldName,
-                    languageId: parseInt(language)
+                    language,
+                    fieldName
                 }),
             error: (err) => console.error('Error getting contentlet ', err)
         });

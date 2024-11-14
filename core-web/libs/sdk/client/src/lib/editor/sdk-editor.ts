@@ -7,7 +7,7 @@ import {
 } from './listeners/listeners';
 import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from './models/client.model';
 import { DotCMSPageEditorConfig } from './models/editor.model';
-import { INLINE_EDITING_EVENT_KEY, InlineEditingEventData } from './models/inline-event.model';
+import { INLINE_EDITING_EVENT_KEY, InlineEditEventData } from './models/inline-event.model';
 
 import { Contentlet } from '../client/content/shared/types';
 
@@ -49,7 +49,7 @@ export function editContentlet<T>(contentlet: Contentlet<T>) {
  *
  * @export
  * @param {INLINE_EDITING_EVENT_KEY} type
- * @param {InlineEditingEventData} eventData
+ * @param {InlineEditEventData} eventData
  * @return {*}
  *
  *  * @example
@@ -59,10 +59,9 @@ export function editContentlet<T>(contentlet: Contentlet<T>) {
  * </div>
  * ```
  */
-// Test this
 export function initInlineEditing(
     type: INLINE_EDITING_EVENT_KEY,
-    data?: InlineEditingEventData
+    data?: InlineEditEventData
 ): void {
     postMessageToEditor({
         action: CLIENT_ACTIONS.INIT_INLINE_EDITING,

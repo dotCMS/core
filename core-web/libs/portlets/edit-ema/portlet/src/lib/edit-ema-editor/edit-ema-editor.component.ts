@@ -25,7 +25,12 @@ import { ProgressBarModule } from 'primeng/progressbar';
 
 import { takeUntil, catchError, filter, map, switchMap, tap, take } from 'rxjs/operators';
 
-import { CLIENT_ACTIONS, NOTIFY_CLIENT } from '@dotcms/client';
+import {
+    CLIENT_ACTIONS,
+    NOTIFY_CLIENT,
+    INLINE_EDITING_EVENT_KEY,
+    InlineEditEventData
+} from '@dotcms/client';
 import {
     DotMessageService,
     DotCopyContentService,
@@ -1355,7 +1360,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @return {*}
      * @memberof EditEmaEditorComponent
      */
-    #handleInlineEditingEvent({ type, data }) {
+    #handleInlineEditingEvent({
+        type,
+        data
+    }: {
+        type: INLINE_EDITING_EVENT_KEY;
+        data?: InlineEditEventData;
+    }) {
         if (!this.uveStore.isEnterprise()) {
             this.#dotAlertConfirmService.alert({
                 header: this.dotMessageService.get('dot.common.license.enterprise.only.error'),
@@ -1371,8 +1382,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 break;
 
             case 'WYSIWYG':
-                // The iframe says that the editor is ready to start inline editing
-                // The dataset of the inline-editing contentlet is ready inside the service.
                 this.inlineEditingService.initEditor();
                 this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
                 break;

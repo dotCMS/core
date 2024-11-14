@@ -71,7 +71,7 @@ describe('BlockEditorRenderer', () => {
 
         it('should call `initInlineEditing` when the component is clicked', () => {
             const spy = jest.spyOn(client, 'initInlineEditing');
-            const { inode, languageId, contentType } = dotcmsContentletMock;
+            const { inode, languageId: language, contentType } = dotcmsContentletMock;
             const { getByTestId } = render(
                 <BlockEditorRenderer
                     blocks={blocks}
@@ -85,7 +85,7 @@ describe('BlockEditorRenderer', () => {
             expect(blockEditorContainer).toHaveTextContent('Hello, World!');
             expect(spy).toHaveBeenCalledWith('BLOCK_EDITOR', {
                 inode,
-                languageId,
+                language,
                 contentType,
                 content: blocks,
                 fieldName: 'fieldName'
