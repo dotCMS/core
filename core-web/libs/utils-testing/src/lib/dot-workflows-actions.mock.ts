@@ -1,4 +1,5 @@
-import { DotCMSWorkflow, DotCMSWorkflowAction, DotCMSWorkflowStep } from '@dotcms/dotcms-models';
+import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotCMSWorkflowActions } from '../../../data-access/src/lib/dot-workflows-actions/dot-workflows-actions.service';
 
 export const mockWorkflowsActions: DotCMSWorkflowAction[] = [
     {
@@ -83,11 +84,7 @@ export const mockPublishAction = {
     actionInputs: []
 };
 
-export const MOCK_SINGLE_WORKFLOW_ACTIONS: {
-    scheme: DotCMSWorkflow;
-    action: DotCMSWorkflowAction;
-    firstStep: DotCMSWorkflowStep;
-}[] = [
+export const MOCK_SINGLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
     {
         action: {
             assignable: false,
@@ -204,11 +201,7 @@ export const MOCK_SINGLE_WORKFLOW_ACTIONS: {
     }
 ];
 
-export const MOCK_MULTIPLE_WORKFLOW_ACTIONS: {
-    scheme: DotCMSWorkflow;
-    action: DotCMSWorkflowAction;
-    firstStep: DotCMSWorkflowStep;
-}[] = [
+export const MOCK_MULTIPLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
     {
         action: {
             assignable: false,

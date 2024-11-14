@@ -6,7 +6,7 @@ import { Injectable, inject } from '@angular/core';
 import { map, pluck } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-js';
-import { DotCMSWorkflow, DotCMSWorkflowAction, DotCMSWorkflowStep } from '@dotcms/dotcms-models';
+import { DotCMSWorkflow, DotCMSWorkflowAction, WorkflowStep } from '@dotcms/dotcms-models';
 
 export enum DotRenderMode {
     LISTING = 'LISTING',
@@ -16,7 +16,7 @@ export enum DotRenderMode {
 export interface DotCMSWorkflowActions {
     scheme: DotCMSWorkflow;
     action: DotCMSWorkflowAction;
-    firstStep: DotCMSWorkflowStep;
+    firstStep: WorkflowStep;
 }
 
 @Injectable()
