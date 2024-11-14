@@ -662,9 +662,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @CloseDBIfOpened
     @Override
-    public Contentlet findContentletByIdentifier(final String identifier, final long languageId, final String variantId, final User user, final Date timeMachineDate, final boolean respectFrontendRoles)
+    public Contentlet findContentletByIdentifier(final String identifier, final long languageId, final String variantId,
+            final Date timeMachineDate, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException{
         final Contentlet contentlet = contentFactory.findContentletByIdentifier(identifier, languageId, variantId, timeMachineDate);
         if (permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
@@ -745,18 +749,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @CloseDBIfOpened
     @Override
     public Optional<Contentlet> findContentletByIdentifierOrFallback(final String identifier,
-            final long incomingLangId, final User user, String variantId, final Date timeMachine,
+            final long incomingLangId, String variantId, final Date timeMachine, final User user,
             final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         final long defaultLanguageId = this.languageAPI.getDefaultLanguage().getId();
         final long tryLanguage = incomingLangId <= 0 ? defaultLanguageId : incomingLangId;
 
         Contentlet contentlet = findContentletByIdentifier(identifier, tryLanguage,
-                variantId, user, timeMachine, respectFrontendRoles);
+                variantId, timeMachine, user, respectFrontendRoles);
 
         if (contentlet == null && tryLanguage != defaultLanguageId) {
             contentlet =  findContentletByIdentifier(identifier, defaultLanguageId,
-                variantId, user, timeMachine, respectFrontendRoles);
+                variantId, timeMachine, user, respectFrontendRoles);
         }
         return Optional.ofNullable(contentlet);
     }

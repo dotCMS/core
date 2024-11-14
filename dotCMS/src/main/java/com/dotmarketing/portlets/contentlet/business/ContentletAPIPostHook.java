@@ -1716,15 +1716,15 @@ public interface ContentletAPIPostHook {
     public default void findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user, boolean respectFrontendRoles) {}
 
 	/**
-	 *
 	 * @param identifier
 	 * @param incomingLangId
-	 * @param user
 	 * @param timeMachine
+	 * @param user
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	default void findContentletByIdentifierOrFallback(String identifier, long incomingLangId, User user, String variantId, Date timeMachine, boolean respectFrontendRoles) {}
+	default void findContentletByIdentifierOrFallback(String identifier, long incomingLangId,
+			String variantId, Date timeMachine, User user, boolean respectFrontendRoles) {}
 
     public default void findInDb(String inode) {};
 

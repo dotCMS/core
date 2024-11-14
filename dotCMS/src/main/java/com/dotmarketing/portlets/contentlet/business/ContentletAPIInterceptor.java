@@ -937,7 +937,8 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
-	public Contentlet findContentletByIdentifier(String identifier, long languageId, String variantId, User user, Date timeMachineDate, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException{
+	public Contentlet findContentletByIdentifier(String identifier, long languageId, String variantId,
+			Date timeMachineDate, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException{
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletByIdentifier(identifier, languageId, variantId, user, timeMachineDate, respectFrontendRoles);
 			if(!preResult){
@@ -946,7 +947,8 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 				throw new DotRuntimeException(errorMessage);
 			}
 		}
-		Contentlet c = conAPI.findContentletByIdentifier(identifier, languageId, variantId, user, timeMachineDate, respectFrontendRoles);
+		Contentlet c = conAPI.findContentletByIdentifier(identifier, languageId, variantId,
+				timeMachineDate, user, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
 			post.findContentletByIdentifier(identifier, languageId, variantId, user, timeMachineDate, respectFrontendRoles);
 		}
@@ -3237,9 +3239,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
     }
 
 	@Override
-	public Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, long incomingLangId, User user, String variantId, Date timeMachine, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, long incomingLangId,
+			String variantId, Date timeMachine, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		for (ContentletAPIPreHook pre : preHooks) {
-			boolean preResult = pre.findContentletByIdentifierOrFallback(identifier, incomingLangId, user, variantId, timeMachine, respectFrontendRoles);
+			boolean preResult = pre.findContentletByIdentifierOrFallback(identifier, incomingLangId,
+					variantId, timeMachine, user, respectFrontendRoles);
 			if (!preResult) {
 				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
 				Logger.error(this, errorMessage);
@@ -3247,9 +3251,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			}
 		}
 		final Optional<Contentlet> found =
-				conAPI.findContentletByIdentifierOrFallback(identifier, incomingLangId, user, variantId, timeMachine, respectFrontendRoles);
+				conAPI.findContentletByIdentifierOrFallback(identifier, incomingLangId, variantId,
+						timeMachine, user, respectFrontendRoles);
 		for (ContentletAPIPostHook post : postHooks) {
-			post.findContentletByIdentifierOrFallback(identifier, incomingLangId, user, variantId, timeMachine, respectFrontendRoles);
+			post.findContentletByIdentifierOrFallback(identifier, incomingLangId, variantId,
+					timeMachine, user, respectFrontendRoles);
 		}
 
 		return found;
