@@ -377,7 +377,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
           final String queryString = request.getQueryString();
           final int responseCode = request.getResponseCode();
 
-          final String newUrl = uri + (queryString != null ? StringPool.QUESTION + queryString : StringPool.BLANK);
+          final String newUrl = uri + (UtilMethods.isSet(queryString) ? StringPool.QUESTION + queryString : StringPool.BLANK);
 
           if (responseCode == 301 || responseCode == 302) {
               response.setStatus(responseCode);
