@@ -559,8 +559,20 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param context
      * @param actionlet
      */
-    protected void registerActionlet(final BundleContext context, final WorkFlowActionlet actionlet) {
-        OSGIUtil.getInstance().registerActionlet(context, actionlet, actionlets);
+    protected void registerActionlet (final BundleContext context, final WorkFlowActionlet actionlet) {
+
+        //Getting the service to register our Actionlet
+        final ServiceReference<?> serviceRefSelected = context.getServiceReference( WorkflowAPIOsgiService.class.getName() );
+        if (serviceRefSelected == null) {
+            return;
+        }
+
+        OSGIUtil.getInstance().setWorkflowOsgiService((WorkflowAPIOsgiService) context.getService(serviceRefSelected));
+        OSGIUtil.getInstance().getWorkflowOsgiService().addActionlet(actionlet.getClass());
+        actionlets.add(actionlet);
+
+        Logger.info(this, String.format("Added actionlet: [%s]", actionlet.getName()));
+        OSGIUtil.getInstance().actionletsStopped.remove(actionlet.getClass().getCanonicalName());
     }
 
     /**

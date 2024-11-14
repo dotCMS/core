@@ -15,7 +15,8 @@ import {
     areContainersEquals,
     compareUrlPaths,
     createFullURL,
-    getDragItemData
+    getDragItemData,
+    createReorderMenuURL
 } from '.';
 
 import { dotPageContainerStructureMock } from '../shared/mocks';
@@ -707,6 +708,21 @@ describe('utils functions', () => {
             const result = getDragItemData(dataset);
 
             expect(result).toBeNull();
+        });
+    });
+
+    describe('createReorderMenuURL', () => {
+        it('should create the correct URL', () => {
+            const result = createReorderMenuURL({
+                startLevel: 1,
+                depth: 1,
+                pagePath: '123',
+                hostId: '456'
+            });
+
+            expect(result).toEqual(
+                'http://localhost/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=1&depth=1&pagePath=123&hostId=456'
+            );
         });
     });
 });

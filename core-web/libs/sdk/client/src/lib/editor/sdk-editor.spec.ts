@@ -27,6 +27,7 @@ jest.mock('./models/client.model', () => {
         },
         INITIAL_DOT_UVE: {
             editContentlet: jest.fn(),
+            reorderMenu: jest.fn(),
             lastScrollYPosition: 0
         }
     };
@@ -102,6 +103,7 @@ describe('DotCMSPageEditor', () => {
             expect(scrollHandler).toHaveBeenCalled();
             expect(window.dotUVE).toEqual({
                 editContentlet: expect.any(Function),
+                reorderMenu: expect.any(Function),
                 lastScrollYPosition: 0
             });
         });

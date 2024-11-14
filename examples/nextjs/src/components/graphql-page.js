@@ -8,7 +8,7 @@ import CalendarEvent from "./content-types/calendarEvent";
 import Product from "./content-types/product";
 import ImageComponent from "./content-types/image";
 
-import Header from "./layout/header";
+import Header from "./layout/header/header";
 import Footer from "./layout/footer/footer";
 import Navigation from "./layout/navigation";
 import { usePathname, useRouter } from "next/navigation";

@@ -34,7 +34,8 @@ import {
     DotSeoMetaTagsUtilService,
     DotContentletService,
     DotTempFileUploadService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotAlertConfirmService
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -44,15 +45,10 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
-import {
-    SafeUrlPipe,
-    DotSpinnerModule,
-    DotMessagePipe,
-    DotCopyContentModalService
-} from '@dotcms/ui';
+import { SafeUrlPipe, DotSpinnerModule, DotCopyContentModalService } from '@dotcms/ui';
 import { isEqual } from '@dotcms/utils';
 
-import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
+import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
@@ -65,6 +61,7 @@ import {
     UpdatedContentlet
 } from './components/ema-page-dropzone/types';
 
+import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
@@ -78,15 +75,16 @@ import {
     VTLFile,
     DeletePayload,
     InsertPayloadFromDelete,
-    ReorderPayload,
     DialogAction,
-    PostMessage
+    PostMessage,
+    ReorderMenuPayload
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { ClientRequestProps } from '../store/features/client/withClient';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
+    createReorderMenuURL,
     compareUrlPaths,
     deleteContentletFromContainer,
     getDragItemData,
@@ -108,13 +106,13 @@ import {
         DotEmaDialogComponent,
         ConfirmDialogModule,
         EditEmaToolbarComponent,
-        DotMessagePipe,
         EmaPageDropzoneComponent,
         EditEmaPaletteComponent,
         EmaContentletToolsComponent,
-        DotEmaBookmarksComponent,
         ProgressBarModule,
-        DotResultsSeoToolComponent
+        DotResultsSeoToolComponent,
+        DotUveToolbarComponent,
+        DotBlockEditorSidebarComponent
     ],
     providers: [
         DotCopyContentModalService,
@@ -127,6 +125,7 @@ import {
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
+    @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
 
     protected readonly uveStore = inject(UVEStore);
 
@@ -146,6 +145,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly dotPageApiService = inject(DotPageApiService);
+    readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
 
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
@@ -153,6 +153,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
     readonly $editorProps = this.uveStore.$editorProps;
+    readonly $previewMode = this.uveStore.$previewMode;
 
     get contentWindow(): Window {
         return this.iframe.nativeElement.contentWindow;
@@ -796,6 +797,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 this.uveStore.reload();
                 this.dialog.resetDialog();
+
+                // This is a temporary solution to "reload" the content by reloading the window
+                // we should change this with a new SDK reload strategy
+                this.contentWindow?.postMessage(
+                    {
+                        name: NOTIFY_CLIENT.UVE_RELOAD_PAGE
+                    },
+                    this.host
+                );
             },
             [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
                 this.messageService.add({
@@ -990,14 +1000,35 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CLIENT_ACTIONS.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
                 this.dialog.editContentlet({ ...contentlet, clientAction: action });
             },
-            [CLIENT_ACTIONS.REORDER_MENU]: ({ reorderUrl }: ReorderPayload) => {
+            [CLIENT_ACTIONS.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuPayload) => {
+                const urlObject = createReorderMenuURL({
+                    startLevel,
+                    depth,
+                    pagePath: this.uveStore.params().url,
+                    hostId: this.uveStore.pageAPIResponse().site.identifier
+                });
+
                 this.dialog.openDialogOnUrl(
-                    reorderUrl,
+                    urlObject,
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
             [CLIENT_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
+            },
+            [CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING]: (payload) => {
+                if (!this.uveStore.isEnterprise()) {
+                    this.#dotAlertConfirmService.alert({
+                        header: this.dotMessageService.get(
+                            'dot.common.license.enterprise.only.error'
+                        ),
+                        message: this.dotMessageService.get('editpage.not.lincese.error')
+                    });
+
+                    return;
+                }
+
+                this.blockSidebar?.open(payload);
             }
         };
         const actionToExecute = CLIENT_ACTIONS_FUNC_MAP[action];
@@ -1055,6 +1086,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     protected handleEditContentlet(payload: ActionPayload) {
         const { contentlet, container } = payload;
         const { onNumberOfPages = '1', title } = contentlet;
+
+        // console.log("LLAMADO", this.$editorProps().showDialogs);
 
         if (Number(onNumberOfPages) <= 1) {
             this.dialog?.editContentlet(contentlet);
@@ -1232,9 +1265,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Reloads the component from the dialog.
+     * Reloads the component from the dialog/sidebar.
      */
-    reloadFromDialog() {
+    reloadPage() {
         this.uveStore.reload();
     }
 
