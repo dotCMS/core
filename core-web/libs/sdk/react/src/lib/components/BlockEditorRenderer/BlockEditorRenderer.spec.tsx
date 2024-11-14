@@ -83,7 +83,7 @@ describe('BlockEditorRenderer', () => {
             const blockEditorContainer = getByTestId('dot-block-editor-container');
             blockEditorContainer.click();
             expect(blockEditorContainer).toHaveTextContent('Hello, World!');
-            expect(spy).toHaveBeenCalledWith('block-editor', {
+            expect(spy).toHaveBeenCalledWith('BLOCK_EDITOR', {
                 inode,
                 languageId,
                 contentType,

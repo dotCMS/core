@@ -36,7 +36,7 @@ const listenBlockEditorClick = (): void => {
 
         node.classList.add('dotcms__inline-edit-field');
         node.addEventListener('click', () => {
-            initInlineEditing('block-editor', {
+            initInlineEditing('BLOCK_EDITOR', {
                 inode,
                 content,
                 fieldName,

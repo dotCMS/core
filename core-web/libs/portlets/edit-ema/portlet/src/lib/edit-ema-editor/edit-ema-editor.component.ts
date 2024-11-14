@@ -1366,7 +1366,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         }
 
         switch (type) {
-            case 'block-editor':
+            case 'BLOCK_EDITOR':
                 this.blockSidebar?.open(data);
                 break;
 

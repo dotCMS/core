@@ -32,7 +32,7 @@ describe('Traditional VTL utils', () => {
                 const { inode, languageId, contentType, fieldName, blockEditorContent } = dataset;
                 const content = JSON.parse(blockEditorContent || '');
 
-                expect(spy).toHaveBeenCalledWith('block-editor', {
+                expect(spy).toHaveBeenCalledWith('BLOCK_EDITOR', {
                     inode,
                     languageId,
                     contentType,

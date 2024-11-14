@@ -128,7 +128,7 @@ describe('DotCMSPageEditor', () => {
 
     describe('initInlineEditing', () => {
         it('should send the correct message to the editor to edit `block-editor`', () => {
-            const type = 'block-editor';
+            const type = 'BLOCK_EDITOR';
             const data = {
                 inode: '123',
                 languageId: 1,

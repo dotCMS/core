@@ -1,4 +1,4 @@
-export type INLINE_EDITING_EVENT_KEY = 'block-editor' | 'WYSIWYG';
+export type INLINE_EDITING_EVENT_KEY = 'BLOCK_EDITOR' | 'WYSIWYG';
 
 export interface InlineEditingBlockEditorData {
     inode: string;

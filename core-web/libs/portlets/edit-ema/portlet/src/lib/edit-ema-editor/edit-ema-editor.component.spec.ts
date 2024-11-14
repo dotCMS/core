@@ -672,7 +672,7 @@ describe('EditEmaEditorComponent', () => {
                             data: {
                                 action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
                                 payload: {
-                                    type: 'block-editor',
+                                    type: 'BLOCK_EDITOR',
                                     data: {}
                                 }
                             }

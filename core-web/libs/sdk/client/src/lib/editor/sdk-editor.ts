@@ -54,7 +54,7 @@ export function editContentlet<T>(contentlet: Contentlet<T>) {
  *
  *  * @example
  * ```html
- * <div onclick="initInlineEditing('block-editor', { inode, languageId, contentType, fieldName, content })">
+ * <div onclick="initInlineEditing('BLOCK_EDITOR', { inode, languageId, contentType, fieldName, content })">
  *      ${My Content}
  * </div>
  * ```
