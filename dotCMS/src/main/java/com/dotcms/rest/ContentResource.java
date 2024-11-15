@@ -1300,6 +1300,8 @@ public class ContentResource {
         final JSONArray jsonArray = new JSONArray();
 
         for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles, isParent, language, live)) {
+            relatedContent.setProperty(field.name(), null);
+
             switch (depth) {
                 //returns a list of identifiers
                 case 0:

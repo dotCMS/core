@@ -356,13 +356,10 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         final HttpServletRequest httpRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final PageMode currentPageMode = PageMode.get(httpRequest);
 
-        final int beginningDepthValue = getInitialDepthValue();
-        int depth = 0;
+        int depth = getInitialDepthValue();
 
         if (isInsideAnotherBlockEditorAndRelatedContent()) {
-            depth = decreaseDepthValue(beginningDepthValue);
-        } else if (null != httpRequest && null == httpRequest.getAttribute(WebKeys.HTMLPAGE_DEPTH)) {
-            depth = beginningDepthValue;
+            depth = decreaseDepthValue(depth);
         }
 
         ContentUtils.addRelationships(contentlet, APILocator.systemUser(), currentPageMode, contentlet.getLanguageId(), depth);
