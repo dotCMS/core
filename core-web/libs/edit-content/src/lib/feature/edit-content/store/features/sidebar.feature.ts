@@ -10,21 +10,17 @@ import {
 
 import { computed } from '@angular/core';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ContentState } from './content.feature';
 
 import { getPersistSidebarState, setPersistSidebarState } from '../../../../utils/functions.util';
 import { EditContentState } from '../edit-content.store';
 
-interface AsideState {
+interface SidebarState {
     showSidebar: boolean;
-    state: ComponentStatus;
-    error: string | null;
 }
 
-const initialState: AsideState = {
-    showSidebar: false,
-    state: ComponentStatus.INIT,
-    error: null
+const initialState: SidebarState = {
+    showSidebar: false
 };
 
 /**
@@ -35,7 +31,7 @@ const initialState: AsideState = {
 export function withSidebar() {
     return signalStoreFeature(
         {
-            state: type<EditContentState>()
+            state: type<EditContentState & ContentState>()
         },
         withState(initialState),
         withComputed(({ contentlet }) => ({

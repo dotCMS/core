@@ -240,7 +240,6 @@ describe('DotFormComponent', () => {
                 const workflowActions = spectator.query(DotWorkflowActionsComponent);
                 expect(workflowActions).toBeTruthy();
 
-                console.log(spectator.debugElement.nativeElement.innerHTML);
                 const saveButton = spectator.query('.p-splitbutton-defaultbutton');
                 expect(saveButton).toBeTruthy();
                 expect(saveButton.textContent.trim()).toBe('Save');
