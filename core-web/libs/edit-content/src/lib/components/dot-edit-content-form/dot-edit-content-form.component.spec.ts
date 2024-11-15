@@ -5,7 +5,6 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
-
 import { of } from 'rxjs';
 
 import { Validators } from '@angular/forms';
@@ -128,21 +127,6 @@ describe('DotFormComponent', () => {
             expect(component.form.get('modUserName')).toBeFalsy();
             expect(component.form.get('publishDate')).toBeFalsy();
         });
-
-        // it('should disable the form when loading and enable it when not loading', () => {
-        //     spectator.detectChanges();
-
-        //     // // Initially, the form should be enabled
-        //     expect(component.form.enabled).toBe(true);
-
-        //     patchState(store, {
-        //         state: ComponentStatus.SAVING
-        //     });
-
-        //     spectator.flushEffects();
-
-        //     expect(component.form.enabled).toBe(false);
-        // });
     });
 
     describe('New Content', () => {
