@@ -10,10 +10,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
+
 import {
     DotContentTypeService,
     DotFireActionOptions,
     DotHttpErrorManagerService,
+    DotMessageService,
     DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -25,12 +28,17 @@ import {
     DotCMSContentType,
     DotCMSWorkflowAction
 } from '@dotcms/dotcms-models';
-import { mockWorkflowsActions } from '@dotcms/utils-testing';
+import { MockDotMessageService, mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { DotEditContentStore } from './edit-content.store';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { CONTENT_TYPE_MOCK } from '../../../utils/mocks';
+
+const messageServiceMock = new MockDotMessageService({
+    'edit.content.success.workflow.message': 'Your changes have being applied.',
+    success: 'Success'
+});
 
 describe('DotEditContentStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotEditContentStore>>;
@@ -46,6 +54,7 @@ describe('DotEditContentStore', () => {
 
     let workflowActionsService: SpyObject<DotWorkflowsActionsService>;
     let workflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
+    let messageService: SpyObject<MessageService>;
 
     const createService = createServiceFactory({
         service: DotEditContentStore,
@@ -55,7 +64,8 @@ describe('DotEditContentStore', () => {
             DotEditContentService,
             DotHttpErrorManagerService,
             DotWorkflowsActionsService,
-            DotWorkflowService
+            DotWorkflowService,
+            MessageService
         ],
         providers: [
             {
@@ -69,7 +79,11 @@ describe('DotEditContentStore', () => {
 
             mockProvider(Router, {
                 navigate: jest.fn().mockReturnValue(Promise.resolve(true))
-            })
+            }),
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            }
         ]
     });
 
@@ -84,6 +98,7 @@ describe('DotEditContentStore', () => {
         workflowActionsService = spectator.inject(DotWorkflowsActionsService);
         workflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
         dotEditContentService = spectator.inject(DotEditContentService);
+        messageService = spectator.inject(MessageService);
 
         router = spectator.inject(Router);
     });
@@ -212,6 +227,12 @@ describe('DotEditContentStore', () => {
                 replaceUrl: true,
                 queryParamsHandling: 'preserve'
             });
+
+            expect(messageService.add).toHaveBeenCalledWith({
+                severity: 'success',
+                summary: 'Success',
+                detail: 'Your changes have being applied.'
+            });
         }));
 
         it('should handle error when firing workflow action', fakeAsync(() => {
@@ -225,7 +246,7 @@ describe('DotEditContentStore', () => {
             store.fireWorkflowAction(mockOptions);
             tick();
 
-            expect(store.state()).toBe(ComponentStatus.ERROR);
+            expect(store.state()).toBe(ComponentStatus.LOADED);
             expect(store.error()).toBe('Error firing workflow action');
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
         }));

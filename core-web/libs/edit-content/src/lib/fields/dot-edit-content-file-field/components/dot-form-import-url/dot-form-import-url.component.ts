@@ -12,11 +12,10 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
+import { INPUT_TYPES } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import { DotMessagePipe, DotFieldValidationMessageComponent, DotValidators } from '@dotcms/ui';
 
 import { FormImportUrlStore } from './store/form-import-url.store';
-
-import { INPUT_TYPE } from '../../../dot-edit-content-text-field/utils';
 
 @Component({
     selector: 'dot-form-import-url',
@@ -38,7 +37,7 @@ export class DotFormImportUrlComponent implements OnInit {
     readonly #formBuilder = inject(FormBuilder);
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #dialogConfig = inject(
-        DynamicDialogConfig<{ inputType: INPUT_TYPE; acceptedFiles: string[] }>
+        DynamicDialogConfig<{ inputType: INPUT_TYPES; acceptedFiles: string[] }>
     );
     #abortController: AbortController | null = null;
 

@@ -59,6 +59,11 @@ public @interface Actionlet {
     boolean onlyBatch() default false;
 
     /**
+     * Set this to true if the actionlet is commentable
+     */
+    boolean comment() default false;
+
+    /**
      * Set this to true if the sub actionlet is a reset content
      * @return
      */

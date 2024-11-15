@@ -31,8 +31,6 @@ public class TimedCacheProvider extends CacheProvider {
 	private final ConcurrentHashMap<String, Cache<String, Object>> groups = new ConcurrentHashMap<>();
 
 	static final String DEFAULT_CACHE = CacheProviderAPI.DEFAULT_CACHE;
-	static final String LIVE_CACHE_PREFIX = CacheProviderAPI.LIVE_CACHE_PREFIX;
-	static final String WORKING_CACHE_PREFIX = CacheProviderAPI.WORKING_CACHE_PREFIX;
 
 
 	private final HashSet<String> availableCaches = new HashSet<>();
@@ -94,7 +92,7 @@ public class TimedCacheProvider extends CacheProvider {
 	}
 
 	@Override
-	public synchronized Object get(String group, String key) {
+	public Object get(String group, String key) {
 		// Get the cache for the given group
 		Cache cache = getCache(group);
 		return cache.getIfPresent(key);
@@ -204,7 +202,7 @@ public class TimedCacheProvider extends CacheProvider {
 		return (group + ":" + key).toLowerCase();
 	}
 
-	private synchronized Cache<String, Object> getCache(String cacheName) {
+	private Cache<String, Object> getCache(String cacheName) {
 		if (cacheName == null) {
 			throw new DotStateException("Null cache region passed in");
 		}
