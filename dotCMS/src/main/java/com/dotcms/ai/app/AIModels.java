@@ -39,9 +39,7 @@ public class AIModels {
 
     private static final String SUPPORTED_MODELS_KEY = "supportedModels";
     private static final String AI_MODELS_FETCH_ATTEMPTS_KEY = "ai.models.fetch.attempts";
-    private static final int AI_MODELS_FETCH_ATTEMPTS = Config.getIntProperty(AI_MODELS_FETCH_ATTEMPTS_KEY, 3);
     private static final String AI_MODELS_FETCH_TIMEOUT_KEY = "ai.models.fetch.timeout";
-    private static final int AI_MODELS_FETCH_TIMEOUT = Config.getIntProperty(AI_MODELS_FETCH_TIMEOUT_KEY, 4000);
     private static final String AI_MODELS_API_URL_KEY = "AI_MODELS_API_URL";
     private static final String AI_MODELS_API_URL_DEFAULT = "https://api.openai.com/v1/models";
     private static final String AI_MODELS_API_URL = Config.getStringProperty(
@@ -60,11 +58,12 @@ public class AIModels {
     }
 
     private static CircuitBreakerUrl.Response<OpenAIModels> fetchOpenAIModels(final AppConfig appConfig) {
+        final String aiModelsApiUrl = Config.getStringProperty(AI_MODELS_API_URL_KEY, AI_MODELS_API_URL_DEFAULT);
         final CircuitBreakerUrl.Response<OpenAIModels> response = CircuitBreakerUrl.builder()
                 .setMethod(CircuitBreakerUrl.Method.GET)
-                .setUrl(AI_MODELS_API_URL)
-                .setTimeout(AI_MODELS_FETCH_TIMEOUT)
-                .setTryAgainAttempts(AI_MODELS_FETCH_ATTEMPTS)
+                .setUrl(aiModelsApiUrl)
+                .setTimeout(Config.getIntProperty(AI_MODELS_FETCH_TIMEOUT_KEY, 4000))
+                .setTryAgainAttempts(Config.getIntProperty(AI_MODELS_FETCH_ATTEMPTS_KEY, 3))
                 .setHeaders(CircuitBreakerUrl.authHeaders("Bearer " + appConfig.getApiKey()))
                 .setThrowWhenNot2xx(true)
                 .build()
@@ -75,7 +74,7 @@ public class AIModels {
                     AIModels.class,
                     () -> String.format(
                             "Error fetching OpenAI supported models from [%s] (status code: [%d])",
-                            AI_MODELS_API_URL,
+                            aiModelsApiUrl,
                             response.getStatusCode()));
             throw new DotRuntimeException("Error fetching OpenAI supported models");
         }
