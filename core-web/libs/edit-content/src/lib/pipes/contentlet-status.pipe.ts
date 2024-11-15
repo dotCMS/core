@@ -5,7 +5,6 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotEditContentStatus } from '../models/dot-edit-content-status.enum';
 
-// TODO: Impove this pipe to use the dynamic statuses from the workflow
 @Pipe({
     name: 'contentletStatus',
     standalone: true
