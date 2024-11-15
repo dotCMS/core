@@ -45,6 +45,7 @@ export interface DotCMSWorkflowStatus {
     scheme: DotCMSWorkflow;
     step: WorkflowStep;
     task: WorkflowTask;
+    firstStep: WorkflowStep;
 }
 
 export interface WorkflowStep {

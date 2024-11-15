@@ -6,11 +6,12 @@
 @let referencePagesCount = store.information.relatedContent();
 <!-- Workflow Component -->
 @let workflowOptions = store.workflowSchemeOptions();
-@let schema = store.getScheme();
+@let scheme = store.getScheme();
 @let step = store.currentStep();
 @let task = store.lastTask();
 @let isLoadingWorkflow = store.isLoadingWorkflow();
 @let showSelectWorkflowWarning = store.showSelectWorkflowWarning();
+@let firstStep = store.getFirstStep();
 
 <aside class="content-sidebar">
     <p-tabView>
@@ -48,9 +49,10 @@
                     [(showDialog)]="$showDialog"
                     (onSelectWorkflow)="store.setSelectedWorkflow($event)"
                     [workflow]="{
-                        scheme: schema,
-                        step: step,
-                        task: task
+                        scheme,
+                        step,
+                        task,
+                        firstStep
                     }"
                     [isLoading]="isLoadingWorkflow"
                     [noWorkflowSelectedYet]="showSelectWorkflowWarning"

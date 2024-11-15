@@ -44,10 +44,9 @@ import { withWorkflow } from './features/workflow.feature';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { parseWorkflows, transformFormDataFn } from '../../../utils/functions.util';
+import { withDebug } from './features/debug.feature';
 
 export interface EditContentState {
-    /** Actions available for the content type */
-    actions: DotCMSWorkflowAction[]; // DELETE THIS GUY
     /** ContentType full data */
     contentType: DotCMSContentType | null;
     /** Contentlet full data */
@@ -57,10 +56,16 @@ export interface EditContentState {
         [key: string]: {
             scheme: DotCMSWorkflow;
             actions: DotCMSWorkflowAction[];
+            firstStep: WorkflowStep;
         };
     };
+    /** Current workflow scheme id */
     currentSchemeId: string | null;
+    /** Actions available for the current content */
+    currentContentActions: DotCMSWorkflowAction[];
+    /** Current workflow step */
     currentStep: WorkflowStep | null;
+    /** Current workflow task */
     lastTask: WorkflowTask | null;
     state: ComponentStatus;
     error: string | null;
@@ -71,9 +76,9 @@ const initialState: EditContentState = {
     contentlet: null,
     schemes: {},
     currentSchemeId: null,
+    currentContentActions: [],
     currentStep: null,
     lastTask: null,
-    actions: [],
     state: ComponentStatus.INIT,
     error: null
 };
@@ -174,7 +179,8 @@ export const DotEditContentStore = signalStore(
          * Shows workflow buttons when:
          * - Content type has only one workflow scheme OR
          * - Content is existing AND has a selected workflow scheme OR
-         * - Content is new and content type has only one workflow scheme
+         * - Content is new and content type has only one workflow scheme OR
+         * - Content is new and has selected a workflow scheme
          * Hides workflow buttons when:
          * - Content is new and has multiple schemes without selection
          *
@@ -190,6 +196,10 @@ export const DotEditContentStore = signalStore(
             }
 
             if (isExisting && hasSelectedScheme) {
+                return true;
+            }
+
+            if (!isExisting && hasSelectedScheme) {
                 return true;
             }
 
@@ -213,7 +223,48 @@ export const DotEditContentStore = signalStore(
          *
          * @returns {boolean} True if content is new, false otherwise
          */
-        isNew: computed(() => !store.contentlet())
+        isNew: computed(() => !store.contentlet()),
+
+        /**
+         * Computed property that retrieves the actions for the current workflow scheme.
+         *
+         * @returns {DotCMSWorkflowAction[]} The actions for the current workflow scheme.
+         */
+        getActions: computed(() => {
+            const isNew = !store.contentlet();
+            const currentSchemeId = store.currentSchemeId();
+            const schemes = store.schemes();
+            const currentContentActions = store.currentContentActions();
+
+            // If no scheme is selected, return empty array
+            if (!currentSchemeId || !schemes[currentSchemeId]) {
+                return [];
+            }
+
+            // For existing content, use specific contentlet actions
+            if (!isNew && currentContentActions.length) {
+                return currentContentActions;
+            }
+
+            // For new content, use scheme actions
+            return Object.values(schemes[currentSchemeId].actions).sort((a, b) => {
+                if (a.name === 'Save') return -1;
+                if (b.name === 'Save') return 1;
+                return a.name.localeCompare(b.name);
+            });
+        }),
+
+        /**
+         * Computed property that retrieves the first step of the current workflow scheme.
+         *
+         * @returns {WorkflowStep} The first step of the current workflow scheme.
+         */
+        getFirstStep: computed(() => {
+            const schemes = store.schemes();
+            const currentSchemeId = store.currentSchemeId();
+
+            return schemes[currentSchemeId]?.firstStep;
+        })
     })),
     withMethods(
         (
@@ -242,11 +293,10 @@ export const DotEditContentStore = signalStore(
 
                         return forkJoin({
                             contentType: dotContentTypeService.getContentType(contentType),
-                            actions: workflowActionService.getDefaultActions(contentType),
-                            schemes: workflowActionService.getWorkFlowActions(contentType)
+                            schemes: workflowActionService.getDefaultActions(contentType)
                         }).pipe(
                             tapResponse({
-                                next: ({ contentType, actions, schemes }) => {
+                                next: ({ contentType, schemes }) => {
                                     const parsedSchemes = parseWorkflows(schemes);
                                     const schemeIds = Object.keys(parsedSchemes);
                                     const defaultSchemeId =
@@ -254,7 +304,7 @@ export const DotEditContentStore = signalStore(
 
                                     patchState(store, {
                                         contentType,
-                                        actions,
+
                                         schemes: parsedSchemes,
                                         currentSchemeId: defaultSchemeId,
                                         state: ComponentStatus.LOADED,
@@ -291,7 +341,7 @@ export const DotEditContentStore = signalStore(
 
                                 return forkJoin({
                                     contentType: dotContentTypeService.getContentType(contentType),
-                                    actions: workflowActionService.getByInode(
+                                    currentContentActions: workflowActionService.getByInode(
                                         inode,
                                         DotRenderMode.EDITING
                                     ),
@@ -300,12 +350,17 @@ export const DotEditContentStore = signalStore(
                                 });
                             }),
                             tapResponse({
-                                next: ({ contentType, actions, schemes, contentlet }) => {
+                                next: ({
+                                    contentType,
+                                    currentContentActions,
+                                    schemes,
+                                    contentlet
+                                }) => {
                                     const parsedSchemes = parseWorkflows(schemes);
                                     patchState(store, {
                                         contentType,
                                         schemes: parsedSchemes,
-                                        actions,
+                                        currentContentActions,
                                         contentlet,
                                         state: ComponentStatus.LOADED
                                     });
@@ -346,7 +401,7 @@ export const DotEditContentStore = signalStore(
                             }),
                             switchMap((contentlet) => {
                                 return forkJoin({
-                                    actions: workflowActionService.getByInode(
+                                    currentContentActions: workflowActionService.getByInode(
                                         contentlet.inode,
                                         DotRenderMode.EDITING
                                     ),
@@ -354,7 +409,7 @@ export const DotEditContentStore = signalStore(
                                 });
                             }),
                             tapResponse({
-                                next: ({ contentlet, actions }) => {
+                                next: ({ contentlet, currentContentActions }) => {
                                     router.navigate(['/content', contentlet.inode], {
                                         replaceUrl: true,
                                         queryParamsHandling: 'preserve'
@@ -362,10 +417,11 @@ export const DotEditContentStore = signalStore(
 
                                     patchState(store, {
                                         contentlet,
-                                        actions,
+                                        currentContentActions,
                                         state: ComponentStatus.LOADED,
                                         error: null
                                     });
+
                                     messageService.add({
                                         severity: 'success',
                                         summary: dotMessageService.get('success'),
@@ -391,7 +447,7 @@ export const DotEditContentStore = signalStore(
     withSidebar(),
     withInformation(),
     withWorkflow(),
-    // withDebug(),
+    withDebug(),
     withHooks({
         onInit(store) {
             const activatedRoute = inject(ActivatedRoute);
