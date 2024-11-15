@@ -57,24 +57,19 @@ export class DotWorkflowsActionsService {
 
     /**
      * Returns the workflow actions of the passed contentType
-     * @deprecated
      * @param {string} inode
      * @param {DotRenderMode} [renderMode]
      * @returns {Observable<DotCMSWorkflowAction[]>}
      * @memberof DotWorkflowsActionsService
      */
-    getDefaultActions(contentTypeId: string): Observable<DotCMSWorkflowAction[]> {
+    getDefaultActions(contentTypeId: string): Observable<DotCMSWorkflowActions[]> {
         return this.httpClient
             .get<
-                DotCMSResponse<{ action: DotCMSWorkflowAction; scheme: DotCMSWorkflow }[]>
+                DotCMSResponse<DotCMSWorkflowActions[]>
             >(`${this.BASE_URL}/initialactions/contenttype/${contentTypeId}`)
             .pipe(
                 pluck('entity'),
-                map((res = []) => {
-                    return res.map(({ action }) => {
-                        return action;
-                    });
-                })
+                map((res) => res || [])
             );
     }
 

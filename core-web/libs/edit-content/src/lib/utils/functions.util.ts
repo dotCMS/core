@@ -5,7 +5,8 @@ import {
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutTab,
     DotCMSWorkflow,
-    DotCMSWorkflowAction
+    DotCMSWorkflowAction,
+    WorkflowStep
 } from '@dotcms/dotcms-models';
 
 import {
@@ -306,25 +307,25 @@ export const parseWorkflows = (
     data: {
         scheme: DotCMSWorkflow;
         action: DotCMSWorkflowAction;
+        firstStep: WorkflowStep;
     }[]
 ) => {
     if (!Array.isArray(data)) {
         return {};
     }
 
-    return data.reduce((acc, { scheme, action }) => {
+    return data.reduce((acc, { scheme, action, firstStep }) => {
         if (!acc[scheme.id]) {
             acc[scheme.id] = {
                 scheme: {
                     ...scheme
                 },
-                actions: {}
+                actions: [],
+                firstStep
             };
         }
 
-        acc[scheme.id].actions[action.id] = {
-            ...action
-        };
+        acc[scheme.id].actions.push(action);
 
         return acc;
     }, {});

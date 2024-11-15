@@ -1,6 +1,7 @@
 @let scheme = $workflow().scheme;
 @let step = $workflow().step;
 @let task = $workflow().task;
+@let firstStep = $workflow().firstStep;
 @let isLoading = $isLoading();
 @let noWorkflowSelectedYet = $noWorkflowSelectedYet();
 
@@ -44,8 +45,7 @@
             @if (isLoading) {
                 <p-skeleton />
             } @else {
-                <!-- TODO: Make this dynamic when is New contentlet -->
-                {{ step?.name || 'New' | dm }}
+                {{ firstStep?.name }}
             }
         </dd>
 
