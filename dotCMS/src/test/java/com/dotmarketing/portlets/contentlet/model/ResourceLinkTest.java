@@ -120,7 +120,8 @@ public class ResourceLinkTest {
             }
 
             @Override
-            String replaceUrlPattern(final String pattern, final Contentlet contentlet, final Identifier identifier, final Metadata metadata, final Host site) {
+            String replaceUrlPattern(final String pattern, final Contentlet contentlet, final Identifier identifier, final Metadata metadata, final Host site,
+                                     final String fieldVelocityVarName) {
                 return String.format("/dA/%s/%s", contentlet.getInode(), htmlFileName);
             }
         };

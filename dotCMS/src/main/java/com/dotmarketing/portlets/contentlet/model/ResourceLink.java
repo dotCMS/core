@@ -187,17 +187,17 @@ public class ResourceLink {
             final String mimeType               = metadata.getContentType();
             final Tuple2<String, String> resourceLink      = createResourceLink(contentlet, identifier, metadata, hostUrlBuilder.toString());
             final Tuple2<String, String> versionPathIdPath = createVersionPathIdPath(contentlet, fieldVelocityVarName, metadata);
-            final String configuredImageURL                = getConfiguredImageURL (contentlet, identifier, metadata, host);
+            final String configuredImageURL                = getConfiguredImageURL (contentlet, identifier, fieldVelocityVarName, metadata, host);
 
             return new ResourceLink(resourceLink._1(), resourceLink._2(), mimeType, contentlet, identifier,
                     fieldVelocityVarName, isEditableAsText(mimeType, metadata.getName()), downloadRestricted,
                     versionPathIdPath._1(), versionPathIdPath._2(), configuredImageURL);
         }
 
-        private String getConfiguredImageURL(final Contentlet contentlet, final Identifier identifier, final Metadata metadata, final Host host) {
+        private String getConfiguredImageURL(final Contentlet contentlet, final Identifier identifier, final String fieldVelocityVarName, final Metadata metadata, final Host host) {
 
-            final  String pattern = Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "/dA/{shortyInode}/{name}");
-            return replaceUrlPattern(pattern, contentlet, identifier, metadata, host);
+            final  String pattern = Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "/dA/{shortyInode}/{fieldVelocityVarName}/{name}");
+            return replaceUrlPattern(pattern, contentlet, identifier, metadata, host, fieldVelocityVarName);
         }
 
         /**
@@ -213,7 +213,9 @@ public class ResourceLink {
          *
          * @return The generated URL for the File Asset.
          */
-        String replaceUrlPattern(final String pattern, final Contentlet contentlet, final Identifier identifier, final Metadata metadata, final Host site) {
+        String replaceUrlPattern(final String pattern, final Contentlet contentlet,
+                                 final Identifier identifier, final Metadata metadata, final Host site,
+                                 final String fieldVelocityVarName) {
             final String fileName  = contentlet.isFileAsset() ? identifier.getAssetName() : metadata.getName();
             final String path      = pattern.equals("{path}{name}") ? getPath(identifier) : getPath(contentlet);
             final String extension = UtilMethods.getFileExtension(fileName);
@@ -236,6 +238,7 @@ public class ResourceLink {
             return patternBuilder
                     .replaceAll("{name}",        fileName)
                     .replaceAll("{fileName}",    fileName)
+                    .replaceAll("{fieldVelocityVarName}", fieldVelocityVarName)
                     .replaceAll("{path}",        path)
                     .replaceAll("{extension}",   extension)
                     .replaceAll("{languageId}",  String.valueOf(contentlet.getLanguageId()))
