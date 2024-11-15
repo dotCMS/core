@@ -90,6 +90,7 @@ export class DotExperimentsService {
         if (!experimentId) {
             return of(undefined);
         }
+
         return this.http
             .get<DotCMSResponseExperiment<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`)
             .pipe(pluck('entity'))
