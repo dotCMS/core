@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.util.Map;
 import java.util.Set;
@@ -38,13 +39,15 @@ public class WidgetViewStrategy extends WebAssetStrategy<Contentlet> {
             final Set<TransformOptions> options, final User user)
             throws DotSecurityException, DotDataException {
 
+        if (options.contains(TransformOptions.SKIP_WIDGET_CODE_RENDERING)) {
+            Logger.debug(this, "Skipping widget code rendering");
+            return map;
+        }
+
         final String fieldValue = (String) map.get(WidgetContentType.WIDGET_CODE_FIELD_VAR);
-
-        final Object parsedValue = RenderFieldStrategy.parseAsJSON(null, null,
-                fieldValue, widget, WidgetContentType.WIDGET_CODE_FIELD_VAR);
-
+        final Object parsedValue = RenderFieldStrategy.parseAsJSON(null, null, fieldValue, widget,
+                WidgetContentType.WIDGET_CODE_FIELD_VAR);
         map.put(WidgetContentType.WIDGET_CODE_JSON_FIELD_VAR, parsedValue);
-
         return map;
     }
 }
