@@ -441,6 +441,15 @@
                             }%>
 
                             <div class="fieldName">
+								<%
+									String hint = UtilMethods.isSet(f.getHint()) ? f.getHint() : null;
+									if (hint != null) {
+								%>
+									<a href="#" id="tip-<%=f.getVelocityVarName()%>"><span class="hintIcon"></span></a>
+									<span dojoType="dijit.Tooltip" connectId="tip-<%=f.getVelocityVarName()%>" position="above" style="width:100px;">
+									<span class="contentHint"><%=hint%></span>
+									</span>
+								<%}%>
                                 <% if(f.isRequired()) {%>
                                     <label class="required">
                             		<%} else {%>
