@@ -1,19 +1,19 @@
 import { tapResponse } from '@ngrx/component-store';
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe, forkJoin, of, EMPTY } from 'rxjs';
+import { EMPTY, forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
-import { switchMap, shareReplay, catchError, tap, take, map } from 'rxjs/operators';
+import { map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotLanguagesService, DotLicenseService, DotExperimentsService } from '@dotcms/data-access';
+import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
-import { DotPageApiService, DotPageApiParams } from '../../../services/dot-page-api.service';
+import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
@@ -109,13 +109,9 @@ export function withLoad() {
                                 }),
                                 switchMap(({ pageAPIResponse, isEnterprise, currentUser }) =>
                                     forkJoin({
-                                        experiment: dotExperimentsService
-                                            .getById(params.experimentId)
-                                            .pipe(
-                                                // If there is an error, we return undefined
-                                                // This is to avoid blocking the page if there is an error with the experiment
-                                                catchError(() => of(undefined))
-                                            ),
+                                        experiment: dotExperimentsService.getById(
+                                            params.experimentId
+                                        ),
                                         languages: dotLanguagesService.getLanguagesUsedPage(
                                             pageAPIResponse.page.identifier
                                         )
