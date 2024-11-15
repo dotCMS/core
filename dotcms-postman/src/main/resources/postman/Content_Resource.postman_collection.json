@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "dc526187-a3a3-4be4-ad40-328b4edf7d7c",
+		"_postman_id": "cc82cd2a-3672-4485-9f9b-a8129c683055",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "31066048"
+		"_exporter_id": "30436704"
 	},
 	"item": [
 		{
@@ -3053,13 +3053,15 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/content/id/{{parentContentId}}",
+									"raw": "{{serverURL}}/api/content/depth/2/id/{{parentContentId}}",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"content",
+										"depth",
+										"2",
 										"id",
 										"{{parentContentId}}"
 									]
