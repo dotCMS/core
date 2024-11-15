@@ -52,7 +52,7 @@ import static org.mockito.Mockito.when;
  * Test for {@link StoryBlockAPI}
  * @author jsanca
  */
-//@RunWith(DataProviderRunner.class)
+@RunWith(DataProviderRunner.class)
 public class StoryBlockAPITest extends IntegrationTestBase {
 
     @DataProvider
@@ -452,14 +452,28 @@ public class StoryBlockAPITest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link StoryBlockAPIImpl#refreshReferences(Contentlet)}
+     * When:
+     * - We have a Content Type with 3 fields:
+     *      TextField this is like the title
+     *      RelationshipField MANY_TO_MANY relationship to itself
+     *      BlocEditorField
+     * - Now we are going to create 3 Contentlets:
+     *      A: related to C
+     *         Add in BLockEditor: B and C
+     *      B: related to A
+     *         Add in BLockEditor: A and C
+     *      C: related to B
+     *         Add in BLockEditor: A and B
+     * And we are going to load A
      *
+     * Should: return the right depth all the time and don't throw a {@link OutOfMemoryError} or {@link StackOverflowError}
      * @param depth
      * @throws Exception
      */
     @Test
-    //@UseDataProvider("depthValues")
-    public void testCycleRelationshipAndBlockEditor() throws Exception {
-        final int depth = 1;
+    @UseDataProvider("depthValues")
+    public void testCycleRelationshipAndBlockEditor(final int depth) throws Exception {
         final Language language = new LanguageDataGen().nextPersisted();
 
         ContentType contentType = new ContentTypeDataGen().nextPersisted();
@@ -552,11 +566,29 @@ public class StoryBlockAPITest extends IntegrationTestBase {
     }
 
     /**
+     * When:
+     * - We have a Content Type with 3 fields:
+     *      TextField this is like the title
+     *      RelationshipField ONE_TO_ONE relationship to itself
+     *      BlocEditorField
+     * - Now we are going to create some Contentlets:
+     *      A: related to B
+     *         Add in BLockEditor C
+     *      B: related to D
+     *         Add in BLockEditor: E
+     *      C: related to F
+     *         Add in BLockEditor G
+     *      F: related to H
+     *         Add in BLockEditor I
+     *      H: related to K
+     *         Add in BLockEditor K
+     * And we are going to load A
      *
+     * Should: return the right depth all the time
      * @throws Exception
      */
-   // @Test
-    //@UseDataProvider("depthValues")
+    @Test
+    @UseDataProvider("depthValues")
     public void hydrateWithBlockEditorAndRelationship(final int depth) throws Exception {
 
         final Language language = new LanguageDataGen().nextPersisted();
