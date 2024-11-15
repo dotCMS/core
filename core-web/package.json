@@ -217,7 +217,7 @@
         "gh-pages": "^6.1.1",
         "happy-dom": "^15.7.4",
         "html-webpack-plugin": "^5.5.0",
-        "http-proxy-middleware": "^2.0.6",
+        "http-proxy-middleware": "^2.0.7",
         "husky": "^7.0.0",
         "install": "^0.13.0",
         "is-ci": "^3.0.1",
