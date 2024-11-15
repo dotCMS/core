@@ -170,6 +170,33 @@ export const DotEditContentStore = signalStore(
         }),
 
         /**
+         * Computed property that determines if workflow action buttons should be shown.
+         * Shows workflow buttons when:
+         * - Content type has only one workflow scheme OR
+         * - Content is existing AND has a selected workflow scheme OR
+         * - Content is new and content type has only one workflow scheme
+         * Hides workflow buttons when:
+         * - Content is new and has multiple schemes without selection
+         *
+         * @returns {boolean} True if workflow action buttons should be shown, false otherwise
+         */
+        showWorkflowActions: computed(() => {
+            const hasOneScheme = Object.keys(store.schemes()).length === 1;
+            const isExisting = !!store.contentlet();
+            const hasSelectedScheme = !!store.currentSchemeId();
+
+            if (hasOneScheme) {
+                return true;
+            }
+
+            if (isExisting && hasSelectedScheme) {
+                return true;
+            }
+
+            return false;
+        }),
+
+        /**
          * Computed property that transforms the workflow schemes into dropdown options
          * @returns Array of options with value (scheme id) and label (scheme name)
          */
