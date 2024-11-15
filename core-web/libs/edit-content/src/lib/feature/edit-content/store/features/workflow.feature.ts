@@ -1,3 +1,4 @@
+import { tapResponse } from '@ngrx/operators';
 import {
     patchState,
     signalStoreFeature,
@@ -17,7 +18,6 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotHttpErrorManagerService, DotWorkflowService } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSWorkflow, WorkflowStep, WorkflowTask } from '@dotcms/dotcms-models';
 
-import { tapResponse } from '@ngrx/operators';
 import { EditContentState } from '../edit-content.store';
 
 interface WorkflowState {

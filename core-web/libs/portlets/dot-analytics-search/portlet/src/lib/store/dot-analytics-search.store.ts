@@ -1,5 +1,5 @@
 import { JsonObject } from '@angular-devkit/core';
-
+import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
@@ -17,7 +17,6 @@ import {
 } from '@dotcms/data-access';
 import { AnalyticsQueryType, ComponentStatus, HealthStatusTypes } from '@dotcms/dotcms-models';
 import { PrincipalConfiguration } from '@dotcms/ui';
-import { tapResponse } from '@ngrx/operators';
 
 interface RouteData {
     isEnterprise: boolean;

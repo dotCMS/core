@@ -1,6 +1,23 @@
+import { tapResponse } from '@ngrx/operators';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { forkJoin, of, pipe } from 'rxjs';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+
+import { MessageService } from 'primeng/api';
+
+import { switchMap, tap } from 'rxjs/operators';
+
 import {
     DotContentTypeService,
     DotFireActionOptions,
@@ -17,24 +34,13 @@ import {
     DotCMSWorkflowAction,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { tapResponse } from '@ngrx/operators';
-import {
-    patchState,
-    signalStore,
-    withComputed,
-    withHooks,
-    withMethods,
-    withState
-} from '@ngrx/signals';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { MessageService } from 'primeng/api';
-import { forkJoin, of, pipe } from 'rxjs';
-import { switchMap, tap } from 'rxjs/operators';
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
-import { transformFormDataFn } from '../../../utils/functions.util';
+
 import { withInformation } from './features/information.feature';
 import { withSidebar } from './features/sidebar.feature';
 import { withWorkflow } from './features/workflow.feature';
+
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { transformFormDataFn } from '../../../utils/functions.util';
 
 export interface EditContentState {
     actions: DotCMSWorkflowAction[];
@@ -74,6 +80,7 @@ export const DotEditContentStore = signalStore(
             if (!contentType?.metadata) {
                 return false;
             }
+
             return (
                 contentType.metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true
             );
