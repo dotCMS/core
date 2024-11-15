@@ -4,7 +4,11 @@ import com.dotcms.analytics.content.ContentAnalyticsAPI;
 import com.dotcms.analytics.content.ReportResponse;
 import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceFactory;
+import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
+import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
+import com.dotcms.analytics.track.matchers.RequestMatcher;
 import com.dotcms.analytics.track.matchers.UserCustomDefinedRequestMatcher;
+import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
@@ -33,6 +37,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.JSONP;
+import com.dotcms.analytics.track.collectors.EventType;
 
 /**
  * Resource class that exposes endpoints to query content analytics data.
@@ -237,8 +242,23 @@ public class ContentAnalyticsResource {
         DotPreconditions.checkNotNull(userEventPayload.get("event_type"), IllegalArgumentException.class, "The 'event_type' field is required");
         Logger.debug(this,  ()->"Creating an user custom event with the payload: " + userEventPayload);
         request.setAttribute("requestId", Objects.nonNull(request.getAttribute("requestId")) ? request.getAttribute("requestId") : UUIDUtil.uuid());
-        WebEventsCollectorServiceFactory.getInstance().getWebEventsCollectorService().fireCollectorsAndEmitEvent(request, response, USER_CUSTOM_DEFINED_REQUEST_MATCHER, userEventPayload);
+        WebEventsCollectorServiceFactory.getInstance().getWebEventsCollectorService().fireCollectorsAndEmitEvent(request, response, loadRequestMatcher(userEventPayload), userEventPayload);
         return new ResponseEntityStringView("User event created successfully");
+    }
+
+    private RequestMatcher loadRequestMatcher(final Map<String, Serializable> userEventPayload) {
+
+        final String eventType = (String)userEventPayload.getOrDefault("event_type", "CUSTOM_USER_EVENT");
+        if (EventType.FILE_REQUEST.getType().equals(eventType)) {
+            return new FilesRequestMatcher();
+        } else if (EventType.PAGE_REQUEST.getType().equals(eventType) ||
+                EventType.URL_MAP.getType().equals(eventType)) {
+            return new PagesAndUrlMapsRequestMatcher();
+        } else if (EventType.VANITY_REQUEST.getType().equals(eventType)) {
+            return new VanitiesRequestMatcher();
+        }
+
+        return USER_CUSTOM_DEFINED_REQUEST_MATCHER;
     }
 
 }

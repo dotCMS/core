@@ -25,7 +25,11 @@ public class CustomerEventCollector implements Collector {
         final String host = (String)collectorContextMap.get("host");
         final Host site = (Host) collectorContextMap.get("currentHost");
         final String language = (String)collectorContextMap.get("lang");
-        collectorPayloadBean.put("url", uri);
+        if (Objects.isNull(collectorPayloadBean.get("url"))) {
+
+            collectorPayloadBean.put("url", uri);
+        }
+
         collectorPayloadBean.put("host", host);
         collectorPayloadBean.put("language", language);
         collectorPayloadBean.put("site", null != site?site.getIdentifier():"unknown");

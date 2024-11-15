@@ -138,7 +138,7 @@ public class WebEventsCollectorServiceFactory {
                                     .map(CollectorPayloadBean::toMap)
                                     .collect(java.util.stream.Collectors.toList());
                         }));
-            } catch (Exception e) {
+            } catch (Exception e) { // todo: should we catch a more specific exception?
                 Logger.debug(WebEventsCollectorServiceFactory.class, () -> "Error saving Analytics Events:" + e.getMessage());
             }
         }
