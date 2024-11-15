@@ -14,6 +14,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
+
 import { switchMap, tap } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/angular';
@@ -23,7 +25,8 @@ import {
     DotHttpErrorManagerService,
     DotRenderMode,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotMessageService
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -98,6 +101,11 @@ export const DotEditContentStore = signalStore(
         isLoaded: computed(() => store.state() === ComponentStatus.LOADED),
 
         /**
+         * Computed property that determines if the store's status is equal to ComponentStatus.SAVING.
+         */
+        isSaving: computed(() => store.state() === ComponentStatus.SAVING),
+
+        /**
          * A computed property that checks if an error exists in the store.
          *
          * @returns {boolean} True if there is an error in the store, false otherwise.
@@ -132,6 +140,8 @@ export const DotEditContentStore = signalStore(
             dotContentTypeService = inject(DotContentTypeService),
             dotEditContentService = inject(DotEditContentService),
             dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
+            messageService = inject(MessageService),
+            dotMessageService = inject(DotMessageService),
 
             router = inject(Router)
         ) => ({
@@ -262,10 +272,17 @@ export const DotEditContentStore = signalStore(
                                         state: ComponentStatus.LOADED,
                                         error: null
                                     });
+                                    messageService.add({
+                                        severity: 'success',
+                                        summary: dotMessageService.get('success'),
+                                        detail: dotMessageService.get(
+                                            'edit.content.success.workflow.message'
+                                        )
+                                    });
                                 },
                                 error: (error: HttpErrorResponse) => {
                                     patchState(store, {
-                                        state: ComponentStatus.ERROR,
+                                        state: ComponentStatus.LOADED,
                                         error: 'Error firing workflow action'
                                     });
                                     dotHttpErrorManagerService.handle(error);

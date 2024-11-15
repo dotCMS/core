@@ -1,0 +1,22 @@
+Name,Suite,Section,Estimated Time,Type,Steps (Instructions),Steps (Expected Result),Preconditions/Validadtion,,Assigned to: ,Status,Issue link,,,,,,,,,,,,,,
+Toggle Column to Closed View,Information Panel,Panel,10,Functional,1. Click the toggle button to collapse the column.,"The column collapses and is no longer visible, and the content in the main area adjusts accordingly.",The column is in the open view.,,,,,,,,,,,,,,,,,,
+Toggle Column to Open View,Information Panel,Panel,5,Functional,1. Click the toggle button to expand the column.,"The column expands and displays the Info, History, and Settings tabs. The content in the main area adjusts accordingly.",The column is in the closed view.,,,,,,,,,,,,,,,,,,
+Verify Visible Content in Open View,Information Panel,Panel,5,Functional,"1. Expand the column.
+2. Verify that content in the Info, History, and Settings tabs is visible.",All tabs show their corresponding content without any missing elements.,The column is open.,,,,,,,,,,,,,,,,,,
+Attempt to Toggle Column with Disabled Button,Information Panel,Panel,5,Functional,1. Attempt to click the toggle button while it is disabled.,"The column does not open or close, and no action is taken.",The toggle button is disabled.,,,,,,,,,,,,,,,,,,
+Resize Window with Column in Closed View,Information Panel,Panel,5,Functional,1. Resize the window to a smaller screen size (mobile view,"The column remains closed, and no distortion occurs in the layout.",The column is closed.,,,,,,,,,,,,,,,,,,
+Resize Window with Column in Open View,Information Panel,Panel,5,Functional,1. Resize the window to a smaller screen size (mobile view).,The column remains open and adjusts to the smaller screen size without breaking the layout.,The column is open.,,,,,,,,,,,,,,,,,,
+Verify Transition Between Open and Closed Views,Information Panel,Panel,5,Functional,"1. Open the column.
+2. Close the column.
+3. Repeat the process multiple times.","The transition between open and closed views is smooth without flickering, delays, or any visual artifacts.",The column is initially closed.,,,,,,,,,,,,,,,,,,
+Verify Data Persistence After Collapse and Reope,Information Panel,Panel,5,Functional,"1. Enter data in the Settings tab.
+2. Collapse the column.
+3. Reopen the column.",The data entered in the Settings tab is persisted and visible after reopening the column.,"The column is open, and data has been entered in one of the tabs (e.g., in Settings).",,,,,,,,,,,,,,,,,,
+Collapse Column During Content Loading,Information Panel,Panel,5,Functional,1. Click the toggle button to collapse the column while content is still loading.,"The column collapses smoothly without freezing or breaking, and no errors occur during the process.","The column is loading content (e.g., switching between tabs).",,,,,,,,,,,,,,,,,,
+Collapse Column Under Slow Network Conditions,Information Panel,Panel,5,Functional,1. Attempt to collapse the column during slow network conditions.,"The column collapses as expected, even under slow network conditions, without any UI errors or broken elements.","The network connection is slow, and the column is currently ope",,,,,,,,,,,,,,,,,,
+Toggle Column in Mobile View,Information Panel,Panel,5,Functional,1. Click the toggle button to expand the column in mobile view.,"The column expands properly, and all tabs (Info, History, Settings) adjust to the mobile screen without breaking the layout.","The column is closed, and the window is in mobile view",,,,,,,,,,,,,,,,,,
+Verify Correct Tab Switching in Open View,Information Panel,Panel,5,Functional,"1. Switch between the Info, History, and Settings tabs while the column is open.",The content in each tab switches correctly and displays the corresponding data for each tab.,The column is open.,,,,,,,,,,,,,,,,,,
+Expand Column and Update Data,Information Panel,Panel,5,Functional,"1. Open the column.
+2. Make changes to the data in the Settings tab.
+3. Collapse the column.",The changes made in the Settings tab are saved correctly even after the column is collapsed.,The column is closed.,,,,,,,,,,,,,,,,,,
+Toggle Column with Network Disconnected,Information Panel,Panel,5,Functional,1. Attempt to open the column with the network disconnected.,The column either opens with cached content or displays an appropriate error message indicating that the content could not be loaded.,"The column is closed, and the network connection is lost.",,,,,,,,,,,,,,,,,,

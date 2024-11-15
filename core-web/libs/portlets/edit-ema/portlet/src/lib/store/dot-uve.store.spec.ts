@@ -16,7 +16,8 @@ import {
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
-    DotMessageService
+    DotMessageService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
@@ -37,6 +38,7 @@ import { UVE_STATUS } from '../shared/enums';
 import {
     BASE_SHELL_ITEMS,
     BASE_SHELL_PROPS_RESPONSE,
+    dotPropertiesServiceMock,
     HEADLESS_BASE_QUERY_PARAMS,
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL,
@@ -65,6 +67,10 @@ describe('UVEStore', () => {
             MessageService,
             mockProvider(Router),
             mockProvider(ActivatedRoute),
+            {
+                provide: DotPropertiesService,
+                useValue: dotPropertiesServiceMock
+            },
             {
                 provide: DotPageApiService,
                 useValue: {

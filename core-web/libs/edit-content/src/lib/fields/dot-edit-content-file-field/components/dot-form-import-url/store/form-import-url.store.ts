@@ -9,7 +9,7 @@ import { switchMap, tap } from 'rxjs/operators';
 
 import { ComponentStatus, DotHttpErrorResponse } from '@dotcms/dotcms-models';
 
-import { UploadedFile, UPLOAD_TYPE } from '../../../models';
+import { UploadedFile, UPLOAD_TYPE } from '../../../../../models/dot-edit-content-file.model';
 import { DotFileFieldUploadService } from '../../../services/upload-file/upload-file.service';
 
 export interface FormImportUrlState {
