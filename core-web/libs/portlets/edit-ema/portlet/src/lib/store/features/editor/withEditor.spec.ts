@@ -65,7 +65,8 @@ const initialState: UVEState = {
     status: UVE_STATUS.LOADED,
     isTraditionalPage: false,
     canEditPage: true,
-    pageIsLocked: true
+    pageIsLocked: true,
+    isClientReady: false
 };
 
 export const uveStoreMock = signalStore(withState<UVEState>(initialState), withEditor());

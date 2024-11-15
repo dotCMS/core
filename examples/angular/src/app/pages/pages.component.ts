@@ -67,7 +67,7 @@ export class DotCMSPagesComponent implements OnInit {
   protected readonly components = signal<any>(DYNAMIC_COMPONENTS);
 
   // This should be PageApiOptions from @dotcms/client
-  protected readonly editorCofig: any = { params: { depth: 2 } };
+  protected readonly editorConfig: any = { params: { depth: 2 } };
 
   ngOnInit() {
     if (isInsideEditor()) {
@@ -81,7 +81,7 @@ export class DotCMSPagesComponent implements OnInit {
         ),
         startWith(null), // Trigger initial load
         tap(() => this.#setLoading()),
-        switchMap(() => this.#pageService.getPageAndNavigation(this.#route, this.editorCofig)),
+        switchMap(() => this.#pageService.getPageAndNavigation(this.#route, this.editorConfig)),
         takeUntilDestroyed(this.#destroyRef)
       )
       .subscribe(({ page = {}, nav, error }) => {
