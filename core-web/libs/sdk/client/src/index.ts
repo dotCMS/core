@@ -14,6 +14,7 @@ import { NOTIFY_CLIENT } from './lib/editor/models/listeners.model';
 import {
     destroyEditor,
     editContentlet,
+    reorderMenu,
     initEditor,
     isInsideEditor,
     updateNavigation,
@@ -26,6 +27,7 @@ export {
     getPageRequestParams,
     isInsideEditor,
     editContentlet,
+    reorderMenu,
     DotCmsClient,
     DotCMSPageEditorConfig,
     CLIENT_ACTIONS,

@@ -27,6 +27,7 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
+    DotPropertiesService,
     DotWorkflowActionsFireService,
     PushPublishService
 } from '@dotcms/data-access';
@@ -56,6 +57,7 @@ import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
 import {
+    dotPropertiesServiceMock,
     PAGE_RESPONSE_BY_LANGUAGE_ID,
     PAGE_RESPONSE_URL_CONTENT_MAP,
     PAYLOAD_MOCK
@@ -103,6 +105,10 @@ describe('DotEmaShellComponent', () => {
             DotMessageService,
             DialogService,
             DotWorkflowActionsFireService,
+            {
+                provide: DotPropertiesService,
+                useValue: dotPropertiesServiceMock
+            },
             {
                 provide: DotcmsConfigService,
                 useValue: new DotcmsConfigServiceMock()

@@ -1,0 +1,39 @@
+Name,Section,Type,Steps (Instructions),Steps (Expected Results),Preconditions,Status,Assigned to: ,Status,Issue link
+Drag and drop files,Binary Field,Functional,"Step 1: Open the binary field
+Step 2: Drag and drop a valid file",File is successfully uploaded via drag and drop,User is on the binary field,,,,
+"Select files to upload using the ""choose file"" link",Binary Field,Functional,"Step 1: Open the binary field
+Step 2: Select a valid file using the ""choose file"" link",File is successfully selected and uploaded,User is on the binary field,,,,
+Import files from URL,Binary Field,Functional,"Step 1: Open the binary field
+Step 2: Import a valid file by providing a URL",File is successfully imported from the provided URL,User is on the binary field,,,,
+Create a new file from text,Binary Field,Functional,"Step 1: Open the binary field
+Step 2: Create a new file using the text editor",New file is created from text,User is on the binary field,,,,
+Generate a file from AI (if AI configuration exists),Binary Field,Functional,"Step 1: Open the binary field
+Step 2: Attempt to generate a file using AI
+Step 3: Check if AI configuration exists and option is enabled/disabled accordingly","File is generated if AI configuration exists, otherwise the option is disabled",AI configuration exists in the system (or not),,,,
+File preview generation for supported extensions,Binary Field,Functional,"Step 1: Upload files of various supported extensions
+Step 2: Verify the file preview is generated",File preview is generated for all supported extensions,Supported extensions are known,,,,
+Validate if field is required,Binary Field,Functional,"Step 1: Open the binary field
+Step 2: Leave the field empty
+Step 3: Check if validation error appears if the field is required",Validation error appears when the field is required and left empty,Field can be marked as required,,,,
+Show clear message if field is required,Binary Field,Functional,"Step 1: Set the field as required
+Step 2: Leave it empty
+Step 3: Verify a clear error message is shown",A clear error message is shown when the required field is left empty,Field is marked as required,,,,
+Validate metadata display on information button,Binary Field,Functional,"Step 1: Open the binary field
+Step 2: Click the information button
+Step 3: Verify the metadata is displayed properly",Metadata is displayed correctly when information button is clicked,Metadata is available for the file,,,,
+Show remove option upon file selection,Binary Field,Functional,"Step 1: Select a file in the binary field
+Step 2: Verify that the remove option appears",Remove option appears after selecting a file,File is selected,,,,
+Show edit button upon file selection,Binary Field,Functional,"Step 1: Select a file in the binary field
+Step 2: Verify that the edit button appears",Edit button appears after selecting a file,File is selected,,,,
+Edit file using image editor for images,Binary Field,Functional,"Step 1: Select an image file
+Step 2: Open the image editor
+Step 3: Edit the file and save changes",File is edited and saved using the image editor,An image file is selected,,,,
+Edit file using text editor for other file types,Binary Field,Functional,"Step 1: Select a non-image file
+Step 2: Open the text editor
+Step 3: Edit the file and save changes",File is edited and saved using the text editor,A non-image file is selected,,,,
+Edit text file name and code,Binary Field,Functional,"Step 1: Select a text file
+Step 2: Edit the file name and code using the text editor",File name and code are successfully edited,A text file is selected,,,,
+"Support syntax highlighting, format, and line numbers in code editor",Binary Field,Functional,"Step 1: Select a code file
+Step 2: Verify syntax highlighting, formatting, and line numbers are supported","Code editor supports syntax highlighting, formatting, and line numbers",A code file is selected,,,,
+Show cancel and save buttons in code editor,Binary Field,Functional,"Step 1: Open the code editor
+Step 2: Verify the cancel and save buttons are present",Cancel and save buttons are present and functional in the code editor,Code editor is open,,,,

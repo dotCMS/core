@@ -50,15 +50,10 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
-import {
-    SafeUrlPipe,
-    DotSpinnerModule,
-    DotMessagePipe,
-    DotCopyContentModalService
-} from '@dotcms/ui';
+import { SafeUrlPipe, DotSpinnerModule, DotCopyContentModalService } from '@dotcms/ui';
 import { isEqual } from '@dotcms/utils';
 
-import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
+import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
@@ -85,15 +80,16 @@ import {
     VTLFile,
     DeletePayload,
     InsertPayloadFromDelete,
-    ReorderPayload,
     DialogAction,
-    PostMessage
+    PostMessage,
+    ReorderMenuPayload
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { ClientRequestProps } from '../store/features/client/withClient';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
+    createReorderMenuURL,
     compareUrlPaths,
     deleteContentletFromContainer,
     getDragItemData,
@@ -115,13 +111,12 @@ import {
         DotEmaDialogComponent,
         ConfirmDialogModule,
         EditEmaToolbarComponent,
-        DotMessagePipe,
         EmaPageDropzoneComponent,
         EditEmaPaletteComponent,
         EmaContentletToolsComponent,
-        DotEmaBookmarksComponent,
         ProgressBarModule,
         DotResultsSeoToolComponent,
+        DotUveToolbarComponent,
         DotBlockEditorSidebarComponent
     ],
     providers: [
@@ -163,6 +158,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
     readonly $editorProps = this.uveStore.$editorProps;
+    readonly $previewMode = this.uveStore.$previewMode;
 
     get contentWindow(): Window {
         return this.iframe.nativeElement.contentWindow;
@@ -806,6 +802,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 this.uveStore.reload();
                 this.dialog.resetDialog();
+
+                // This is a temporary solution to "reload" the content by reloading the window
+                // we should change this with a new SDK reload strategy
+                this.contentWindow?.postMessage(
+                    {
+                        name: NOTIFY_CLIENT.UVE_RELOAD_PAGE
+                    },
+                    this.host
+                );
             },
             [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
                 this.messageService.add({
@@ -994,9 +999,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CLIENT_ACTIONS.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
                 this.dialog.editContentlet({ ...contentlet, clientAction: action });
             },
-            [CLIENT_ACTIONS.REORDER_MENU]: ({ reorderUrl }: ReorderPayload) => {
+            [CLIENT_ACTIONS.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuPayload) => {
+                const urlObject = createReorderMenuURL({
+                    startLevel,
+                    depth,
+                    pagePath: this.uveStore.params().url,
+                    hostId: this.uveStore.pageAPIResponse().site.identifier
+                });
+
                 this.dialog.openDialogOnUrl(
-                    reorderUrl,
+                    urlObject,
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },

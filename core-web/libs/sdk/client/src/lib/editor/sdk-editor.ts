@@ -6,7 +6,7 @@ import {
     subscriptions
 } from './listeners/listeners';
 import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from './models/client.model';
-import { DotCMSPageEditorConfig } from './models/editor.model';
+import { DotCMSPageEditorConfig, ReorderMenuConfig } from './models/editor.model';
 import { INLINE_EDITING_EVENT_KEY, InlineEditEventData } from './models/inline-event.model';
 
 import { Contentlet } from '../client/content/shared/types';
@@ -69,6 +69,25 @@ export function initInlineEditing(
             type,
             data
         }
+    });
+}
+
+/*
+ * Reorders the menu based on the provided configuration.
+ *
+ * @param {ReorderMenuConfig} [config] - Optional configuration for reordering the menu.
+ * @param {number} [config.startLevel=1] - The starting level of the menu to reorder.
+ * @param {number} [config.depth=2] - The depth of the menu to reorder.
+ *
+ * This function constructs a URL for the reorder menu page with the specified
+ * start level and depth, and sends a message to the editor to perform the reorder action.
+ */
+export function reorderMenu(config?: ReorderMenuConfig): void {
+    const { startLevel = 1, depth = 2 } = config || {};
+
+    postMessageToEditor({
+        action: CLIENT_ACTIONS.REORDER_MENU,
+        payload: { startLevel, depth }
     });
 }
 
