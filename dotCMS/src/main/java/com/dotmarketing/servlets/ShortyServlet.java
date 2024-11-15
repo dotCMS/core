@@ -1,5 +1,7 @@
 package com.dotmarketing.servlets;
 
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import java.io.IOException;
 import java.util.Objects;
@@ -40,6 +42,8 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
@@ -59,7 +63,7 @@ public class ShortyServlet extends HttpServlet {
   private final HostWebAPI     hostWebAPI     = WebAPILocator.getHostWebAPI();
   private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
   private final ShortyIdAPI    shortyIdAPI    = APILocator.getShortyAPI();
-
+  private final WebResource    webResource    = new WebResource();
 
   private static final String  JPEG                        = ".jpeg";
   private static final String  JPEGP                       = ".jpegp";
@@ -263,6 +267,16 @@ public class ShortyServlet extends HttpServlet {
   private void serve(final HttpServletRequest request,
                      final HttpServletResponse response) throws Exception {
 
+    try {
+        final User user = ServletUtils.getUserAndAuthenticateIfRequired(
+                this.webResource, request, response);
+        Logger.debug(this, () -> "User: " + user);
+    } catch (SecurityException e) {
+        SecurityLogger.logInfo(ShortyServlet.class, e.getMessage());
+        Logger.debug(ShortyServlet.class, e,  () -> "Error getting user and authenticating");
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        return;
+    }
 
     final PageMode mode = PageMode.get(request);
 

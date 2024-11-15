@@ -1,5 +1,7 @@
 package com.dotmarketing.servlets;
 
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.filters.Constants;
 import java.io.IOException;
 import java.util.Optional;
@@ -10,7 +12,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -25,16 +26,21 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 public class SpeedyAssetServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
+
+    private WebResource webResource = new WebResource();
 
     public void init(ServletConfig config) throws ServletException {
       if (Config.CONTEXT == null) {
@@ -50,6 +56,17 @@ public class SpeedyAssetServlet extends HttpServlet {
     protected void service(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         Logger.debug(this, "======Starting SpeedyAssetServlet_service=====");
+
+        try {
+            final User user = ServletUtils.getUserAndAuthenticateIfRequired(
+                    webResource, request, response);
+            Logger.debug(this, () -> "User: " + user);
+        } catch (SecurityException e) {
+            SecurityLogger.logInfo(SpeedyAssetServlet.class, e.getMessage());
+            Logger.debug(SpeedyAssetServlet.class, e,  () -> "Error getting user and authenticating");
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
 
         /*
 		 * Getting host object form the session

@@ -4,12 +4,14 @@ import static com.dotmarketing.image.focalpoint.FocalPointAPIImpl.TMP;
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
 
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
-import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
 import com.google.common.collect.ImmutableMap;
-import com.liferay.portal.util.PortalUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,7 +51,6 @@ import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -73,8 +74,8 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
 import eu.bitwalker.useragentutils.Browser;
-import eu.bitwalker.useragentutils.OperatingSystem;
 import eu.bitwalker.useragentutils.UserAgent;
+import io.vavr.control.Try;
 
 /**
  * This servlet allows you invoke content exporters over binary fields. With the following URL syntax you are able to
@@ -109,6 +110,7 @@ public class BinaryExporterServlet extends HttpServlet {
 	private final ContentletAPI contentAPI = APILocator.getContentletAPI();
 	private final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
 	private final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
+	private final WebResource webResource = new WebResource();
 
 	Map<String, BinaryContentExporter> exportersByPathMapping;
 
@@ -236,7 +238,6 @@ public class BinaryExporterServlet extends HttpServlet {
 				return;
 			}
 
-			UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 			BinaryContentExporter.BinaryContentExporterData data = null;
 			File inputFile = null;
 			HttpSession session = req.getSession(false);
@@ -249,8 +250,18 @@ public class BinaryExporterServlet extends HttpServlet {
 
 			boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 
-
-			final User user = PortalUtil.getUser(req);
+			User user;
+			try {
+				final User currentUser = ServletUtils.getUserAndAuthenticateIfRequired(
+						this.webResource, req, resp);
+				Logger.debug(this, () -> "User: " + currentUser);
+				user = currentUser;
+			} catch (SecurityException e) {
+				SecurityLogger.logInfo(BinaryExporterServlet.class, e.getMessage());
+				Logger.debug(BinaryExporterServlet.class, e,  () -> "Error getting user and authenticating");
+				resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+				return;
+			}
 
 			final PageMode mode = PageMode.get(req);
 
@@ -373,7 +384,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				}
 
 			}
-			
+
 			// if this is file uploaded by the tempResource
       if (shorty.type == ShortType.TEMP_FILE) {
         if (!Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_NO_REFERER, false) && !new SecurityUtils().validateReferer(req)) {
@@ -383,7 +394,7 @@ public class BinaryExporterServlet extends HttpServlet {
         }
         inputFile = tempFileAPI.getTempFile(req, shorty.longId).get().file;
       }
-      
+
 
       if(params.get("quality_q")!=null) {
       	final UserAgent userAgent = new UserAgent(req.getHeader("user-agent"));
@@ -396,7 +407,7 @@ public class BinaryExporterServlet extends HttpServlet {
       }
 
 
-			
+
 			//DOTCMS-5674
 			if(UtilMethods.isSet(fieldVarName)){
 				params.put("fieldVarName", new String[]{fieldVarName});
@@ -427,19 +438,19 @@ public class BinaryExporterServlet extends HttpServlet {
         if (list.size() > 8) {
           list = list.subList(0, 8);
         }
-  
+
         if (list.contains(req.getRequestURI())) {
           list.remove(req.getRequestURI());
         }
         list.add(0, req.getRequestURI());
-  
+
         req.getSession().setAttribute(WebKeys.IMAGE_TOOL_CLIPBOARD, list);
-  
+
         resp.getWriter().println("success");
         resp.getWriter().println(req.getRequestURI());
         return;
       }
-      
+
 
 			/*******************************
 			 *
@@ -447,18 +458,18 @@ public class BinaryExporterServlet extends HttpServlet {
 			 *
 			 *******************************/
 			long _fileLength = data.getDataFile().length();
-			
+
 			String mimeType = fileAssetAPI.getMimeType(data.getDataFile().getName());
 
 			if (mimeType == null) {
 				mimeType = "application/octet-stream";
 			}
-			
+
 			resp.setHeader("Content-Disposition", "inline; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"" );
 			resp.setHeader("Content-Length", String.valueOf(_fileLength));
 
 			resp.setContentType(mimeType);
-			
+
 			if (req.getParameter("dotcms_force_download") != null || req.getParameter("force_download") != null) {
 
 				// if we are downloading a jpeg version of a png or gif
@@ -468,7 +479,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					downloadName = downloadName.replaceAll("\\." + x, "\\." + y);
 				}
 				resp.setHeader("Content-Disposition", "attachment; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"");
-			
+
 			} else {
 
 
@@ -490,7 +501,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					_lastModified = _lastModified * 1000;
 					Date _lastModifiedDate = new java.util.Date(_lastModified);
 
-					
+
 					String _eTag = (ASSETS_USE_WEAK_ETAGS ? "W/" : "") + "dot:" + assetInode + ":" + _lastModified + ":" + _fileLength;
 
 					SimpleDateFormat httpDate = new SimpleDateFormat(Constants.RFC2822_FORMAT);
@@ -614,13 +625,13 @@ public class BinaryExporterServlet extends HttpServlet {
 	            int count = 0;
 	            byte[] buffer = new byte[4096];
 	            out = resp.getOutputStream();
-	            
+
 	            while((count = is.read(buffer)) > 0) {
 	            	out.write(buffer, 0, count);
 	            }
-	            
+
 			}
-            
+
 		} catch (DotRuntimeException e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
             if(!resp.isCommitted()){
@@ -678,11 +689,11 @@ public class BinaryExporterServlet extends HttpServlet {
 		}
 		// close our resources no matter what
 		finally{
-			
+
 		  CloseUtils.closeQuietly(input, is, out);
 
 		}
-		
+
 	}
 
 	private Contentlet getContentletByIdentifier(final PageMode pageMode,
