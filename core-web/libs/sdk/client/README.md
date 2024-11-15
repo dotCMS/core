@@ -85,6 +85,13 @@ The `getCollection` method allows you to fetch a collection of content items usi
 Here’s a simple example to fetch content from a collection:
 
 ```typescript
+import { DotCmsClient } from '@dotcms/client';
+
+const client = DotCmsClient.init({
+    dotcmsUrl: 'https://your-dotcms-instance.com',
+    authToken: 'your-auth-token'
+});
+
 const collectionResponse = await client.content
     .getCollection('Blog') // Collection name
     .limit(10) // Limit results to 10 items
@@ -208,6 +215,17 @@ Retrieves the specified page's elements from your DotCMS system in JSON format.
 ### `DotCmsClient.nav.get(options: NavApiOptions): Promise<unknown>`
 
 Retrieves information about the DotCMS file and folder tree.
+
+### `DotCmsClient.content.getCollection(contentType: string): CollectionBuilder<T>`
+Creates a builder to filter and fetch a collection of content items for a specific content type.
+
+#### Parameters
+
+contentType (string): The content type to retrieve.
+
+#### Returns
+
+CollectionBuilder<T>: A builder instance for chaining filters and executing the query.
 
 ## Contributing
 
