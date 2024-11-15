@@ -1,3 +1,22 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { computed, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import {
+    DotContentTypeService,
+    DotFireActionOptions,
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotRenderMode,
+    DotWorkflowActionsFireService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotCMSContentType,
+    DotCMSWorkflowAction,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import { tapResponse } from '@ngrx/operators';
 import {
     patchState,
@@ -8,39 +27,14 @@ import {
     withState
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { forkJoin, of, pipe } from 'rxjs';
-
-import { HttpErrorResponse } from '@angular/common/http';
-import { computed, inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-
 import { MessageService } from 'primeng/api';
-
+import { forkJoin, of, pipe } from 'rxjs';
 import { switchMap, tap } from 'rxjs/operators';
-
-import {
-    DotContentTypeService,
-    DotFireActionOptions,
-    DotHttpErrorManagerService,
-    DotRenderMode,
-    DotWorkflowActionsFireService,
-    DotWorkflowsActionsService,
-    DotMessageService
-} from '@dotcms/data-access';
-import {
-    ComponentStatus,
-    DotCMSContentType,
-    DotCMSContentlet,
-    DotCMSWorkflowAction,
-    FeaturedFlags
-} from '@dotcms/dotcms-models';
-
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { transformFormDataFn } from '../../../utils/functions.util';
 import { withInformation } from './features/information.feature';
 import { withSidebar } from './features/sidebar.feature';
 import { withWorkflow } from './features/workflow.feature';
-
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
-import { transformFormDataFn } from '../../../utils/functions.util';
 
 export interface EditContentState {
     actions: DotCMSWorkflowAction[];
@@ -65,7 +59,7 @@ const initialState: EditContentState = {
  * related to content editing and workflow actions.
  */
 export const DotEditContentStore = signalStore(
-    withState(initialState),
+    withState<EditContentState>(initialState),
     withComputed((store) => ({
         /**
          * Computed property that determines if the new content editor feature is enabled.
@@ -77,9 +71,12 @@ export const DotEditContentStore = signalStore(
          */
         isEnabledNewContentEditor: computed(() => {
             const contentType = store.contentType();
-            const metadata = contentType?.metadata;
-
-            return metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true;
+            if (!contentType?.metadata) {
+                return false;
+            }
+            return (
+                contentType.metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true
+            );
         }),
 
         /**

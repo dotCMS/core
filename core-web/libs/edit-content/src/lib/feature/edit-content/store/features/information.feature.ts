@@ -1,4 +1,3 @@
-import { tapResponse } from '@ngrx/component-store';
 import {
     patchState,
     signalStoreFeature,
@@ -18,6 +17,7 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
+import { tapResponse } from '@ngrx/operators';
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
 import { EditContentState } from '../edit-content.store';
 

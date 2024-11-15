@@ -1,4 +1,3 @@
-import { tapResponse } from '@ngrx/component-store';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
@@ -13,6 +12,7 @@ import {
     TreeNodeSelectItem
 } from '@dotcms/edit-content/models/dot-edit-content-host-folder-field.interface';
 import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
+import { tapResponse } from '@ngrx/operators';
 
 export const PEER_PAGE_LIMIT = 1000;
 
