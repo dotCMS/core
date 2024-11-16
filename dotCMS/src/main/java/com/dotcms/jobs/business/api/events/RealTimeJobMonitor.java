@@ -2,6 +2,8 @@ package com.dotcms.jobs.business.api.events;
 
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobState;
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import java.util.Arrays;
 import java.util.List;
@@ -13,7 +15,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
 
 /**
  * Manages real-time monitoring of jobs in the system. This class provides functionality to register
@@ -66,6 +67,55 @@ import javax.enterprise.event.Observes;
 public class RealTimeJobMonitor {
 
     private final Map<String, List<JobWatcher>> jobWatchers = new ConcurrentHashMap<>();
+
+    public RealTimeJobMonitor() {
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobProgressUpdatedEvent.class,
+                (EventSubscriber<JobProgressUpdatedEvent>) this::onJobProgressUpdated
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobFailedEvent.class,
+                (EventSubscriber<JobFailedEvent>) this::onJobFailed
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobRemovedFromQueueEvent.class,
+                (EventSubscriber<JobRemovedFromQueueEvent>) this::onJobRemovedFromQueueEvent
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobCompletedEvent.class,
+                (EventSubscriber<JobCompletedEvent>) this::onJobCompleted
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobCanceledEvent.class,
+                (EventSubscriber<JobCanceledEvent>) this::onJobCanceled
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobCancellingEvent.class,
+                (EventSubscriber<JobCancellingEvent>) this::onJobCancelling
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobCancelRequestEvent.class,
+                (EventSubscriber<JobCancelRequestEvent>) this::onJobCancelRequest
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobStartedEvent.class,
+                (EventSubscriber<JobStartedEvent>) this::onJobStarted
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobAbandonedEvent.class,
+                (EventSubscriber<JobAbandonedEvent>) this::onAbandonedJob
+        );
+
+    }
 
     /**
      * Registers a watcher for a specific job with optional filtering of updates. The watcher will
@@ -237,7 +287,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobStartedEvent.
      */
-    public void onJobStarted(@Observes JobStartedEvent event) {
+    public void onJobStarted(JobStartedEvent event) {
         updateWatchers(event.getJob());
     }
 
@@ -246,7 +296,16 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobCancelRequestEvent.
      */
-    public void onJobCancelRequest(@Observes JobCancelRequestEvent event) {
+    public void onJobCancelRequest(JobCancelRequestEvent event) {
+        updateWatchers(event.getJob());
+    }
+
+    /**
+     * Handles the abandoned job event.
+     *
+     * @param event The JobAbandonedEvent.
+     */
+    public void onAbandonedJob(JobAbandonedEvent event) {
         updateWatchers(event.getJob());
     }
 
@@ -255,7 +314,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobCancellingEvent.
      */
-    public void onJobCancelling(@Observes JobCancellingEvent event) {
+    public void onJobCancelling(JobCancellingEvent event) {
         updateWatchers(event.getJob());
     }
 
@@ -264,7 +323,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobCanceledEvent.
      */
-    public void onJobCanceled(@Observes JobCanceledEvent event) {
+    public void onJobCanceled(JobCanceledEvent event) {
         updateWatchers(event.getJob());
         removeWatcher(event.getJob().id());
     }
@@ -274,7 +333,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobCompletedEvent.
      */
-    public void onJobCompleted(@Observes JobCompletedEvent event) {
+    public void onJobCompleted(JobCompletedEvent event) {
         updateWatchers(event.getJob());
         removeWatcher(event.getJob().id());
     }
@@ -284,7 +343,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobRemovedFromQueueEvent.
      */
-    public void onJobRemovedFromQueueEvent(@Observes JobRemovedFromQueueEvent event) {
+    public void onJobRemovedFromQueueEvent(JobRemovedFromQueueEvent event) {
         removeWatcher(event.getJob().id());
     }
 
@@ -293,7 +352,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobFailedEvent.
      */
-    public void onJobFailed(@Observes JobFailedEvent event) {
+    public void onJobFailed(JobFailedEvent event) {
         updateWatchers(event.getJob());
     }
 
@@ -302,7 +361,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobProgressUpdatedEvent.
      */
-    public void onJobProgressUpdated(@Observes JobProgressUpdatedEvent event) {
+    public void onJobProgressUpdated(JobProgressUpdatedEvent event) {
         updateWatchers(event.getJob());
     }
 

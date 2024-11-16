@@ -1,7 +1,11 @@
 package com.dotcms.jobs.business.queue;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
+import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.queue.error.JobLockingException;
 import com.dotcms.jobs.business.queue.error.JobNotFoundException;
@@ -22,6 +26,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.jonpeterson.jackson.module.versioning.VersioningModule;
 import io.vavr.Lazy;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -76,6 +81,24 @@ public class PostgresJobQueue implements JobQueue {
                     + "WHERE id = (SELECT id FROM job_queue WHERE state = ? "
                     + "ORDER BY priority DESC, created_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED) "
                     + "RETURNING *";
+
+    private static final String DETECT_AND_MARK_ABANDONED_WITH_LOCK_QUERY =
+            "WITH active_states AS (" +
+                    "    SELECT unnest(ARRAY[$??$]) as state"
+                    +
+                    "), abandoned_jobs AS (" +
+                    "    SELECT j.*, j.result as existing_result" +
+                    "    FROM job j" +
+                    "    INNER JOIN active_states a ON j.state = a.state::text" +
+                    "    WHERE j.updated_at < ?" +
+                    "    ORDER BY j.updated_at ASC" +
+                    "    LIMIT 1" +
+                    "    FOR UPDATE SKIP LOCKED" +
+                    ") " +
+                    "UPDATE job " +
+                    "SET state = ?, updated_at = ? " +
+                    "WHERE id IN (SELECT id FROM abandoned_jobs) " +
+                    "RETURNING *";
 
     private static final String GET_ACTIVE_JOBS_QUERY_FOR_QUEUE =
             "WITH total AS (SELECT COUNT(*) AS total_count " +
@@ -171,6 +194,7 @@ public class PostgresJobQueue implements JobQueue {
         return mapper;
     });
 
+    @WrapInTransaction
     @Override
     public String createJob(final String queueName, final Map<String, Object> parameters)
             throws JobQueueException {
@@ -223,6 +247,7 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public Job getJob(final String jobId) throws JobNotFoundException, JobQueueDataException {
 
@@ -256,6 +281,7 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public JobState getJobState(final String jobId)
             throws JobNotFoundException, JobQueueDataException {
@@ -274,6 +300,7 @@ public class PostgresJobQueue implements JobQueue {
         return job.state();
     }
 
+    @CloseDBIfOpened
     @Override
     public JobPaginatedResult getActiveJobs(final String queueName, final int page,
             final int pageSize) throws JobQueueDataException {
@@ -300,6 +327,7 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public JobPaginatedResult getCompletedJobs(final String queueName,
             final LocalDateTime startDate,
@@ -329,6 +357,7 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public JobPaginatedResult getJobs(final int page, final int pageSize)
             throws JobQueueDataException {
@@ -346,6 +375,7 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public JobPaginatedResult getActiveJobs(final int page, final int pageSize)
             throws JobQueueDataException {
@@ -372,6 +402,7 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public JobPaginatedResult getCompletedJobs(final int page, final int pageSize)
             throws JobQueueDataException {
@@ -396,6 +427,7 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public JobPaginatedResult getCanceledJobs(final int page, final int pageSize)
             throws JobQueueDataException {
@@ -420,6 +452,7 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public JobPaginatedResult getFailedJobs(final int page, final int pageSize)
             throws JobQueueDataException {
@@ -444,6 +477,7 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public void updateJobStatus(final Job job) throws JobQueueDataException {
 
@@ -489,9 +523,10 @@ public class PostgresJobQueue implements JobQueue {
             }).orElse(null));
             historyDc.loadResult();
 
-            // Remove from job_queue if completed, failed, or canceled
+            // Remove from job_queue if completed, failed, abandoned or canceled
             if (job.state() == JobState.COMPLETED
                     || job.state() == JobState.FAILED
+                    || job.state() == JobState.ABANDONED
                     || job.state() == JobState.CANCELED) {
                 removeJobFromQueue(job.id());
             }
@@ -506,6 +541,7 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Job> getUpdatedJobsSince(final Set<String> jobIds, final LocalDateTime since)
             throws JobQueueDataException {
@@ -528,6 +564,7 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public void putJobBackInQueue(final Job job) throws JobQueueDataException {
 
@@ -550,6 +587,7 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public Job nextJob() throws JobQueueDataException, JobLockingException {
 
@@ -580,6 +618,60 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    @CloseDBIfOpened
+    @Override
+    public Job detectAndMarkAbandoned(final Duration threshold, final JobState... inStates)
+            throws JobQueueDataException {
+
+        try {
+
+            String parameters = String.join(", ", Collections.nCopies(inStates.length, "?"));
+
+            var query = DETECT_AND_MARK_ABANDONED_WITH_LOCK_QUERY
+                    .replace(REPLACE_TOKEN_PARAMETERS, parameters);
+
+            LocalDateTime thresholdTime = LocalDateTime.now().minus(threshold);
+
+            DotConnect dc = new DotConnect();
+            dc.setSQL(query);
+            for (JobState state : inStates) {
+                dc.addParam(state.name());
+            }
+            dc.addParam(Timestamp.valueOf(thresholdTime));
+            dc.addParam(JobState.ABANDONED.name());
+            dc.addParam(Timestamp.valueOf(LocalDateTime.now()));
+
+            List<Map<String, Object>> results = dc.loadObjectResults();
+            if (!results.isEmpty()) {
+                final var foundAbandonedJob = DBJobTransformer.toJob(results.get(0));
+
+                // Create error detail for abandoned job
+                final ErrorDetail errorDetail = ErrorDetail.builder()
+                        .message("Job abandoned due to no updates within " +
+                                threshold.toMinutes() + " minutes")
+                        .exceptionClass("com.dotcms.jobs.business.error.JobAbandonedException")
+                        .timestamp(LocalDateTime.now())
+                        .processingStage("Abandoned Job Detection")
+                        .stackTrace("Job exceeded inactivity threshold of " +
+                                threshold.toMinutes() + " minutes")
+                        .build();
+                final JobResult jobResult = JobResult.builder().errorDetail(errorDetail).build();
+
+                final Job abandonedJob = foundAbandonedJob.markAsAbandoned(jobResult);
+                updateJobStatus(abandonedJob);
+
+                return abandonedJob;
+            }
+
+            return null;
+        } catch (DotDataException e) {
+            final var errorMessage = "Database error while detecting abandoned jobs";
+            Logger.error(this, errorMessage, e);
+            throw new JobQueueDataException(errorMessage, e);
+        }
+    }
+
+    @CloseDBIfOpened
     @Override
     public void updateJobProgress(final String jobId, final float progress)
             throws JobQueueDataException {
@@ -601,6 +693,7 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public void removeJobFromQueue(final String jobId) throws JobQueueDataException {
 
@@ -615,6 +708,7 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public boolean hasJobBeenInState(final String jobId, final JobState... states)
             throws JobQueueDataException {
