@@ -423,7 +423,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         // if the class calling the workflow api is not friend, so checks the validation
         if (!this.getFriendClass().isFriend()) {
             if (!hasValidLicense()) {
-                throw new InvalidLicenseException(LICENSE_REQUIRED_MESSAGE_KEY);
+              //  throw new InvalidLicenseException(LICENSE_REQUIRED_MESSAGE_KEY);
             }
 
             boolean hasAccessToPortlet = false;
@@ -1596,7 +1596,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private void validateWorkflowLicense(String scheme, String message) {
 		if (!SYSTEM_WORKFLOW_ID.equals(scheme) && !SYSTEM_WORKFLOW_VARIABLE_NAME.equals(scheme)
 				&& (!hasValidLicense() && !this.getFriendClass().isFriend())) {
-			throw new InvalidLicenseException(message);
+			//throw new InvalidLicenseException(message);
 		}
 	}
 

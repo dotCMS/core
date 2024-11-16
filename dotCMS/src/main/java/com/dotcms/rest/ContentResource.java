@@ -836,8 +836,12 @@ public class ContentResource {
         final ContentType type = contentlet.getContentType();
 
         final boolean doRender = (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.TRUE.toString().equalsIgnoreCase(render));
-
+        //Render code
         m.putAll(ContentletUtil.getContentPrintableMap(user, contentlet, allCategoriesInfo, doRender));
+        if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
+                .equalsIgnoreCase(render)) {
+            m.put("parsedCode", WidgetResource.parseWidget(request, response, contentlet));
+        }
 
         if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
             m.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(contentlet));
@@ -1424,6 +1428,7 @@ public class ContentResource {
         final boolean doRender = (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.TRUE.toString().equalsIgnoreCase(render));
         //By default, all underlying transformer strategies that are triggered by the Widget ContentType or the option RENDER_FIELDS are enabled
         //Therefore, we need to disable them in case the render option is not enabled to avoid undesired rendering when no explicitly requested
+        // Render field "code"
         final Map<String, Object> map = ContentletUtil.getContentPrintableMap(user, contentlet, allCategoriesInfo, doRender);
         final Set<String> jsonFields = getJSONFields(type);
 
@@ -1455,6 +1460,10 @@ public class ContentResource {
                     jsonObject.put(key, map.get(key));
                 }
             }
+        }
+        if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
+                .equalsIgnoreCase(render)) {
+            jsonObject.put("parsedCode", WidgetResource.parseWidget(request, response, contentlet));
         }
 
         if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
