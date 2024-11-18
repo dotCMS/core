@@ -1,4 +1,6 @@
 "use client";
+import { usePathname } from "next/navigation";
+import { DotcmsLayout } from "@dotcms/react";
 
 import WebPageContent from "./content-types/webPageContent";
 import Banner from "./content-types/banner";
@@ -7,19 +9,17 @@ import CallToAction from "./content-types/callToAction";
 import CalendarEvent from "./content-types/calendarEvent";
 import Product from "./content-types/product";
 import ImageComponent from "./content-types/image";
+import { Video } from "./content-types/Video";
+import BlogWithBlockEditor from "./content-types/blog";
+import { CustomNoComponent } from "./content-types/empty";
+import { SimpleWidget } from "./content-types/SimpleWidget";
 
 import Header from "./layout/header";
 import Footer from "./layout/footer/footer";
 import Navigation from "./layout/navigation";
-import { usePathname } from "next/navigation";
-import { DotcmsLayout } from "@dotcms/react";
-import { CustomNoComponent } from "./content-types/empty";
 
-import { usePageAsset } from "../hooks/usePageAsset";
-import BlogWithBlockEditor from "./content-types/blog";
-import { SimpleWidget } from "./content-types/SimpleWidget";
-import { Video } from "./content-types/Video";
 import NotFound from "@/app/not-found";
+import { usePageAsset } from "../hooks/usePageAsset";
 
 // Mapping of components to DotCMS content types
 const components = {

@@ -1,5 +1,5 @@
 {
-  "name": "nextjs-dotcms-ema",
+  "name": "nextjs-dotcms-uve",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@dotcms/client": "latest",
-    "@dotcms/experiments": "latest",
     "@dotcms/react": "latest",
     "next": "^14.2.16",
     "react": "^18",
