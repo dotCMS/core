@@ -27,6 +27,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -56,6 +57,13 @@ import com.dotcms.analytics.track.collectors.EventType;
 public class ContentAnalyticsResource {
 
     private static final UserCustomDefinedRequestMatcher USER_CUSTOM_DEFINED_REQUEST_MATCHER =  new UserCustomDefinedRequestMatcher();
+
+    private static final Map<String, Supplier<RequestMatcher>> MATCHER_MAP = Map.of(
+            EventType.FILE_REQUEST.getType(), FilesRequestMatcher::new,
+            EventType.PAGE_REQUEST.getType(), PagesAndUrlMapsRequestMatcher::new,
+            EventType.URL_MAP.getType(), PagesAndUrlMapsRequestMatcher::new,
+            EventType.VANITY_REQUEST.getType(), VanitiesRequestMatcher::new
+    );
 
     private final WebResource webResource;
     private final ContentAnalyticsAPI contentAnalyticsAPI;
@@ -261,17 +269,8 @@ public class ContentAnalyticsResource {
 
     private RequestMatcher loadRequestMatcher(final Map<String, Serializable> userEventPayload) {
 
-        final String eventType = (String)userEventPayload.getOrDefault("event_type", "CUSTOM_USER_EVENT");
-        if (EventType.FILE_REQUEST.getType().equals(eventType)) {
-            return new FilesRequestMatcher();
-        } else if (EventType.PAGE_REQUEST.getType().equals(eventType) ||
-                EventType.URL_MAP.getType().equals(eventType)) {
-            return new PagesAndUrlMapsRequestMatcher();
-        } else if (EventType.VANITY_REQUEST.getType().equals(eventType)) {
-            return new VanitiesRequestMatcher();
-        }
-
-        return USER_CUSTOM_DEFINED_REQUEST_MATCHER;
+        String eventType = (String) userEventPayload.getOrDefault("event_type", "CUSTOM_USER_EVENT");
+        return MATCHER_MAP.getOrDefault(eventType, () -> USER_CUSTOM_DEFINED_REQUEST_MATCHER).get();
     }
 
 }
