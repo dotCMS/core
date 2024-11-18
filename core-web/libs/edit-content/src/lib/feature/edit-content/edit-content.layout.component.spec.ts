@@ -26,8 +26,7 @@ import {
 } from '@dotcms/data-access';
 import {
     MOCK_MULTIPLE_WORKFLOW_ACTIONS,
-    MOCK_SINGLE_WORKFLOW_ACTIONS,
-    mockWorkflowsActions
+    MOCK_SINGLE_WORKFLOW_ACTIONS
 } from '@dotcms/utils-testing';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
@@ -110,7 +109,9 @@ describe('EditContentLayoutComponent', () => {
     describe('New Content Editor', () => {
         it('should initialize new content, show layout components and dialogs when new content editor is enabled', fakeAsync(() => {
             dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
-            workflowActionsService.getDefaultActions.mockReturnValue(of(mockWorkflowsActions));
+            workflowActionsService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
             workflowActionsService.getWorkFlowActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
@@ -138,7 +139,9 @@ describe('EditContentLayoutComponent', () => {
             };
 
             dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK_NO_METADATA));
-            workflowActionsService.getDefaultActions.mockReturnValue(of(mockWorkflowsActions));
+            workflowActionsService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
             workflowActionsService.getWorkFlowActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
@@ -153,13 +156,15 @@ describe('EditContentLayoutComponent', () => {
     describe('Warning Messages', () => {
         beforeEach(() => {
             dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
-            workflowActionsService.getDefaultActions.mockReturnValue(of(mockWorkflowsActions));
+            workflowActionsService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
             dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_TAB));
         });
 
         it('should show workflow warning message when multiple schemes are available for new content', fakeAsync(() => {
-            // Set up multiple workflow schemes
-            workflowActionsService.getWorkFlowActions.mockReturnValue(
+            // Multiple schemes trigger the warning message
+            workflowActionsService.getDefaultActions.mockReturnValue(
                 of(MOCK_MULTIPLE_WORKFLOW_ACTIONS)
             );
 
@@ -170,6 +175,7 @@ describe('EditContentLayoutComponent', () => {
             const warningMessage = spectator.query(
                 byTestId('edit-content-layout__select-workflow-warning')
             );
+            expect(store.showSelectWorkflowWarning()).toBe(true);
             expect(warningMessage).toBeTruthy();
         }));
 

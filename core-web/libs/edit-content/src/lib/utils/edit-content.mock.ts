@@ -1131,6 +1131,17 @@ export const MOCK_WORKFLOW_DATA = [
             schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
             showOn: ['EDITING', 'UNPUBLISHED', 'NEW', 'LOCKED', 'PUBLISHED']
         },
+        firstStep: {
+            creationDate: 1731595862064,
+            enableEscalation: false,
+            escalationAction: null,
+            escalationTime: 0,
+            id: '6cb7e3bd-1710-4eed-8838-d3db60f78f19',
+            myOrder: 0,
+            name: 'New',
+            resolved: false,
+            schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2'
+        },
         scheme: {
             archived: false,
             creationDate: new Date(1731432900580),
@@ -1176,6 +1187,17 @@ export const MOCK_WORKFLOW_DATA = [
             roleHierarchyForAssign: false,
             schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
             showOn: ['EDITING', 'UNPUBLISHED', 'NEW', 'LOCKED', 'LISTING', 'PUBLISHED']
+        },
+        firstStep: {
+            creationDate: 1731595862064,
+            enableEscalation: false,
+            escalationAction: null,
+            escalationTime: 0,
+            id: '6cb7e3bd-1710-4eed-8838-d3db60f78f19',
+            myOrder: 0,
+            name: 'Edit',
+            resolved: false,
+            schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'
         },
         scheme: {
             archived: false,

@@ -1,44 +1,11 @@
-import { tapResponse } from '@ngrx/operators';
-import {
-    patchState,
-    signalStore,
-    withComputed,
-    withHooks,
-    withMethods,
-    withState
-} from '@ngrx/signals';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { forkJoin, of, pipe } from 'rxjs';
-
-import { HttpErrorResponse } from '@angular/common/http';
-import { computed, inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { signalStore, withHooks, withState } from '@ngrx/signals';
 
 import { inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import {
-    DotContentTypeService,
-    DotFireActionOptions,
-    DotHttpErrorManagerService,
-    DotMessageService,
-    DotRenderMode,
-    DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
-} from '@dotcms/data-access';
-import {
-    ComponentStatus,
-    DotCMSContentlet,
-    DotCMSContentType,
-    DotCMSWorkflow,
-    DotCMSWorkflowAction,
-    FeaturedFlags,
-    WorkflowStep,
-    WorkflowTask
-} from '@dotcms/dotcms-models';
-
+import { withContent } from './features/content.feature';
 import { withInformation } from './features/information.feature';
 import { withSidebar } from './features/sidebar.feature';
 import { withWorkflow } from './features/workflow.feature';
