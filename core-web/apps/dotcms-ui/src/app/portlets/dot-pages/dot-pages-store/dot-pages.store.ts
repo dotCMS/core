@@ -1,4 +1,5 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { forkJoin, Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
