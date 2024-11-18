@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENT_TYPE_ID_ATTR;
@@ -166,7 +167,7 @@ public class DBUniqueFieldValidationStrategyTest {
                 .key(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
                 .value("true")
                 .field(contentType.fields().stream()
-                        .filter(field -> field.variable().equals(uniqueFieldVariable))
+                        .filter(field -> Objects.equals(field.variable(), uniqueFieldVariable))
                         .limit(1)
                         .findFirst()
                         .orElseThrow())
@@ -209,7 +210,7 @@ public class DBUniqueFieldValidationStrategyTest {
         extraTableUniqueFieldValidationStrategy.validate(contentlet_2, uniqueField);
 
         final List<Map<String, Object>> results = new DotConnect()
-                .setSQL("SELECT * FROM unique_fields WHERE supporting_values->>'contentTypeID' = ?")
+                .setSQL("SELECT * FROM unique_fields WHERE supporting_values->>'" + CONTENT_TYPE_ID_ATTR + "' = ?")
                 .addParam(contentType.id())
                 .loadObjectResults();
 
@@ -258,7 +259,7 @@ public class DBUniqueFieldValidationStrategyTest {
             throw new AssertionError("IllegalArgumentException Expected");
         } catch (IllegalArgumentException e) {
             //expected
-            assertEquals("The Field " + notUniqueField.variable() + " is not unique", e.getMessage());
+            assertEquals("Field '" + notUniqueField.variable() + "' is not marked as 'unique'", e.getMessage());
         }
     }
 
@@ -604,7 +605,7 @@ public class DBUniqueFieldValidationStrategyTest {
         final Map<String, Object> supportingValues = JsonUtil.getJsonFromString(
                 results.get(0).get("supporting_values").toString());
 
-        assertEquals(compareWith, supportingValues.get("contentletsId"));
+        assertEquals(compareWith, supportingValues.get(UniqueFieldCriteria.CONTENTLET_IDS_ATTR));
     }
 
     /**

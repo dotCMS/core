@@ -48,7 +48,7 @@ public class UniqueFieldDataBaseUtil {
     private static final String GET_UNIQUE_FIELDS_BY_CONTENTLET = "SELECT * FROM unique_fields " +
             "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND supporting_values->>'" + VARIANT_ATTR + "' = ?";
 
-    private final String DELETE_UNIQUE_FIELD = "DELETE FROM unique_fields WHERE unique_key_val = ? " +
+    private static final String DELETE_UNIQUE_FIELD = "DELETE FROM unique_fields WHERE unique_key_val = ? " +
             "AND supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
 
     /**
