@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 
 /**
@@ -69,6 +70,11 @@ public class RealTimeJobMonitor {
     private final Map<String, List<JobWatcher>> jobWatchers = new ConcurrentHashMap<>();
 
     public RealTimeJobMonitor() {
+        // Default constructor required for CDI
+    }
+
+    @PostConstruct
+    protected void init() {
 
         APILocator.getLocalSystemEventsAPI().subscribe(
                 JobProgressUpdatedEvent.class,

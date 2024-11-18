@@ -380,7 +380,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         }
     }
 
-    @WrapInTransaction
     @Override
     public void cancelJob(final String jobId) throws DotDataException {
 
@@ -404,7 +403,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param event The event that triggers the job cancellation request.
      */
     @VisibleForTesting
-    @WrapInTransaction
     void onCancelRequestJob(final JobCancelRequestEvent event) {
 
         try {
@@ -505,7 +503,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param progressTracker The processor progress tracker
      * @param previousProgress The previous progress value
      */
-    @WrapInTransaction
     private float updateJobProgress(final Job job, final ProgressTracker progressTracker,
             final float previousProgress) throws DotDataException {
 
@@ -865,7 +862,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      *
      * @param job The job to cancel.
      */
-    @WrapInTransaction
     private void handleJobCancelRequest(final Job job) throws DotDataException {
 
         Job cancelJob = job.withState(JobState.CANCEL_REQUESTED);
@@ -881,7 +877,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param job       The job that was canceled.
      * @param processor The processor that handled the job.
      */
-    @WrapInTransaction
     private void handleJobCancelling(final Job job, final JobProcessor processor) {
 
         try {
@@ -981,7 +976,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param job The job to update.
      * @throws DotDataException if there's an error updating the job status.
      */
-    @WrapInTransaction
     private void updateJobStatus(final Job job) throws DotDataException {
         try {
             jobQueue.updateJobStatus(job);
