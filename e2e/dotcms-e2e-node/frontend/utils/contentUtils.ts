@@ -46,6 +46,7 @@ export class ContentUtils {
         const iframe = page.frameLocator(iFramesLocators.main_iframe);
         await expect(iframe.locator('#structure_inode')).toBeVisible();
         await iframe.locator('#widget_structure_inode div').first().click();
+        await iframe.getByText(typeLocator).waitFor();
         await iframe.getByText(typeLocator).click();
         await iframe.locator('#dijit_form_DropDownButton_0').click();
         await expect(iframe.getByLabel('actionPrimaryMenu')).toBeVisible();

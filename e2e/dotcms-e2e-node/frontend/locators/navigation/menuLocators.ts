@@ -39,8 +39,8 @@ export class MenuEntriesLocators {
     readonly COLLAPSE: Locator;
 
     constructor(page: Page) {
-        this.EXPAND = page.locator('p-button').getByRole('button');
-        this.COLLAPSE =  page.locator('p-button').getByRole('button');
+        this.EXPAND = page.locator('button[ng-reflect-ng-class="[object Object]"]').first();
+        this.COLLAPSE =  page.locator('button[ng-reflect-ng-class="[object Object]"]').first();
 
     }
 }

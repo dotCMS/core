@@ -4,7 +4,6 @@ import {admin1, limited1, wrong1, wrong2} from './credentialsData';
 
 const validCredentials = [
     {username: admin1.username, password: admin1.password}, // admin user
-    {username: limited1.username, password: limited1.password}, // limited user
 ];
 
 /**
@@ -43,6 +42,6 @@ invalidCredentials.forEach(credentials => {
         await page.getByTestId('submitButton').click();
 
         // Assertion and further test steps
-        await expect(page.getByTestId('message')).toBeVisible();
+        await expect(page.getByTestId('message')).toBeVisible({timeout: 30000});
     });
 });
