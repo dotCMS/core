@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "devDependencies": {
-    "@playwright/test": "^1.47.0",
+    "@playwright/test": "^1.48.2",
     "@types/node": "^22.5.4",
     "dotenv": "^16.4.5"
   },
