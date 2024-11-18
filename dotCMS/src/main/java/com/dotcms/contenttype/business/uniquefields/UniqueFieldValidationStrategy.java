@@ -108,8 +108,9 @@ public interface  UniqueFieldValidationStrategy {
     }
 
     /**
+     * Validates that the specified {@link Field} is a proper unique field.
      *
-     * @param field
+     * @param field The field to validate.
      */
     default void validateField(final Field field) {
         Objects.requireNonNull(field);

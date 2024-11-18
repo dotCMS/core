@@ -79,10 +79,6 @@ public class UniqueFieldCriteria {
         return map;
     }
 
-    /*public boolean isUniqueForSite() {
-        return isUniqueForSite(this.contentType.id(), this.field.variable());
-    }*/
-
     /**
      * return true if the uniquePerSite Field Variable is set to true.
      *

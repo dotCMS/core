@@ -482,11 +482,14 @@ public class FieldVariableResource implements Serializable {
 	}
 
 	/**
-	 * @param field
-	 * @param fieldVarId
-	 * @param user
+	 * Deletes the specified Field Variable from the given Field.
 	 *
-	 * @throws DotDataException
+	 * @param field      The {@link Field} that the Field Variable is associated with.
+	 * @param fieldVarId The ID of the Field Variable that will be deleted.
+	 * @param user       The {@link User} performing the action.
+	 *
+	 * @throws DotDataException An error occurred when deleting the Field Variable from the
+	 *                          database.
 	 */
 	@WrapInTransaction
 	private void deleteFieldVariable(final Field field, final String fieldVarId) throws DotDataException, UniqueFieldValueDuplicatedException {

@@ -943,7 +943,9 @@ public class FieldAPIImpl implements FieldAPI {
 		 //update Content Type mod_date to detect the changes done on the field variable
 		contentTypeAPI.updateModDate(type);
     } catch (final DotSecurityException e) {
-        throw new DotDataException("Error updating Content Type mode_date for FieldVariable '"+fieldVar.id()+"': "+ExceptionUtil.getErrorMessage(e));
+        final String errorMsg = String.format("Error updating Content Type mode_date containing " +
+                "Field Variable '%s': %s", fieldVar.key(), ExceptionUtil.getErrorMessage(e));
+        throw new DotDataException(errorMsg);
     }
     if (fieldVar.key().equals(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)) {
         final UniqueFieldValidationStrategyResolver resolver =

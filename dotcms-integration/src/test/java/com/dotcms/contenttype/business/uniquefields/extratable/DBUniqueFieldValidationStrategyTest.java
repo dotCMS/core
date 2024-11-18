@@ -595,7 +595,6 @@ public class DBUniqueFieldValidationStrategyTest {
 
     private static void checkContentIds(final UniqueFieldCriteria uniqueFieldCriteria,
                                         final Collection compareWith) throws DotDataException, IOException {
-        //final List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE unique_key_val = ?")
         final List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE unique_key_val = encode(sha256(?::bytea), 'hex') ")
                 .addParam(uniqueFieldCriteria.criteria())
                 .loadObjectResults();
