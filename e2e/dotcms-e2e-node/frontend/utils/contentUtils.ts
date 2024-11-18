@@ -28,10 +28,12 @@ export class ContentUtils {
         //Click on action
         await dotIframe.getByText(action).click();
         //Wait for the content to be saved
-        await expect(dotIframe.getByText('Content saved')).toBeVisible();
+
+
+        await expect(dotIframe.getByText('Content saved')).toBeVisible({ timeout: 9000 });
         await expect(dotIframe.getByText('Content saved')).toBeHidden();
         //Click on close
-        await page.getByRole('button', { name: '' }).click();
+        await page.getByTestId('close-button').getByRole('button').click();
     }
 
     /**

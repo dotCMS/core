@@ -39,7 +39,8 @@ export class MenuEntriesLocators {
     readonly COLLAPSE: Locator;
 
     constructor(page: Page) {
-        this.EXPAND = page.getByRole('button', { name: '' });
-        this.COLLAPSE = page.getByRole('button', { name: '' });
+        this.EXPAND = page.locator('p-button').getByRole('button');
+        this.COLLAPSE =  page.locator('p-button').getByRole('button');
+
     }
 }
