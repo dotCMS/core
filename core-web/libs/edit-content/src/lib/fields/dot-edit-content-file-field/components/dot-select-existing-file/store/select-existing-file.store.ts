@@ -83,6 +83,8 @@ export const SelectExisingFileStore = signalStore(
                     switchMap((event) => {
                         const content = store.content();
 
+                        console.log('event', event);
+
                         let identifier = SYSTEM_HOST_ID;
 
                         if (event) {
