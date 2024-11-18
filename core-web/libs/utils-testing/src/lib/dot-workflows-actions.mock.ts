@@ -90,6 +90,7 @@ export const mockPublishAction = {
 export const MOCK_SINGLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
     {
         action: {
+            id: 'ceca71a0-deee-4999-bd47-b01baa1bcfc8',
             assignable: false,
             commentable: false,
             condition: '',
@@ -107,7 +108,6 @@ export const MOCK_SINGLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
             hasUnarchiveActionlet: false,
             hasUnpublishActionlet: false,
             icon: 'workflowIcon',
-            id: 'ceca71a0-deee-4999-bd47-b01baa1bcfc8',
             metadata: undefined,
             name: 'Save',
             nextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
@@ -147,6 +147,7 @@ export const MOCK_SINGLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
     },
     {
         action: {
+            name: 'Translate',
             assignable: false,
             commentable: false,
             condition: '',
@@ -166,7 +167,6 @@ export const MOCK_SINGLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
             icon: 'workflowIcon',
             id: '8d567403-a201-42de-9a48-10cea8a7bdb2',
             metadata: undefined,
-            name: 'Translate',
             nextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
             nextStep: 'f43c5d5a-fc51-4c67-a750-cc8f8e4a87f7',
             nextStepCurrentStep: false,
@@ -234,6 +234,8 @@ export const MOCK_MULTIPLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
             schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2'
         },
         action: {
+            id: 'ceca71a0-deee-4999-bd47-b01baa1bcfc8',
+            name: 'Save',
             showOn: ['EDITING', 'PUBLISHED', 'UNPUBLISHED', 'LOCKED', 'NEW'],
             assignable: false,
             commentable: false,
@@ -252,9 +254,7 @@ export const MOCK_MULTIPLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
             hasUnarchiveActionlet: false,
             hasUnpublishActionlet: false,
             icon: 'workflowIcon',
-            id: 'ceca71a0-deee-4999-bd47-b01baa1bcfc8',
             metadata: undefined,
-            name: 'Save',
             nextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
             nextStep: 'ee24a4cb-2d15-4c98-b1bd-6327126451f3',
             nextStepCurrentStep: false,
@@ -278,6 +278,8 @@ export const MOCK_MULTIPLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
             schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'
         },
         action: {
+            name: 'Translate',
+            icon: 'workflowIcon',
             actionInputs: [],
             assignable: false,
             commentable: false,
@@ -295,10 +297,8 @@ export const MOCK_MULTIPLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
             hasSaveActionlet: false,
             hasUnarchiveActionlet: false,
             hasUnpublishActionlet: false,
-            icon: 'workflowIcon',
             id: '8d567403-a201-42de-9a48-10cea8a7bdb2',
             metadata: undefined,
-            name: 'Translate',
             nextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
             nextStep: 'f43c5d5a-fc51-4c67-a750-cc8f8e4a87f7',
             nextStepCurrentStep: false,
