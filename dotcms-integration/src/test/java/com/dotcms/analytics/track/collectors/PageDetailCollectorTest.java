@@ -1,38 +1,33 @@
 package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.visitor.filter.characteristics.CharacterWebAPI;
-import com.dotcms.visitor.filter.characteristics.GDPRCharacter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -42,6 +37,9 @@ import static org.mockito.Mockito.mock;
  * @author Jose Castro
  * @since Oct 14th, 2024
  */
+
+@ApplicationScoped
+@RunWith(JUnit4WeldRunner.class)
 public class PageDetailCollectorTest extends IntegrationTestBase {
 
     private static final String PARENT_FOLDER_1_NAME = "news";
@@ -103,7 +101,7 @@ public class PageDetailCollectorTest extends IntegrationTestBase {
 
         final Map<String, Object> expectedDataMap = Map.of(
                 "event_type", EventType.PAGE_REQUEST.getType(),
-                "host", testSite.getIdentifier(),
+                "host", testSite.getHostname(),
                 "language", language.getIsoCode(),
                 "url", TEST_URL_MAP_DETAIL_PAGE_URL,
                 "object", Map.of(

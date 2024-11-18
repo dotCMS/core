@@ -53,7 +53,7 @@ public class PagesCollector implements Collector {
         final String language = (String)collectorContextMap.get(CollectorContextMap.LANG);
         final PageMode pageMode = (PageMode)collectorContextMap.get(CollectorContextMap.PAGE_MODE);
         final HashMap<String, String> pageObject = new HashMap<>();
-
+        collectorPayloadBean.put(EVENT_TYPE, EventType.PAGE_REQUEST.getType());
         if (Objects.nonNull(uri) && Objects.nonNull(site) && Objects.nonNull(languageId)) {
 
             final boolean isUrlMap = isUrlMap(collectorContextMap);
@@ -83,6 +83,8 @@ public class PagesCollector implements Collector {
                 pageObject.put(ID, page.getIdentifier());
                 pageObject.put(TITLE, page.getTitle());
                 collectorPayloadBean.put(EVENT_TYPE, EventType.PAGE_REQUEST.getType());
+                pageObject.put("id", page.getIdentifier());
+                pageObject.put("title", page.getTitle());
             }
             pageObject.put(URL, uri);
         }
@@ -92,7 +94,7 @@ public class PagesCollector implements Collector {
         collectorPayloadBean.put(LANGUAGE, language);
 
         if (Objects.nonNull(site)) {
-            collectorPayloadBean.put(HOST,  site.getIdentifier());
+            collectorPayloadBean.put(HOST,  site.getHostname());
         }
 
         return collectorPayloadBean;

@@ -1,0 +1,11 @@
+:host {
+    height: 100%;
+    display: flex;
+    ::ng-deep {
+        .p-treenode-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+}

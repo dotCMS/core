@@ -68,7 +68,8 @@ public class WebEventsCollectorServiceFactory {
         WebEventsCollectorServiceImpl () {
 
             addCollector(new BasicProfileCollector(), new FilesCollector(), new PagesCollector(),
-                    new PageDetailCollector(), new SyncVanitiesCollector(), new AsyncVanitiesCollector());
+                    new PageDetailCollector(), new SyncVanitiesCollector(), new AsyncVanitiesCollector(),
+                    new CustomerEventCollector());
         }
 
         @VisibleForTesting

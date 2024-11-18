@@ -105,7 +105,8 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
     @Test(expected = AnalyticsException.class)
     public void test_getAccessToken_fail() throws Exception {
         AccessTokens.get().removeAccessToken(analyticsApp.getAnalyticsProperties().clientId(), null);
-        new AnalyticsAPIImpl("http://some-host:9999")
+        Config.initializeConfig();
+        new AnalyticsAPIImpl()
             .getAccessToken(analyticsApp, AccessTokenFetchMode.FORCE_RENEW);
     }
 
@@ -143,7 +144,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
         AccessToken accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         assertNull(accessToken);
 
-        new AnalyticsAPIImpl("http://some-host:9999").refreshAccessToken(analyticsApp);
+        new AnalyticsAPIImpl().refreshAccessToken(analyticsApp);
     }
 
     /**

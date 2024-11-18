@@ -4,26 +4,35 @@ import {
     fetchPageDataFromInsideUVE,
     scrollHandler
 } from './listeners/listeners';
-import { postMessageToEditor, CUSTOMER_ACTIONS } from './models/client.model';
+import { postMessageToEditor, CLIENT_ACTIONS } from './models/client.model';
 import {
     addClassToEmptyContentlets,
     initEditor,
+    initInlineEditing,
     isInsideEditor,
     updateNavigation
 } from './sdk-editor';
 
-jest.mock('./models/client.model', () => ({
-    postMessageToEditor: jest.fn(),
-    CUSTOMER_ACTIONS: {
-        NAVIGATION_UPDATE: 'set-url',
-        SET_BOUNDS: 'set-bounds',
-        SET_CONTENTLET: 'set-contentlet',
-        IFRAME_SCROLL: 'scroll',
-        PING_EDITOR: 'ping-editor',
-        CONTENT_CHANGE: 'content-change',
-        NOOP: 'noop'
-    }
-}));
+jest.mock('./models/client.model', () => {
+    return {
+        postMessageToEditor: jest.fn(),
+        CLIENT_ACTIONS: {
+            NAVIGATION_UPDATE: 'set-url',
+            SET_BOUNDS: 'set-bounds',
+            SET_CONTENTLET: 'set-contentlet',
+            EDIT_CONTENTLET: 'edit-contentlet',
+            IFRAME_SCROLL: 'scroll',
+            PING_EDITOR: 'ping-editor',
+            CONTENT_CHANGE: 'content-change',
+            NOOP: 'noop'
+        },
+        INITIAL_DOT_UVE: {
+            editContentlet: jest.fn(),
+            reorderMenu: jest.fn(),
+            lastScrollYPosition: 0
+        }
+    };
+});
 
 jest.mock('./listeners/listeners', () => ({
     pingEditor: jest.fn(),
@@ -80,7 +89,7 @@ describe('DotCMSPageEditor', () => {
         it('should update navigation', () => {
             updateNavigation('/');
             expect(postMessageToEditor).toHaveBeenCalledWith({
-                action: CUSTOMER_ACTIONS.NAVIGATION_UPDATE,
+                action: CLIENT_ACTIONS.NAVIGATION_UPDATE,
                 payload: {
                     url: 'index'
                 }
@@ -93,6 +102,11 @@ describe('DotCMSPageEditor', () => {
             expect(listenEditorMessages).toHaveBeenCalled();
             expect(listenHoveredContentlet).toHaveBeenCalled();
             expect(scrollHandler).toHaveBeenCalled();
+            expect(window.dotUVE).toEqual({
+                editContentlet: expect.any(Function),
+                reorderMenu: expect.any(Function),
+                lastScrollYPosition: 0
+            });
         });
     });
 
@@ -111,6 +125,43 @@ describe('DotCMSPageEditor', () => {
 
             expect(emptyContentlet.classList.contains('empty-contentlet')).toBe(true);
             expect(contentlet.classList.contains('empty-contentlet')).toBe(false);
+        });
+    });
+
+    describe('initInlineEditing', () => {
+        it('should send the correct message to the editor to edit `block-editor`', () => {
+            const type = 'BLOCK_EDITOR';
+            const data = {
+                inode: '123',
+                language: 1,
+                contentType: 'text',
+                fieldName: 'body',
+                content: {}
+            };
+
+            initInlineEditing(type, data);
+
+            expect(postMessageToEditor).toHaveBeenCalledWith({
+                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                payload: {
+                    type,
+                    data
+                }
+            });
+        });
+
+        it('should send the correct message to the editor to edit `WYSIWYG`', () => {
+            const type = 'WYSIWYG';
+
+            initInlineEditing(type);
+
+            expect(postMessageToEditor).toHaveBeenCalledWith({
+                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                payload: {
+                    type,
+                    data: undefined
+                }
+            });
         });
     });
 });

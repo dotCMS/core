@@ -6,7 +6,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.liferay.util.StringPool;
@@ -63,7 +62,7 @@ public class FilesCollector implements Collector {
 
         collectorPayloadBean.put(OBJECT,  fileObject);
         collectorPayloadBean.put(URL, uri);
-        collectorPayloadBean.put(HOST, host);
+        collectorPayloadBean.put(HOST, Objects.nonNull(site)?site.getHostname():host);
         collectorPayloadBean.put(LANGUAGE, language);
         collectorPayloadBean.put(SITE, null != site?site.getIdentifier():StringPool.UNKNOWN);
         collectorPayloadBean.put(EVENT_TYPE, EventType.FILE_REQUEST.getType());
@@ -71,7 +70,7 @@ public class FilesCollector implements Collector {
         return collectorPayloadBean;
     }
 
-    private Optional<Contentlet> getFileAsset(String uri, Host host, Long languageId) {
+    protected Optional<Contentlet> getFileAsset(String uri, Host host, Long languageId) {
         try {
             if (uri.endsWith(".dotsass")) {
                 final String actualUri = uri.substring(0, uri.lastIndexOf('.')) + ".scss";

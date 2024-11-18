@@ -14,7 +14,7 @@ import { ControlContainer, FormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
 
@@ -26,7 +26,8 @@ import {
     DotPropertiesService,
     DotUploadFileService,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWorkflowService
 } from '@dotcms/data-access';
 import { DotMessagePipe, mockMatchMedia, monacoMock } from '@dotcms/utils-testing';
 
@@ -137,6 +138,8 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             mockProvider(DotEditContentService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(ActivatedRoute),
+            mockProvider(DotWorkflowService),
+            mockProvider(MessageService),
             provideHttpClient(),
             provideHttpClientTesting(),
             ConfirmationService,

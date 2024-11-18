@@ -8,9 +8,11 @@ import com.dotcms.jobs.business.queue.error.JobNotFoundException;
 import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotcms.jobs.business.queue.error.JobQueueException;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -53,7 +55,6 @@ import java.util.stream.Collectors;
  * @see Job
  * @see JobState
  */
-
 public class PostgresJobQueue implements JobQueue {
 
     private static final String CREATE_JOB_QUEUE_QUERY = "INSERT INTO job_queue "
@@ -76,7 +77,7 @@ public class PostgresJobQueue implements JobQueue {
                     + "ORDER BY priority DESC, created_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED) "
                     + "RETURNING *";
 
-    private static final String GET_ACTIVE_JOBS_QUERY =
+    private static final String GET_ACTIVE_JOBS_QUERY_FOR_QUEUE =
             "WITH total AS (SELECT COUNT(*) AS total_count " +
                     "    FROM job WHERE queue_name = ? AND state IN (?, ?) " +
                     "), " +
@@ -86,7 +87,7 @@ public class PostgresJobQueue implements JobQueue {
                     ") " +
                     "SELECT p.*, t.total_count FROM total t LEFT JOIN paginated_data p ON true";
 
-    private static final String GET_COMPLETED_JOBS_QUERY =
+    private static final String GET_COMPLETED_JOBS_QUERY_FOR_QUEUE =
             "WITH total AS (SELECT COUNT(*) AS total_count " +
                     "    FROM job WHERE queue_name = ? AND state = ? AND completed_at BETWEEN ? AND ? " +
                     "), " +
@@ -96,15 +97,15 @@ public class PostgresJobQueue implements JobQueue {
                     ") " +
                     "SELECT p.*, t.total_count FROM total t LEFT JOIN paginated_data p ON true";
 
-    private static final String GET_FAILED_JOBS_QUERY =
+    private static final String GET_JOBS_QUERY_BY_STATE =
             "WITH total AS (" +
                     "    SELECT COUNT(*) AS total_count FROM job " +
-                    "    WHERE state = ? " +
+                    "    WHERE state IN $??$ " +
                     "), " +
                     "paginated_data AS (" +
                     "    SELECT * " +
-                    "    FROM job WHERE state = ? " +
-                    "    ORDER BY updated_at DESC " +
+                    "    FROM job WHERE state IN $??$ " +
+                    "    ORDER BY $ORDER_BY$ DESC " +
                     "    LIMIT ? OFFSET ? " +
                     ") " +
                     "SELECT p.*, t.total_count " +
@@ -149,9 +150,12 @@ public class PostgresJobQueue implements JobQueue {
                     + " WHERE id = ?";
 
     private static final String HAS_JOB_BEEN_IN_STATE_QUERY = "SELECT "
-            + "EXISTS (SELECT 1 FROM job_history WHERE job_id = ? AND state = ?)";
+            + "EXISTS (SELECT 1 FROM job_history WHERE job_id = ? AND state IN $??$)";
 
     private static final String COLUMN_TOTAL_COUNT = "total_count";
+
+    private static final String REPLACE_TOKEN_PARAMETERS = "$??$";
+    private static final String REPLACE_TOKEN_ORDER_BY = "$ORDER_BY$";
 
     /**
      * Jackson mapper configuration and lazy initialized instance.
@@ -222,6 +226,12 @@ public class PostgresJobQueue implements JobQueue {
     @Override
     public Job getJob(final String jobId) throws JobNotFoundException, JobQueueDataException {
 
+        // Check cache first
+        Job job = CacheLocator.getJobCache().get(jobId);
+        if (UtilMethods.isSet(job)) {
+            return job;
+        }
+
         try {
             DotConnect dc = new DotConnect();
             dc.setSQL(SELECT_JOB_BY_ID_QUERY);
@@ -229,7 +239,13 @@ public class PostgresJobQueue implements JobQueue {
 
             List<Map<String, Object>> results = dc.loadObjectResults();
             if (!results.isEmpty()) {
-                return DBJobTransformer.toJob(results.get(0));
+
+                job = DBJobTransformer.toJob(results.get(0));
+
+                // Cache the job
+                CacheLocator.getJobCache().put(job);
+
+                return job;
             }
 
             Logger.warn(this, "Job with id: " + jobId + " not found");
@@ -241,13 +257,31 @@ public class PostgresJobQueue implements JobQueue {
     }
 
     @Override
+    public JobState getJobState(final String jobId)
+            throws JobNotFoundException, JobQueueDataException {
+
+        // Check cache first
+        JobState jobState = CacheLocator.getJobCache().getState(jobId);
+        if (UtilMethods.isSet(jobState)) {
+            return jobState;
+        }
+
+        final var job = getJob(jobId);
+
+        // Cache the job state
+        CacheLocator.getJobCache().putState(job.id(), job.state());
+
+        return job.state();
+    }
+
+    @Override
     public JobPaginatedResult getActiveJobs(final String queueName, final int page,
             final int pageSize) throws JobQueueDataException {
 
         try {
 
             DotConnect dc = new DotConnect();
-            dc.setSQL(GET_ACTIVE_JOBS_QUERY);
+            dc.setSQL(GET_ACTIVE_JOBS_QUERY_FOR_QUEUE);
             dc.addParam(queueName);
             dc.addParam(JobState.PENDING.name());
             dc.addParam(JobState.RUNNING.name());
@@ -259,8 +293,10 @@ public class PostgresJobQueue implements JobQueue {
 
             return jobPaginatedResult(page, pageSize, dc);
         } catch (DotDataException e) {
-            Logger.error(this, "Database error while fetching active jobs", e);
-            throw new JobQueueDataException("Database error while fetching active jobs", e);
+            Logger.error(this,
+                    "Database error while fetching active jobs by queue", e);
+            throw new JobQueueDataException(
+                    "Database error while fetching active jobs by queue", e);
         }
     }
 
@@ -272,7 +308,7 @@ public class PostgresJobQueue implements JobQueue {
 
         try {
             DotConnect dc = new DotConnect();
-            dc.setSQL(GET_COMPLETED_JOBS_QUERY);
+            dc.setSQL(GET_COMPLETED_JOBS_QUERY_FOR_QUEUE);
             dc.addParam(queueName);
             dc.addParam(JobState.COMPLETED.name());
             dc.addParam(Timestamp.valueOf(startDate));
@@ -286,8 +322,10 @@ public class PostgresJobQueue implements JobQueue {
 
             return jobPaginatedResult(page, pageSize, dc);
         } catch (DotDataException e) {
-            Logger.error(this, "Database error while fetching completed jobs", e);
-            throw new JobQueueDataException("Database error while fetching completed jobs", e);
+            Logger.error(this,
+                    "Database error while fetching completed jobs by queue", e);
+            throw new JobQueueDataException(
+                    "Database error while fetching completed jobs by queue", e);
         }
     }
 
@@ -309,12 +347,91 @@ public class PostgresJobQueue implements JobQueue {
     }
 
     @Override
+    public JobPaginatedResult getActiveJobs(final int page, final int pageSize)
+            throws JobQueueDataException {
+
+        try {
+
+            var query = GET_JOBS_QUERY_BY_STATE
+                    .replace(REPLACE_TOKEN_PARAMETERS, "(?, ?)")
+                    .replace(REPLACE_TOKEN_ORDER_BY, "created_at");
+
+            DotConnect dc = new DotConnect();
+            dc.setSQL(query);
+            dc.addParam(JobState.PENDING.name());
+            dc.addParam(JobState.RUNNING.name());
+            dc.addParam(JobState.PENDING.name()); // Repeated for paginated_data CTE
+            dc.addParam(JobState.RUNNING.name());
+            dc.addParam(pageSize);
+            dc.addParam((page - 1) * pageSize);
+
+            return jobPaginatedResult(page, pageSize, dc);
+        } catch (DotDataException e) {
+            Logger.error(this, "Database error while fetching active jobs", e);
+            throw new JobQueueDataException("Database error while fetching active jobs", e);
+        }
+    }
+
+    @Override
+    public JobPaginatedResult getCompletedJobs(final int page, final int pageSize)
+            throws JobQueueDataException {
+
+        try {
+
+            var query = GET_JOBS_QUERY_BY_STATE
+                    .replace(REPLACE_TOKEN_PARAMETERS, "(?)")
+                    .replace(REPLACE_TOKEN_ORDER_BY, "completed_at");
+
+            DotConnect dc = new DotConnect();
+            dc.setSQL(query);
+            dc.addParam(JobState.COMPLETED.name());
+            dc.addParam(JobState.COMPLETED.name());  // Repeated for paginated_data CTE
+            dc.addParam(pageSize);
+            dc.addParam((page - 1) * pageSize);
+
+            return jobPaginatedResult(page, pageSize, dc);
+        } catch (DotDataException e) {
+            Logger.error(this, "Database error while fetching completed jobs", e);
+            throw new JobQueueDataException("Database error while fetching completed jobs", e);
+        }
+    }
+
+    @Override
+    public JobPaginatedResult getCanceledJobs(final int page, final int pageSize)
+            throws JobQueueDataException {
+
+        try {
+
+            var query = GET_JOBS_QUERY_BY_STATE
+                    .replace(REPLACE_TOKEN_PARAMETERS, "(?)")
+                    .replace(REPLACE_TOKEN_ORDER_BY, "completed_at");
+
+            DotConnect dc = new DotConnect();
+            dc.setSQL(query);
+            dc.addParam(JobState.CANCELED.name());
+            dc.addParam(JobState.CANCELED.name());  // Repeated for paginated_data CTE
+            dc.addParam(pageSize);
+            dc.addParam((page - 1) * pageSize);
+
+            return jobPaginatedResult(page, pageSize, dc);
+        } catch (DotDataException e) {
+            Logger.error(this, "Database error while fetching cancelled jobs", e);
+            throw new JobQueueDataException("Database error while fetching cancelled jobs", e);
+        }
+    }
+
+    @Override
     public JobPaginatedResult getFailedJobs(final int page, final int pageSize)
             throws JobQueueDataException {
 
         try {
+
+            var query = GET_JOBS_QUERY_BY_STATE
+                    .replace(REPLACE_TOKEN_PARAMETERS, "(?)")
+                    .replace(REPLACE_TOKEN_ORDER_BY, "updated_at");
+
             DotConnect dc = new DotConnect();
-            dc.setSQL(GET_FAILED_JOBS_QUERY);
+            dc.setSQL(query);
             dc.addParam(JobState.FAILED.name());
             dc.addParam(JobState.FAILED.name());  // Repeated for paginated_data CTE
             dc.addParam(pageSize);
@@ -378,6 +495,11 @@ public class PostgresJobQueue implements JobQueue {
                     || job.state() == JobState.CANCELED) {
                 removeJobFromQueue(job.id());
             }
+
+            // Cleanup cache
+            CacheLocator.getJobCache().remove(job);
+            CacheLocator.getJobCache().removeState(job.id());
+
         } catch (DotDataException e) {
             Logger.error(this, "Database error while updating job status", e);
             throw new JobQueueDataException("Database error while updating job status", e);
@@ -469,6 +591,10 @@ public class PostgresJobQueue implements JobQueue {
             dc.addParam(Timestamp.valueOf(LocalDateTime.now()));
             dc.addParam(jobId);
             dc.loadResult();
+
+            // Cleanup cache
+            CacheLocator.getJobCache().remove(jobId);
+
         } catch (DotDataException e) {
             Logger.error(this, "Database error while updating job progress", e);
             throw new JobQueueDataException("Database error while updating job progress", e);
@@ -490,13 +616,25 @@ public class PostgresJobQueue implements JobQueue {
     }
 
     @Override
-    public boolean hasJobBeenInState(String jobId, JobState state) throws JobQueueDataException {
+    public boolean hasJobBeenInState(final String jobId, final JobState... states)
+            throws JobQueueDataException {
+
+        if (states.length == 0) {
+            return false;
+        }
+
+        String parameters = String.join(", ", Collections.nCopies(states.length, "?"));
+
+        var query = HAS_JOB_BEEN_IN_STATE_QUERY
+                .replace(REPLACE_TOKEN_PARAMETERS, "(" + parameters + ")");
 
         try {
             DotConnect dc = new DotConnect();
-            dc.setSQL(HAS_JOB_BEEN_IN_STATE_QUERY);
+            dc.setSQL(query);
             dc.addParam(jobId);
-            dc.addParam(state.name());
+            for (JobState state : states) {
+                dc.addParam(state.name());
+            }
             List<Map<String, Object>> results = dc.loadObjectResults();
 
             if (!results.isEmpty()) {
@@ -519,7 +657,7 @@ public class PostgresJobQueue implements JobQueue {
      * @return A JobPaginatedResult instance
      * @throws DotDataException If there is an error loading the query results
      */
-    private static JobPaginatedResult jobPaginatedResult(
+    private JobPaginatedResult jobPaginatedResult(
             int page, int pageSize, DotConnect dc) throws DotDataException {
 
         final var results = dc.loadObjectResults();

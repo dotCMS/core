@@ -16,21 +16,21 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { MessagesModule } from 'primeng/messages';
-import { Toast, ToastModule } from 'primeng/toast';
 
 import {
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWorkflowService
 } from '@dotcms/data-access';
 import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
 import { DotEditContentStore } from './store/edit-content.store';
 
-import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
+import { DotEditContentSidebarComponent } from '../../components/dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import * as utils from '../../utils/functions.util';
 import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
@@ -45,18 +45,17 @@ describe('EditContentLayoutComponent', () => {
     const createComponent = createComponentFactory({
         component: EditContentLayoutComponent,
         imports: [
-            MockModule(ToastModule),
-
             MockModule(MessagesModule),
             MockComponent(DotEditContentFormComponent),
-            MockComponent(DotEditContentAsideComponent)
+            MockComponent(DotEditContentSidebarComponent)
         ],
         componentProviders: [
             DotEditContentStore, // Usign the real DotEditContentStore
             mockProvider(DotWorkflowsActionsService),
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(DotEditContentService),
-            mockProvider(DotContentTypeService)
+            mockProvider(DotContentTypeService),
+            mockProvider(DotWorkflowService)
         ],
         providers: [
             mockProvider(DotHttpErrorManagerService),
@@ -98,10 +97,6 @@ describe('EditContentLayoutComponent', () => {
         jest.spyOn(utils, 'getPersistSidebarState').mockReturnValue(true);
     });
 
-    it('should have p-toast component', () => {
-        expect(spectator.query(Toast)).toBeTruthy();
-    });
-
     it('should have p-confirmDialog component', () => {
         expect(spectator.query(ConfirmDialog)).toBeTruthy();
     });
@@ -124,7 +119,6 @@ describe('EditContentLayoutComponent', () => {
             expect(spectator.query(byTestId('edit-content-layout__body'))).toBeTruthy();
             expect(spectator.query(byTestId('edit-content-layout__sidebar'))).toBeTruthy();
 
-            expect(spectator.query(Toast)).toBeTruthy();
             expect(spectator.query(ConfirmDialog)).toBeTruthy();
         }));
 

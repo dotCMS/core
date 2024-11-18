@@ -53,12 +53,20 @@ export const getContainersData = (
     const acceptTypes = containerStructures.map((structure) => structure.contentTypeVar).join(',');
 
     // Get the contentlets for "this" container
-    const contentlets = containers[identifier].contentlets[`uuid-${uuid}`];
+    const contentlets =
+        containers[identifier].contentlets[`uuid-${uuid}`] ??
+        containers[identifier].contentlets[`uuid-dotParser_${uuid}`];
+
+    if (!contentlets) {
+        console.warn(
+            `We couldn't find the contentlets for the container with the identifier ${identifier} and the uuid ${uuid} becareful by adding content to this container.\nWe recommend to change the container in the layout and add the content again.`
+        );
+    }
 
     return {
         ...containers[identifier].container,
         acceptTypes,
-        contentlets,
+        contentlets: contentlets ?? [],
         variantId
     };
 };

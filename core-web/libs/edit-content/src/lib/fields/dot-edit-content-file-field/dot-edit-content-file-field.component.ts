@@ -21,6 +21,7 @@ import { filter, map } from 'rxjs/operators';
 
 import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotGeneratedAIImage } from '@dotcms/dotcms-models';
+import { INPUT_TYPES, UploadedFile } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import {
     DotDropZoneComponent,
     DotMessagePipe,
@@ -34,7 +35,7 @@ import { DotFileFieldPreviewComponent } from './components/dot-file-field-previe
 import { DotFileFieldUiMessageComponent } from './components/dot-file-field-ui-message/dot-file-field-ui-message.component';
 import { DotFormFileEditorComponent } from './components/dot-form-file-editor/dot-form-file-editor.component';
 import { DotFormImportUrlComponent } from './components/dot-form-import-url/dot-form-import-url.component';
-import { INPUT_TYPES, UploadedFile } from './models';
+import { DotSelectExistingFileComponent } from './components/dot-select-existing-file/dot-select-existing-file.component';
 import { DotFileFieldUploadService } from './services/upload-file/upload-file.service';
 import { FileFieldStore } from './store/file-field.store';
 import { getUiMessage } from './utils/messages';
@@ -386,6 +387,35 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             )
             .subscribe((file) => {
                 this.store.setPreviewFile(file);
+            });
+    }
+
+    showSelectExistingFileDialog() {
+        const header = this.#dotMessageService.get(
+            'dot.file.field.dialog.select.existing.file.header'
+        );
+
+        this.#dialogRef = this.#dialogService.open(DotSelectExistingFileComponent, {
+            header,
+            appendTo: 'body',
+            closeOnEscape: false,
+            draggable: false,
+            keepInViewport: false,
+            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            resizable: false,
+            modal: true,
+            width: '90%',
+            style: { 'max-width': '1040px' },
+            data: {}
+        });
+
+        this.#dialogRef.onClose
+            .pipe(
+                filter((file) => !!file),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((file) => {
+                this.store.setPreviewFile({ source: 'contentlet', file });
             });
     }
 

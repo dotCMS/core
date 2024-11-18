@@ -87,7 +87,7 @@ public class PageDetailCollector implements Collector {
         collectorPayloadBean.put(LANGUAGE, language);
 
         if (Objects.nonNull(site)) {
-            collectorPayloadBean.put(HOST, site.getIdentifier());
+            collectorPayloadBean.put(HOST, site.getHostname());
         }
         return collectorPayloadBean;
     }

@@ -143,7 +143,11 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
                     ({ chain }) => {
                         return chain()
                             .command(({ tr }) => {
+                                preventClose = true;
                                 tr.setMeta(BUBBLE_ASSET_FORM_PLUGIN_KEY, { open: true, type });
+                                setTimeout(() => {
+                                    preventClose = false;
+                                }, 0);
 
                                 return true;
                             })

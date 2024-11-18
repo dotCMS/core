@@ -568,7 +568,10 @@ public class PageResourceHelper implements Serializable {
      * language or not.
      *
      * @throws DotDataException An error occurred when interacting with the database.
+     *
+     * @deprecated This method is deprecated and will be removed in future versions.
      */
+    @Deprecated(since = "Nov 7th, 24", forRemoval = true)
     public List<ExistingLanguagesForPageView> getExistingLanguagesForPage(final String pageId, final User user) throws DotDataException {
         DotPreconditions.checkNotNull(pageId, "Page ID cannot be null");
         DotPreconditions.checkNotNull(user, "User cannot be null");

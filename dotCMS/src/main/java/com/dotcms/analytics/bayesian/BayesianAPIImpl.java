@@ -8,7 +8,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.vavr.Lazy;
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
@@ -26,9 +25,6 @@ import java.util.stream.Stream;
  * @author vico
  */
 public class BayesianAPIImpl implements BayesianAPI {
-
-    private final Lazy<Integer> betaDistSamples =
-            Lazy.of(() -> Config.getIntProperty("BETA_DISTRIBUTION_SAMPLE_SIZE", 1000));
 
     /**
      * {@inheritDoc}
@@ -705,7 +701,7 @@ public class BayesianAPIImpl implements BayesianAPI {
      * @return sample size
      */
     private int resolveSampleSize() {
-        return betaDistSamples.get();
+        return Config.getIntProperty("BETA_DISTRIBUTION_SAMPLE_SIZE", 1000);
     }
 
     /**

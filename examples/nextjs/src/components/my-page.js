@@ -2,13 +2,14 @@
 
 import WebPageContent from "./content-types/webPageContent";
 import Banner from "./content-types/banner";
+import Blog from "./content-types/blog";
 import Activity from "./content-types/activity";
 import CallToAction from "./content-types/callToAction";
 import CalendarEvent from "./content-types/calendarEvent";
 import Product from "./content-types/product";
 import ImageComponent from "./content-types/image";
 
-import Header from "./layout/header";
+import Header from "./layout/header/header";
 import Footer from "./layout/footer/footer";
 import Navigation from "./layout/navigation";
 import { usePathname, useRouter } from "next/navigation";
@@ -17,8 +18,7 @@ import { withExperiments } from "@dotcms/experiments";
 import { CustomNoComponent } from "./content-types/empty";
 
 import { usePageAsset } from "../hooks/usePageAsset";
-import BlogWithBlockEditor from "./content-types/blog";
-import { DotCmsClient } from "@dotcms/client";
+import NotFound from "@/app/not-found";
 
 /**
  * Configure experiment settings below. If you are not using experiments,
@@ -32,6 +32,7 @@ const experimentConfig = {
 
 // Mapping of components to DotCMS content types
 const componentsMap = {
+    Blog: Blog,
     webPageContent: WebPageContent,
     Banner: Banner,
     Activity: Activity,
@@ -40,7 +41,6 @@ const componentsMap = {
     calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
     CustomNoComponent: CustomNoComponent,
-    BlockEditorItem: BlogWithBlockEditor,
 };
 
 export function MyPage({ pageAsset, nav }) {
@@ -62,32 +62,34 @@ export function MyPage({ pageAsset, nav }) {
 
     pageAsset = usePageAsset(pageAsset);
 
+    if (!pageAsset) {
+        return <NotFound />;
+    }
+
     return (
         <div className="flex flex-col gap-6 min-h-screen bg-lime-50">
-            {pageAsset.layout.header && (
-                <Header>
-                    <Navigation items={nav} />
-                </Header>
+            {pageAsset?.layout.header && (
+                <Header>{!!nav && <Navigation items={nav} />}</Header>
             )}
 
             <main className="flex flex-col gap-8 m-auto">
                 <DotLayoutComponent
                     pageContext={{
-                        components: componentsMap,
-                        pageAsset: pageAsset,
+                        pageAsset,
+                        components: componentsMap
                     }}
                     config={{
                         pathname,
                         editor: {
                             params: {
-                                depth: 3,
-                            },
-                        },
+                                depth: 3
+                            }
+                        }
                     }}
                 />
             </main>
 
-            {pageAsset.layout.footer && <Footer />}
+            {pageAsset?.layout.footer && <Footer />}
         </div>
     );
 }

@@ -1,19 +1,22 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
-import { DotWorkflowActionsFireService, DotWorkflowsActionsService } from '@dotcms/data-access';
+import {
+    DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
+    DotWorkflowService
+} from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentStore } from './store/edit-content.store';
 
-import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
+import { DotEditContentSidebarComponent } from '../../components/dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 
 @Component({
@@ -26,14 +29,14 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         MessagesModule,
         RouterLink,
         DotEditContentFormComponent,
-        DotEditContentAsideComponent,
+        DotEditContentSidebarComponent,
         ConfirmDialogModule
     ],
     providers: [
         DotWorkflowsActionsService,
         DotWorkflowActionsFireService,
         DotEditContentService,
-        MessageService,
+        DotWorkflowService,
         DotEditContentStore
     ],
 

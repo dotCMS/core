@@ -9,6 +9,10 @@ on:
         options:
           - 'full'
           - 'empty'
+      old-assets:
+        description: 'Include old assets'
+        required: true
+        type: boolean          
       changelog:
         description: 'Changes description'
         required: true
@@ -28,7 +32,7 @@ env:
   EMPTY_STARTER_TOKEN: ${{ secrets.DOT_EMPTY_STARTER_ACCESS_TOKEN }}
   FULL_STARTER_URL: ${{ vars.DOT_STARTER_URL }}
   FULL_STARTER_TOKEN: ${{ secrets.DOT_STARTER_ACCESS_TOKEN }}
-  DOWNLOAD_ENDPOINT: api/v1/maintenance/_downloadStarterWithAssets?oldAssets=true
+  DOWNLOAD_ENDPOINT: api/v1/maintenance/_downloadStarterWithAssets?oldAssets=${{ github.event.inputs.old-assets }}
 
 jobs:
   get-starter:
@@ -88,7 +92,7 @@ jobs:
   deploy-artifacts:
     needs: [ get-starter ]
     runs-on: ubuntu-20.04
-    environment: trunk
+    environment: starter
     outputs:
       filename: ${{ steps.deploy-artifacts.outputs.filename }}
       url: ${{ steps.deploy-artifacts.outputs.url }}
@@ -153,10 +157,10 @@ jobs:
           echo "::endgroup::"
 
   update-pom:
-    if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == false }}
+    if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == 'false' }}
     needs: [ deploy-artifacts ]
     runs-on: ubuntu-20.04
-    environment: trunk
+    environment: starter
     outputs:
       pull-request-url: ${{ steps.create-pull-request.outputs.pull-request-url }}
     steps:
@@ -201,10 +205,9 @@ jobs:
             automated pr          
         
   send-notification:
-    needs: [ deploy-artifacts, update-pom ]
+    needs: [ deploy-artifacts ]
     runs-on: ubuntu-20.04
-    environment: trunk
-    if: always() && github.event.inputs.dry-run == false
+    if: always() && github.event.inputs.dry-run == 'false'
     steps:
 
       - uses: actions/checkout@v4
@@ -215,6 +218,7 @@ jobs:
           echo "::group::Compose Message"
           ARTIFACT_FILENAME="${{ needs.deploy-artifacts.outputs.filename }}"
           ARTIFACT_URL="${{ needs.deploy-artifacts.outputs.url }}"
+          OLD_ASSETS="${{ github.event.inputs.old-assets }}"
           CHANGELOG="${{ github.event.inputs.changelog }}"
           PULL_REQUEST_URL="${{ needs.update-pom.outputs.pull-request-url }}"
           if [ "$STARTER_TYPE" == "empty" ]; then
@@ -226,6 +230,7 @@ jobs:
           > This automated script is happy to announce that a new *_${STARTER_TYPE} starter_* :package: \`${ARTIFACT_FILENAME}\` is now available on \`ARTIFACTORY\` :frog:!
           >
           > :link: ${ARTIFACT_URL}
+          > _Old assets included_: ${OLD_ASSETS}
           > *Changelog*
           > \`\`\`${CHANGELOG}\`\`\`
           >
