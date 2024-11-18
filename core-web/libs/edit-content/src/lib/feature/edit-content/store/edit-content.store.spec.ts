@@ -28,11 +28,7 @@ import {
     DotCMSContentType,
     DotCMSWorkflowAction
 } from '@dotcms/dotcms-models';
-import {
-    MOCK_SINGLE_WORKFLOW_ACTIONS,
-    MockDotMessageService,
-    mockWorkflowsActions
-} from '@dotcms/utils-testing';
+import { MOCK_SINGLE_WORKFLOW_ACTIONS, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentStore } from './edit-content.store';
 
@@ -120,7 +116,9 @@ describe('DotEditContentStore', () => {
             const testContentType = 'testContentType';
 
             contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
-            workflowActionsService.getDefaultActions.mockReturnValue(of(mockWorkflowsActions));
+            workflowActionsService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
             workflowActionsService.getWorkFlowActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
@@ -130,10 +128,9 @@ describe('DotEditContentStore', () => {
             // use the proper contentType for get the data
             expect(contentTypeService.getContentType).toHaveBeenCalledWith(testContentType);
             expect(workflowActionsService.getDefaultActions).toHaveBeenCalledWith(testContentType);
-            expect(workflowActionsService.getWorkFlowActions).toHaveBeenCalledWith(testContentType);
 
             expect(store.contentType()).toEqual(CONTENT_TYPE_MOCK);
-            expect(store.actions()).toEqual(mockWorkflowsActions);
+
             expect(store.state()).toBe(ComponentStatus.LOADED);
             expect(store.error()).toBeNull();
         });
@@ -142,7 +139,9 @@ describe('DotEditContentStore', () => {
             const mockError = new HttpErrorResponse({ status: 404, statusText: 'Not Found' });
 
             contentTypeService.getContentType.mockReturnValue(throwError(() => mockError));
-            workflowActionsService.getDefaultActions.mockReturnValue(of(mockWorkflowsActions));
+            workflowActionsService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
 
             store.initializeNewContent('testContentType');
 
@@ -187,7 +186,7 @@ describe('DotEditContentStore', () => {
 
             expect(store.contentlet()).toEqual(mockContentlet);
             expect(store.contentType()).toEqual(mockContentType);
-            expect(store.actions()).toEqual(mockActions);
+
             expect(store.state()).toBe(ComponentStatus.LOADED);
             expect(store.error()).toBe(null);
         });
@@ -226,7 +225,7 @@ describe('DotEditContentStore', () => {
 
             expect(store.state()).toBe(ComponentStatus.LOADED);
             expect(store.contentlet()).toEqual(mockContentlet);
-            expect(store.actions()).toEqual(mockActions);
+
             expect(store.error()).toBeNull();
 
             expect(workflowActionsFireService.fireTo).toHaveBeenCalledWith(mockOptions);

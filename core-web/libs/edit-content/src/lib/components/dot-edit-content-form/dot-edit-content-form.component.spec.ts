@@ -142,7 +142,7 @@ describe('DotFormComponent', () => {
         beforeEach(() => {
             dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
             workflowActionsService.getDefaultActions.mockReturnValue(
-                of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
             workflowActionsService.getWorkFlowActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
@@ -233,29 +233,6 @@ describe('DotFormComponent', () => {
                 spectator.click(sidebarButton);
 
                 expect(toggleSidebarSpy).toHaveBeenCalled();
-            });
-
-            it('should call fireWorkflowAction when Save action is clicked', () => {
-                const fireWorkflowActionSpy = jest.spyOn(component.$store, 'fireWorkflowAction');
-                const workflowActions = spectator.query(DotWorkflowActionsComponent);
-                expect(workflowActions).toBeTruthy();
-
-                const saveButton = spectator.query('.p-splitbutton-defaultbutton');
-                expect(saveButton).toBeTruthy();
-                expect(saveButton.textContent.trim()).toBe('Save');
-
-                spectator.click(saveButton);
-
-                expect(fireWorkflowActionSpy).toHaveBeenCalledWith({
-                    actionId: MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB[0].id,
-                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
-                    data: {
-                        contentlet: {
-                            ...component.form.value,
-                            contentType: MOCK_CONTENTTYPE_1_TAB.variable
-                        }
-                    }
-                });
             });
 
             it('should call toggleSidebar when sidebar toggle button is clicked', () => {

@@ -675,15 +675,13 @@ describe('Utils Functions', () => {
         it('should parse real workflow data correctly', () => {
             const expected = {
                 [MOCK_WORKFLOW_DATA[0].scheme.id]: {
-                    actions: {
-                        [MOCK_WORKFLOW_DATA[0].action.id]: { ...MOCK_WORKFLOW_DATA[0].action }
-                    },
+                    actions: [{ ...MOCK_WORKFLOW_DATA[0].action }],
+                    firstStep: { ...MOCK_WORKFLOW_DATA[0].firstStep },
                     scheme: { ...MOCK_WORKFLOW_DATA[0].scheme }
                 },
                 [MOCK_WORKFLOW_DATA[1].scheme.id]: {
-                    actions: {
-                        [MOCK_WORKFLOW_DATA[1].action.id]: { ...MOCK_WORKFLOW_DATA[1].action }
-                    },
+                    actions: [{ ...MOCK_WORKFLOW_DATA[1].action }],
+                    firstStep: { ...MOCK_WORKFLOW_DATA[1].firstStep },
                     scheme: { ...MOCK_WORKFLOW_DATA[1].scheme }
                 }
             };
