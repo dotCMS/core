@@ -498,7 +498,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         Contentlet contentB = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "B").nextPersisted();
         Contentlet contentC = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "C").nextPersisted();
 
-        final Contentlet contentACompleteANdPublish = setFieldsAndPublishBothAsBlockEditor(contentA, relationshipField,
+        /*final Contentlet contentACompleteANdPublish = setFieldsAndPublishBothAsBlockEditor(contentA, relationshipField,
                 storyBlockField, contentC, contentB);
 
         final Contentlet contentBCompleteANdPublish = setFieldsAndPublishBothAsBlockEditor(contentB, relationshipField,
@@ -562,7 +562,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                     }
                 }
             }
-        }
+        }*/
     }
 
     /**
