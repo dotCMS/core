@@ -1596,7 +1596,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private void validateWorkflowLicense(String scheme, String message) {
 		if (!SYSTEM_WORKFLOW_ID.equals(scheme) && !SYSTEM_WORKFLOW_VARIABLE_NAME.equals(scheme)
 				&& (!hasValidLicense() && !this.getFriendClass().isFriend())) {
-			//throw new InvalidLicenseException(message);
+			throw new InvalidLicenseException(message);
 		}
 	}
 
