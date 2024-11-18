@@ -1,10 +1,16 @@
 package com.dotcms.contenttype.business.uniquefields.extratable;
 
+import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FieldVariableDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.variant.VariantAPI;
@@ -20,7 +26,9 @@ import com.liferay.util.StringPool;
 import net.bytebuddy.utility.RandomString;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,11 +36,19 @@ import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENT_TYPE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VARIABLE_NAME_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.LANGUAGE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.SITE_ID_ATTR;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.INODE_KEY;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+@ApplicationScoped
+@RunWith(JUnit4WeldRunner.class)
 public class DBUniqueFieldValidationStrategyTest {
 
     static UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil;
@@ -248,31 +264,39 @@ public class DBUniqueFieldValidationStrategyTest {
 
     private static void validateAfterInsert(UniqueFieldCriteria uniqueFieldCriteria,
                                             Contentlet... contentlets) throws DotDataException {
+        validateAfterInsert(uniqueFieldCriteria, false, contentlets);
+    }
+
+    private static void validateAfterInsert(final UniqueFieldCriteria uniqueFieldCriteria, final boolean uniquePerSite,
+                                            final Contentlet... contentlets) throws DotDataException {
 
         final ContentType contentType = uniqueFieldCriteria.contentType();
         final Field field =uniqueFieldCriteria.field();
         final Language language = uniqueFieldCriteria.language();
         final Object value = uniqueFieldCriteria.value();
 
-        final List<Map<String, Object>> results = new DotConnect()
-                .setSQL("SELECT * FROM unique_fields WHERE supporting_values->>'contentTypeID' = ? AND " +
-                        "supporting_values->>'fieldVariableName' = ? AND supporting_values->>'fieldValue' = ? AND " +
-                        "(supporting_values->>'languageId')::numeric = ?")
+        final String sql = "SELECT * FROM unique_fields WHERE " +
+                "supporting_values->>'" + CONTENT_TYPE_ID_ATTR + "' = ? AND " +
+                "supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ? AND " +
+                "supporting_values->>'" + FIELD_VALUE_ATTR + "' = ? AND " +
+                "(supporting_values->>'" + LANGUAGE_ID_ATTR + "')::numeric = ?" +
+                (uniquePerSite ? " AND supporting_values->>'" + SITE_ID_ATTR + "' = ?" : "");
+        final DotConnect dc = new DotConnect()
+                .setSQL(sql)
                 .addParam(contentType.id())
                 .addParam(field.variable())
                 .addParam(value)
-                .addParam(language.getId())
-                .loadObjectResults();
+                .addParam(language.getId());
+        if (uniquePerSite) {
+            dc.addParam(contentlets[0].getHost());
+        }
+        final List<Map<String, Object>> results = dc.loadObjectResults();
 
-        assertEquals(contentlets.length, results.size());
+        assertEquals("", contentlets.length, results.size());
 
         for (Contentlet contentlet : contentlets) {
-            final Map<String, Object> mapExpected = new HashMap<>(uniqueFieldCriteria.toMap());
-
-            mapExpected.put("contentletsId", list(contentlet.getIdentifier()));
-            mapExpected.put("uniquePerSite", false);
-
-            final String valueToHash = contentType.id() + field.variable() + language.getId() + value;
+            final String valueToHash = contentType.id() + field.variable() + language.getId() + value
+                    + (uniquePerSite ? contentlet.getHost() : "");
             assertEquals(StringUtils.hashText(valueToHash), results.get(0).get("unique_key_val"));
         }
     }
@@ -571,8 +595,9 @@ public class DBUniqueFieldValidationStrategyTest {
 
     private static void checkContentIds(final UniqueFieldCriteria uniqueFieldCriteria,
                                         final Collection compareWith) throws DotDataException, IOException {
-        final List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE unique_key_val = ?")
-                .addParam(uniqueFieldCriteria.hash())
+        //final List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE unique_key_val = ?")
+        final List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE unique_key_val = encode(sha256(?::bytea), 'hex') ")
+                .addParam(uniqueFieldCriteria.criteria())
                 .loadObjectResults();
 
         assertEquals(1, results.size());
@@ -842,4 +867,155 @@ public class DBUniqueFieldValidationStrategyTest {
 
         assertEquals(1, results.size());
     }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link DBUniqueFieldValidationStrategy#validate(Contentlet, Field)}</li>
+     *     <li><b>Given Scenario: </b>Create two Contentlets with the same unique value, but each
+     *     living under a different Site, and the {@code uniquePerSite} is set to {@code true}.</li>
+     *     <li><b>Expected Result: </b>Even though they share the exact same unique value, the
+     *     creation must be successful as they both live in different Sites.</li>
+     * </ul>
+     */
+    @Test
+    public void insertWithUniquePerSiteAsTrue() throws DotDataException, UniqueFieldValueDuplicatedException, DotSecurityException {
+        // ╔══════════════════╗
+        // ║  Initialization  ║
+        // ╚══════════════════╝
+        final boolean uniquePerSite = true;
+
+        // ╔════════════════════════╗
+        // ║  Generating Test data  ║
+        // ╚════════════════════════╝
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Field field = new FieldDataGen().type(TextField.class).contentTypeId(contentType.id()).unique(true).nextPersisted();
+        new FieldVariableDataGen().key(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME).value(Boolean.toString(uniquePerSite)).field(field).nextPersisted();
+        final Object uniqueValue = new RandomString().nextString();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Host secondSite = new SiteDataGen().nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .setProperty(field.variable(), uniqueValue)
+                .host(site)
+                .languageId(language.getId())
+                .next();
+
+        final DBUniqueFieldValidationStrategy dbValidationStrategy = new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
+        dbValidationStrategy.validate(contentlet, field);
+
+        UniqueFieldCriteria uniqueFieldCriteria = new UniqueFieldCriteria.Builder()
+                .setContentType(contentType)
+                .setField(field)
+                .setValue(uniqueValue)
+                .setLanguage(language)
+                .setSite(site)
+                .setVariantName(VariantAPI.DEFAULT_VARIANT.name())
+                .build();
+
+        // ╔══════════════╗
+        // ║  Assertions  ║
+        // ╚══════════════╝
+        validateAfterInsert(uniqueFieldCriteria, uniquePerSite, contentlet);
+
+        // ╔════════════════════════╗
+        // ║  Generating Test data  ║
+        // ╚════════════════════════╝
+        final Contentlet contentletInOtherSite = new ContentletDataGen(contentType)
+                .setProperty(field.variable(), uniqueValue)
+                .host(secondSite)
+                .languageId(language.getId())
+                .next();
+
+        dbValidationStrategy.validate(contentletInOtherSite, field);
+
+        uniqueFieldCriteria = new UniqueFieldCriteria.Builder()
+                .setContentType(contentType)
+                .setField(field)
+                .setValue(uniqueValue)
+                .setLanguage(language)
+                .setSite(secondSite)
+                .setVariantName(VariantAPI.DEFAULT_VARIANT.name())
+                .build();
+
+        // ╔══════════════╗
+        // ║  Assertions  ║
+        // ╚══════════════╝
+        validateAfterInsert(uniqueFieldCriteria, true, contentletInOtherSite);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link DBUniqueFieldValidationStrategy#validate(Contentlet, Field)}</li>
+     *     <li><b>Given Scenario: </b>Create two Contentlets with the same unique value, but each
+     *     living under a different Site, and the {@code uniquePerSite} is set to {@code false}
+     *     .</li>
+     *     <li><b>Expected Result: </b>Even though both contents live in different Sites, the
+     *     creation must FAIL as they have the exact same unique value.</li>
+     * </ul>
+     */
+    @Test
+    public void insertWithUniquePerSiteAsFalse() throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
+        // ╔══════════════════╗
+        // ║  Initialization  ║
+        // ╚══════════════════╝
+        final boolean uniquePerSite = false;
+
+        // ╔════════════════════════╗
+        // ║  Generating Test data  ║
+        // ╚════════════════════════╝
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Field field = new FieldDataGen().type(TextField.class).contentTypeId(contentType.id()).unique(true).nextPersisted();
+        new FieldVariableDataGen().key(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME).value(Boolean.toString(uniquePerSite)).field(field).nextPersisted();
+        final Object uniqueValue = new RandomString().nextString();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Host secondSite = new SiteDataGen().nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .setProperty(field.variable(), uniqueValue)
+                .host(site)
+                .languageId(language.getId())
+                .next();
+
+        final DBUniqueFieldValidationStrategy dbValidationStrategy = new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
+        dbValidationStrategy.validate(contentlet, field);
+
+        UniqueFieldCriteria uniqueFieldCriteria = new UniqueFieldCriteria.Builder()
+                .setContentType(contentType)
+                .setField(field)
+                .setValue(uniqueValue)
+                .setLanguage(language)
+                .setSite(site)
+                .setVariantName(VariantAPI.DEFAULT_VARIANT.name())
+                .build();
+
+        // ╔══════════════╗
+        // ║  Assertions  ║
+        // ╚══════════════╝
+        validateAfterInsert(uniqueFieldCriteria, uniquePerSite, contentlet);
+
+        // ╔════════════════════════╗
+        // ║  Generating Test data  ║
+        // ╚════════════════════════╝
+        final Contentlet contentletInOtherSite = new ContentletDataGen(contentType)
+                .setProperty(field.variable(), uniqueValue)
+                .host(secondSite)
+                .languageId(language.getId())
+                .next();
+
+        // ╔══════════════╗
+        // ║  Assertions  ║
+        // ╚══════════════╝
+        try {
+            dbValidationStrategy.validate(contentletInOtherSite, field);
+        } catch (final UniqueFieldValueDuplicatedException e) {
+            assertTrue("The error message is NOT the expected one", e.getMessage()
+                    .equalsIgnoreCase("The unique value '" + uniqueValue + "' for the field '"
+                            + field.variable() +"' in the Content Type '" + contentType.variable()
+                            + "' already exists"));
+        }
+    }
+
 }

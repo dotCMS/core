@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -105,7 +107,7 @@ public class FieldVariableResource implements Serializable {
 												 @PathParam("fieldId") final String fieldId,
 												 final String fieldVariableJson,
 												 @Context final HttpServletRequest req,
-												 @Context final HttpServletResponse res) throws DotDataException, DotSecurityException {
+												 @Context final HttpServletResponse res) throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
 		final User user = new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(req, res)
 				.requiredBackendUser(true)
@@ -156,7 +158,7 @@ public class FieldVariableResource implements Serializable {
 												  @PathParam("fieldVar") final String fieldVar,
 												  final String fieldVariableJson,
 												  @Context final HttpServletRequest req,
-												  @Context final HttpServletResponse res) throws DotDataException, DotSecurityException {
+												  @Context final HttpServletResponse res) throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
 		final User user = new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(req, res)
 				.requiredBackendUser(true)
@@ -337,7 +339,7 @@ public class FieldVariableResource implements Serializable {
 												 @PathParam("fieldVarId") final String fieldVarId,
 												 final String fieldVariableJson,
 												 @Context final HttpServletRequest req,
-												 @Context final HttpServletResponse res) throws DotDataException, DotSecurityException {
+												 @Context final HttpServletResponse res) throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
 		final User user = new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(req, res)
 				.requiredBackendUser(true)
@@ -390,7 +392,7 @@ public class FieldVariableResource implements Serializable {
 												  @PathParam("fieldVarId") final String fieldVarId,
 												  final String fieldVariableJson,
 												  @Context final HttpServletRequest req,
-												  @Context final HttpServletResponse res) throws DotDataException, DotSecurityException {
+												  @Context final HttpServletResponse res) throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
 		final User user = new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(req, res)
 				.requiredBackendUser(true)
@@ -428,15 +430,14 @@ public class FieldVariableResource implements Serializable {
 												 @PathParam("fieldId") final String fieldId,
 												 @PathParam("fieldVarId") final String fieldVarId,
 												 @Context final HttpServletRequest req,
-												 @Context final HttpServletResponse res) throws DotDataException {
-		new WebResource.InitBuilder(this.webResource)
+												 @Context final HttpServletResponse res) throws DotDataException, UniqueFieldValueDuplicatedException, DotSecurityException {
+		final User user = new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(req, res)
 				.requiredBackendUser(true)
 				.rejectWhenNoUser(true)
-				.init();
+				.init().getUser();
 		final Field field = this.fieldAPI.find(fieldId);
-		final FieldVariable fieldVariable = this.getFieldVariable(field, fieldVarId);
-		this.fieldAPI.delete(fieldVariable);
+		this.deleteFieldVariable(field, fieldVarId);
 		return Response.ok(new ResponseEntityView<>((String) null)).build();
 	}
 
@@ -469,16 +470,28 @@ public class FieldVariableResource implements Serializable {
 												  @PathParam("fieldVar") final String fieldVar,
 												  @PathParam("fieldVarId") final String fieldVarId,
 												  @Context final HttpServletRequest req,
-												  @Context final HttpServletResponse res) throws DotDataException {
+												  @Context final HttpServletResponse res) throws DotDataException, UniqueFieldValueDuplicatedException, DotSecurityException {
 		new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(req, res)
 				.requiredBackendUser(true)
 				.rejectWhenNoUser(true)
 				.init();
 		final Field field = this.fieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
+		this.deleteFieldVariable(field, fieldVarId);
+		return Response.ok(new ResponseEntityView<>((String) null)).build();
+	}
+
+	/**
+	 * @param field
+	 * @param fieldVarId
+	 * @param user
+	 *
+	 * @throws DotDataException
+	 */
+	@WrapInTransaction
+	private void deleteFieldVariable(final Field field, final String fieldVarId) throws DotDataException, UniqueFieldValueDuplicatedException {
 		final FieldVariable fieldVariable = this.getFieldVariable(field, fieldVarId);
 		this.fieldAPI.delete(fieldVariable);
-		return Response.ok(new ResponseEntityView<>((String) null)).build();
 	}
 
 	/**
@@ -544,15 +557,14 @@ public class FieldVariableResource implements Serializable {
 	 */
 	private FieldVariable updateFieldVariable(final String fieldVarId,
 											  final String fieldVariableJson, final Field field,
-											  final User user) throws DotDataException, DotSecurityException {
-		FieldVariable updatedFieldVariable = this.jsonToFieldVariable(fieldVariableJson, field, true);
+											  final User user) throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
+		final FieldVariable updatedFieldVariable = this.jsonToFieldVariable(fieldVariableJson, field, true);
 		final FieldVariable currentFieldVariable = this.getFieldVariable(field, fieldVarId);
 		if (!Objects.equals(currentFieldVariable.id(), updatedFieldVariable.id())) {
 			throw new DotDataException(String.format("Existing Field Variable ID '%s' does not match the updated Field Variable ID " +
 							"'%s'", fieldVarId, updatedFieldVariable.id()));
 		}
-		updatedFieldVariable = this.fieldAPI.save(updatedFieldVariable, user);
-		return updatedFieldVariable;
+		return this.fieldAPI.save(updatedFieldVariable, user);
 	}
 
 	/**
