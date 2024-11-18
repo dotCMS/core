@@ -473,7 +473,6 @@ public class StoryBlockAPITest extends IntegrationTestBase {
      */
     @Test
     @UseDataProvider("depthValues")
-    @Ignore
     public void testCycleRelationshipAndBlockEditor(final int depth) throws Exception {
         final Language language = new LanguageDataGen().nextPersisted();
 
