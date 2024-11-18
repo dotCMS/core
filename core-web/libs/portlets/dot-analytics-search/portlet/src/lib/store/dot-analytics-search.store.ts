@@ -1,5 +1,5 @@
 import { JsonObject } from '@angular-devkit/core';
-import { tapResponse } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
