@@ -1,6 +1,6 @@
 import { InjectionToken } from '@angular/core';
 
-import { DotPersona } from '@dotcms/dotcms-models';
+import { DotPersona, FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { CommonErrors } from './enums';
 import { CommonErrorsInfo } from './models';
@@ -67,3 +67,5 @@ export const DEFAULT_PERSONA: DotPersona = {
     hasLiveVersion: false,
     modUser: 'system'
 };
+
+export const UVE_FEATURE_FLAGS = [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE];

@@ -39,6 +39,7 @@ const initialState: AiImagePromptdState = {
 };
 
 export const DotAiImagePromptStore = signalStore(
+    { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState(initialState),
     withComputed(({ status, context, images, galleryActiveIndex }) => ({
         isLoading: computed(() => {

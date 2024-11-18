@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessagesModule } from 'primeng/messages';
@@ -37,7 +36,6 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         DotWorkflowsActionsService,
         DotWorkflowActionsFireService,
         DotEditContentService,
-        MessageService,
         DotWorkflowService,
         DotEditContentStore
     ],

@@ -1,8 +1,11 @@
 package com.dotcms.jobs.business.api;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.jobs.business.api.events.EventProducer;
+import com.dotcms.jobs.business.api.events.JobCancelRequestEvent;
 import com.dotcms.jobs.business.api.events.JobCanceledEvent;
 import com.dotcms.jobs.business.api.events.JobCancellingEvent;
 import com.dotcms.jobs.business.api.events.JobCompletedEvent;
@@ -14,6 +17,7 @@ import com.dotcms.jobs.business.api.events.JobStartedEvent;
 import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
+import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryPolicyProcessor;
 import com.dotcms.jobs.business.error.RetryStrategy;
@@ -30,11 +34,14 @@ import com.dotcms.jobs.business.queue.JobQueue;
 import com.dotcms.jobs.business.queue.error.JobNotFoundException;
 import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotcms.jobs.business.queue.error.JobQueueException;
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
+import io.vavr.control.Try;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
@@ -170,6 +177,11 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         // Events
         this.realTimeJobMonitor = realTimeJobMonitor;
         this.eventProducer = eventProducer;
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobCancelRequestEvent.class,
+                (EventSubscriber<JobCancelRequestEvent>) this::onCancelRequestJob
+        );
     }
 
     @Override
@@ -304,11 +316,11 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     @CloseDBIfOpened
     @Override
     public JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize)
-            throws JobQueueDataException {
+            throws DotDataException {
         try {
             return jobQueue.getActiveJobs(queueName, page, pageSize);
         } catch (JobQueueDataException e) {
-            throw new JobQueueDataException("Error fetching active jobs", e);
+            throw new DotDataException("Error fetching active jobs", e);
         }
     }
 
@@ -324,45 +336,41 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getActiveJobs(int page, int pageSize)
-            throws JobQueueDataException {
+    public JobPaginatedResult getActiveJobs(int page, int pageSize) throws DotDataException {
         try {
             return jobQueue.getActiveJobs(page, pageSize);
         } catch (JobQueueDataException e) {
-            throw new JobQueueDataException("Error fetching active jobs", e);
+            throw new DotDataException("Error fetching active jobs", e);
         }
     }
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getCompletedJobs(int page, int pageSize)
-            throws JobQueueDataException {
+    public JobPaginatedResult getCompletedJobs(int page, int pageSize) throws DotDataException {
         try {
             return jobQueue.getCompletedJobs(page, pageSize);
         } catch (JobQueueDataException e) {
-            throw new JobQueueDataException("Error fetching completed jobs", e);
+            throw new DotDataException("Error fetching completed jobs", e);
         }
     }
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getCanceledJobs(int page, int pageSize)
-            throws JobQueueDataException {
+    public JobPaginatedResult getCanceledJobs(int page, int pageSize) throws DotDataException {
         try {
             return jobQueue.getCanceledJobs(page, pageSize);
         } catch (JobQueueDataException e) {
-            throw new JobQueueDataException("Error fetching canceled jobs", e);
+            throw new DotDataException("Error fetching canceled jobs", e);
         }
     }
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getFailedJobs(int page, int pageSize)
-            throws JobQueueDataException {
+    public JobPaginatedResult getFailedJobs(int page, int pageSize) throws DotDataException {
         try {
             return jobQueue.getFailedJobs(page, pageSize);
         } catch (JobQueueDataException e) {
-            throw new JobQueueDataException("Error fetching failed jobs", e);
+            throw new DotDataException("Error fetching failed jobs", e);
         }
     }
 
@@ -370,37 +378,60 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     @Override
     public void cancelJob(final String jobId) throws DotDataException {
 
-        final Job job;
-        try {
-            job = jobQueue.getJob(jobId);
-        } catch (JobNotFoundException e) {
-            throw new DoesNotExistException(e);
-        } catch (JobQueueDataException e) {
-            throw new DotDataException("Error fetching job", e);
+        final Job job = getJob(jobId);
+
+        if (job.state() == JobState.PENDING || job.state() == JobState.RUNNING) {
+            handleJobCancelRequest(job);
+        } else {
+            Logger.warn(this, "Job " + job.id() + " is not in a cancellable state. "
+                    + "Current state: " + job.state());
         }
 
-        final Optional<JobProcessor> instance = getInstance(jobId);
-        if (instance.isPresent()) {
-            final var processor = instance.get();
-            if (processor instanceof Cancellable) {
-                try {
-                    Logger.info(this, "Cancelling job " + jobId);
-                    ((Cancellable) processor).cancel(job);
-                    handleJobCancelling(job, processor);
-                } catch (Exception e) {
-                    final var error = new DotDataException("Error cancelling job " + jobId, e);
-                    Logger.error(JobQueueManagerAPIImpl.class, error);
-                    throw error;
+    }
+
+    /**
+     * Handles the cancellation of a job based on the given JobCancelRequestEvent. Retrieves the job
+     * and checks its state. If the job is in a PENDING or RUNNING state, attempts to cancel it by
+     * leveraging the job's associated processor. Logs and throws exceptions if any issues occur
+     * during the cancellation process.
+     *
+     * @param event The event that triggers the job cancellation request.
+     */
+    @VisibleForTesting
+    @WrapInTransaction
+    void onCancelRequestJob(final JobCancelRequestEvent event) {
+
+        try {
+
+            final var job = getJob(event.getJob().id());
+            if (job.state() == JobState.PENDING
+                    || job.state() == JobState.RUNNING
+                    || job.state() == JobState.CANCEL_REQUESTED) {
+
+                final Optional<JobProcessor> instance = getInstance(job.id());
+                if (instance.isPresent()) {
+                    final var processor = instance.get();
+                    if (processor instanceof Cancellable) {
+                        handleJobCancelling(job, processor);
+                    } else {
+                        final var error = new JobCancellationException(
+                                job.id(), "Job is not Cancellable");
+                        Logger.error(JobQueueManagerAPIImpl.class, error);
+                        throw error;
+                    }
+                } else {
+                    // In a cluster, the job may be running on another server
+                    Logger.debug(this,
+                            "Job cancellation requested. No processor found for job " + job.id());
                 }
             } else {
-               final var error = new DotDataException("Job " + jobId + " cannot be canceled");
-               Logger.error(JobQueueManagerAPIImpl.class, error);
-               throw error;
+                Logger.warn(this, "Job " + job.id() + " is not in a cancellable state. "
+                        + "Current state: " + job.state());
             }
-        } else {
-            Logger.error(this, "No processor found for job " + jobId);
-            throw new JobProcessorNotFoundException(job.queueName(), jobId);
+        } catch (DotDataException e) {
+            throw new JobCancellationException(event.getJob().id(), e);
         }
+
     }
 
     @Override
@@ -466,6 +497,24 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     }
 
     /**
+     * Fetches the state of a job from the job queue using the provided job ID.
+     *
+     * @param jobId the unique identifier of the job whose state is to be fetched
+     * @return the current state of the job
+     * @throws DotDataException if there is an error accessing the job state data
+     */
+    @CloseDBIfOpened
+    private JobState getJobState(final String jobId) throws DotDataException {
+        try {
+            return jobQueue.getJobState(jobId);
+        } catch (JobNotFoundException e) {
+            throw new DoesNotExistException(e);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching job state", e);
+        }
+    }
+
+    /**
      * Updates the progress of a job and notifies its watchers.
      *
      * @param job             The job whose progress to update.
@@ -484,7 +533,11 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 // Only update progress if it has changed
                 if (progress > previousProgress) {
 
-                    Job updatedJob = job.withProgress(progress);
+                    // Make sure we have the latest state, the job of the running processor won't
+                    // be updated with changes on the state, like a cancel request.
+                    final var latestState = getJobState(job.id());
+
+                    Job updatedJob = job.withProgress(progress).withState(latestState);
 
                     jobQueue.updateJobProgress(job.id(), updatedJob.progress());
                     eventProducer.getEvent(JobProgressUpdatedEvent.class).fire(
@@ -708,19 +761,14 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                             } catch (DotDataException e) {
                                 throw new DotRuntimeException("Error updating job progress", e);
                             }
-                        }, 0, 1, TimeUnit.SECONDS
+                        }, 0, 2, TimeUnit.SECONDS
                 );
 
                 // Process the job
                 processor.process(runningJob);
 
-                if (jobQueue.hasJobBeenInState(runningJob.id(), JobState.CANCELLING)) {
-                    handleJobCancellation(runningJob, processor);
-                } else {
-                    handleJobCompletion(runningJob, processor);
-                }
-                //Free up resources
-                removeInstanceRef(runningJob.id());
+                // The job finished processing
+                handleJobCompletion(runningJob, processor);
             } catch (Exception e) {
 
                 Logger.error(this,
@@ -729,6 +777,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 handleJobFailure(
                         runningJob, processor, e, "Job execution"
                 );
+            } finally {
+                //Free up resources
+                removeInstanceRef(runningJob.id());
             }
         } else {
 
@@ -808,54 +859,80 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         final float progress = getJobProgress(job);
 
-        final Job completedJob = job.markAsCompleted(jobResult).withProgress(progress);
-        updateJobStatus(completedJob);
-        eventProducer.getEvent(JobCompletedEvent.class).fire(
-                new JobCompletedEvent(completedJob, LocalDateTime.now())
-        );
-    }
-
-    /**
-     * Handles the cancellation of a job.
-     *
-     * @param job       The job that was canceled.
-     * @param processor The processor that handled the job.
-     */
-    @WrapInTransaction
-    private void handleJobCancelling(final Job job, final JobProcessor processor)
-            throws DotDataException {
-
-        Job cancelJob = job.withState(JobState.CANCELLING);
-        updateJobStatus(cancelJob);
-        eventProducer.getEvent(JobCancellingEvent.class).fire(
-                new JobCancellingEvent(cancelJob, LocalDateTime.now())
-        );
-    }
-
-    /**
-     * Handles the cancellation of a job.
-     *
-     * @param job       The job that was canceled.
-     * @param processor The processor that handled the job.
-     */
-    @WrapInTransaction
-    private void handleJobCancellation(final Job job, final JobProcessor processor)
-            throws DotDataException {
-
-        final var resultMetadata = processor.getResultMetadata(job);
-
-        JobResult jobResult = null;
-        if (resultMetadata != null && !resultMetadata.isEmpty()) {
-            jobResult = JobResult.builder().metadata(resultMetadata).build();
+        try {
+            if (jobQueue.hasJobBeenInState(job.id(), JobState.CANCEL_REQUESTED, JobState.CANCELLING)) {
+                Job canceledJob = job.markAsCanceled(jobResult).withProgress(progress);
+                updateJobStatus(canceledJob);
+                eventProducer.getEvent(JobCanceledEvent.class).fire(
+                        new JobCanceledEvent(canceledJob, LocalDateTime.now())
+                );
+            } else {
+                final Job completedJob = job.markAsCompleted(jobResult).withProgress(progress);
+                updateJobStatus(completedJob);
+                eventProducer.getEvent(JobCompletedEvent.class).fire(
+                        new JobCompletedEvent(completedJob, LocalDateTime.now())
+                );
+            }
+        } catch (JobQueueDataException e) {
+            final var errorMessage = "Error updating job status";
+            Logger.error(this, errorMessage, e);
+            throw new DotDataException(errorMessage, e);
         }
+    }
 
-        final float progress = getJobProgress(job);
+    /**
+     * Handles the request to cancel a job.
+     *
+     * @param job The job to cancel.
+     */
+    @WrapInTransaction
+    private void handleJobCancelRequest(final Job job) throws DotDataException {
 
-        Job canceledJob = job.markAsCanceled(jobResult).withProgress(progress);
-        updateJobStatus(canceledJob);
-        eventProducer.getEvent(JobCanceledEvent.class).fire(
-                new JobCanceledEvent(canceledJob, LocalDateTime.now())
+        Job cancelJob = job.withState(JobState.CANCEL_REQUESTED);
+        updateJobStatus(cancelJob);
+
+        // Prepare the cancel request events
+        final JobCancelRequestEvent cancelRequestEvent = new JobCancelRequestEvent(
+                cancelJob, LocalDateTime.now()
         );
+
+        // LOCAL event
+        APILocator.getLocalSystemEventsAPI().notify(cancelRequestEvent);
+
+        // CLUSTER WIDE event
+        Try.run(() -> APILocator.getSystemEventsAPI()
+                        .push(SystemEventType.CLUSTER_WIDE_EVENT, new Payload(cancelRequestEvent)))
+                .onFailure(e -> Logger.error(JobQueueManagerAPIImpl.this, e.getMessage()));
+
+        // CDI event
+        eventProducer.getEvent(JobCancelRequestEvent.class).fire(
+                cancelRequestEvent
+        );
+    }
+
+    /**
+     * Handles the cancellation of a job.
+     *
+     * @param job       The job that was canceled.
+     * @param processor The processor that handled the job.
+     */
+    @WrapInTransaction
+    private void handleJobCancelling(final Job job, final JobProcessor processor) {
+
+        try {
+            Logger.info(this, "Cancelling job " + job.id());
+            ((Cancellable) processor).cancel(job);
+
+            Job cancelJob = job.withState(JobState.CANCELLING);
+            updateJobStatus(cancelJob);
+            eventProducer.getEvent(JobCancellingEvent.class).fire(
+                    new JobCancellingEvent(cancelJob, LocalDateTime.now())
+            );
+        } catch (DotDataException e) {
+            final var error = new JobCancellationException(job.id(), e);
+            Logger.error(this, error);
+            throw error;
+        }
     }
 
     /**

@@ -2,7 +2,7 @@ import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
 import { ElementRef } from '@angular/core';
 
-import { InlineEditService } from './inline-edit.service';
+import { INLINE_CONTENT_STYLES, InlineEditService } from './inline-edit.service';
 
 import { InlineEditingContentletDataset } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 
@@ -75,6 +75,22 @@ describe('InlineEditService', () => {
         const isInMultiplePages = spectator.service['isInMultiplePages'](dataset);
 
         expect(isInMultiplePages).toBe(true);
+    });
+
+    it('should set the right scripts and styles', () => {
+        const iframe = document.createElement('iframe');
+        const iframeElement = new ElementRef<HTMLIFrameElement>(iframe);
+        document.body.appendChild(iframe);
+        spectator.service.injectInlineEdit(iframeElement);
+
+        const wysiwygScript = iframe.contentDocument.querySelector(
+            'script[src="/html/js/tinymce/js/tinymce/tinymce.min.js"]'
+        );
+
+        const style = iframe.contentDocument.querySelector('style');
+
+        expect(wysiwygScript).toBeTruthy();
+        expect(style.innerHTML).toBe(INLINE_CONTENT_STYLES);
     });
 
     it('should set target inline MCE dataset', () => {

@@ -40,16 +40,10 @@ import java.util.Optional;
  */
 public class AnalyticsAPIImpl implements AnalyticsAPI {
 
-    private final String analyticsIdpUrl;
     private final boolean useDummyToken;
 
-    public AnalyticsAPIImpl(final String analyticsIdpUrl) {
-        this.analyticsIdpUrl = analyticsIdpUrl;
-        useDummyToken = Config.getBooleanProperty(ANALYTICS_USE_DUMMY_TOKEN_KEY, false);
-    }
-
     public AnalyticsAPIImpl() {
-        this(Config.getStringProperty(ANALYTICS_IDP_URL_KEY, null));
+        useDummyToken = Config.getBooleanProperty(ANALYTICS_USE_DUMMY_TOKEN_KEY, false);
     }
 
     /**
@@ -125,6 +119,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             throw new UnrecoverableAnalyticsException(e.getMessage(), e);
         }
 
+        final String analyticsIdpUrl = Config.getStringProperty(ANALYTICS_IDP_URL_KEY, null);
         try {
             final CircuitBreakerUrl.Response<AccessToken> response = requestAccessToken(analyticsApp);
 
@@ -241,7 +236,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             throw new AnalyticsException(String.format(
                 "ACCESS_TOKEN could not be fetched for clientId %s from %s",
                 analyticsApp.getAnalyticsProperties().clientId(),
-                analyticsIdpUrl));
+                Config.getStringProperty(ANALYTICS_IDP_URL_KEY, null)));
         }
 
         final TokenStatus tokenStatus = AnalyticsHelper.get().resolveTokenStatus(accessToken);
@@ -256,7 +251,10 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * Validates by evaluating that analytics IDP url is not empty, otherwise throw an exception.
      */
     private void validateAnalytics() {
-        Preconditions.checkNotEmpty(analyticsIdpUrl, DotStateException.class, "Analytics IDP url is missing");
+        Preconditions.checkNotEmpty(
+                Config.getStringProperty(ANALYTICS_IDP_URL_KEY, null),
+                DotStateException.class,
+                "Analytics IDP url is missing");
     }
 
     /**
@@ -288,7 +286,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             String.format(
                 "Error requesting ACCESS_TOKEN with clientId %s from IDP server %s (response: %s)",
                 analyticsApp.getAnalyticsProperties().clientId(),
-                analyticsIdpUrl,
+                Config.getStringProperty(ANALYTICS_IDP_URL_KEY, null),
                 response.getStatusCode()));
     }
 
@@ -312,9 +310,9 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     private CircuitBreakerUrl.Response<AccessToken> requestAccessToken(final AnalyticsApp analyticsApp) {
         final CircuitBreakerUrl.Response<AccessToken> response = CircuitBreakerUrl.builder()
             .setMethod(CircuitBreakerUrl.Method.POST)
-            .setUrl(analyticsIdpUrl)
-            .setTimeout(ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT)
-            .setTryAgainAttempts(ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS)
+            .setUrl(Config.getStringProperty(ANALYTICS_IDP_URL_KEY, null))
+            .setTimeout(Config.getLongProperty(ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT_KEY, 4000L))
+            .setTryAgainAttempts(Config.getIntProperty(ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS_KEY, 3))
             .setHeaders(accessTokenHeaders())
             .setRawData(prepareRequestData(analyticsApp))
             .setThrowWhenNot2xx(false)
@@ -365,8 +363,8 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
         final CircuitBreakerUrl.Response<AnalyticsKey> response = CircuitBreakerUrl.builder()
             .setMethod(CircuitBreakerUrl.Method.GET)
             .setUrl(analyticsApp.getAnalyticsProperties().analyticsConfigUrl())
-            .setTimeout(ANALYTICS_KEY_RENEW_TIMEOUT)
-            .setTryAgainAttempts(ANALYTICS_KEY_RENEW_ATTEMPTS)
+            .setTimeout(Config.getLongProperty(ANALYTICS_KEY_RENEW_TIMEOUT_KEY, 4000L))
+            .setTryAgainAttempts(Config.getIntProperty(ANALYTICS_KEY_RENEW_ATTEMPTS_KEY, 3))
             .setHeaders(analyticsKeyHeaders(accessToken))
             .setThrowWhenNot2xx(false)
             .build()

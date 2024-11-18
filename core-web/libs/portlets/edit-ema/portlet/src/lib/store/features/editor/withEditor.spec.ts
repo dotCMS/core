@@ -1,7 +1,7 @@
 import { describe, expect } from '@jest/globals';
 import { SpyObject } from '@ngneat/spectator';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { signalStore, withState, patchState } from '@ngrx/signals';
+import { patchState, signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
@@ -68,7 +68,11 @@ const initialState: UVEState = {
     pageIsLocked: true
 };
 
-export const uveStoreMock = signalStore(withState<UVEState>(initialState), withEditor());
+export const uveStoreMock = signalStore(
+    { protectedState: false },
+    withState<UVEState>(initialState),
+    withEditor()
+);
 
 describe('withEditor', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
@@ -618,6 +622,7 @@ describe('withEditor', () => {
                 expect(store.$editorProps()).toEqual({
                     showDialogs: true,
                     showEditorContent: true,
+                    showBlockEditorSidebar: true,
                     iframe: {
                         opacity: '0.5',
                         pointerEvents: 'auto',

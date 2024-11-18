@@ -1,0 +1,52 @@
+Name,Section,Type,Steps (Instructions),Steps (Expected Results),Preconditions,,,Assigned to: ,Status,Issue link
+Check if Apps portlet is available with enterprise license,Apps,Functional," 1: Open dotCMS with an enterprise license
+ 2: Verify Apps portlet is available",Apps portlet is available with enterprise license,Enterprise license is active,,,,,
+Verify clear message for community edition users,Apps,Functional," 1: Open dotCMS in community edition
+ 2: Verify a clear and consistent message is shown for community users",Clear and consistent message is shown for community edition users (this feature should be just for EE users) ,Community edition is active,,,,,
+Check if search component filters apps by title or name,Apps,Functional," 1: Open Apps portlet
+ 2: Use the search component to filter apps by title or name",Search component filters apps successfully by title or name,Apps portlet is open,,,,,
+"Verify link to ""how to create apps"" redirects to dotCMS docs",Apps,Functional," 1: Locate the link to ""how to create apps""
+ 2: Click the link
+ 3: Verify redirection to dotCMS docs page",Link redirects to the dotCMS documentation page,Apps portlet is open,,,,,
+Check ability to import configuration by requesting file and password,Apps,Functional," 1: Open Apps portlet
+ 2: Choose import configuration
+ 3: Upload a file and enter a password",System requests file and password for importing configuration,Configuration file and password are available,,,,,
+Verify importing configuration works,Apps,Functional," 1: Upload a configuration file
+ 2: Verify successful import of the configuration",Configuration is imported successfully,Configuration file is available for import,,,,,
+Verify bulk export of all configurations,Apps,Functional," 1: Select bulk export option
+ 2: Verify all configurations are exported",All configurations are exported successfully,Configurations are available for bulk export,,,,,
+Verify password encryption when exporting configuration,Apps,Functional," 1: Attempt to export a configuration
+ 2: Verify the system asks for a password for encryption",System requests a password for encryption before exporting,Configurations are available for export,,,,,
+Ensure listing of all supported apps,Apps,Functional," 1: Open Apps portlet
+ 2: Verify all supported apps are listed",All supported apps are listed,Supported apps are known,,,,,
+Verify redirection to configuration page when an app is selected,Apps,Functional," 1: Select an app
+ 2: Verify redirection to the app configuration page",System redirects to configuration page of the selected app,Apps portlet is open,,,,,
+Check search filter on configuration page,Apps,Functional," 1: Open the configuration page for an app
+ 2: Use the search filter to filter configurations",Search filter works on the configuration page,App configuration page is open,,,,,
+Ensure listing of all available sites when adding new configuration,Apps,Functional," 1: Add a new configuration
+ 2: Verify that all available sites are listed",All available sites are listed when adding new configuration,App configuration page is open,,,,,
+Verify ability to add configuration by filling required fields after selecting a site,Apps,Functional," 1: Select a site from the list
+ 2: Add a configuration by filling in required fields",Configuration is added successfully after selecting a site and filling required fields,Sites are available for configuration,,,,,
+Ensure configuration can be saved,Apps,Functional," 1: After adding a configuration, click save
+ 2: Verify the configuration is saved successfully",Configuration is saved successfully,Configuration page is open and sites are available,,,,,
+Check if every app displays the proper documentation,Apps,Functional," 1: Open the documentation for an app
+ 2: Verify proper documentation is displayed",App documentation is displayed correctly,Apps portlet is open,,,,,
+Verify ability to download configuration file after adding it,Apps,Functional," 1: After adding a configuration, click download
+ 2: Verify the configuration file is downloaded",Configuration file is downloaded successfully,Configuration is added successfully,,,,,
+Ensure password encryption when downloading configuration,Apps,Functional," 1: Attempt to download a configuration file
+ 2: Verify password encryption is required",Password encryption is required when downloading configuration,Configuration file is available for download,,,,,
+Verify ability to edit configuration after adding it,Apps,Functional," 1: Select a configuration
+ 2: Edit the configuration and save changes",Configuration is edited successfully,Configuration is available for editing,,,,,
+Ensure specific configuration can be deleted,Apps,Functional," 1: Select a specific configuration
+ 2: Delete the configuration",Configuration is deleted successfully,Configuration is available for deletion,,,,,
+Ensure bulk deletion of configurations,Apps,Functional," 1: Select bulk delete option
+ 2: Delete all configurations",All configurations are deleted successfully,Multiple configurations are available,,,,,
+Validate confirmation request when deleting configuration,Apps,Functional," 1: Attempt to delete a configuration
+ 2: Verify a confirmation request is displayed",Confirmation request is displayed when attempting to delete configuration,Configuration is available for deletion,,,,,
+Verify exporting configuration for a specific app,Apps,Functional," 1: Select a specific app
+ 2: Export its configuration",Configuration for the selected app is exported successfully,Specific app has configuration,,,,,
+Validate app key is shown when an app is selected,Apps,Functional," 1: Select a specific app
+ 2: Verify the app key is displayed",App key is displayed when app is selected,Specific app is selected,,,,,
+Check if app key can be copied to clipboard by clicking on it,Apps,Functional," 1: Select a specific app
+ 2: Click on the app key
+ 3: Verify the key is copied to clipboard",App key is copied to clipboard when clicked,Specific app is selected,,,,,
