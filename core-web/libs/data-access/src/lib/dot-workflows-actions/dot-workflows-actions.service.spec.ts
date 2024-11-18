@@ -1,7 +1,11 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
 import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
-import { mockWorkflows, mockWorkflowsActions } from '@dotcms/utils-testing';
+import {
+    MOCK_SINGLE_WORKFLOW_ACTIONS,
+    mockWorkflows,
+    mockWorkflowsActions
+} from '@dotcms/utils-testing';
 
 import { DotWorkflowsActionsService } from './dot-workflows-actions.service';
 
@@ -38,12 +42,12 @@ describe('DotWorkflowsActionsService', () => {
 
     it('should get default actions by content type', (done) => {
         const contentTypeId = '123';
-        const mockResponse = mockWorkflowsActions.map((action) => ({
-            action
-        }));
+        const mockResponse = {
+            entity: MOCK_SINGLE_WORKFLOW_ACTIONS
+        };
 
         spectator.service.getDefaultActions(contentTypeId).subscribe((res) => {
-            expect(res).toEqual(mockWorkflowsActions);
+            expect(res).toEqual(MOCK_SINGLE_WORKFLOW_ACTIONS);
             done();
         });
 
@@ -52,9 +56,7 @@ describe('DotWorkflowsActionsService', () => {
                 `/api/v1/workflow/initialactions/contenttype/${contentTypeId}`,
                 HttpMethod.GET
             )
-            .flush({
-                entity: mockResponse
-            });
+            .flush(mockResponse);
     });
 
     it('should get workflow actions by content type name', (done) => {
