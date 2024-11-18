@@ -3,6 +3,7 @@ package com.dotcms.rest;
 import static com.dotmarketing.util.NumberUtil.toInt;
 import static com.dotmarketing.util.NumberUtil.toLong;
 
+import com.dotcms.api.web.HttpServletRequestImpersonator;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
@@ -1463,7 +1464,8 @@ public class ContentResource {
         }
         if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
                 .equalsIgnoreCase(render)) {
-            jsonObject.put("parsedCode", WidgetResource.parseWidget(request, response, contentlet));
+            final HttpServletRequestImpersonator impersonator = HttpServletRequestImpersonator.newInstance();
+            jsonObject.put("parsedCode", WidgetResource.parseWidget(impersonator.request(), response, contentlet));
         }
 
         if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
