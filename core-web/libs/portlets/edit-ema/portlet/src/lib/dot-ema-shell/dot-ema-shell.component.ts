@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Component, effect, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
@@ -9,7 +9,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { skip, takeUntil } from 'rxjs/operators';
+import { skip } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -26,7 +26,6 @@ import { SiteService } from '@dotcms/dotcms-js';
 import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotInfoPageComponent, DotNotLicenseComponent, SafeUrlPipe } from '@dotcms/ui';
-import { isEqual } from '@dotcms/utils/lib/shared/lodash/functions';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
@@ -88,6 +87,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly #siteService = inject(SiteService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #confirmationService = inject(ConfirmationService);
+    readonly #location = inject(Location);
 
     protected readonly $shellProps = this.uveStore.$shellProps;
 
@@ -102,46 +102,26 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     });
 
     ngOnInit(): void {
-        this.#activatedRoute.queryParams
-            .pipe(takeUntil(this.#destroy$))
-            .subscribe((queryParams) => {
-                const { data } = this.#activatedRoute.snapshot.data;
+        const { queryParams, data } = this.#activatedRoute.snapshot;
+        const { data: dotData } = data;
+        const allowedDevURLs = dotData?.options?.allowedDevURLs;
 
-                // If we have a clientHost we need to check if it's in the whitelist
-                if (queryParams.clientHost) {
-                    const canAccessClientHost = this.checkClientHostAccess(
-                        queryParams.clientHost,
-                        data?.options?.allowedDevURLs
-                    ); // If we don't have a whitelist we can't access the clientHost;
+        // This can be a fuction that returns the queryParams to use
+        const queryParamsClone = { ...queryParams } as DotPageApiParams;
+        const validHost = this.checkClientHostAccess(queryParamsClone?.clientHost, allowedDevURLs);
+        if (!validHost) {
+            delete queryParamsClone?.clientHost;
+            this.#location.replaceState(
+                this.#router.createUrlTree([], { queryParams: queryParamsClone }).toString()
+            );
+        }
 
-                    // If we can't access the clientHost we need to navigate to the default page
-                    if (!canAccessClientHost) {
-                        this.navigate({
-                            ...queryParams,
-                            clientHost: null // Clean the queryParam so the editor behaves as expected
-                        });
-
-                        return; // We need to return here, to avoid the editor to load with a non desirable clientHost
-                    }
-                }
-
-                const currentParams = {
-                    ...(queryParams as DotPageApiParams),
-                    clientHost: queryParams.clientHost ?? data?.url
-                };
-
-                // We don't need to load if the params are the same
-                if (isEqual(this.uveStore.params(), currentParams)) {
-                    return;
-                }
-
-                this.uveStore.init(currentParams);
-            });
+        this.uveStore.init(queryParamsClone);
 
         // We need to skip one because it's the initial value
-        this.#siteService.switchSite$.pipe(skip(1)).subscribe(() => {
-            this.#router.navigate(['/pages']);
-        });
+        this.#siteService.switchSite$
+            .pipe(skip(1))
+            .subscribe(() => this.#router.navigate(['/pages']));
     }
 
     ngOnDestroy(): void {
