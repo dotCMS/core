@@ -55,6 +55,7 @@ const initialState: FileFieldState = {
 };
 
 export const FileFieldStore = signalStore(
+    { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState(initialState),
     withComputed(({ fileStatus }) => ({
         isInit: computed(() => {

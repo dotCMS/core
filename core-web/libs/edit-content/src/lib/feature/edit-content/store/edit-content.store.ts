@@ -1,4 +1,4 @@
-import { tapResponse } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import {
     patchState,
     signalStore,
@@ -18,18 +18,18 @@ import { MessageService } from 'primeng/api';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotCMSContentlet } from '@dotcms/angular';
 import {
     DotContentTypeService,
     DotFireActionOptions,
     DotHttpErrorManagerService,
+    DotMessageService,
     DotRenderMode,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService,
-    DotMessageService
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
+    DotCMSContentlet,
     DotCMSContentType,
     DotCMSWorkflowAction,
     FeaturedFlags
@@ -65,7 +65,7 @@ const initialState: EditContentState = {
  * related to content editing and workflow actions.
  */
 export const DotEditContentStore = signalStore(
-    withState(initialState),
+    withState<EditContentState>(initialState),
     withComputed((store) => ({
         /**
          * Computed property that determines if the new content editor feature is enabled.
@@ -77,9 +77,13 @@ export const DotEditContentStore = signalStore(
          */
         isEnabledNewContentEditor: computed(() => {
             const contentType = store.contentType();
-            const metadata = contentType?.metadata;
+            if (!contentType?.metadata) {
+                return false;
+            }
 
-            return metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true;
+            return (
+                contentType.metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true
+            );
         }),
 
         /**
