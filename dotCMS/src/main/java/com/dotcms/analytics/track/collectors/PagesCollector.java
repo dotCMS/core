@@ -47,8 +47,7 @@ public class PagesCollector implements Collector {
     public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
                                         final CollectorPayloadBean collectorPayloadBean) {
 
-        final String uri = Objects.isNull(collectorPayloadBean.get("url"))?
-                (String)collectorContextMap.get("uri"):(String)collectorPayloadBean.get("url");
+        final String uri = (String)collectorContextMap.get("uri");
         final Host site = (Host) collectorContextMap.get("currentHost");
         final Long languageId = (Long)collectorContextMap.get("langId");
         final String language = (String)collectorContextMap.get("lang");

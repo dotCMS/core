@@ -16,6 +16,7 @@ public class CharacterCollectorContextMap implements CollectorContextMap {
     private final Map<String, Object> contextMap = new HashMap<>();
     private final RequestMatcher requestMatcher;
     private final Map<String, Serializable> characterMap;
+    private final Map<String, Object> customValuesMap;
 
     public CharacterCollectorContextMap(final Character character,
                                         final RequestMatcher requestMatcher,
@@ -24,12 +25,28 @@ public class CharacterCollectorContextMap implements CollectorContextMap {
         this.characterMap = character.getMap();
         this.requestMatcher = requestMatcher;
         this.contextMap.putAll(contextMap);
+        this.customValuesMap = Map.of();
+    }
+
+    public CharacterCollectorContextMap(final Character character,
+                                        final RequestMatcher requestMatcher,
+                                        final Map<String, Object> contextMap,
+                                        Map<String, Object> customValuesMap) {
+
+        this.characterMap = character.getMap();
+        this.requestMatcher = requestMatcher;
+        this.contextMap.putAll(contextMap);
+        this.customValuesMap = customValuesMap;
     }
 
 
 
     @Override
     public Object get(final String key) {
+
+        if (this.customValuesMap.containsKey(key)) {
+            return this.customValuesMap.get(key);
+        }
 
         if (this.characterMap.containsKey(key)) {
             return this.characterMap.get(key);

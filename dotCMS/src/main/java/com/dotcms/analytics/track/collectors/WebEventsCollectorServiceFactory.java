@@ -102,15 +102,16 @@ public class WebEventsCollectorServiceFactory {
         public void fireCollectorsAndEmitEvent(final HttpServletRequest request,
                                                 final HttpServletResponse response,
                                                 final RequestMatcher requestMatcher,
-                                               final Map<String, Serializable> basePayloadMap) {
+                                               final Map<String, Serializable> basePayloadMap,
+                                               final Map<String, Object> baseContextMap) {
 
             final Character character = WebAPILocator.getCharacterWebAPI().getOrCreateCharacter(request, response);
             final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
 
             final CollectorPayloadBean base = UtilMethods.isSet(basePayloadMap)?
-                    new ConcurrentCollectorPayloadBean(basePayloadMap): new ConcurrentCollectorPayloadBean();
+                    new ConcurrentCollectorPayloadBeanWithBaseMap(basePayloadMap): new ConcurrentCollectorPayloadBean();
             final CollectorContextMap syncCollectorContextMap =
-                    new RequestCharacterCollectorContextMap(request, character, requestMatcher);
+                    new RequestCharacterCollectorContextMap(request, character, requestMatcher, baseContextMap);
 
             Logger.debug(this, ()-> "Running sync collectors");
 
@@ -122,7 +123,7 @@ public class WebEventsCollectorServiceFactory {
             // if there is anything to run async
             final PageMode pageMode = PageMode.get(request);
             final CollectorContextMap collectorContextMap = new CharacterCollectorContextMap(character, requestMatcher,
-                    getCollectorContextMap(request, pageMode, site));
+                    getCollectorContextMap(request, pageMode, site), baseContextMap);
 
             try {
                 this.submitter.logEvent(
@@ -147,7 +148,7 @@ public class WebEventsCollectorServiceFactory {
                                                 final HttpServletResponse response,
                                                 final RequestMatcher requestMatcher) {
 
-            this.fireCollectorsAndEmitEvent(request, response, requestMatcher, Map.of());
+            this.fireCollectorsAndEmitEvent(request, response, requestMatcher, Map.of(), Map.of());
         }
 
         private static Map<String, Object> getCollectorContextMap(final HttpServletRequest request,

@@ -51,7 +51,8 @@ public class RuleAnalyticsFireUserEventActionletTest extends UnitTestBase {
 
             @Override
             public void fireCollectorsAndEmitEvent(HttpServletRequest request, HttpServletResponse response,
-                                                   RequestMatcher requestMatcher, Map<String, Serializable> userEventPayload) {
+                                                   RequestMatcher requestMatcher, Map<String, Serializable> userEventPayload,
+                                                   Map<String, Object> baseContext) {
 
                 Assert.assertNotNull(userEventPayload);
                 Assert.assertEquals("page", userEventPayload.get("event_type"));

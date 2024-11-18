@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -242,8 +243,20 @@ public class ContentAnalyticsResource {
         DotPreconditions.checkNotNull(userEventPayload.get("event_type"), IllegalArgumentException.class, "The 'event_type' field is required");
         Logger.debug(this,  ()->"Creating an user custom event with the payload: " + userEventPayload);
         request.setAttribute("requestId", Objects.nonNull(request.getAttribute("requestId")) ? request.getAttribute("requestId") : UUIDUtil.uuid());
-        WebEventsCollectorServiceFactory.getInstance().getWebEventsCollectorService().fireCollectorsAndEmitEvent(request, response, loadRequestMatcher(userEventPayload), userEventPayload);
+        WebEventsCollectorServiceFactory.getInstance().getWebEventsCollectorService().fireCollectorsAndEmitEvent(request, response,
+                loadRequestMatcher(userEventPayload), userEventPayload, fromPayload(userEventPayload));
         return new ResponseEntityStringView("User event created successfully");
+    }
+
+    private Map<String, Object> fromPayload(final Map<String, Serializable> userEventPayload) {
+        final Map<String, Object> baseContextMap = new HashMap<>();
+
+        if (userEventPayload.containsKey("url")) {
+
+            baseContextMap.put("uri", userEventPayload.get("url"));
+        }
+
+        return baseContextMap;
     }
 
     private RequestMatcher loadRequestMatcher(final Map<String, Serializable> userEventPayload) {
