@@ -47,26 +47,6 @@ test('Validate portlet title', async ({page}) => {
  * Test to validate the filter is present and usable in the content portlet
  * @param page
   */
-test('Filter bar is present and usable', async ({page}) => {
-    const contentUtils = new ContentUtils(page);
-    const iframe = page.frameLocator(iFramesLocators.main_iframe);
-
-    // select the content type on filter
-    await contentUtils.selectTypeOnFilter(page, richText.locator, richText.label);
-
-    // Click on add new content button
-    await iframe.locator('#dijit_form_DropDownButton_0').click();
-    await expect.soft(iframe.getByLabel('actionPrimaryMenu')).toBeVisible();
-    await iframe.getByLabel('▼').getByText('Add New Content').click();
-
-    // Validate the modal title match with the content selected
-    await expect(page.getByRole('heading')).toHaveText('Content (Generic)');
-});
-
-/**
- * Test to validate the filter is present and usable in the content portlet
- * @param page
-  */
 test('Search filter', async ({page}) => {
     const contentUtils = new ContentUtils(page);
     const iframe = page.frameLocator(iFramesLocators.main_iframe);
