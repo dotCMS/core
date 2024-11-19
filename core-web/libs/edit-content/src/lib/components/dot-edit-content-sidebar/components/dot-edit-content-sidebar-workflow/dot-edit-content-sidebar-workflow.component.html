@@ -1,8 +1,9 @@
 @let scheme = $workflow().scheme;
 @let task = $workflow().task;
-@let firstStep = $workflow().firstStep;
+
 @let isLoading = $isLoading();
 @let noWorkflowSelectedYet = $noWorkflowSelectedYet();
+@let currentStep = $workflow().step;
 
 <dl class="workflow-list">
     <dt class="workflow-column__title" id="workflow-title">{{ 'Workflow' | dm }}</dt>
@@ -44,7 +45,7 @@
             @if (isLoading) {
                 <p-skeleton />
             } @else {
-                {{ firstStep?.name }}
+                {{ currentStep?.name }}
             }
         </dd>
 

@@ -155,15 +155,25 @@ export function withWorkflow() {
             ),
 
             /**
-             * Computed property that retrieves the first step of the current workflow scheme.
+             * Computed property that retrieves the current step of the workflow.
+             * For new content, returns the first step of the selected scheme.
+             * For existing content, returns the current step from the workflow status.
              *
-             * @returns {WorkflowStep} The first step of the current workflow scheme.
+             * @returns {WorkflowStep} The current workflow step
              */
-            getFirstStep: computed(() => {
-                const schemes = store.schemes();
-                const currentSchemeId = store.currentSchemeId();
+            getCurrentStep: computed(() => {
+                const contentlet = store.contentlet();
 
-                return schemes[currentSchemeId]?.firstStep;
+                if (!contentlet?.inode) {
+                    // New content - get first step of selected scheme
+                    const schemes = store.schemes();
+                    const currentSchemeId = store.currentSchemeId();
+
+                    return schemes[currentSchemeId]?.firstStep;
+                }
+
+                // Existing content - get current step from workflow status
+                return store.currentStep();
             })
         })),
         withMethods(
