@@ -507,62 +507,70 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         final Contentlet contentCCompleteANdPublish = setFieldsAndPublishBothAsBlockEditor(contentC, relationshipField,
                 storyBlockField, contentB, contentA);
 
-        final HttpServletRequest request  = mock(HttpServletRequest.class);
-        when(request.getAttribute(WebKeys.HTMLPAGE_DEPTH)).thenReturn(String.valueOf(depth));
-        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        final HttpServletRequest oldThreadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse oldThreadResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
 
-        final HttpServletResponse response  = mock(HttpServletResponse.class);
-        HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
+        try {
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getAttribute(WebKeys.HTMLPAGE_DEPTH)).thenReturn(String.valueOf(depth));
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
-        /*Contentlet contentAFromAPI = APILocator.getContentletAPI()
-                .find(contentACompleteANdPublish.getInode(), APILocator.systemUser(), false);
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
 
-        Map<String, Object> blockEditorMap = JsonUtil.getJsonFromString(contentAFromAPI.getStringProperty(storyBlockField.variable()));
-        List<Map<String, Object>> blockValue = (List<Map<String, Object>>) blockEditorMap.get("content");
+            Contentlet contentAFromAPI = APILocator.getContentletAPI()
+                    .find(contentACompleteANdPublish.getInode(), APILocator.systemUser(), false);
 
-        assertEquals(3, blockValue.size());
+            Map<String, Object> blockEditorMap = JsonUtil.getJsonFromString(contentAFromAPI.getStringProperty(storyBlockField.variable()));
+            List<Map<String, Object>> blockValue = (List<Map<String, Object>>) blockEditorMap.get("content");
 
-        for (int i = 0; i < blockValue.size(); i++) {
+            assertEquals(3, blockValue.size());
 
-            if (blockValue.get(i).get("type").equals("dotContent")) {
-                Map<String, Object> blockEditorItem = (Map<String, Object>)
-                        ((Map<String, Object>) blockValue.get(i).get("attrs")).get("data");
+            for (int i = 0; i < blockValue.size(); i++) {
 
-                assertEquals(i == 0 ? contentB.getIdentifier() : contentC.getIdentifier(), blockEditorItem.get("identifier"));
+                if (blockValue.get(i).get("type").equals("dotContent")) {
+                    Map<String, Object> blockEditorItem = (Map<String, Object>)
+                            ((Map<String, Object>) blockValue.get(i).get("attrs")).get("data");
 
-                List<Object> relatedContent = (List<Object>) blockEditorItem.get(relationshipField.variable());
-                assertEquals(1, relatedContent.size());
+                    assertEquals(i == 0 ? contentB.getIdentifier() : contentC.getIdentifier(), blockEditorItem.get("identifier"));
 
-                if (depth == 0) {
-                    assertEquals( i == 0 ? contentA.getIdentifier() : contentB.getIdentifier(),
-                            relatedContent.get(0).toString());
-                } else if (depth == 1){
-                    assertEquals(  i == 0 ? contentA.getIdentifier() : contentB.getIdentifier(),
-                            ((Map<String, Object>) relatedContent.get(0)).get("identifier"));
+                    List<Object> relatedContent = (List<Object>) blockEditorItem.get(relationshipField.variable());
+                    assertEquals(1, relatedContent.size());
 
-                    assertNull( ((Map<String, Object>) relatedContent.get(0)).get(relationshipField.variable()));
-                } else if (depth > 1) {
-                    assertEquals(i == 0 ? contentA.getIdentifier() : contentB.getIdentifier(),
-                            ((Map<String, Object>) relatedContent.get(0)).get("identifier"));
+                    if (depth == 0) {
+                        assertEquals( i == 0 ? contentA.getIdentifier() : contentB.getIdentifier(),
+                                relatedContent.get(0).toString());
+                    } else if (depth == 1){
+                        assertEquals(  i == 0 ? contentA.getIdentifier() : contentB.getIdentifier(),
+                                ((Map<String, Object>) relatedContent.get(0)).get("identifier"));
 
-                    final List<Object> secondLevelRelatedContents = (List<Object>)
-                            ((Map<String, Object>) relatedContent.get(0)).get(relationshipField.variable());
+                        assertNull( ((Map<String, Object>) relatedContent.get(0)).get(relationshipField.variable()));
+                    } else if (depth > 1) {
+                        assertEquals(i == 0 ? contentA.getIdentifier() : contentB.getIdentifier(),
+                                ((Map<String, Object>) relatedContent.get(0)).get("identifier"));
 
-                    assertEquals(1, secondLevelRelatedContents.size());
+                        final List<Object> secondLevelRelatedContents = (List<Object>)
+                                ((Map<String, Object>) relatedContent.get(0)).get(relationshipField.variable());
 
-                    if (depth == 2) {
-                        assertEquals(i == 0 ? contentC.getIdentifier() : contentA.getIdentifier(),
-                                secondLevelRelatedContents.get(0).toString());
-                    } else {
-                       final  Map<String, Object> secondLevelRelatedContent = (Map<String, Object>) secondLevelRelatedContents.get(0);
-                        assertEquals(i == 0 ? contentC.getIdentifier() : contentA.getIdentifier(),
-                                secondLevelRelatedContent.get("identifier"));
+                        assertEquals(1, secondLevelRelatedContents.size());
 
-                        assertNull(secondLevelRelatedContent.get(relationshipField.variable()));
+                        if (depth == 2) {
+                            assertEquals(i == 0 ? contentC.getIdentifier() : contentA.getIdentifier(),
+                                    secondLevelRelatedContents.get(0).toString());
+                        } else {
+                           final  Map<String, Object> secondLevelRelatedContent = (Map<String, Object>) secondLevelRelatedContents.get(0);
+                            assertEquals(i == 0 ? contentC.getIdentifier() : contentA.getIdentifier(),
+                                    secondLevelRelatedContent.get("identifier"));
+
+                            assertNull(secondLevelRelatedContent.get(relationshipField.variable()));
+                        }
                     }
                 }
             }
-        }*/
+        }finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(oldThreadResponse);
+        }
     }
 
     /**
