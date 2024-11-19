@@ -99,8 +99,6 @@ export const SelectExisingFileStore = signalStore(
                         return hasIdentifier;
                     }),
                     switchMap((identifier) => {
-                        const content = store.content();
-
                         return dotEditContentService.getContentByFolder(identifier).pipe(
                             tapResponse({
                                 next: (data) => {
@@ -115,7 +113,7 @@ export const SelectExisingFileStore = signalStore(
                                 error: () =>
                                     patchState(store, {
                                         content: {
-                                            ...content,
+                                            data: [],
                                             status: ComponentStatus.ERROR,
                                             error: 'dot.file.field.dialog.select.existing.file.table.error.content'
                                         }
