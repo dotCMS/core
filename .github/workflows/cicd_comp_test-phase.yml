@@ -202,7 +202,7 @@ jobs:
       - uses: ./.github/actions/core-cicd/maven-job
         with:
           stage-name: "Karate ${{ matrix.suites.name }}"
-          maven-args: "verify -pl :dotcms-karate -Dkarate.test.skip=false -it.test=${{ matrix.suites.tests }}"
+          maven-args: "verify -pl :dotcms-karate -Dkarate.test.skip=false -Dit.test=${{ matrix.suites.tests }}"
           generates-test-results: true
           dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
           requires-node: true
