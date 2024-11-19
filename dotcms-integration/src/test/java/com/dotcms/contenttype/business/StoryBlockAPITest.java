@@ -597,7 +597,6 @@ public class StoryBlockAPITest extends IntegrationTestBase {
      */
     @Test
     @UseDataProvider("depthValues")
-    @Ignore
     public void hydrateWithBlockEditorAndRelationship(final int depth) throws Exception {
 
         final Language language = new LanguageDataGen().nextPersisted();
@@ -647,50 +646,58 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         final Contentlet contentHCompleteANdPublish = setFieldsAndPublish(contentH, relationshipField,
                 storyBlockField, contentJ, contentK);
 
-        final HttpServletRequest request  = mock(HttpServletRequest.class);
-        when(request.getAttribute(WebKeys.HTMLPAGE_DEPTH)).thenReturn(String.valueOf(depth));
-        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        final HttpServletRequest oldThreadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse oldThreadResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
 
-        final HttpServletResponse response  = mock(HttpServletResponse.class);
-        HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
+        try {
+            final HttpServletRequest request  = mock(HttpServletRequest.class);
+            when(request.getAttribute(WebKeys.HTMLPAGE_DEPTH)).thenReturn(String.valueOf(depth));
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
-        Contentlet contentAFromAPI = APILocator.getContentletAPI()
-                .find(contentACompleteANdPublish.getInode(), APILocator.systemUser(), false);
+            final HttpServletResponse response  = mock(HttpServletResponse.class);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
 
-        Map<String, Object> blockEditorMap = JsonUtil.getJsonFromString(contentAFromAPI.getStringProperty(storyBlockField.variable()));
-        List<Map<String, Object>> blockValue = (List<Map<String, Object>>) blockEditorMap.get("content");
+            Contentlet contentAFromAPI = APILocator.getContentletAPI()
+                    .find(contentACompleteANdPublish.getInode(), APILocator.systemUser(), false);
 
-        assertEquals(2, blockValue.size());
+            Map<String, Object> blockEditorMap = JsonUtil.getJsonFromString(contentAFromAPI.getStringProperty(storyBlockField.variable()));
+            List<Map<String, Object>> blockValue = (List<Map<String, Object>>) blockEditorMap.get("content");
 
-        Map<String, Object> blockEditorItem = blockValue.get(0);
-        final Map<String, Object> blockEditorContent = (Map<String, Object>) ((Map<String, Object>) blockEditorItem.get("attrs")).get("data");
-        assertEquals(contentC.getIdentifier(), blockEditorContent.get("identifier"));
+            assertEquals(2, blockValue.size());
 
-        if (depth == 0) {
-            assertEquals(contentF.getIdentifier(), blockEditorContent.get(relationshipField.variable()));
-        } else if (depth == 1) {
-            assertEquals(contentF.getIdentifier(),
-                    ((Map<String, Object>) blockEditorContent.get(relationshipField.variable())).get("identifier"));
+            Map<String, Object> blockEditorItem = blockValue.get(0);
+            final Map<String, Object> blockEditorContent = (Map<String, Object>) ((Map<String, Object>) blockEditorItem.get("attrs")).get("data");
+            assertEquals(contentC.getIdentifier(), blockEditorContent.get("identifier"));
 
-            assertNull(contentF.getIdentifier(),
-                    ((Map<String, Object>) blockEditorContent.get(relationshipField.variable())).get(relationshipField.variable()));
-        } else if (depth > 1) {
-            assertEquals(contentF.getIdentifier(),
-                    ((Map<String, Object>) blockEditorContent.get(relationshipField.variable())).get("identifier"));
+            if (depth == 0) {
+                assertEquals(contentF.getIdentifier(), blockEditorContent.get(relationshipField.variable()));
+            } else if (depth == 1) {
+                assertEquals(contentF.getIdentifier(),
+                        ((Map<String, Object>) blockEditorContent.get(relationshipField.variable())).get("identifier"));
 
-            final Map<String, Object> secondLevelRelatedContent = (Map<String, Object>) blockEditorContent.get(relationshipField.variable());
-            assertEquals(contentF.getIdentifier(), secondLevelRelatedContent.get("identifier"));
+                assertNull(contentF.getIdentifier(),
+                        ((Map<String, Object>) blockEditorContent.get(relationshipField.variable())).get(relationshipField.variable()));
+            } else if (depth > 1) {
+                assertEquals(contentF.getIdentifier(),
+                        ((Map<String, Object>) blockEditorContent.get(relationshipField.variable())).get("identifier"));
 
-            if (depth == 2) {
-                assertEquals(contentH.getIdentifier(), secondLevelRelatedContent.get(relationshipField.variable()));
-            } else {
-                assertEquals(contentH.getIdentifier(),
-                        ((Map<String, Object>) secondLevelRelatedContent.get(relationshipField.variable())).get("identifier"));
+                final Map<String, Object> secondLevelRelatedContent = (Map<String, Object>) blockEditorContent.get(relationshipField.variable());
+                assertEquals(contentF.getIdentifier(), secondLevelRelatedContent.get("identifier"));
 
-                assertNull(
-                        ((Map<String, Object>) secondLevelRelatedContent.get(relationshipField.variable()))
-                                .get(relationshipField.variable()));
+                if (depth == 2) {
+                    assertEquals(contentH.getIdentifier(), secondLevelRelatedContent.get(relationshipField.variable()));
+                } else {
+                    assertEquals(contentH.getIdentifier(),
+                            ((Map<String, Object>) secondLevelRelatedContent.get(relationshipField.variable())).get("identifier"));
+
+                    assertNull(
+                            ((Map<String, Object>) secondLevelRelatedContent.get(relationshipField.variable()))
+                                    .get(relationshipField.variable()));
+                }
             }
+        }finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(oldThreadResponse);
         }
     }
 
