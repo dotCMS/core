@@ -37,11 +37,13 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENTLET_IDS_ATTR;
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENT_TYPE_ID_ATTR;
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VARIABLE_NAME_ATTR;
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.LANGUAGE_ID_ATTR;
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.SITE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.UNIQUE_PER_SITE_ATTR;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.INODE_KEY;
@@ -216,15 +218,15 @@ public class DBUniqueFieldValidationStrategyTest {
 
         assertEquals(2, results.size());
 
-        final UniqueFieldCriteria[] uniqueFieldCriterias = new UniqueFieldCriteria[]{uniqueFieldCriteria_1, uniqueFieldCriteria_2};
+        final UniqueFieldCriteria[] uniqueFieldCriteria = new UniqueFieldCriteria[]{uniqueFieldCriteria_1, uniqueFieldCriteria_2};
         final Contentlet[] contentlets = new Contentlet[]{contentlet_1, contentlet_2};
         final Host[] sites = new Host[]{site, site_2};
 
         for (int i =0; i < results.size(); i++) {
             Map<String, Object> result = results.get(i);
-            final Map<String, Object> mapExpected = new HashMap<>(uniqueFieldCriterias[i].toMap());
-            mapExpected.put("contentletsId", list(contentlets[i].getIdentifier()));
-            mapExpected.put("uniquePerSite", true);
+            final Map<String, Object> mapExpected = new HashMap<>(uniqueFieldCriteria[i].toMap());
+            mapExpected.put(CONTENTLET_IDS_ATTR, list(contentlets[i].getIdentifier()));
+            mapExpected.put(UNIQUE_PER_SITE_ATTR, true);
 
             final String valueToHash = contentType.id() + uniqueField.variable() + language.getId() + uniqueValue +
                     sites[i].getIdentifier();
@@ -861,11 +863,13 @@ public class DBUniqueFieldValidationStrategyTest {
 
         checkContentIds(uniqueFieldCriteria_2, list(contentletSaved.getIdentifier()));
 
-        List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE supporting_values->>'contentTypeID' = ?")
+        List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE supporting_values->>'"
+                        + CONTENT_TYPE_ID_ATTR + "' = ?")
                 .addParam(contentType.id())
                 .loadObjectResults();
 
-        assertEquals(1, results.size());
+        assertEquals("One Unique Field record matching the specified Content Type should've been returned",
+                1, results.size());
     }
 
     /**
