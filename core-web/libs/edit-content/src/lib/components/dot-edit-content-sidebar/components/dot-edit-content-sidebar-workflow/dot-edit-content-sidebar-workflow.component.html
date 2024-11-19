@@ -1,5 +1,4 @@
 @let scheme = $workflow().scheme;
-@let step = $workflow().step;
 @let task = $workflow().task;
 @let firstStep = $workflow().firstStep;
 @let isLoading = $isLoading();
@@ -75,14 +74,18 @@
         [closable]="true">
         <div class="p-fluid">
             <div class="field">
-                <label for="workflow">{{ 'Select the workflow you want to work on' | dm }}</label>
+                <label for="workflow">
+                    {{ 'edit.content.sidebar.workflow.dialog.title' | dm }}
+                </label>
                 <p-dropdown
                     id="workflow"
                     appendTo="body"
                     [options]="$workflowSchemeOptions()"
                     optionLabel="label"
                     [(ngModel)]="$selectedWorkflow"
-                    placeholder="{{ 'Select a workflow' | dm }}"></p-dropdown>
+                    placeholder="{{
+                        'edit.content.sidebar.workflow.dialog.dropdown.placeholder' | dm
+                    }}"></p-dropdown>
             </div>
         </div>
         <ng-template pTemplate="footer">
