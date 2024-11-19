@@ -143,10 +143,10 @@ public class PageResourceTest {
     private HttpServletResponse response;
     private HttpSession session;
     private Host host;
-    private final String pageName = "index" + System.currentTimeMillis();
-    private final String folderName = "about-us" + System.currentTimeMillis();
-    private final String hostName = "my.host.com" + System.currentTimeMillis();
-    private final String pagePath = String.format("/%s/%s",folderName,pageName);
+    private String pageName = "index" + System.currentTimeMillis();
+    private String folderName = "about-us" + System.currentTimeMillis();
+    private String hostName = "my.host.com" + System.currentTimeMillis();
+    private String pagePath = String.format("/%s/%s",folderName,pageName);
     private HTMLPageAsset pageAsset;
     private Template template;
     private Container container1;
@@ -168,6 +168,11 @@ public class PageResourceTest {
     @Before
     public void init()
             throws DotSecurityException, DotDataException, SystemException, PortalException {
+
+        pageName = "index" + System.currentTimeMillis();
+        folderName = "about-us" + System.currentTimeMillis();
+        hostName = "my.host.com" + System.currentTimeMillis();
+        pagePath = String.format("/%s/%s", folderName, pageName);
 
         // Collection to store attributes keys/values
         final Map<String, Object> attributes = new ConcurrentHashMap<>();
