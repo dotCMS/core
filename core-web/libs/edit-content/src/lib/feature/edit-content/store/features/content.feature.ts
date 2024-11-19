@@ -26,7 +26,10 @@ import {
     ComponentStatus,
     DotCMSContentlet,
     DotCMSContentType,
-    FeaturedFlags
+    DotCMSWorkflow,
+    DotCMSWorkflowAction,
+    FeaturedFlags,
+    WorkflowStep
 } from '@dotcms/dotcms-models';
 
 import { WorkflowState } from './workflow.feature';
@@ -40,17 +43,26 @@ export interface ContentState {
     contentType: DotCMSContentType | null;
     /** Contentlet full data */
     contentlet: DotCMSContentlet | null;
+    /** Schemas available for the content type */
+    schemes: {
+        [key: string]: {
+            scheme: DotCMSWorkflow;
+            actions: DotCMSWorkflowAction[];
+            firstStep: WorkflowStep;
+        };
+    };
 }
 
-const initialState: ContentState = {
+export const contentInitialState: ContentState = {
     contentType: null,
-    contentlet: null
+    contentlet: null,
+    schemes: {}
 };
 
 export function withContent() {
     return signalStoreFeature(
         { state: type<EditContentRootState & WorkflowState>() },
-        withState(initialState),
+        withState(contentInitialState),
         withComputed((store) => ({
             /**
              * Computed property that determines if the content is new.

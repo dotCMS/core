@@ -22,10 +22,9 @@ import { workflowInitialState } from './workflow.feature';
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
 import { parseWorkflows } from '../../../../utils/functions.util';
 import { CONTENT_TYPE_MOCK } from '../../../../utils/mocks';
-import { initialState } from '../edit-content.store';
+import { initialRootState } from '../edit-content.store';
 
 describe('ContentFeature', () => {
-    // let spectator: SpectatorService<ReturnType<EditContentRootState & WorkflowState>>;
     let spectator: SpectatorService<any>;
 
     let store: any;
@@ -36,7 +35,7 @@ describe('ContentFeature', () => {
 
     const createStore = createServiceFactory({
         service: signalStore(
-            withState({ ...initialState, ...workflowInitialState }),
+            withState({ ...initialRootState, ...workflowInitialState }),
             withContent()
         ),
         mocks: [

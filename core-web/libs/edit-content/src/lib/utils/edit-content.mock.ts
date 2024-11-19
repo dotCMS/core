@@ -16,7 +16,8 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotCMSWorkflowAction
+    DotCMSWorkflowAction,
+    DotCMSWorkflowStatus
 } from '@dotcms/dotcms-models';
 
 export const MOCK_CONTENTTYPE_1_TAB: DotCMSContentType = {
@@ -1214,3 +1215,42 @@ export const MOCK_WORKFLOW_DATA = [
         }
     }
 ];
+
+/**
+ * Mock data for workflow status.
+ *
+ * @see MOCK_WORKFLOW_DATA
+ */
+export const MOCK_WORKFLOW_STATUS: DotCMSWorkflowStatus = {
+    scheme: {
+        ...MOCK_WORKFLOW_DATA[1].scheme
+    },
+    firstStep: MOCK_WORKFLOW_DATA[1].firstStep,
+    step: {
+        creationDate: 1731983051341,
+        enableEscalation: false,
+        escalationAction: null,
+        escalationTime: 0,
+        id: 'f43c5d5a-fc51-4c67-a750-cc8f8e4a87f7',
+        myOrder: 2,
+        name: 'Published',
+        resolved: false,
+        schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'
+    },
+    task: {
+        assignedTo: 'Admin User',
+        belongsTo: null,
+        createdBy: 'e7d4e34e-5127-45fc-8123-d48b62d510e3',
+        creationDate: 1731983076219,
+        description: null,
+        dueDate: null,
+        id: 'ea337da7-25d9-494a-b4ab-03c7bcda39dc',
+        inode: 'ea337da7-25d9-494a-b4ab-03c7bcda39dc',
+        languageId: 1,
+        modDate: 1731983076219,
+        new: false,
+        status: 'f43c5d5a-fc51-4c67-a750-cc8f8e4a87f7',
+        title: 'asdasd',
+        webasset: '93dda60a-3a10-49e3-bef4-b663d57d86df'
+    }
+};

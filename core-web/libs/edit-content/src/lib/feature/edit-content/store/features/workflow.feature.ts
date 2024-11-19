@@ -45,15 +45,6 @@ import {
 import { EditContentRootState } from '../edit-content.store';
 
 export interface WorkflowState {
-    /** Schemas available for the content type */
-    schemes: {
-        [key: string]: {
-            scheme: DotCMSWorkflow;
-            actions: DotCMSWorkflowAction[];
-            firstStep: WorkflowStep;
-        };
-    };
-
     /** Current workflow scheme id */
     currentSchemeId: string | null;
 
@@ -74,7 +65,6 @@ export interface WorkflowState {
 }
 
 export const workflowInitialState: WorkflowState = {
-    schemes: {},
     currentSchemeId: null,
     currentContentActions: [],
     currentStep: null,
@@ -219,11 +209,12 @@ export function withWorkflow() {
                                     },
 
                                     error: (error: HttpErrorResponse) => {
+                                        console.log('error', error);
                                         patchState(store, {
                                             workflow: {
                                                 ...store.workflow(),
                                                 status: ComponentStatus.ERROR,
-                                                error: error.message
+                                                error: 'Error getting workflow status'
                                             }
                                         });
                                         dotHttpErrorManagerService.handle(error);

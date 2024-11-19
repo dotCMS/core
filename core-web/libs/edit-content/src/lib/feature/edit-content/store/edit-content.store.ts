@@ -15,7 +15,7 @@ export interface EditContentRootState {
     error: string | null;
 }
 
-export const initialState: EditContentRootState = {
+export const initialRootState: EditContentRootState = {
     state: ComponentStatus.INIT,
     error: null
 };
@@ -26,7 +26,7 @@ export const initialState: EditContentRootState = {
  * related to content editing and workflow actions.
  */
 export const DotEditContentStore = signalStore(
-    withState(initialState),
+    withState(initialRootState),
     withContent(),
     withSidebar(),
     withInformation(),

@@ -10,7 +10,6 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { ContentState } from '../feature/edit-content/store/features/content.feature';
-import { WorkflowState } from '../feature/edit-content/store/features/workflow.feature';
 import {
     CALENDAR_FIELD_TYPES,
     FLATTENED_FIELD_TYPES,
@@ -346,7 +345,7 @@ export const parseWorkflows = (
  * @returns boolean indicating if workflow actions should be shown
  */
 export function shouldShowWorkflowActions(
-    schemes: WorkflowState['schemes'],
+    schemes: ContentState['schemes'],
     contentlet: ContentState['contentlet'],
     currentSchemeId: string | null
 ): boolean {
@@ -382,7 +381,7 @@ export function shouldShowWorkflowActions(
  * @returns boolean indicating if workflow selection warning should be shown
  */
 export function shouldShowWorkflowWarning(
-    schemes: WorkflowState['schemes'],
+    schemes: ContentState['schemes'],
     contentlet: ContentState['contentlet'],
     currentSchemeId: string | null
 ): boolean {
@@ -407,7 +406,7 @@ export function shouldShowWorkflowWarning(
  * @returns Array of workflow actions
  */
 export function getWorkflowActions(
-    schemes: WorkflowState['schemes'],
+    schemes: ContentState['schemes'],
     contentlet: ContentState['contentlet'],
     currentSchemeId: string | null,
     currentContentActions: DotCMSWorkflowAction[]
