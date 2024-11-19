@@ -4,6 +4,7 @@ import com.dotcms.jobs.business.api.JobProcessorScanner;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.Queue;
+import com.dotcms.rest.api.v1.JobQueueManagerHelper;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -29,15 +30,13 @@ public class ContentImportHelper {
     private static final String CMD_PREVIEW = "preview";
     private static final String CMD_PUBLISH = "publish";
 
-    JobQueueManagerAPI jobQueueManagerAPI;
-    JobProcessorScanner scanner;
+    private JobQueueManagerAPI jobQueueManagerAPI;
+    private JobQueueManagerHelper jobQueueManagerHelper;
 
     @Inject
-    public ContentImportHelper(
-            JobQueueManagerAPI jobQueueManagerAPI,
-            JobProcessorScanner scanner) {
+    public ContentImportHelper(JobQueueManagerAPI jobQueueManagerAPI, JobQueueManagerHelper jobQueueManagerHelper) {
         this.jobQueueManagerAPI = jobQueueManagerAPI;
-        this.scanner = scanner;
+        this.jobQueueManagerHelper = jobQueueManagerHelper;
     }
 
     public ContentImportHelper() {
@@ -45,57 +44,12 @@ public class ContentImportHelper {
 
     @PostConstruct
     public void onInit() {
-
-        if(!jobQueueManagerAPI.isStarted()){
-            jobQueueManagerAPI.start();
-            Logger.info(this.getClass(), "JobQueueManagerAPI started");
-        }
-        final List<Class<? extends JobProcessor>> processors = scanner.discoverJobProcessors();
-        processors.forEach(processor -> {
-            try {
-                if(!testInstantiation(processor)){
-                    return;
-                }
-                //registering the processor with the jobQueueManagerAPI
-                // lower case it to avoid case
-                if(processor.isAnnotationPresent(Queue.class)){
-                    final Queue queue = processor.getAnnotation(Queue.class);
-                    jobQueueManagerAPI.registerProcessor(queue.value(), processor);
-                } else {
-                    jobQueueManagerAPI.registerProcessor(processor.getName(), processor);
-                }
-            }catch (Exception e){
-                Logger.error(this.getClass(), "Unable to register JobProcessor ", e);
-            }
-        });
-    }
-
-    /**
-     * Test if a processor can be instantiated
-     * @param processor The processor to tested
-     * @return true if the processor can be instantiated, false otherwise
-     */
-    private boolean testInstantiation(Class<? extends JobProcessor> processor)  {
-        try {
-            final Constructor<? extends JobProcessor> declaredConstructor = processor.getDeclaredConstructor();
-            declaredConstructor.newInstance();
-            return true;
-        } catch (Exception e) {
-            Logger.error(this.getClass(), String.format(" JobProcessor [%s] can not be instantiated and will be ignored.",processor.getName()), e);
-        }
-        return false;
+        jobQueueManagerHelper.registerProcessors(jobQueueManagerAPI);
     }
 
     @PreDestroy
     public void onDestroy() {
-        if(jobQueueManagerAPI.isStarted()){
-            try {
-                jobQueueManagerAPI.close();
-                Logger.info(this.getClass(), "JobQueueManagerAPI successfully closed");
-            } catch (Exception e) {
-                Logger.error(this.getClass(), e.getMessage(), e);
-            }
-        }
+        jobQueueManagerHelper.shutdown(jobQueueManagerAPI);
     }
 
     /**
