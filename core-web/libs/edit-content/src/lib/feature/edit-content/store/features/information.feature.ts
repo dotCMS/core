@@ -39,7 +39,7 @@ const initialState: InformationState = {
  * Signal store feature that manages the information component state in the edit content sidebar
  * Handles loading states, error handling, and related content count for the current contentlet
  */
-export function withInformation<InformationState>() {
+export function withInformation() {
     return signalStoreFeature(
         withState(initialState),
         withComputed(({ information }) => ({
