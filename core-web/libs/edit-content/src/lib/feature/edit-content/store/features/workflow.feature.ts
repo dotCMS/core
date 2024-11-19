@@ -35,9 +35,13 @@ import {
     WorkflowTask
 } from '@dotcms/dotcms-models';
 
+import {
+    getWorkflowActions,
+    shouldShowWorkflowActions,
+    shouldShowWorkflowWarning
+} from '../../../../utils/functions.util';
+import { EditContentRootState } from '../edit-content.store';
 import { ContentState } from './content.feature';
-
-import { EditContentState } from '../edit-content.store';
 
 export interface WorkflowState {
     /** Schemas available for the content type */
@@ -68,7 +72,7 @@ export interface WorkflowState {
     };
 }
 
-const initialState: WorkflowState = {
+export const workflowInitialState: WorkflowState = {
     schemes: {},
     currentSchemeId: null,
     currentContentActions: [],
@@ -86,12 +90,10 @@ const initialState: WorkflowState = {
  *
  * @returns
  */
-export function withWorkflow() {
+export function withWorkflow<WorkflowState>() {
     return signalStoreFeature(
-        {
-            state: type<EditContentState & ContentState>()
-        },
-        withState(initialState),
+        { state: type<EditContentRootState & ContentState>() },
+        withState(workflowInitialState),
         withComputed((store) => ({
             /**
              * Computed property that determines if the workflow component is in a loading state
@@ -113,35 +115,14 @@ export function withWorkflow() {
 
             /**
              * Computed property that determines if workflow action buttons should be shown.
-             * Shows workflow buttons when:
-             * - Content type has only one workflow scheme OR
-             * - Content is existing AND has a selected workflow scheme OR
-             * - Content is new and content type has only one workflow scheme OR
-             * - Content is new and has selected a workflow scheme
-             * Hides workflow buttons when:
-             * - Content is new and has multiple schemes without selection
-             *
-             * @returns {boolean} True if workflow action buttons should be shown, false otherwise
              */
-            showWorkflowActions: computed(() => {
-                const hasOneScheme = Object.keys(store.schemes()).length === 1;
-                const isExisting = !!store.contentlet();
-                const hasSelectedScheme = !!store.currentSchemeId();
-
-                if (hasOneScheme) {
-                    return true;
-                }
-
-                if (isExisting && hasSelectedScheme) {
-                    return true;
-                }
-
-                if (!isExisting && hasSelectedScheme) {
-                    return true;
-                }
-
-                return false;
-            }),
+            showWorkflowActions: computed(() =>
+                shouldShowWorkflowActions(
+                    store.schemes(),
+                    store.contentlet(),
+                    store.currentSchemeId()
+                )
+            ),
 
             /**
              * Computed property that determines if the workflow selection warning should be shown.
@@ -149,43 +130,27 @@ export function withWorkflow() {
              *
              * @returns {boolean} True if warning should be shown, false otherwise
              */
-            showSelectWorkflowWarning: computed(() => {
-                const isNew = !store.contentlet();
-                const hasNoSchemeSelected = !store.currentSchemeId();
-                const hasMultipleSchemas = Object.keys(store.schemes()).length > 1;
-
-                return isNew && hasMultipleSchemas && hasNoSchemeSelected;
-            }),
+            showSelectWorkflowWarning: computed(() =>
+                shouldShowWorkflowWarning(
+                    store.schemes(),
+                    store.contentlet(),
+                    store.currentSchemeId()
+                )
+            ),
 
             /**
              * Computed property that retrieves the actions for the current workflow scheme.
              *
              * @returns {DotCMSWorkflowAction[]} The actions for the current workflow scheme.
              */
-            getActions: computed(() => {
-                const isNew = !store.contentlet();
-                const currentSchemeId = store.currentSchemeId();
-                const schemes = store.schemes();
-                const currentContentActions = store.currentContentActions();
-
-                // If no scheme is selected, return empty array
-                if (!currentSchemeId || !schemes[currentSchemeId]) {
-                    return [];
-                }
-
-                // For existing content, use specific contentlet actions
-                if (!isNew && currentContentActions.length) {
-                    return currentContentActions;
-                }
-
-                // For new content, use scheme actions
-                return Object.values(schemes[currentSchemeId].actions).sort((a, b) => {
-                    if (a.name === 'Save') return -1;
-                    if (b.name === 'Save') return 1;
-
-                    return a.name.localeCompare(b.name);
-                });
-            }),
+            getActions: computed(() =>
+                getWorkflowActions(
+                    store.schemes(),
+                    store.contentlet(),
+                    store.currentSchemeId(),
+                    store.currentContentActions()
+                )
+            ),
 
             /**
              * Computed property that transforms the workflow schemes into dropdown options

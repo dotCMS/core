@@ -29,11 +29,10 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
-import { WorkflowState } from './workflow.feature';
-
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
 import { parseWorkflows, transformFormDataFn } from '../../../../utils/functions.util';
-import { EditContentState } from '../edit-content.store';
+import { EditContentRootState } from '../edit-content.store';
+import { WorkflowState } from './workflow.feature';
 
 export interface ContentState {
     /** ContentType full data */
@@ -47,9 +46,9 @@ const initialState: ContentState = {
     contentlet: null
 };
 
-export function withContent() {
+export function withContent<ContentState>() {
     return signalStoreFeature(
-        { state: type<EditContentState & WorkflowState>() },
+        { state: type<EditContentRootState & WorkflowState>() },
         withState(initialState),
         withComputed((store) => ({
             /**

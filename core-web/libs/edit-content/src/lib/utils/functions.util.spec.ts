@@ -3,6 +3,7 @@ import { describe, expect, it } from '@jest/globals';
 import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
 
 import {
+    MOCK_CONTENTLET_1_TAB,
     MOCK_CONTENTTYPE_2_TABS,
     MOCK_FORM_CONTROL_FIELDS,
     MOCK_WORKFLOW_DATA
@@ -12,10 +13,12 @@ import {
     createPaths,
     getFieldVariablesParsed,
     getPersistSidebarState,
+    getWorkflowActions,
     isFilteredType,
     isValidJson,
     parseWorkflows,
     setPersistSidebarState,
+    shouldShowWorkflowWarning,
     stringToJson
 } from './functions.util';
 import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
@@ -698,6 +701,114 @@ describe('Utils Functions', () => {
 
         it('should handle empty array input', () => {
             expect(parseWorkflows([])).toEqual({});
+        });
+    });
+});
+
+describe('Workflow Utility Functions', () => {
+    describe('shouldShowWorkflowWarning', () => {
+        const mockSchemes = parseWorkflows(MOCK_WORKFLOW_DATA);
+
+        it('should return true when content is new, has multiple schemes and no scheme selected', () => {
+            const result = shouldShowWorkflowWarning(mockSchemes, null, null);
+            expect(result).toBe(true);
+        });
+
+        it('should return false when content exists', () => {
+            const result = shouldShowWorkflowWarning(mockSchemes, MOCK_CONTENTLET_1_TAB, null);
+            expect(result).toBe(false);
+        });
+
+        it('should return false when only one scheme exists', () => {
+            const singleScheme = {
+                'd61a59e1-a49c-46f2-a929-db2b4bfa88b2':
+                    mockSchemes['d61a59e1-a49c-46f2-a929-db2b4bfa88b2']
+            };
+            const result = shouldShowWorkflowWarning(singleScheme, null, null);
+            expect(result).toBe(false);
+        });
+
+        it('should return false when scheme is selected', () => {
+            const result = shouldShowWorkflowWarning(
+                mockSchemes,
+                null,
+                'd61a59e1-a49c-46f2-a929-db2b4bfa88b2'
+            );
+            expect(result).toBe(false);
+        });
+    });
+
+    describe('getWorkflowActions', () => {
+        const mockSchemes = parseWorkflows(MOCK_WORKFLOW_DATA);
+
+        it('should return empty array when no scheme is selected', () => {
+            const result = getWorkflowActions(mockSchemes, null, null, []);
+            expect(result).toEqual([]);
+        });
+
+        it('should return empty array when selected scheme does not exist', () => {
+            const result = getWorkflowActions(mockSchemes, null, 'non-existent-scheme', []);
+            expect(result).toEqual([]);
+        });
+
+        it('should return current content actions for existing content', () => {
+            const currentActions = [MOCK_WORKFLOW_DATA[0].action];
+            const result = getWorkflowActions(
+                mockSchemes,
+                MOCK_CONTENTLET_1_TAB,
+                'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+                currentActions
+            );
+            expect(result).toEqual(currentActions);
+        });
+
+        it('should return sorted scheme actions for new content with Save first', () => {
+            const result = getWorkflowActions(
+                mockSchemes,
+                null,
+                'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+                []
+            );
+
+            expect(result.length).toBeGreaterThan(0);
+            expect(result[0].name).toBe('Save');
+        });
+
+        it('should return scheme actions when content exists but no current actions', () => {
+            const result = getWorkflowActions(
+                mockSchemes,
+                MOCK_CONTENTLET_1_TAB,
+                'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+                []
+            );
+
+            expect(result.length).toBeGreaterThan(0);
+            expect(result[0].name).toBe('Save');
+        });
+    });
+
+    describe('parseWorkflows', () => {
+        it('should return empty object when input is not an array', () => {
+            expect(parseWorkflows(null)).toEqual({});
+            expect(parseWorkflows(undefined)).toEqual({});
+        });
+
+        it('should correctly parse workflow data', () => {
+            const result = parseWorkflows(MOCK_WORKFLOW_DATA);
+
+            // Check structure for System Workflow
+            expect(result['d61a59e1-a49c-46f2-a929-db2b4bfa88b2']).toBeDefined();
+            expect(result['d61a59e1-a49c-46f2-a929-db2b4bfa88b2'].scheme.name).toBe(
+                'System Workflow'
+            );
+            expect(result['d61a59e1-a49c-46f2-a929-db2b4bfa88b2'].actions).toHaveLength(1);
+            expect(result['d61a59e1-a49c-46f2-a929-db2b4bfa88b2'].firstStep.name).toBe('New');
+
+            // Check structure for Blogs workflow
+            expect(result['2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd']).toBeDefined();
+            expect(result['2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'].scheme.name).toBe('Blogs');
+            expect(result['2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'].actions).toHaveLength(1);
+            expect(result['2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'].firstStep.name).toBe('Edit');
         });
     });
 });
