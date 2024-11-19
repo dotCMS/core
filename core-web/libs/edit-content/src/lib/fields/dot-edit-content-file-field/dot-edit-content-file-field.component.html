@@ -97,6 +97,7 @@
             @let uploadedFile = store.uploadedFile();
             @if (uploadedFile) {
                 <dot-file-field-preview
+                    [fieldVariable]="'asset'"
                     (removeFile)="store.removeFile()"
                     [previewFile]="uploadedFile" />
             }

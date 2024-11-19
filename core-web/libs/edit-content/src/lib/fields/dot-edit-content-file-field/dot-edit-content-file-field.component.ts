@@ -406,7 +406,10 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             modal: true,
             width: '90%',
             style: { 'max-width': '1040px' },
-            data: {}
+            data: {
+                inputType: this.$field().fieldType,
+                acceptedFiles: this.store.acceptedFiles()
+            }
         });
 
         this.#dialogRef.onClose

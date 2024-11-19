@@ -57,6 +57,13 @@ export class DotFileFieldPreviewComponent implements OnInit {
      * @memberof DotFileFieldPreviewComponent
      */
     $previewFile = input.required<UploadedFile>({ alias: 'previewFile' });
+
+    /**
+     * Field variable
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
+    $fieldVariable = input.required<string>({ alias: 'fieldVariable' });
     /**
      * Remove file
      *
@@ -102,10 +109,12 @@ export class DotFileFieldPreviewComponent implements OnInit {
      */
     $downloadLink = computed(() => {
         const previewFile = this.$previewFile();
+        const fieldVariable = this.$fieldVariable();
+
         if (previewFile.source === 'contentlet') {
             const file = previewFile.file;
 
-            return `/contentAsset/raw-data/${file.inode}/asset?byInode=true&force_download=true`;
+            return `/contentAsset/raw-data/${file.inode}/${fieldVariable}?byInode=true&force_download=true`;
         }
 
         return null;
@@ -163,7 +172,7 @@ export class DotFileFieldPreviewComponent implements OnInit {
     private fetchResourceLinks(contentlet: DotCMSContentlet): void {
         this.#dotResourceLinksService
             .getFileResourceLinks({
-                fieldVariable: 'asset',
+                fieldVariable: this.$fieldVariable(),
                 inodeOrIdentifier: contentlet.identifier
             })
             .pipe(

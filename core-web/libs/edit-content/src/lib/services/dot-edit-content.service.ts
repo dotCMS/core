@@ -227,7 +227,7 @@ export class DotEditContentService {
             .pipe(map((response) => response.entity.count));
     }
 
-    getContentByFolder(folderId: string) {
+    getContentByFolder({ folderId, mimeTypes }: { folderId: string; mimeTypes?: string[] }) {
         const params = {
             hostFolderId: folderId,
             showLinks: false,
@@ -237,7 +237,8 @@ export class DotEditContentService {
             showFolders: false,
             showWorking: true,
             showArchived: true,
-            sortByDesc: true
+            sortByDesc: true,
+            mimeTypes
         };
 
         return this.#siteService.getContentByFolder(params);

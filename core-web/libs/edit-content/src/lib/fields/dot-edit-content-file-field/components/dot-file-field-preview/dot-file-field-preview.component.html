@@ -16,7 +16,7 @@
                     data-testId="temp-file-thumbnail" />
             } @else {
                 <dot-contentlet-thumbnail
-                    fieldVariable="asset"
+                    [fieldVariable]="$fieldVariable()"
                     [iconSize]="'48px'"
                     [contentlet]="previewFile.file"
                     [playableVideo]="true"

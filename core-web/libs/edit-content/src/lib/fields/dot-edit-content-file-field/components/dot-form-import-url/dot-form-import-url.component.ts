@@ -17,6 +17,11 @@ import { DotMessagePipe, DotFieldValidationMessageComponent, DotValidators } fro
 
 import { FormImportUrlStore } from './store/form-import-url.store';
 
+type DialogData = {
+    inputType: INPUT_TYPES;
+    acceptedFiles: string[];
+};
+
 @Component({
     selector: 'dot-form-import-url',
     standalone: true,
@@ -36,9 +41,7 @@ export class DotFormImportUrlComponent implements OnInit {
     readonly store = inject(FormImportUrlStore);
     readonly #formBuilder = inject(FormBuilder);
     readonly #dialogRef = inject(DynamicDialogRef);
-    readonly #dialogConfig = inject(
-        DynamicDialogConfig<{ inputType: INPUT_TYPES; acceptedFiles: string[] }>
-    );
+    readonly #dialogConfig = inject(DynamicDialogConfig<DialogData>);
     #abortController: AbortController | null = null;
 
     readonly form = this.#formBuilder.nonNullable.group({
@@ -83,7 +86,7 @@ export class DotFormImportUrlComponent implements OnInit {
      * If the input type is 'Binary', the upload type is set to 'temp', otherwise it's set to 'dotasset'.
      */
     ngOnInit(): void {
-        const data = this.#dialogConfig?.data;
+        const data = this.#dialogConfig?.data as DialogData;
 
         this.store.initSetup({
             uploadType: data?.inputType === 'Binary' ? 'temp' : 'dotasset',
