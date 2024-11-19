@@ -69,6 +69,16 @@ public class JobQueueHelper {
         jobQueueManagerAPI.registerProcessor(queueName, processor);
     }
 
+    @PostConstruct
+    public void onInit() {
+        jobQueueManagerHelper.registerProcessors(jobQueueManagerAPI);
+    }
+
+    @PreDestroy
+    public void onDestroy() {
+        jobQueueManagerHelper.shutdown(jobQueueManagerAPI);
+    }
+
     /**
      * Creates a job
      *
