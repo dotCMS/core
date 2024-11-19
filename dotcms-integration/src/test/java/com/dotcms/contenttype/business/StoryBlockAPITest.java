@@ -507,17 +507,17 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         final Contentlet contentCCompleteANdPublish = setFieldsAndPublishBothAsBlockEditor(contentC, relationshipField,
                 storyBlockField, contentB, contentA);
 
-        final HttpServletRequest request  = mock(HttpServletRequest.class);
+        /*final HttpServletRequest request  = mock(HttpServletRequest.class);
         when(request.getAttribute(WebKeys.HTMLPAGE_DEPTH)).thenReturn(String.valueOf(depth));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
         final HttpServletResponse response  = mock(HttpServletResponse.class);
         HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
 
-        /*Contentlet contentAFromAPI = APILocator.getContentletAPI()
+        Contentlet contentAFromAPI = APILocator.getContentletAPI()
                 .find(contentACompleteANdPublish.getInode(), APILocator.systemUser(), false);
 
-        /*Map<String, Object> blockEditorMap = JsonUtil.getJsonFromString(contentAFromAPI.getStringProperty(storyBlockField.variable()));
+        Map<String, Object> blockEditorMap = JsonUtil.getJsonFromString(contentAFromAPI.getStringProperty(storyBlockField.variable()));
         List<Map<String, Object>> blockValue = (List<Map<String, Object>>) blockEditorMap.get("content");
 
         assertEquals(3, blockValue.size());
