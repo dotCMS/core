@@ -89,8 +89,24 @@ export const mockPublishAction = {
  */
 export const MOCK_SINGLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
     {
+        scheme: {
+            id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+            archived: false,
+            name: 'System Workflow',
+            creationDate: new Date(1731532550440),
+            defaultScheme: false,
+            description: '',
+            entryActionId: null,
+            mandatory: false,
+            modDate: new Date(1730906400422),
+            system: true,
+            variableName: 'SystemWorkflow'
+        },
         action: {
             id: 'ceca71a0-deee-4999-bd47-b01baa1bcfc8',
+            name: 'Save',
+            icon: 'workflowIcon',
+            showOn: ['EDITING', 'PUBLISHED', 'UNPUBLISHED', 'LOCKED', 'NEW'],
             assignable: false,
             commentable: false,
             condition: '',
@@ -107,9 +123,7 @@ export const MOCK_SINGLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
             hasSaveActionlet: false,
             hasUnarchiveActionlet: false,
             hasUnpublishActionlet: false,
-            icon: 'workflowIcon',
             metadata: undefined,
-            name: 'Save',
             nextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
             nextStep: 'ee24a4cb-2d15-4c98-b1bd-6327126451f3',
             nextStepCurrentStep: false,
@@ -117,37 +131,39 @@ export const MOCK_SINGLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
             owner: undefined,
             roleHierarchyForAssign: false,
             schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
-            showOn: ['EDITING', 'PUBLISHED', 'UNPUBLISHED', 'LOCKED', 'NEW'],
             actionInputs: []
         },
         firstStep: {
+            id: '6cb7e3bd-1710-4eed-8838-d3db60f78f19',
+            name: 'New',
             creationDate: 1731595862064,
             enableEscalation: false,
             escalationAction: null,
             escalationTime: 0,
-            id: '6cb7e3bd-1710-4eed-8838-d3db60f78f19',
             myOrder: 0,
-            name: 'New',
             resolved: false,
             schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2'
-        },
-        scheme: {
-            archived: false,
-            creationDate: new Date(1731532550440),
-            defaultScheme: false,
-            description: '',
-            entryActionId: null,
-            id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
-            mandatory: false,
-            modDate: new Date(1730906400422),
-            name: 'System Workflow',
-            system: true,
-            variableName: 'SystemWorkflow'
         }
     },
     {
+        scheme: {
+            name: 'System Workflow',
+            id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+            system: true,
+            creationDate: new Date(1731532550440),
+            archived: false,
+            defaultScheme: false,
+            description: '',
+            entryActionId: null,
+            mandatory: false,
+            modDate: new Date(1730906400422),
+            variableName: 'SystemWorkflow'
+        },
         action: {
             name: 'Translate',
+            id: '8d567403-a201-42de-9a48-10cea8a7bdb2',
+            icon: 'workflowIcon',
+            showOn: ['EDITING', 'PUBLISHED', 'UNPUBLISHED', 'LOCKED', 'LISTING'],
             assignable: false,
             commentable: false,
             condition: '',
@@ -164,8 +180,6 @@ export const MOCK_SINGLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
             hasSaveActionlet: false,
             hasUnarchiveActionlet: false,
             hasUnpublishActionlet: false,
-            icon: 'workflowIcon',
-            id: '8d567403-a201-42de-9a48-10cea8a7bdb2',
             metadata: undefined,
             nextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
             nextStep: 'f43c5d5a-fc51-4c67-a750-cc8f8e4a87f7',
@@ -174,32 +188,18 @@ export const MOCK_SINGLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
             owner: undefined,
             roleHierarchyForAssign: false,
             schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
-            showOn: ['EDITING', 'PUBLISHED', 'UNPUBLISHED', 'LOCKED', 'LISTING'],
             actionInputs: []
         },
         firstStep: {
+            name: 'New',
+            resolved: false,
+            id: '6cb7e3bd-1710-4eed-8838-d3db60f78f19',
             creationDate: 1731595862064,
             enableEscalation: false,
             escalationAction: null,
             escalationTime: 0,
-            id: '6cb7e3bd-1710-4eed-8838-d3db60f78f19',
             myOrder: 0,
-            name: 'New',
-            resolved: false,
             schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2'
-        },
-        scheme: {
-            archived: false,
-            creationDate: new Date(1731532550440),
-            defaultScheme: false,
-            description: '',
-            entryActionId: null,
-            id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
-            mandatory: false,
-            modDate: new Date(1730906400422),
-            name: 'System Workflow',
-            system: true,
-            variableName: 'SystemWorkflow'
         }
     }
 ];
