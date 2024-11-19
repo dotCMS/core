@@ -1,4 +1,5 @@
-import { ComponentStore, OnStateInit, tapResponse } from '@ngrx/component-store';
+import { ComponentStore, OnStateInit } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { EMPTY, Observable, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
