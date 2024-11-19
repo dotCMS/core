@@ -209,7 +209,6 @@ export function withWorkflow() {
                                     },
 
                                     error: (error: HttpErrorResponse) => {
-                                        console.log('error', error);
                                         patchState(store, {
                                             workflow: {
                                                 ...store.workflow(),
