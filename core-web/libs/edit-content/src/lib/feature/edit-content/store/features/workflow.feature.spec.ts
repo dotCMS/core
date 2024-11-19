@@ -6,6 +6,7 @@ import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
+
 import { MessageService } from 'primeng/api';
 
 import {
@@ -17,18 +18,18 @@ import {
 } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
+import { contentInitialState, ContentState } from './content.feature';
+import { withWorkflow } from './workflow.feature';
+
 import {
     MOCK_CONTENTLET_1_TAB,
     MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
     MOCK_WORKFLOW_DATA,
     MOCK_WORKFLOW_STATUS
 } from '../../../../utils/edit-content.mock';
-import { CONTENT_TYPE_MOCK } from '../../../../utils/mocks';
-
 import { parseWorkflows } from '../../../../utils/functions.util';
+import { CONTENT_TYPE_MOCK } from '../../../../utils/mocks';
 import { initialRootState } from '../edit-content.store';
-import { contentInitialState, ContentState } from './content.feature';
-import { withWorkflow } from './workflow.feature';
 
 const mockInitialStateWithContent: ContentState = {
     ...contentInitialState,
