@@ -288,7 +288,7 @@
 
 
 			<th  nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>
-			<th style="width:100%" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>
+			<th style="width:100%" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Contents") %></strong></th>
 			<th style="width:100px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>
 			<th style="width:40px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
 			<th style="width:150px" nowrap="nowrap" align="center" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Updated") %></strong></th>
