@@ -29,7 +29,7 @@ public class MockSession implements HttpSession {
         super();
         this.id = id;
         this.creationTime = System.currentTimeMillis();
-        if (sessionIn != null) {
+        if (sessionIn != null && sessionIn.getAttributeNames() != null) {
             Collections.list(sessionIn.getAttributeNames())
                     .forEach(k -> valmap.put(k, sessionIn.getAttribute(k)));
         }
