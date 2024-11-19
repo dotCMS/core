@@ -56,7 +56,7 @@ public class PostgresJobQueueIntegrationTest {
 
     @AfterEach
     void cleanUpEach() {
-        //clearJobs();
+        clearJobs();
     }
 
     /**
