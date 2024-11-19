@@ -517,12 +517,12 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         Contentlet contentAFromAPI = APILocator.getContentletAPI()
                 .find(contentACompleteANdPublish.getInode(), APILocator.systemUser(), false);
 
-        /*Map<String, Object> blockEditorMap = JsonUtil.getJsonFromString(contentAFromAPI.getStringProperty(storyBlockField.variable()));
+        Map<String, Object> blockEditorMap = JsonUtil.getJsonFromString(contentAFromAPI.getStringProperty(storyBlockField.variable()));
         List<Map<String, Object>> blockValue = (List<Map<String, Object>>) blockEditorMap.get("content");
 
         assertEquals(3, blockValue.size());
 
-        for (int i = 0; i < blockValue.size(); i++) {
+        /*for (int i = 0; i < blockValue.size(); i++) {
 
             if (blockValue.get(i).get("type").equals("dotContent")) {
                 Map<String, Object> blockEditorItem = (Map<String, Object>)
