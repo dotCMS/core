@@ -45,8 +45,9 @@ export class ContentUtils {
     async addNewContentAction(page: Page, typeLocator: string, typeString: string) {
         const iframe = page.frameLocator(iFramesLocators.main_iframe);
         await expect(iframe.locator('#structure_inode')).toBeVisible();
+        await page.waitForTimeout(1000);
         await iframe.locator('#widget_structure_inode div').first().click();
-        await iframe.getByText(typeLocator).waitFor();
+        await page.waitForTimeout(1000);
         await iframe.getByText(typeLocator).click();
         await iframe.locator('#dijit_form_DropDownButton_0').click();
         await expect(iframe.getByLabel('actionPrimaryMenu')).toBeVisible();

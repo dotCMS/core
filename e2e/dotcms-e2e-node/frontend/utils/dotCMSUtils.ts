@@ -12,6 +12,7 @@ export class dotCMSUtils {
      */
     async login(page: Page, username: string, password: string) {
         await page.goto('/dotAdmin');
+        await page.waitForLoadState()
         await page.fill(loginLocators.userNameInput, username);
         await page.fill(loginLocators.passwordInput, password); 
         await page.getByTestId(loginLocators.loginBtn).click();

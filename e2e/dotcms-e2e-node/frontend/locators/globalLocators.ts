@@ -34,6 +34,5 @@ export const richText = {
 }
 
 export {
-    GroupEntriesLocators, MenuEntriesLocators, ToolEntriesLocators
 } from './navigation/menuLocators';
 
