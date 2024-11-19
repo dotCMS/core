@@ -16,6 +16,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
@@ -108,6 +109,7 @@ import java.util.Optional;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -116,12 +118,15 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 
 /**
  * {@link PageResource} test
  */
+@ApplicationScoped
+@RunWith(JUnit4WeldRunner.class)
 public class PageResourceTest {
     private ContentletAPI esapi;
     private PageResource pageResource;
@@ -131,10 +136,10 @@ public class PageResourceTest {
     private HttpServletResponse response;
     private HttpSession session;
     private Host host;
-    private final String pageName = "index" + System.currentTimeMillis();
-    private final String folderName = "about-us" + System.currentTimeMillis();
-    private final String hostName = "my.host.com" + System.currentTimeMillis();
-    private final String pagePath = String.format("/%s/%s",folderName,pageName);
+    private String pageName = "index" + System.currentTimeMillis();
+    private String folderName = "about-us" + System.currentTimeMillis();
+    private String hostName = "my.host.com" + System.currentTimeMillis();
+    private String pagePath = String.format("/%s/%s",folderName,pageName);
     private HTMLPageAsset pageAsset;
     private Template template;
     private Container container1;
@@ -156,6 +161,11 @@ public class PageResourceTest {
     @Before
     public void init()
             throws DotSecurityException, DotDataException, SystemException, PortalException {
+
+        pageName = "index" + System.currentTimeMillis();
+        folderName = "about-us" + System.currentTimeMillis();
+        hostName = "my.host.com" + System.currentTimeMillis();
+        pagePath = String.format("/%s/%s", folderName, pageName);
 
         // Collection to store attributes keys/values
         final Map<String, Object> attributes = new ConcurrentHashMap<>();
