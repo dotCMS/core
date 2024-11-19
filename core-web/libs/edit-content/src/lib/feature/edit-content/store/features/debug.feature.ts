@@ -9,7 +9,7 @@ export function withDebug() {
         withHooks({
             onInit(store) {
                 watchState(store, (state) => {
-                    console.info('🔄 Store state:', state);
+                    console.warn('🔄 Store state:', state);
                 });
             }
         })

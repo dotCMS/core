@@ -1,31 +1,35 @@
-import { Router } from '@angular/router';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { signalStore, withState } from '@ngrx/signals';
+import { of, throwError } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { fakeAsync, tick } from '@angular/core/testing';
+import { Router } from '@angular/router';
 
 import {
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-
-import { of, throwError } from 'rxjs';
-
-import { HttpErrorResponse } from '@angular/common/http';
-import { fakeAsync, tick } from '@angular/core/testing';
 import { ComponentStatus, DotCMSContentlet, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
+
+import { withContent } from './content.feature';
+import { workflowInitialState } from './workflow.feature';
+
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
 import { parseWorkflows } from '../../../../utils/functions.util';
 import { CONTENT_TYPE_MOCK } from '../../../../utils/mocks';
 import { initialState } from '../edit-content.store';
-import { withContent } from './content.feature';
-import { workflowInitialState } from './workflow.feature';
 
 describe('ContentFeature', () => {
+    // let spectator: SpectatorService<ReturnType<EditContentRootState & WorkflowState>>;
     let spectator: SpectatorService<any>;
+
     let store: any;
     let contentTypeService: SpyObject<DotContentTypeService>;
-    let dotHttpErrorManagerService: SpyObject<DotHttpErrorManagerService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
     let workflowActionService: SpyObject<DotWorkflowsActionsService>;
     let router: SpyObject<Router>;
@@ -48,7 +52,6 @@ describe('ContentFeature', () => {
         spectator = createStore();
         store = spectator.service;
         contentTypeService = spectator.inject(DotContentTypeService);
-        dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
         dotEditContentService = spectator.inject(DotEditContentService);
         workflowActionService = spectator.inject(DotWorkflowsActionsService);
         router = spectator.inject(Router);

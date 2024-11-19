@@ -347,7 +347,7 @@ export const parseWorkflows = (
  */
 export function shouldShowWorkflowActions(
     schemes: WorkflowState['schemes'],
-    contentlet: any | null,
+    contentlet: ContentState['contentlet'],
     currentSchemeId: string | null
 ): boolean {
     const hasOneScheme = Object.keys(schemes).length === 1;
@@ -428,6 +428,7 @@ export function getWorkflowActions(
     return Object.values(schemes[currentSchemeId].actions).sort((a, b) => {
         if (a.name === 'Save') return -1;
         if (b.name === 'Save') return 1;
+
         return a.name.localeCompare(b.name);
     });
 }

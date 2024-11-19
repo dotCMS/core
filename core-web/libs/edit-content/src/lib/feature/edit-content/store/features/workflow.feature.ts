@@ -35,13 +35,14 @@ import {
     WorkflowTask
 } from '@dotcms/dotcms-models';
 
+import { ContentState } from './content.feature';
+
 import {
     getWorkflowActions,
     shouldShowWorkflowActions,
     shouldShowWorkflowWarning
 } from '../../../../utils/functions.util';
 import { EditContentRootState } from '../edit-content.store';
-import { ContentState } from './content.feature';
 
 export interface WorkflowState {
     /** Schemas available for the content type */
@@ -90,7 +91,7 @@ export const workflowInitialState: WorkflowState = {
  *
  * @returns
  */
-export function withWorkflow<WorkflowState>() {
+export function withWorkflow() {
     return signalStoreFeature(
         { state: type<EditContentRootState & ContentState>() },
         withState(workflowInitialState),

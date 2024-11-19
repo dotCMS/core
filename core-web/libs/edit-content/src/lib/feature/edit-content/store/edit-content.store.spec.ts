@@ -1,4 +1,9 @@
+import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
+
 import { ActivatedRoute } from '@angular/router';
+
+import { MessageService } from 'primeng/api';
+
 import {
     DotContentTypeService,
     DotHttpErrorManagerService,
@@ -8,10 +13,10 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { MessageService } from 'primeng/api';
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
+
 import { DotEditContentStore } from './edit-content.store';
+
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
 
 describe('DotEditContentStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotEditContentStore>>;
