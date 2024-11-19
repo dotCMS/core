@@ -120,6 +120,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -2162,7 +2163,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void updateContentletWithDuplicateValuesInUniqueFields()
-            throws DotDataException, DotSecurityException, InterruptedException, IOException {
+            throws DotDataException, DotSecurityException, IOException {
         final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
@@ -2207,19 +2208,19 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             APILocator.getContentTypeFieldAPI().save(uniqueFieldUpdated, APILocator.systemUser());
 
             Map<String, ? extends Serializable> uniqueFieldCriteriaMap = Map.of(
-                    "contentTypeID", contentType.id(),
-                    "fieldVariableName", uniqueTextFieldFromDB.variable(),
-                    "fieldValue", uniqueVersionValue.toString(),
-                    "languageId", language.getId(),
-                    "hostId", host.getIdentifier(),
-                    "uniquePerSite", true,
-                    "variant", VariantAPI.DEFAULT_VARIANT.name()
+                    CONTENT_TYPE_ID_ATTR, Objects.requireNonNull(contentType.id()),
+                    FIELD_VARIABLE_NAME_ATTR, Objects.requireNonNull(uniqueTextFieldFromDB.variable()),
+                    FIELD_VALUE_ATTR, uniqueVersionValue,
+                    LANGUAGE_ID_ATTR, language.getId(),
+                    SITE_ID_ATTR, host.getIdentifier(),
+                    UNIQUE_PER_SITE_ATTR, true,
+                    VARIANT_ATTR, VariantAPI.DEFAULT_VARIANT.name()
             );
 
             final Map<String, Object> supportingValues = new HashMap<>(uniqueFieldCriteriaMap);
-            supportingValues.put("contentletsId", CollectionsUtils.list(contentlet_1.getIdentifier(),
+            supportingValues.put(CONTENTLET_IDS_ATTR, CollectionsUtils.list(contentlet_1.getIdentifier(),
                     contentlet_2.getIdentifier()));
-            supportingValues.put("uniquePerSite", false);
+            supportingValues.put(UNIQUE_PER_SITE_ATTR, false);
 
             final String hash = StringUtils.hashText(contentType.id() + uniqueTextFieldFromDB.variable() +
                     language.getId() + uniqueVersionValue + host.getIdentifier());
@@ -2241,20 +2242,21 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static void checkContentletInUniqueFieldsTable(final Contentlet contentlet) throws DotDataException, IOException {
         final List<Map<String, Object>> result_1 = new DotConnect()
-                .setSQL("SELECT * FROM unique_fields WHERE supporting_values->'contentletsId' @> ?::jsonb")
+                .setSQL("SELECT * FROM unique_fields WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb")
                 .addParam("\"" + contentlet.getIdentifier() + "\"")
                 .loadObjectResults();
 
-        assertEquals(1, result_1.size());
+        assertEquals("Only one Unique Value record should've been returned",1, result_1.size());
 
         final PGobject supportingValues = (PGobject) result_1.get(0).get("supporting_values");
         final Map<String, Object> supportingValuesMap = JsonUtil.getJsonFromString(supportingValues.getValue());
-        final List<String> contentletsId = (List<String>) supportingValuesMap.get("contentletsId");
+        final List<String> contentletIds = (List<String>) supportingValuesMap.get(CONTENTLET_IDS_ATTR);
 
-        assertEquals(1, contentletsId.size());
-        assertEquals(contentlet.getIdentifier(), contentletsId.get(0));
+        assertEquals("Only one Unique Value record should've been returned", 1, contentletIds.size());
+        assertEquals("The returned Contentlet ID doesn't match the expected one", contentlet.getIdentifier(), contentletIds.get(0));
     }
 
     /**
