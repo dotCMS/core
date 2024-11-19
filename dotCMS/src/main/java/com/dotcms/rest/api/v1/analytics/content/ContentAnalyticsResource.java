@@ -238,6 +238,9 @@ public class ContentAnalyticsResource {
 
         DotPreconditions.checkNotNull(userEventPayload, IllegalArgumentException.class, "The 'userEventPayload' JSON cannot be null");
         DotPreconditions.checkNotNull(userEventPayload.get("event_type"), IllegalArgumentException.class, "The 'event_type' field is required");
+        if (userEventPayload.containsKey(Collector.EVENT_SOURCE)) {
+            throw new IllegalArgumentException("The 'event_source' field is reserved and cannot be used");
+        }
         Logger.debug(this,  ()->"Creating an user custom event with the payload: " + userEventPayload);
         request.setAttribute("requestId", Objects.nonNull(request.getAttribute("requestId")) ? request.getAttribute("requestId") : UUIDUtil.uuid());
 
