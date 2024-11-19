@@ -111,10 +111,11 @@ public class ContentImportHelper {
     public String createJob(
             final boolean preview, 
             final String queueName, 
-            final com.dotcms.rest.api.v1.contentImport.ContentImportParams params,
+            final ContentImportParams params,
             final User user,
             final HttpServletRequest request) throws DotDataException, JsonProcessingException {
 
+        params.checkValid();
         params.getForm().checkValid();
 
         final Map<String, Object> jobParameters = createJobParameters(preview, params, user, request);
@@ -154,7 +155,7 @@ public class ContentImportHelper {
      */
     private void addOptionalParameters(
             final com.dotcms.rest.api.v1.contentImport.ContentImportParams params,
-            final Map<String, Object> jobParameters) throws JsonProcessingException, DotDataException {
+            final Map<String, Object> jobParameters) throws JsonProcessingException {
         
         final com.dotcms.rest.api.v1.contentImport.ContentImportForm form = params.getForm();
 
@@ -182,11 +183,9 @@ public class ContentImportHelper {
      * Processes the file upload and adds the necessary parameters to the job
      */
     private void processFileUpload(
-            final com.dotcms.rest.api.v1.contentImport.ContentImportParams params,
+            final ContentImportParams params,
             final Map<String, Object> jobParameters,
             final HttpServletRequest request) throws DotDataException {
-
-        validateFileUpload(params);
 
         try {
             final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFile(
@@ -199,15 +198,6 @@ public class ContentImportHelper {
         } catch (DotSecurityException e) {
             Logger.error(this, "Error handling file upload", e);
             throw new DotDataException("Error processing file upload: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Validates that the file upload parameters are present
-     */
-    private void validateFileUpload(final com.dotcms.rest.api.v1.contentImport.ContentImportParams params) throws DotDataException {
-        if (params.getFileInputStream() == null || params.getContentDisposition() == null) {
-            throw new DotDataException("CSV file is required");
         }
     }
 }

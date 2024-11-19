@@ -1,9 +1,11 @@
 package com.dotcms.rest.api.v1.contentImport;
 
+import com.dotcms.repackage.javax.validation.ValidationException;
+import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotmarketing.exception.DotDataException;
+import net.minidev.json.annotate.JsonIgnore;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
@@ -14,15 +16,18 @@ import java.io.InputStream;
  */
 public class ContentImportParams extends Validated {
 
+    @NotNull(message = "The file is required.")
     @FormDataParam("file")
     private InputStream fileInputStream;
 
+    @JsonIgnore
     @FormDataParam("file")
     private FormDataContentDisposition contentDisposition;
 
     @FormDataParam("form")
-    private com.dotcms.rest.api.v1.contentImport.ContentImportForm form;
+    private ContentImportForm form;
 
+    @NotNull(message = "The form data is required.")
     @FormDataParam("form")
     private String jsonForm;
 
@@ -46,7 +51,7 @@ public class ContentImportParams extends Validated {
         return jsonForm;
     }
 
-    public void setForm(com.dotcms.rest.api.v1.contentImport.ContentImportForm form) {
+    public void setForm(ContentImportForm form) {
         this.form = form;
     }
 
@@ -54,13 +59,9 @@ public class ContentImportParams extends Validated {
      * Gets the parsed form object, lazily parsing the JSON if needed
      * @return The ContentImportForm object
      */
-    public com.dotcms.rest.api.v1.contentImport.ContentImportForm getForm() throws DotDataException, JsonProcessingException {
+    public ContentImportForm getForm() throws JsonProcessingException {
         if (null == form && (null != jsonForm && !jsonForm.isEmpty())) {
             form = new ObjectMapper().readValue(jsonForm, com.dotcms.rest.api.v1.contentImport.ContentImportForm.class);
-        }
-
-        if (form == null) {
-            throw new DotDataException("Import form parameters are required");
         }
         return form;
     }
@@ -72,5 +73,13 @@ public class ContentImportParams extends Validated {
                 ", hasFile=" + (fileInputStream != null) +
                 ", fileName=" + (contentDisposition != null ? contentDisposition.getFileName() : "null") +
                 '}';
+    }
+
+    @Override
+    public void checkValid() {
+        super.checkValid();
+        if (contentDisposition == null || contentDisposition.getFileName() == null) {
+            throw new ValidationException("The file must have a valid file name.");
+        }
     }
 }
