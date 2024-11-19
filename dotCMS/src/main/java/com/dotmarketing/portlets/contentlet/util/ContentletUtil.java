@@ -164,6 +164,7 @@ public class ContentletUtil {
 		return new DotTransformerBuilder().contentResourceOptions(allCategoriesInfo)
 				.siteToMapTransformer(false)
 				.renderFields(renderFields)
+				.forUser(user)
 				.content(sourceContentlet).build().toMaps().get(0);
 	}
 
