@@ -6,6 +6,7 @@ import com.dotcms.visitor.filter.characteristics.Character;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * This Context Map has the character map
@@ -36,7 +37,7 @@ public class CharacterCollectorContextMap implements CollectorContextMap {
         this.characterMap = character.getMap();
         this.requestMatcher = requestMatcher;
         this.contextMap.putAll(contextMap);
-        this.customValuesMap = customValuesMap;
+        this.customValuesMap = Objects.nonNull(customValuesMap)?customValuesMap:Map.of();
     }
 
 

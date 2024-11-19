@@ -7,6 +7,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * This Context Map has the request + character map
@@ -26,7 +27,7 @@ public class RequestCharacterCollectorContextMap implements CollectorContextMap 
         this.request = request;
         this.character = character;
         this.requestMatcher = requestMatcher;
-        this.customValuesMap = customValuesMap;
+        this.customValuesMap = Objects.nonNull(customValuesMap)?customValuesMap:Map.of();
     }
 
     public RequestCharacterCollectorContextMap(final HttpServletRequest request,
