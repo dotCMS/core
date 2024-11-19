@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.contenttype;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -339,7 +338,7 @@ public class FieldVariableResource implements Serializable {
 												 @PathParam("fieldVarId") final String fieldVarId,
 												 final String fieldVariableJson,
 												 @Context final HttpServletRequest req,
-												 @Context final HttpServletResponse res) throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
+												 @Context final HttpServletResponse res) throws DotDataException, DotSecurityException {
 		final User user = new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(req, res)
 				.requiredBackendUser(true)
@@ -392,7 +391,7 @@ public class FieldVariableResource implements Serializable {
 												  @PathParam("fieldVarId") final String fieldVarId,
 												  final String fieldVariableJson,
 												  @Context final HttpServletRequest req,
-												  @Context final HttpServletResponse res) throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
+												  @Context final HttpServletResponse res) throws DotDataException, DotSecurityException {
 		final User user = new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(req, res)
 				.requiredBackendUser(true)
@@ -430,7 +429,7 @@ public class FieldVariableResource implements Serializable {
 												 @PathParam("fieldId") final String fieldId,
 												 @PathParam("fieldVarId") final String fieldVarId,
 												 @Context final HttpServletRequest req,
-												 @Context final HttpServletResponse res) throws DotDataException, UniqueFieldValueDuplicatedException {
+												 @Context final HttpServletResponse res) throws DotDataException {
 		new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(req, res)
 				.requiredBackendUser(true)
@@ -470,7 +469,7 @@ public class FieldVariableResource implements Serializable {
 												  @PathParam("fieldVar") final String fieldVar,
 												  @PathParam("fieldVarId") final String fieldVarId,
 												  @Context final HttpServletRequest req,
-												  @Context final HttpServletResponse res) throws DotDataException, UniqueFieldValueDuplicatedException {
+												  @Context final HttpServletResponse res) throws DotDataException {
 		new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(req, res)
 				.requiredBackendUser(true)
