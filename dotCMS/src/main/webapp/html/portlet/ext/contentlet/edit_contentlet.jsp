@@ -75,6 +75,7 @@
 <%@ page import="com.dotcms.contenttype.transform.field.FieldTransformer" %>
 <%@ page import="com.dotmarketing.util.Logger" %>
 <%@ page import="com.dotmarketing.util.ConfigUtils" %>
+<%@ page import="java.util.Optional" %>
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
@@ -442,7 +443,9 @@
 
                             <div class="fieldName">
 								<%
-									String hint = UtilMethods.isSet(f.getHint()) ? f.getHint() : null;
+									String hint = Optional.ofNullable(f.getHint())
+											.filter(UtilMethods::isSet)
+											.orElse(null);
 									if (hint != null) {
 								%>
 									<a href="#" id="tip-<%=f.getVelocityVarName()%>"><span class="hintIcon"></span></a>
