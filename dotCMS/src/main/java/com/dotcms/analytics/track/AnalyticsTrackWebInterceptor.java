@@ -59,7 +59,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
                         .addBlackPatterns(CollectionsUtils.concat(Config.getStringArrayProperty(  // except this
                                 "ANALYTICS_BLACKLISTED_KEYS", new String[]{}), DEFAULT_BLACKLISTED_PROPS)).build(),
                 new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_TURNED_ON_KEY, true)),
-                ()->APILocator.systemUser(),
+                APILocator::systemUser,
                 new PagesAndUrlMapsRequestMatcher(),
                 new FilesRequestMatcher(),
                 //       new RulesRedirectsRequestMatcher(),

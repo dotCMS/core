@@ -1,5 +1,7 @@
 import { ElementRef, Injectable, signal } from '@angular/core';
 
+import { CLIENT_ACTIONS } from '@dotcms/client';
+
 import { InlineEditingContentletDataset } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 
 declare global {
@@ -137,8 +139,10 @@ export class InlineEditService {
 
         window.parent.postMessage(
             {
-                action: 'init-inline-editing',
-                payload: {}
+                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                payload: {
+                    type: 'WYSIWYG'
+                }
             },
             '*'
         );
