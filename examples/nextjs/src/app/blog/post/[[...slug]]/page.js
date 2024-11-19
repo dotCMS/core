@@ -14,9 +14,9 @@ import { MyBlogPage } from "@/components/my-blog-page";
  * @return {*}
  */
 export async function generateMetadata({ params, searchParams }) {
-    const path = params?.slug?.join("/") || "/";
+    const path = params?.slug?.join("/");
     const pageRequestParams = getPageRequestParams({
-        path,
+        path: `blog/post/${path}`,
         params: searchParams,
     });
 
@@ -37,9 +37,10 @@ export async function generateMetadata({ params, searchParams }) {
 
 export default async function Home({ searchParams, params }) {
     const getPageData = async () => {
-        const path = params?.slug?.join("/") || "/";
+        const path = params?.slug?.join("/");
+        console.log(path)
         const pageParams = getPageRequestParams({
-            path,
+            path: `blog/post/${path}`,
             params: searchParams,
         });
 
