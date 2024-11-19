@@ -1,11 +1,12 @@
 'use client';
 import Link from 'next/link';
 import { isInsideEditor } from '@dotcms/client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import ReorderButton from './components/reorderMenu';
 
 function Header({ children }) {
     const [insideEditor, setInsideEditor] = useState(false);
+    
 
     useEffect(() => {
         setInsideEditor(isInsideEditor());
