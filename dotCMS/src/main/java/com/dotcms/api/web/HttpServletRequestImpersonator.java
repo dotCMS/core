@@ -17,7 +17,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class HttpServletRequestImpersonator {
 
-    private static final Pattern MOCK_REQUEST_PATTERN = Pattern.compile(".*mock.*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern MOCK_REQUEST_PATTERN = Pattern.compile(".*(mock|fake).*", Pattern.CASE_INSENSITIVE);
 
     /**
      * new instance of {@link HttpServletRequestImpersonator}
