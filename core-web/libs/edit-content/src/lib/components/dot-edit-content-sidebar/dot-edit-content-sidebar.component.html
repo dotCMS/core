@@ -7,11 +7,10 @@
 <!-- Workflow Component -->
 @let workflowOptions = store.workflowSchemeOptions();
 @let scheme = store.getScheme();
-@let step = store.currentStep();
 @let task = store.lastTask();
 @let isLoadingWorkflow = store.isLoadingWorkflow();
 @let showSelectWorkflowWarning = store.showSelectWorkflowWarning();
-@let firstStep = store.getFirstStep();
+@let currentStep = store.getCurrentStep();
 
 <aside class="content-sidebar">
     <p-tabView>
@@ -50,9 +49,8 @@
                     (onSelectWorkflow)="store.setSelectedWorkflow($event)"
                     [workflow]="{
                         scheme,
-                        step,
-                        task,
-                        firstStep
+                        step: currentStep,
+                        task
                     }"
                     [isLoading]="isLoadingWorkflow"
                     [noWorkflowSelectedYet]="showSelectWorkflowWarning"
