@@ -7,7 +7,6 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.queue.JobQueue;
-import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotmarketing.exception.DotDataException;
 import java.util.Map;
 import java.util.Optional;
@@ -94,10 +93,10 @@ public interface JobQueueManagerAPI {
      * @param page      The page number
      * @param pageSize  The number of jobs per page
      * @return A result object containing the list of active jobs and pagination information.
-     * @throws JobQueueDataException if there's an error fetching the jobs
+     * @throws DotDataException if there's an error fetching the jobs
      */
     JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize)
-            throws JobQueueDataException;
+            throws DotDataException;
 
     /**
      * Retrieves a list of jobs.
@@ -115,9 +114,9 @@ public interface JobQueueManagerAPI {
      * @param page     The page number
      * @param pageSize The number of jobs per page
      * @return A result object containing the list of active jobs and pagination information.
-     * @throws JobQueueDataException if there's an error fetching the jobs
+     * @throws DotDataException if there's an error fetching the jobs
      */
-    JobPaginatedResult getActiveJobs(int page, int pageSize) throws JobQueueDataException;
+    JobPaginatedResult getActiveJobs(int page, int pageSize) throws DotDataException;
 
     /**
      * Retrieves a list of completed jobs
@@ -125,9 +124,9 @@ public interface JobQueueManagerAPI {
      * @param page     The page number
      * @param pageSize The number of jobs per page
      * @return A result object containing the list of completed jobs and pagination information.
-     * @throws JobQueueDataException if there's an error fetching the jobs
+     * @throws DotDataException if there's an error fetching the jobs
      */
-    JobPaginatedResult getCompletedJobs(int page, int pageSize) throws JobQueueDataException;
+    JobPaginatedResult getCompletedJobs(int page, int pageSize) throws DotDataException;
 
     /**
      * Retrieves a list of canceled jobs
@@ -135,9 +134,9 @@ public interface JobQueueManagerAPI {
      * @param page     The page number
      * @param pageSize The number of jobs per page
      * @return A result object containing the list of canceled jobs and pagination information.
-     * @throws JobQueueDataException if there's an error fetching the jobs
+     * @throws DotDataException if there's an error fetching the jobs
      */
-    JobPaginatedResult getCanceledJobs(int page, int pageSize) throws JobQueueDataException;
+    JobPaginatedResult getCanceledJobs(int page, int pageSize) throws DotDataException;
 
     /**
      * Retrieves a list of failed jobs
@@ -145,9 +144,9 @@ public interface JobQueueManagerAPI {
      * @param page     The page number
      * @param pageSize The number of jobs per page
      * @return A result object containing the list of failed jobs and pagination information.
-     * @throws JobQueueDataException if there's an error fetching the jobs
+     * @throws DotDataException if there's an error fetching the jobs
      */
-    JobPaginatedResult getFailedJobs(int page, int pageSize) throws JobQueueDataException;
+    JobPaginatedResult getFailedJobs(int page, int pageSize) throws DotDataException;
 
     /**
      * Cancels a job.

@@ -1,10 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import {
-    SpectatorRouting,
-    createRoutingFactory,
-    byTestId,
-    mockProvider
-} from '@ngneat/spectator/jest';
+import { SpectatorRouting, createRoutingFactory, byTestId } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 
@@ -36,6 +31,7 @@ import {
     DotLicenseService,
     DotMessageService,
     DotPersonalizeService,
+    DotPropertiesService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
     DotTempFileUploadService,
@@ -72,12 +68,14 @@ import {
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { CONTENT_TYPE_MOCK } from './components/edit-ema-palette/components/edit-ema-palette-content-type/edit-ema-palette-content-type.component.spec';
 import { CONTENTLETS_MOCK } from './components/edit-ema-palette/edit-ema-palette.component.spec';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
+import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
@@ -91,7 +89,8 @@ import {
     newContentlet,
     PAYLOAD_MOCK,
     UVE_PAGE_RESPONSE_MAP,
-    EMA_DRAG_ITEM_CONTENTLET_MOCK
+    EMA_DRAG_ITEM_CONTENTLET_MOCK,
+    dotPropertiesServiceMock
 } from '../shared/mocks';
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
@@ -108,7 +107,10 @@ const messagesMock = {
     'dot.common.dialog.accept': 'Accept',
     'dot.common.dialog.reject': 'Reject',
     'editpage.content.add.already.title': 'Content already added',
-    'editpage.content.add.already.message': 'This content is already added to this container'
+    'editpage.content.add.already.message': 'This content is already added to this container',
+    'editpage.not.lincese.error':
+        'Inline editing is available only with an enterprise license. Please contact support to upgrade your license.',
+    'dot.common.license.enterprise.only.error': 'Enterprise Only'
 };
 
 const IFRAME_MOCK = {
@@ -146,9 +148,17 @@ const createRouting = () =>
             DotFavoritePageService,
             DotESContentService,
             {
+                provide: DotPropertiesService,
+                useValue: {
+                    ...dotPropertiesServiceMock,
+                    getKeyAsList: () => of([])
+                }
+            },
+            {
                 provide: DotAlertConfirmService,
                 useValue: {
-                    confirm: () => of({})
+                    confirm: () => of({}),
+                    alert: () => of({})
                 }
             },
             {
@@ -221,6 +231,7 @@ const createRouting = () =>
             DotCopyContentModalService,
             DotWorkflowActionsFireService,
             DotTempFileUploadService,
+            DotAlertConfirmService,
             {
                 provide: DotHttpErrorManagerService,
                 useValue: new MockDotHttpErrorManagerService()
@@ -309,7 +320,14 @@ const createRouting = () =>
                 provide: DotPersonalizeService,
                 useValue: new DotPersonalizeServiceMock()
             },
-            mockProvider(DotContentTypeService),
+            {
+                provide: DotContentTypeService,
+                useValue: {
+                    filterContentTypes: () => of([CONTENT_TYPE_MOCK]),
+                    getContentTypes: () => of([CONTENT_TYPE_MOCK]),
+                    getContentType: () => of(CONTENT_TYPE_MOCK)
+                }
+            },
             {
                 provide: DotContentletLockerService,
                 useValue: {
@@ -326,9 +344,11 @@ describe('EditEmaEditorComponent', () => {
         let confirmationService: ConfirmationService;
         let messageService: MessageService;
         let addMessageSpy: jest.SpyInstance;
+        let dotLicenseService: DotLicenseService;
         let dotCopyContentModalService: DotCopyContentModalService;
         let dotCopyContentService: DotCopyContentService;
         let dotContentletService: DotContentletService;
+        let dotAlertConfirmService: DotAlertConfirmService;
         let dotHttpErrorManagerService: DotHttpErrorManagerService;
         let dotTempFileUploadService: DotTempFileUploadService;
         let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
@@ -358,16 +378,18 @@ describe('EditEmaEditorComponent', () => {
             store = spectator.inject(UVEStore, true);
             confirmationService = spectator.inject(ConfirmationService, true);
             messageService = spectator.inject(MessageService, true);
+            dotLicenseService = spectator.inject(DotLicenseService, true);
             dotCopyContentModalService = spectator.inject(DotCopyContentModalService, true);
             dotCopyContentService = spectator.inject(DotCopyContentService, true);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService, true);
             dotContentletService = spectator.inject(DotContentletService, true);
+            dotAlertConfirmService = spectator.inject(DotAlertConfirmService, true);
             dotTempFileUploadService = spectator.inject(DotTempFileUploadService, true);
             dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
             router = spectator.inject(Router, true);
             dotPageApiService = spectator.inject(DotPageApiService, true);
-
             addMessageSpy = jest.spyOn(messageService, 'add');
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
 
             store.init({
                 clientHost: 'http://localhost:3000',
@@ -406,6 +428,23 @@ describe('EditEmaEditorComponent', () => {
                 componentsToHide.forEach((testId) => {
                     expect(spectator.query(byTestId(testId))).toBeNull();
                 });
+            });
+
+            it('should show the old toolbar when FEATURE_FLAG_UVE_PREVIEW_MODE is false', () => {
+                const toolbar = spectator.query(EditEmaToolbarComponent);
+
+                expect(toolbar).not.toBeNull();
+            });
+
+            it('should show the new toolbar when FEATURE_FLAG_UVE_PREVIEW_MODE is true', () => {
+                store.setFlags({
+                    FEATURE_FLAG_UVE_PREVIEW_MODE: true
+                });
+                spectator.detectChanges();
+
+                const toolbar = spectator.query(DotUveToolbarComponent);
+
+                expect(toolbar).not.toBeNull();
             });
 
             it('should hide components when the store changes for a variant', () => {
@@ -465,6 +504,13 @@ describe('EditEmaEditorComponent', () => {
                 spectator.component.ngOnDestroy();
 
                 expect(store.isClientReady()).toBe(false);
+            });
+
+            it('should relaod when Block editor is saved', () => {
+                const blockEditorSidebar = spectator.query(DotBlockEditorSidebarComponent);
+                const spy = jest.spyOn(store, 'reload');
+                blockEditorSidebar.onSaved.emit();
+                expect(spy).toHaveBeenCalled();
             });
         });
 
@@ -643,6 +689,62 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
                 });
 
+                it('should notify block-editor-sidebar to enable editing', () => {
+                    const spy = jest.spyOn(spectator.component.blockSidebar, 'open');
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                                payload: {
+                                    type: 'BLOCK_EDITOR',
+                                    data: {}
+                                }
+                            }
+                        })
+                    );
+
+                    spectator.detectComponentChanges();
+
+                    expect(spy).toHaveBeenCalledWith({});
+                });
+
+                it('should show a message and not notify the event if there is not enterprise lincese', () => {
+                    const spyAlert = jest.spyOn(dotAlertConfirmService, 'alert');
+
+                    jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
+
+                    spectator.detectChanges();
+
+                    store.init({
+                        clientHost: 'http://localhost:3000',
+                        url: 'index',
+                        language_id: '1',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    });
+
+                    spectator.detectChanges();
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                                payload: {}
+                            }
+                        })
+                    );
+
+                    spectator.detectComponentChanges();
+
+                    expect(spyAlert).toHaveBeenCalledWith({
+                        header: 'Enterprise Only',
+                        message:
+                            'Inline editing is available only with an enterprise license. Please contact support to upgrade your license.'
+                    });
+                });
+
                 describe('reorder navigation', () => {
                     it('should open a dialog to reorder the navigation', () => {
                         window.dispatchEvent(
@@ -651,7 +753,8 @@ describe('EditEmaEditorComponent', () => {
                                 data: {
                                     action: CLIENT_ACTIONS.REORDER_MENU,
                                     payload: {
-                                        reorderUrl: 'http://localhost:3000/reorder-menu'
+                                        startLevel: 1,
+                                        depth: 2
                                     }
                                 }
                             })
@@ -726,7 +829,8 @@ describe('EditEmaEditorComponent', () => {
                                 data: {
                                     action: CLIENT_ACTIONS.REORDER_MENU,
                                     payload: {
-                                        reorderUrl: 'http://localhost:3000/reorder-menu'
+                                        startLevel: 1,
+                                        depth: 2
                                     }
                                 }
                             })
@@ -756,6 +860,8 @@ describe('EditEmaEditorComponent', () => {
 
                         expect(pDialog.attributes['ng-reflect-visible']).toBe('false');
                     });
+
+                    afterEach(() => jest.clearAllMocks());
                 });
 
                 xdescribe('reload', () => {
@@ -2883,4 +2989,6 @@ describe('EditEmaEditorComponent', () => {
             });
         });
     });
+
+    afterEach(() => jest.clearAllMocks());
 });

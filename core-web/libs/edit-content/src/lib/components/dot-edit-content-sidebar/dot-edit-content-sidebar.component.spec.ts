@@ -10,6 +10,7 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
 import { TabView } from 'primeng/tabview';
 
 import {
@@ -49,6 +50,7 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(DotMessageService),
             mockProvider(Router),
             mockProvider(DotWorkflowService),
+            mockProvider(MessageService),
             {
                 provide: ActivatedRoute,
                 useValue: {

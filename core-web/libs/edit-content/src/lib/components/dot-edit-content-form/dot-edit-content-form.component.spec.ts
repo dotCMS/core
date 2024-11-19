@@ -10,6 +10,7 @@ import { of } from 'rxjs';
 import { Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
 import { TabPanel, TabView } from 'primeng/tabview';
 
 import {
@@ -40,7 +41,7 @@ import { MockResizeObserver } from '../../utils/mocks';
 describe('DotFormComponent', () => {
     let spectator: Spectator<DotEditContentFormComponent>;
     let component: DotEditContentFormComponent;
-    let store: SpyObject<InstanceType<typeof DotEditContentStore>>;
+    let store: InstanceType<typeof DotEditContentStore>;
     let dotContentTypeService: SpyObject<DotContentTypeService>;
     let workflowActionsService: SpyObject<DotWorkflowsActionsService>;
     let workflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
@@ -62,6 +63,7 @@ describe('DotFormComponent', () => {
             mockProvider(DotMessageService),
             mockProvider(Router),
             mockProvider(DotWorkflowService),
+            mockProvider(MessageService),
             {
                 provide: ActivatedRoute,
                 useValue: {

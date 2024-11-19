@@ -3,11 +3,13 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 import { computed } from '@angular/core';
 
 import { withEditor } from './features/editor/withEditor';
+import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
 import { ShellProps, TranslateProps, UVEState } from './models';
 
 import { DotPageApiResponse } from '../services/dot-page-api.service';
+import { UVE_FEATURE_FLAGS } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import { getErrorPayload, getRequestHostName, sanitizeURL } from '../utils';
 
@@ -26,6 +28,7 @@ const initialState: UVEState = {
 };
 
 export const UVEStore = signalStore(
+    { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
     withComputed(
         ({
@@ -145,5 +148,6 @@ export const UVEStore = signalStore(
     }),
     withLoad(),
     withLayout(),
-    withEditor()
+    withEditor(),
+    withFlags(UVE_FEATURE_FLAGS)
 );

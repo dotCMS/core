@@ -12,6 +12,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -100,6 +102,22 @@ public class JobUtil {
                 UtilMethods.extractUserIdOrNull(user));
 
         return requestProxy;
+    }
+
+    /**
+     * Helper method to round the progress to 3 decimal places.
+     *
+     * @param progress The progress value to round
+     * @return The rounded progress value
+     */
+    public static float roundedProgress(final float progress) {
+
+        // Round the progress to 3 decimal places
+        final var roundedProgress = BigDecimal.valueOf(progress)
+                .setScale(3, RoundingMode.HALF_UP)
+                .floatValue();
+
+        return Math.round(roundedProgress * 1000f) / 1000f;
     }
 
 }

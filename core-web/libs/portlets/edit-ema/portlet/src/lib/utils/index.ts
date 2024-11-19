@@ -24,6 +24,9 @@ import {
 
 export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
 
+const REORDER_MENU_BASE_URL =
+    'c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu';
+
 export const TEMPORAL_DRAG_ITEM: EmaDragItem = {
     baseType: 'dotAsset',
     contentType: 'dotAsset',
@@ -509,4 +512,47 @@ export const getDragItemData = ({ type, item }: DOMStringMap) => {
         // In that case, we are draging an invalid element from the window
         return null;
     }
+};
+
+/**
+ * Adds missing query parameters `pagePath` and `hostId` to the given URL if they are not already present.
+ *
+ * @param {Object} params - The parameters object.
+ * @param {string} params.url - The URL to which the parameters will be added.
+ * @param {string} params.pagePath - The page path to be added as a query parameter if missing.
+ * @param {string} params.hostId - The host ID to be added as a query parameter if missing.
+ * @returns {string} - The updated URL with the missing parameters added.
+ */
+export const createReorderMenuURL = ({
+    startLevel,
+    depth,
+    pagePath,
+    hostId
+}: {
+    startLevel: number;
+    depth: number;
+    pagePath: string;
+    hostId: string;
+}) => {
+    const urlObject = new URL(REORDER_MENU_BASE_URL, window.location.origin);
+
+    const params = urlObject.searchParams;
+
+    if (!params.has('startLevel')) {
+        params.set('startLevel', startLevel.toString());
+    }
+
+    if (!params.has('depth')) {
+        params.set('depth', depth.toString());
+    }
+
+    if (!params.has('pagePath')) {
+        params.set('pagePath', pagePath);
+    }
+
+    if (!params.has('hostId')) {
+        params.set('hostId', hostId);
+    }
+
+    return urlObject.toString();
 };

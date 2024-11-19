@@ -1,4 +1,4 @@
-import { tapResponse } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import {
     patchState,
     signalStore,
@@ -14,19 +14,22 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
+
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotCMSContentlet } from '@dotcms/angular';
 import {
     DotContentTypeService,
     DotFireActionOptions,
     DotHttpErrorManagerService,
+    DotMessageService,
     DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
+    DotCMSContentlet,
     DotCMSContentType,
     DotCMSWorkflowAction,
     FeaturedFlags
@@ -62,7 +65,7 @@ const initialState: EditContentState = {
  * related to content editing and workflow actions.
  */
 export const DotEditContentStore = signalStore(
-    withState(initialState),
+    withState<EditContentState>(initialState),
     withComputed((store) => ({
         /**
          * Computed property that determines if the new content editor feature is enabled.
@@ -74,9 +77,13 @@ export const DotEditContentStore = signalStore(
          */
         isEnabledNewContentEditor: computed(() => {
             const contentType = store.contentType();
-            const metadata = contentType?.metadata;
+            if (!contentType?.metadata) {
+                return false;
+            }
 
-            return metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true;
+            return (
+                contentType.metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true
+            );
         }),
 
         /**
@@ -96,6 +103,11 @@ export const DotEditContentStore = signalStore(
          * @returns {boolean} - Returns true if the store's status is LOADED, otherwise false.
          */
         isLoaded: computed(() => store.state() === ComponentStatus.LOADED),
+
+        /**
+         * Computed property that determines if the store's status is equal to ComponentStatus.SAVING.
+         */
+        isSaving: computed(() => store.state() === ComponentStatus.SAVING),
 
         /**
          * A computed property that checks if an error exists in the store.
@@ -132,6 +144,8 @@ export const DotEditContentStore = signalStore(
             dotContentTypeService = inject(DotContentTypeService),
             dotEditContentService = inject(DotEditContentService),
             dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
+            messageService = inject(MessageService),
+            dotMessageService = inject(DotMessageService),
 
             router = inject(Router)
         ) => ({
@@ -262,10 +276,17 @@ export const DotEditContentStore = signalStore(
                                         state: ComponentStatus.LOADED,
                                         error: null
                                     });
+                                    messageService.add({
+                                        severity: 'success',
+                                        summary: dotMessageService.get('success'),
+                                        detail: dotMessageService.get(
+                                            'edit.content.success.workflow.message'
+                                        )
+                                    });
                                 },
                                 error: (error: HttpErrorResponse) => {
                                     patchState(store, {
-                                        state: ComponentStatus.ERROR,
+                                        state: ComponentStatus.LOADED,
                                         error: 'Error firing workflow action'
                                     });
                                     dotHttpErrorManagerService.handle(error);

@@ -1,5 +1,5 @@
 <!--Todo: handle Loading and Saving state-->
-@if ($store.isLoaded()) {
+@if ($store.isLoaded() || $store.isSaving()) {
     @let contentType = $store.contentType();
     @let variable = contentType.variable;
     @let showSidebar = $store.showSidebar();
@@ -38,9 +38,4 @@
     }
 }
 
-@if ($store.hasError()) {
-    {{ 'edit.content.layout.no.content.to.show ' | dm }}
-}
-
-<p-toast />
 <p-confirmDialog />

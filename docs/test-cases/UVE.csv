@@ -1,0 +1,188 @@
+Name,Section,Type,Test Case References,Steps (Instructions),Steps (Expected Result),Preconditions,Mode,,Assigned to: ,Status,Issue link (In case of fail),Notes,,,,,,,,,,,,,
+Users should be to edit the new UVE editor,UVE,Functional,Ticket #26644,"1. Start the dotCMS instance
+2. Navigate to the dotCMS backend 
+3. Try to edit a page and make sure you have the new UVE editor",You should be able to edit the page in the new UVE editor,"1. Set this FF:
+- ""DOT_FEATURE_FLAG_NEW_EDIT_PAGE"": ""true""
+2. Configure UVE following the documentation",VTL/HEADLESS,,Valentino Giardino,Passed,https://github.com/dotCMS/core/issues/29768,Issue found when trying to add an Event to a container but the issue is in the Next example.,,,,,,,,,,,,,
+Contentlet: Add button,UVE,Functional,,"1. Edit any page.
+2. Hover a contentlet
+3. Click `+` icon
+4. Select a option: Content, Widget, Form (Enterprise)
+","1. A dialog should opens.
+2. Select the content you want to add.
+3. The content should be added to the top or the bottom depends on the button
+you clicked",Have a page asset with content in it.,VTL/HEADLESS,,Valentino Giardino,Passed,,,,,,,,,,,,,,,
+Contentlet: Add Widget,UVE,Functional,,"1. Edit any page.
+2. Add a `Widget`","The Widget should be added correctly even if it's not in the container's
+whitelist","1. Have a page asset
+2. Have a Widget",VTL/HEADLESS,,Valentino Giardino,Passed,,Next example doesnt have widget component,,,,,,,,,,,,,
+Contentlet: Code ,UVE,Functional,,"1. Edit any page.
+2. Hover a contentlet with `.vtl` code
+3. Click `code` icon","1. A dialog should opens the Eidt Content for the `vtl` code
+2. You should be able to do any changes you like and save it.
+3. Close the dialog.
+4. The `vtl` code changes should be reflected on the page.",Have a page asset with content in it.,VTL/HEADLESS,,Valentino Giardino,Failed,https://github.com/dotCMS/core/issues/29854,Code icon/button not showing in headless,,,,,,,,,,,,,
+Contentlet: Delete ,UVE,Functional,,"1. Edit any page.
+2. Hover any content in the page.
+3. Click ``delete icon",It should delete the content,Have a page asset with content in it.,VTL/HEADLESS,,Valentino Giardino,Passed,,,,,,,,,,,,,,,
+Contentlet: Edit,UVE,Functional,,"1. Edit any page.
+2. Hover any content in the page.
+3. Click on the `pencil` icon in the tools.","1. A dialog should opens the Edit Content form.
+2. You should be able to do any changes you like and save it.
+3. Close the dialog.
+4. The new changes content should be now reflected on the page.",Have a page asset with content in it.,VTL/HEADLESS,,Valentino Giardino,Passed,,,,,,,,,,,,,,,
+Contentlet: Inline Editing [WYSIWYG only],UVE,Functional,Ticket #28196,"1. Edit any page.
+2. Add a `WYSIWYG` to a container
+3. Click on the content
+","The WYSIWYG field shoul enable inline-editing with a minimal editor 
+configuration",Have a page asset with content with a WYSIWYS field in it.,VTL,,Valentino Giardino,Passed,,,,,,,,,,,,,,,
+Contentlet: Move ,UVE,Functional,,"1. Edit any page.
+2. Hover any content in the page.
+3. Click and hold the `Arrows alt` icon
+4. Position the content in the same container or in other one.","1. While holding the mouse you should see the contenttype name.
+2. You should be able to move the content to another container.
+3. You should be able to move the content in the same container in a different
+position.
+4. You should not be able to drop it outside a content",Have a page asset with content in it.,VTL/HEADLESS,,Valentino Giardino,Failed,https://github.com/dotCMS/core/issues/29837,UVE: Dragging a contentlet out of the browser and then dropping it into a container breaks the UVE,,,,,,,,,,,,,
+Drag&Drop: Auto Scroll,UVE,Functional,,"1. Grab an content or item from the content palette
+2. Move the item to the bottom or top
+3. See how the page scroll automatically while grabbing",The page should scroll automatically,Have a page asset with content in it.,VTL/HEADLESS,,Valentino Giardino,Passed,,,,,,,,,,,,,,,
+Drag&Drop: Upload Assets,UVE,Functional,,"1. From your desktop grab an image or asset
+2. Drop it in a container that accepts dotAssets",It should upload the assets to dotCMS and display it in the page,Have a page asset with conatiner in it.,VTL/HEADLESS,,Valentino Giardino,Failed,https://github.com/dotCMS/core/issues/29837,UVE: Dragging a contentlet out of the browser and then dropping it into a container breaks the UVE.,,,,,,,,,,,,,
+Headless: devURLWhitelist,UVE,Functional,,"1. Go to Apps > UVE
+2. Set up the configuration in this ticket #28871
+3. Go to Edit Page
+4. Once in there, you can add `&clientHost=""YOUR_DEV_URL""` to the URL.","You should be able to toggle between the different pages you set in the
+whitelist by changing that query params with URL you want.","1. Have a page asset
+2. Configure UVE for Headless as shown here: ticket 
+#28871",HEADLESS,,Valentino Giardino,Passed,https://github.com/dotCMS/core/issues/29836,Solved in #29836,,,,,,,,,,,,,
+Headless: SETUP external hosting ,UVE,Functional,,Set-up the UVE for a external Hosting folllowing this documentation,You should be able to see you hosted page and edit it in dotCMS,"1. Configure UVE for external hosts
+2. Enterprise License",,,Valentino Giardino,Passed,,,,,,,,,,,,,,,
+Navigation bar: Content Paletter [Enterprise only],UVE,Functional,,It should function the same way as it did in the previous version of the editor,"It should let you seletect Contenttypes and Contentlets to add to a container
+in the page.
+
+More information:
+
+- Universal Visual Editor: The Content Palette
+- Page Editor (Legacy): The Content Palette","1. Have a page asset
+2. Have an Enterprise License",VTL/HEADLESS,,Valentino Giardino,Passed,,,,,,,,,,,,,,,
+Navigation bar: Experiments [Enterprise only],UVE,Functional,,It should function the same way as it did in the previous version of the editor,"It should let youto create variants of a Page and compare their performance
+against defined goals
+
+More information:
+
+- Experiments and A/B Testing","1. Have a page asset
+2. Have a Experiments enviroment running",VTL/HEADLESS,,Valentino Giardino,Failed,https://github.com/dotCMS/core/issues/29590,copy experiment url button not working propertly,,,,,,,,,,,,,
+Navigation bar: Layout [Enterprise only],UVE,Functional,,It should function the same way as it did in the previous version of the editor,"It should let you modify the layout as in the template portlet
+
+More information:
+
+- Design Template","1. Have a page asset with a Design Template
+2. Have a Enterprice License",VTL/HEADLESS,,Valentino Giardino,Passed,,,,,,,,,,,,,,,
+Navigation bar: Page properties,UVE,Functional,,It should function the same way as it did in the previous version of the editor,"It should let you update the page properties
+
+More information:
+
+- Page Properties",Have a page asset with a Design Template,VTL/HEADLESS,,Valentino Giardino,Failed,https://github.com/dotCMS/core/issues/29896,,,,,,,,,,,,,,
+Navigation bar: Page Tools,UVE,Functional,,It should function the same way as it did in the previous version of the editor,"The Page Tools pane opens a popup, seen below, that includes convenient
+links to services that can help evaluate a page for accessibility, security, etc.
+
+More information:
+
+- Page Tools",Have a page asset,VTL/HEADLESS,,Valentino Giardino,Passed,,,,,,,,,,,,,,,
+"Navigation bar: Verify we are refreshing the
+page properties after any change",UVE/Sidebar,Functional,Ticket #28398,"1. Edit any page and save the changes                                                         
+2. Edit the page again and bring back to the previous version
+3. Make sure we are refreshing the properties modal ",The properties modal should be refreshed after bring back ,Have a dotCMS instance running ,VTL/HEADLESS,,Valentino Giardino,Passed,,,,,,,,,,,,,,,
+Navigation: Re-order,UVE,Functional,Ticket #28040,"1. Click on the navigation buttom to reorder the menu.
+2. Reorder the menu
+
+See this ticket to set-up the `reorder` button in the UVE",You should be able to see the menu in the order you set,"1. Have a page asset with
+2. Set-up the `reorder` button in the UVE.
+More information here",VTL,,Valentino Giardino,Passed,,,,,,,,,,,,,,,
+Toolbar:  Preview - Social Media Tiles,UVE/Toolbar,Fuctional,Ticket #26911,"1. Edit any page
+2. Click on `Preview`
+3. Selec any `Social Media Tiles`","You should be able to preview the page in your chosen social media platform,
+including the meta tags information.",Have a page asset,VTL/HEADLESS,,Valentino Giardino,Failed,https://github.com/dotCMS/core/issues/29895,blog description showing $pDescription,,,,,,,,,,,,,
+Toolbar:  Workflow Actions,UVE/Toolbar,Functional,Ticket #26702,"1. Edit any page
+2. Execute any Workflow Actions available (Click on the button)","1. The workflwo should run successfully.
+2. Message should be display when a WF ends.
+3. The buttons should update we the new WF available.","1. Have a page asset
+2. Assing a Workflow Action to that Page",VTL/HEADLESS,,Valentino Giardino,Failed,https://github.com/dotCMS/core/issues/29891,toolbar botton not working,,,,,,,,,,,,,
+Toolbar: API Button,UVE/Toolbar,Functional,Ticket #26846,"1. Edit any page
+2. Click on `API` button","1. The page API should be open in a new tap.
+2. The URL should point to `/api/v1/page/json/${YOU_PAGE_URL}`","1. Set the FF
+2. Create a page asset",VTL/HEADLESS,,Valentino Giardino,Passed,,,,,,,,,,,,,,,
+Toolbar: Bookmark Button,UVE/Toolbar,Functional,Ticket #26914,"1. Edit any page
+2. Click on the bookmark icon. (It should open a dialog)
+3. Fill the bookmar form
+4. Click on `save`
+5. Go to the Page portlet
+6. Open the Bookmarks section","You should have a new `Favorite Page` contentlet with 
+the page information.","1. Set the FF
+2. Create a page asset
+3. Configure Bookmarks if needed [documentation]",VTL/HEADLESS,,Valentino Giardino,Passed,,,,,,,,,,,,,,,
+Toolbar: Copy URL Button,UVE/Toolbar,Functional,Ticket #26846,"1. Edit any page
+2. Click on `Copy URL` button","1. You should have the page `URL` on your clipboard.
+2. The `URL` should not have any query params.
+3. The `URL` should include the `host` origin.","1. Set the FF
+2. Create a page asset",VTL/HEADLESS,,Daniel Colina,Passed,,,,,,,,,,,,,,,
+Toolbar: Persona Selector,UVE/Toolbar,Functional,Ticket #26845,"1. Edit any page
+2. Click on the Persona Dropdown
+3. Select any available persona
+4. Click on `Accept`","1. A personalized version of the page should be created for the person
+you selected.
+2. The `com.dotmarketing.persona.id` in the queryParams should be
+updated with the new personId","1. Have a page asset
+2. Have more than one persona",VTL/HEADLESS,,,Passed,,,,,,,,,,,,,,,
+Toolbar: Preview - Devices,UVE/Toolbar,Fuctional,Ticket #26911,"1. Edit any page
+2. Click on `Preview`
+3. Select any device ","The page should adjust to the device's size and allow you to see a preview.
+When in ""preview"" mode, the page should not be editable.",Have a page asset,VTL/HEADLESS,,Daniel Colina,Passed,,,,,,,,,,,,,,,
+Toolbar: Preview - Open Published Version,UVE/Toolbar,Fuctional,Ticket #26911,"1. Edit any page
+2. Click on `Preview`
+3. Selec any `Open Published Version`",You should be able to see the published page in a new page tab,Have a page asset,VTL/HEADLESS,,Daniel Colina,Passed,,,,,,,,,,,,,,,
+Toolbar: Preview - Search Engine,UVE/Toolbar,Fuctional,Ticket #26911,"1. Edit any page
+2. Click on `Preview`
+3. Selec any `Search Engine Results Pages`","You should be able to preview the page in your chosen social media platform,
+including the meta tags information.",Have a page asset,VTL/HEADLESS,,Daniel Colina,Failed,https://github.com/dotCMS/core/issues/29895,,,,,,,,,,,,,,
+"Toolbar: Language - Users should be able to toggle page
+language ",UVE/Toolbar,Functional,Ticket #26821,"1. Go to Edit Page
+2. Click on the Language Dropdown
+3. It should display a language list where the page is available
+4. Click on any language.
+","You should be able to see the page for that language with its
+relate content in that language as well","1. Set the FF
+2. Create a page asset in english
+3. Create a different version of that Page in other language
+",VTL/HEADLESS,,Daniel Colina,Failed,https://github.com/dotCMS/core/issues/29851,,,,,,,,,,,,,,
+Verify UVE displays more than 10 personas ,UVE,Fuctional,Ticket #29161,"1. Login
+2. Add more than 10 personas
+3. Try to edit a page 
+4. Make sure you are able to see more than 10 personas in the selector ",We should be able to list all the personas without problems ,"1. Have a dotcms instance running 
+2. Have the proper confing in the UVE app",,,Daniel Colina,Passed,,,,,,,,,,,,,,,
+Verify you can in-line editing in UVE,UVE,Functional,Ticket #28973,"1. Login 
+2.Try to edit some page 
+3. Make sure you are able to use the in-line editing feature ",You should be able to edit the page in the new UVE editor,"1. Have a dotcms instance running 
+2. Have the proper confing in the UVE app",,,Daniel Colina,Passed,https://github.com/dotCMS/core/issues/29838,Next example does not work properly. However the Angular example works fine. It has been fixed.,,,,,,,,,,,,,
+"Verify you can Edit GraphQL Generated Pages
+",UVE,Functional,Ticket #29045,"1. Login 
+2. Try to edit a page inside the /campaing/... folders (those are generated by GQL)
+3. Attempt to enter the UVE mode to make edits.
+",You should be able to edit the page in the new UVE editor without problems and no errors present ,"1. Have a dotcms instance running 
+2. Have the proper confing in the UVE app",VTL/HEADLESS,,Daniel Colina,Passed,,,,,,,,,,,,,,,
+Make sure the Config for devURLWhitelist is working as expected,UVE,Fuctional,Ticket #29069,"1. Login 
+2. Go to apps and add the proper config 
+3. Make sure the withe listing is working as expected 
+",All the listed urls should work without problems ,"1. Have a dotcms instance running 
+2. Have the proper confing in the UVE app",,,Daniel Colina,Passed,https://github.com/dotCMS/core/issues/29836,Solved in #29836,,,,,,,,,,,,,
+Make sure you are able to in-line editing on UVE,UVE,Fuctional,,"1. Login
+2. Edit any page 
+3. try to in-line editing any piece of content 
+",You should be able to edit using the inline editing without anyh problem ,"1. Have an instance running
+2. Make sure you have the proper UVE config ",,,Daniel Colina,Passed,https://github.com/dotCMS/core/issues/29838,Next example does not work properly. However the Angular example works fine. It has been fixed. ,,,,,,,,,,,,,
+Make sure in-line editing is working on cross-domain,UVE,Functional,Ticket #29311,"1. Login
+2. Edit any page 
+3. try to in-line editing any piece of content 
+",You should be able to edit using the inline editing without anyh problem ,"1. Have an instance running
+2. Make sure you have the proper UVE config ",,,Daniel Colina,Passed,,,,,,,,,,,,,,,

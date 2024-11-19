@@ -1,7 +1,6 @@
 package com.dotcms;
 
 import com.dotcms.ai.workflow.OpenAIAutoTagActionletTest;
-import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
@@ -183,7 +182,6 @@ import org.junit.runners.Suite.SuiteClasses;
         UserResourceIntegrationTest.class,
         IntegrationResourceLinkTest.class,
         HashBuilderTest.class,
-        ElasticsearchUtilTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,

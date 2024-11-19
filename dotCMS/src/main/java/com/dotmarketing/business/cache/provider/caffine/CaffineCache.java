@@ -199,7 +199,7 @@ public class CaffineCache extends CacheProvider {
                             : Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
 
             final int seconds =
-                    isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".seconds", 100)
+                    isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".seconds", -1)
                             : Config.getIntProperty("cache." + group + ".seconds", -1);
 
             com.github.benmanes.caffeine.cache.stats.CacheStats cstats = foundCache.stats();
