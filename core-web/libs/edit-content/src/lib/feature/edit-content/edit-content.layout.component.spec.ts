@@ -16,7 +16,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { MessagesModule } from 'primeng/messages';
-import { Toast, ToastModule } from 'primeng/toast';
 
 import {
     DotContentTypeService,
@@ -46,8 +45,6 @@ describe('EditContentLayoutComponent', () => {
     const createComponent = createComponentFactory({
         component: EditContentLayoutComponent,
         imports: [
-            MockModule(ToastModule),
-
             MockModule(MessagesModule),
             MockComponent(DotEditContentFormComponent),
             MockComponent(DotEditContentSidebarComponent)
@@ -100,10 +97,6 @@ describe('EditContentLayoutComponent', () => {
         jest.spyOn(utils, 'getPersistSidebarState').mockReturnValue(true);
     });
 
-    it('should have p-toast component', () => {
-        expect(spectator.query(Toast)).toBeTruthy();
-    });
-
     it('should have p-confirmDialog component', () => {
         expect(spectator.query(ConfirmDialog)).toBeTruthy();
     });
@@ -126,7 +119,6 @@ describe('EditContentLayoutComponent', () => {
             expect(spectator.query(byTestId('edit-content-layout__body'))).toBeTruthy();
             expect(spectator.query(byTestId('edit-content-layout__sidebar'))).toBeTruthy();
 
-            expect(spectator.query(Toast)).toBeTruthy();
             expect(spectator.query(ConfirmDialog)).toBeTruthy();
         }));
 
