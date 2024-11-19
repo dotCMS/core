@@ -10,12 +10,10 @@ import {
 
 import { computed } from '@angular/core';
 
+import { getPersistSidebarState, setPersistSidebarState } from '../../../../utils/functions.util';
 import { ContentState } from './content.feature';
 
-import { getPersistSidebarState, setPersistSidebarState } from '../../../../utils/functions.util';
-import { EditContentState } from '../edit-content.store';
-
-interface SidebarState {
+export interface SidebarState {
     showSidebar: boolean;
 }
 
@@ -30,9 +28,7 @@ const initialState: SidebarState = {
  */
 export function withSidebar() {
     return signalStoreFeature(
-        {
-            state: type<EditContentState & ContentState>()
-        },
+        { state: type<ContentState>() },
         withState(initialState),
         withComputed(({ contentlet }) => ({
             getCurrentContentIdentifier: computed(() => contentlet()?.identifier)

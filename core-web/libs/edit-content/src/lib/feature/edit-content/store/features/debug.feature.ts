@@ -1,6 +1,4 @@
-import { getState, signalStoreFeature, withHooks } from '@ngrx/signals';
-
-import { effect } from '@angular/core';
+import { signalStoreFeature, watchState, withHooks } from '@ngrx/signals';
 
 /**
  * Feature that adds debugging functionality to the Store
@@ -10,9 +8,8 @@ export function withDebug() {
     return signalStoreFeature(
         withHooks({
             onInit(store) {
-                effect(() => {
-                    // eslint-disable-next-line no-console
-                    console.info('🔄 Store state:', getState(store));
+                watchState(store, (state) => {
+                    console.info('🔄 Store state:', state);
                 });
             }
         })

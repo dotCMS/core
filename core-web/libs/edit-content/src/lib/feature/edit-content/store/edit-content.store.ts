@@ -10,12 +10,12 @@ import { withInformation } from './features/information.feature';
 import { withSidebar } from './features/sidebar.feature';
 import { withWorkflow } from './features/workflow.feature';
 
-export interface EditContentState {
+export interface EditContentRootState {
     state: ComponentStatus;
     error: string | null;
 }
 
-const initialState: EditContentState = {
+export const initialState: EditContentRootState = {
     state: ComponentStatus.INIT,
     error: null
 };
@@ -26,7 +26,7 @@ const initialState: EditContentState = {
  * related to content editing and workflow actions.
  */
 export const DotEditContentStore = signalStore(
-    withState<EditContentState>(initialState),
+    withState(initialState),
     withContent(),
     withSidebar(),
     withInformation(),
