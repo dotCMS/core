@@ -17,7 +17,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class HttpServletRequestImpersonator {
 
-    private static final Pattern MOCK_REQUEST_PATTERN = Pattern.compile(".*(mock|fake).*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern MOCK_OR_FAKE_PATTERN = Pattern.compile("(^|\\b|\\.)mock|fake($|\\b|\\.)", Pattern.CASE_INSENSITIVE);
 
     /**
      * new instance of {@link HttpServletRequestImpersonator}
@@ -56,8 +56,12 @@ public class HttpServletRequestImpersonator {
      * @param request {@link HttpServletRequest}
      * @return boolean
      */
-    private boolean isMockRequest(final HttpServletRequest request) {
-        return request != null && MOCK_REQUEST_PATTERN.matcher(request.getClass().getName()).matches();
+    boolean isMockRequest(final HttpServletRequest request) {
+        if (request == null) {
+            return false;
+        }
+        final String clazzName = request.getClass().getName();
+        return MOCK_OR_FAKE_PATTERN.matcher(clazzName).find();
     }
 
 }
