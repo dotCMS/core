@@ -2,6 +2,7 @@
 
 import WebPageContent from "./content-types/webPageContent";
 import Banner from "./content-types/banner";
+import Blog from "./content-types/blog";
 import Activity from "./content-types/activity";
 import CallToAction from "./content-types/callToAction";
 import CalendarEvent from "./content-types/calendarEvent";
@@ -17,7 +18,6 @@ import { withExperiments } from "@dotcms/experiments";
 import { CustomNoComponent } from "./content-types/empty";
 
 import { usePageAsset } from "../hooks/usePageAsset";
-import BlogWithBlockEditor from "./content-types/blog";
 import NotFound from "@/app/not-found";
 
 /**
@@ -32,6 +32,7 @@ const experimentConfig = {
 
 // Mapping of components to DotCMS content types
 const componentsMap = {
+    Blog: Blog,
     webPageContent: WebPageContent,
     Banner: Banner,
     Activity: Activity,
@@ -40,7 +41,6 @@ const componentsMap = {
     calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
     CustomNoComponent: CustomNoComponent,
-    BlockEditorItem: BlogWithBlockEditor,
 };
 
 export function MyPage({ pageAsset, nav }) {
