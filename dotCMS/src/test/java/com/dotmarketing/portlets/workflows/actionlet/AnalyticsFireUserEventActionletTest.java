@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotcms.analytics.track.collectors.Collector;
+import com.dotcms.analytics.track.collectors.EventSource;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorService;
 import com.dotcms.analytics.track.matchers.RequestMatcher;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
@@ -56,13 +57,13 @@ public class AnalyticsFireUserEventActionletTest {
                                                    Map<String, Serializable> userEventPayload, Map<String, Object> baseContext) {
 
                 Assert.assertNotNull(userEventPayload);
-                Assert.assertEquals("page", userEventPayload.get("event_type"));
-                Assert.assertEquals("123", userEventPayload.get("id"));
+                Assert.assertEquals(EventSource.WORKFLOW.getName(), userEventPayload.get(Collector.EVENT_SOURCE));
+                Assert.assertEquals("123", userEventPayload.get(Collector.ID));
 
-                final Map<String, String> object = (Map<String, String>) userEventPayload.get("object");
+                final Map<String, String> object = (Map<String, String>) userEventPayload.get(Collector.OBJECT);
                 Assert.assertNotNull(object);
-                Assert.assertEquals("123", object.get("id"));
-                Assert.assertEquals("CONTENT", object.get("object_content_type_var_name"));
+                Assert.assertEquals("123", object.get(Collector.ID));
+                Assert.assertEquals("CONTENT", object.get(Collector.CONTENT_TYPE_VAR_NAME));
             }
         };
         final AnalyticsFireUserEventActionlet analyticsFireUserEventActionlet = new AnalyticsFireUserEventActionlet(webEventsCollectorService);

@@ -3,7 +3,7 @@
 import NotFound from "@/app/not-found";
 import Blog from "@/components/content-types/blog";
 import Footer from "@/components/layout/footer/footer";
-import Header from "@/components/layout/header";
+import Header from "@/components/layout/header/header";
 import Navigation from "@/components/layout/navigation";
 
 import { usePageAsset } from "@/hooks/usePageAsset";

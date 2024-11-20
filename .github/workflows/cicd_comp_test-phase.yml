@@ -37,6 +37,10 @@ on:
         required: false
         type: boolean
         default: false
+      karate:
+        required: false
+        type: boolean
+        default: false
       integration:
         required: false
         type: boolean
@@ -180,7 +184,38 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
           cleanup-runner: true
-
+  # Karate Tests
+  karate-tests:
+    name: Karate Tests - ${{ matrix.suites.name }}
+    runs-on: ubuntu-24.04
+    if: inputs.karate || inputs.run-all-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        suites:
+          - { name: "Default", pathName: "default", tests: 'KarateCITests#defaults'  }
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/core-cicd/maven-job
+        with:
+          stage-name: "Karate ${{ matrix.suites.name }}"
+          maven-args: "verify -pl :dotcms-test-karate -Dkarate.test.skip=false -Dit.test=${{ matrix.suites.tests }}"
+          generates-test-results: true
+          dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
+          requires-node: true
+          needs-docker-image: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+          cleanup-runner: true
+      - id: upload-karate-report
+        name: Upload Karate-report
+        uses: actions/upload-artifact@v4
+        with:
+          name: karate-reports
+          path: dotCMS/target/karate-reports
   # E2E Tests
   linux-e2e-tests:
     name: E2E Tests ${{matrix.suites.name}}

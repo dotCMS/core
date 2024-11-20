@@ -5,7 +5,7 @@ import { pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { exhaustMap, switchMap, tap } from 'rxjs/operators';
+import { exhaustMap, switchMap, tap, filter, map } from 'rxjs/operators';
 
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
@@ -35,6 +35,7 @@ export interface SelectExisingFileState {
     content: {
         data: DotCMSContentlet[];
         status: ComponentStatus;
+        error: string | null;
     };
     currentSite: TreeNodeItem | null;
     selectedContent: DotCMSContentlet | null;
@@ -50,7 +51,8 @@ const initialState: SelectExisingFileState = {
     },
     content: {
         data: [],
-        status: ComponentStatus.INIT
+        status: ComponentStatus.INIT,
+        error: null
     },
     currentSite: null,
     selectedContent: null,
@@ -80,25 +82,41 @@ export const SelectExisingFileStore = signalStore(
                             content: { ...store.content(), status: ComponentStatus.LOADING }
                         })
                     ),
-                    switchMap((event) => {
-                        const content = store.content();
+                    map((event) => (event ? event?.node?.data?.identifier : SYSTEM_HOST_ID)),
+                    filter((identifier) => {
+                        const hasIdentifier = !!identifier;
 
-                        let identifier = SYSTEM_HOST_ID;
-
-                        if (event) {
-                            identifier = event.node.data.identifier;
+                        if (!hasIdentifier) {
+                            patchState(store, {
+                                content: {
+                                    data: [],
+                                    status: ComponentStatus.ERROR,
+                                    error: 'dot.file.field.dialog.select.existing.file.table.error.id'
+                                }
+                            });
                         }
 
+                        return hasIdentifier;
+                    }),
+                    switchMap((identifier) => {
                         return dotEditContentService.getContentByFolder(identifier).pipe(
                             tapResponse({
                                 next: (data) => {
                                     patchState(store, {
-                                        content: { data, status: ComponentStatus.LOADED }
+                                        content: {
+                                            data,
+                                            status: ComponentStatus.LOADED,
+                                            error: null
+                                        }
                                     });
                                 },
                                 error: () =>
                                     patchState(store, {
-                                        content: { ...content, status: ComponentStatus.ERROR }
+                                        content: {
+                                            data: [],
+                                            status: ComponentStatus.ERROR,
+                                            error: 'dot.file.field.dialog.select.existing.file.table.error.content'
+                                        }
                                     })
                             })
                         );

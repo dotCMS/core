@@ -3,6 +3,8 @@ package com.dotcms.rest.api.v1.analytics.content;
 import com.dotcms.analytics.content.ContentAnalyticsAPI;
 import com.dotcms.analytics.content.ReportResponse;
 import com.dotcms.analytics.model.ResultSetItem;
+import com.dotcms.analytics.track.collectors.Collector;
+import com.dotcms.analytics.track.collectors.EventSource;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceFactory;
 import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
 import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
@@ -248,11 +250,17 @@ public class ContentAnalyticsResource {
                 .init();
 
         DotPreconditions.checkNotNull(userEventPayload, IllegalArgumentException.class, "The 'userEventPayload' JSON cannot be null");
-        DotPreconditions.checkNotNull(userEventPayload.get("event_type"), IllegalArgumentException.class, "The 'event_type' field is required");
+        if (userEventPayload.containsKey(Collector.EVENT_SOURCE)) {
+            throw new IllegalArgumentException("The 'event_source' field is reserved and cannot be used");
+        }
         Logger.debug(this,  ()->"Creating an user custom event with the payload: " + userEventPayload);
         request.setAttribute("requestId", Objects.nonNull(request.getAttribute("requestId")) ? request.getAttribute("requestId") : UUIDUtil.uuid());
+        final Map<String, Serializable> userEventPayloadWithDefaults = new HashMap<>(userEventPayload);
+        userEventPayloadWithDefaults.put(Collector.EVENT_SOURCE, EventSource.REST_API.getName());
+        userEventPayloadWithDefaults.put(Collector.EVENT_TYPE,   userEventPayload.getOrDefault(Collector.EVENT_TYPE, EventType.CUSTOM_USER_EVENT.getType()));
         WebEventsCollectorServiceFactory.getInstance().getWebEventsCollectorService().fireCollectorsAndEmitEvent(request, response,
-                loadRequestMatcher(userEventPayload), userEventPayload, fromPayload(userEventPayload));
+                loadRequestMatcher(userEventPayload), userEventPayloadWithDefaults, fromPayload(userEventPayload));
+
         return new ResponseEntityStringView("User event created successfully");
     }
 
@@ -269,7 +277,7 @@ public class ContentAnalyticsResource {
 
     private RequestMatcher loadRequestMatcher(final Map<String, Serializable> userEventPayload) {
 
-        String eventType = (String) userEventPayload.getOrDefault("event_type", "CUSTOM_USER_EVENT");
+        String eventType = (String) userEventPayload.getOrDefault(Collector.EVENT_TYPE, EventType.CUSTOM_USER_EVENT.getType());
         return MATCHER_MAP.getOrDefault(eventType, () -> USER_CUSTOM_DEFINED_REQUEST_MATCHER).get();
     }
 
