@@ -1,15 +1,16 @@
 package com.dotcms.contenttype.business;
 
-import static com.dotcms.util.CollectionsUtils.list;
-
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
+import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -50,10 +51,14 @@ import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalizat
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -62,6 +67,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
@@ -84,6 +90,8 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.apache.commons.lang.StringUtils;
+
 import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -91,7 +99,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.commons.lang.StringUtils;
+
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.liferay.util.StringPool.BLANK;
 
 
 public class FieldAPIImpl implements FieldAPI {
@@ -663,8 +674,24 @@ public class FieldAPIImpl implements FieldAPI {
                       + " has been marked as System Indexed as it has defined a field variable with key "
                       + FieldVariable.ES_CUSTOM_MAPPING_KEY);
           }
+      } else if (var.key().equals(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)) {
+        final Optional<String> previousValueOpt = field.fieldVariableValue(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME);
+        if (previousValueOpt.isPresent() && previousValueOpt.get().equalsIgnoreCase(newFieldVariable.value())) {
+            // 'uniquePerSite' value was not changed, do not recalculate
+            return newFieldVariable;
+        }
+        final UniqueFieldValidationStrategyResolver resolver =
+                CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
+        try {
+            this.sendStartRecalculationNotification(user, field);
+            resolver.get().recalculate(field, Boolean.parseBoolean(newFieldVariable.value()));
+            this.sendEndRecalculationNotification(user, field);
+        } catch (final UniqueFieldValueDuplicatedException e) {
+            this.sendFailedRecalculationNotification(user, field);
+            Logger.error(this, ExceptionUtil.getErrorMessage(e), e);
+            throw new DotDataException(e);
+        }
       }
-      
       return newFieldVariable;
   }
 
@@ -907,17 +934,34 @@ public class FieldAPIImpl implements FieldAPI {
   @WrapInTransaction
   @Override
   public void delete(final FieldVariable fieldVar) throws DotDataException {
-
     fieldFactory.delete(fieldVar);
-    Field field = this.find(fieldVar.fieldId());
-    ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(this.userAPI.getSystemUser());
+    final Field field = this.find(fieldVar.fieldId());
+    final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(this.userAPI.getSystemUser());
 	ContentType type;
 	try {
 		type = contentTypeAPI.find(field.contentTypeId());
 		 //update Content Type mod_date to detect the changes done on the field variable
 		contentTypeAPI.updateModDate(type);
-	} catch (DotSecurityException e) {
-		throw new DotDataException("Error updating Content Type mode_date for FieldVariable("+fieldVar.id()+"). "+e.getMessage());
+    } catch (final DotSecurityException e) {
+        final String errorMsg = String.format("Error updating Content Type mode_date containing " +
+                "Field Variable '%s': %s", fieldVar.key(), ExceptionUtil.getErrorMessage(e));
+        throw new DotDataException(errorMsg);
+    }
+    if (fieldVar.key().equals(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)) {
+        final UniqueFieldValidationStrategyResolver resolver =
+              CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
+        final User loggedInUser =
+                Try.of(() -> WebAPILocator.getUserWebAPI().getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
+                        .getOrElse(APILocator.systemUser());
+        try {
+            this.sendStartRecalculationNotification(loggedInUser, field);
+            resolver.get().recalculate(field, false);
+            this.sendEndRecalculationNotification(loggedInUser, field);
+        } catch (final UniqueFieldValueDuplicatedException e) {
+            this.sendFailedRecalculationNotification(loggedInUser, field);
+            Logger.error(this, ExceptionUtil.getErrorMessage(e), e);
+            throw new DotDataException(e);
+        }
 	}
   }
 
@@ -1061,5 +1105,75 @@ public class FieldAPIImpl implements FieldAPI {
 
         return false;
     }
-  
+
+    /**
+     * Sends a notification to the user when the recalculation of unique field values starts.
+     *
+     * @param user  The {@link User} that will receive the notification.
+     * @param field The unique {@link Field} that the notification is associated with.
+     */
+    private void sendStartRecalculationNotification(final User user, final Field field) {
+        this.sendNotification("message.contentlet.unique.start.recalculation", field, user,
+                NotificationLevel.INFO);
+    }
+
+    /**
+     * Sends a notification to the user when the recalculation of unique field values ends.
+     *
+     * @param user  The {@link User} that will receive the notification.
+     * @param field The unique {@link Field} that the notification is associated with.
+     */
+    private void sendEndRecalculationNotification(final User user, final Field field) {
+        this.sendNotification("message.contentlet.unique.finish.recalculation", field, user,
+                NotificationLevel.INFO);
+    }
+
+    /**
+     * Sends a notification to the user when the recalculation of unique field values fails.
+     *
+     * @param user  The {@link User} that will receive the notification.
+     * @param field The unique {@link Field} that the notification is associated with.
+     */
+    private void sendFailedRecalculationNotification(final User user, final Field field) {
+        this.sendNotification("message.contentlet.unique.failed.recalculation", field, user,
+                NotificationLevel.ERROR);
+    }
+
+    /**
+     * Sends a notification to both the System Events API and the Notification API.
+     *
+     * @param messageKey The message to be sent to the logged-in user.
+     * @param field      The unique {@link Field} that the notification is associated with.
+     * @param user       The {@link User} that will receive the notification.
+     * @param level      The Notification Level of the message: {@link NotificationLevel#INFO},
+     *                   {@link NotificationLevel#WARNING}, or {@link NotificationLevel#ERROR}.
+     */
+    private void sendNotification(final String messageKey, Field field, final User user,
+                                  final NotificationLevel level) {
+        final SystemMessageEventUtil messageEventUtil = SystemMessageEventUtil.getInstance();
+        final String notificationTitle = Try.of(() -> LanguageUtil.get(user,
+                "message.contentlet.unique.notification.title")).getOrElse(BLANK);
+        String message = Try.of(() -> LanguageUtil.get(user, messageKey)).getOrElse(BLANK);
+        message = message.replace("{0}", field.name());
+
+        if (NotificationLevel.ERROR.equals(level)) {
+            messageEventUtil.pushSimpleErrorEvent(new ErrorEntity(BLANK, message));
+        } else {
+            messageEventUtil.pushSimpleTextEvent(message, user.getUserId());
+        }
+        try {
+            APILocator.getNotificationAPI().generateNotification(
+                    new I18NMessage(notificationTitle),
+                    new I18NMessage(message),
+                    null,
+                    level,
+                    NotificationType.GENERIC,
+                    user.getUserId(),
+                    user.getLocale()
+            );
+        } catch (final DotDataException e) {
+            // Notification could not be sent. Just move on
+        }
+    }
+
 }

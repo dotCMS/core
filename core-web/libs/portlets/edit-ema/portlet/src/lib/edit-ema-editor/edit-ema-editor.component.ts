@@ -25,7 +25,12 @@ import { ProgressBarModule } from 'primeng/progressbar';
 
 import { takeUntil, catchError, filter, map, switchMap, tap, take } from 'rxjs/operators';
 
-import { CLIENT_ACTIONS, NOTIFY_CLIENT } from '@dotcms/client';
+import {
+    CLIENT_ACTIONS,
+    NOTIFY_CLIENT,
+    INLINE_EDITING_EVENT_KEY,
+    InlineEditEventData
+} from '@dotcms/client';
 import {
     DotMessageService,
     DotCopyContentService,
@@ -179,6 +184,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.setIframeContent(code);
 
             requestAnimationFrame(() => {
+                /**
+                 * The status of isClientReady is changed outside of editor
+                 * so we need to set it to true here to avoid the editor to be in a loading state
+                 * This is only for traditional pages. For Headless, the isClientReady is set from the client application
+                 */
+                this.uveStore.setIsClientReady(true);
                 const win = this.contentWindow;
                 if (enableInlineEdit) {
                     this.inlineEditingService.injectInlineEdit(this.iframe);
@@ -868,12 +879,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CLIENT_ACTIONS.IFRAME_SCROLL_END]: () => {
                 this.uveStore.updateEditorOnScrollEnd();
             },
-            [CLIENT_ACTIONS.INIT_INLINE_EDITING]: () => {
-                // The iframe says that the editor is ready to start inline editing
-                // The dataset of the inline-editing contentlet is ready inside the service.
-                this.inlineEditingService.initEditor();
-                this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
-            },
             [CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING]: (payload: {
                 dataset: InlineEditingContentletDataset;
             }) => {
@@ -1013,22 +1018,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
+            [CLIENT_ACTIONS.INIT_INLINE_EDITING]: (payload) =>
+                this.#handleInlineEditingEvent(payload),
             [CLIENT_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
-            },
-            [CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING]: (payload) => {
-                if (!this.uveStore.isEnterprise()) {
-                    this.#dotAlertConfirmService.alert({
-                        header: this.dotMessageService.get(
-                            'dot.common.license.enterprise.only.error'
-                        ),
-                        message: this.dotMessageService.get('editpage.not.lincese.error')
-                    });
-
-                    return;
-                }
-
-                this.blockSidebar?.open(payload);
             }
         };
         const actionToExecute = CLIENT_ACTIONS_FUNC_MAP[action];
@@ -1376,5 +1369,45 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 this.placeItem(payload, dragItem);
             });
+    }
+
+    /**
+     * Handle the inline editing event
+     *
+     * @param {*} { type, data }
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    #handleInlineEditingEvent({
+        type,
+        data
+    }: {
+        type: INLINE_EDITING_EVENT_KEY;
+        data?: InlineEditEventData;
+    }) {
+        if (!this.uveStore.isEnterprise()) {
+            this.#dotAlertConfirmService.alert({
+                header: this.dotMessageService.get('dot.common.license.enterprise.only.error'),
+                message: this.dotMessageService.get('editpage.not.lincese.error')
+            });
+
+            return;
+        }
+
+        switch (type) {
+            case 'BLOCK_EDITOR':
+                this.blockSidebar?.open(data);
+                break;
+
+            case 'WYSIWYG':
+                this.inlineEditingService.initEditor();
+                this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
+                break;
+
+            default:
+                console.warn('Unknown block editor type', type);
+
+                break;
+        }
     }
 }

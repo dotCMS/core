@@ -7,6 +7,7 @@ import {
 } from './listeners/listeners';
 import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from './models/client.model';
 import { DotCMSPageEditorConfig, ReorderMenuConfig } from './models/editor.model';
+import { INLINE_EDITING_EVENT_KEY, InlineEditEventData } from './models/inline-event.model';
 
 import { Contentlet } from '../client/content/shared/types';
 
@@ -44,6 +45,34 @@ export function editContentlet<T>(contentlet: Contentlet<T>) {
 }
 
 /**
+ * Initializes the inline editing in the editor.
+ *
+ * @export
+ * @param {INLINE_EDITING_EVENT_KEY} type
+ * @param {InlineEditEventData} eventData
+ * @return {*}
+ *
+ *  * @example
+ * ```html
+ * <div onclick="initInlineEditing('BLOCK_EDITOR', { inode, languageId, contentType, fieldName, content })">
+ *      ${My Content}
+ * </div>
+ * ```
+ */
+export function initInlineEditing(
+    type: INLINE_EDITING_EVENT_KEY,
+    data?: InlineEditEventData
+): void {
+    postMessageToEditor({
+        action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+        payload: {
+            type,
+            data
+        }
+    });
+}
+
+/*
  * Reorders the menu based on the provided configuration.
  *
  * @param {ReorderMenuConfig} [config] - Optional configuration for reordering the menu.

@@ -14,6 +14,7 @@ import { map, take } from 'rxjs/operators';
 import { JSONContent } from '@tiptap/core';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
+import { InlineEditorData } from '@dotcms/client';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -24,19 +25,11 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 export interface BlockEditorData {
-    content: { [key: string]: string };
+    inode: string;
+    fieldName: string;
+    language: number;
+    content: JSONContent;
     field: DotCMSContentTypeField;
-    fieldName: string;
-    inode: string;
-    languageId: number;
-}
-
-export interface BlockEditorPayload {
-    fieldName: string;
-    contentType: string;
-    inode: string;
-    language: string;
-    blockEditorContent: string;
 }
 
 export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
@@ -83,24 +76,18 @@ export class DotBlockEditorSidebarComponent {
     /**
      * Open the sidebar with the block editor content
      *
-     * @param {BlockEditorPayload} { fieldName, contentType, inode, language, blockEditorContent }
+     * @param {InlineEditorData} { fieldName, contentType, inode, language, blockEditorContent }
      * @memberof DotBlockEditorSidebarComponent
      */
-    open({
-        fieldName,
-        contentType,
-        inode,
-        language,
-        blockEditorContent
-    }: BlockEditorPayload): void {
+    open({ inode, content, language, fieldName, contentType }: InlineEditorData): void {
         this.#getEditorField({ fieldName, contentType }).subscribe({
             next: (field) =>
                 this.contentlet.set({
                     inode,
                     field,
-                    fieldName,
-                    languageId: parseInt(language),
-                    content: this.#getJsonContent(blockEditorContent)
+                    content,
+                    language,
+                    fieldName
                 }),
             error: (err) => console.error('Error getting contentlet ', err)
         });
@@ -172,22 +159,5 @@ export class DotBlockEditorSidebarComponent {
         return this.#dotContentTypeService
             .getContentType(contentType)
             .pipe(map(({ fields }) => fields.find(({ variable }) => variable === fieldName)));
-    }
-
-    /**
-     * Parse the content to JSON
-     *
-     * @param {string} content
-     * @return {*}  {JSONContent}
-     * @memberof DotBlockEditorSidebarComponent
-     */
-    #getJsonContent(content: string): JSONContent {
-        try {
-            return JSON.parse(content);
-        } catch (e) {
-            console.error('Error parsing JSON content ', e);
-
-            return {};
-        }
     }
 }
