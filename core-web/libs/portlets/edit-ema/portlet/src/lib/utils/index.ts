@@ -556,3 +556,27 @@ export const createReorderMenuURL = ({
 
     return urlObject.toString();
 };
+
+/**
+ * Check if the clientHost is in the whitelist provided by the app
+ *
+ * @private
+ * @param {string} clientHost
+ * @param {*} [allowedDevURLs=[]]
+ * @return {*}
+ * @memberof DotEmaShellComponent
+ */
+export const checkClientHostAccess = (
+    clientHost: string,
+    allowedDevURLs: string[] = []
+): boolean => {
+    if (!clientHost || !Array.isArray(allowedDevURLs) || !allowedDevURLs.length) {
+        return false;
+    }
+
+    // Most IDEs and terminals add a / at the end of the URL, so we need to sanitize it
+    const sanitizedClientHost = sanitizeURL(clientHost);
+    const sanitizedAllowedDevURLs = allowedDevURLs.map(sanitizeURL);
+
+    return sanitizedAllowedDevURLs.includes(sanitizedClientHost);
+};

@@ -2,7 +2,7 @@ import { Subject } from 'rxjs';
 
 import { CommonModule, Location } from '@angular/common';
 import { Component, effect, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -25,7 +25,7 @@ import {
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotInfoPageComponent, DotNotLicenseComponent, SafeUrlPipe } from '@dotcms/ui';
+import { DotInfoPageComponent, DotNotLicenseComponent } from '@dotcms/ui';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
@@ -36,7 +36,7 @@ import { WINDOW } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction, DotPage } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { compareUrlPaths } from '../utils';
+import { checkClientHostAccess, compareUrlPaths } from '../utils';
 
 @Component({
     selector: 'dot-ema-shell',
@@ -71,7 +71,6 @@ import { compareUrlPaths } from '../utils';
         RouterModule,
         DotPageToolsSeoComponent,
         DotEmaDialogComponent,
-        SafeUrlPipe,
         DotInfoPageComponent,
         DotNotLicenseComponent
     ]
@@ -102,21 +101,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     });
 
     ngOnInit(): void {
-        const { queryParams, data } = this.#activatedRoute.snapshot;
-        const { data: dotData } = data;
-        const allowedDevURLs = dotData?.options?.allowedDevURLs;
+        const params = this.#getQueryParams();
 
-        // This can be a fuction that returns the queryParams to use
-        const queryParamsClone = { ...queryParams } as DotPageApiParams;
-        const validHost = this.checkClientHostAccess(queryParamsClone?.clientHost, allowedDevURLs);
-        if (!validHost) {
-            delete queryParamsClone?.clientHost;
-            this.#location.replaceState(
-                this.#router.createUrlTree([], { queryParams: queryParamsClone }).toString()
-            );
-        }
-
-        this.uveStore.init(queryParamsClone);
+        this.#updateLocation(params);
+        this.uveStore.init(params);
 
         // We need to skip one because it's the initial value
         this.#siteService.switchSite$
@@ -247,33 +235,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Check if the clientHost is in the whitelist provided by the app
-     *
-     * @private
-     * @param {string} clientHost
-     * @param {*} [allowedDevURLs=[]]
-     * @return {*}
-     * @memberof DotEmaShellComponent
-     */
-    private checkClientHostAccess(clientHost: string, allowedDevURLs: string[] = []): boolean {
-        // If we don't have a whitelist or a clientHost we can't access it
-        if (!clientHost || !Array.isArray(allowedDevURLs) || !allowedDevURLs.length) {
-            return false;
-        }
-
-        // Most IDEs and terminals add a / at the end of the URL, so we need to sanitize it
-        const sanitizedClientHost = clientHost.endsWith('/') ? clientHost.slice(0, -1) : clientHost;
-
-        // We need to sanitize the whitelist as well
-        const sanitizedAllowedDevURLs = allowedDevURLs.map((url) =>
-            url.endsWith('/') ? url.slice(0, -1) : url
-        );
-
-        // If the clientHost is in the whitelist we can access it
-        return sanitizedAllowedDevURLs.includes(sanitizedClientHost);
-    }
-
-    /**
      * Asks the user for confirmation to create a new translation for a given language.
      *
      * @param {DotLanguage} language - The language to create a new translation for.
@@ -305,5 +266,39 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 });
             }
         });
+    }
+
+    /**
+     * Get the query params from the Router
+     *
+     * @return {*}  {DotPageApiParams}
+     * @memberof DotEmaShellComponent
+     */
+    #getQueryParams(): DotPageApiParams {
+        const { queryParams, data: routeData } = this.#activatedRoute.snapshot;
+        const allowedDevURLs = routeData.data?.options?.allowedDevURLs;
+
+        // Clone queryParams to avoid mutation errors
+        const params = { ...queryParams } as DotPageApiParams;
+        const validHost = checkClientHostAccess(params.clientHost, allowedDevURLs);
+
+        if (!validHost) {
+            delete params.clientHost;
+        }
+
+        return params as DotPageApiParams;
+    }
+
+    /**
+     * Update the location with the new query params
+     *
+     * Note: This method does not trigger a navigation event
+     *
+     * @param {Params} queryParams
+     * @memberof DotEmaShellComponent
+     */
+    #updateLocation(queryParams: Params): void {
+        const urlTree = this.#router.createUrlTree([], { queryParams });
+        this.#location.replaceState(urlTree.toString());
     }
 }
