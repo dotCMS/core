@@ -723,6 +723,8 @@
                             languageId
                         }
                     };
+
+                    notifyUVEWhenURLisChanged(data);
                 }
             }
         } else {
@@ -748,6 +750,15 @@
         customEvent.initCustomEvent('ng-event', false, false, customEventDetail);
         document.dispatchEvent(customEvent);
 
+    }
+
+    function notifyUVEWhenURLisChanged(data) {
+        var customEvent = document.createEvent('CustomEvent');
+        customEvent.initCustomEvent('ng-event', false, false, {
+            name: 'url-is-changed',
+            payload: data
+        });
+        document.dispatchEvent(customEvent);
     }
 
     function refreshPermissionsTab(){

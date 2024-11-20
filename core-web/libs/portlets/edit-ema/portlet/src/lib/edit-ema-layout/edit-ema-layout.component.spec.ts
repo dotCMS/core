@@ -180,6 +180,13 @@ describe('EditEmaLayoutComponent', () => {
             expect(dotRouter.allowRouteDeactivation).toHaveBeenCalled();
         }));
 
+        it('should set isClientReady false after saving', fakeAsync(() => {
+            templateBuilder.templateChange.emit();
+            tick(6000);
+
+            expect(store.isClientReady()).toBe(false);
+        }));
+
         it('should save right away if we request page leave before the 5 secs', () => {
             const saveTemplate = jest.spyOn(component, 'saveTemplate');
 
