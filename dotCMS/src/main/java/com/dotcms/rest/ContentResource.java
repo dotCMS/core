@@ -1462,8 +1462,7 @@ public class ContentResource {
                 }
             }
         }
-        if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
-                .equalsIgnoreCase(render)) {
+        if (BaseContentType.WIDGET.equals(type.baseType()) && "true".equalsIgnoreCase(render)) {
             final HttpServletRequestImpersonator impersonator = HttpServletRequestImpersonator.newInstance();
             jsonObject.put("parsedCode", WidgetResource.parseWidget(impersonator.request(), response, contentlet));
         }
