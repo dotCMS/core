@@ -184,6 +184,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.setIframeContent(code);
 
             requestAnimationFrame(() => {
+                /**
+                 * The status of isClientReady is changed outside of editor
+                 * so we need to set it to true here to avoid the editor to be in a loading state
+                 * This is only for traditional pages. For Headless, the isClientReady is set from the client application
+                 */
+                this.uveStore.setIsClientReady(true);
+
                 const win = this.contentWindow;
                 if (enableInlineEdit) {
                     this.inlineEditingService.injectInlineEdit(this.iframe);
