@@ -399,7 +399,7 @@ jobs:
         if: success() && github.event.inputs.update_github_labels == 'true'
         uses: ./.github/workflows/issue_comp_release-labeling.yml
         with:
-          new_label: 'Release ${{ github.event.inputs.release_version }}''
+          new_label: 'Release ${{ github.event.inputs.release_version }}'
         secrets:
           CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
 
