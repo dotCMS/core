@@ -17,7 +17,7 @@ import {
     signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Params, Router } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -249,7 +249,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 return;
             }
 
-            this.updateQueryParams({
+            this.uveStore.updatePageParams({
                 url: url.pathname
             });
         }
@@ -559,8 +559,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {number} language_id
      * @memberof DotEmaComponent
      */
-    onLanguageSelected(language_id: number) {
-        this.updateQueryParams({
+    onLanguageSelected(language_id: string) {
+        this.uveStore.updatePageParams({
             language_id
         });
     }
@@ -845,7 +845,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 if (isSameUrl) {
                     this.uveStore.setEditorState(EDITOR_STATE.IDLE);
                 } else {
-                    this.updateQueryParams({
+                    this.uveStore.updatePageParams({
                         url: payload.url,
                         'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                     });
@@ -1048,20 +1048,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         );
     }
 
-    /**
-     * Update the query params
-     *
-     * @private
-     * @param {Params} params
-     * @memberof EditEmaEditorComponent
-     */
-    private updateQueryParams(params: Params) {
-        this.router.navigate([], {
-            queryParams: params,
-            queryParamsHandling: 'merge'
-        });
-    }
-
     private handleDuplicatedContentlet() {
         this.messageService.add({
             severity: 'info',
@@ -1203,7 +1189,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe(({ URL_MAP_FOR_CONTENT }) => {
                 if (URL_MAP_FOR_CONTENT != this.uveStore.params().url) {
                     // If the URL is different, we need to navigate to the new URL
-                    this.updateQueryParams({ url: URL_MAP_FOR_CONTENT });
+                    this.uveStore.updatePageParams({ url: URL_MAP_FOR_CONTENT });
 
                     return;
                 }
