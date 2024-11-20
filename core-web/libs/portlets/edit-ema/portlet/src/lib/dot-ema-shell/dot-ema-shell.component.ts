@@ -100,15 +100,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         }
     });
 
-    constructor() {
-        effect(() => {
-            const params = this.uveStore.params();
-            this.#updateLocation(params);
-            // We don't want to track this because it's a side effect
-            // This will also be trigger every time the params change but changes inside the method will not trigger a new effect
-            untracked(() => this.uveStore.init(params));
-        });
-    }
+    readonly $handleCanEditLayout = effect(() => {
+        const params = this.uveStore.params();
+        this.#updateLocation(params);
+        // We don't want to track this because it's a side effect
+        // This will also be trigger every time the params change but changes inside the method will not trigger a new effect
+        untracked(() => this.uveStore.init(params));
+    });
 
     ngOnInit(): void {
         const params = this.#getQueryParams();
@@ -301,7 +299,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      */
     #updateLocation(queryParams: Params): void {
         const urlTree = this.#router.createUrlTree([], { queryParams });
-        this.#location.replaceState(urlTree.toString());
+        this.#location.go(urlTree.toString());
     }
 
     /**
@@ -310,7 +308,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @memberof DotEmaShellComponent
      */
     #goBackToCurrentLanguage(): void {
-        const language_id = this.uveStore.$languageId();
-        this.updatePageParams({ language_id });
+        // Check how to get previous language id
+        this.updatePageParams({ language_id: '1' });
     }
 }

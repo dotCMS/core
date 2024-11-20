@@ -52,23 +52,21 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
     protected readonly $layoutProperties = this.uveStore.$layoutProps;
 
+    readonly $handleCanEditLayout = effect(() => {
+        // The only way to enter here directly is by the URL, so we need to redirect the user to the correct page
+        if (this.uveStore.$canEditLayout()) {
+            return;
+        }
+
+        this.#router.navigate(['edit-page/content'], {
+            queryParamsHandling: 'merge'
+        });
+    });
+
     private lastTemplate: DotTemplateDesigner;
 
     updateTemplate$ = new Subject<DotTemplateDesigner>();
     destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor() {
-        // The only way to enter here directly is by the URL, so we need to redirect the user to the correct page
-        effect(() => {
-            if (this.uveStore.$canEditLayout()) {
-                return;
-            }
-
-            this.#router.navigate(['edit-page/content'], {
-                queryParamsHandling: 'merge'
-            });
-        });
-    }
 
     ngOnInit(): void {
         this.initSaveTemplateDebounce();
