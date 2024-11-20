@@ -8,9 +8,19 @@ import { map, pluck } from 'rxjs/operators';
 import { DotCMSResponse } from '@dotcms/dotcms-js';
 import { DotCMSWorkflow, DotCMSWorkflowAction, WorkflowStep } from '@dotcms/dotcms-models';
 
+/**
+ * Render mode for the workflow actions
+ *
+ * @export
+ * @enum {string}
+ */
 export enum DotRenderMode {
     LISTING = 'LISTING',
-    EDITING = 'EDITING'
+    EDITING = 'EDITING',
+    LOCKED = 'LOCKED',
+    UNLOCKED = 'UNLOCKED',
+    PUBLISHED = 'PUBLISHED',
+    UNPUBLISHED = 'UNPUBLISHED'
 }
 
 export interface DotCMSWorkflowActions {

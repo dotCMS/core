@@ -6,8 +6,9 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TooltipModule } from 'primeng/tooltip';
 
-import { DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
+import { DotCMSWorkflowAction, DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 /**
@@ -25,7 +26,8 @@ import { DotMessagePipe } from '@dotcms/ui';
         ButtonModule,
         DialogModule,
         DropdownModule,
-        FormsModule
+        FormsModule,
+        TooltipModule
     ],
 
     templateUrl: './dot-edit-content-sidebar-workflow.component.html',
@@ -59,6 +61,14 @@ export class DotEditContentSidebarWorkflowComponent {
      * @memberof DotEditContentSidebarWorkflowComponent
      */
     readonly onSelectWorkflow = output<string>();
+
+    /**
+     * Output event to reset the workflow.
+     *
+     * @type {Output<DotCMSWorkflowAction>}
+     * @memberof DotEditContentSidebarWorkflowComponent
+     */
+    readonly onResetWorkflow = output<DotCMSWorkflowAction>();
 
     /**
      * The selected workflow.
@@ -107,6 +117,19 @@ export class DotEditContentSidebarWorkflowComponent {
     $workflowSchemeOptions = input<SelectItem[]>([], {
         alias: 'workflowSchemeOptions'
     });
+
+    /**
+     * Whether to show the reset action.
+     *
+     * @type {Signal<{ showReset: boolean; resetAction: DotCMSWorkflowAction | null }>}
+     * @memberof DotEditContentSidebarWorkflowComponent
+     */
+    $showResetAction = input<{ showReset: boolean; resetAction: DotCMSWorkflowAction | null }>(
+        { showReset: false, resetAction: null },
+        {
+            alias: 'showResetAction'
+        }
+    );
 
     /**
      * Whether to show the workflow selection dialog icon.

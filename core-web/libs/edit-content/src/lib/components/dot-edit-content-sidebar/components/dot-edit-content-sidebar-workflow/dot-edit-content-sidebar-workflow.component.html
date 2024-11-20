@@ -4,6 +4,7 @@
 @let isLoading = $isLoading();
 @let noWorkflowSelectedYet = $noWorkflowSelectedYet();
 @let currentStep = $workflow().step;
+@let showResetAction = $showResetAction();
 
 <dl class="workflow-list">
     <dt class="workflow-column__title" id="workflow-title">{{ 'Workflow' | dm }}</dt>
@@ -25,10 +26,23 @@
         } @else {
             {{ scheme?.name }}
 
-            <!-- While not step, is consider as New contentlet -->
+            <!-- Show the workflow dialog selection icon -->
             @if ($showWorkflowDialogIcon()) {
                 <p-button
+                    [pTooltip]="'edit.content.sidebar.workflow.change' | dm"
+                    data-testId="workflow-dialog-icon"
                     (click)="showDialog()"
+                    pButton
+                    styleClass="p-button-link"
+                    icon="pi pi-pencil"></p-button>
+            }
+
+            <!-- Show the reset action button -->
+            @if (showResetAction.showReset) {
+                <p-button
+                    [pTooltip]="'edit.content.sidebar.workflow.reset' | dm"
+                    data-testId="workflow-reset-action"
+                    (click)="onResetWorkflow.emit(showResetAction.resetAction)"
                     pButton
                     styleClass="p-button-link"
                     icon="pi pi-replay"></p-button>

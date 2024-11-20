@@ -11,6 +11,7 @@
 @let isLoadingWorkflow = store.isLoadingWorkflow();
 @let showSelectWorkflowWarning = store.showSelectWorkflowWarning();
 @let currentStep = store.getCurrentStep();
+@let resetActionState = store.resetActionState();
 
 <aside class="content-sidebar">
     <p-tabView>
@@ -47,6 +48,7 @@
                     [workflowSchemeOptions]="workflowOptions"
                     [(showDialog)]="$showDialog"
                     (onSelectWorkflow)="store.setSelectedWorkflow($event)"
+                    [showResetAction]="resetActionState"
                     [workflow]="{
                         scheme,
                         step: currentStep,

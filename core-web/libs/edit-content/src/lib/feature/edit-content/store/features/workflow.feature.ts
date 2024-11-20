@@ -246,6 +246,26 @@ export function withWorkflow() {
                 },
 
                 /**
+                 * Determines if the reset workflowbutton should be shown and stores the reset action
+                 * Shows only if there's an action with hasResetActionlet=true and showOn includes 'EDITING'
+                 *
+                 * @returns {{ showReset: boolean, resetAction: DotCMSWorkflowAction | null }}
+                 */
+                resetActionState: computed(() => {
+                    const currentContentActions = store.currentContentActions();
+                    const resetAction = currentContentActions.find(
+                        (action) =>
+                            action.hasResetActionlet &&
+                            action.showOn.includes(DotRenderMode.EDITING)
+                    );
+
+                    return {
+                        showReset: !!resetAction,
+                        resetAction: resetAction || null
+                    };
+                }),
+
+                /**
                  * Fires a workflow action and updates the component state accordingly.
                  *
                  * This method triggers a sequence of events to fire a workflow action
