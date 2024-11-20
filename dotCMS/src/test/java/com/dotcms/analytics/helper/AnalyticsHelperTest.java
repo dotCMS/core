@@ -20,8 +20,8 @@ import org.junit.Test;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.concurrent.TimeUnit;
 
-import static com.dotcms.analytics.AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL;
 import static com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor.BEARER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -113,7 +113,7 @@ public class AnalyticsHelperTest extends UnitTestBase {
         AccessToken accessToken = createFreshAccessToken();
         assertFalse(AnalyticsHelper.get().hasTokenExpired(accessToken));
 
-        accessToken = accessToken.withIssueDate(Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL));
+        accessToken = accessToken.withIssueDate(Instant.now().minusSeconds(TimeUnit.HOURS.toSeconds(1)));
         assertTrue(AnalyticsHelper.get().hasTokenExpired(accessToken));
     }
 
@@ -169,7 +169,7 @@ public class AnalyticsHelperTest extends UnitTestBase {
         assertSame(TokenStatus.BLOCKED, AnalyticsHelper.get().resolveTokenStatus(accessToken));
 
         accessToken = createAccessToken()
-            .withIssueDate(Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL));
+            .withIssueDate(Instant.now().minusSeconds(TimeUnit.HOURS.toSeconds(1)));
         assertSame(TokenStatus.EXPIRED, AnalyticsHelper.get().resolveTokenStatus(accessToken));
     }
 
@@ -200,7 +200,7 @@ public class AnalyticsHelperTest extends UnitTestBase {
      */
     @Test(expected = AnalyticsException.class)
     public void test_checkExpiredAccessToken() throws AnalyticsException {
-        checkStatusThrowing(createAccessToken().withIssueDate(Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL)));
+        checkStatusThrowing(createAccessToken().withIssueDate(Instant.now().minusSeconds(TimeUnit.HOURS.toSeconds(1))));
     }
 
     /**
@@ -412,7 +412,7 @@ public class AnalyticsHelperTest extends UnitTestBase {
                 "some-token-type",
                 tokenStatus,
                 null)
-            .withExpiresIn(ANALYTICS_ACCESS_TOKEN_TTL);
+            .withExpiresIn((int) TimeUnit.HOURS.toSeconds(1));
     }
 
     private AccessToken createAccessToken() {
