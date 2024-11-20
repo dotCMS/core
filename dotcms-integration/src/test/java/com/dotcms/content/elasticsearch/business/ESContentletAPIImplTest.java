@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
@@ -154,7 +155,7 @@ import static org.mockito.Mockito.when;
  * @author nollymar
  */
 @ApplicationScoped
-@RunWith(DataProviderRunner.class)
+@RunWith(DataProviderWeldRunner.class)
 public class ESContentletAPIImplTest extends IntegrationTestBase {
 
     private static ContentTypeAPI contentTypeAPI;
