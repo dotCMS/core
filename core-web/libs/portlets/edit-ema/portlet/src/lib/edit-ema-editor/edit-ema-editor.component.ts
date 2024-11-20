@@ -217,9 +217,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
-            .subscribe(({ data }: MessageEvent) => {
-                this.handlePostMessage(data);
-            });
+            .subscribe(({ data }: MessageEvent) => this.handlePostMessage(data));
     }
 
     /**

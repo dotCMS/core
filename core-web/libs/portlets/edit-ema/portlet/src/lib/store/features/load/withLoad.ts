@@ -11,7 +11,6 @@ import { map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
@@ -137,11 +136,6 @@ export function withLoad() {
                                                     currentUser,
                                                     experiment,
                                                     languages,
-                                                    params: {
-                                                        ...params,
-                                                        variantName:
-                                                            params.variantName || DEFAULT_VARIANT_ID
-                                                    },
                                                     canEditPage,
                                                     pageIsLocked,
                                                     isTraditionalPage,

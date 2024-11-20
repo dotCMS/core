@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { CommonModule, Location } from '@angular/common';
-import { Component, effect, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, effect, inject, OnDestroy, OnInit, untracked, ViewChild } from '@angular/core';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -23,7 +23,7 @@ import {
     DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotLanguage } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotLanguage } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotInfoPageComponent, DotNotLicenseComponent } from '@dotcms/ui';
 
@@ -100,11 +100,19 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         }
     });
 
+    constructor() {
+        effect(() => {
+            const qp = this.uveStore.params();
+            this.#updateLocation(qp);
+            // We don't want to track this because it's a side effect
+            // This will also be trigger every time the params change but changes inside the method will not trigger a new effect
+            untracked(() => this.uveStore.init(qp));
+        });
+    }
+
     ngOnInit(): void {
         const params = this.#getQueryParams();
-
-        this.#updateLocation(params);
-        this.uveStore.init(params);
+        this.uveStore.updatePageParams(params);
 
         // We need to skip one because it's the initial value
         this.#siteService.switchSite$
@@ -125,10 +133,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
                 if (!isSaved && isTranslation) {
-                    // At this point we are in the language of the translation, if the user didn't save we need to navigate to the default language
-                    this.navigate({
-                        language_id: 1
-                    });
+                    this.#goBackToCurrentLanguage();
                 }
 
                 break;
@@ -152,14 +157,14 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const targetUrl = this.getTargetUrl(url);
 
         if (this.shouldNavigate(targetUrl)) {
-            // Navigate to the new URL if it's different from the current one
-            this.navigate({ url: targetUrl });
+            this.updatePageParams({ url: targetUrl });
 
             return;
         }
 
         this.uveStore.reload();
     }
+
     /**
      * Extracts the htmlPageReferer url from the event payload.
      *
@@ -227,11 +232,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.uveStore.reload();
     }
 
-    private navigate(queryParams) {
-        this.#router.navigate([], {
-            queryParams,
-            queryParamsHandling: 'merge'
-        });
+    private updatePageParams(queryParams) {
+        this.uveStore.updatePageParams(queryParams);
     }
 
     /**
@@ -260,11 +262,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     newLanguage: language.id
                 });
             },
-            reject: () => {
-                this.navigate({
-                    language_id: 1
-                });
-            }
+            reject: () => this.#goBackToCurrentLanguage()
         });
     }
 
@@ -286,6 +284,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             delete params.clientHost;
         }
 
+        if (!params.variantName) {
+            params.variantName = DEFAULT_VARIANT_ID;
+        }
+
         return params as DotPageApiParams;
     }
 
@@ -300,5 +302,15 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     #updateLocation(queryParams: Params): void {
         const urlTree = this.#router.createUrlTree([], { queryParams });
         this.#location.replaceState(urlTree.toString());
+    }
+
+    /**
+     * Use the Page Language to navigate back to the current language
+     *
+     * @memberof DotEmaShellComponent
+     */
+    #goBackToCurrentLanguage(): void {
+        const language_id = this.uveStore.$languageId();
+        this.updatePageParams({ language_id });
     }
 }
