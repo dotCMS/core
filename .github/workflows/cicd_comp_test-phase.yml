@@ -193,7 +193,7 @@ jobs:
       fail-fast: false
       matrix:
         suites:
-          - { name: "Default", pathName: "default", tests: 'KarateCITests#defaultTests'  }
+          - { name: "Default", pathName: "default", tests: 'KarateCITests#defaults'  }
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

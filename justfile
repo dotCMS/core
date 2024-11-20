@@ -99,7 +99,7 @@ dev-tomcat-stop:
 test-postman collections='page':
     ./mvnw -pl :dotcms-postman verify -Dpostman.test.skip=false -Pdebug -Dpostman.collections={{ collections }}
 
-test-karate collections='KarateCITests#defaultTests':
+test-karate collections='KarateCITests#defaults':
     ./mvnw -pl :dotcms-test-karate verify -Dkarate.test.skip=false -Pdebug -Dit.test={{ collections }}
 
 # Stops Postman-related Docker containers
