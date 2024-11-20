@@ -365,6 +365,14 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         ContentUtils.addRelationships(contentlet, APILocator.systemUser(), currentPageMode, contentlet.getLanguageId(), depth);
     }
 
+    /**
+     * Decrease the DEPTH value:
+     * If the current value is 2, reduce it to 0.
+     * If the current value is 3, reduce it to 1.
+     *
+     * @param depthValue current depth value
+     * @return
+     */
     private int decreaseDepthValue(int depthValue) {
         if (depthValue == 2) {
             return 0;
