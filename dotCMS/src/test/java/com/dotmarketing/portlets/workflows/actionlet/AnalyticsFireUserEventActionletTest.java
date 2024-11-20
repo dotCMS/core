@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotcms.analytics.track.collectors.Collector;
+import com.dotcms.analytics.track.collectors.EventSource;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorService;
 import com.dotcms.analytics.track.matchers.RequestMatcher;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
@@ -55,7 +56,7 @@ public class AnalyticsFireUserEventActionletTest {
             public void fireCollectorsAndEmitEvent(HttpServletRequest request, HttpServletResponse response, RequestMatcher requestMatcher, Map<String, Serializable> userEventPayload) {
 
                 Assert.assertNotNull(userEventPayload);
-                Assert.assertEquals("page", userEventPayload.get(Collector.EVENT_SOURCE));
+                Assert.assertEquals(EventSource.WORKFLOW.getName(), userEventPayload.get(Collector.EVENT_SOURCE));
                 Assert.assertEquals("123", userEventPayload.get(Collector.ID));
 
                 final Map<String, String> object = (Map<String, String>) userEventPayload.get(Collector.OBJECT);
