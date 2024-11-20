@@ -16,6 +16,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -32,6 +33,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 
 /**
@@ -82,7 +84,10 @@ public class AnalyticsHelper {
         return Optional.ofNullable(accessToken.issueDate())
             .map(issuedAt -> {
                 final Instant now = Instant.now();
-                final Instant expireDate = issuedAt.plusSeconds(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL);
+                final int accessTokenTtl = Config.getIntProperty(
+                        AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_KEY,
+                        (int) TimeUnit.HOURS.toSeconds(1));
+                final Instant expireDate = issuedAt.plusSeconds(accessTokenTtl);
                 return now.isBefore(expireDate) && (filter == null || filter.test(now, expireDate));
             })
             .orElseGet(() -> {
@@ -110,7 +115,11 @@ public class AnalyticsHelper {
     public boolean isTokenInWindow(final AccessToken accessToken) {
         return filterIssueDate(
             accessToken,
-            (now, expireDate) -> now.isAfter(expireDate.minusSeconds(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_WINDOW)));
+            (now, expireDate) -> now.isAfter(
+                    expireDate.minusSeconds(
+                            Config.getLongProperty(
+                                    AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_WINDOW_KEY,
+                                    TimeUnit.MINUTES.toSeconds(1)))));
     }
 
     /**
