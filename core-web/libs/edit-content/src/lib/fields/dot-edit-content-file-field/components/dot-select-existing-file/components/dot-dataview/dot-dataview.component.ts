@@ -46,6 +46,14 @@ export class DotDataViewComponent {
      * @required
      */
     $data = input.required<DotCMSContentlet[]>({ alias: 'data' });
+
+    /**
+     * Error message to display in the table.
+     *
+     * @type {string}
+     */
+    $errorMessage = input<string>('', { alias: 'error' });
+
     /**
      * A boolean observable that indicates the loading state.
      * This is typically used to show or hide a loading indicator in the UI.
