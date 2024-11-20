@@ -225,7 +225,7 @@ public class ContentletFactoryTest extends ContentletBaseTest {
      * Method to test: {@link ContentletFactory.findContentletByIdentifier(String, long, String, Date)}
      * Given scenario: A contentlet is created with a future publish date. The method is called with a date in the future
      * Expected result: When the method is called with a date in the future, the contentlet is found. When the method is called with a date in the past, the contentlet is not found.
-     * @throws DotDataException 
+     * @throws DotDataException
      */
     @Test
     public void Test_Find_Contentlet_By_Identifier_Using_Time_Machine_Date() throws DotDataException {
