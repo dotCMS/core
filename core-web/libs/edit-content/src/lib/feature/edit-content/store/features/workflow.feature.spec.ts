@@ -173,7 +173,7 @@ describe('WorkflowFeature', () => {
                 const mockStatus = {
                     ...MOCK_WORKFLOW_STATUS,
                     scheme: MOCK_WORKFLOW_DATA[0].scheme,
-                    firstStep: MOCK_WORKFLOW_DATA[0].firstStep
+                    step: MOCK_WORKFLOW_DATA[0].firstStep
                 };
                 workflowService.getWorkflowStatus.mockReturnValue(of(mockStatus));
 
@@ -194,8 +194,8 @@ describe('WorkflowFeature', () => {
                 expect(store.workflowSchemeOptions()).toEqual(expected);
             });
 
-            it('should return first step of current workflow scheme', () => {
-                expect(store.getFirstStep()).toEqual(MOCK_WORKFLOW_DATA[0].firstStep);
+            it('should return current step of workflow', () => {
+                expect(store.currentStep()).toEqual(MOCK_WORKFLOW_STATUS.step);
             });
         });
     });

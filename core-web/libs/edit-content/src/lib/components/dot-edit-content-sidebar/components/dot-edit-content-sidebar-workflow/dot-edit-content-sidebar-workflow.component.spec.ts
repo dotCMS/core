@@ -35,7 +35,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('workflow-name')).textContent.trim()).toBe('Blogs');
-            expect(spectator.query(byTestId('workflow-step')).textContent.trim()).toBe('New');
+            expect(spectator.query(byTestId('workflow-step')).textContent.trim()).toBe('QA');
             expect(spectator.query(byTestId('workflow-assigned')).textContent.trim()).toBe(
                 'Admin User'
             );
