@@ -836,7 +836,7 @@ public class ContentResource {
         final Map<String, Object> m = new HashMap<>();
         final ContentType type = contentlet.getContentType();
 
-        final boolean doRender = (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.TRUE.toString().equalsIgnoreCase(render));
+        final boolean doRender = (BaseContentType.WIDGET.equals(type.baseType()) && "true".equalsIgnoreCase(render));
         //Render code
         m.putAll(ContentletUtil.getContentPrintableMap(user, contentlet, allCategoriesInfo, doRender));
         if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
