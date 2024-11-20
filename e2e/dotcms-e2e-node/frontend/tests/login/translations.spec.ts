@@ -3,8 +3,8 @@ import {assert} from 'console';
 
 const languages = [
     {language: 'español (España)', translation: '¡Bienvenido!'},
-    {language: 'italiano (Italia)', translation: 'Benvenuto!'},
-    {language: 'français (France)', translation: 'Bienvenue !'},
+    // {language: 'italiano (Italia)', translation: 'Benvenuto!'},
+    // {language: 'français (France)', translation: 'Bienvenue !'},
     {language: 'Deutsch (Deutschland)', translation: 'Willkommen!'},
     {language: '中文 (中国)', translation: '欢迎'},
     {language: 'Nederlands (Nederland)', translation: 'Welkom!'},
