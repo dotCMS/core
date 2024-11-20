@@ -5,7 +5,6 @@ import { EMPTY, forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
 
 import { map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
@@ -36,8 +35,6 @@ export function withLoad() {
             const dotLicenseService = inject(DotLicenseService);
             const loginService = inject(LoginService);
             const dotExperimentsService = inject(DotExperimentsService);
-            const router = inject(Router);
-            const activatedRoute = inject(ActivatedRoute);
 
             return {
                 init: rxMethod<DotPageApiParams>(
@@ -66,29 +63,8 @@ export function withLoad() {
                                             params: qp
                                         });
 
+                                        // EMPTY is a simple Observable that only emits the complete notification.
                                         return EMPTY;
-                                    }),
-                                    tap({
-                                        next: (pageAPIResponse) => {
-                                            if (!pageAPIResponse) {
-                                                return;
-                                            }
-
-                                            const { page, template } = pageAPIResponse;
-
-                                            const isLayoutDisabled =
-                                                !page?.canEdit || !template?.drawed;
-                                            const pathIsLayout =
-                                                activatedRoute?.firstChild?.snapshot?.url?.[0]
-                                                    .path === 'layout';
-
-                                            if (isLayoutDisabled && pathIsLayout) {
-                                                // If the user can't edit the page or the template is not drawed we navigate to the content page
-                                                router.navigate(['edit-page/content'], {
-                                                    queryParamsHandling: 'merge'
-                                                });
-                                            }
-                                        }
                                     })
                                 ),
                                 isEnterprise: dotLicenseService

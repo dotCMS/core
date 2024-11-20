@@ -2,7 +2,15 @@ import { Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    OnDestroy,
+    OnInit,
+    effect,
+    inject
+} from '@angular/core';
+import { Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
@@ -38,6 +46,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     private readonly dotPageLayoutService = inject(DotPageLayoutService);
     private readonly messageService = inject(MessageService);
     private readonly dotMessageService = inject(DotMessageService);
+    readonly #router = inject(Router);
 
     protected readonly uveStore = inject(UVEStore);
 
@@ -47,6 +56,19 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
     updateTemplate$ = new Subject<DotTemplateDesigner>();
     destroy$: Subject<boolean> = new Subject<boolean>();
+
+    constructor() {
+        // The only way to enter here directly is by the URL, so we need to redirect the user to the correct page
+        effect(() => {
+            if (this.uveStore.$canEditLayout()) {
+                return;
+            }
+
+            this.#router.navigate(['edit-page/content'], {
+                queryParamsHandling: 'merge'
+            });
+        });
+    }
 
     ngOnInit(): void {
         this.initSaveTemplateDebounce();

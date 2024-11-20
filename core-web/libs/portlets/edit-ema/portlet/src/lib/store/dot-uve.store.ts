@@ -1,6 +1,6 @@
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 
-import { computed } from '@angular/core';
+import { computed, untracked } from '@angular/core';
 
 import { withEditor } from './features/editor/withEditor';
 import { withFlags } from './features/flags/withFlags';
@@ -22,9 +22,9 @@ const initialState: UVEState = {
     errorCode: null,
     params: null,
     status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    canEditPage: false,
-    pageIsLocked: true
+    isTraditionalPage: true, // This should be a computed property
+    canEditPage: false, // This should be a computed property
+    pageIsLocked: true // This should be a computed property
 };
 
 export const UVEStore = signalStore(
@@ -42,7 +42,7 @@ export const UVEStore = signalStore(
         }) => {
             return {
                 $translateProps: computed<TranslateProps>(() => {
-                    const response = pageAPIResponse();
+                    const response = untracked(() => pageAPIResponse());
                     const languageId = response?.viewAs.language?.id;
                     const translatedLanguages = languages();
                     const currentLanguage = translatedLanguages.find(
@@ -64,6 +64,7 @@ export const UVEStore = signalStore(
                     const page = response?.page;
                     const templateDrawed = response?.template.drawed;
 
+                    // Expose this
                     const isLayoutDisabled = !page?.canEdit || !templateDrawed;
                     const errorCode = error();
 

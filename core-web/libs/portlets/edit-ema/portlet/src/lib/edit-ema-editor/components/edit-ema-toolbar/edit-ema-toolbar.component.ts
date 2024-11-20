@@ -196,16 +196,17 @@ export class EditEmaToolbarComponent {
     handleNewPage(page: DotCMSContentlet): void {
         const { pageURI, url, languageId } = page;
         const params = {
-            ...this.uveStore.params(),
             url: pageURI ?? url,
             language_id: languageId?.toString()
         };
 
         if (this.shouldNavigateToNewPage(params)) {
             this.uveStore.updatePageParams(params);
-        } else {
-            this.uveStore.reload();
+
+            return;
         }
+
+        this.uveStore.reload();
     }
 
     /**
