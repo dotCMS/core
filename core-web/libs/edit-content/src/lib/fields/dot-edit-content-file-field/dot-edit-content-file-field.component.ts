@@ -21,7 +21,7 @@ import { filter, map } from 'rxjs/operators';
 
 import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotGeneratedAIImage } from '@dotcms/dotcms-models';
-import { INPUT_TYPES, UploadedFile } from '@dotcms/edit-content/models/dot-edit-content-file.model';
+import { INPUT_TYPE, UploadedFile } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import {
     DotDropZoneComponent,
     DotMessagePipe,
@@ -162,7 +162,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
 
         this.store.initLoad({
             fieldVariable: field.variable,
-            inputType: field.fieldType as INPUT_TYPES
+            inputType: field.fieldType as INPUT_TYPE
         });
     }
 

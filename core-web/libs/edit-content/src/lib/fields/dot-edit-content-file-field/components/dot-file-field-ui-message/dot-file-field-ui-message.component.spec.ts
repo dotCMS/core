@@ -1,5 +1,7 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
+import { CommonModule } from '@angular/common';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -14,7 +16,7 @@ describe('DotFileFieldUiMessageComponent', () => {
     const createComponent = createComponentFactory({
         component: DotFileFieldUiMessageComponent,
         detectChanges: false,
-        imports: [DotMessagePipe],
+        imports: [DotMessagePipe, CommonModule],
         providers: [
             {
                 provide: DotMessageService,
