@@ -1,4 +1,4 @@
-import { INPUT_TYPES } from '../../models/dot-edit-content-file.model';
+import { INPUT_TYPE } from '../../models/dot-edit-content-file.model';
 
 type Actions = {
     allowExistingFile: boolean;
@@ -9,7 +9,7 @@ type Actions = {
     maxFileSize: number | null;
 };
 
-type ConfigActions = Record<INPUT_TYPES, Actions>;
+type ConfigActions = Record<INPUT_TYPE, Actions>;
 
 export const INPUT_CONFIG: ConfigActions = {
     File: {

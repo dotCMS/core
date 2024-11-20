@@ -12,13 +12,13 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { INPUT_TYPES } from '@dotcms/edit-content/models/dot-edit-content-file.model';
+import { INPUT_TYPE, INPUT_TYPES } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import { DotMessagePipe, DotFieldValidationMessageComponent, DotValidators } from '@dotcms/ui';
 
 import { FormImportUrlStore } from './store/form-import-url.store';
 
 type DialogData = {
-    inputType: INPUT_TYPES;
+    inputType: INPUT_TYPE;
     acceptedFiles: string[];
 };
 
@@ -89,7 +89,7 @@ export class DotFormImportUrlComponent implements OnInit {
         const data = this.#dialogConfig?.data as DialogData;
 
         this.store.initSetup({
-            uploadType: data?.inputType === 'Binary' ? 'temp' : 'dotasset',
+            uploadType: data?.inputType === INPUT_TYPES.Binary ? 'temp' : 'dotasset',
             acceptedFiles: data?.acceptedFiles ?? []
         });
     }

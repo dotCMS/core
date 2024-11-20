@@ -11,7 +11,7 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotFileFieldUploadService } from '@dotcms/edit-content/fields/dot-edit-content-file-field/services/upload-file/upload-file.service';
-import { INPUT_TYPES } from '@dotcms/edit-content/models/dot-edit-content-file.model';
+import { INPUT_TYPE, INPUT_TYPES } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotDataViewComponent } from './components/dot-dataview/dot-dataview.component';
@@ -19,7 +19,7 @@ import { DotSideBarComponent } from './components/dot-sidebar/dot-sidebar.compon
 import { SelectExisingFileStore } from './store/select-existing-file.store';
 
 type DialogData = {
-    inputType: INPUT_TYPES;
+    inputType: INPUT_TYPE;
 };
 
 @Component({
@@ -74,7 +74,7 @@ export class DotSelectExistingFileComponent implements OnInit {
 
     ngOnInit() {
         const data = this.#dialogConfig?.data as DialogData;
-        const inputType = data?.inputType === 'Image' ? ['image'] : [];
+        const inputType = data?.inputType === INPUT_TYPES.Image ? ['image'] : [];
         this.store.setMimeTypes(inputType);
     }
 
