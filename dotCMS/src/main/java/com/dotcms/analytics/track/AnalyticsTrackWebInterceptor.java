@@ -240,7 +240,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
         }
 
         if (event.getKey().contains(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY)) {
-            isTurnedOn.set(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, true));
+            isAutoInjectTurnedOn.set(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, true));
         }
     }
 }

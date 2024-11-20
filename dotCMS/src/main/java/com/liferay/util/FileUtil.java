@@ -771,7 +771,7 @@ public class FileUtil {
 
 	/**
 	 * Convert the input stream to a string
-	 * @param in
+	 * @param in InputStream
 	 * @return String
 	 * @throws IOException
 	 */
@@ -779,12 +779,23 @@ public class FileUtil {
 		return IOUtils.toString(in, StandardCharsets.UTF_8);
 	}
 
+	/**
+	 * Convert the resource stream from the classpath to a string
+	 * @param classpathDir String class path dir of the resource
+	 * @return String
+	 * @throws IOException
+	 */
 	public static String toStringFromResourceAsStream (final String classpathDir) throws IOException {
 		try (final InputStream in = FileUtil.class.getResourceAsStream(classpathDir)) {
 			return toString(in);
 		}
 	}
 
+	/**
+	 * Convert the resource stream from the classpath to a string throwing only RuntimeException in case of error
+	 * @param classpathDir String class path dir of the resource
+	 * @return String
+	 */
 	public static String toStringFromResourceAsStreamNoThrown (final String classpathDir) {
 		try {
 			return toStringFromResourceAsStream(classpathDir);
