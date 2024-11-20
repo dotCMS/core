@@ -6,7 +6,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.liferay.util.StringPool;
@@ -45,28 +44,28 @@ public class FilesCollector implements Collector {
     public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
                                         final CollectorPayloadBean collectorPayloadBean) {
 
-        final String uri = (String)collectorContextMap.get("uri");
-        final String host = (String)collectorContextMap.get("host");
-        final Host site = (Host) collectorContextMap.get("currentHost");
-        final Long languageId = (Long)collectorContextMap.get("langId");
-        final String language = (String)collectorContextMap.get("lang");
+        final String uri = (String)collectorContextMap.get(CollectorContextMap.URI);
+        final String host = (String)collectorContextMap.get(CollectorContextMap.HOST);
+        final Host site = (Host) collectorContextMap.get(CollectorContextMap.CURRENT_HOST);
+        final Long languageId = (Long)collectorContextMap.get(CollectorContextMap.LANG_ID);
+        final String language = (String)collectorContextMap.get(CollectorContextMap.LANG);
         final HashMap<String, String> fileObject = new HashMap<>();
 
         if (Objects.nonNull(uri) && Objects.nonNull(site) && Objects.nonNull(languageId)) {
 
             getFileAsset(uri, site, languageId).ifPresent(fileAsset -> {
-                fileObject.put("id", fileAsset.getIdentifier());
-                fileObject.put("title", fileAsset.getTitle());
-                fileObject.put("url", uri);
+                fileObject.put(ID, fileAsset.getIdentifier());
+                fileObject.put(TITLE, fileAsset.getTitle());
+                fileObject.put(URL, uri);
             });
         }
 
-        collectorPayloadBean.put("object",  fileObject);
-        collectorPayloadBean.put("url", uri);
-        collectorPayloadBean.put("host", Objects.nonNull(site)?site.getHostname():host);
-        collectorPayloadBean.put("language", language);
-        collectorPayloadBean.put("site", null != site?site.getIdentifier():"unknown");
-        collectorPayloadBean.put("event_type", EventType.FILE_REQUEST.getType());
+        collectorPayloadBean.put(OBJECT,  fileObject);
+        collectorPayloadBean.put(URL, uri);
+        collectorPayloadBean.put(HOST, Objects.nonNull(site)?site.getHostname():host);
+        collectorPayloadBean.put(LANGUAGE, language);
+        collectorPayloadBean.put(SITE, null != site?site.getIdentifier():StringPool.UNKNOWN);
+        collectorPayloadBean.put(EVENT_TYPE, EventType.FILE_REQUEST.getType());
 
         return collectorPayloadBean;
     }
