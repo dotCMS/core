@@ -4888,7 +4888,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             binaryField2 = fieldAPI.save(binaryField2, user);
 
             //Creating a temporary File to use in the binary fields.
-            File imageFile = temporaryFolder.newFile("ImageFile.png");
+            File imageFile = getTemporaryFolder().newFile("ImageFile.png");
             writeTextIntoFile(imageFile, "This is the same image");
 
             contentlet = new Contentlet();
@@ -4992,7 +4992,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             binaryField = fieldAPI.save(binaryField, user);
 
             //Creating a temporary binary file
-            imageFile = temporaryFolder.newFile("BinaryFile.txt");
+            imageFile = getTemporaryFolder().newFile("BinaryFile.txt");
             writeTextIntoFile(imageFile, "This is the same file");
 
             initialContent = new Contentlet();
@@ -7572,7 +7572,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     private File createTempFileWithText(String name, String text) throws IOException {
-        File tempFile = temporaryFolder.newFile(name);
+        File tempFile = getTemporaryFolder().newFile(name);
         writeTextIntoFile(tempFile, text);
         return tempFile;
     }
