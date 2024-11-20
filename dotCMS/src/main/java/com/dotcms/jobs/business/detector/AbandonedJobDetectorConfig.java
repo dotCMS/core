@@ -9,6 +9,12 @@ public class AbandonedJobDetectorConfig {
     private final long detectionIntervalMinutes;
     private final long abandonmentThresholdMinutes;
 
+    // Required for CDI proxy
+    protected AbandonedJobDetectorConfig() {
+        this.detectionIntervalMinutes = 0;
+        this.abandonmentThresholdMinutes = 0;
+    }
+
     /**
      * Constructs a new configuration with the specified timing parameters.
      *
