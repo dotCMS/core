@@ -11,6 +11,9 @@
 @let isLoadingWorkflow = store.isLoadingWorkflow();
 @let showSelectWorkflowWarning = store.showSelectWorkflowWarning();
 @let currentStep = store.getCurrentStep();
+<!-- Locales Component -->
+@let locales = store.locales();
+@let defaultLocale = store.defaultLocale();
 
 <aside class="content-sidebar">
     <p-tabView>
@@ -37,6 +40,14 @@
                         referencesPageCount: referencePagesCount
                     }"
                     data-testId="information" />
+            </dot-edit-content-sidebar-section>
+
+            <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.locales' | dm">
+                <dot-edit-content-sidebar-locales
+                    [locales]="locales"
+                    [defaultLocale]="defaultLocale"
+                    [contentlet]="contentlet"
+                    data-testId="locales" />
             </dot-edit-content-sidebar-section>
 
             <!-- Workflow section -->

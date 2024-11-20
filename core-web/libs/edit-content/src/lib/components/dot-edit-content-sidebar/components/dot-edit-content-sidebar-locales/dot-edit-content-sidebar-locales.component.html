@@ -1,0 +1,14 @@
+@let locales = $locales();
+@let defaultLocale = $defaultLocale();
+@let contentlet = $contentlet();
+
+@for (locale of locales; track locale.id) {
+    <p-chip
+        [label]="locale.isoCode"
+        styleClass="p-chip-sm test"
+        [ngClass]="{
+            translated: locale.translated,
+            current: contentlet.languageId === locale.id,
+            default: defaultLocale.id === locale.id
+        }" />
+}
