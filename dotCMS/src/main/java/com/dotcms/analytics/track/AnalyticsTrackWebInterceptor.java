@@ -120,9 +120,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
         try {
             if (isAllowed(request)) {
 
-                if (request.getRequestURI().contains(AUTO_INJECT_LIB_PATH)
-                             && isFeatureFlagAutoInjectTurnOn(request)
-                            ) {
+                if (isAutoInjectAndFeatureFlagIsOn(request)) {
 
                     Logger.debug(this, () -> "intercept, Matched: ca-lib.js request: " + request.getRequestURI());
                     response.getWriter().append(caLib.get());
@@ -144,8 +142,9 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
         return Result.NEXT;
     }
 
-    private boolean isFeatureFlagAutoInjectTurnOn(final HttpServletRequest request) {
-        return isAutoInjectTurnedOn.get();
+    private boolean isAutoInjectAndFeatureFlagIsOn(final HttpServletRequest request) {
+
+        return request.getRequestURI().contains(AUTO_INJECT_LIB_PATH) && isAutoInjectTurnedOn.get();
     }
 
     /**
