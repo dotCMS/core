@@ -14,9 +14,11 @@ Feature: Checking JSON Attributes
         if (results && results.length > 0) {
           for (var i = 0; i < results.length; i++) {
             var result = results[i];
-            var key = Object.keys(result)[0];
-            if (result[key] && result[key].errorMessage) {
-              errors.push(result[key].errorMessage);
+          // Handle both nested error messages and direct error messages
+            for (var key in result) {
+              if (result[key] && result[key].errorMessage) {
+                errors.push(result[key].errorMessage);
+              }
             }
           }
         }

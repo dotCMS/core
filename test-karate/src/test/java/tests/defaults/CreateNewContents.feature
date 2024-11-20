@@ -14,7 +14,7 @@ Feature: Content Management API Tests
   Scenario Outline: Verify content retrieval by <type> with default language
     # Turn on system properties
     * call read('classpath:dependencyfeatures/turnOnSystemTableProperties.feature')
-
+    * configure cookies = null
     Given url baseUrl + '/api/v1/content/' + <id> + '?language=2'
     And headers commonHeaders
     When method get
@@ -33,7 +33,7 @@ Feature: Content Management API Tests
   Scenario Outline: Verify authentication requirements for content update - <scenario>
     # Turn off system properties
     * call read('classpath:dependencyfeatures/turnOffSystemTableProperties.feature')
-
+    * configure cookies = null
     Given url baseUrl + '/api/v1/workflow/actions/default/fire/PUBLISH'
     And request
       """
@@ -47,10 +47,9 @@ Feature: Content Management API Tests
         }
       }
       """
+    * def auth = (useAuth == 'true') ? ('Basic ' + encodedAuth(credentials)) : null
+    And header Authorization = auth
     And header Content-Type = 'application/json'
-    * def headers = { 'Content-Type': 'application/json' }
-    * if (useAuth) karate.set('headers', 'Authorization', 'Basic ' + encodedAuth(credentials))
-    And headers headers
     When method put
     Then status 401
     And match response contains expectedError
