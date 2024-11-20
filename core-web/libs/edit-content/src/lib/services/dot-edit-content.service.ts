@@ -232,11 +232,11 @@ export class DotEditContentService {
             hostFolderId: folderId,
             showLinks: false,
             showDotAssets: true,
-            showPages: true,
+            showPages: false,
             showFiles: true,
             showFolders: false,
             showWorking: true,
-            showArchived: true,
+            showArchived: false,
             sortByDesc: true,
             mimeTypes
         };

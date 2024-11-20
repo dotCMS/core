@@ -37,3 +37,11 @@ export const INPUT_CONFIG: ConfigActions = {
         maxFileSize: null
     }
 };
+
+export const DEFAULT_CONTENT_TYPE = 'asset';
+
+
+export const CONTENT_TYPES = {
+    'DotAsset': 'asset',
+    'FileAsset': 'fileAsset',
+};
