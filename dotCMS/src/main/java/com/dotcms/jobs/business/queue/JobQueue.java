@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -176,7 +177,7 @@ public interface JobQueue {
      * @return The abandoned job if one was found and marked, null otherwise
      * @throws JobQueueDataException if there's a data storage error
      */
-    Job detectAndMarkAbandoned(Duration threshold, JobState... inStates)
+    Optional<Job> detectAndMarkAbandoned(Duration threshold, JobState... inStates)
             throws JobQueueDataException;
 
     /**

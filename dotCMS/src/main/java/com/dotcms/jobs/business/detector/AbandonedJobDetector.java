@@ -9,6 +9,7 @@ import com.dotcms.jobs.business.util.JobUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -107,12 +108,12 @@ public class AbandonedJobDetector implements AutoCloseable {
 
         try {
 
-            Job abandonedJob;
+            Optional<Job> abandonedJob;
             while ((abandonedJob = jobQueue.detectAndMarkAbandoned(
                     Duration.ofMinutes(abandonmentThresholdMinutes),
-                    ABANDONMENT_CHECK_STATES)) != null) {
+                    ABANDONMENT_CHECK_STATES)).isPresent()) {
 
-                processAbandonedJob(abandonedJob);
+                processAbandonedJob(abandonedJob.get());
             }
         } catch (Exception e) {
             final var errorMessage = "Error detecting abandoned jobs";

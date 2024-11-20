@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -620,7 +621,7 @@ public class PostgresJobQueue implements JobQueue {
 
     @CloseDBIfOpened
     @Override
-    public Job detectAndMarkAbandoned(final Duration threshold, final JobState... inStates)
+    public Optional<Job> detectAndMarkAbandoned(final Duration threshold, final JobState... inStates)
             throws JobQueueDataException {
 
         try {
@@ -660,10 +661,10 @@ public class PostgresJobQueue implements JobQueue {
                 final Job abandonedJob = foundAbandonedJob.markAsAbandoned(jobResult);
                 updateJobStatus(abandonedJob);
 
-                return abandonedJob;
+                return Optional.of(abandonedJob);
             }
 
-            return null;
+            return Optional.empty();
         } catch (DotDataException e) {
             final var errorMessage = "Database error while detecting abandoned jobs";
             Logger.error(this, errorMessage, e);

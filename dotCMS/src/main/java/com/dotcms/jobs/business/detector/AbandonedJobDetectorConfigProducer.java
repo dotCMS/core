@@ -37,6 +37,7 @@ public class AbandonedJobDetectorConfigProducer {
      *
      * @return A new configuration object with the current property values
      */
+    @ApplicationScoped
     @Produces
     public AbandonedJobDetectorConfig produceAbandonedJobDetectorConfig() {
         return new AbandonedJobDetectorConfig(
