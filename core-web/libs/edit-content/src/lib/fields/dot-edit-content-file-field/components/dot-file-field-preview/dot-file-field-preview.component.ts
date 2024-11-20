@@ -18,7 +18,11 @@ import { DialogModule } from 'primeng/dialog';
 import { catchError } from 'rxjs/operators';
 
 import { DotResourceLinksService } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotCMSContentlet, DotFileMetadata } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotFileMetadata
+} from '@dotcms/dotcms-models';
 import {
     DotPreviewResourceLink,
     UploadedFile

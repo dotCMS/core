@@ -40,8 +40,7 @@ export const INPUT_CONFIG: ConfigActions = {
 
 export const DEFAULT_CONTENT_TYPE = 'asset';
 
-
 export const CONTENT_TYPES = {
-    'DotAsset': 'asset',
-    'FileAsset': 'fileAsset',
+    DotAsset: 'asset',
+    FileAsset: 'fileAsset'
 };
