@@ -25,7 +25,7 @@ import {
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotInfoPageComponent, DotNotLicenseComponent, SafeUrlPipe } from '@dotcms/ui';
+import { DotInfoPageComponent, DotNotLicenseComponent } from '@dotcms/ui';
 import { isEqual } from '@dotcms/utils/lib/shared/lodash/functions';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
@@ -72,7 +72,6 @@ import { compareUrlPaths } from '../utils';
         RouterModule,
         DotPageToolsSeoComponent,
         DotEmaDialogComponent,
-        SafeUrlPipe,
         DotInfoPageComponent,
         DotNotLicenseComponent
     ]
@@ -166,6 +165,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 break;
             }
 
+            case NG_CUSTOM_EVENTS.URL_IS_CHANGED: {
+                this.handleSavePageEvent(event);
+                break;
+            }
+
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
                 this.handleSavePageEvent(event);
                 break;
@@ -180,12 +184,12 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @return {void}
      */
     private handleSavePageEvent(event: CustomEvent): void {
-        const url = this.extractPageRefererUrl(event);
-        const targetUrl = this.getTargetUrl(url);
+        const htmlPageReferer = event.detail.payload?.htmlPageReferer;
+        const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
 
-        if (this.shouldNavigate(targetUrl)) {
+        if (this.shouldNavigate(url.pathname)) {
             // Navigate to the new URL if it's different from the current one
-            this.navigate({ url: targetUrl });
+            this.navigate({ url: url.pathname });
 
             return;
         }

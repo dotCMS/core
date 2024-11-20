@@ -2,7 +2,6 @@ package com.dotmarketing.startup.runonce;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -14,46 +13,55 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
 import org.postgresql.util.PGobject;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Array;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENTLET_IDS_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENT_TYPE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VARIABLE_NAME_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.LANGUAGE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.SITE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.UNIQUE_PER_SITE_ATTR;
 
 /**
- * Task Upgrade to Create/populate the unique_fields Table for Unique Field Validation
+ * This Upgrade Task creates and populates the {@code unique_fields} table for the new Unique Field
+ * Validation mechanism. The new {@code unique_fields} will be used to validate fields that must be
+ * unique, and what parameters were used to defined such a uniqueness feature.
  *
- * This introduces a new table, unique_fields, which will be used to validate fields that must be unique.
- *
- * <b>Table Structure</b>
- *
- * <code>
+ * <h4>Table Definition:</h4>
+ * <pre>
+ *     {@code
  * CREATE TABLE unique_fields (
  *     unique_key_val VARCHAR(64) PRIMARY KEY,
  *     supporting_values JSONB
  * );
- * </code>
- *
- * - unique_key_val: This field will store a hash created from a combination of the following:
- *
- * Content type ID
- * Field variable name
- * Field value
- * Language
- * Host ID (if the uniquePerSite option is enabled)
- *
- * - supporting_values: This field contains a JSON object with the following format:
- *
- * <code>
+ * }
+ * </pre>
+ * <h4>Columns:</h4>
+ * The {@code unique_key_val} column will store a hash created from a combination of the following:
+ * <ul>
+ *     <li>Content type ID.</li>
+ *     <li>Field variable name.</li>
+ *     <li>Field value.</li>
+ *     <li>Language.</li>
+ *     <li>Site ID (if the {@code uniquePerSite} option is enabled).</li>
+ * </ul>
+ * <p>
+ * The {@code supporting_values} column contains a JSON object with the following format:
+ * <pre>
+ *     {@code
  * {
  *     "contentTypeID": "",
  *     "fieldVariableName": "",
@@ -63,16 +71,24 @@ import static com.dotcms.util.CollectionsUtils.list;
  *     "uniquePerSite": true|false,
  *     "contentletsId": [...]
  * }
- * </code>
+ * }
+ * </pre>
+ * <p>The {@code contentletsId} array holds the IDs of contentlets with the same field value that
+ * existed before the database was upgraded. After the upgrade, no more contentlets with
+ * duplicate values will be allowed.</p>
  *
- * The contentletsId array holds the IDs of contentlets with the same field value that existed before the database was upgraded.
- * After the upgrade, no more contentlets with duplicate values will be allowed.
+ * <h4>Additional Details:</h4>
+ * <ul>
+ *     <li>The Host ID is included in the hash calculation only if the {@code uniquePerSite}
+ *     field variable is enabled.</li>
+ *     <li>The {@code unique_key_val} field ensures that only truly unique values can be inserted
+ *     moving forward.</li>
+ *     <li>This upgrade task also populates the {@code unique_fields} table with the existing
+ *     unique field values from the current database.</li>
+ * </ul>
  *
- * <b>Additional Details</b>
- *
- *-  The Host ID is included in the hash calculation only if the uniquePerSite field variable is enabled.
- *- The unique_key_val field ensures that only truly unique values can be inserted moving forward.
- *- This upgrade task also populates the unique_fields table with the existing unique field values from the current database.
+ * @author Freddy Rodriguez
+ * @since Oct 30th, 2024
  */
 public class Task241007CreateUniqueFieldsTable implements StartupTask {
 
@@ -81,7 +97,7 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
             "supporting_values JSONB" +
             " )";
 
-    private static final String RETRIVE_UNIQUE_FIELD_VALUES_QUERY = "SELECT structure.inode AS content_type_id," +
+    private static final String RETRIEVE_UNIQUE_FIELD_VALUES_QUERY = "SELECT structure.inode AS content_type_id," +
                 " field.velocity_var_name AS field_var_name," +
                 " contentlet.language_id AS language_id," +
                 " identifier.host_inode AS host_id," +
@@ -98,6 +114,7 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
                     " contentlet.language_id," +
                     " identifier.host_inode," +
                     " jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->> 'value'";
+
     private static final String INSERT_UNIQUE_FIELDS_QUERY = "INSERT INTO unique_fields(unique_key_val, supporting_values) VALUES(?, ?)";
 
     @Override
@@ -146,13 +163,13 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
                     uniqueFieldsValue.get("field_var_name").toString());
 
             final Map<String, Object> supportingValues = Map.of(
-                 "contentTypeID", uniqueFieldsValue.get("content_type_id"),
-                "fieldVariableName", uniqueFieldsValue.get("field_var_name"),
-                "fieldValue", uniqueFieldsValue.get("field_value"),
-                "languageId", Long.parseLong(uniqueFieldsValue.get("language_id").toString()),
-                "hostId", uniqueFieldsValue.get("host_id"),
-                "uniquePerSite", uniqueForSite,
-                "contentletsId", contentlets
+                    CONTENT_TYPE_ID_ATTR, uniqueFieldsValue.get("content_type_id"),
+                    FIELD_VARIABLE_NAME_ATTR, uniqueFieldsValue.get("field_var_name"),
+                    FIELD_VALUE_ATTR, uniqueFieldsValue.get("field_value"),
+                    LANGUAGE_ID_ATTR, Long.parseLong(uniqueFieldsValue.get("language_id").toString()),
+                    SITE_ID_ATTR, uniqueFieldsValue.get("host_id"),
+                    UNIQUE_PER_SITE_ATTR, uniqueForSite,
+                    CONTENTLET_IDS_ATTR, contentlets
             );
 
             Params notificationParams = new Params.Builder().add(hash, getJSONObject(supportingValues)).build();
@@ -208,10 +225,8 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
 
     private static boolean isUniqueForSite(String contentTypeId, String fieldVariableName) throws DotDataException {
         final Field uniqueField = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(contentTypeId, fieldVariableName);
-
-        final boolean uniqueForSite = uniqueField.fieldVariableValue(ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
+        return uniqueField.fieldVariableValue(ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
                 .map(Boolean::valueOf).orElse(false);
-        return uniqueForSite;
     }
 
     /**
@@ -229,6 +244,7 @@ public class Task241007CreateUniqueFieldsTable implements StartupTask {
      * @throws DotDataException
      */
     private static List<Map<String, Object>> retrieveUniqueFieldsValues() throws DotDataException {
-        return new DotConnect().setSQL(RETRIVE_UNIQUE_FIELD_VALUES_QUERY).loadObjectResults();
+        return new DotConnect().setSQL(RETRIEVE_UNIQUE_FIELD_VALUES_QUERY).loadObjectResults();
     }
+
 }

@@ -1,15 +1,23 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
-import com.dotcms.contenttype.business.*;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.CopyContentTypeBean;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.ExperimentDataGen;
@@ -58,7 +66,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -69,24 +76,18 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.model.ContentletRelationships;
-import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
@@ -101,6 +102,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.postgresql.util.PGobject;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -111,16 +113,32 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENTLET_IDS_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENT_TYPE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VARIABLE_NAME_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.LANGUAGE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.SITE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.UNIQUE_PER_SITE_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.VARIANT_ATTR;
 import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -135,7 +153,8 @@ import static org.mockito.Mockito.when;
  *
  * @author nollymar
  */
-@RunWith(DataProviderRunner.class)
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
 public class ESContentletAPIImplTest extends IntegrationTestBase {
 
     private static ContentTypeAPI contentTypeAPI;
@@ -985,43 +1004,50 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static void checkUniqueFieldsTable(final boolean uniquePerSite, final ContentType contentType,
                                               final Field uniqueField, Contentlet... contentlets)
             throws DotDataException {
-        List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE supporting_values->>'contentTypeID' = ?")
+        final List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE supporting_values->>'" + CONTENT_TYPE_ID_ATTR + "' = ?")
                 .addParam(contentType.id())
                 .loadObjectResults();
 
-        assertEquals(contentlets.length, results.size());
+        assertEquals("Only " + contentlets.length + " contentlet(s) must have been returned",
+                contentlets.length, results.size());
 
-        for (Map<String, Object> result : results) {
+        for (final Map<String, Object> result : results) {
             try {
                 final Map<String, Object> supportingValues  = JsonUtil.getJsonFromString(result.get("supporting_values").toString());
-                final List<String> contentletsId = (List<String>) supportingValues.get("contentletsId");
-                final String variant = supportingValues.get("variant").toString();
+                final List<String> contentletIds = (List<String>) supportingValues.get(CONTENTLET_IDS_ATTR);
+                final String variant = supportingValues.get(VARIANT_ATTR).toString();
 
-                assertEquals(1, contentletsId.size());
+                assertEquals("There should be only 1 entry for this unique field",1, contentletIds.size());
 
-                assertEquals(uniqueField.variable(), supportingValues.get("fieldVariableName"));
-                assertEquals(uniquePerSite, supportingValues.get("uniquePerSite"));
+                assertEquals("Unique Field var name " + uniqueField.variable() + " should've been returned",
+                        uniqueField.variable(), supportingValues.get(FIELD_VARIABLE_NAME_ATTR));
+                assertEquals("Value of the 'uniquePerSite' is not the expected one",
+                        uniquePerSite, supportingValues.get(UNIQUE_PER_SITE_ATTR));
 
                 Contentlet contentletFound = null;
 
                 for (Contentlet contentlet : contentlets) {
-                    if (contentletsId.get(0).equals(contentlet.getIdentifier()) && variant.equals(contentlet.getVariantId())) {
+                    if (contentletIds.get(0).equals(contentlet.getIdentifier()) && variant.equals(contentlet.getVariantId())) {
                         contentletFound = contentlet;
                         break;
                     }
                 }
 
                 if (contentletFound == null) {
-                    throw new AssertionError("Contentley does not expected");
+                    throw new AssertionError("Contentlet was not found");
                 }
 
-                assertEquals(contentletFound.get(uniqueField.variable()), supportingValues.get("fieldValue"));
-                assertEquals(contentletFound.getLanguageId(), Long.parseLong(supportingValues.get("languageId").toString()));
-                assertEquals(contentletFound.getHost(), supportingValues.get("hostId"));
-            } catch (IOException e) {
+                assertEquals("The value of the unique field is not the expected one",
+                        contentletFound.get(uniqueField.variable()), supportingValues.get(FIELD_VALUE_ATTR));
+                assertEquals("The Language ID of the unique field entry is not the expected one",
+                        contentletFound.getLanguageId(), Long.parseLong(supportingValues.get(LANGUAGE_ID_ATTR).toString()));
+                assertEquals("The Site ID of the unique field is not the expected one",
+                        contentletFound.getHost(), supportingValues.get(SITE_ID_ATTR));
+            } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -2137,7 +2163,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void updateContentletWithDuplicateValuesInUniqueFields()
-            throws DotDataException, DotSecurityException, InterruptedException, IOException {
+            throws DotDataException, DotSecurityException, IOException {
         final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
@@ -2182,19 +2208,19 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             APILocator.getContentTypeFieldAPI().save(uniqueFieldUpdated, APILocator.systemUser());
 
             Map<String, ? extends Serializable> uniqueFieldCriteriaMap = Map.of(
-                    "contentTypeID", contentType.id(),
-                    "fieldVariableName", uniqueTextFieldFromDB.variable(),
-                    "fieldValue", uniqueVersionValue.toString(),
-                    "languageId", language.getId(),
-                    "hostId", host.getIdentifier(),
-                    "uniquePerSite", true,
-                    "variant", VariantAPI.DEFAULT_VARIANT.name()
+                    CONTENT_TYPE_ID_ATTR, Objects.requireNonNull(contentType.id()),
+                    FIELD_VARIABLE_NAME_ATTR, Objects.requireNonNull(uniqueTextFieldFromDB.variable()),
+                    FIELD_VALUE_ATTR, uniqueVersionValue,
+                    LANGUAGE_ID_ATTR, language.getId(),
+                    SITE_ID_ATTR, host.getIdentifier(),
+                    UNIQUE_PER_SITE_ATTR, true,
+                    VARIANT_ATTR, VariantAPI.DEFAULT_VARIANT.name()
             );
 
             final Map<String, Object> supportingValues = new HashMap<>(uniqueFieldCriteriaMap);
-            supportingValues.put("contentletsId", CollectionsUtils.list(contentlet_1.getIdentifier(),
+            supportingValues.put(CONTENTLET_IDS_ATTR, CollectionsUtils.list(contentlet_1.getIdentifier(),
                     contentlet_2.getIdentifier()));
-            supportingValues.put("uniquePerSite", false);
+            supportingValues.put(UNIQUE_PER_SITE_ATTR, false);
 
             final String hash = StringUtils.hashText(contentType.id() + uniqueTextFieldFromDB.variable() +
                     language.getId() + uniqueVersionValue + host.getIdentifier());
@@ -2216,20 +2242,21 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static void checkContentletInUniqueFieldsTable(final Contentlet contentlet) throws DotDataException, IOException {
         final List<Map<String, Object>> result_1 = new DotConnect()
-                .setSQL("SELECT * FROM unique_fields WHERE supporting_values->'contentletsId' @> ?::jsonb")
+                .setSQL("SELECT * FROM unique_fields WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb")
                 .addParam("\"" + contentlet.getIdentifier() + "\"")
                 .loadObjectResults();
 
-        assertEquals(1, result_1.size());
+        assertEquals("Only one Unique Value record should've been returned",1, result_1.size());
 
         final PGobject supportingValues = (PGobject) result_1.get(0).get("supporting_values");
         final Map<String, Object> supportingValuesMap = JsonUtil.getJsonFromString(supportingValues.getValue());
-        final List<String> contentletsId = (List<String>) supportingValuesMap.get("contentletsId");
+        final List<String> contentletIds = (List<String>) supportingValuesMap.get(CONTENTLET_IDS_ATTR);
 
-        assertEquals(1, contentletsId.size());
-        assertEquals(contentlet.getIdentifier(), contentletsId.get(0));
+        assertEquals("Only one Unique Value record should've been returned", 1, contentletIds.size());
+        assertEquals("The returned Contentlet ID doesn't match the expected one", contentlet.getIdentifier(), contentletIds.get(0));
     }
 
     /**
