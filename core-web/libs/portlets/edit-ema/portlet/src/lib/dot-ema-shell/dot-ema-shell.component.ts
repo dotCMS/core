@@ -102,11 +102,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     constructor() {
         effect(() => {
-            const qp = this.uveStore.params();
-            this.#updateLocation(qp);
+            const params = this.uveStore.params();
+            this.#updateLocation(params);
             // We don't want to track this because it's a side effect
             // This will also be trigger every time the params change but changes inside the method will not trigger a new effect
-            untracked(() => this.uveStore.init(qp));
+            untracked(() => this.uveStore.init(params));
         });
     }
 

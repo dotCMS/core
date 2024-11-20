@@ -57,15 +57,13 @@ export function withLoad() {
                                             return of(pageAPIResponse);
                                         }
 
-                                        const queryParams = {
+                                        const qp = {
                                             ...params,
                                             url: vanityUrl.forwardTo.replace('/', '')
                                         };
 
-                                        // We navigate to the new url and return undefined
-                                        router.navigate([], {
-                                            queryParams,
-                                            queryParamsHandling: 'merge'
+                                        patchState(store, {
+                                            params: qp
                                         });
 
                                         return EMPTY;
