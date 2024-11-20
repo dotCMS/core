@@ -13,6 +13,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { TabViewModule } from 'primeng/tabview';
 
+import { DotEditContentSidebarLocalesComponent } from '@dotcms/edit-content/components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales.component';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
@@ -43,7 +44,8 @@ import { DotEditContentStore } from '../../feature/edit-content/store/edit-conte
         SlicePipe,
         DialogModule,
         DropdownModule,
-        ButtonModule
+        ButtonModule,
+        DotEditContentSidebarLocalesComponent
     ]
 })
 export class DotEditContentSidebarComponent {
