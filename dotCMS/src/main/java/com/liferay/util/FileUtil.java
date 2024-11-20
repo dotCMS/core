@@ -23,11 +23,18 @@
 package com.liferay.util;
 
 import com.dotcms.publisher.pusher.PushUtils;
+
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.dotmarketing.exception.DotRuntimeException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
@@ -759,6 +766,30 @@ public class FileUtil {
 		}
 		catch (IOException ioe) {
 			return new ArrayList<>();
+		}
+	}
+
+	/**
+	 * Convert the input stream to a string
+	 * @param in
+	 * @return String
+	 * @throws IOException
+	 */
+	public static String toString (final InputStream in) throws IOException {
+		return IOUtils.toString(in, StandardCharsets.UTF_8);
+	}
+
+	public static String toStringFromResourceAsStream (final String classpathDir) throws IOException {
+		try (final InputStream in = FileUtil.class.getResourceAsStream(classpathDir)) {
+			return toString(in);
+		}
+	}
+
+	public static String toStringFromResourceAsStreamNoThrown (final String classpathDir) {
+		try {
+			return toStringFromResourceAsStream(classpathDir);
+		} catch (IOException e) {
+			throw new DotRuntimeException(e);
 		}
 	}
 

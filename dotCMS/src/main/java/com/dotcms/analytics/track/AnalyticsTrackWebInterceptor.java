@@ -21,7 +21,9 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
@@ -42,6 +44,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
 
     private static final  String[] DEFAULT_BLACKLISTED_PROPS = new String[]{StringPool.BLANK};
     private static final  String ANALYTICS_TURNED_ON_KEY = "FEATURE_FLAG_CONTENT_ANALYTICS";
+    private static final  String ANALYTICS_AUTO_INJECT_TURNED_ON_KEY = "FEATURE_FLAG_CONTENT_ANALYTICS_AUTO_INJECT";
     private static final  Map<String, RequestMatcher> requestMatchersMap = new ConcurrentHashMap<>();
     private final HostWebAPI hostWebAPI;
     private final AppsAPI appsAPI;
@@ -49,6 +52,11 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
 
     private final WhiteBlackList whiteBlackList;
     private final AtomicBoolean isTurnedOn;
+    private final AtomicBoolean isAutoInjectTurnedOn;
+
+    private static final String AUTO_INJECT_LIB_PATH = "/s/ca-lib.js";
+    private static final String AUTO_INJECT_LIB_CLASS_PATH = "/ca/ca-lib.js";
+    private final Lazy<String> caLib;
 
     public AnalyticsTrackWebInterceptor() {
 
@@ -59,6 +67,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
                         .addBlackPatterns(CollectionsUtils.concat(Config.getStringArrayProperty(  // except this
                                 "ANALYTICS_BLACKLISTED_KEYS", new String[]{}), DEFAULT_BLACKLISTED_PROPS)).build(),
                 new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_TURNED_ON_KEY, true)),
+                new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, true)),
                 APILocator::systemUser,
                 new PagesAndUrlMapsRequestMatcher(),
                 new FilesRequestMatcher(),
@@ -71,6 +80,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
                         final AppsAPI appsAPI,
                         final WhiteBlackList whiteBlackList,
                         final AtomicBoolean isTurnedOn,
+                        final AtomicBoolean isAutoInjectTurnedOn,
                         final Supplier<User> systemUser,
                         final RequestMatcher... requestMatchers) {
 
@@ -78,8 +88,10 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
         this.appsAPI    = appsAPI;
         this.whiteBlackList = whiteBlackList;
         this.isTurnedOn = isTurnedOn;
+        this.isAutoInjectTurnedOn = isAutoInjectTurnedOn;
         this.systemUserSupplier = systemUser;
         addRequestMatcher(requestMatchers);
+        this.caLib = Lazy.of(() -> FileUtil.toStringFromResourceAsStreamNoThrown(AUTO_INJECT_LIB_CLASS_PATH));
     }
 
     /**
@@ -107,6 +119,16 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
 
         try {
             if (isAllowed(request)) {
+
+                if (request.getRequestURI().contains(AUTO_INJECT_LIB_PATH)
+                             && isFeatureFlagAutoInjectTurnOn(request)
+                            ) {
+
+                    Logger.debug(this, () -> "intercept, Matched: ca-lib.js request: " + request.getRequestURI());
+                    response.getWriter().append(caLib.get());
+                    return Result.SKIP_NO_CHAIN;
+                }
+
                 final Optional<RequestMatcher> matcherOpt = this.anyMatcher(request, response, RequestMatcher::runBeforeRequest);
                 if (matcherOpt.isPresent()) {
 
@@ -120,6 +142,10 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
         }
 
         return Result.NEXT;
+    }
+
+    private boolean isFeatureFlagAutoInjectTurnOn(final HttpServletRequest request) {
+        return isAutoInjectTurnedOn.get();
     }
 
     /**
@@ -211,6 +237,10 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
     public void notify(final SystemTableUpdatedKeyEvent event) {
         if (event.getKey().contains(ANALYTICS_TURNED_ON_KEY)) {
             isTurnedOn.set(Config.getBooleanProperty(ANALYTICS_TURNED_ON_KEY, true));
+        }
+
+        if (event.getKey().contains(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY)) {
+            isTurnedOn.set(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, true));
         }
     }
 }
