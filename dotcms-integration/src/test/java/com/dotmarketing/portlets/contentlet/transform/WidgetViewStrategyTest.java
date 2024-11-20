@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,7 +42,8 @@ public class WidgetViewStrategyTest extends IntegrationTestBase {
 
     static final String VELOCITY_MESSAGE = "Hello World";
     static final String DONT_RENDER_THIS_CODE = "Message from velocity $date";
-    static final String YES_RENDER_THIS_CODE = "My value: #set($message=\""+ VELOCITY_MESSAGE + "\") $dotJSON.put(\"message\", $message)";
+    static final String YES_RENDER_THIS_CODE = "My value: #set($message=\"" + VELOCITY_MESSAGE
+            + "\") $dotJSON.put(\"message\", $message)";
     static final String DESTROY_USER_SESSION = "kill session ${session.invalidate()}";
     static Host site;
     static Contentlet widgetWithJson;
@@ -50,7 +52,6 @@ public class WidgetViewStrategyTest extends IntegrationTestBase {
 
     @BeforeClass
     public static void prepare() throws Exception {
-
 
         IntegrationTestInitService.getInstance().init();
 
@@ -64,7 +65,6 @@ public class WidgetViewStrategyTest extends IntegrationTestBase {
                         .next()
         );
 
-
         ContentType simpleWidgetContentType = new ContentTypeDataGen()
                 .baseContentType(BaseContentType.WIDGET)
                 .name("SimpleWidget" + System.currentTimeMillis())
@@ -72,11 +72,11 @@ public class WidgetViewStrategyTest extends IntegrationTestBase {
                 .fields(fields)
                 .nextPersisted();
 
-
-
         Field codeField = simpleWidgetContentType.fieldMap().get("widgetCode");
 
-        APILocator.getContentTypeFieldAPI().save(FieldBuilder.builder(codeField).values("$code").sortOrder(100).build(), APILocator.systemUser());
+        APILocator.getContentTypeFieldAPI()
+                .save(FieldBuilder.builder(codeField).values("$code").sortOrder(100).build(),
+                        APILocator.systemUser());
 
         site = new SiteDataGen().nextPersisted();
 
@@ -109,16 +109,19 @@ public class WidgetViewStrategyTest extends IntegrationTestBase {
     /**
      * Validates that a widget without JSON code does not produce a JSON response.
      *
-     * <p><b>Given Scenario:</b> A widget is created with content that does not include JSON-producing code.</p>
+     * <p><b>Given Scenario:</b> A widget is created with content that does not include
+     * JSON-producing code.</p>
      * <p><b>Expected Result:</b> The widget's JSON field is present but empty.</p>
      *
-     * @throws DotDataException    if there is a data-related error.
+     * @throws DotDataException     if there is a data-related error.
      * @throws DotSecurityException if there is a security-related error.
      */
     @Test
     public void test_widget_returns_NO_json() throws DotDataException, DotSecurityException {
-        Map<String, Object> map = new DotTransformerBuilder().defaultOptions().content(widgetWithoutJson).build().toMaps().get(0);
-        Map<String,Object> widgetCode = (Map<String, Object>)map.get(WidgetContentType.WIDGET_CODE_JSON_FIELD_VAR);
+        Map<String, Object> map = new DotTransformerBuilder().defaultOptions()
+                .content(widgetWithoutJson).build().toMaps().get(0);
+        Map<String, Object> widgetCode = (Map<String, Object>) map.get(
+                WidgetContentType.WIDGET_CODE_JSON_FIELD_VAR);
         assertNotNull(widgetCode);
         assertTrue(widgetCode.isEmpty());
     }
@@ -126,37 +129,41 @@ public class WidgetViewStrategyTest extends IntegrationTestBase {
     /**
      * Validates that a widget with JSON code produces the correct JSON response.
      *
-     * <p><b>Given Scenario:</b> A widget is created with content that includes JSON-producing code.</p>
+     * <p><b>Given Scenario:</b> A widget is created with content that includes JSON-producing
+     * code.</p>
      * <p><b>Expected Result:</b> The widget's JSON field contains the expected key-value pair.</p>
      *
-     * @throws DotDataException    if there is a data-related error.
+     * @throws DotDataException     if there is a data-related error.
      * @throws DotSecurityException if there is a security-related error.
      */
     @Test
     public void test_widget_returns_WITH_json() throws DotDataException, DotSecurityException {
 
-        Map<String, Object> map = new DotTransformerBuilder().defaultOptions().content(widgetWithJson).build().toMaps().get(0);
-        Map<String,Object> widgetCode = (Map<String, Object>)map.get(WidgetContentType.WIDGET_CODE_JSON_FIELD_VAR);
+        Map<String, Object> map = new DotTransformerBuilder().defaultOptions()
+                .content(widgetWithJson).build().toMaps().get(0);
+        Map<String, Object> widgetCode = (Map<String, Object>) map.get(
+                WidgetContentType.WIDGET_CODE_JSON_FIELD_VAR);
         assertNotNull(widgetCode);
         assertFalse(widgetCode.isEmpty());
-        assertEquals(VELOCITY_MESSAGE,widgetCode.get("message"));
+        assertEquals(VELOCITY_MESSAGE, widgetCode.get("message"));
 
     }
 
     /**
      * Validates that a widget with session-modifying code does not affect the actual HTTP session.
      *
-     * <p><b>Given Scenario:</b> A widget is created with content intended to invalidate the session.</p>
-     * <p><b>Expected Result:</b> The session remains unchanged, preserving its attributes and ID.</p>
+     * <p><b>Given Scenario:</b> A widget is created with content intended to invalidate the
+     * session.</p>
+     * <p><b>Expected Result:</b> The session remains unchanged, preserving its attributes and
+     * ID.</p>
      */
     @Test
     public void test_widget_does_not_modify_real_request_session() {
 
-        HttpServletRequest request = new MockHeaderRequest(
-                new MockSessionRequest(
-                        new FakeHttpRequest("localhost", "/").request()
-                )
-        );
+        //This should pass as none mocked request
+        //Cause of we pass a mock the impersonator will not mock a mock
+        final HttpServletRequest request = new HttpServletRequestWrapper(new MockSessionRequest(
+                new MockHeaderRequest(new FakeHttpRequest("localhost", "/").request())).request());
 
         request.getSession().setAttribute("testing", Boolean.TRUE);
         String sessionId = request.getSession().getId();
@@ -164,9 +171,10 @@ public class WidgetViewStrategyTest extends IntegrationTestBase {
         try {
             HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
-
-            Map<String, Object> map = new DotTransformerBuilder().defaultOptions().content(widgetSessionKiller).build().toMaps().get(0);
-            Map<String, Object> widgetCode = (Map<String, Object>) map.get(WidgetContentType.WIDGET_CODE_JSON_FIELD_VAR);
+            Map<String, Object> map = new DotTransformerBuilder().defaultOptions()
+                    .content(widgetSessionKiller).build().toMaps().get(0);
+            Map<String, Object> widgetCode = (Map<String, Object>) map.get(
+                    WidgetContentType.WIDGET_CODE_JSON_FIELD_VAR);
             assertNotNull(widgetCode);
             assertTrue(widgetCode.isEmpty());
 
@@ -174,7 +182,7 @@ public class WidgetViewStrategyTest extends IntegrationTestBase {
             assertTrue((Boolean) request.getSession().getAttribute("testing"));
 
 
-        }finally {
+        } finally {
             HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
         }
 
