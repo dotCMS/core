@@ -43,6 +43,10 @@ public class UniqueFieldDataBaseUtil {
 
     private static final String UPDATE_CONTENT_LIST ="UPDATE unique_fields " +
             "SET supporting_values = jsonb_set(supporting_values, '{" + CONTENTLET_IDS_ATTR + "}', ?::jsonb) " +
+            "WHERE unique_key_val = encode(sha256(?::bytea), 'hex')";
+
+    private static final String UPDATE_CONTENT_LIST_WITH_HASH ="UPDATE unique_fields " +
+            "SET supporting_values = jsonb_set(supporting_values, '{" + CONTENTLET_IDS_ATTR + "}', ?::jsonb) " +
             "WHERE unique_key_val = ?";
 
     private static final String GET_UNIQUE_FIELDS_BY_CONTENTLET = "SELECT * FROM unique_fields " +
@@ -71,22 +75,60 @@ public class UniqueFieldDataBaseUtil {
     }
 
     /**
-     * Update the contentList attribute in the supportingValues field of the unique_fields table.
+     * Updates the list of Contentlets associated to a specific unique field. This method is
+     * critical to track Contentlets whose unique value is the same, which is what happened with the
+     * Elasticsearch Strategy.
      *
-     * @param hash
-     * @param contentletId
+     * @param uniqueFieldCriteria The {@link UniqueFieldCriteria} to used to generate the hash
+     *                            representing the unique field.
+     * @param contentletId        The Contentlet ID to be added to the list.
      */
     public void updateContentList(final UniqueFieldCriteria uniqueFieldCriteria, final String contentletId) throws DotDataException {
-        updateContentLists(uniqueFieldCriteria.criteria(), list(contentletId));
+        updateContentList(uniqueFieldCriteria.criteria(), list(contentletId));
     }
 
-    public void updateContentLists(final String hash, final List contentletIds) throws DotDataException {
+    /**
+     * Updates the list of Contentlets associated to a specific unique field. In case of corrupted
+     * records, the {@code contentletIds} parameter will contain more than one Contentlet ID.
+     *
+     * @param criteria      The String with the concatenated values of the unique field.
+     * @param contentletIds The list of Contentlet IDs that match the same unique field.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    public void updateContentList(final String criteria, final List<String> contentletIds) throws DotDataException {
         new DotConnect().setSQL(UPDATE_CONTENT_LIST)
+                .addJSONParam(contentletIds)
+                .addParam(criteria)
+                .loadObjectResults();
+    }
+
+    /**
+     * Updates the list of Contentlets associated to a specific unique field. In case of corrupted
+     * records, the {@code contentletIds} parameter will contain more than one Contentlet ID.
+     *
+     * @param hash          The hashed String with the concatenated values of the unique field.
+     * @param contentletIds The list of Contentlet IDs that match the same unique field.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    public void updateContentListWithHash(final String hash, final List<String> contentletIds) throws DotDataException {
+        new DotConnect().setSQL(UPDATE_CONTENT_LIST_WITH_HASH)
                 .addJSONParam(contentletIds)
                 .addParam(hash)
                 .loadObjectResults();
     }
 
+    /**
+     * Retrieves the unique field values of a given Contentlet.
+     *
+     * @param contentlet The {@link Contentlet} to retrieve the unique field values from.
+     *
+     * @return An {@link Optional} containing the unique field values if they exist, or an empty
+     * optional otherwise.
+     *
+     * @throws DotDataException If an error occurs when interacting with the database.
+     */
     public Optional<Map<String, Object>> get(final Contentlet contentlet) throws DotDataException {
         final List<Map<String, Object>> results = new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_CONTENTLET)
                 .addParam("\"" + contentlet.getIdentifier() + "\"")
@@ -96,7 +138,15 @@ public class UniqueFieldDataBaseUtil {
         return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
     }
 
-    public void delete(final String hash, String fieldVariable) throws DotDataException {
+    /**
+     * Deletes a unique field from the database.
+     *
+     * @param hash          The hash of the unique field.
+     * @param fieldVariable The Velocity Var Name of the unique field being deleted.
+     *
+     * @throws DotDataException If an error occurs when interacting with the database.
+     */
+    public void delete(final String hash, final String fieldVariable) throws DotDataException {
         new DotConnect().setSQL(DELETE_UNIQUE_FIELD)
                 .addParam(hash)
                 .addParam(fieldVariable)

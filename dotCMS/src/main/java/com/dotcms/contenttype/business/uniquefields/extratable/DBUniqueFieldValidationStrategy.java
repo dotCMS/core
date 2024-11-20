@@ -124,7 +124,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                     uniqueFieldDataBaseUtil.delete(hash, field.variable());
                 } else {
                     contentletIds.remove(contentlet.getIdentifier());
-                    uniqueFieldDataBaseUtil.updateContentLists(hash, contentletIds);
+                    uniqueFieldDataBaseUtil.updateContentListWithHash(hash, contentletIds);
                 }
             }
         } catch (final IOException e){
