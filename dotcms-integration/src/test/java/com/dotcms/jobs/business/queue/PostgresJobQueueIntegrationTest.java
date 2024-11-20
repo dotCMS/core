@@ -385,10 +385,10 @@ public class PostgresJobQueueIntegrationTest {
         assertEquals(createdJobIds, processedJobIds, "Processed jobs don't match created jobs");
 
         // Verify no more jobs are detected
-        assertNull(jobQueue.detectAndMarkAbandoned(
+        assertTrue(jobQueue.detectAndMarkAbandoned(
                 Duration.ofMinutes(1),
-                JobState.RUNNING, JobState.CANCEL_REQUESTED, JobState.CANCELLING
-        ), "There should be no more jobs abandoned");
+                JobState.RUNNING, JobState.CANCEL_REQUESTED, JobState.CANCELLING).isEmpty(),
+                "There should be no more jobs abandoned");
 
         // Verify all jobs are in ABANDONED state
         for (String jobId : createdJobIds) {
