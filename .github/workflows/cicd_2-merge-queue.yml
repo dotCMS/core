@@ -24,6 +24,7 @@ jobs:
       jvm_unit_test: ${{ needs.initialize.outputs.jvm_unit_test == 'true' }}
       integration: ${{ needs.initialize.outputs.backend == 'true' }}
       postman: ${{ needs.initialize.outputs.backend == 'true' }}
+      karate: ${{ needs.initialize.outputs.backend == 'true' }}
       frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
       cli: ${{ needs.initialize.outputs.cli == 'true' }}
       e2e: ${{ needs.initialize.outputs.build == 'true' }}
