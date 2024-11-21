@@ -1,5 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -183,18 +189,6 @@ import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import javax.activation.MimeType;
-import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -222,12 +216,17 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+import javax.activation.MimeType;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -618,7 +617,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } catch (DotContentletStateException dcs) {
             Logger.debug(this, () -> String.format(
                     "No working contentlet found for language: %d and identifier: %s ", languageId,
-                    null != contentletId ? contentletId.getId() : "Unkown"));
+                    contentletId.getId()));
         }
         return null;
     }
@@ -653,6 +652,26 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException(
                     "Can't find contentlet: " + identifier + " lang:" + languageId + " live:"
                             + live, e);
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @CloseDBIfOpened
+    @Override
+    public Contentlet findContentletByIdentifier(final String identifier, final long languageId, final String variantId,
+            final Date timeMachineDate, final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException{
+        final Contentlet contentlet = contentFactory.findContentletByIdentifier(identifier, languageId, variantId, timeMachineDate);
+        if (permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+            return contentlet;
+        } else {
+            final String userId = (user == null) ? "Unknown" : user.getUserId();
+            throw new DotSecurityException(
+                    String.format("User '%s' does not have READ permissions on %s", userId,
+                            ContentletUtil
+                                    .toShortString(contentlet)));
         }
     }
 
@@ -718,6 +737,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     "Can't find contentlet: " + identifier + " lang:" + incomingLangId + " live:"
                             + live, e);
         }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Optional<Contentlet> findContentletByIdentifierOrFallback(final String identifier,
+            final long incomingLangId, String variantId, final Date timeMachine, final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        final long defaultLanguageId = this.languageAPI.getDefaultLanguage().getId();
+        final long tryLanguage = incomingLangId <= 0 ? defaultLanguageId : incomingLangId;
+
+        Contentlet contentlet = findContentletByIdentifier(identifier, tryLanguage,
+                variantId, timeMachine, user, respectFrontendRoles);
+
+        if (contentlet == null && tryLanguage != defaultLanguageId) {
+            contentlet =  findContentletByIdentifier(identifier, defaultLanguageId,
+                variantId, timeMachine, user, respectFrontendRoles);
+        }
+        return Optional.ofNullable(contentlet);
     }
 
     @CloseDBIfOpened
