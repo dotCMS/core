@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { SpyObject, createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
@@ -20,9 +21,9 @@ const MOCK_LANGUAGES = [
 ] as DotLanguage[];
 
 describe('LocalesFeature', () => {
-    let spectator: SpectatorService<unknown>;
+    let spectator: SpectatorService<any>;
 
-    let store: unknown;
+    let store: any;
     let dotLanguagesService: SpyObject<DotLanguagesService>;
     let dotContentletService: SpyObject<DotContentletService>;
 
@@ -46,12 +47,11 @@ describe('LocalesFeature', () => {
         store = spectator.service;
         dotLanguagesService = spectator.inject(DotLanguagesService);
         dotContentletService = spectator.inject(DotContentletService);
-
-        jest.spyOn(dotContentletService, 'getLanguages').mockReturnValue(of(MOCK_LANGUAGES));
-        jest.spyOn(dotLanguagesService, 'getDefault').mockReturnValue(of(MOCK_LANGUAGES[1]));
     });
 
     it('should load locales when a new contentlet is loaded', fakeAsync(() => {
+        dotContentletService.getLanguages.mockReturnValue(of(MOCK_LANGUAGES));
+        dotLanguagesService.getDefault.mockReturnValue(of(MOCK_LANGUAGES[1]));
         store.updateContent();
         tick();
 
