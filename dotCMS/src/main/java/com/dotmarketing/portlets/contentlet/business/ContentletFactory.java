@@ -150,7 +150,7 @@ public abstract class ContentletFactory {
 
 
 	/**
-	 * Retrieves a contentlet from the database based on its identifier and the working version
+	 * Retrieves a contentlet from the database based on its identifier language and variant, and time machine date (meaning when the contentlet will be published)
 	 * @param identifier
 	 * @param languageId
 	 * @param variantId
