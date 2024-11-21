@@ -8,6 +8,7 @@ import graphql.VisibleForTesting;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -53,12 +54,13 @@ public class ContentImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<String> importContent(
             @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
             @BeanParam final ContentImportParams params)
             throws DotDataException, JsonProcessingException {
         final var initDataObject = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
+                .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
 

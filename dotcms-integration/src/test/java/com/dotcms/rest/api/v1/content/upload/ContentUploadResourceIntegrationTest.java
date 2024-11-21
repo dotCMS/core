@@ -12,6 +12,7 @@ import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.processor.impl.ImportContentletsProcessor;
 import com.dotcms.jobs.business.util.JobUtil;
+import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.JobQueueManagerHelper;
 import com.dotcms.rest.api.v1.contentImport.ContentImportForm;
@@ -33,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -50,6 +52,7 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
 
     private static User adminUser;
     private static HttpServletRequest request;
+    private static HttpServletResponse response;
     private static Host defaultSite;
     private static ObjectMapper mapper;
     private static ContentImportResource importResource;
@@ -66,6 +69,7 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
         adminUser = TestUserUtils.getAdminUser();
         defaultSite = APILocator.getHostAPI().findDefaultHost(adminUser, false);
         request = JobUtil.generateMockRequest(adminUser, defaultSite.getHostname());
+        response = new MockHttpResponse();
         mapper = new ObjectMapper();
 
         JobQueueManagerHelper jobQueueManagerHelper = mock(JobQueueManagerHelper.class);
@@ -89,8 +93,8 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
         ContentImportForm form = createContentImportForm(contentType.name(), "1", "workflow-action-id", List.of("title"));
         ContentImportParams params = createContentImportParams(csvFile, form);
 
-        ResponseEntityView<String> response = importResource.importContent(request, params);
-        validateSuccessfulResponse(response, contentType.name(), "1", List.of("title"), "workflow-action-id", CMD_PUBLISH);
+        ResponseEntityView<String> importContentResponse = importResource.importContent(request, response, params);
+        validateSuccessfulResponse(importContentResponse, contentType.name(), "1", List.of("title"), "workflow-action-id", CMD_PUBLISH);
     }
 
     /**
@@ -106,8 +110,8 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
         ContentImportForm form = createContentImportForm(contentType.name(), null, "workflow-action-id-2", null);
         ContentImportParams params = createContentImportParams(csvFile, form);
 
-        ResponseEntityView<String> response = importResource.importContent(request, params);
-        validateSuccessfulResponse(response, contentType.name(), null, null, "workflow-action-id-2", CMD_PUBLISH);
+        ResponseEntityView<String> importContentResponse = importResource.importContent(request, response, params);
+        validateSuccessfulResponse(importContentResponse, contentType.name(), null, null, "workflow-action-id-2", CMD_PUBLISH);
     }
 
     /**
@@ -121,7 +125,7 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
         ContentImportForm form = createContentImportForm(null, null, "workflow-action-id", null);
         ContentImportParams params = createContentImportParams(csvFile, form);
 
-        assertThrows(ValidationException.class, () -> importResource.importContent(request, params));
+        assertThrows(ValidationException.class, () -> importResource.importContent(request, response, params));
     }
 
     /**
@@ -137,7 +141,7 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
         ContentImportForm form = createContentImportForm(contentType.name(), null, null, null);
         ContentImportParams params = createContentImportParams(csvFile, form);
 
-        assertThrows(ValidationException.class, () -> importResource.importContent(request, params));
+        assertThrows(ValidationException.class, () -> importResource.importContent(request, response, params));
     }
 
     /**
@@ -153,7 +157,7 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
         ContentImportParams params = new ContentImportParams();
         params.setJsonForm(mapper.writeValueAsString(form));
 
-        assertThrows(ValidationException.class, () -> importResource.importContent(request, params));
+        assertThrows(ValidationException.class, () -> importResource.importContent(request, response, params));
     }
 
     /**
@@ -169,7 +173,7 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
         params.setFileInputStream(new FileInputStream(csvFile));
         params.setContentDisposition(createContentDisposition(csvFile.getName()));
 
-        assertThrows(ValidationException.class, () -> importResource.importContent(request, params));
+        assertThrows(ValidationException.class, () -> importResource.importContent(request, response, params));
     }
 
     /**
