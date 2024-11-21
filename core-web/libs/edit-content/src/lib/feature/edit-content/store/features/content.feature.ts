@@ -35,7 +35,8 @@ import {
 import { WorkflowState } from './workflow.feature';
 
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
-import { parseWorkflows, transformFormDataFn } from '../../../../utils/functions.util';
+import { transformFormDataFn } from '../../../../utils/functions.util';
+import { parseWorkflows } from '../../../../utils/workflows.utils';
 import { EditContentRootState } from '../edit-content.store';
 
 export interface ContentState {
@@ -181,7 +182,7 @@ export function withContent() {
                                     error: (error: HttpErrorResponse) => {
                                         patchState(store, {
                                             state: ComponentStatus.ERROR,
-                                            error: 'Error initializing content'
+                                            error: 'edit.content.sidebar.information.error.initializing.content'
                                         });
                                         dotHttpErrorManagerService.handle(error);
                                     }
@@ -237,7 +238,7 @@ export function withContent() {
                                     error: (error: HttpErrorResponse) => {
                                         patchState(store, {
                                             state: ComponentStatus.ERROR,
-                                            error: 'Error initializing content'
+                                            error: 'edit.content.sidebar.information.error.initializing.content'
                                         });
                                         dotHttpErrorManagerService.handle(error);
                                         router.navigate(['/c/content']);

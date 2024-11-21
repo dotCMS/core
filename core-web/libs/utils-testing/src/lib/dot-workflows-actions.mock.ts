@@ -1,5 +1,4 @@
-import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
-import { DotCMSWorkflowActions } from '../../../data-access/src/lib/dot-workflows-actions/dot-workflows-actions.service';
+import { DotCMSContentletWorkflowActions, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
 export const mockWorkflowsActions: DotCMSWorkflowAction[] = [
     {
@@ -87,7 +86,7 @@ export const mockPublishAction = {
 /**
  * Mock of a ContentType with single workflow actions
  */
-export const MOCK_SINGLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
+export const MOCK_SINGLE_WORKFLOW_ACTIONS: DotCMSContentletWorkflowActions[] = [
     {
         scheme: {
             id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
@@ -207,7 +206,7 @@ export const MOCK_SINGLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
 /**
  * Mock of a ContentType with multiple workflow actions
  */
-export const MOCK_MULTIPLE_WORKFLOW_ACTIONS: DotCMSWorkflowActions[] = [
+export const MOCK_MULTIPLE_WORKFLOW_ACTIONS: DotCMSContentletWorkflowActions[] = [
     {
         scheme: {
             archived: false,

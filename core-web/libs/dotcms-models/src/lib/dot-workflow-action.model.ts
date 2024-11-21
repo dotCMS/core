@@ -1,4 +1,5 @@
 import { DotCMSContentType } from './dot-content-types.model';
+import { DotCMSWorkflow, WorkflowStep } from './dot-workflow.model';
 
 export interface DotCMSWorkflowActionEvent {
     workflow: DotCMSWorkflowAction;
@@ -70,4 +71,10 @@ export interface DotCMSSystemAction {
 export interface DotCMSWorkflowInput {
     id: string;
     body: any;
+}
+
+export interface DotCMSContentletWorkflowActions {
+    scheme: DotCMSWorkflow;
+    action: DotCMSWorkflowAction;
+    firstStep: WorkflowStep;
 }

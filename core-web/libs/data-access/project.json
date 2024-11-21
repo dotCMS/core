@@ -17,5 +17,5 @@
             "executor": "@nx/eslint:lint"
         }
     },
-    "tags": ["skip:lint"]
+    "tags": []
 }

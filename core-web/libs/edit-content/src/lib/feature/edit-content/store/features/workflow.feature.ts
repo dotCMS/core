@@ -41,7 +41,7 @@ import {
     getWorkflowActions,
     shouldShowWorkflowActions,
     shouldShowWorkflowWarning
-} from '../../../../utils/functions.util';
+} from '../../../../utils/workflows.utils';
 import { EditContentRootState } from '../edit-content.store';
 
 export interface WorkflowState {
@@ -107,13 +107,17 @@ export function withWorkflow() {
             /**
              * Computed property that determines if workflow action buttons should be shown.
              */
-            showWorkflowActions: computed(() =>
-                shouldShowWorkflowActions(
-                    store.schemes(),
-                    store.contentlet(),
-                    store.currentSchemeId()
-                )
-            ),
+            showWorkflowActions: computed(() => {
+                const schemes = store.schemes();
+                const contentlet = store.contentlet();
+                const currentSchemeId = store.currentSchemeId();
+
+                return shouldShowWorkflowActions({
+                    schemes,
+                    contentlet,
+                    currentSchemeId
+                });
+            }),
 
             /**
              * Computed property that determines if the workflow selection warning should be shown.
@@ -121,27 +125,36 @@ export function withWorkflow() {
              *
              * @returns {boolean} True if warning should be shown, false otherwise
              */
-            showSelectWorkflowWarning: computed(() =>
-                shouldShowWorkflowWarning(
-                    store.schemes(),
-                    store.contentlet(),
-                    store.currentSchemeId()
-                )
-            ),
+            showSelectWorkflowWarning: computed(() => {
+                const schemes = store.schemes();
+                const contentlet = store.contentlet();
+                const currentSchemeId = store.currentSchemeId();
+
+                return shouldShowWorkflowWarning({
+                    schemes,
+                    contentlet,
+                    currentSchemeId
+                });
+            }),
 
             /**
              * Computed property that retrieves the actions for the current workflow scheme.
              *
              * @returns {DotCMSWorkflowAction[]} The actions for the current workflow scheme.
              */
-            getActions: computed(() =>
-                getWorkflowActions(
-                    store.schemes(),
-                    store.contentlet(),
-                    store.currentSchemeId(),
-                    store.currentContentActions()
-                )
-            ),
+            getActions: computed(() => {
+                const schemes = store.schemes();
+                const contentlet = store.contentlet();
+                const currentSchemeId = store.currentSchemeId();
+                const currentContentActions = store.currentContentActions();
+
+                return getWorkflowActions({
+                    schemes,
+                    contentlet,
+                    currentSchemeId,
+                    currentContentActions
+                });
+            }),
 
             /**
              * Computed property that transforms the workflow schemes into dropdown options

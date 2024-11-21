@@ -66,7 +66,7 @@ export class DotEditContentSidebarWorkflowComponent {
      * @type {string}
      * @memberof DotEditContentSidebarWorkflowComponent
      */
-    $selectedWorkflow = model<SelectItem>({} as SelectItem);
+    $selectedWorkflow = model<SelectItem | null>();
 
     /**
      * The workflow status of the content item.

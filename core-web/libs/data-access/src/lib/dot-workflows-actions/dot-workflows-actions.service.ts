@@ -6,17 +6,15 @@ import { Injectable, inject } from '@angular/core';
 import { map, pluck } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-js';
-import { DotCMSWorkflow, DotCMSWorkflowAction, WorkflowStep } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentletWorkflowActions,
+    DotCMSWorkflow,
+    DotCMSWorkflowAction
+} from '@dotcms/dotcms-models';
 
 export enum DotRenderMode {
     LISTING = 'LISTING',
     EDITING = 'EDITING'
-}
-
-export interface DotCMSWorkflowActions {
-    scheme: DotCMSWorkflow;
-    action: DotCMSWorkflowAction;
-    firstStep: WorkflowStep;
 }
 
 @Injectable()
@@ -62,10 +60,10 @@ export class DotWorkflowsActionsService {
      * @returns {Observable<DotCMSWorkflowAction[]>}
      * @memberof DotWorkflowsActionsService
      */
-    getDefaultActions(contentTypeId: string): Observable<DotCMSWorkflowActions[]> {
+    getDefaultActions(contentTypeId: string): Observable<DotCMSContentletWorkflowActions[]> {
         return this.httpClient
             .get<
-                DotCMSResponse<DotCMSWorkflowActions[]>
+                DotCMSResponse<DotCMSContentletWorkflowActions[]>
             >(`${this.BASE_URL}/initialactions/contenttype/${contentTypeId}`)
             .pipe(
                 pluck('entity'),
@@ -83,10 +81,10 @@ export class DotWorkflowsActionsService {
      * @param {string} contentTypeName
      * @returns {Observable<DotCMSWorkflowActions>}
      */
-    getWorkFlowActions(contentTypeName: string): Observable<DotCMSWorkflowActions[]> {
+    getWorkFlowActions(contentTypeName: string): Observable<DotCMSContentletWorkflowActions[]> {
         return this.httpClient
             .get<
-                DotCMSResponse<DotCMSWorkflowActions[]>
+                DotCMSResponse<DotCMSContentletWorkflowActions[]>
             >(`${this.BASE_URL}/defaultactions/contenttype/${contentTypeName}`)
             .pipe(
                 pluck('entity'),

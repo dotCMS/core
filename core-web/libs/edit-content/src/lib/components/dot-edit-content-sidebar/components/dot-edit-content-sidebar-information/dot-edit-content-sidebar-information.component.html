@@ -17,7 +17,7 @@
         @if (contentType) {
             <a
                 data-testid="content-type-link"
-                [pTooltip]="'Go to edit Content Type' | dm"
+                [pTooltip]="'edit.content.sidebar.information.go.to.content.type' | dm"
                 class="sidebar-card sidebar-card__content-type"
                 [routerLink]="'/content-types-angular/edit/' + contentType.variable"
                 target="_blank">
@@ -32,10 +32,15 @@
                 <span
                     class="sidebar-card__subtitle"
                     [tooltipPosition]="'left'"
-                    [pTooltip]="!contentlet?.creationDate ? ('Not created yet' | dm) : null">
+                    [pTooltip]="
+                        !contentlet?.creationDate
+                            ? ('edit.content.sidebar.information.no.created.yet' | dm)
+                            : null
+                    ">
                     {{
                         contentlet?.creationDate
-                            ? (contentlet?.ownerName | dotNameFormat) || 'You'
+                            ? (contentlet?.ownerName | dotNameFormat) ||
+                              ('edit.content.sidebar.workflow.you' | dm)
                             : '-'
                     }}
                 </span>
@@ -54,7 +59,11 @@
                 <span
                     class="sidebar-card__subtitle"
                     [tooltipPosition]="'left'"
-                    [pTooltip]="!contentlet?.modDate ? ('Not modified yet' | dm) : null">
+                    [pTooltip]="
+                        !contentlet?.modDate
+                            ? ('edit.content.sidebar.information.moddate.tooltip' | dm)
+                            : null
+                    ">
                     {{ contentlet?.modDate ? (contentlet?.modUserName | dotNameFormat) : '-' }}
                 </span>
                 @if (contentlet?.modDate) {
@@ -72,7 +81,11 @@
                 <span
                     class="sidebar-card__subtitle"
                     [tooltipPosition]="'left'"
-                    [pTooltip]="!contentlet?.publishDate ? ('Not published yet' | dm) : null">
+                    [pTooltip]="
+                        !contentlet?.publishDate
+                            ? ('edit.content.sidebar.information.publishdate.tooltip' | dm)
+                            : null
+                    ">
                     {{
                         contentlet?.publishDate
                             ? (contentlet?.publishUserName | dotNameFormat)
