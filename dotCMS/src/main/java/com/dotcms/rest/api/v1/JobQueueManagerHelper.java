@@ -11,27 +11,53 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.lang.reflect.Constructor;
 import java.util.List;
+import java.util.Objects;
 
+/**
+ * Helper class for managing job queue processors in the JobQueueManagerAPI.
+ * This class is responsible for discovering job processors, registering them with
+ * the JobQueueManagerAPI, and shutting down the JobQueueManagerAPI when needed.
+ * <p>
+ * It utilizes the {@link JobProcessorScanner} to discover available job processors
+ * and the {@link JobQueueManagerAPI} to register them for processing jobs in the queue.
+ * <p>
+ * The class is annotated with {@link ApplicationScoped} to indicate that it is
+ * a singleton managed by the CDI container.
+ */
 @ApplicationScoped
 public class JobQueueManagerHelper {
 
     private JobProcessorScanner scanner;
 
+    /**
+     * Constructor that injects the {@link JobProcessorScanner} instance.
+     *
+     * @param scanner The JobProcessorScanner to discover job processors
+     */
     @Inject
     public JobQueueManagerHelper(final JobProcessorScanner scanner) {
         this.scanner = scanner;
     }
 
+    /**
+     * Default constructor required by CDI.
+     */
     public JobQueueManagerHelper() {
-        // Default constructor required by CDI
     }
 
+    /**
+     * Registers all discovered job processors with the provided JobQueueManagerAPI.
+     * If the JobQueueManagerAPI is not started, it starts the API before registering the processors.
+     *
+     * @param jobQueueManagerAPI The JobQueueManagerAPI instance to register processors with
+     */
     public void registerProcessors(final JobQueueManagerAPI jobQueueManagerAPI) {
         if (!jobQueueManagerAPI.isStarted()) {
             jobQueueManagerAPI.start();
             Logger.info(this.getClass(), "JobQueueManagerAPI started");
         }
 
+        // Discover job processors and attempt to register them
         List<Class<? extends JobProcessor>> processors = scanner.discoverJobProcessors();
         processors.forEach(processor -> {
             try {
@@ -46,8 +72,10 @@ public class JobQueueManagerHelper {
     }
 
     /**
-     * Test if a processor can be instantiated
-     * @param processor The processor to tested
+     * Tests whether a given job processor can be instantiated by attempting to
+     * create an instance of the processor using its default constructor.
+     *
+     * @param processor The processor class to test for instantiation
      * @return true if the processor can be instantiated, false otherwise
      */
     private boolean testInstantiation(final Class<? extends JobProcessor> processor) {
@@ -61,15 +89,30 @@ public class JobQueueManagerHelper {
         return false;
     }
 
+    /**
+     * Registers a job processor with the JobQueueManagerAPI using the queue name specified
+     * in the {@link Queue} annotation, if present. If no annotation is found, the processor's
+     * class name is used as the queue name.
+     *
+     * @param jobQueueManagerAPI the JobQueueManagerAPI instance to register the processor with
+     * @param processor the processor class to register
+     */
     private void registerProcessor(final JobQueueManagerAPI jobQueueManagerAPI, final Class<? extends JobProcessor> processor) {
         Queue queue = AnnotationUtils.getBeanAnnotation(processor, Queue.class);
-        if (null != queue) {
+        if (Objects.nonNull(queue)) {
             jobQueueManagerAPI.registerProcessor(queue.value(), processor);
         } else {
             jobQueueManagerAPI.registerProcessor(processor.getName(), processor);
         }
     }
 
+    /**
+     * Shuts down the provided JobQueueManagerAPI if it is currently started.
+     * If the JobQueueManagerAPI is started, it attempts to close it gracefully.
+     * In case of an error during the shutdown process, the error is logged.
+     *
+     * @param jobQueueManagerAPI the JobQueueManagerAPI instance to shut down
+     */
     public void shutdown(final JobQueueManagerAPI jobQueueManagerAPI) {
         if (jobQueueManagerAPI.isStarted()) {
             try {
@@ -81,4 +124,3 @@ public class JobQueueManagerHelper {
         }
     }
 }
-
