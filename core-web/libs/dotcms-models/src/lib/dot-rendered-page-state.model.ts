@@ -1,3 +1,5 @@
+// TODO: Createa a GD ticket to fix circular dependency error
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { User } from '@dotcms/dotcms-js';
 
 import { DotPageContainerStructure } from './dot-container.model';
