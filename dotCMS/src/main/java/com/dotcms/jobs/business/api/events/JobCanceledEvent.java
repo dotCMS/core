@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 /**
  * Event fired when a job is canceled.
  */
-public class JobCanceledEvent {
+public class JobCanceledEvent implements JobEvent {
 
     private final Job job;
     private final LocalDateTime canceledAt;
