@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.analytics.content.ContentAnalyticsAPI;
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -15,7 +14,10 @@ import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.business.field.FieldHandlerStrategyFactory;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.PaginationUtil;
-import com.dotcms.contenttype.business.*;
+import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
+import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -303,7 +305,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * Default class constructor.
      */
     public ESContentletAPIImpl() {
-        this.uniqueFieldValidationStrategyResolver = Lazy.of( () -> getUniqueFieldValidationStrategyResolver());
+        this.uniqueFieldValidationStrategyResolver = Lazy.of(ESContentletAPIImpl::getUniqueFieldValidationStrategyResolver);
         indexAPI = new ContentletIndexAPIImpl();
         contentFactory = new ESContentFactoryImpl();
         permissionAPI = APILocator.getPermissionAPI();
@@ -7608,18 +7610,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // validate unique
             if (field.isUnique()) {
-
                 try {
                     uniqueFieldValidationStrategyResolver.get().get().validate(contentlet,
                             LegacyFieldTransformer.from(field));
-                } catch (UniqueFieldValueDuplicatedException e) {
+                } catch (final UniqueFieldValueDuplicatedException e) {
                     cve.addUniqueField(field);
                     hasError = true;
                     Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue,
                             UtilMethods.isSet(e.getContentlets()) ? e.getContentlets().get(0) : "Unknown"));
-                } catch (DotDataException | DotSecurityException e) {
-                    Logger.warn(this, "Unable to get contentlets for Content Type: "
-                            + contentlet.getContentType().name(), e);
+                } catch (final DotDataException | DotSecurityException e) {
+                    Logger.warn(this, String.format("Unable to validate unique field '%s' in Content Type '%s': %s",
+                            field.getVelocityVarName(), contentlet.getContentType().name(), ExceptionUtil.getErrorMessage(e)), e);
                 }
             }
 
@@ -7706,7 +7707,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private boolean getUniquePerSiteConfig(final com.dotcms.contenttype.model.field.Field field) {
         return field.fieldVariableValue(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
-                .map(value -> Boolean.valueOf(value)).orElse(false);
+                .map(Boolean::valueOf).orElse(false);
     }
 
     private void validateBinary(final File binary, final String fieldName, final Field legacyField,

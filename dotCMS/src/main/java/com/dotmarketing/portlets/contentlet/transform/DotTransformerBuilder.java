@@ -194,7 +194,7 @@ public class DotTransformerBuilder {
     }
 
     /**
-     * Fine Tuned to be consumed from ContentResource
+     * Fine-Tuned to be consumed from ContentResource
      * @return
      */
     public DotTransformerBuilder contentResourceOptions(final boolean allCategoriesInfo){
@@ -209,7 +209,7 @@ public class DotTransformerBuilder {
     }
 
     /**
-     * Fine Tuned to be consumed from ContentResource
+     * Fine-Tuned to be consumed from ContentResource
      * @return
      */
     public DotTransformerBuilder allOptions(final boolean allCategoriesInfo){
@@ -234,12 +234,28 @@ public class DotTransformerBuilder {
     }
 
     /**
-     * Dont know where? to go land here.
+     * Don't know where? to go land here.
      * @return
      */
     public DotTransformerBuilder defaultOptions(){
         optionsHolder.clear();
         optionsHolder.addAll(DotContentletTransformerImpl.defaultOptions);
+        return this;
+    }
+
+    /**
+     * This opens the door to say we want to skip rendering code
+     * @param renderFields boolean true if we want to render the fields, otherwise false
+     * @return the builder
+     */
+    public DotTransformerBuilder renderFields(final boolean renderFields){
+        if (renderFields) {
+            optionsHolder.add(TransformOptions.RENDER_FIELDS);
+        } else {
+            optionsHolder.remove(TransformOptions.RENDER_FIELDS);
+            //By default, Widget Strategy render widget code. If we want to skip it, we need to add this option
+            optionsHolder.add(TransformOptions.SKIP_WIDGET_CODE_RENDERING);
+        }
         return this;
     }
 
