@@ -19,6 +19,8 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
+import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -308,6 +310,139 @@ public class PostgresJobQueueIntegrationTest {
             assertEquals(JobState.COMPLETED, job.state(),
                     "Job " + jobId + " is not in COMPLETED state");
         }
+    }
+
+    /**
+     * Method to test: detectAndMarkAbandoned in PostgresJobQueue
+     * Given Scenario: Multiple threads attempt to process abandoned jobs concurrently
+     * ExpectedResult:
+     * - Each job is processed exactly once
+     * - All jobs are marked as ABANDONED
+     * - No job is processed more than once (thread safety)
+     * - All created jobs are processed
+     */
+    @Test
+    void test_detectAndMarkAbandoned() throws Exception {
+
+        final int NUM_JOBS = 10;
+        final int NUM_THREADS = 5;
+        String queueName = "testQueue";
+
+        // Create jobs
+        Set<String> createdJobIds = new HashSet<>();
+        for (int i = 0; i < NUM_JOBS; i++) {
+            String jobId = jobQueue.createJob(queueName, new HashMap<>());
+            createdJobIds.add(jobId);
+
+            // Changing the job state to running
+            final var createdJob = jobQueue.getJob(jobId);
+            jobQueue.updateJobStatus(createdJob.withState(JobState.RUNNING));
+        }
+
+        // Update the updated_at timestamp to be old enough to be considered abandoned
+        new DotConnect()
+                .setSQL("UPDATE job SET updated_at = ? WHERE id IN (SELECT id FROM job_queue)")
+                .addParam(Timestamp.valueOf(LocalDateTime.now().minusMinutes(5)))
+                .loadResult();
+
+        // Set to keep track of processed job IDs
+        Set<String> processedJobIds = Collections.synchronizedSet(new HashSet<>());
+
+        // Create and start threads
+        List<Thread> threads = new ArrayList<>();
+        for (int i = 0; i < NUM_THREADS; i++) {
+            Thread thread = new Thread(() -> {
+                try {
+                    while (true) {
+                        Optional<Job> abandonedJobOptional = jobQueue.detectAndMarkAbandoned(
+                                Duration.ofMinutes(1),
+                                JobState.RUNNING, JobState.CANCEL_REQUESTED, JobState.CANCELLING);
+                        if (abandonedJobOptional.isEmpty()) {
+                            break;  // No more jobs to process
+                        }
+
+                        Job abandonedJob = abandonedJobOptional.get();
+                        // Ensure this job hasn't been processed before
+                        assertTrue(processedJobIds.add(abandonedJob.id()),
+                                "Job " + abandonedJob.id() + " was processed more than once");
+                        assertEquals(JobState.ABANDONED, abandonedJob.state());
+                    }
+                } catch (Exception e) {
+                    fail("Exception in thread: " + e.getMessage());
+                }
+            });
+            threads.add(thread);
+            thread.start();
+        }
+
+        // Wait for all threads to complete
+        for (Thread thread : threads) {
+            thread.join();
+        }
+
+        // Verify all jobs were processed
+        assertEquals(NUM_JOBS, processedJobIds.size(), "Not all jobs were processed");
+        assertEquals(createdJobIds, processedJobIds, "Processed jobs don't match created jobs");
+
+        // Verify no more jobs are detected
+        assertTrue(jobQueue.detectAndMarkAbandoned(
+                Duration.ofMinutes(1),
+                JobState.RUNNING, JobState.CANCEL_REQUESTED, JobState.CANCELLING).isEmpty(),
+                "There should be no more jobs abandoned");
+
+        // Verify all jobs are in ABANDONED state
+        for (String jobId : createdJobIds) {
+            Job job = jobQueue.getJob(jobId);
+            assertEquals(JobState.ABANDONED, job.state(),
+                    "Job " + jobId + " is not in ABANDONED state");
+        }
+    }
+
+    /**
+     * Method to test: detectAndMarkAbandoned in PostgresJobQueue
+     * Given Scenario: Single job with different threshold values
+     * ExpectedResult:
+     * - Job is not marked as abandoned when threshold is higher than its idle time
+     * - Job is marked as abandoned when threshold is lower than its idle time
+     * - Job state transitions correctly to ABANDONED when threshold is met
+     */
+    @Test
+    void test_detectAndMarkAbandoned_threshold() throws Exception {
+
+        // Create a job
+        String queueName = "testQueue";
+        String jobId = jobQueue.createJob(queueName, new HashMap<>());
+
+        // Change state to running
+        Job job = jobQueue.getJob(jobId);
+        jobQueue.updateJobStatus(job.withState(JobState.RUNNING));
+
+        // Set the updated_at to 2 minutes ago
+        new DotConnect()
+                .setSQL("UPDATE job SET updated_at = ? WHERE id = ?")
+                .addParam(Timestamp.valueOf(LocalDateTime.now().minusMinutes(2)))
+                .addParam(jobId)
+                .loadResult();
+
+        // First check: Using 3 minutes threshold - Should NOT be considered abandoned
+        Optional<Job> abandonedJob = jobQueue.detectAndMarkAbandoned(
+                Duration.ofMinutes(3),
+                JobState.RUNNING
+        );
+        assertTrue(abandonedJob.isEmpty(), "Job should not be considered abandoned yet");
+
+        // Second check: Using 1 minute threshold - Should be considered abandoned
+        abandonedJob = jobQueue.detectAndMarkAbandoned(
+                Duration.ofMinutes(1),
+                JobState.RUNNING
+        );
+        assertTrue(abandonedJob.isPresent(), "Job should be considered abandoned");
+        assertEquals(jobId, abandonedJob.get().id(), "Wrong job was marked as abandoned");
+        assertEquals(JobState.ABANDONED, abandonedJob.get().state(), "Job should be in ABANDONED state");
+
+        // Verify the job state in database
+        Job finalJob = jobQueue.getJob(jobId);
+        assertEquals(JobState.ABANDONED, finalJob.state(), "Job state in database should be ABANDONED");
     }
 
     /**
