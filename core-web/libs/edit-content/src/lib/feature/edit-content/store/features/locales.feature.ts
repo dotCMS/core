@@ -23,7 +23,7 @@ import {
 import { DotLanguage } from '@dotcms/dotcms-models';
 import { ContentState } from '@dotcms/edit-content/feature/edit-content/store/features/content.feature';
 
-interface LocalesState {
+export interface LocalesState {
     locales: DotLanguage[] | null;
     defaultLocale: DotLanguage | null;
 }
