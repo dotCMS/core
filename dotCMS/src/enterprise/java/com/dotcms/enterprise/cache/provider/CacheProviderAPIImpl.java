@@ -177,10 +177,10 @@ public class CacheProviderAPIImpl implements CacheProviderAPI, CacheOSGIService 
     }
 
     List<CacheProvider> initProviders(List<CacheProvider> cacheProviders) {
-        cacheProviders.forEach(provider -> {
+        cacheProviders.forEach(provider ->
             Try.run(provider::init).onFailure(
-                    e -> Logger.error(this, "Error initializing CacheProvider [" + provider.getName() + "].", e));
-        });
+                    e -> Logger.error(this, "Error initializing CacheProvider [" + provider.getName() + "]." + e.getMessage(), e))
+        );
         return cacheProviders;
     }
 
