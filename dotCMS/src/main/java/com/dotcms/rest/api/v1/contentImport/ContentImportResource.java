@@ -1,7 +1,9 @@
 package com.dotcms.rest.api.v1.contentImport;
 
+import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import graphql.VisibleForTesting;
@@ -12,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 
 @Path("/v1/content")
@@ -49,10 +52,10 @@ public class ContentImportResource {
      * @return Response containing the job ID
      */
     @POST
-    @Path("/import")
+    @Path("/_import")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<String> importContent(
+    public Response importContent(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @BeanParam final ContentImportParams params)
@@ -64,7 +67,11 @@ public class ContentImportResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        final String jobId = importHelper.createJob(CMD_PUBLISH, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
-        return new ResponseEntityView<>(jobId);
+        try{
+            final String jobId = importHelper.createJob(CMD_PUBLISH, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
+            return Response.ok(new ResponseEntityView<>(jobId)).build();
+        }catch (JobValidationException e) {
+            return ExceptionMapperUtil.createResponse(null, e.getMessage());
+        }
     }
 } 
