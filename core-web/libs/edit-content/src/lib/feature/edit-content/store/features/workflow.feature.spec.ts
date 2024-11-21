@@ -173,7 +173,7 @@ describe('WorkflowFeature', () => {
                 const mockStatus = {
                     ...MOCK_WORKFLOW_STATUS,
                     scheme: MOCK_WORKFLOW_DATA[0].scheme,
-                    step: MOCK_WORKFLOW_DATA[0].firstStep
+                    step: MOCK_WORKFLOW_STATUS.step
                 };
                 workflowService.getWorkflowStatus.mockReturnValue(of(mockStatus));
 

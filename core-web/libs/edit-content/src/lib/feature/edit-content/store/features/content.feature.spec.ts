@@ -20,8 +20,9 @@ import { withContent } from './content.feature';
 import { workflowInitialState } from './workflow.feature';
 
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
-import { parseWorkflows } from '../../../../utils/functions.util';
+
 import { CONTENT_TYPE_MOCK } from '../../../../utils/mocks';
+import { parseWorkflows } from '../../../../utils/workflows.utils';
 import { initialRootState } from '../edit-content.store';
 
 describe('ContentFeature', () => {
@@ -170,7 +171,9 @@ describe('ContentFeature', () => {
             tick();
 
             expect(store.state()).toBe(ComponentStatus.ERROR);
-            expect(store.error()).toBe('Error initializing content');
+            expect(store.error()).toBe(
+                'edit.content.sidebar.information.error.initializing.content'
+            );
         }));
     });
 
@@ -209,7 +212,9 @@ describe('ContentFeature', () => {
             store.initializeExistingContent('123');
             tick();
             expect(store.state()).toBe(ComponentStatus.ERROR);
-            expect(store.error()).toBe('Error initializing content');
+            expect(store.error()).toBe(
+                'edit.content.sidebar.information.error.initializing.content'
+            );
 
             expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
         }));
