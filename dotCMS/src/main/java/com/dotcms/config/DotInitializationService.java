@@ -2,6 +2,7 @@ package com.dotcms.config;
 
 import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.api.EmbeddingsInitializer;
+import com.dotcms.analytics.init.AnalyticsInitializer;
 import com.dotcms.api.system.event.PayloadVerifierFactoryInitializer;
 import com.dotcms.api.system.event.SystemEventProcessorFactoryInitializer;
 import com.dotcms.business.SystemTableInitializer;
@@ -11,6 +12,7 @@ import com.dotcms.system.event.local.business.LocalSystemEventSubscribersInitial
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.variant.business.DefaultVariantInitializer;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
@@ -131,7 +133,8 @@ public class DotInitializationService implements Serializable {
                 new ContentTypeInitializer(),
                 new DefaultVariantInitializer(),
                 new SystemTableInitializer(),
-                new EmbeddingsInitializer()
+                new EmbeddingsInitializer(),
+                new AnalyticsInitializer()
         );
     } // getInternalInitializers.
 

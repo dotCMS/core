@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import com.dotcms.analytics.web.AnalyticsWebAPI;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.web.ExperimentWebAPI;
@@ -70,6 +71,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     private final URLMapAPIImpl urlMapAPIImpl;
     private final LanguageWebAPI languageWebAPI;
     private final ExperimentWebAPI experimentWebAPI;
+    private final AnalyticsWebAPI analyticsWebAPI;
 
     public HTMLPageAssetRenderedAPIImpl(){
         this(
@@ -79,7 +81,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 APILocator.getLanguageAPI(),
                 APILocator.getHTMLPageAssetAPI(),
                 APILocator.getURLMapAPI(),
-                WebAPILocator.getLanguageWebAPI()
+                WebAPILocator.getLanguageWebAPI(),
+                null
         );
     }
 
@@ -91,8 +94,9 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final LanguageAPI languageAPI,
             final HTMLPageAssetAPI htmlPageAssetAPI,
             final URLMapAPIImpl urlMapAPIImpl,
-            final LanguageWebAPI languageWebAPI
-    ){
+            final LanguageWebAPI languageWebAPI,
+            final AnalyticsWebAPI analyticsWebAPI
+            ){
 
         this.permissionAPI = permissionAPI;
         this.userAPI = userAPI;
@@ -103,6 +107,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         this.languageWebAPI = languageWebAPI;
 
         this.experimentWebAPI = WebAPILocator.getExperimentWebAPI();
+        this.analyticsWebAPI = analyticsWebAPI;
     }
 
     @Override
@@ -298,7 +303,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final HTMLPageAsset page = htmlPageUrl.getHTMLPage();
         Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml HTMLPageUrl: " + htmlPageUrl.toString());
 
-        final String pageHTML = new HTMLPageAssetRenderedBuilder()
+        String pageHTML = new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
                 .setUser(context.getUser())
                 .setRequest(request)
@@ -308,15 +313,30 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setLive(htmlPageUrl.hasLive())
                 .getPageHTML(context.getPageMode());
 
-        if (context.getPageMode() == PageMode.LIVE && ConfigExperimentUtil.INSTANCE.isExperimentAutoJsInjection()) {
-            Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml experiments is running");
-            return experimentWebAPI.getCode(host, request)
-                    .map(jsCodeToBeInjected -> injectJSCode(pageHTML, jsCodeToBeInjected))
-                    .orElse(pageHTML);
-        } else {
-            Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml Page HTML: " + pageHTML);
-            return pageHTML;
+        if (context.getPageMode() == PageMode.LIVE) {
+
+            if (ConfigExperimentUtil.INSTANCE.isExperimentAutoJsInjection()) {
+
+                Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml experiments is running");
+                final String finalPageHtml = pageHTML;
+                pageHTML = experimentWebAPI.getCode(host, request)
+                        .map(jsCodeToBeInjected -> injectJSCode(finalPageHtml, jsCodeToBeInjected))
+                        .orElse(pageHTML);
+            }
+
+            if (this.analyticsWebAPI.isAutoJsInjectionEnabled(request)) {
+
+                Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml analytics is running");
+                final String finalPageHtml = pageHTML;
+                pageHTML = this.analyticsWebAPI.getCode(host, request)
+                        .map(jsCodeToBeInjected -> injectJSCode(finalPageHtml, jsCodeToBeInjected))
+                        .orElse(pageHTML);
+            }
         }
+
+        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml Page HTML: " + pageHTML);
+        return pageHTML;
+
     }
 
     private String injectJSCode(final String pageHTML, final String JsCode) {

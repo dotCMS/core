@@ -1,30 +1,24 @@
 package com.dotcms.analytics.track;
 
-import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceFactory;
 import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
 import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
 import com.dotcms.analytics.track.matchers.RequestMatcher;
 import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
+import com.dotcms.analytics.web.AnalyticsWebAPI;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
-import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.WhiteBlackList;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
-import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
-import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -34,7 +28,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * Web Interceptor to track analytics
@@ -44,31 +37,24 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
 
     private static final  String[] DEFAULT_BLACKLISTED_PROPS = new String[]{StringPool.BLANK};
     private static final  String ANALYTICS_TURNED_ON_KEY = "FEATURE_FLAG_CONTENT_ANALYTICS";
-    private static final  String ANALYTICS_AUTO_INJECT_TURNED_ON_KEY = "FEATURE_FLAG_CONTENT_ANALYTICS_AUTO_INJECT";
     private static final  Map<String, RequestMatcher> requestMatchersMap = new ConcurrentHashMap<>();
-    private final HostWebAPI hostWebAPI;
-    private final AppsAPI appsAPI;
-    private final Supplier<User> systemUserSupplier;
-
+    private final AnalyticsWebAPI analyticsWebAPI;
     private final WhiteBlackList whiteBlackList;
     private final AtomicBoolean isTurnedOn;
-    private final AtomicBoolean isAutoInjectTurnedOn;
 
-    private static final String AUTO_INJECT_LIB_PATH = "/s/ca-lib.js";
+    private static final String AUTO_INJECT_LIB_WEB_PATH = "/s/ca-lib.js";
     private static final String AUTO_INJECT_LIB_CLASS_PATH = "/ca/ca-lib.js";
     private final Lazy<String> caLib;
 
     public AnalyticsTrackWebInterceptor() {
 
-        this(WebAPILocator.getHostWebAPI(), APILocator.getAppsAPI(),
-                new WhiteBlackList.Builder()
+        this(new WhiteBlackList.Builder()
                         .addWhitePatterns(Config.getStringArrayProperty("ANALYTICS_WHITELISTED_KEYS",
                                 new String[]{StringPool.BLANK})) // allows everything
                         .addBlackPatterns(CollectionsUtils.concat(Config.getStringArrayProperty(  // except this
                                 "ANALYTICS_BLACKLISTED_KEYS", new String[]{}), DEFAULT_BLACKLISTED_PROPS)).build(),
                 new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_TURNED_ON_KEY, true)),
-                new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, true)),
-                APILocator::systemUser,
+                WebAPILocator.getAnalyticsWebAPI(),
                 new PagesAndUrlMapsRequestMatcher(),
                 new FilesRequestMatcher(),
                 //       new RulesRedirectsRequestMatcher(),
@@ -76,22 +62,16 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
 
     }
 
-    public AnalyticsTrackWebInterceptor(final HostWebAPI hostWebAPI,
-                        final AppsAPI appsAPI,
-                        final WhiteBlackList whiteBlackList,
-                        final AtomicBoolean isTurnedOn,
-                        final AtomicBoolean isAutoInjectTurnedOn,
-                        final Supplier<User> systemUser,
-                        final RequestMatcher... requestMatchers) {
+    public AnalyticsTrackWebInterceptor(final WhiteBlackList whiteBlackList,
+                                        final AtomicBoolean isTurnedOn,
+                                        final AnalyticsWebAPI analyticsWebAPI,
+                                        final RequestMatcher... requestMatchers) {
 
-        this.hostWebAPI = hostWebAPI;
-        this.appsAPI    = appsAPI;
         this.whiteBlackList = whiteBlackList;
         this.isTurnedOn = isTurnedOn;
-        this.isAutoInjectTurnedOn = isAutoInjectTurnedOn;
-        this.systemUserSupplier = systemUser;
         addRequestMatcher(requestMatchers);
         this.caLib = Lazy.of(() -> FileUtil.toStringFromResourceAsStreamNoThrown(AUTO_INJECT_LIB_CLASS_PATH));
+        this.analyticsWebAPI = analyticsWebAPI;
     }
 
     /**
@@ -144,7 +124,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
 
     private boolean isAutoInjectAndFeatureFlagIsOn(final HttpServletRequest request) {
 
-        return request.getRequestURI().contains(AUTO_INJECT_LIB_PATH) && isAutoInjectTurnedOn.get();
+        return request.getRequestURI().contains(AUTO_INJECT_LIB_WEB_PATH) && this.analyticsWebAPI.isAutoJsInjectionFlagOn();
     }
 
     /**
@@ -157,31 +137,10 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
     private boolean isAllowed(final HttpServletRequest request) {
 
         return  isTurnedOn.get() &&
-                anyConfig(request) &&
+                this.analyticsWebAPI.anyAnalyticsConfig(request) &&
                 whiteBlackList.isAllowed(request.getRequestURI());
     }
 
-    private boolean anyConfig(final HttpServletRequest request) {
-
-        final Host currentSite = this.hostWebAPI.getCurrentHostNoThrow(request);
-
-        return anySecrets(currentSite);
-
-    }
-
-    /**
-     * Returns true if the host or the system host has any secrets for the analytics app.
-     * @param host
-     * @return
-     */
-    private boolean anySecrets (final Host host) {
-
-        return   Try.of(
-                        () ->
-                                this.appsAPI.getSecrets(
-                                        AnalyticsApp.ANALYTICS_APP_KEY, true, host, systemUserSupplier.get()).isPresent())
-                .getOrElseGet(e -> false);
-    }
 
     private void addRequestId(final HttpServletRequest request) {
         if (null == request.getAttribute("requestId")) {
@@ -236,10 +195,6 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
     public void notify(final SystemTableUpdatedKeyEvent event) {
         if (event.getKey().contains(ANALYTICS_TURNED_ON_KEY)) {
             isTurnedOn.set(Config.getBooleanProperty(ANALYTICS_TURNED_ON_KEY, true));
-        }
-
-        if (event.getKey().contains(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY)) {
-            isAutoInjectTurnedOn.set(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, true));
         }
     }
 }

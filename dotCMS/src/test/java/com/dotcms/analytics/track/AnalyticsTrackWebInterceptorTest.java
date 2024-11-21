@@ -2,11 +2,11 @@ package com.dotcms.analytics.track;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.track.matchers.RequestMatcher;
+import com.dotcms.analytics.web.AnalyticsWebAPI;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.util.WhiteBlackList;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -61,15 +61,12 @@ public class AnalyticsTrackWebInterceptorTest {
     public void test_intercept_feature_flag_turn_off() throws IOException {
 
         Config.CONTEXT = Mockito.mock(ServletContext.class);
-        final HostWebAPI hostWebAPI = Mockito.mock(HostWebAPI.class);
-        final AppsAPI appsAPI  = Mockito.mock(AppsAPI.class);
         final WhiteBlackList whiteBlackList  = Mockito.mock(WhiteBlackList.class);
         final AtomicBoolean isTurnedOn = new AtomicBoolean(false); // turn off the feature flag
-        final AtomicBoolean isAutoInjectTurnedOn = new AtomicBoolean(false); // turn off the feature flag
         final TestMatcher testMatcher = new TestMatcher();
-        final User user = new User();
+        final AnalyticsWebAPI analyticsWebAPI = Mockito.mock(AnalyticsWebAPI.class);
         final AnalyticsTrackWebInterceptor interceptor = new AnalyticsTrackWebInterceptor(
-                hostWebAPI, appsAPI, whiteBlackList, isTurnedOn, isAutoInjectTurnedOn, ()->user, testMatcher);
+                whiteBlackList, isTurnedOn, analyticsWebAPI, testMatcher);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
         try {
@@ -90,9 +87,9 @@ public class AnalyticsTrackWebInterceptorTest {
         Config.CONTEXT = Mockito.mock(ServletContext.class);
         final HostWebAPI hostWebAPI = Mockito.mock(HostWebAPI.class);
         final AppsAPI appsAPI  = Mockito.mock(AppsAPI.class);
+        final AnalyticsWebAPI analyticsWebAPI = Mockito.mock(AnalyticsWebAPI.class);
         final WhiteBlackList whiteBlackList  = Mockito.mock(WhiteBlackList.class);
         final AtomicBoolean isTurnedOn = new AtomicBoolean(true); // turn on the feature flag
-        final AtomicBoolean isAutoInjectTurnedOn = new AtomicBoolean(false); // turn off the feature flag
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
         final TestMatcher testMatcher = new TestMatcher();
@@ -103,8 +100,7 @@ public class AnalyticsTrackWebInterceptorTest {
         Mockito.when(appsAPI.getSecrets(AnalyticsApp.ANALYTICS_APP_KEY,
                 true, currentHost, user)).thenReturn(Optional.empty()); // no config
 
-        final AnalyticsTrackWebInterceptor interceptor = new AnalyticsTrackWebInterceptor(
-                hostWebAPI, appsAPI, whiteBlackList, isTurnedOn, isAutoInjectTurnedOn, ()->user, testMatcher);
+        final AnalyticsTrackWebInterceptor interceptor = new AnalyticsTrackWebInterceptor(whiteBlackList, isTurnedOn, analyticsWebAPI, testMatcher);
 
         try {
             interceptor.intercept(request, response);
@@ -124,11 +120,11 @@ public class AnalyticsTrackWebInterceptorTest {
         Config.CONTEXT = Mockito.mock(ServletContext.class);
         final HostWebAPI hostWebAPI = Mockito.mock(HostWebAPI.class);
         final AppsAPI appsAPI  = Mockito.mock(AppsAPI.class);
+        final AnalyticsWebAPI analyticsWebAPI = Mockito.mock(AnalyticsWebAPI.class);
         final WhiteBlackList whiteBlackList  = new WhiteBlackList.Builder()
                 .addWhitePatterns(new String[]{StringPool.BLANK}) // allows everything
                 .addBlackPatterns(new String[]{StringPool.BLANK}).build();
         final AtomicBoolean isTurnedOn = new AtomicBoolean(true); // turn on the feature flag
-        final AtomicBoolean isAutoInjectTurnedOn = new AtomicBoolean(false); // turn off the feature flag
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
         final TestMatcher testMatcher = new TestMatcher();
@@ -140,11 +136,12 @@ public class AnalyticsTrackWebInterceptorTest {
         Mockito.when(appsAPI.getSecrets(AnalyticsApp.ANALYTICS_APP_KEY,
                 true, currentHost, user)).thenReturn(Optional.of(appSecrets)); // no config
         Mockito.when(request.getRequestURI()).thenReturn("/some-uri");
+        Mockito.when(analyticsWebAPI.anyAnalyticsConfig(request)).thenReturn(true);
 
         try {
 
             final AnalyticsTrackWebInterceptor interceptor = new AnalyticsTrackWebInterceptor(
-                    hostWebAPI, appsAPI, whiteBlackList, isTurnedOn, isAutoInjectTurnedOn, ()->user, testMatcher);
+                    whiteBlackList, isTurnedOn, analyticsWebAPI, testMatcher);
             interceptor.intercept(request, response);
         }catch (Exception e) {}
 
