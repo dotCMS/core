@@ -100,7 +100,8 @@ public class AnalyticsFireUserEventActionlet extends WorkFlowActionlet {
             userEventPayload.put(Collector.OBJECT, objectDetail);
             userEventPayload.put(Collector.EVENT_SOURCE, EventSource.WORKFLOW.getName());
             userEventPayload.put(Collector.EVENT_TYPE, UtilMethods.isSet(eventType)? eventType.trim(): eventType);
-            webEventsCollectorService.fireCollectorsAndEmitEvent(request, response, USER_CUSTOM_DEFINED_REQUEST_MATCHER, userEventPayload);
+            webEventsCollectorService.fireCollectorsAndEmitEvent(request, response,
+                    USER_CUSTOM_DEFINED_REQUEST_MATCHER, userEventPayload, Map.of());
         } else {
             Logger.warn(this, "The request or response is null, can't send the event for the contentlet: " + identifier);
             // note: here we need more info to populate what the collectors used to populate from the request

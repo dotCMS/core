@@ -7,9 +7,11 @@ import com.dotcms.jobs.business.queue.error.JobLockingException;
 import com.dotcms.jobs.business.queue.error.JobNotFoundException;
 import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotcms.jobs.business.queue.error.JobQueueException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -165,6 +167,18 @@ public interface JobQueue {
      * @throws JobLockingException   if there's an error acquiring a lock on the next job
      */
     Job nextJob() throws JobQueueDataException, JobLockingException;
+
+    /**
+     * Detects and marks jobs as abandoned if they haven't been updated within the specified
+     * threshold.
+     *
+     * @param threshold The time duration after which a job is considered abandoned
+     * @param inStates  The states to check for abandoned jobs
+     * @return The abandoned job if one was found and marked, null otherwise
+     * @throws JobQueueDataException if there's a data storage error
+     */
+    Optional<Job> detectAndMarkAbandoned(Duration threshold, JobState... inStates)
+            throws JobQueueDataException;
 
     /**
      * Updates the progress of a job.

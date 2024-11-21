@@ -39,6 +39,8 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -49,6 +51,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
 import org.glassfish.jersey.internal.util.Base64;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1689,5 +1692,83 @@ public class ContentResourceTest extends IntegrationTestBase {
         }
 
         return simpleWidgetContentType;
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: The method is invoked for a widget with a code field and a widget code field with the same value
+     * Expected result: The response should return the rendered widget code when the render parameter is set to true
+     * @throws Exception
+     */
+    @Test
+    public void testRenderWidgetCode() throws Exception {
+
+        //We're going to use this as code and widget code to test the endpoint
+        final String code = "#set($a = 10)\n"
+                + "#set($b = 5) \n"
+                + "#set($sum = $a + $b) \n"
+                + "$sum";
+        // When rendering the widget code, the result should be the sum of a and b (10 + 5 = 15)
+
+        final ContentType type = getWidgetLikeContentTypeUrlField("CodeWidgetType", null, ()->code);
+
+        ContentletDataGen contentletDataGen = new ContentletDataGen(type.id())
+                .languageId(1L)
+                .host(APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
+                .setProperty("widgetTitle", "myWidgetTitle")
+                .setProperty("code", code)
+                .setProperty("url", "somevalue");
+
+        final Contentlet contentlet = contentletDataGen.nextPersisted();
+        ContentletDataGen.publish(contentlet);
+
+        // Build request and response
+        final HttpServletRequest request = createHttpRequest(null, null);
+        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+
+        // Send request
+        final ContentResource contentResource = new ContentResource();
+
+        final Map<?, ?> resp = callEndpoint(contentResource, request, response, contentlet, false);
+        final String codeValue = resp.get("code").toString();
+        final String widgetCodeValue = resp.get("widgetCode").toString();
+
+        final String raw = removeSpecialCharacters(code);
+
+        assertEquals(raw, removeSpecialCharacters(codeValue));
+        assertEquals(raw, removeSpecialCharacters(widgetCodeValue));
+
+        final Map<?, ?> resp2 = callEndpoint(contentResource, request, response, contentlet, true);
+        final String parsedCode = resp2.get("code").toString();
+        final String parsedWidgetCode = resp2.get("widgetCode").toString();
+        Assert.assertEquals(15,Integer.parseInt(parsedCode));
+        Assert.assertEquals(15,Integer.parseInt(parsedWidgetCode));
+
+    }
+
+    public static String removeSpecialCharacters(String input) {
+        return input.replaceAll("[^a-zA-Z0-9\\s]", "");
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * @param contentResource The content resource
+     * @param request The request
+     * @param response The response
+     * @param contentlet The contentlet
+     * @param render If the contentlet should be rendered
+     * @return The map with the contentlet
+     * @throws JsonProcessingException
+     */
+    private static Map<?, ?> callEndpoint(final ContentResource contentResource, final HttpServletRequest request,
+            final HttpServletResponse response, final Contentlet contentlet, final boolean render) throws JsonProcessingException {
+        Response endpointResponse = contentResource.getContent(request, response,
+                "/id/" + contentlet.getIdentifier() + "/render/"+render);
+
+        final String out = endpointResponse.getEntity().toString();
+        final Map<?,?> map = new ObjectMapper().readValue(out, Map.class);
+        final List<?> contentlets = (List<?>)map.get("contentlets");
+        Assert.assertFalse(contentlets.isEmpty());
+        return (Map<?, ?>)contentlets.get(0);
     }
 }

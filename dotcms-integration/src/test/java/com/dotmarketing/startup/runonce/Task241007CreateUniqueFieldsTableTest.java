@@ -1,6 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
+import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
@@ -34,6 +35,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENTLET_IDS_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENT_TYPE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VARIABLE_NAME_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.LANGUAGE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.SITE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.UNIQUE_PER_SITE_ATTR;
 import static org.junit.Assert.*;
 
 /**
@@ -149,6 +157,7 @@ public class Task241007CreateUniqueFieldsTableTest {
         checkSupportingValues(result_2, contentType, uniqueField, contentlet_2);
     }
 
+    @SuppressWarnings("unchecked")
     private static void checkSupportingValues(Map<String, Object> result_1, ContentType contentType,
                                               Field uniqueField, Contentlet... contentlets) throws IOException {
 
@@ -156,15 +165,15 @@ public class Task241007CreateUniqueFieldsTableTest {
                 .map(Boolean::valueOf).orElse(false);
 
         final Map<String, Object> supportingValues_1 = JsonUtil.getJsonFromString(result_1.get("supporting_values").toString());
-        assertEquals(contentType.id(), supportingValues_1.get("contentTypeID"));
-        assertEquals(uniqueField.variable(), supportingValues_1.get("fieldVariableName"));
-        assertEquals(contentlets[0].get(uniqueField.variable()), supportingValues_1.get("fieldValue"));
-        assertEquals(contentlets[0].getLanguageId(), Long.parseLong(supportingValues_1.get("languageId").toString()));
-        assertEquals(contentlets[0].getHost(), supportingValues_1.get("hostId"));
-        assertEquals(uniqueForSite, supportingValues_1.get("uniquePerSite"));
-        assertEquals(contentlets.length, ((List) supportingValues_1.get("contentletsId")).size());
+        assertEquals(contentType.id(), supportingValues_1.get(CONTENT_TYPE_ID_ATTR));
+        assertEquals(uniqueField.variable(), supportingValues_1.get(FIELD_VARIABLE_NAME_ATTR));
+        assertEquals(contentlets[0].get(uniqueField.variable()), supportingValues_1.get(FIELD_VALUE_ATTR));
+        assertEquals(contentlets[0].getLanguageId(), Long.parseLong(supportingValues_1.get(LANGUAGE_ID_ATTR).toString()));
+        assertEquals(contentlets[0].getHost(), supportingValues_1.get(SITE_ID_ATTR));
+        assertEquals(uniqueForSite, supportingValues_1.get(UNIQUE_PER_SITE_ATTR));
+        assertEquals(contentlets.length, ((List<String>) supportingValues_1.get(CONTENTLET_IDS_ATTR)).size());
         assertEquals(Arrays.stream(contentlets).map(Contentlet::getIdentifier).sorted().collect(Collectors.toList()),
-                ((List<String>) supportingValues_1.get("contentletsId")).stream().sorted().collect(Collectors.toList()));
+                ((List<String>) supportingValues_1.get(CONTENTLET_IDS_ATTR)).stream().sorted().collect(Collectors.toList()));
     }
 
     private static String getHash(ContentType contentType, Field uniqueField, Contentlet contentlet_1) throws NoSuchAlgorithmException {

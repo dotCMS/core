@@ -37,10 +37,11 @@ public interface WebEventsCollectorService {
      * @param requestMatcher The {@link RequestMatcher} that matched the dotCMS object being
      *                       processed, such as: HTML Page, File Asset, URL Mapped Content,
      *                       Vanity URL, etc.
-     * @param basePayloadMap A Map containing all the properties that were retrieved by a given
-     *                       {@link Collector}.
+     * @param basePayloadMap A Map containing all payload properties that were given user
+     * @param baseContextMap A Map containing all context the properties that were given user
      */
     void fireCollectorsAndEmitEvent(final HttpServletRequest request, final HttpServletResponse response,
-                                    final RequestMatcher requestMatcher, final Map<String, Serializable> userEventPayload);
+                                    final RequestMatcher requestMatcher, final Map<String, Serializable> basePayloadMap,
+                                    Map<String, Object> baseContextMap);
 
 }

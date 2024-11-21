@@ -1,11 +1,9 @@
 package com.dotcms.jobs.business.api;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyFloat;
-import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
@@ -24,9 +22,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.dotcms.jobs.business.api.events.EventProducer;
 import com.dotcms.jobs.business.api.events.JobCancelRequestEvent;
 import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
+import com.dotcms.jobs.business.detector.AbandonedJobDetector;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.error.JobCancellationException;
@@ -50,9 +48,7 @@ import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,8 +59,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import javax.enterprise.event.Event;
 import org.awaitility.Awaitility;
 import org.junit.Before;
 import org.junit.Test;
@@ -149,9 +143,9 @@ public class JobQueueManagerAPITest {
 
     private JobQueueManagerAPI jobQueueManagerAPI;
 
-    private EventProducer eventProducer;
-
     private RetryPolicyProcessor retryPolicyProcessor;
+
+    private AbandonedJobDetector abandonedJobDetector;
 
     /**
      * Factory to create mock JobProcessor instances for testing.
@@ -181,19 +175,16 @@ public class JobQueueManagerAPITest {
         mockCancellableProcessor = mock(SimpleCancellableJobProcessor.class);
         mockRetryStrategy = mock(RetryStrategy.class);
         mockCircuitBreaker = mock(CircuitBreaker.class);
-        eventProducer = mock(EventProducer.class);
         retryPolicyProcessor = mock(RetryPolicyProcessor.class);
+        abandonedJobDetector = mock(AbandonedJobDetector.class);
 
         jobQueueManagerAPI = newJobQueueManagerAPI(
-                mockJobQueue, mockCircuitBreaker, mockRetryStrategy, eventProducer, jobProcessorFactory,
-                retryPolicyProcessor, 1, 10
+                mockJobQueue, mockCircuitBreaker, mockRetryStrategy, jobProcessorFactory,
+                retryPolicyProcessor, abandonedJobDetector, 1
         );
 
         jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
         jobQueueManagerAPI.setRetryStrategy("testQueue", mockRetryStrategy);
-
-        var event = mock(Event.class);
-        when(eventProducer.getEvent(any())).thenReturn(event);
     }
 
     /**
@@ -341,79 +332,6 @@ public class JobQueueManagerAPITest {
         // Verify that close() can be called multiple times without error
         jobQueueManagerAPI.close();
         assertFalse(jobQueueManagerAPI.isStarted());
-    }
-
-    /**
-     * Method to test: watchJob in JobQueueManagerAPI
-     * Given Scenario: Valid job ID and watcher are provided
-     * ExpectedResult: Watcher receives all job state updates correctly
-     */
-    @Test
-    public void test_watchJob() throws Exception {
-
-        // Create a mock job
-        String jobId = "job123";
-        Job mockJob = mock(Job.class);
-        when(mockJob.id()).thenReturn(jobId);
-        when(mockJob.queueName()).thenReturn("testQueue");
-
-        // Mock JobQueue behavior
-        when(mockJobQueue.getJob(jobId)).thenReturn(mockJob);
-        when(mockJobQueue.nextJob()).thenReturn(mockJob).thenReturn(null);
-        when(mockJob.markAsRunning()).thenReturn(mockJob);
-        when(mockJob.withProgressTracker(any(DefaultProgressTracker.class))).thenReturn(mockJob);
-
-        // Make the circuit breaker always allow requests
-        when(mockCircuitBreaker.allowRequest()).thenReturn(true);
-
-        // Mock JobProcessor behavior
-        ProgressTracker mockProgressTracker = mock(ProgressTracker.class);
-        when(mockJob.progressTracker()).thenReturn(Optional.ofNullable(mockProgressTracker));
-        when(mockJob.progress()).thenReturn(0f);
-        when(mockJob.withProgress(anyFloat())).thenReturn(mockJob);
-
-        AtomicReference<JobState> jobState = new AtomicReference<>(JobState.PENDING);
-        when(mockJob.state()).thenAnswer(inv -> jobState.get());
-
-        when(mockJob.withState(any())).thenAnswer(inv -> {
-            jobState.set(inv.getArgument(0));
-            return mockJob;
-        });
-        when(mockJob.markAsCompleted(any())).thenAnswer(inv -> {
-            jobState.set(JobState.COMPLETED);
-            return mockJob;
-        });
-        when(mockJob.markAsFailed(any())).thenAnswer(inv -> {
-            jobState.set(JobState.FAILED);
-            return mockJob;
-        });
-
-        when(mockJobQueue.getUpdatedJobsSince(anySet(), any(LocalDateTime.class)))
-                .thenAnswer(invocation -> Collections.singletonList(mockJob));
-
-        // Create a list to capture job states
-        List<JobState> capturedStates = Collections.synchronizedList(new ArrayList<>());
-        // Create a test watcher
-        Consumer<Job> testWatcher = job -> {
-            assertNotNull(job);
-            assertEquals(jobId, job.id());
-            capturedStates.add(job.state());
-        };
-
-        // Start the JobQueueManagerAPI
-        jobQueueManagerAPI.start();
-
-        // Register the watcher
-        jobQueueManagerAPI.watchJob(jobId, testWatcher);
-
-        // Wait for job processing to complete
-        Awaitility.await()
-                .atMost(10, TimeUnit.SECONDS)
-                .pollInterval(100, TimeUnit.MILLISECONDS)
-                .until(() -> capturedStates.contains(JobState.COMPLETED));
-
-        // Stop the JobQueueManagerAPI
-        jobQueueManagerAPI.close();
     }
 
     /**
@@ -843,128 +761,6 @@ public class JobQueueManagerAPITest {
     }
 
     /**
-     * Method to test: Job progress tracking in JobQueueManagerAPI
-     * Given Scenario: Job with multiple progress updates
-     * ExpectedResult: Progress is tracked correctly and increases monotonically
-     */
-    @Test
-    public void test_JobProgressTracking() throws Exception {
-
-        // Create a mock job
-        Job mockJob = mock(Job.class);
-        when(mockJob.id()).thenReturn("progress-test-job");
-        when(mockJob.queueName()).thenReturn("testQueue");
-
-        AtomicReference<Float> jobProgress = new AtomicReference<>(0f);
-        AtomicReference<JobState> jobState = new AtomicReference<>(JobState.PENDING);
-
-        when(mockJob.state()).thenAnswer(inv -> jobState.get());
-        when(mockJob.withState(any())).thenAnswer(inv -> {
-            jobState.set(inv.getArgument(0));
-            return mockJob;
-        });
-        when(mockJob.markAsRunning()).thenAnswer(inv -> {
-            jobState.set(JobState.RUNNING);
-            return mockJob;
-        });
-        when(mockJob.markAsCompleted(any())).thenAnswer(inv -> {
-            jobState.set(JobState.COMPLETED);
-            return mockJob;
-        });
-        when(mockJob.withProgressTracker(any(DefaultProgressTracker.class))).thenReturn(mockJob);
-
-        when(mockJob.progress()).thenAnswer(inv -> jobProgress.get());
-        when(mockJob.withProgress(anyFloat())).thenAnswer(inv -> {
-            jobProgress.set(inv.getArgument(0));
-            return mockJob;
-        });
-
-        // Set up the job queue to return our mock job
-        when(mockJobQueue.nextJob()).thenReturn(mockJob).thenReturn(null);
-        when(mockJobQueue.getJob(anyString())).thenReturn(mockJob);
-
-        // Create a real ProgressTracker
-        ProgressTracker realProgressTracker = new DefaultProgressTracker();
-        when(mockJob.progressTracker()).thenReturn(Optional.of(realProgressTracker));
-
-        // Make the circuit breaker always allow requests
-        when(mockCircuitBreaker.allowRequest()).thenReturn(true);
-
-        // List to store progress updates
-        List<Float> progressUpdates = Collections.synchronizedList(new ArrayList<>());
-
-        // Configure the mockJobProcessor to update progress
-        doAnswer(inv -> {
-
-            for (int i = 0; i <= 10; i++) {
-                float progress = i / 10f;
-                realProgressTracker.updateProgress(progress);
-                // Simulate the effect of updateJobProgress
-                jobProgress.set(progress);
-
-                // Simulate work
-                long startTime = System.currentTimeMillis();
-                Awaitility.await()
-                        .atMost(3, TimeUnit.SECONDS)
-                        .pollInterval(100, TimeUnit.MILLISECONDS)
-                        .until(() -> System.currentTimeMillis() - startTime >= 50);
-            }
-
-            Job job = inv.getArgument(0);
-            job.markAsCompleted(any());
-            return null;
-        }).when(mockJobProcessor).process(any());
-
-        // Set up a job watcher to capture progress updates
-        jobQueueManagerAPI.watchJob("progress-test-job", job -> {
-            progressUpdates.add(job.progress());
-        });
-
-        when(mockJobQueue.getUpdatedJobsSince(anySet(), any(LocalDateTime.class)))
-                .thenAnswer(invocation -> Collections.singletonList(mockJob));
-
-        // Start the job queue
-        jobQueueManagerAPI.start();
-
-        // Wait for job processing to complete
-        Awaitility.await().atMost(10, TimeUnit.SECONDS)
-                .pollInterval(100, TimeUnit.MILLISECONDS)
-                .untilAsserted(() -> {
-                    assertEquals(JobState.COMPLETED, jobState.get());
-                });
-
-        // Verify that progress was tracked correctly
-        assertTrue(
-                "Should have multiple progress updates",
-                progressUpdates.size() > 1
-        );
-        assertEquals(
-                0.0f, progressUpdates.get(0), 0.01f,
-                "Initial progress should be 0"
-        );
-        assertEquals(
-                1.0f, progressUpdates.get(progressUpdates.size() - 1), 0.01f,
-                "Final progress should be 1"
-        );
-
-        // Verify that progress increased monotonically
-        for (int i = 1; i < progressUpdates.size(); i++) {
-            assertTrue("Progress should increase or stay the same",
-                    progressUpdates.get(i) >= progressUpdates.get(i - 1)
-            );
-        }
-
-        // Verify that the job was processed
-        verify(mockJobProcessor, times(1)).process(any());
-        verify(mockJobQueue, times(2)).updateJobStatus(any());
-        verify(mockJobQueue, times(2)).
-                updateJobStatus(argThat(job -> job.state() == JobState.COMPLETED));
-
-        // Stop the job queue
-        jobQueueManagerAPI.close();
-    }
-
-    /**
      * Method to test: Circuit breaker mechanism in JobQueueManagerAPI
      * Given Scenario: Multiple job failures occur
      * ExpectedResult: Circuit breaker opens after threshold is reached
@@ -1004,8 +800,8 @@ public class JobQueueManagerAPITest {
 
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
         JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
-                mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer, jobProcessorFactory,
-                retryPolicyProcessor, 1, 1000
+                mockJobQueue, circuitBreaker, mockRetryStrategy, jobProcessorFactory,
+                retryPolicyProcessor, abandonedJobDetector, 1
         );
 
         jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
@@ -1089,8 +885,8 @@ public class JobQueueManagerAPITest {
 
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
         JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
-                mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer, jobProcessorFactory,
-                retryPolicyProcessor, 1, 1000
+                mockJobQueue, circuitBreaker, mockRetryStrategy, jobProcessorFactory,
+                retryPolicyProcessor, abandonedJobDetector, 1
         );
         jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
 
@@ -1152,8 +948,8 @@ public class JobQueueManagerAPITest {
 
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
         JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
-                mockJobQueue, circuitBreaker, mockRetryStrategy, eventProducer, jobProcessorFactory,
-                retryPolicyProcessor, 1, 1000
+                mockJobQueue, circuitBreaker, mockRetryStrategy, jobProcessorFactory,
+                retryPolicyProcessor, abandonedJobDetector, 1
         );
         jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
 
@@ -1296,9 +1092,6 @@ public class JobQueueManagerAPITest {
             when(mockJob.withProgressTracker(any(DefaultProgressTracker.class))).thenReturn(
                     mockJob);
 
-            when(mockJobQueue.getUpdatedJobsSince(anySet(), any(LocalDateTime.class)))
-                    .thenAnswer(invocation -> Collections.singletonList(mockJob));
-
             // Create Mock Job Event
             JobCancelRequestEvent mockEvent = mock(JobCancelRequestEvent.class);
             when(mockEvent.getJob()).thenReturn(mockJob);
@@ -1382,24 +1175,22 @@ public class JobQueueManagerAPITest {
      *                                           failures.
      * @param retryStrategy                      The strategy to use for retrying failed jobs.
      * @param threadPoolSize                     The size of the thread pool for job processing.
-     * @param pollJobUpdatesIntervalMilliseconds The interval in milliseconds for polling job
-     *                                           updates.
      * @return A newly created instance of JobQueueManagerAPI.
      */
     private JobQueueManagerAPI newJobQueueManagerAPI(JobQueue jobQueue,
             CircuitBreaker circuitBreaker,
             RetryStrategy retryStrategy,
-            EventProducer eventProducer,
             JobProcessorFactory jobProcessorFactory,
             RetryPolicyProcessor retryPolicyProcessor,
-            int threadPoolSize, int pollJobUpdatesIntervalMilliseconds) {
+            AbandonedJobDetector abandonedJobDetector,
+            int threadPoolSize) {
 
         final var realTimeJobMonitor = new RealTimeJobMonitor();
 
         return new JobQueueManagerAPIImpl(
-                jobQueue, new JobQueueConfig(threadPoolSize, pollJobUpdatesIntervalMilliseconds),
-                circuitBreaker, retryStrategy, realTimeJobMonitor, eventProducer,
-                jobProcessorFactory, retryPolicyProcessor
+                jobQueue, new JobQueueConfig(threadPoolSize),
+                circuitBreaker, retryStrategy, realTimeJobMonitor,
+                jobProcessorFactory, retryPolicyProcessor, abandonedJobDetector
         );
     }
 
