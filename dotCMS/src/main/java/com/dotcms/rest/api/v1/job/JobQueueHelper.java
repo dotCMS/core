@@ -2,14 +2,12 @@ package com.dotcms.rest.api.v1.job;
 
 import static com.dotcms.jobs.business.util.JobUtil.roundedProgress;
 
-import com.dotcms.jobs.business.api.JobProcessorScanner;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.processor.JobProcessor;
-import com.dotcms.jobs.business.processor.Queue;
 import com.dotcms.rest.api.v1.JobQueueManagerHelper;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
@@ -23,10 +21,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Constructor;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -71,12 +67,12 @@ public class JobQueueHelper {
 
     @PostConstruct
     public void onInit() {
-        jobQueueManagerHelper.registerProcessors(jobQueueManagerAPI);
+        jobQueueManagerHelper.registerProcessors();
     }
 
     @PreDestroy
     public void onDestroy() {
-        jobQueueManagerHelper.shutdown(jobQueueManagerAPI);
+        jobQueueManagerHelper.shutdown();
     }
 
     /**

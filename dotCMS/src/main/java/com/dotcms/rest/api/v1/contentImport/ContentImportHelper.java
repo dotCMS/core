@@ -1,9 +1,6 @@
 package com.dotcms.rest.api.v1.contentImport;
 
-import com.dotcms.jobs.business.api.JobProcessorScanner;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
-import com.dotcms.jobs.business.processor.JobProcessor;
-import com.dotcms.jobs.business.processor.Queue;
 import com.dotcms.rest.api.v1.JobQueueManagerHelper;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotmarketing.business.APILocator;
@@ -19,9 +16,7 @@ import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import java.lang.reflect.Constructor;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @ApplicationScoped
@@ -42,12 +37,12 @@ public class ContentImportHelper {
 
     @PostConstruct
     public void onInit() {
-        jobQueueManagerHelper.registerProcessors(jobQueueManagerAPI);
+        jobQueueManagerHelper.registerProcessors();
     }
 
     @PreDestroy
     public void onDestroy() {
-        jobQueueManagerHelper.shutdown(jobQueueManagerAPI);
+        jobQueueManagerHelper.shutdown();
     }
 
     /**

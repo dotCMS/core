@@ -17,54 +17,49 @@ import java.util.Objects;
  * Helper class for managing job queue processors in the JobQueueManagerAPI.
  * This class is responsible for discovering job processors, registering them with
  * the JobQueueManagerAPI, and shutting down the JobQueueManagerAPI when needed.
- * <p>
- * It utilizes the {@link JobProcessorScanner} to discover available job processors
- * and the {@link JobQueueManagerAPI} to register them for processing jobs in the queue.
- * <p>
- * The class is annotated with {@link ApplicationScoped} to indicate that it is
- * a singleton managed by the CDI container.
  */
 @ApplicationScoped
 public class JobQueueManagerHelper {
 
+    private JobQueueManagerAPI jobQueueManagerAPI;
     private JobProcessorScanner scanner;
 
     /**
-     * Constructor that injects the {@link JobProcessorScanner} instance.
+     * Constructor that injects the {@link JobProcessorScanner} and {@link JobQueueManagerAPI}.
      *
      * @param scanner The JobProcessorScanner to discover job processors
+     * @param jobQueueManagerAPI The JobQueueManagerAPI instance to register processors with
      */
     @Inject
-    public JobQueueManagerHelper(final JobProcessorScanner scanner) {
+    public JobQueueManagerHelper(final JobProcessorScanner scanner, final JobQueueManagerAPI jobQueueManagerAPI) {
         this.scanner = scanner;
+        this.jobQueueManagerAPI = jobQueueManagerAPI;
     }
 
     /**
      * Default constructor required by CDI.
      */
     public JobQueueManagerHelper() {
+        // Default constructor required by CDI
     }
 
     /**
-     * Registers all discovered job processors with the provided JobQueueManagerAPI.
+     * Registers all discovered job processors with the JobQueueManagerAPI.
      * If the JobQueueManagerAPI is not started, it starts the API before registering the processors.
-     *
-     * @param jobQueueManagerAPI The JobQueueManagerAPI instance to register processors with
      */
-    public void registerProcessors(final JobQueueManagerAPI jobQueueManagerAPI) {
+    public void registerProcessors() {
         if (!jobQueueManagerAPI.isStarted()) {
             jobQueueManagerAPI.start();
             Logger.info(this.getClass(), "JobQueueManagerAPI started");
         }
 
-        // Discover job processors and attempt to register them
         List<Class<? extends JobProcessor>> processors = scanner.discoverJobProcessors();
         processors.forEach(processor -> {
             try {
                 if (!testInstantiation(processor)) {
                     return;
                 }
-                registerProcessor(jobQueueManagerAPI, processor);
+                registerProcessor(processor);
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Unable to register JobProcessor ", e);
             }
@@ -94,10 +89,9 @@ public class JobQueueManagerHelper {
      * in the {@link Queue} annotation, if present. If no annotation is found, the processor's
      * class name is used as the queue name.
      *
-     * @param jobQueueManagerAPI the JobQueueManagerAPI instance to register the processor with
      * @param processor the processor class to register
      */
-    private void registerProcessor(final JobQueueManagerAPI jobQueueManagerAPI, final Class<? extends JobProcessor> processor) {
+    private void registerProcessor(final Class<? extends JobProcessor> processor) {
         Queue queue = AnnotationUtils.getBeanAnnotation(processor, Queue.class);
         if (Objects.nonNull(queue)) {
             jobQueueManagerAPI.registerProcessor(queue.value(), processor);
@@ -107,13 +101,11 @@ public class JobQueueManagerHelper {
     }
 
     /**
-     * Shuts down the provided JobQueueManagerAPI if it is currently started.
+     * Shuts down the JobQueueManagerAPI if it is currently started.
      * If the JobQueueManagerAPI is started, it attempts to close it gracefully.
      * In case of an error during the shutdown process, the error is logged.
-     *
-     * @param jobQueueManagerAPI the JobQueueManagerAPI instance to shut down
      */
-    public void shutdown(final JobQueueManagerAPI jobQueueManagerAPI) {
+    public void shutdown() {
         if (jobQueueManagerAPI.isStarted()) {
             try {
                 jobQueueManagerAPI.close();
