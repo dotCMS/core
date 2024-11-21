@@ -27,19 +27,17 @@ import java.util.Map;
 @ApplicationScoped
 public class ContentImportHelper {
 
-    private static final String CMD_PREVIEW = "preview";
-    private static final String CMD_PUBLISH = "publish";
-
     private JobQueueManagerAPI jobQueueManagerAPI;
     private JobQueueManagerHelper jobQueueManagerHelper;
 
     @Inject
-    public ContentImportHelper(JobQueueManagerAPI jobQueueManagerAPI, JobQueueManagerHelper jobQueueManagerHelper) {
+    public ContentImportHelper(final JobQueueManagerAPI jobQueueManagerAPI, final JobQueueManagerHelper jobQueueManagerHelper) {
         this.jobQueueManagerAPI = jobQueueManagerAPI;
         this.jobQueueManagerHelper = jobQueueManagerHelper;
     }
 
     public ContentImportHelper() {
+        //default constructor Mandatory for CDI
     }
 
     @PostConstruct
@@ -55,7 +53,7 @@ public class ContentImportHelper {
     /**
      * Creates a content import job with the provided parameters
      *
-     * @param preview Whether this is a preview job
+     * @param command Whether this is a preview job
      * @param queueName The name of the queue to submit the job to
      * @param params The import parameters
      * @param user The user initiating the import
@@ -63,7 +61,7 @@ public class ContentImportHelper {
      * @return The ID of the created job
      */
     public String createJob(
-            final boolean preview, 
+            final String command,
             final String queueName, 
             final ContentImportParams params,
             final User user,
@@ -72,7 +70,7 @@ public class ContentImportHelper {
         params.checkValid();
         params.getForm().checkValid();
 
-        final Map<String, Object> jobParameters = createJobParameters(preview, params, user, request);
+        final Map<String, Object> jobParameters = createJobParameters(command, params, user, request);
         processFileUpload(params, jobParameters, request);
 
         return jobQueueManagerAPI.createJob(queueName, jobParameters);
@@ -82,15 +80,15 @@ public class ContentImportHelper {
      * Creates the job parameters map from the provided inputs
      */
     private Map<String, Object> createJobParameters(
-            final boolean preview,
+            final String command,
             final com.dotcms.rest.api.v1.contentImport.ContentImportParams params,
             final User user,
-            final HttpServletRequest request) throws JsonProcessingException, DotDataException {
+            final HttpServletRequest request) throws JsonProcessingException {
 
         final Map<String, Object> jobParameters = new HashMap<>();
         
         // Add required parameters
-        jobParameters.put("cmd", preview ? CMD_PREVIEW : CMD_PUBLISH);
+        jobParameters.put("cmd", command);
         jobParameters.put("userId", user.getUserId());
         jobParameters.put("contentType", params.getForm().getContentType());
         jobParameters.put("workflowActionId", params.getForm().getWorkflowActionId());
@@ -111,7 +109,7 @@ public class ContentImportHelper {
             final com.dotcms.rest.api.v1.contentImport.ContentImportParams params,
             final Map<String, Object> jobParameters) throws JsonProcessingException {
         
-        final com.dotcms.rest.api.v1.contentImport.ContentImportForm form = params.getForm();
+        final ContentImportForm form = params.getForm();
 
         if (form.getLanguage() != null && !form.getLanguage().isEmpty()) {
             jobParameters.put("language", form.getLanguage());

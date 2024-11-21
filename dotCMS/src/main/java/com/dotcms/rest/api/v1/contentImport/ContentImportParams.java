@@ -47,6 +47,10 @@ public class ContentImportParams extends Validated {
         this.contentDisposition = contentDisposition;
     }
 
+    public void setJsonForm(String jsonForm) {
+        this.jsonForm = jsonForm;
+    }
+
     public String getJsonForm() {
         return jsonForm;
     }
@@ -61,7 +65,7 @@ public class ContentImportParams extends Validated {
      */
     public ContentImportForm getForm() throws JsonProcessingException {
         if (null == form && (null != jsonForm && !jsonForm.isEmpty())) {
-            form = new ObjectMapper().readValue(jsonForm, com.dotcms.rest.api.v1.contentImport.ContentImportForm.class);
+            form = new ObjectMapper().readValue(jsonForm, ContentImportForm.class);
         }
         return form;
     }

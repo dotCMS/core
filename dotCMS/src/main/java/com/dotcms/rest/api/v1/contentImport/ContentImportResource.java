@@ -4,6 +4,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.exception.DotDataException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import graphql.VisibleForTesting;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -16,15 +17,19 @@ import javax.ws.rs.core.MediaType;
 public class ContentImportResource {
 
     private final WebResource webResource;
-    private final com.dotcms.rest.api.v1.contentImport.ContentImportHelper importHelper;
+    private final ContentImportHelper importHelper;
     private final String IMPORT_QUEUE_NAME = "importContentlets";
 
+    //TODO move to a common place
+    private static final String CMD_PREVIEW = "preview";
+    private static final String CMD_PUBLISH = "publish";
+
     @Inject
-    public ContentImportResource(final com.dotcms.rest.api.v1.contentImport.ContentImportHelper importHelper) {
+    public ContentImportResource(final ContentImportHelper importHelper) {
         this(new WebResource(), importHelper);
     }
 
-    public ContentImportResource(WebResource webResource, com.dotcms.rest.api.v1.contentImport.ContentImportHelper importHelper) {
+    public ContentImportResource(final WebResource webResource, final ContentImportHelper importHelper) {
         this.webResource = webResource;
         this.importHelper = importHelper;
     }
@@ -48,7 +53,7 @@ public class ContentImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<String> importContent(
             @Context final HttpServletRequest request,
-            @BeanParam final com.dotcms.rest.api.v1.contentImport.ContentImportParams params)
+            @BeanParam final ContentImportParams params)
             throws DotDataException, JsonProcessingException {
         final var initDataObject = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -57,7 +62,7 @@ public class ContentImportResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        final String jobId = importHelper.createJob(false, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
+        final String jobId = importHelper.createJob(CMD_PUBLISH, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
         return new ResponseEntityView<>(jobId);
     }
 } 
