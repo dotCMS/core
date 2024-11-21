@@ -6,10 +6,10 @@ import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
-import { DotMessageService } from '../../../../../../../data-access/src/lib/dot-messages/dot-messages.service';
 import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 import { DotNameFormatPipe } from '../../../../pipes/name-format.pipe';
 
@@ -58,6 +58,7 @@ export class DotEditContentSidebarInformationComponent {
      */
     $createdTooltipMessage = computed(() => {
         const { contentlet } = this.$data();
+
         return !contentlet?.creationDate
             ? this.#dotMessageService.get('edit.content.sidebar.information.no.created.yet')
             : null;

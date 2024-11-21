@@ -1,4 +1,5 @@
-import { DotCMSWorkflow, DotCMSWorkflowAction, WorkflowStep } from '../../../../dotcms-models/src';
+import { DotCMSWorkflow, DotCMSWorkflowAction, WorkflowStep } from '@dotcms/dotcms-models';
+
 import { ContentState } from '../feature/edit-content/store/features/content.feature';
 
 /**
@@ -140,6 +141,7 @@ export const getWorkflowActions = ({
     return Object.values(schemes[currentSchemeId].actions).sort((a, b) => {
         if (a.name === 'Save') return -1;
         if (b.name === 'Save') return 1;
+
         return a.name.localeCompare(b.name);
     });
 };
