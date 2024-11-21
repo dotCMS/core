@@ -24,6 +24,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
@@ -35,6 +36,7 @@ import org.junit.runner.RunWith;
 import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -57,10 +59,8 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
     private static ObjectMapper mapper;
     private static ContentImportResource importResource;
 
-    //TODO move to a common place
     private final static String IMPORT_QUEUE_NAME = "importContentlets";
     private final static String CMD_PUBLISH = "publish";
-    private final static String CMD_PREVIEW = "preview";
 
     @BeforeAll
     static void setUp() throws Exception {
@@ -81,9 +81,12 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
     }
 
     /**
-     * Given: A valid CSV file and all required import parameters
-     * When: Importing content with valid content type, language, workflow action, and fields
-     * Then: The import job should be created successfully with all parameters properly set
+     * Scenario: Import content with all parameters being passed (csv file, content type, language, workflow action, and fields).
+     * <p>
+     * Expected: A new import job should be created successfully with all parameters properly set.
+     *
+     * @throws IOException if there's an error with file operations
+     * @throws DotDataException if there's an error with dotCMS data operations
      */
     @Test
     public void test_import_content_with_valid_params() throws IOException, DotDataException {
@@ -93,64 +96,129 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
         ContentImportForm form = createContentImportForm(contentType.name(), "1", "workflow-action-id", List.of("title"));
         ContentImportParams params = createContentImportParams(csvFile, form);
 
-        ResponseEntityView<String> importContentResponse = importResource.importContent(request, response, params);
+        Response importContentResponse = importResource.importContent(request, response, params);
         validateSuccessfulResponse(importContentResponse, contentType.name(), "1", List.of("title"), "workflow-action-id", CMD_PUBLISH);
     }
 
     /**
-     * Given: A valid CSV file with only required parameters
-     * When: Importing content without optional parameters (language and fields)
-     * Then: The import job should be created successfully with only required parameters set
+     * Scenario: Import content with all parameters using the language ISO code
+     * <p>
+     * Expected: A new import job should be created successfully with all parameters properly set.
+     *
+     * @throws IOException if there's an error with file operations
+     * @throws DotDataException if there's an error with dotCMS data operations
      */
     @Test
-    public void test_import_content_without_optional_params() throws IOException, DotDataException {
+    public void test_import_content_with_language_iso_code() throws IOException, DotDataException {
+        ContentType contentType = TestDataUtils.getRichTextLikeContentType();
+        File csvFile = createTestCsvFile();
+
+        ContentImportForm form = createContentImportForm(contentType.name(), "en-us", "workflow-action-id", List.of("title"));
+        ContentImportParams params = createContentImportParams(csvFile, form);
+
+        Response importContentResponse = importResource.importContent(request, response, params);
+        validateSuccessfulResponse(importContentResponse, contentType.name(), "en-us", List.of("title"), "workflow-action-id", CMD_PUBLISH);
+    }
+
+    /**
+     * Scenario: Attempt to import content without specifying language and fields parameters.
+     * <p>
+     * Expected: The import request should fail with BAD_REQUEST (400) status code.
+     * A key identifying the different Language versions of the same content must be defined
+     * when importing multilingual files
+     *
+     * @throws IOException if there's an error with file operations
+     * @throws DotDataException if there's an error with dotCMS data operations
+     */
+    @Test
+    public void test_import_content_without_language_and_field_params() throws IOException, DotDataException {
         ContentType contentType = TestDataUtils.getRichTextLikeContentType();
         File csvFile = createTestCsvFile();
 
         ContentImportForm form = createContentImportForm(contentType.name(), null, "workflow-action-id-2", null);
         ContentImportParams params = createContentImportParams(csvFile, form);
 
-        ResponseEntityView<String> importContentResponse = importResource.importContent(request, response, params);
-        validateSuccessfulResponse(importContentResponse, contentType.name(), null, null, "workflow-action-id-2", CMD_PUBLISH);
+        // Assert that the response status is BAD_REQUEST (400)
+        assertBadRequestResponse(importResource.importContent(request, response, params));
+
     }
 
     /**
-     * Given: A valid CSV file but missing content type in form
-     * When: Attempting to import content without specifying content type
-     * Then: A ValidationException should be thrown
+     * Scenario: Attempt to import content specifying a non-existing language.
+     * <p>
+     * Expected: The import request should fail with BAD_REQUEST (400) status code.
+     *
+     * @throws IOException if there's an error with file operations
+     * @throws DotDataException if there's an error with dotCMS data operations
      */
     @Test
-    public void test_import_content_without_content_type_in_form() throws IOException {
-        File csvFile = createTestCsvFile();
-        ContentImportForm form = createContentImportForm(null, null, "workflow-action-id", null);
-        ContentImportParams params = createContentImportParams(csvFile, form);
-
-        assertThrows(ValidationException.class, () -> importResource.importContent(request, response, params));
-    }
-
-    /**
-     * Given: A valid CSV file but missing workflow action in form
-     * When: Attempting to import content without specifying workflow action
-     * Then: A ValidationException should be thrown
-     */
-    @Test
-    public void test_import_content_without_workflow_action_in_form() throws IOException {
+    public void test_import_content_with_invalid_language() throws IOException, DotDataException {
         ContentType contentType = TestDataUtils.getRichTextLikeContentType();
         File csvFile = createTestCsvFile();
 
-        ContentImportForm form = createContentImportForm(contentType.name(), null, null, null);
+        ContentImportForm form = createContentImportForm(contentType.name(), "123", "workflow-action-id-2", null);
         ContentImportParams params = createContentImportParams(csvFile, form);
 
-        assertThrows(ValidationException.class, () -> importResource.importContent(request, response, params));
+        assertBadRequestResponse(importResource.importContent(request, response, params));
     }
 
     /**
-     * Given: Valid form data but no CSV file
-     * When: Attempting to import content without providing a file
-     * Then: A ValidationException should be thrown
+     * Scenario: Attempt to import content specifying a non-existing content-type.
+     * <p>
+     * Expected: The import request should fail with BAD_REQUEST (400) status code since the content type is invalid.
+     *
+     * @throws IOException if there's an error with file operations
+     * @throws DotDataException if there's an error with dotCMS data operations
      */
     @Test
-    public void test_import_content_missing_file() throws Exception {
+    public void test_import_content_with_invalid_content_type() throws IOException, DotDataException {
+        File csvFile = createTestCsvFile();
+
+        ContentImportForm form = createContentImportForm("doesNotExist", "12345", "workflow-action-id-2", null);
+        ContentImportParams params = createContentImportParams(csvFile, form);
+
+        assertBadRequestResponse(importResource.importContent(request, response, params));
+    }
+
+    /**
+     * Scenario: Attempt to create an import form without specifying the required content type parameter.
+     * <p>
+     * Expected: A ValidationException should be thrown since content type is a required parameter
+     * for content import operations.
+     * A Content Type id or variable is required.
+     *
+     * @throws ValidationException when attempting to create a form without content type
+     */
+    @Test
+    public void test_import_content_without_content_type_in_form() {
+        assertThrows(ValidationException.class, () -> createContentImportForm(null, null, "workflow-action-id", null));
+    }
+
+    /**
+     * Scenario: Attempt to create an import form without specifying the required workflow action parameter.
+     * <p>
+     * Expected: A ValidationException should be thrown since workflow action is a required parameter
+     * for content import operations.
+     *
+     * @throws ValidationException when attempting to create a form without workflow action
+     */
+    @Test
+    public void test_import_content_without_workflow_action_in_form() {
+        ContentType contentType = TestDataUtils.getRichTextLikeContentType();
+        assertThrows(ValidationException.class, () -> createContentImportForm(contentType.name(), null, null, null));
+    }
+
+    /**
+     * Scenario: Attempt to import content with valid form data but without providing the required CSV file.
+     * <p>
+     * Expected: A ValidationException should be thrown since the file is a required parameter
+     * for content import operations.
+     *
+     * @throws JsonProcessingException if there's an error during JSON serialization
+     * @throws ValidationException when attempting to import content without setting the file
+     */
+    @Test
+    public void test_import_content_missing_file() throws JsonProcessingException {
         ContentType contentType = TestDataUtils.getRichTextLikeContentType();
         ContentImportForm form = createContentImportForm(contentType.name(), "1", "workflow-action-id", null);
 
@@ -161,12 +229,16 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
     }
 
     /**
-     * Given: A valid CSV file but no form data
-     * When: Attempting to import content without providing form data
-     * Then: A ValidationException should be thrown
+     * Scenario: Attempt to import content with a valid CSV file but without providing the required form data.
+     * <p>
+     * Expected: A ValidationException should be thrown since form data is a required parameter
+     * for content import operations.
+     *
+     * @throws IOException if there's an error during file operations
+     * @throws ValidationException when attempting to import content without setting form data
      */
     @Test
-    public void test_import_content_missing_form() throws Exception {
+    public void test_import_content_missing_form() throws IOException {
         File csvFile = createTestCsvFile();
 
         ContentImportParams params = new ContentImportParams();
@@ -177,19 +249,44 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
     }
 
     /**
-     * Helper method to validate successful import response.
-     * Given: A response from a successful content import
-     * When: Validating the job parameters
-     * Then: All expected parameters should match the provided values
+     * Validates the response and job parameters from a content import operation.
+     * <p>
+     * Performs the following validations:
+     * - Response status is OK (200)
+     * - Response entity is properly formatted
+     * - Job exists in the queue
+     * - All job parameters match expected values
+     * - Optional fields are properly set when provided
+     *
+     * @param response The Response object from the import operation
+     * @param expectedContentType The content type that should be set in the job
+     * @param expectedLanguage The language ID that should be set in the job
+     * @param expectedFields List of fields that should be included in the job, or null if no fields expected
+     * @param expectedWorkflowActionId The workflow action ID that should be set in the job
+     * @param expectedCommand The command that should be set in the job (usually 'publish')
+     * @throws DotDataException if there's an error retrieving the job from the queue
+     * @throws AssertionError if any validation fails
      */
-    private static void validateSuccessfulResponse(ResponseEntityView<String> response, String expectedContentType, String expectedLanguage, List<String> expectedFields, String expectedWorkflowActionId, String expectedCommand) throws DotDataException {
+    private static void validateSuccessfulResponse(Response response, String expectedContentType, String expectedLanguage, List<String> expectedFields, String expectedWorkflowActionId, String expectedCommand) throws DotDataException {
+        // Validate Response object
+        assertNotNull(response, "Import response should not be null");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Response status should be OK");
+
+        // Check and cast the entity safely
+        Object entity = response.getEntity();
+        assertNotNull(entity, "Response entity should not be null");
+        assertInstanceOf(ResponseEntityView.class, entity, "Entity should be of type ResponseEntityView<String>");
+
+        @SuppressWarnings("unchecked")
+        ResponseEntityView<String> responseEntityView = (ResponseEntityView<String>) entity;
+
         // Validate response object and job ID existence
-        assertNotNull(response, "Response should not be null");
-        assertNotNull(response.getEntity(), "Job ID should not be null");
-        assertFalse(response.getEntity().isEmpty(), "Job ID should be a non-empty string");
+        assertNotNull(responseEntityView, "ResponseEntityView should not be null");
+        assertNotNull(responseEntityView.getEntity(), "Job ID should not be null");
+        assertFalse(responseEntityView.getEntity().isEmpty(), "Job ID should be a non-empty string");
 
         // Retrieve and validate job exists in the queue
-        Job job = APILocator.getJobQueueManagerAPI().getJob(response.getEntity());
+        Job job = APILocator.getJobQueueManagerAPI().getJob(responseEntityView.getEntity());
         assertNotNull(job, "Job should exist in queue");
 
         // Validate core import parameters
@@ -212,7 +309,13 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
         }
     }
 
-    //TODO move to a common place
+    /**
+     * Creates a temporary CSV file for testing purposes.
+     * The file contains two rows of test data with 'title' and 'body' columns.
+     *
+     * @return A temporary File object containing test CSV data
+     * @throws IOException if there's an error creating or writing to the temporary file
+     */
     private static File createTestCsvFile() throws IOException {
         String csv = "title,body\nTest Title 1,Test Body 1\nTest Title 2,Test Body 2\n";
         File csvFile = File.createTempFile("test", ".csv");
@@ -220,6 +323,13 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
         return csvFile;
     }
 
+    /**
+     * Creates a FormDataContentDisposition object for file upload testing.
+     * Sets up the basic metadata required for a file upload including name and size.
+     *
+     * @param filename The name of the file to be included in the content disposition
+     * @return A FormDataContentDisposition object configured for testing
+     */
     private static FormDataContentDisposition createContentDisposition(String filename) {
         return FormDataContentDisposition
                 .name("file")
@@ -228,6 +338,15 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
                 .build();
     }
 
+    /**
+     * Creates a ContentImportParams object with all required parameters for content import.
+     * Includes file input stream, content disposition, and JSON form data.
+     *
+     * @param file The CSV file to be imported
+     * @param form The form containing import configuration parameters
+     * @return A fully configured ContentImportParams object
+     * @throws IOException if there's an error reading the file or serializing the form to JSON
+     */
     private static ContentImportParams createContentImportParams(File file, ContentImportForm form) throws IOException {
         ContentImportParams params = new ContentImportParams();
         params.setFileInputStream(new FileInputStream(file));
@@ -236,7 +355,31 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
         return params;
     }
 
-    private static ContentImportForm createContentImportForm(String contentType, String language, String workflowActionId, List<String> fields) {
+    /**
+     * Creates a ContentImportForm with the specified parameters for content import configuration.
+     *
+     * @param contentType The type of content to be imported
+     * @param language The language ID for the imported content
+     * @param workflowActionId The ID of the workflow action to be applied
+     * @param fields List of fields to be included in the import
+     * @return A ContentImportForm configured with the specified parameters
+     * @throws ValidationException if required parameters (contentType or workflowActionId) are missing
+     */
+    private static ContentImportForm createContentImportForm(String contentType, String language, 
+            String workflowActionId, List<String> fields) {
         return new ContentImportForm(contentType, language, workflowActionId, fields);
+    }
+
+    /**
+     * Asserts that the given response has a status of BAD_REQUEST (400).
+     *
+     * <p>This method checks that the HTTP response status code is 400 (BAD_REQUEST).
+     * It is commonly used in test cases where the expected response is an error due to invalid input or request.</p>
+     *
+     * @param importContentResponse the HTTP response to check
+     * @throws AssertionError if the response status is not BAD_REQUEST
+     */
+    private static void assertBadRequestResponse(Response importContentResponse) {
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), importContentResponse.getStatus(), "Expected BAD_REQUEST status");
     }
 }
