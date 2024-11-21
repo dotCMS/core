@@ -68,7 +68,6 @@ public class ContentImportHelper {
             final HttpServletRequest request) throws DotDataException, JsonProcessingException {
 
         params.checkValid();
-        params.getForm().checkValid();
 
         final Map<String, Object> jobParameters = createJobParameters(command, params, user, request);
         processFileUpload(params, jobParameters, request);

@@ -12,12 +12,12 @@ import java.util.List;
  */
 public class ContentImportForm extends Validated {
 
-    @NotNull(message = "Content Type is required")
+    @NotNull(message = "A Content Type id or variable is required")
     private final String contentType;
 
     private final String language;
 
-    @NotNull(message = "Workflow Action ID is required")
+    @NotNull(message = "A Workflow Action id is required")
     private final String workflowActionId;
 
     private final List<String> fields;
@@ -33,6 +33,7 @@ public class ContentImportForm extends Validated {
         this.language = language;
         this.workflowActionId = workflowActionId;
         this.fields = fields;
+        this.checkValid();
     }
 
     public String getContentType() {
