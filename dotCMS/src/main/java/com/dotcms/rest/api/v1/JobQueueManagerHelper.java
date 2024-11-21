@@ -4,6 +4,7 @@ import com.dotcms.jobs.business.api.JobProcessorScanner;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.Queue;
+import com.dotcms.util.AnnotationUtils;
 import com.dotmarketing.util.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -17,14 +18,15 @@ public class JobQueueManagerHelper {
     private JobProcessorScanner scanner;
 
     @Inject
-    public JobQueueManagerHelper(JobProcessorScanner scanner) {
+    public JobQueueManagerHelper(final JobProcessorScanner scanner) {
         this.scanner = scanner;
     }
 
     public JobQueueManagerHelper() {
+        // Default constructor required by CDI
     }
 
-    public void registerProcessors(JobQueueManagerAPI jobQueueManagerAPI) {
+    public void registerProcessors(final JobQueueManagerAPI jobQueueManagerAPI) {
         if (!jobQueueManagerAPI.isStarted()) {
             jobQueueManagerAPI.start();
             Logger.info(this.getClass(), "JobQueueManagerAPI started");
@@ -48,7 +50,7 @@ public class JobQueueManagerHelper {
      * @param processor The processor to tested
      * @return true if the processor can be instantiated, false otherwise
      */
-    private boolean testInstantiation(Class<? extends JobProcessor> processor) {
+    private boolean testInstantiation(final Class<? extends JobProcessor> processor) {
         try {
             Constructor<? extends JobProcessor> declaredConstructor = processor.getDeclaredConstructor();
             declaredConstructor.newInstance();
@@ -59,16 +61,16 @@ public class JobQueueManagerHelper {
         return false;
     }
 
-    private void registerProcessor(JobQueueManagerAPI jobQueueManagerAPI, Class<? extends JobProcessor> processor) {
-        if (processor.isAnnotationPresent(Queue.class)) {
-            Queue queue = processor.getAnnotation(Queue.class);
+    private void registerProcessor(final JobQueueManagerAPI jobQueueManagerAPI, final Class<? extends JobProcessor> processor) {
+        Queue queue = AnnotationUtils.getBeanAnnotation(processor, Queue.class);
+        if (null != queue) {
             jobQueueManagerAPI.registerProcessor(queue.value(), processor);
         } else {
             jobQueueManagerAPI.registerProcessor(processor.getName(), processor);
         }
     }
 
-    public void shutdown(JobQueueManagerAPI jobQueueManagerAPI) {
+    public void shutdown(final JobQueueManagerAPI jobQueueManagerAPI) {
         if (jobQueueManagerAPI.isStarted()) {
             try {
                 jobQueueManagerAPI.close();
