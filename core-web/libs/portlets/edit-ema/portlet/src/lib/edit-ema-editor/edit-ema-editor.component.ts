@@ -840,7 +840,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // When we set the url, we trigger in the shell component a load to get the new state of the page
                 // This triggers a rerender that makes nextjs to send the set_url again
                 // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
-                const isSameUrl = compareUrlPaths(this.uveStore.params()?.url, payload.url);
+                const isSameUrl = compareUrlPaths(this.uveStore.pageParams()?.url, payload.url);
 
                 if (isSameUrl) {
                     this.uveStore.setEditorState(EDITOR_STATE.IDLE);
@@ -1004,7 +1004,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const urlObject = createReorderMenuURL({
                     startLevel,
                     depth,
-                    pagePath: this.uveStore.params().url,
+                    pagePath: this.uveStore.pageParams().url,
                     hostId: this.uveStore.pageAPIResponse().site.identifier
                 });
 
@@ -1187,7 +1187,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 filter((contentlet) => !!contentlet)
             )
             .subscribe(({ URL_MAP_FOR_CONTENT }) => {
-                if (URL_MAP_FOR_CONTENT != this.uveStore.params().url) {
+                if (URL_MAP_FOR_CONTENT != this.uveStore.pageParams().url) {
                     // If the URL is different, we need to navigate to the new URL
                     this.uveStore.updatePageParams({ url: URL_MAP_FOR_CONTENT });
 

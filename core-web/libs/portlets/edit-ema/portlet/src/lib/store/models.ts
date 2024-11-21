@@ -7,13 +7,18 @@ import { UVE_STATUS } from '../shared/enums';
 import { DotPage, NavigationBarItem } from '../shared/models';
 
 export interface UVEState {
+    languages: DotLanguage[];
     isEnterprise: boolean;
     pageAPIResponse?: DotPageApiResponse;
-    languages: DotLanguage[];
+    pageParams?: DotPageApiParams;
     currentUser?: CurrentUser;
     experiment?: DotExperiment;
     errorCode?: number;
-    params?: DotPageApiParams;
+    viewParams: {
+        preview: false;
+        orientation: 'landscape';
+        device: 'desktop';
+    };
     status: UVE_STATUS;
     isTraditionalPage: boolean;
     canEditPage: boolean;

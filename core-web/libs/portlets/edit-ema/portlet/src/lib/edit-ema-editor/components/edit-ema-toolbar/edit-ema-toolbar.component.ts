@@ -253,7 +253,7 @@ export class EditEmaToolbarComponent {
      */
     private shouldNavigateToNewPage(params: Params): boolean {
         const { url: newUrl, language_id: newLanguageId } = params;
-        const { url: currentUrl, language_id: currentLanguageId } = this.uveStore.params();
+        const { url: currentUrl, language_id: currentLanguageId } = this.uveStore.pageParams();
 
         // Determine the target URL, prioritizing the content map URL if available
         const urlContentMap = this.uveStore.pageAPIResponse().urlContentMap;

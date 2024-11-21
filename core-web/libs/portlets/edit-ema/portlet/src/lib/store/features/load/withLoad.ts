@@ -54,14 +54,12 @@ export function withLoad() {
                                             return of(pageAPIResponse);
                                         }
 
-                                        const qp = {
+                                        const pageParams = {
                                             ...params,
                                             url: vanityUrl.forwardTo.replace('/', '')
                                         };
 
-                                        patchState(store, {
-                                            params: qp
-                                        });
+                                        patchState(store, { pageParams });
 
                                         // EMPTY is a simple Observable that only emits the complete notification.
                                         return EMPTY;
@@ -139,7 +137,7 @@ export function withLoad() {
                         }),
                         switchMap(() => {
                             return dotPageApiService
-                                .getClientPage(store.params(), store.clientRequestProps())
+                                .getClientPage(store.pageParams(), store.clientRequestProps())
                                 .pipe(
                                     switchMap((pageAPIResponse) =>
                                         dotLanguagesService
@@ -171,7 +169,7 @@ export function withLoad() {
                                                 pageIsLocked,
                                                 status: UVE_STATUS.LOADED,
                                                 isClientReady: true,
-                                                isTraditionalPage: !store.params().clientHost // If we don't send the clientHost we are using as VTL page
+                                                isTraditionalPage: !store.pageParams().clientHost // If we don't send the clientHost we are using as VTL page
                                             });
                                         },
                                         error: ({ status: errorStatus }: HttpErrorResponse) => {

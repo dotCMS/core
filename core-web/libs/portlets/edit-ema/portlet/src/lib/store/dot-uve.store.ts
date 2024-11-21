@@ -16,11 +16,12 @@ import { getErrorPayload, getRequestHostName, sanitizeURL } from '../utils';
 const initialState: UVEState = {
     isEnterprise: false,
     languages: [],
-    pageAPIResponse: null,
+    pageAPIResponse: null, // This should be called `pageAsset`
     currentUser: null,
     experiment: null,
     errorCode: null,
-    params: null,
+    pageParams: null,
+    viewParams: null, // This should be called `viewSettings`/`editorViewSettings`?
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true, // This should be a computed property
     canEditPage: false, // This should be a computed property
@@ -34,7 +35,7 @@ export const UVEStore = signalStore(
         ({
             pageAPIResponse,
             isTraditionalPage,
-            params,
+            pageParams,
             languages,
             errorCode: error,
             status,
@@ -59,7 +60,7 @@ export const UVEStore = signalStore(
 
                     const currentUrl = '/' + sanitizeURL(response?.page.pageURI);
 
-                    const requestHostName = getRequestHostName(isTraditionalPage(), params());
+                    const requestHostName = getRequestHostName(isTraditionalPage(), pageParams());
 
                     const page = response?.page;
                     const templateDrawed = response?.template.drawed;
@@ -145,11 +146,11 @@ export const UVEStore = signalStore(
                     pageAPIResponse
                 });
             },
-            updatePageParams(params: Partial<DotPageApiParams>) {
+            updatePageParams(pageParams: Partial<DotPageApiParams>) {
                 patchState(store, {
-                    params: {
-                        ...store.params(),
-                        ...params
+                    pageParams: {
+                        ...store.pageParams(),
+                        ...pageParams
                     }
                 });
             }

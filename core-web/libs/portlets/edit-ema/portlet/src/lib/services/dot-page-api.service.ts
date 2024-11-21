@@ -49,6 +49,8 @@ export interface DotPageApiParams {
     depth?: string;
 }
 
+export type DotPageApiKeys = keyof DotPageApiParams;
+
 export interface GetPersonasParams {
     pageId: string;
     filter?: string;

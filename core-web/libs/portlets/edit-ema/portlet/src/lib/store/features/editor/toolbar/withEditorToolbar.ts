@@ -45,7 +45,7 @@ export function withEditorToolbar() {
         withState<EditorToolbarState>(initialState),
         withComputed((store) => ({
             $toolbarProps: computed<ToolbarProps>(() => {
-                const params = store.params();
+                const params = store.pageParams();
                 const url = sanitizeURL(params?.url);
 
                 const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);

@@ -36,7 +36,7 @@ import { WINDOW } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction, DotPage } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { checkClientHostAccess, compareUrlPaths } from '../utils';
+import { checkClientHostAccess, compareUrlPaths, filterPageParams } from '../utils';
 
 @Component({
     selector: 'dot-ema-shell',
@@ -92,7 +92,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     readonly #destroy$ = new Subject<boolean>();
 
-    readonly translatePageEffect = effect(() => {
+    readonly $translatePageEffect = effect(() => {
         const { page, currentLanguage } = this.uveStore.$translateProps();
 
         if (currentLanguage && !currentLanguage?.translated) {
@@ -100,16 +100,15 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         }
     });
 
-    readonly $handleCanEditLayout = effect(() => {
-        const params = this.uveStore.params();
+    readonly $handlePageParamsEffect = effect(() => {
+        const params = this.uveStore.pageParams();
         this.#updateLocation(params);
         // We don't want to track this because it's a side effect
-        // This will also be trigger every time the params change but changes inside the method will not trigger a new effect
         untracked(() => this.uveStore.init(params));
     });
 
     ngOnInit(): void {
-        const params = this.#getQueryParams();
+        const params = this.#getPageParams();
         this.uveStore.updatePageParams(params);
 
         // We need to skip one because it's the initial value
@@ -155,7 +154,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const targetUrl = this.getTargetUrl(url);
 
         if (this.shouldNavigate(targetUrl)) {
-            this.updatePageParams({ url: targetUrl });
+            this.uveStore.updatePageParams({ url: targetUrl });
 
             return;
         }
@@ -196,7 +195,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @returns {boolean} - True if the current URL differs from the target URL and navigation is required.
      */
     private shouldNavigate(targetUrl: string | undefined): boolean {
-        const currentUrl = this.uveStore.params().url;
+        const currentUrl = this.uveStore.pageParams().url;
 
         // Navigate if the target URL is defined and different from the current URL
         return targetUrl !== undefined && !compareUrlPaths(targetUrl, currentUrl);
@@ -228,10 +227,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      */
     reloadFromDialog() {
         this.uveStore.reload();
-    }
-
-    private updatePageParams(queryParams) {
-        this.uveStore.updatePageParams(queryParams);
     }
 
     /**
@@ -270,12 +265,12 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @return {*}  {DotPageApiParams}
      * @memberof DotEmaShellComponent
      */
-    #getQueryParams(): DotPageApiParams {
+    #getPageParams(): DotPageApiParams {
         const { queryParams, data: routeData } = this.#activatedRoute.snapshot;
         const allowedDevURLs = routeData.data?.options?.allowedDevURLs;
 
         // Clone queryParams to avoid mutation errors
-        const params = { ...queryParams } as DotPageApiParams;
+        const params = filterPageParams(queryParams);
         const validHost = checkClientHostAccess(params.clientHost, allowedDevURLs);
 
         if (!validHost) {
@@ -286,7 +281,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             params.variantName = DEFAULT_VARIANT_ID;
         }
 
-        return params as DotPageApiParams;
+        return params;
     }
 
     /**
@@ -309,6 +304,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      */
     #goBackToCurrentLanguage(): void {
         // Check how to get previous language id
-        this.updatePageParams({ language_id: '1' });
+        this.uveStore.updatePageParams({ language_id: '1' });
     }
 }
