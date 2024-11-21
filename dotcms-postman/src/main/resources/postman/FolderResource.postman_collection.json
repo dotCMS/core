@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "15096bf1-87b1-4a58-acdc-033137e934e5",
+		"_postman_id": "d0b98de2-fe86-455b-aac7-6065ddbc0ad8",
 		"name": "FolderResource",
 		"description": "Test for FolderResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -779,6 +779,21 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
 						"method": "PUT",
 						"header": [],
 						"url": {
@@ -1158,16 +1173,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "siteId",
-			"value": ""
-		},
-		{
-			"key": "folderId",
-			"value": ""
 		}
 	]
 }
