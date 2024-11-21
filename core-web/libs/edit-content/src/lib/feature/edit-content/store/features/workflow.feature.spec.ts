@@ -27,8 +27,8 @@ import {
     MOCK_WORKFLOW_DATA,
     MOCK_WORKFLOW_STATUS
 } from '../../../../utils/edit-content.mock';
-import { parseWorkflows } from '../../../../utils/functions.util';
 import { CONTENT_TYPE_MOCK } from '../../../../utils/mocks';
+import { parseWorkflows } from '../../../../utils/workflows.utils';
 import { initialRootState } from '../edit-content.store';
 
 const mockInitialStateWithContent: ContentState = {
