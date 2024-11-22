@@ -22,6 +22,10 @@
     grid-area: topBar;
     padding: $spacing-0 $spacing-1;
 
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-0;
+
     .pi {
         font-size: $font-size-lmd;
         margin-right: $spacing-1;
