@@ -181,9 +181,10 @@ describe('EditEmaToolbarComponent', () => {
                         }),
                         setDevice: jest.fn(),
                         setSocialMedia: jest.fn(),
-                        params: signal(params),
+                        pageParams: signal(params),
                         pageAPIResponse: signal(MOCK_RESPONSE_VTL),
-                        reload: jest.fn()
+                        reload: jest.fn(),
+                        updatePageParams: jest.fn()
                     })
                 ]
             });
@@ -314,13 +315,11 @@ describe('EditEmaToolbarComponent', () => {
             });
 
             it('should set language', () => {
+                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
                 spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
                 spectator.detectChanges();
 
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: { language_id: 2 },
-                    queryParamsHandling: 'merge'
-                });
+                expect(spyUpdatePageParams).toHaveBeenCalledWith({ language_id: '2' });
             });
         });
 
@@ -361,6 +360,7 @@ describe('EditEmaToolbarComponent', () => {
             });
 
             it('should personalize - no confirmation', () => {
+                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     identifier: '123',
                     pageId: '123',
@@ -369,9 +369,8 @@ describe('EditEmaToolbarComponent', () => {
                 } as any);
                 spectator.detectChanges();
 
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: { 'com.dotmarketing.persona.id': '123' },
-                    queryParamsHandling: 'merge'
+                expect(spyUpdatePageParams).toHaveBeenCalledWith({
+                    'com.dotmarketing.persona.id': '123'
                 });
             });
 
@@ -430,6 +429,7 @@ describe('EditEmaToolbarComponent', () => {
             });
 
             it('should update page', () => {
+                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
                 spectator.triggerEventHandler(DotEditEmaWorkflowActionsComponent, 'newPage', {
                     pageURI: '/path-and-stuff',
                     url: 'path',
@@ -439,15 +439,9 @@ describe('EditEmaToolbarComponent', () => {
 
                 spectator.detectChanges();
 
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        clientHost: 'http://localhost:3000',
-                        'com.dotmarketing.persona.id': 'dot:persona',
-                        language_id: '1',
-                        url: '/path-and-stuff',
-                        variantName: 'DEFAULT'
-                    },
-                    queryParamsHandling: 'merge'
+                expect(spyUpdatePageParams).toHaveBeenCalledWith({
+                    url: '/path-and-stuff',
+                    language_id: '1'
                 });
             });
 
@@ -509,7 +503,7 @@ describe('EditEmaToolbarComponent', () => {
                             }),
                             setDevice: jest.fn(),
                             setSocialMedia: jest.fn(),
-                            params: signal(params)
+                            pageParams: signal(params)
                         })
                     ]
                 });
@@ -551,7 +545,7 @@ describe('EditEmaToolbarComponent', () => {
                             }),
                             setDevice: jest.fn(),
                             setSocialMedia: jest.fn(),
-                            params: signal(params)
+                            pageParams: signal(params)
                         })
                     ]
                 });
@@ -590,7 +584,7 @@ describe('EditEmaToolbarComponent', () => {
                             }),
                             setDevice: jest.fn(),
                             setSocialMedia: jest.fn(),
-                            params: signal(params)
+                            pageParams: signal(params)
                         })
                     ]
                 });
@@ -652,7 +646,7 @@ describe('EditEmaToolbarComponent', () => {
                             }),
                             setDevice: jest.fn(),
                             setSocialMedia: jest.fn(),
-                            params: signal(params)
+                            pageParams: signal(params)
                         })
                     ]
                 });
