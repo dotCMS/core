@@ -29,8 +29,7 @@ import {
     DotcmsConfigService,
     DotcmsEventsService,
     LoginService,
-    SiteService,
-    mockSites
+    SiteService
 } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotNotLicenseComponent } from '@dotcms/ui';
@@ -52,6 +51,7 @@ import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
 import {
     dotPropertiesServiceMock,
+    MOCK_RESPONSE_HEADLESS,
     PAGE_RESPONSE_BY_LANGUAGE_ID,
     PAGE_RESPONSE_URL_CONTENT_MAP,
     PAYLOAD_MOCK
@@ -161,11 +161,13 @@ describe('DotEmaShellComponent', () => {
     let spectator: Spectator<DotEmaShellComponent>;
     let store: SpyObject<InstanceType<typeof UVEStore>>;
 
-    let siteService: SiteServiceMock;
-    let confirmationService: ConfirmationService;
     let router: Router;
-    let activatedRoute: ActivatedRoute;
     let location: Location;
+    let siteService: SiteServiceMock;
+    let activatedRoute: ActivatedRoute;
+    let dotLicenseService: DotLicenseService;
+    let dotPageApiService: DotPageApiService;
+    let confirmationService: ConfirmationService;
 
     const createComponent = createComponentFactory({
         component: DotEmaShellComponent,
@@ -277,27 +279,29 @@ describe('DotEmaShellComponent', () => {
         ]
     });
 
-    describe('with queryParams', () => {
-        beforeEach(() => {
-            spectator = createComponent({
-                providers: [
-                    {
-                        provide: DotLicenseService,
-                        useValue: {
-                            isEnterprise: () => of(true),
-                            canAccessEnterprisePortlet: () => of(true)
-                        }
+    beforeEach(() => {
+        spectator = createComponent({
+            providers: [
+                {
+                    provide: DotLicenseService,
+                    useValue: {
+                        isEnterprise: () => of(true),
+                        canAccessEnterprisePortlet: () => of(true)
                     }
-                ]
-            });
-            siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
-            store = spectator.inject(UVEStore, true);
-            router = spectator.inject(Router, true);
-            location = spectator.inject(Location, true);
-            activatedRoute = spectator.inject(ActivatedRoute, true);
-            confirmationService = spectator.inject(ConfirmationService, true);
+                }
+            ]
         });
+        siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
+        store = spectator.inject(UVEStore, true);
+        router = spectator.inject(Router, true);
+        location = spectator.inject(Location, true);
+        activatedRoute = spectator.inject(ActivatedRoute, true);
+        dotPageApiService = spectator.inject(DotPageApiService, true);
+        dotLicenseService = spectator.inject(DotLicenseService, true);
+        confirmationService = spectator.inject(ConfirmationService, true);
+    });
 
+    describe('with queryParams', () => {
         it('should trigger an store load with default values', () => {
             const spyStoreInit = jest.spyOn(store, 'init');
             spectator.detectChanges();
@@ -383,155 +387,154 @@ describe('DotEmaShellComponent', () => {
             //     spectator.detectChanges();
             //     expect(spyStoreInit).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             // });
+        });
 
-            describe('Client Host', () => {
-                // Check this one
-                it('should trigger init the store without the clientHost queryParam when it is not allowed', () => {
-                    const spyStoreInit = jest.spyOn(store, 'init');
-                    const paramWithNotAllowedHost = {
-                        ...INITIAL_PAGE_PARAMS,
-                        clientHost: 'http://localhost:4200'
-                    };
+        describe('ClientHost', () => {
+            it('should trigger init the store without the clientHost queryParam when it is not allowed', () => {
+                const spyStoreInit = jest.spyOn(store, 'init');
+                const paramWithNotAllowedHost = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:4200'
+                };
 
-                    const data = UVE_CONFIG_MOCK({
-                        allowedDevURLs: ['http://localhost:3000']
-                    });
-
-                    overrideRouteSnashot(
-                        activatedRoute,
-                        SNAPSHOT_MOCK({ queryParams: paramWithNotAllowedHost, data })
-                    );
-
-                    spectator.detectChanges();
-                    expect(spyStoreInit).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
-                    expect(spyStoreInit).not.toHaveBeenCalledWith(paramWithNotAllowedHost);
+                const data = UVE_CONFIG_MOCK({
+                    allowedDevURLs: ['http://localhost:3000']
                 });
 
-                it('should trigger a load when changing the clientHost and it is on the allowedDevURLs', () => {
-                    const spyStoreInit = jest.spyOn(store, 'init');
-                    const paramsWithAllowedHost = {
-                        ...INITIAL_PAGE_PARAMS,
-                        clientHost: 'http://localhost:3000'
-                    };
-                    overrideRouteSnashot(
-                        activatedRoute,
-                        SNAPSHOT_MOCK({
-                            queryParams: paramsWithAllowedHost,
-                            data: UVE_CONFIG_MOCK(BASIC_OPTIONS)
-                        })
-                    );
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({ queryParams: paramWithNotAllowedHost, data })
+                );
 
-                    spectator.detectChanges();
-                    expect(spyStoreInit).toHaveBeenCalledWith(paramsWithAllowedHost);
-                });
-
-                it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is empty', () => {
-                    const spyStoreInit = jest.spyOn(store, 'init');
-                    const paramWithNotAllowedHost = {
-                        ...INITIAL_PAGE_PARAMS,
-                        clientHost: 'http://localhost:3000'
-                    };
-
-                    overrideRouteSnashot(
-                        activatedRoute,
-                        SNAPSHOT_MOCK({
-                            queryParams: paramWithNotAllowedHost,
-                            data: UVE_CONFIG_MOCK({ allowedDevURLs: [] })
-                        })
-                    );
-                    spectator.detectChanges();
-                    expect(spyStoreInit).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
-                });
-
-                it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is has a wrong data type', () => {
-                    const spyStoreInit = jest.spyOn(store, 'init');
-                    const paramWithNotAllowedHost = {
-                        ...INITIAL_PAGE_PARAMS,
-                        clientHost: 'http://localhost:1111'
-                    };
-
-                    overrideRouteSnashot(
-                        activatedRoute,
-                        SNAPSHOT_MOCK({
-                            queryParams: paramWithNotAllowedHost,
-                            data: UVE_CONFIG_MOCK({ allowedDevURLs: 'http://localhost:3000' })
-                        })
-                    );
-
-                    spectator.detectChanges();
-                    expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
-                });
-
-                it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is is not present', () => {
-                    const spyStoreInit = jest.spyOn(store, 'init');
-                    const paramWithNotAllowedHost = {
-                        ...INITIAL_PAGE_PARAMS,
-                        clientHost: 'http://localhost:1111'
-                    };
-
-                    overrideRouteSnashot(
-                        activatedRoute,
-                        SNAPSHOT_MOCK({
-                            queryParams: paramWithNotAllowedHost,
-                            data: UVE_CONFIG_MOCK({})
-                        })
-                    );
-
-                    spectator.detectChanges();
-                    expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
-                });
-
-                it('should trigger a navigate without the clientHost queryParam when the options are not present', () => {
-                    const spyStoreInit = jest.spyOn(store, 'init');
-                    const paramWithNotAllowedHost = {
-                        ...INITIAL_PAGE_PARAMS,
-                        clientHost: 'http://localhost:1111'
-                    };
-
-                    overrideRouteSnashot(
-                        activatedRoute,
-                        SNAPSHOT_MOCK({
-                            queryParams: paramWithNotAllowedHost,
-                            data: {
-                                uveConfig: {}
-                            }
-                        })
-                    );
-
-                    spectator.detectChanges();
-                    expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
-                });
-
-                it('should trigger a navigate without the clientHost queryParam when the uveConfig is not present', () => {
-                    const spyStoreInit = jest.spyOn(store, 'init');
-                    const paramWithNotAllowedHost = {
-                        ...INITIAL_PAGE_PARAMS,
-                        clientHost: 'http://localhost:1111'
-                    };
-
-                    overrideRouteSnashot(
-                        activatedRoute,
-                        SNAPSHOT_MOCK({
-                            queryParams: paramWithNotAllowedHost,
-                            data: {}
-                        })
-                    );
-
-                    spectator.detectChanges();
-                    expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
-                });
+                spectator.detectChanges();
+                expect(spyStoreInit).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
+                expect(spyStoreInit).not.toHaveBeenCalledWith(paramWithNotAllowedHost);
             });
 
-            afterEach(() => {
-                // Restoring the snapshot to the default
+            it('should trigger a load when changing the clientHost and it is on the allowedDevURLs', () => {
+                const spyStoreInit = jest.spyOn(store, 'init');
+                const paramsWithAllowedHost = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:3000'
+                };
                 overrideRouteSnashot(
                     activatedRoute,
                     SNAPSHOT_MOCK({
-                        queryParams: INITIAL_PAGE_PARAMS,
+                        queryParams: paramsWithAllowedHost,
                         data: UVE_CONFIG_MOCK(BASIC_OPTIONS)
                     })
                 );
+
+                spectator.detectChanges();
+                expect(spyStoreInit).toHaveBeenCalledWith(paramsWithAllowedHost);
             });
+
+            it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is empty', () => {
+                const spyStoreInit = jest.spyOn(store, 'init');
+                const paramWithNotAllowedHost = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:3000'
+                };
+
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({
+                        queryParams: paramWithNotAllowedHost,
+                        data: UVE_CONFIG_MOCK({ allowedDevURLs: [] })
+                    })
+                );
+                spectator.detectChanges();
+                expect(spyStoreInit).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
+            });
+
+            it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is has a wrong data type', () => {
+                const spyStoreInit = jest.spyOn(store, 'init');
+                const paramWithNotAllowedHost = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:1111'
+                };
+
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({
+                        queryParams: paramWithNotAllowedHost,
+                        data: UVE_CONFIG_MOCK({ allowedDevURLs: 'http://localhost:3000' })
+                    })
+                );
+
+                spectator.detectChanges();
+                expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+            });
+
+            it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is is not present', () => {
+                const spyStoreInit = jest.spyOn(store, 'init');
+                const paramWithNotAllowedHost = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:1111'
+                };
+
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({
+                        queryParams: paramWithNotAllowedHost,
+                        data: UVE_CONFIG_MOCK({})
+                    })
+                );
+
+                spectator.detectChanges();
+                expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+            });
+
+            it('should trigger a navigate without the clientHost queryParam when the options are not present', () => {
+                const spyStoreInit = jest.spyOn(store, 'init');
+                const paramWithNotAllowedHost = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:1111'
+                };
+
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({
+                        queryParams: paramWithNotAllowedHost,
+                        data: {
+                            uveConfig: {}
+                        }
+                    })
+                );
+
+                spectator.detectChanges();
+                expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+            });
+
+            it('should trigger a navigate without the clientHost queryParam when the uveConfig is not present', () => {
+                const spyStoreInit = jest.spyOn(store, 'init');
+                const paramWithNotAllowedHost = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:1111'
+                };
+
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({
+                        queryParams: paramWithNotAllowedHost,
+                        data: {}
+                    })
+                );
+
+                spectator.detectChanges();
+                expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+            });
+        });
+
+        afterEach(() => {
+            // Restoring the snapshot to the default
+            overrideRouteSnashot(
+                activatedRoute,
+                SNAPSHOT_MOCK({
+                    queryParams: INITIAL_PAGE_PARAMS,
+                    data: UVE_CONFIG_MOCK(BASIC_OPTIONS)
+                })
+            );
         });
 
         describe('language checking', () => {
@@ -856,124 +859,32 @@ describe('DotEmaShellComponent', () => {
 
     describe('without license', () => {
         beforeEach(() => {
-            spectator = createComponent({
-                providers: [
-                    {
-                        provide: DotPageApiService,
-                        useValue: {
-                            get() {
-                                return of({
-                                    page: {
-                                        title: 'hello world',
-                                        identifier: '123',
-                                        inode: '123',
-                                        canEdit: false,
-                                        canRead: false
-                                    },
-                                    viewAs: {
-                                        language: {
-                                            id: 1,
-                                            language: 'English',
-                                            countryCode: 'US',
-                                            languageCode: 'EN',
-                                            country: 'United States'
-                                        },
-                                        persona: DEFAULT_PERSONA
-                                    },
-                                    site: mockSites[0],
-                                    template: { drawed: true }
-                                });
-                            },
-                            save() {
-                                return of({});
-                            },
-                            getPersonas() {
-                                return of({
-                                    entity: [DEFAULT_PERSONA],
-                                    pagination: {
-                                        totalEntries: 1,
-                                        perPage: 10,
-                                        page: 1
-                                    }
-                                });
-                            }
-                        }
-                    },
-                    {
-                        provide: DotLicenseService,
-                        useValue: {
-                            isEnterprise: () => of(false),
-                            canAccessEnterprisePortlet: () => of(false)
-                        }
-                    }
-                ]
-            });
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
+            jest.spyOn(dotLicenseService, 'canAccessEnterprisePortlet').mockReturnValue(of(false));
+            spectator.detectChanges();
         });
 
         it('should render not-license component', () => {
-            spectator.detectChanges();
             expect(spectator.query(DotNotLicenseComponent)).toBeDefined();
         });
     });
 
     describe('without read permission', () => {
         beforeEach(() => {
-            spectator = createComponent({
-                providers: [
-                    {
-                        provide: DotPageApiService,
-                        useValue: {
-                            get() {
-                                return of({
-                                    page: {
-                                        title: 'hello world',
-                                        identifier: '123',
-                                        inode: '123',
-                                        canEdit: false,
-                                        canRead: false
-                                    },
-                                    viewAs: {
-                                        language: {
-                                            id: 1,
-                                            language: 'English',
-                                            countryCode: 'US',
-                                            languageCode: 'EN',
-                                            country: 'United States'
-                                        },
-                                        persona: DEFAULT_PERSONA
-                                    },
-                                    site: mockSites[0],
-                                    template: { drawed: true }
-                                });
-                            },
-                            save() {
-                                return of({});
-                            },
-                            getPersonas() {
-                                return of({
-                                    entity: [DEFAULT_PERSONA],
-                                    pagination: {
-                                        totalEntries: 1,
-                                        perPage: 10,
-                                        page: 1
-                                    }
-                                });
-                            }
-                        }
-                    },
-                    {
-                        provide: DotLicenseService,
-                        useValue: {
-                            isEnterprise: () => of(true),
-                            canAccessEnterprisePortlet: () => of(true)
-                        }
+            jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                of({
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: false,
+                        canRead: false
                     }
-                ]
-            });
+                })
+            );
+            spectator.detectChanges();
         });
 
         it('should not render components', () => {
-            spectator.detectChanges();
             expect(spectator.query(EditEmaNavigationBarComponent)).toBeNull();
             expect(spectator.query(ToastModule)).toBeNull();
             expect(spectator.query(DotPageToolsSeoComponent)).toBeNull();
