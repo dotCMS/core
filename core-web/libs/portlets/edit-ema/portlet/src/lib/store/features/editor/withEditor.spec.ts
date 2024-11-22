@@ -54,7 +54,7 @@ const initialState: UVEState = {
     currentUser: null,
     experiment: null,
     errorCode: null,
-    params: {
+    pageParams: {
         ...emptyParams,
         url: 'test-url',
         language_id: '1',
@@ -541,7 +541,7 @@ describe('withEditor', () => {
                     const payload = {
                         pageContainers: ACTION_PAYLOAD_MOCK.pageContainers,
                         pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
-                        params: store.params()
+                        params: store.pageParams()
                     };
 
                     store.savePage(ACTION_PAYLOAD_MOCK.pageContainers);
@@ -549,7 +549,7 @@ describe('withEditor', () => {
                     expect(saveSpy).toHaveBeenCalledWith(payload);
 
                     expect(getClientPageSpy).toHaveBeenCalledWith(
-                        store.params(),
+                        store.pageParams(),
                         store.clientRequestProps()
                     );
 
