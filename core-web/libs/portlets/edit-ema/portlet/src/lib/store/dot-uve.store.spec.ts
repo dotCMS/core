@@ -129,6 +129,7 @@ describe('UVEStore', () => {
             buildPageAPIResponseFromMock(MOCK_RESPONSE_HEADLESS)
         );
 
+        store.setPageParams(HEADLESS_BASE_QUERY_PARAMS);
         store.init(HEADLESS_BASE_QUERY_PARAMS);
     });
 
@@ -203,83 +204,6 @@ describe('UVEStore', () => {
                 });
             });
 
-            it('should return the shell props for Legacy Pages', () => {
-                jest.spyOn(dotPageApiService, 'get').mockImplementation(
-                    buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
-                );
-
-                store.init(VTL_BASE_QUERY_PARAMS);
-
-                expect(store.$shellProps()).toEqual({
-                    canRead: true,
-                    error: null,
-                    seoParams: {
-                        siteId: MOCK_RESPONSE_VTL.site.identifier,
-                        languageId: 1,
-                        currentUrl: '/test-url',
-                        requestHostName: 'http://localhost'
-                    },
-                    items: [
-                        {
-                            icon: 'pi-file',
-                            label: 'editema.editor.navbar.content',
-                            href: 'content',
-                            id: 'content'
-                        },
-                        {
-                            icon: 'pi-table',
-                            label: 'editema.editor.navbar.layout',
-                            href: 'layout',
-                            id: 'layout',
-                            isDisabled: false,
-                            tooltip: null
-                        },
-                        {
-                            icon: 'pi-sliders-h',
-                            label: 'editema.editor.navbar.rules',
-                            id: 'rules',
-                            href: `rules/${MOCK_RESPONSE_VTL.page.identifier}`,
-                            isDisabled: false
-                        },
-                        {
-                            iconURL: 'experiments',
-                            label: 'editema.editor.navbar.experiments',
-                            href: `experiments/${MOCK_RESPONSE_VTL.page.identifier}`,
-                            id: 'experiments',
-                            isDisabled: false
-                        },
-                        {
-                            icon: 'pi-th-large',
-                            label: 'editema.editor.navbar.page-tools',
-                            id: 'page-tools'
-                        },
-                        {
-                            icon: 'pi-ellipsis-v',
-                            label: 'editema.editor.navbar.properties',
-                            id: 'properties',
-                            isDisabled: false
-                        }
-                    ]
-                });
-            });
-
-            it('should return item for layout as disable', () => {
-                jest.spyOn(dotPageApiService, 'get').mockImplementation(
-                    buildPageAPIResponseFromMock({
-                        ...MOCK_RESPONSE_VTL,
-                        page: {
-                            ...MOCK_RESPONSE_VTL.page,
-                            canEdit: false
-                        }
-                    })
-                );
-
-                store.init(VTL_BASE_QUERY_PARAMS);
-
-                const layoutItem = store.$shellProps().items.find((item) => item.id === 'layout');
-
-                expect(layoutItem.isDisabled).toBe(true);
-            });
             it('should return layout, rules and experiments as disabled when isEnterprise is false', () => {
                 jest.spyOn(dotPageApiService, 'get').mockImplementation(
                     buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
@@ -296,47 +220,134 @@ describe('UVEStore', () => {
                 expect(rulesItem.isDisabled).toBe(true);
                 expect(experimentsItem.isDisabled).toBe(true);
             });
-            it('should return item for layout as disable and with a tooltip', () => {
-                jest.spyOn(dotPageApiService, 'get').mockImplementation(
-                    buildPageAPIResponseFromMock({
-                        ...MOCK_RESPONSE_VTL,
-                        template: {
-                            ...MOCK_RESPONSE_VTL.template,
-                            drawed: false
-                        }
-                    })
-                );
 
-                store.init(VTL_BASE_QUERY_PARAMS);
+            describe('with VTL', () => {
+                beforeEach(() => store.setPageParams(VTL_BASE_QUERY_PARAMS));
 
-                const layoutItem = store.$shellProps().items.find((item) => item.id === 'layout');
+                it('should return the shell props for Legacy Pages', () => {
+                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
+                        buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
+                    );
 
-                expect(layoutItem.isDisabled).toBe(true);
-                expect(layoutItem.tooltip).toBe(
-                    'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
-                );
-            });
+                    store.init(VTL_BASE_QUERY_PARAMS);
 
-            it('should return rules and experiments as disable when page cannot be edited', () => {
-                jest.spyOn(dotPageApiService, 'get').mockImplementation(
-                    buildPageAPIResponseFromMock({
-                        ...MOCK_RESPONSE_VTL,
-                        page: {
-                            ...MOCK_RESPONSE_VTL.page,
-                            canEdit: false
-                        }
-                    })
-                );
+                    expect(store.$shellProps()).toEqual({
+                        canRead: true,
+                        error: null,
+                        seoParams: {
+                            siteId: MOCK_RESPONSE_VTL.site.identifier,
+                            languageId: 1,
+                            currentUrl: '/test-url',
+                            requestHostName: 'http://localhost'
+                        },
+                        items: [
+                            {
+                                icon: 'pi-file',
+                                label: 'editema.editor.navbar.content',
+                                href: 'content',
+                                id: 'content'
+                            },
+                            {
+                                icon: 'pi-table',
+                                label: 'editema.editor.navbar.layout',
+                                href: 'layout',
+                                id: 'layout',
+                                isDisabled: false,
+                                tooltip: null
+                            },
+                            {
+                                icon: 'pi-sliders-h',
+                                label: 'editema.editor.navbar.rules',
+                                id: 'rules',
+                                href: `rules/${MOCK_RESPONSE_VTL.page.identifier}`,
+                                isDisabled: false
+                            },
+                            {
+                                iconURL: 'experiments',
+                                label: 'editema.editor.navbar.experiments',
+                                href: `experiments/${MOCK_RESPONSE_VTL.page.identifier}`,
+                                id: 'experiments',
+                                isDisabled: false
+                            },
+                            {
+                                icon: 'pi-th-large',
+                                label: 'editema.editor.navbar.page-tools',
+                                id: 'page-tools'
+                            },
+                            {
+                                icon: 'pi-ellipsis-v',
+                                label: 'editema.editor.navbar.properties',
+                                id: 'properties',
+                                isDisabled: false
+                            }
+                        ]
+                    });
+                });
 
-                store.init(VTL_BASE_QUERY_PARAMS);
+                it('should return item for layout as disable and with a tooltip', () => {
+                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
+                        buildPageAPIResponseFromMock({
+                            ...MOCK_RESPONSE_VTL,
+                            template: {
+                                ...MOCK_RESPONSE_VTL.template,
+                                drawed: false
+                            }
+                        })
+                    );
 
-                const rules = store.$shellProps().items.find((item) => item.id === 'rules');
-                const experiments = store
-                    .$shellProps()
-                    .items.find((item) => item.id === 'experiments');
+                    store.init(VTL_BASE_QUERY_PARAMS);
 
-                expect(rules.isDisabled).toBe(true);
-                expect(experiments.isDisabled).toBe(true);
+                    const layoutItem = store
+                        .$shellProps()
+                        .items.find((item) => item.id === 'layout');
+
+                    expect(layoutItem.isDisabled).toBe(true);
+                    expect(layoutItem.tooltip).toBe(
+                        'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
+                    );
+                });
+
+                it('should return item for layout as disable', () => {
+                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
+                        buildPageAPIResponseFromMock({
+                            ...MOCK_RESPONSE_VTL,
+                            page: {
+                                ...MOCK_RESPONSE_VTL.page,
+                                canEdit: false
+                            }
+                        })
+                    );
+
+                    store.init(VTL_BASE_QUERY_PARAMS);
+
+                    const layoutItem = store
+                        .$shellProps()
+                        .items.find((item) => item.id === 'layout');
+
+                    expect(layoutItem.isDisabled).toBe(true);
+                });
+
+                it('should return rules and experiments as disable when page cannot be edited', () => {
+                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
+                        buildPageAPIResponseFromMock({
+                            ...MOCK_RESPONSE_VTL,
+                            page: {
+                                ...MOCK_RESPONSE_VTL.page,
+                                canEdit: false
+                            }
+                        })
+                    );
+
+                    store.init(VTL_BASE_QUERY_PARAMS);
+
+                    const rules = store.$shellProps().items.find((item) => item.id === 'rules');
+                    const experiments = store
+                        .$shellProps()
+                        .items.find((item) => item.id === 'experiments');
+
+                    expect(rules.isDisabled).toBe(true);
+                    expect(experiments.isDisabled).toBe(true);
+                });
             });
         });
     });
