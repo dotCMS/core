@@ -73,7 +73,7 @@ public class ContentImportParams extends Validated {
     @Override
     public String toString() {
         return "ContentImportParams{" +
-                "form=" + form +
+                "form=" + getJsonForm() +
                 ", hasFile=" + (fileInputStream != null) +
                 ", fileName=" + (contentDisposition != null ? contentDisposition.getFileName() : "null") +
                 '}';
