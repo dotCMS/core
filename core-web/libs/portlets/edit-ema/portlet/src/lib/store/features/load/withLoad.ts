@@ -46,6 +46,7 @@ export function withLoad() {
                         switchMap((params) => {
                             return forkJoin({
                                 pageAPIResponse: dotPageApiService.get(params).pipe(
+                                    // This logic should be handled in the Shell component using an effect
                                     switchMap((pageAPIResponse) => {
                                         const { vanityUrl } = pageAPIResponse;
 

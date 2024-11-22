@@ -14,7 +14,7 @@ export interface UVEState {
     currentUser?: CurrentUser;
     experiment?: DotExperiment;
     errorCode?: number;
-    viewParams: {
+    viewParams?: {
         preview: false;
         orientation: 'landscape';
         device: 'desktop';
