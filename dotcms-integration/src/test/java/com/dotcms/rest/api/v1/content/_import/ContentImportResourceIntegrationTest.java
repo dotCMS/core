@@ -263,7 +263,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @throws DotDataException if there's an error retrieving the job from the queue
      * @throws AssertionError if any validation fails
      */
-    private static void validateSuccessfulResponse(Response response, String expectedContentType, String expectedLanguage, List<String> expectedFields, String expectedWorkflowActionId, String expectedCommand) throws DotDataException {
+    private void validateSuccessfulResponse(Response response, String expectedContentType, String expectedLanguage, List<String> expectedFields, String expectedWorkflowActionId, String expectedCommand) throws DotDataException {
         // Validate Response object
         assertNotNull(response, "Import response should not be null");
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Response status should be OK");
@@ -312,7 +312,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @return A temporary File object containing test CSV data
      * @throws IOException if there's an error creating or writing to the temporary file
      */
-    private static File createTestCsvFile() throws IOException {
+    private File createTestCsvFile() throws IOException {
         String csv = "title,body\nTest Title 1,Test Body 1\nTest Title 2,Test Body 2\n";
         File csvFile = File.createTempFile("test", ".csv");
         Files.write(csvFile.toPath(), csv.getBytes());
@@ -326,7 +326,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @param filename The name of the file to be included in the content disposition
      * @return A FormDataContentDisposition object configured for testing
      */
-    private static FormDataContentDisposition createContentDisposition(String filename) {
+    private FormDataContentDisposition createContentDisposition(String filename) {
         return FormDataContentDisposition
                 .name("file")
                 .fileName(filename)
@@ -343,7 +343,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @return A fully configured ContentImportParams object
      * @throws IOException if there's an error reading the file or serializing the form to JSON
      */
-    private static ContentImportParams createContentImportParams(File file, ContentImportForm form) throws IOException {
+    private ContentImportParams createContentImportParams(File file, ContentImportForm form) throws IOException {
         ContentImportParams params = new ContentImportParams();
         params.setFileInputStream(new FileInputStream(file));
         params.setContentDisposition(createContentDisposition(file.getName()));
@@ -361,7 +361,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @return A ContentImportForm configured with the specified parameters
      * @throws ValidationException if required parameters (contentType or workflowActionId) are missing
      */
-    private static ContentImportForm createContentImportForm(String contentType, String language, 
+    private ContentImportForm createContentImportForm(String contentType, String language,
             String workflowActionId, List<String> fields) {
         return new ContentImportForm(contentType, language, workflowActionId, fields);
     }
@@ -375,7 +375,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @param importContentResponse the HTTP response to check
      * @throws AssertionError if the response status is not BAD_REQUEST
      */
-    private static void assertBadRequestResponse(Response importContentResponse) {
+    private void assertBadRequestResponse(Response importContentResponse) {
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), importContentResponse.getStatus(), "Expected BAD_REQUEST status");
     }
 }
