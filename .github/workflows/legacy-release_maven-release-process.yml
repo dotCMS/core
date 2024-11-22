@@ -381,6 +381,7 @@ jobs:
 
   release-labeling:
     name: Release Labeling
+    needs: [prepare-release, release-process, build-push-image]
     if: success() && github.event.inputs.update_github_labels == 'true'
     uses: ./.github/workflows/issue_comp_release-labeling.yml
     with:
