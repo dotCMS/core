@@ -69,6 +69,6 @@ export default defineConfig({
     command: 'nx serve dotcms-ui',
     cwd: '../../../core-web',
     url: process.env.BASE_URL + '/dotAdmin',
-    reuseExistingServer: false,
+    reuseExistingServer: true,
   }
 });
