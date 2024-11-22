@@ -29,7 +29,7 @@ describe('DotEmaDialogStoreService', () => {
             {
                 provide: UVEStore,
                 useValue: {
-                    params: signal({
+                    pageParams: signal({
                         variantName: TEST_VARIANT // Is the only thing we need to test the component
                     })
                 }
