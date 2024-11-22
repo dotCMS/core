@@ -116,7 +116,7 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
             Map.of("${jitsu_key}", ConfigExperimentUtil.INSTANCE.getAnalyticsKey(currentHost),
                     "${site}", request.getLocalName() + ":" + request.getLocalPort())
                     .forEach((key, value) -> {
-                        
+
                 int start;
                 while ((start = builder.indexOf(key)) != -1) {
                     builder.replace(start, start + key.length(), value);
