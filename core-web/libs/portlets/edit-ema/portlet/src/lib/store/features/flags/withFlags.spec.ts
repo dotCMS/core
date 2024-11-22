@@ -20,7 +20,7 @@ const initialState: UVEState = {
     currentUser: null,
     experiment: null,
     errorCode: null,
-    params: {} as DotPageApiParams,
+    pageParams: {} as DotPageApiParams,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
     canEditPage: false,
