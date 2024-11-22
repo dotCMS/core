@@ -82,7 +82,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 APILocator.getHTMLPageAssetAPI(),
                 APILocator.getURLMapAPI(),
                 WebAPILocator.getLanguageWebAPI(),
-                null
+                WebAPILocator.getAnalyticsWebAPI()
         );
     }
 

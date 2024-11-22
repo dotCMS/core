@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  */
 public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
 
-    private static final  String ANALYTICS_JS_CODE_CLASS_PATH = "ca/html/analytics_head.html";
+    private static final  String ANALYTICS_JS_CODE_CLASS_PATH = "/ca/html/analytics_head.html";
     private static final  String ANALYTICS_AUTO_INJECT_TURNED_ON_KEY = "FEATURE_FLAG_CONTENT_ANALYTICS_AUTO_INJECT";
     private final AtomicBoolean isAutoInjectTurnedOn;
     private final HostWebAPI hostWebAPI;
@@ -114,7 +114,7 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
             final StringBuilder builder = new StringBuilder(this.jsCode.get());
 
             Map.of("${jitsu_key}", ConfigExperimentUtil.INSTANCE.getAnalyticsKey(currentHost),
-                    "${site}", request.getLocalName() + ":" + request.getLocalPort())
+                    "${site}", request.getScheme() + "://" + request.getLocalName() + ":" + request.getLocalPort())
                     .forEach((key, value) -> {
 
                 int start;

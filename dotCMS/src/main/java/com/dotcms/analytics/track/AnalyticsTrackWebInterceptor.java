@@ -29,6 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
+import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
+
 /**
  * Web Interceptor to track analytics
  * @author jsanca
@@ -102,8 +104,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
 
                 if (isAutoInjectAndFeatureFlagIsOn(request)) {
 
-                    Logger.debug(this, () -> "intercept, Matched: ca-lib.js request: " + request.getRequestURI());
-                    response.getWriter().append(caLib.get());
+                    injectCALib(request, response);
                     return Result.SKIP_NO_CHAIN;
                 }
 
@@ -120,6 +121,19 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
         }
 
         return Result.NEXT;
+    }
+
+    private void injectCALib(HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+        Logger.debug(this, () -> "intercept, Matched: ca-lib.js request: " + request.getRequestURI());
+        response.addHeader(CONTENT_TYPE, "application/javascript; charset=utf-8");
+        response.addHeader("access-control-allow-credentials", "true");
+        response.addHeader("access-control-allow-headers",
+                "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Host");
+        response.addHeader("access-control-allow-methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE, PATCH");
+        response.addHeader("access-control-allow-origin", "*");
+        response.addHeader("access-control-max-age", "86400");
+        response.getWriter().append(caLib.get());
     }
 
     private boolean isAutoInjectAndFeatureFlagIsOn(final HttpServletRequest request) {
