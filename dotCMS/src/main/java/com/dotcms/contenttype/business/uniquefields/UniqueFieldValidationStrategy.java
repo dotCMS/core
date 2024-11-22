@@ -102,7 +102,6 @@ public interface  UniqueFieldValidationStrategy {
     default void afterSaved(final Contentlet contentlet, final boolean isNew) throws DotDataException, DotSecurityException {
         // Default implementation does nothing
     }
-
     default void recalculate(final Field field, final boolean uniquePerSite) throws UniqueFieldValueDuplicatedException {
         // Default implementation does nothing
     }
@@ -120,4 +119,14 @@ public interface  UniqueFieldValidationStrategy {
         }
     }
 
+    /**
+     * Clean the Extra unique validation field table after a {@link Contentlet} have been removed.
+     * We need to remove all the unique values of this {@link Contentlet} and {@link com.dotmarketing.portlets.languagesmanager.model.Language}
+     * from the extra table.
+     *
+     * @param contentlet
+     */
+    default void cleanUp(final Contentlet contentlet, final boolean deleteAllVariant) throws DotDataException {
+        //Default implementation do nothing
+    }
 }

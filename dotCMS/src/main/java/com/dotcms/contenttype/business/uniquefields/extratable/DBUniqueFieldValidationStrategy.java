@@ -10,6 +10,7 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -65,7 +66,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                        final ContentType contentType) throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException {
 
         if (isContentletBeingUpdated(contentlet)) {
-            cleanUniqueFieldsUp(contentlet, field);
+            cleanUniqueFieldsUp(contentlet);
         }
 
         final User systemUser = APILocator.systemUser();
@@ -78,6 +79,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                 .setContentType(contentType)
                 .setValue(fieldValue)
                 .setVariantName(contentlet.getVariantId())
+                .setLive(isLive(contentlet))
                 .build();
 
         insertUniqueValue(uniqueFieldCriteria, contentlet.getIdentifier());
@@ -103,32 +105,35 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
      * is not re-generated as the Contentlet ID is not used in it.</p>
      *
      * @param contentlet The {@link Contentlet} being updated.
-     * @param field      The {@link Field} representing the Unique Field.
      *
      * @throws DotDataException An error occurred when interacting with the database.
      */
     @SuppressWarnings("unchecked")
-    private void cleanUniqueFieldsUp(final Contentlet contentlet, final Field field) throws DotDataException {
-        final Optional<Map<String, Object>> uniqueFieldOptional = uniqueFieldDataBaseUtil.get(contentlet);
+    private  void cleanUniqueFieldsUp(final Contentlet contentlet) throws DotDataException {
+        Optional<Map<String, Object>> uniqueFieldOptional = uniqueFieldDataBaseUtil.get(contentlet);
 
+        if (uniqueFieldOptional.isPresent()) {
+            cleanUniqueFieldUp(contentlet.getIdentifier(), uniqueFieldOptional.get());
+        }
+    }
+
+    private void cleanUniqueFieldUp(final String contentId,
+                                    final Map<String, Object> uniqueFields)  {
         try {
-            if (uniqueFieldOptional.isPresent()) {
-                final Map<String, Object> uniqueFields = uniqueFieldOptional.get();
 
-                final String hash = uniqueFields.get("unique_key_val").toString();
-                final PGobject supportingValues = (PGobject) uniqueFields.get("supporting_values");
-                final Map<String, Object> supportingValuesMap = JsonUtil.getJsonFromString(supportingValues.getValue());
-                final List<String> contentletIds = (List<String>) supportingValuesMap.get(CONTENTLET_IDS_ATTR);
+            final String hash = uniqueFields.get("unique_key_val").toString();
+            final PGobject supportingValues = (PGobject) uniqueFields.get("supporting_values");
+            final Map<String, Object> supportingValuesMap = JsonUtil.getJsonFromString(supportingValues.getValue());
+            final List<String> contentletIds = (List<String>) supportingValuesMap.get(CONTENTLET_IDS_ATTR);
 
-                if (contentletIds.size() == 1) {
-                    uniqueFieldDataBaseUtil.delete(hash, field.variable());
-                } else {
-                    contentletIds.remove(contentlet.getIdentifier());
-                    uniqueFieldDataBaseUtil.updateContentListWithHash(hash, contentletIds);
-                }
+            if (contentletIds.size() == 1) {
+                uniqueFieldDataBaseUtil.delete(hash);
+            } else {
+                contentletIds.remove(contentId);
+                uniqueFieldDataBaseUtil.updateContentListWithHash(hash, contentletIds);
             }
-        } catch (final IOException e){
-            throw new DotDataException(e);
+        } catch (IOException | DotDataException e){
+            throw new DotRuntimeException(e);
         }
     }
 
@@ -159,10 +164,19 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                         .setField(uniqueField)
                         .setContentType(contentType)
                         .setValue(fieldValue)
+                        .setLive(isLive(contentlet))
                         .build();
 
                 uniqueFieldDataBaseUtil.updateContentList(uniqueFieldCriteria, contentlet.getIdentifier());
             }
+        }
+    }
+
+    private static boolean isLive(Contentlet contentlet)  {
+        try {
+            return contentlet.isLive();
+        } catch (DotDataException | DotSecurityException | DotStateException e) {
+            return false;
         }
     }
 
@@ -237,6 +251,18 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
         final String originalMessage = exception.getMessage();
         return originalMessage != null && originalMessage.startsWith(
                 "ERROR: duplicate key value violates unique constraint \"unique_fields_pkey\"");
+    }
+
+    @Override
+    public void cleanUp(final Contentlet contentlet, final boolean deleteAllVariant) throws DotDataException {
+        if (deleteAllVariant) {
+            uniqueFieldDataBaseUtil.get(contentlet.getIdentifier(), contentlet.getVariantId()).stream()
+                    .forEach(uniqueFieldValue -> cleanUniqueFieldUp(contentlet.getIdentifier(), uniqueFieldValue));
+        } else {
+            uniqueFieldDataBaseUtil.get(contentlet.getIdentifier(), contentlet.getLanguageId()).stream()
+                    .forEach(uniqueFieldValue -> cleanUniqueFieldUp(contentlet.getIdentifier(), uniqueFieldValue));
+        }
+
     }
 
 }

@@ -767,14 +767,18 @@ public class VersionableAPIImpl implements VersionableAPI {
 
 	@WrapInTransaction
     @Override
-	public void deleteContentletVersionInfo(final String identifier, final long lang) throws DotDataException {
-	    versionableFactory.deleteContentletVersionInfo(identifier, lang);
-	}
+	public void deleteContentletVersionInfoByLanguage(final Contentlet contentlet) throws DotDataException {
+	    versionableFactory.deleteContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+
+        APILocator.getLocalSystemEventsAPI().notify(new DeleteContentletVersionInfoEvent(contentlet));
+    }
 
     @WrapInTransaction
     @Override
-    public void deleteContentletVersionInfo(final String identifier, final String variantId) throws DotDataException {
-        versionableFactory.deleteContentletVersionInfo(identifier, variantId);
+    public void deleteContentletVersionInfoByVariant(final Contentlet contentlet) throws DotDataException {
+        versionableFactory.deleteContentletVersionInfo(contentlet.getIdentifier(), contentlet.getVariantId());
+
+        APILocator.getLocalSystemEventsAPI().notify(new DeleteContentletVersionInfoEvent(contentlet, true));
     }
 
 	@CloseDBIfOpened

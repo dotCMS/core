@@ -13,7 +13,6 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
-import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.system.SimpleMapAppContext;
@@ -615,8 +614,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         }
                     if(verInfo.get().getWorkingInode().equals(contentlet.getInode()))
                         APILocator.getVersionableAPI()
-                                .deleteContentletVersionInfo(contentlet.getIdentifier(),
-                                        contentlet.getLanguageId());
+                                .deleteContentletVersionInfoByLanguage(contentlet);
                 }
                 delete(contentlet.getInode());
             }

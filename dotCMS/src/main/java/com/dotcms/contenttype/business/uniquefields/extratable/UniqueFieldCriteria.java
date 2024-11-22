@@ -1,5 +1,9 @@
 package com.dotcms.contenttype.business.uniquefields.extratable;
 
+
+import com.dotcms.api.APIProvider;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
+
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
@@ -41,13 +45,17 @@ public class UniqueFieldCriteria {
     public static final String CONTENTLET_IDS_ATTR = "contentletIds";
     public static final String VARIANT_ATTR = "variant";
     public static final String UNIQUE_PER_SITE_ATTR = "uniquePerSite";
-
+    public static final String LIVE_ATTR = "live";
     private final ContentType contentType;
     private final Field field;
     private final Object value;
     private final Language language;
     private final Host site;
+
     private final String variantName;
+
+    private boolean isLive;
+
 
     public UniqueFieldCriteria(final Builder builder) {
         this.contentType = builder.contentType;
@@ -56,6 +64,7 @@ public class UniqueFieldCriteria {
         this.language = builder.language;
         this.site = builder.site;
         this.variantName = builder.variantName;
+        this.isLive = builder.isLive;
     }
 
     /**
@@ -69,7 +78,8 @@ public class UniqueFieldCriteria {
                 FIELD_VALUE_ATTR, value.toString(),
                 LANGUAGE_ID_ATTR, language.getId(),
                 UNIQUE_PER_SITE_ATTR, isUniqueForSite(contentType.id(), field.variable()),
-                VARIANT_ATTR, variantName
+                VARIANT_ATTR, variantName,
+                LIVE_ATTR, isLive
         ));
 
         if (site != null) {
@@ -151,6 +161,7 @@ public class UniqueFieldCriteria {
         private Language language;
         private Host site;
         private String variantName;
+        private boolean isLive;
 
         public Builder setVariantName(final String variantName) {
             this.variantName = variantName;
@@ -195,6 +206,10 @@ public class UniqueFieldCriteria {
             return new UniqueFieldCriteria(this);
         }
 
+        public Builder setLive(boolean live) {
+            this.isLive = live;
+            return this;
+        }
     }
 
 }
