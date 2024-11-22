@@ -2,7 +2,6 @@ package com.dotcms.contenttype.business.uniquefields.extratable;
 
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.JsonUtil;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.StringUtils;
@@ -15,7 +14,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENTLET_IDS_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENT_TYPE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VARIABLE_NAME_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.LANGUAGE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.SITE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.UNIQUE_PER_SITE_ATTR;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class UniqueFieldDataBaseUtilTest {
 
@@ -33,7 +41,7 @@ public class UniqueFieldDataBaseUtilTest {
     }
 
     /**
-     * Method to test: {@link UniqueFieldDataBaseUtil#insert(String, Map)}
+     * Method to test: {@link UniqueFieldDataBaseUtil#insertWithHash(String, Map)}
      * When: Called the method with the right parameters
      * Should: Insert a register in the unique_fields table
      */
@@ -44,18 +52,18 @@ public class UniqueFieldDataBaseUtilTest {
         final String hash = StringUtils.hashText("This is a test " + System.currentTimeMillis());
 
         final Map<String, Object> supportingValues = Map.of(
-                "contentTypeID", randomStringGenerator.nextString(),
-                "fieldVariableName", randomStringGenerator.nextString(),
-                "fieldValue", randomStringGenerator.nextString(),
-                "languageId", randomStringGenerator.nextString(),
-                "hostId", randomStringGenerator.nextString(),
-                "uniquePerSite", true,
-                "contentletsId", CollectionsUtils.list( randomStringGenerator.nextString() )
+                CONTENT_TYPE_ID_ATTR, randomStringGenerator.nextString(),
+                FIELD_VARIABLE_NAME_ATTR, randomStringGenerator.nextString(),
+                FIELD_VALUE_ATTR, randomStringGenerator.nextString(),
+                LANGUAGE_ID_ATTR, randomStringGenerator.nextString(),
+                SITE_ID_ATTR, randomStringGenerator.nextString(),
+                UNIQUE_PER_SITE_ATTR, true,
+                CONTENTLET_IDS_ATTR, CollectionsUtils.list( randomStringGenerator.nextString() )
         );
 
         final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
 
-        uniqueFieldDataBaseUtil.insert(hash, supportingValues);
+        uniqueFieldDataBaseUtil.insertWithHash(hash, supportingValues);
 
         final List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE unique_key_val = ?")
                 .addParam(hash).loadObjectResults();
@@ -71,7 +79,7 @@ public class UniqueFieldDataBaseUtilTest {
     }
 
     /**
-     * Method to test: {@link UniqueFieldDataBaseUtil#insert(String, Map)}
+     * Method to test: {@link UniqueFieldDataBaseUtil#insertWithHash(String, Map)}
      * When: Called the method with a 'unique_key_val' duplicated
      * Should: Throw a {@link java.sql.SQLException}
      */
@@ -82,30 +90,30 @@ public class UniqueFieldDataBaseUtilTest {
         final String hash = StringUtils.hashText("This is a test " + System.currentTimeMillis());
 
         final Map<String, Object> supportingValues_1 = Map.of(
-                "contentTypeID", randomStringGenerator.nextString(),
-                "fieldVariableName", randomStringGenerator.nextString(),
-                "fieldValue", randomStringGenerator.nextString(),
-                "languageId", randomStringGenerator.nextString(),
-                "hostId", randomStringGenerator.nextString(),
-                "uniquePerSite", true,
-                "contentletsId", "['" + randomStringGenerator.nextString() + "']"
+                CONTENT_TYPE_ID_ATTR, randomStringGenerator.nextString(),
+                FIELD_VARIABLE_NAME_ATTR, randomStringGenerator.nextString(),
+                FIELD_VALUE_ATTR, randomStringGenerator.nextString(),
+                LANGUAGE_ID_ATTR, randomStringGenerator.nextString(),
+                SITE_ID_ATTR, randomStringGenerator.nextString(),
+                UNIQUE_PER_SITE_ATTR, true,
+                CONTENTLET_IDS_ATTR, "['" + randomStringGenerator.nextString() + "']"
         );
 
         final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
-        uniqueFieldDataBaseUtil.insert(hash, supportingValues_1);
+        uniqueFieldDataBaseUtil.insertWithHash(hash, supportingValues_1);
 
         final Map<String, Object> supportingValues_2 = Map.of(
-                "contentTypeID", randomStringGenerator.nextString(),
-                "fieldVariableName", randomStringGenerator.nextString(),
-                "fieldValue", randomStringGenerator.nextString(),
-                "languageId", randomStringGenerator.nextString(),
-                "hostId", randomStringGenerator.nextString(),
-                "uniquePerSite", true,
-                "contentletsId", CollectionsUtils.list( randomStringGenerator.nextString())
+                CONTENT_TYPE_ID_ATTR, randomStringGenerator.nextString(),
+                FIELD_VARIABLE_NAME_ATTR, randomStringGenerator.nextString(),
+                FIELD_VALUE_ATTR, randomStringGenerator.nextString(),
+                LANGUAGE_ID_ATTR, randomStringGenerator.nextString(),
+                SITE_ID_ATTR, randomStringGenerator.nextString(),
+                UNIQUE_PER_SITE_ATTR, true,
+                CONTENTLET_IDS_ATTR, CollectionsUtils.list( randomStringGenerator.nextString())
         );
 
         try {
-            uniqueFieldDataBaseUtil.insert(hash, supportingValues_2);
+            uniqueFieldDataBaseUtil.insertWithHash(hash, supportingValues_2);
 
             throw new AssertionError("Exception expected");
         } catch (DotDataException e) {

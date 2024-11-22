@@ -1051,6 +1051,70 @@ describe('DotEmaShellComponent', () => {
                 expect(reloadSpy).toHaveBeenCalled();
                 expect(router.navigate).not.toHaveBeenCalled();
             });
+
+            it('should trigger a navigate when url path property is changed', () => {
+                const navigate = jest.spyOn(router, 'navigate');
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.URL_IS_CHANGED,
+                            payload: {
+                                htmlPageReferer: '/a-new-url'
+                            }
+                        }
+                    }),
+                    actionPayload: PAYLOAD_MOCK,
+                    form: {
+                        status: FormStatus.SAVED,
+                        isTranslation: false
+                    },
+                    clientAction: CLIENT_ACTIONS.NOOP
+                });
+                spectator.detectChanges();
+
+                expect(navigate).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        url: '/a-new-url'
+                    },
+                    queryParamsHandling: 'merge'
+                });
+            });
+
+            it('should mantain the current URL as queryParam when the URL property is changed and is a URLContentMap', () => {
+                jest.spyOn(store, 'pageAPIResponse').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP);
+
+                const navigate = jest.spyOn(router, 'navigate');
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.URL_IS_CHANGED,
+                            payload: {
+                                htmlPageReferer: '/a-new-url'
+                            }
+                        }
+                    }),
+                    actionPayload: PAYLOAD_MOCK,
+                    form: {
+                        status: FormStatus.SAVED,
+                        isTranslation: false
+                    },
+                    clientAction: CLIENT_ACTIONS.NOOP
+                });
+                spectator.detectChanges();
+
+                expect(navigate).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        url: '/test-url'
+                    },
+                    queryParamsHandling: 'merge'
+                });
+            });
         });
     });
 

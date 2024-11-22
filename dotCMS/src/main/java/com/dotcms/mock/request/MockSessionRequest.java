@@ -19,13 +19,13 @@ import javax.servlet.http.HttpSession;
  */
 public class MockSessionRequest extends HttpServletRequestWrapper implements MockRequest {
 
-    HttpSession session = null;
+	HttpSession session = null;
 
 	public MockSessionRequest(HttpServletRequest request) {
-	    super(request);
-	    if (request.getSession(false)!= null) {
-	      session = request.getSession();
-	    }
+		super(request);
+		if (request.getSession(false) != null) {
+			session = new MockSession(request.getSession());
+		}
 
 	}
 
@@ -48,11 +48,9 @@ public class MockSessionRequest extends HttpServletRequestWrapper implements Moc
 
 	@Override
 	public HttpSession getSession(boolean create) {
-		return (create) 
-		        ? getSession() 
-		        : session!=null 
-		            ? session 
-		                    : null;
+		return (create)
+				? getSession()
+				: session;
 
 	}
 
@@ -61,6 +59,6 @@ public class MockSessionRequest extends HttpServletRequestWrapper implements Moc
 		this.session = session;
 		return this.session;
 	}
-	
- 
+
+
 }

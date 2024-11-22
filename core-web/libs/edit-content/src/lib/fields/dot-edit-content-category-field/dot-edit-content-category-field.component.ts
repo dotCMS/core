@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -35,7 +34,6 @@ import { CategoryFieldStore } from './store/content-category-field.store';
     imports: [
         ReactiveFormsModule,
         ButtonModule,
-        NgClass,
         DotMessagePipe,
         DotCategoryFieldChipsComponent,
         DotCategoryFieldDialogComponent

@@ -162,14 +162,22 @@ export function withLoad() {
                         })
                     )
                 ),
-                reload: rxMethod<void>(
+                /**
+                 *  When the state is "reloaded" outside the editor component, we need to set `isClientReady` to `false`.
+                 *  This is particularly relevant for Single Page Applications (SPA) or client-side applications,
+                 *  as these apps do not have access to the PREVIEW or EDIT modes.
+                 *  If the store updates without resetting `isClientReady` to `false`,
+                 *  returning to the editor component will not trigger a data re-fetch,
+                 *  causing outdated data to persist.
+                 */
+                reload: rxMethod<Pick<UVEState, 'isClientReady'> | void>(
                     pipe(
                         tap(() => {
                             patchState(store, {
                                 status: UVE_STATUS.LOADING
                             });
                         }),
-                        switchMap(() => {
+                        switchMap((partialState: Pick<UVEState, 'isClientReady'>) => {
                             return dotPageApiService
                                 .getClientPage(store.params(), store.clientRequestProps())
                                 .pipe(
@@ -202,7 +210,7 @@ export function withLoad() {
                                                 canEditPage,
                                                 pageIsLocked,
                                                 status: UVE_STATUS.LOADED,
-                                                isClientReady: true,
+                                                isClientReady: partialState?.isClientReady ?? true,
                                                 isTraditionalPage: !store.params().clientHost // If we don't send the clientHost we are using as VTL page
                                             });
                                         },

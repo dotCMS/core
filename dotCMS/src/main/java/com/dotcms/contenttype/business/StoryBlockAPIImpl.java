@@ -30,12 +30,7 @@ import io.vavr.control.Try;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Implementation class for the {@link StoryBlockAPI}.
@@ -56,6 +51,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         final boolean inTransaction = DbConnectionFactory.inTransaction();
         if (!inTransaction && null != contentlet && null != contentlet.getContentType() &&
                 contentlet.getContentType().hasStoryBlockFields()) {
+
             if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(), "refreshReferences", MAX_RECURSION_LEVEL)) {
                 Logger.debug(this, () -> "This method has been called more than " + MAX_RECURSION_LEVEL +
                         " times in the same thread. This could be a sign of circular reference in the Story Block field. Data will NOT be refreshed.");
@@ -66,6 +62,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                     .forEach(field -> {
 
                         final Object storyBlockValue = contentlet.get(field.variable());
+
                         if (null != storyBlockValue) {
                             final StoryBlockReferenceResult result =
                                     this.refreshStoryBlockValueReferences(storyBlockValue, contentlet.getIdentifier());
@@ -86,12 +83,6 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier) {
         boolean refreshed = false;
         if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
-            if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(),
-                    "refreshStoryBlockValueReferences", MAX_RECURSION_LEVEL)) {
-                Logger.debug(this, () -> "This method has been called more than " + MAX_RECURSION_LEVEL +
-                        " times in the same thread. This could be a sign of circular reference in the Story Block field. Data will NOT be refreshed.");
-                return new StoryBlockReferenceResult(false, storyBlockValue);
-            }
             try {
                 final LinkedHashMap<String, Object> blockEditorMap = this.toMap(storyBlockValue);
                 final Object contentsMap = blockEditorMap.get(CONTENT_KEY);
@@ -364,10 +355,58 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     private void addContentletRelationships(final Contentlet contentlet) {
         final HttpServletRequest httpRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final PageMode currentPageMode = PageMode.get(httpRequest);
-        if (null != httpRequest && null == httpRequest.getAttribute(WebKeys.HTMLPAGE_DEPTH)) {
-            httpRequest.setAttribute(WebKeys.HTMLPAGE_DEPTH, MAX_RELATIONSHIP_DEPTH.get());
+
+        int depth = getInitialDepthValue();
+
+        if (isInsideAnotherBlockEditorAndRelatedContent()) {
+            depth = decreaseDepthValue(depth);
         }
-        ContentUtils.addRelationships(contentlet, APILocator.systemUser(), currentPageMode, contentlet.getLanguageId());
+
+        ContentUtils.addRelationships(contentlet, APILocator.systemUser(), currentPageMode, contentlet.getLanguageId(), depth);
+    }
+
+    /**
+     * Decrease the DEPTH value:
+     * If the current value is 2, reduce it to 0.
+     * If the current value is 3, reduce it to 1.
+     *
+     * @param depthValue current depth value
+     * @return
+     */
+    private int decreaseDepthValue(int depthValue) {
+        if (depthValue == 2) {
+            return 0;
+        }
+
+        if (depthValue == 3) {
+            return 1;
+        }
+
+        return depthValue;
+    }
+
+    public int getInitialDepthValue(){
+        final HttpServletRequest httpRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        String value = null;
+
+        if (null != httpRequest && null != httpRequest.getAttribute(WebKeys.HTMLPAGE_DEPTH))  {
+            value = (String) httpRequest.getAttribute(WebKeys.HTMLPAGE_DEPTH);
+        } else {
+            value = MAX_RELATIONSHIP_DEPTH.get();
+        }
+
+        int depth = ConversionUtils.toInt(value, 0);
+        return depth < 0 || depth > 3 ? 0 : depth;
+    }
+
+    private boolean isInsideAnotherBlockEditorAndRelatedContent(){
+        boolean insideAnotherBlockEditor =
+                ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(), "refreshReferences", 2);
+
+        boolean insideContentRelated =
+                ThreadUtils.isMethodCallCountEqualThan(Contentlet.class.getName(), "getRelated", 1);
+
+        return insideAnotherBlockEditor && insideContentRelated;
     }
 
     /**

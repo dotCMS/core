@@ -26,6 +26,11 @@ public enum JobState {
     FAILED,
 
     /**
+     * The job was abandoned before it could complete.
+     */
+    ABANDONED,
+
+    /**
      * The job is waiting to be canceled.
      */
     CANCEL_REQUESTED,
