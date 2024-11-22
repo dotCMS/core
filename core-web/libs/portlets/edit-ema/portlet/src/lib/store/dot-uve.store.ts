@@ -43,9 +43,9 @@ export const UVEStore = signalStore(
         }) => {
             return {
                 $translateProps: computed<TranslateProps>(() => {
-                    const response = untracked(() => pageAPIResponse());
+                    const response = pageAPIResponse();
                     const languageId = response?.viewAs.language?.id;
-                    const translatedLanguages = languages();
+                    const translatedLanguages = untracked(() => languages());
                     const currentLanguage = translatedLanguages.find(
                         (lang) => lang.id === languageId
                     );

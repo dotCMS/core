@@ -267,7 +267,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      */
     #getPageParams(): DotPageApiParams {
         const { queryParams, data } = this.#activatedRoute.snapshot;
-        const allowedDevURLs = data.uveConfig?.options?.allowedDevURLs;
+        const allowedDevURLs = data?.uveConfig?.options?.allowedDevURLs;
 
         // Clone queryParams to avoid mutation errors
         const params = filterPageParams(queryParams);

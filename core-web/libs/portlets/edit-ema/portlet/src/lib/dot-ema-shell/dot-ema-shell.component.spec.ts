@@ -1,9 +1,11 @@
 import { describe, expect } from '@jest/globals';
+import { createMouseEvent } from '@ngneat/spectator';
 import { SpyObject, createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { Location } from '@angular/common';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -160,8 +162,7 @@ describe('DotEmaShellComponent', () => {
     let store: SpyObject<InstanceType<typeof UVEStore>>;
 
     let siteService: SiteServiceMock;
-    // let confirmationService: SpyObject<ConfirmationService>;
-    // let confirmationServiceSpy: jest.SpyInstance;
+    let confirmationService: ConfirmationService;
     let router: Router;
     let activatedRoute: ActivatedRoute;
     let location: Location;
@@ -294,8 +295,7 @@ describe('DotEmaShellComponent', () => {
             router = spectator.inject(Router, true);
             location = spectator.inject(Location, true);
             activatedRoute = spectator.inject(ActivatedRoute, true);
-            // confirmationService = spectator.inject(ConfirmationService, true);
-            // confirmationServiceSpy = jest.spyOn(confirmationService, 'confirm');
+            confirmationService = spectator.inject(ConfirmationService, true);
         });
 
         it('should trigger an store load with default values', () => {
@@ -534,252 +534,230 @@ describe('DotEmaShellComponent', () => {
             });
         });
 
-        // describe('language checking', () => {
-        //     it('should not trigger the confirmation service if the page is translated to the current language', () => {
-        //         spectator.detectChanges();
+        describe('language checking', () => {
+            let confirmationServiceSpy: jest.SpyInstance;
 
-        //         expect(confirmationServiceSpy).not.toHaveBeenCalled();
-        //     });
+            beforeEach(() => {
+                spectator.detectChanges();
+                confirmationServiceSpy = jest.spyOn(confirmationService, 'confirm');
+            });
+            afterEach(() => jest.clearAllMocks());
 
-        //     it('should not trigger the confirmation service if the page dont have current language', () => {
-        //         spectator.triggerNavigation({
-        //             url: [],
-        //             queryParams: {
-        //                 language_id: 3,
-        //                 url: 'index',
-        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-        //             }
-        //         });
+            it('should not trigger the confirmation service if the page is translated to the current language', () => {
+                expect(confirmationServiceSpy).not.toHaveBeenCalled();
+            });
 
-        //         spectator.detectChanges();
+            it('should not trigger the confirmation service if the page dont have current language', () => {
+                store.updatePageParams({
+                    language_id: 3,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
 
-        //         expect(confirmationServiceSpy).not.toHaveBeenCalled();
-        //     });
+                spectator.detectChanges();
 
-        //     it("should trigger the confirmation service if the page isn't translated to the current language", fakeAsync(() => {
-        //         spectator.triggerNavigation({
-        //             url: [],
-        //             queryParams: {
-        //                 language_id: 2,
-        //                 url: 'index',
-        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-        //             }
-        //         });
+                expect(confirmationServiceSpy).not.toHaveBeenCalled();
+            });
 
-        //         spectator.detectChanges();
+            it("should trigger the confirmation service if the page isn't translated to the current language", fakeAsync(() => {
+                store.updatePageParams({
+                    language_id: 2,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+                tick();
+                spectator.detectChanges();
+                expect(confirmationServiceSpy).toHaveBeenCalledWith({
+                    accept: expect.any(Function),
+                    acceptEvent: expect.any(Object),
+                    reject: expect.any(Function),
+                    rejectEvent: expect.any(Object),
+                    rejectIcon: 'hidden',
+                    acceptIcon: 'hidden',
+                    key: 'shell-confirm-dialog',
+                    header: 'editpage.language-change-missing-lang-populate.confirm.header',
+                    message: 'editpage.language-change-missing-lang-populate.confirm.message'
+                });
+            }));
 
-        //         tick();
+            it('should trigger a navigation to default language when the user rejects the creation', fakeAsync(() => {
+                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
 
-        //         expect(confirmationServiceSpy).toHaveBeenCalledWith({
-        //             accept: expect.any(Function),
-        //             acceptEvent: expect.any(Object),
-        //             reject: expect.any(Function),
-        //             rejectEvent: expect.any(Object),
-        //             rejectIcon: 'hidden',
-        //             acceptIcon: 'hidden',
-        //             key: 'shell-confirm-dialog',
-        //             header: 'editpage.language-change-missing-lang-populate.confirm.header',
-        //             message: 'editpage.language-change-missing-lang-populate.confirm.message'
-        //         });
-        //     }));
+                store.setPageParams({
+                    language_id: 2,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
 
-        //     it('should trigger a navigation to default language when the user rejects the creation', fakeAsync(() => {
-        //         spectator.triggerNavigation({
-        //             url: [],
-        //             queryParams: {
-        //                 language_id: 2,
-        //                 url: 'index',
-        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-        //             }
-        //         });
+                spectator.detectChanges();
 
-        //         spectator.detectChanges();
+                tick(1000);
+                spectator.detectChanges();
 
-        //         tick(1000);
-        //         spectator.detectChanges();
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-        //         const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                const clickEvent = createMouseEvent('click');
 
-        //         const clickEvent = createMouseEvent('click');
+                confirmDialog.querySelector('.p-confirm-dialog-reject').dispatchEvent(clickEvent);
 
-        //         confirmDialog.querySelector('.p-confirm-dialog-reject').dispatchEvent(clickEvent);
+                spectator.detectChanges();
 
-        //         spectator.detectChanges();
+                expect(spyUpdatePageParams).toHaveBeenCalledWith({ language_id: '1' });
+            }));
 
-        //         expect(router.navigate).toHaveBeenCalledWith([], {
-        //             queryParams: { language_id: 1 },
-        //             queryParamsHandling: 'merge'
-        //         });
-        //     }));
+            it('should open a dialog to create the page in the new language when the user accepts the creation', fakeAsync(() => {
+                store.setPageParams({
+                    language_id: 2,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
 
-        //     it('should open a dialog to create the page in the new language when the user accepts the creation', fakeAsync(() => {
-        //         spectator.triggerNavigation({
-        //             url: [],
-        //             queryParams: {
-        //                 language_id: 2,
-        //                 url: 'index',
-        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-        //             }
-        //         });
+                spectator.detectChanges();
+                const dialog = spectator.component.dialog;
+                const translatePageSpy = jest.spyOn(dialog, 'translatePage');
 
-        //         spectator.detectChanges();
-        //         const dialog = spectator.component.dialog;
-        //         const translatePageSpy = jest.spyOn(dialog, 'translatePage');
+                tick(1000);
+                spectator.detectChanges();
 
-        //         tick(1000);
-        //         spectator.detectChanges();
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-        //         const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                confirmDialog
+                    .querySelector('.p-confirm-dialog-accept')
+                    .dispatchEvent(new MouseEvent('click'));
 
-        //         confirmDialog
-        //             .querySelector('.p-confirm-dialog-accept')
-        //             .dispatchEvent(new MouseEvent('click'));
+                expect(translatePageSpy).toHaveBeenCalledWith({
+                    newLanguage: 2,
+                    page: {
+                        canEdit: true,
+                        canRead: true,
+                        identifier: '123',
+                        inode: '123',
+                        live: true,
+                        liveInode: '1234',
+                        pageURI: 'index',
+                        stInode: '12345',
+                        title: 'hello world'
+                    }
+                });
+            }));
 
-        //         expect(translatePageSpy).toHaveBeenCalledWith({
-        //             newLanguage: 2,
-        //             page: {
-        //                 canEdit: true,
-        //                 canRead: true,
-        //                 identifier: '123',
-        //                 inode: '123',
-        //                 live: true,
-        //                 liveInode: '1234',
-        //                 pageURI: 'index',
-        //                 stInode: '12345',
-        //                 title: 'hello world'
-        //             }
-        //         });
-        //     }));
+            it('should open a dialog to create the page and navigate to default language if the user closes the dialog without saving', fakeAsync(() => {
+                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
+                store.setPageParams({
+                    language_id: 2,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
 
-        //     it('should open a dialog to create the page and navigate to default language if the user closes the dialog without saving', fakeAsync(() => {
-        //         spectator.triggerNavigation({
-        //             url: [],
-        //             queryParams: {
-        //                 language_id: 2,
-        //                 url: 'index',
-        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-        //             }
-        //         });
+                spectator.detectChanges();
 
-        //         spectator.detectChanges();
+                tick(1000);
+                spectator.detectChanges();
 
-        //         tick(1000);
-        //         spectator.detectChanges();
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-        //         const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                const clickEvent = createMouseEvent('click');
 
-        //         const clickEvent = createMouseEvent('click');
+                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
 
-        //         confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
+                spectator.detectChanges();
 
-        //         spectator.detectChanges();
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+                        }
+                    }),
+                    actionPayload: PAYLOAD_MOCK,
+                    form: {
+                        status: FormStatus.DIRTY,
+                        isTranslation: true
+                    },
+                    clientAction: CLIENT_ACTIONS.NOOP
+                });
 
-        //         spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
-        //             event: new CustomEvent('ng-event', {
-        //                 detail: {
-        //                     name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
-        //                 }
-        //             }),
-        //             actionPayload: PAYLOAD_MOCK,
-        //             form: {
-        //                 status: FormStatus.DIRTY,
-        //                 isTranslation: true
-        //             },
-        //             clientAction: CLIENT_ACTIONS.NOOP
-        //         });
+                expect(spyUpdatePageParams).toHaveBeenCalledWith({ language_id: '1' });
+            }));
 
-        //         expect(router.navigate).toHaveBeenCalledWith([], {
-        //             queryParams: { language_id: 1 },
-        //             queryParamsHandling: 'merge'
-        //         });
-        //     }));
+            it('should open a dialog to create the page and navigate to default language if the user closes the dialog without saving and without editing ', fakeAsync(() => {
+                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
+                store.setPageParams({
+                    language_id: 2,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
 
-        //     it('should open a dialog to create the page and navigate to default language if the user closes the dialog without saving and without editing ', fakeAsync(() => {
-        //         spectator.triggerNavigation({
-        //             url: [],
-        //             queryParams: {
-        //                 language_id: 2,
-        //                 url: 'index',
-        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-        //             }
-        //         });
+                spectator.detectChanges();
 
-        //         spectator.detectChanges();
+                tick(1000);
+                spectator.detectChanges();
 
-        //         tick(1000);
-        //         spectator.detectChanges();
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-        //         const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                const clickEvent = createMouseEvent('click');
 
-        //         const clickEvent = createMouseEvent('click');
+                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
 
-        //         confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
+                spectator.detectChanges();
 
-        //         spectator.detectChanges();
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+                        }
+                    }),
+                    actionPayload: PAYLOAD_MOCK,
+                    form: {
+                        status: FormStatus.PRISTINE,
+                        isTranslation: true
+                    },
+                    clientAction: CLIENT_ACTIONS.NOOP
+                });
 
-        //         spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
-        //             event: new CustomEvent('ng-event', {
-        //                 detail: {
-        //                     name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
-        //                 }
-        //             }),
-        //             actionPayload: PAYLOAD_MOCK,
-        //             form: {
-        //                 status: FormStatus.PRISTINE,
-        //                 isTranslation: true
-        //             },
-        //             clientAction: CLIENT_ACTIONS.NOOP
-        //         });
+                expect(spyUpdatePageParams).toHaveBeenCalledWith({ language_id: '1' });
+            }));
 
-        //         expect(router.navigate).toHaveBeenCalledWith([], {
-        //             queryParams: { language_id: 1 },
-        //             queryParamsHandling: 'merge'
-        //         });
-        //     }));
+            it('should open a dialog to create the page and do nothing when the user creates the page correctly with SAVE_PAGE and closes the dialog', fakeAsync(() => {
+                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
+                store.setPageParams({
+                    language_id: 2,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
 
-        //     it('should open a dialog to create the page and do nothing when the user creates the page correctly with SAVE_PAGE and closes the dialog', fakeAsync(() => {
-        //         spectator.triggerNavigation({
-        //             url: [],
-        //             queryParams: {
-        //                 language_id: 2,
-        //                 url: 'index',
-        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-        //             }
-        //         });
+                spectator.detectChanges();
 
-        //         spectator.detectChanges();
+                tick(1000);
+                spectator.detectChanges();
 
-        //         tick(1000);
-        //         spectator.detectChanges();
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-        //         const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                const clickEvent = createMouseEvent('click');
 
-        //         const clickEvent = createMouseEvent('click');
+                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
 
-        //         confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
+                spectator.detectChanges();
 
-        //         spectator.detectChanges();
+                spectator.detectChanges();
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+                        }
+                    }),
+                    actionPayload: PAYLOAD_MOCK,
+                    form: {
+                        isTranslation: true,
+                        status: FormStatus.SAVED
+                    },
+                    clientAction: CLIENT_ACTIONS.NOOP
+                });
 
-        //         spectator.detectChanges();
-        //         spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
-        //             event: new CustomEvent('ng-event', {
-        //                 detail: {
-        //                     name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
-        //                 }
-        //             }),
-        //             actionPayload: PAYLOAD_MOCK,
-        //             form: {
-        //                 isTranslation: true,
-        //                 status: FormStatus.SAVED
-        //             },
-        //             clientAction: CLIENT_ACTIONS.NOOP
-        //         });
+                spectator.detectChanges();
 
-        //         spectator.detectChanges();
-
-        //         expect(router.navigate).not.toHaveBeenCalled();
-        //     }));
-        // });
+                expect(spyUpdatePageParams).not.toHaveBeenCalled();
+            }));
+        });
 
         describe('Site Changes', () => {
             it('should trigger a navigate to /pages when site changes', async () => {
