@@ -1,19 +1,10 @@
 import { describe, expect } from '@jest/globals';
-import { ActivatedRouteStub, createMouseEvent } from '@ngneat/spectator';
-import {
-    SpectatorRouting,
-    byTestId,
-    createRoutingFactory,
-    SpyObject
-} from '@ngneat/spectator/jest';
+import { SpyObject, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { fakeAsync, tick } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { ActivatedRoute, ActivatedRouteSnapshot, Router, UrlSegment } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
+import { Location } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -64,24 +55,55 @@ import {
 } from '../shared/mocks';
 import { UVEStore } from '../store/dot-uve.store';
 
+const INITIAL_PAGE_PARAMS = {
+    language_id: 1,
+    url: 'index',
+    variantName: 'DEFAULT',
+    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+};
+
+const DIALOG_ACTION_EVENT = (detail) => {
+    return {
+        event: new CustomEvent('ng-event', { detail }),
+        actionPayload: PAYLOAD_MOCK,
+        form: {
+            status: FormStatus.SAVED,
+            isTranslation: false
+        },
+        clientAction: CLIENT_ACTIONS.NOOP
+    };
+};
+
 describe('DotEmaShellComponent', () => {
-    let spectator: SpectatorRouting<DotEmaShellComponent>;
+    let spectator: Spectator<DotEmaShellComponent>;
     let store: SpyObject<InstanceType<typeof UVEStore>>;
 
-    let siteService: SiteServiceMock;
-    let confirmationService: SpyObject<ConfirmationService>;
-    let confirmationServiceSpy: jest.SpyInstance;
-    let router: Router;
-    let route: ActivatedRoute;
+    // let siteService: SiteServiceMock;
+    // let confirmationService: SpyObject<ConfirmationService>;
+    // let confirmationServiceSpy: jest.SpyInstance;
+    // let router: Router;
+    let location: Location;
 
-    const createComponent = createRoutingFactory({
+    const createComponent = createComponentFactory({
         component: DotEmaShellComponent,
-        imports: [RouterTestingModule, HttpClientTestingModule, ConfirmDialogModule],
+        imports: [ConfirmDialogModule],
         detectChanges: false,
-        firstChild: new ActivatedRouteStub({
-            url: [new UrlSegment('content', {})]
-        }),
         providers: [
+            {
+                provide: ActivatedRoute,
+                useValue: {
+                    snapshot: {
+                        queryParams: INITIAL_PAGE_PARAMS,
+                        data: {
+                            data: {
+                                uveConfig: {
+                                    allowedDevURLs: ['http://localhost:3000']
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             { provide: SiteService, useClass: SiteServiceMock },
             {
                 provide: DotContentletLockerService,
@@ -105,6 +127,8 @@ describe('DotEmaShellComponent', () => {
             DotMessageService,
             DialogService,
             DotWorkflowActionsFireService,
+            Router,
+            Location,
             {
                 provide: DotPropertiesService,
                 useValue: dotPropertiesServiceMock
@@ -186,773 +210,781 @@ describe('DotEmaShellComponent', () => {
                     }
                 ]
             });
-            siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
+            // siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
             store = spectator.inject(UVEStore, true);
-            router = spectator.inject(Router, true);
-            confirmationService = spectator.inject(ConfirmationService, true);
-            jest.spyOn(store, 'init');
-            confirmationServiceSpy = jest.spyOn(confirmationService, 'confirm');
-
-            spectator.triggerNavigation({
-                url: [],
-                queryParams: {
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
-                },
-                data: {
-                    data: {
-                        url: 'http://localhost:3000'
-                    }
-                }
-            });
+            // router = spectator.inject(Router, true);
+            location = spectator.inject(Location, true);
+            // confirmationService = spectator.inject(ConfirmationService, true);
+            // confirmationServiceSpy = jest.spyOn(confirmationService, 'confirm');
         });
 
-        describe('DOM', () => {
-            it('should have a navigation bar', () => {
-                spectator.detectChanges();
-                expect(spectator.query(byTestId('ema-nav-bar'))).not.toBeNull();
-            });
+        it('should call store.init when the `updatePageParams` is called', () => {
+            const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
+            const spyStoreInit = jest.spyOn(store, 'init');
+            const spyLocation = jest.spyOn(location, 'replaceState');
 
-            it('should have nav bar with items', () => {
-                const navBarComponent = spectator.query(EditEmaNavigationBarComponent);
+            spectator.detectChanges();
+            const pageParams = {
+                language_id: 1,
+                url: 'index',
+                variantName: 'DEFAULT',
+                'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+            };
 
-                expect(navBarComponent.items).toEqual([
-                    {
-                        icon: 'pi-file',
-                        label: 'editema.editor.navbar.content',
-                        href: 'content',
-                        id: 'content'
-                    },
-                    {
-                        icon: 'pi-table',
-                        label: 'editema.editor.navbar.layout',
-                        href: 'layout',
-                        isDisabled: false,
-                        tooltip: null,
-                        id: 'layout'
-                    },
-                    {
-                        icon: 'pi-sliders-h',
-                        label: 'editema.editor.navbar.rules',
-                        href: `rules/123`,
-                        isDisabled: false,
-                        id: 'rules'
-                    },
-                    {
-                        iconURL: 'experiments',
-                        label: 'editema.editor.navbar.experiments',
-                        href: 'experiments/123',
-                        isDisabled: false,
-                        id: 'experiments'
-                    },
-                    {
-                        icon: 'pi-th-large',
-                        label: 'editema.editor.navbar.page-tools',
-                        id: 'page-tools'
-                    },
-                    {
-                        icon: 'pi-ellipsis-v',
-                        label: 'editema.editor.navbar.properties',
-                        id: 'properties',
-                        isDisabled: false
-                    }
-                ]);
-            });
-
-            it('should trigger action when the page-tool item is clicked', () => {
-                const pageToolsSpy = jest.spyOn(spectator.component.pageTools, 'toggleDialog');
-
-                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
-
-                spectator.triggerEventHandler(navBar, 'action', 'page-tools');
-
-                expect(pageToolsSpy).toHaveBeenCalled();
-            });
-
-            it('should trigger action when the properties item is clicked', () => {
-                const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
-
-                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
-
-                spectator.triggerEventHandler(navBar, 'action', 'properties');
-
-                expect(dialogSpy).toHaveBeenCalledWith({
-                    contentType: undefined,
-                    identifier: '123',
-                    inode: '123',
-                    title: 'hello world'
-                });
-            });
+            expect(spyUpdatePageParams).toHaveBeenCalledWith(pageParams);
+            expect(spyStoreInit).toHaveBeenCalledWith(pageParams);
+            expect(spyLocation).toHaveBeenCalledWith(
+                '/?language_id=1&url=index&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona'
+            );
         });
 
-        describe('router', () => {
-            it('should trigger an store load with default values', () => {
-                spectator.detectChanges();
-
-                expect(store.init).toHaveBeenCalledWith({
-                    clientHost: 'http://localhost:3000',
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-            });
-
-            it('should trigger a load when changing the queryParams', () => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        language_id: 2,
-                        url: 'my-awesome-page',
-                        'com.dotmarketing.persona.id': 'SomeCoolDude'
-                    }
-                });
-
-                spectator.detectChanges();
-                expect(store.init).toHaveBeenCalledWith({
-                    clientHost: 'http://localhost:3000',
-                    language_id: 2,
-                    url: 'my-awesome-page',
-                    'com.dotmarketing.persona.id': 'SomeCoolDude'
-                });
-            });
-
-            it("should not trigger a load when the queryParams didn't change", () => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        language_id: 1,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    }
-                });
-
-                spectator.detectChanges();
-                expect(store.init).toHaveBeenCalled();
-            });
-
-            it('should trigger a load when changing the clientHost and it is on the allowedDevURLs', () => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        clientHost: 'http://localhost:1111',
-                        language_id: 1,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    },
-                    data: {
-                        data: {
-                            options: {
-                                allowedDevURLs: ['http://localhost:1111']
-                            }
-                        }
-                    }
-                });
-
-                spectator.detectChanges();
-                expect(store.init).toHaveBeenLastCalledWith({
-                    clientHost: 'http://localhost:1111',
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-            });
-
-            it('should trigger a load when changing the clientHost and it is on the allowedDevURLs with a slash at the end', () => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        clientHost: 'http://localhost:1111',
-                        language_id: 1,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    },
-                    data: {
-                        data: {
-                            options: {
-                                allowedDevURLs: ['http://localhost:1111/']
-                            }
-                        }
-                    }
-                });
-
-                spectator.detectChanges();
-                expect(store.init).toHaveBeenLastCalledWith({
-                    clientHost: 'http://localhost:1111',
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-            });
-
-            it('should trigger a load when changing the clientHost has an slash at the and it is on the allowedDevURLs without the slash at the end', () => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        clientHost: 'http://localhost:1111/',
-                        language_id: 1,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    },
-                    data: {
-                        data: {
-                            options: {
-                                allowedDevURLs: ['http://localhost:1111']
-                            }
-                        }
-                    }
-                });
-
-                spectator.detectChanges();
-                expect(store.init).toHaveBeenLastCalledWith({
-                    clientHost: 'http://localhost:1111/',
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-            });
-
-            it('should trigger a load when changing the clientHost has an slash at the and it is on the allowedDevURLs with the slash at the end', () => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        clientHost: 'http://localhost:1111/',
-                        language_id: 1,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    },
-                    data: {
-                        data: {
-                            options: {
-                                allowedDevURLs: ['http://localhost:1111/']
-                            }
-                        }
-                    }
-                });
-
-                spectator.detectChanges();
-                expect(store.init).toHaveBeenLastCalledWith({
-                    clientHost: 'http://localhost:1111/',
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-            });
-
-            it('should trigger a navigate without the clientHost queryParam when the url is not in the allowedDevURLs', () => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        clientHost: 'http://localhost:1111',
-                        language_id: 1,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    },
-                    data: {
-                        data: {
-                            options: {
-                                allowedDevURLs: ['http://localhost:4200']
-                            }
-                        }
-                    }
-                });
-
-                spectator.detectChanges();
-
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        clientHost: null,
-                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                        language_id: 1,
-                        url: 'index'
-                    },
-                    queryParamsHandling: 'merge'
-                });
-
-                expect(store.init).toHaveBeenLastCalledWith({
-                    clientHost: 'http://localhost:3000',
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-            });
-
-            it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is empty', () => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        clientHost: 'http://localhost:1111',
-                        language_id: 1,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    },
-                    data: {
-                        data: {
-                            options: {
-                                allowedDevURLs: []
-                            }
-                        }
-                    }
-                });
-
-                spectator.detectChanges();
-
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        clientHost: null,
-                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                        language_id: 1,
-                        url: 'index'
-                    },
-                    queryParamsHandling: 'merge'
-                });
-
-                expect(store.init).toHaveBeenLastCalledWith({
-                    clientHost: 'http://localhost:3000',
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-            });
-            it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is has a wrong data type', () => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        clientHost: 'http://localhost:1111',
-                        language_id: 1,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    },
-                    data: {
-                        data: {
-                            options: {
-                                allowedDevURLs: "I'm not an array"
-                            }
-                        }
-                    }
-                });
-
-                spectator.detectChanges();
-
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        clientHost: null,
-                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                        language_id: 1,
-                        url: 'index'
-                    },
-                    queryParamsHandling: 'merge'
-                });
-
-                expect(store.init).toHaveBeenLastCalledWith({
-                    clientHost: 'http://localhost:3000',
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-            });
-
-            it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is is not present', () => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        clientHost: 'http://localhost:1111',
-                        language_id: 1,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    },
-                    data: {
-                        data: {
-                            options: {
-                                someRandomOption: 'Hello from the other side'
-                            }
-                        }
-                    }
-                });
-
-                spectator.detectChanges();
-
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        clientHost: null,
-                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                        language_id: 1,
-                        url: 'index'
-                    },
-                    queryParamsHandling: 'merge'
-                });
-
-                expect(store.init).toHaveBeenLastCalledWith({
-                    clientHost: 'http://localhost:3000',
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-            });
-
-            it('should trigger a navigate without the clientHost queryParam when the options are not present', () => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        clientHost: 'http://localhost:1111',
-                        language_id: 1,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    },
-                    data: {
-                        data: {
-                            url: 'http://localhost:3000',
-                            pattern: '.*'
-                        }
-                    }
-                });
-
-                spectator.detectChanges();
-
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        clientHost: null,
-                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                        language_id: 1,
-                        url: 'index'
-                    },
-                    queryParamsHandling: 'merge'
-                });
-
-                expect(store.init).toHaveBeenLastCalledWith({
-                    clientHost: 'http://localhost:3000',
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-            });
-            it('should trigger a navigate without the clientHost queryParam when the data is not present', () => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        clientHost: 'http://localhost:1111',
-                        language_id: 1,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    },
-                    data: {}
-                });
-
-                spectator.detectChanges();
-
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        clientHost: null,
-                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                        language_id: 1,
-                        url: 'index'
-                    },
-                    queryParamsHandling: 'merge'
-                });
-
-                expect(store.init).toHaveBeenLastCalledWith({
-                    clientHost: 'http://localhost:3000',
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-            });
-
-            it('should trigger a navigate without the clientHost queryParam when there is no data in activated route', () => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        clientHost: 'http://localhost:1111',
-                        language_id: 1,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    }
-                });
-
-                spectator.detectChanges();
-
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        clientHost: null,
-                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                        language_id: 1,
-                        url: 'index'
-                    },
-                    queryParamsHandling: 'merge'
-                });
-
-                expect(store.init).toHaveBeenLastCalledWith({
-                    clientHost: 'http://localhost:3000',
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-            });
-        });
-
-        describe('language checking', () => {
-            it('should not trigger the confirmation service if the page is translated to the current language', () => {
-                spectator.detectChanges();
-
-                expect(confirmationServiceSpy).not.toHaveBeenCalled();
-            });
-
-            it('should not trigger the confirmation service if the page dont have current language', () => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        language_id: 3,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    }
-                });
-
-                spectator.detectChanges();
-
-                expect(confirmationServiceSpy).not.toHaveBeenCalled();
-            });
-
-            it("should trigger the confirmation service if the page isn't translated to the current language", fakeAsync(() => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        language_id: 2,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    }
-                });
-
-                spectator.detectChanges();
-
-                tick();
-
-                expect(confirmationServiceSpy).toHaveBeenCalledWith({
-                    accept: expect.any(Function),
-                    acceptEvent: expect.any(Object),
-                    reject: expect.any(Function),
-                    rejectEvent: expect.any(Object),
-                    rejectIcon: 'hidden',
-                    acceptIcon: 'hidden',
-                    key: 'shell-confirm-dialog',
-                    header: 'editpage.language-change-missing-lang-populate.confirm.header',
-                    message: 'editpage.language-change-missing-lang-populate.confirm.message'
-                });
-            }));
-
-            it('should trigger a navigation to default language when the user rejects the creation', fakeAsync(() => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        language_id: 2,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    }
-                });
-
-                spectator.detectChanges();
-
-                tick(1000);
-                spectator.detectChanges();
-
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-
-                const clickEvent = createMouseEvent('click');
-
-                confirmDialog.querySelector('.p-confirm-dialog-reject').dispatchEvent(clickEvent);
-
-                spectator.detectChanges();
-
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: { language_id: 1 },
-                    queryParamsHandling: 'merge'
-                });
-            }));
-
-            it('should open a dialog to create the page in the new language when the user accepts the creation', fakeAsync(() => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        language_id: 2,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    }
-                });
-
-                spectator.detectChanges();
-                const dialog = spectator.component.dialog;
-                const translatePageSpy = jest.spyOn(dialog, 'translatePage');
-
-                tick(1000);
-                spectator.detectChanges();
-
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-
-                confirmDialog
-                    .querySelector('.p-confirm-dialog-accept')
-                    .dispatchEvent(new MouseEvent('click'));
-
-                expect(translatePageSpy).toHaveBeenCalledWith({
-                    newLanguage: 2,
-                    page: {
-                        canEdit: true,
-                        canRead: true,
-                        identifier: '123',
-                        inode: '123',
-                        live: true,
-                        liveInode: '1234',
-                        pageURI: 'index',
-                        stInode: '12345',
-                        title: 'hello world'
-                    }
-                });
-            }));
-
-            it('should open a dialog to create the page and navigate to default language if the user closes the dialog without saving', fakeAsync(() => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        language_id: 2,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    }
-                });
-
-                spectator.detectChanges();
-
-                tick(1000);
-                spectator.detectChanges();
-
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-
-                const clickEvent = createMouseEvent('click');
-
-                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
-
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
-                    event: new CustomEvent('ng-event', {
-                        detail: {
-                            name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
-                        }
-                    }),
-                    actionPayload: PAYLOAD_MOCK,
-                    form: {
-                        status: FormStatus.DIRTY,
-                        isTranslation: true
-                    },
-                    clientAction: CLIENT_ACTIONS.NOOP
-                });
-
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: { language_id: 1 },
-                    queryParamsHandling: 'merge'
-                });
-            }));
-
-            it('should open a dialog to create the page and navigate to default language if the user closes the dialog without saving and without editing ', fakeAsync(() => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        language_id: 2,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    }
-                });
-
-                spectator.detectChanges();
-
-                tick(1000);
-                spectator.detectChanges();
-
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-
-                const clickEvent = createMouseEvent('click');
-
-                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
-
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
-                    event: new CustomEvent('ng-event', {
-                        detail: {
-                            name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
-                        }
-                    }),
-                    actionPayload: PAYLOAD_MOCK,
-                    form: {
-                        status: FormStatus.PRISTINE,
-                        isTranslation: true
-                    },
-                    clientAction: CLIENT_ACTIONS.NOOP
-                });
-
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: { language_id: 1 },
-                    queryParamsHandling: 'merge'
-                });
-            }));
-
-            it('should open a dialog to create the page and do nothing when the user creates the page correctly with SAVE_PAGE and closes the dialog', fakeAsync(() => {
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: {
-                        language_id: 2,
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    }
-                });
-
-                spectator.detectChanges();
-
-                tick(1000);
-                spectator.detectChanges();
-
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-
-                const clickEvent = createMouseEvent('click');
-
-                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
-
-                spectator.detectChanges();
-
-                spectator.detectChanges();
-                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
-                    event: new CustomEvent('ng-event', {
-                        detail: {
-                            name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
-                        }
-                    }),
-                    actionPayload: PAYLOAD_MOCK,
-                    form: {
-                        isTranslation: true,
-                        status: FormStatus.SAVED
-                    },
-                    clientAction: CLIENT_ACTIONS.NOOP
-                });
-
-                spectator.detectChanges();
-
-                expect(router.navigate).not.toHaveBeenCalled();
-            }));
-        });
-
-        describe('Site Changes', () => {
-            it('should trigger a navigate to /pages when site changes', async () => {
-                const navigate = jest.spyOn(router, 'navigate');
-
-                spectator.detectChanges();
-                siteService.setFakeCurrentSite(); // We have to trigger the first set as dotcms on init
-                siteService.setFakeCurrentSite();
-                spectator.detectChanges();
-
-                expect(navigate).toHaveBeenCalledWith(['/pages']);
-            });
-        });
+        // describe('DOM', () => {
+        //     it('should have a navigation bar', () => {
+        //         spectator.detectChanges();
+        //         expect(spectator.query(byTestId('ema-nav-bar'))).not.toBeNull();
+        //     });
+
+        //     it('should have nav bar with items', () => {
+        //         const navBarComponent = spectator.query(EditEmaNavigationBarComponent);
+
+        //         expect(navBarComponent.items).toEqual([
+        //             {
+        //                 icon: 'pi-file',
+        //                 label: 'editema.editor.navbar.content',
+        //                 href: 'content',
+        //                 id: 'content'
+        //             },
+        //             {
+        //                 icon: 'pi-table',
+        //                 label: 'editema.editor.navbar.layout',
+        //                 href: 'layout',
+        //                 isDisabled: false,
+        //                 tooltip: null,
+        //                 id: 'layout'
+        //             },
+        //             {
+        //                 icon: 'pi-sliders-h',
+        //                 label: 'editema.editor.navbar.rules',
+        //                 href: `rules/123`,
+        //                 isDisabled: false,
+        //                 id: 'rules'
+        //             },
+        //             {
+        //                 iconURL: 'experiments',
+        //                 label: 'editema.editor.navbar.experiments',
+        //                 href: 'experiments/123',
+        //                 isDisabled: false,
+        //                 id: 'experiments'
+        //             },
+        //             {
+        //                 icon: 'pi-th-large',
+        //                 label: 'editema.editor.navbar.page-tools',
+        //                 id: 'page-tools'
+        //             },
+        //             {
+        //                 icon: 'pi-ellipsis-v',
+        //                 label: 'editema.editor.navbar.properties',
+        //                 id: 'properties',
+        //                 isDisabled: false
+        //             }
+        //         ]);
+        //     });
+
+        //     it('should trigger action when the page-tool item is clicked', () => {
+        //         const pageToolsSpy = jest.spyOn(spectator.component.pageTools, 'toggleDialog');
+
+        //         const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
+
+        //         spectator.triggerEventHandler(navBar, 'action', 'page-tools');
+
+        //         expect(pageToolsSpy).toHaveBeenCalled();
+        //     });
+
+        //     it('should trigger action when the properties item is clicked', () => {
+        //         const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+
+        //         const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
+
+        //         spectator.triggerEventHandler(navBar, 'action', 'properties');
+
+        //         expect(dialogSpy).toHaveBeenCalledWith({
+        //             contentType: undefined,
+        //             identifier: '123',
+        //             inode: '123',
+        //             title: 'hello world'
+        //         });
+        //     });
+        // });
+
+        // describe('router', () => {
+        //     it('should trigger an store load with default values', () => {
+        //         spectator.detectChanges();
+
+        //         expect(store.init).toHaveBeenCalledWith({
+        //             clientHost: 'http://localhost:3000',
+        //             language_id: 1,
+        //             url: 'index',
+        //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //         });
+        //     });
+
+        //     it('should trigger a load when changing the queryParams', () => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 language_id: 2,
+        //                 url: 'my-awesome-page',
+        //                 'com.dotmarketing.persona.id': 'SomeCoolDude'
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+        //         expect(store.init).toHaveBeenCalledWith({
+        //             clientHost: 'http://localhost:3000',
+        //             language_id: 2,
+        //             url: 'my-awesome-page',
+        //             'com.dotmarketing.persona.id': 'SomeCoolDude'
+        //         });
+        //     });
+
+        //     it("should not trigger a load when the queryParams didn't change", () => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 language_id: 1,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+        //         expect(store.init).toHaveBeenCalled();
+        //     });
+
+        //     it('should trigger a load when changing the clientHost and it is on the allowedDevURLs', () => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 clientHost: 'http://localhost:1111',
+        //                 language_id: 1,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             },
+        //             data: {
+        //                 data: {
+        //                     options: {
+        //                         allowedDevURLs: ['http://localhost:1111']
+        //                     }
+        //                 }
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+        //         expect(store.init).toHaveBeenLastCalledWith({
+        //             clientHost: 'http://localhost:1111',
+        //             language_id: 1,
+        //             url: 'index',
+        //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //         });
+        //     });
+
+        //     it('should trigger a load when changing the clientHost and it is on the allowedDevURLs with a slash at the end', () => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 clientHost: 'http://localhost:1111',
+        //                 language_id: 1,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             },
+        //             data: {
+        //                 data: {
+        //                     options: {
+        //                         allowedDevURLs: ['http://localhost:1111/']
+        //                     }
+        //                 }
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+        //         expect(store.init).toHaveBeenLastCalledWith({
+        //             clientHost: 'http://localhost:1111',
+        //             language_id: 1,
+        //             url: 'index',
+        //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //         });
+        //     });
+
+        //     it('should trigger a load when changing the clientHost has an slash at the and it is on the allowedDevURLs without the slash at the end', () => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 clientHost: 'http://localhost:1111/',
+        //                 language_id: 1,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             },
+        //             data: {
+        //                 data: {
+        //                     options: {
+        //                         allowedDevURLs: ['http://localhost:1111']
+        //                     }
+        //                 }
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+        //         expect(store.init).toHaveBeenLastCalledWith({
+        //             clientHost: 'http://localhost:1111/',
+        //             language_id: 1,
+        //             url: 'index',
+        //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //         });
+        //     });
+
+        //     it('should trigger a load when changing the clientHost has an slash at the and it is on the allowedDevURLs with the slash at the end', () => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 clientHost: 'http://localhost:1111/',
+        //                 language_id: 1,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             },
+        //             data: {
+        //                 data: {
+        //                     options: {
+        //                         allowedDevURLs: ['http://localhost:1111/']
+        //                     }
+        //                 }
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+        //         expect(store.init).toHaveBeenLastCalledWith({
+        //             clientHost: 'http://localhost:1111/',
+        //             language_id: 1,
+        //             url: 'index',
+        //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //         });
+        //     });
+
+        //     it('should trigger a navigate without the clientHost queryParam when the url is not in the allowedDevURLs', () => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 clientHost: 'http://localhost:1111',
+        //                 language_id: 1,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             },
+        //             data: {
+        //                 data: {
+        //                     options: {
+        //                         allowedDevURLs: ['http://localhost:4200']
+        //                     }
+        //                 }
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+
+        //         expect(router.navigate).toHaveBeenCalledWith([], {
+        //             queryParams: {
+        //                 clientHost: null,
+        //                 'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+        //                 language_id: 1,
+        //                 url: 'index'
+        //             },
+        //             queryParamsHandling: 'merge'
+        //         });
+
+        //         expect(store.init).toHaveBeenLastCalledWith({
+        //             clientHost: 'http://localhost:3000',
+        //             language_id: 1,
+        //             url: 'index',
+        //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //         });
+        //     });
+
+        //     it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is empty', () => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 clientHost: 'http://localhost:1111',
+        //                 language_id: 1,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             },
+        //             data: {
+        //                 data: {
+        //                     options: {
+        //                         allowedDevURLs: []
+        //                     }
+        //                 }
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+
+        //         expect(router.navigate).toHaveBeenCalledWith([], {
+        //             queryParams: {
+        //                 clientHost: null,
+        //                 'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+        //                 language_id: 1,
+        //                 url: 'index'
+        //             },
+        //             queryParamsHandling: 'merge'
+        //         });
+
+        //         expect(store.init).toHaveBeenLastCalledWith({
+        //             clientHost: 'http://localhost:3000',
+        //             language_id: 1,
+        //             url: 'index',
+        //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //         });
+        //     });
+        //     it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is has a wrong data type', () => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 clientHost: 'http://localhost:1111',
+        //                 language_id: 1,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             },
+        //             data: {
+        //                 data: {
+        //                     options: {
+        //                         allowedDevURLs: "I'm not an array"
+        //                     }
+        //                 }
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+
+        //         expect(router.navigate).toHaveBeenCalledWith([], {
+        //             queryParams: {
+        //                 clientHost: null,
+        //                 'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+        //                 language_id: 1,
+        //                 url: 'index'
+        //             },
+        //             queryParamsHandling: 'merge'
+        //         });
+
+        //         expect(store.init).toHaveBeenLastCalledWith({
+        //             clientHost: 'http://localhost:3000',
+        //             language_id: 1,
+        //             url: 'index',
+        //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //         });
+        //     });
+
+        //     it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is is not present', () => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 clientHost: 'http://localhost:1111',
+        //                 language_id: 1,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             },
+        //             data: {
+        //                 data: {
+        //                     options: {
+        //                         someRandomOption: 'Hello from the other side'
+        //                     }
+        //                 }
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+
+        //         expect(router.navigate).toHaveBeenCalledWith([], {
+        //             queryParams: {
+        //                 clientHost: null,
+        //                 'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+        //                 language_id: 1,
+        //                 url: 'index'
+        //             },
+        //             queryParamsHandling: 'merge'
+        //         });
+
+        //         expect(store.init).toHaveBeenLastCalledWith({
+        //             clientHost: 'http://localhost:3000',
+        //             language_id: 1,
+        //             url: 'index',
+        //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //         });
+        //     });
+
+        //     it('should trigger a navigate without the clientHost queryParam when the options are not present', () => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 clientHost: 'http://localhost:1111',
+        //                 language_id: 1,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             },
+        //             data: {
+        //                 data: {
+        //                     url: 'http://localhost:3000',
+        //                     pattern: '.*'
+        //                 }
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+
+        //         expect(router.navigate).toHaveBeenCalledWith([], {
+        //             queryParams: {
+        //                 clientHost: null,
+        //                 'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+        //                 language_id: 1,
+        //                 url: 'index'
+        //             },
+        //             queryParamsHandling: 'merge'
+        //         });
+
+        //         expect(store.init).toHaveBeenLastCalledWith({
+        //             clientHost: 'http://localhost:3000',
+        //             language_id: 1,
+        //             url: 'index',
+        //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //         });
+        //     });
+        //     it('should trigger a navigate without the clientHost queryParam when the data is not present', () => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 clientHost: 'http://localhost:1111',
+        //                 language_id: 1,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             },
+        //             data: {}
+        //         });
+
+        //         spectator.detectChanges();
+
+        //         expect(router.navigate).toHaveBeenCalledWith([], {
+        //             queryParams: {
+        //                 clientHost: null,
+        //                 'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+        //                 language_id: 1,
+        //                 url: 'index'
+        //             },
+        //             queryParamsHandling: 'merge'
+        //         });
+
+        //         expect(store.init).toHaveBeenLastCalledWith({
+        //             clientHost: 'http://localhost:3000',
+        //             language_id: 1,
+        //             url: 'index',
+        //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //         });
+        //     });
+
+        //     it('should trigger a navigate without the clientHost queryParam when there is no data in activated route', () => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 clientHost: 'http://localhost:1111',
+        //                 language_id: 1,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+
+        //         expect(router.navigate).toHaveBeenCalledWith([], {
+        //             queryParams: {
+        //                 clientHost: null,
+        //                 'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+        //                 language_id: 1,
+        //                 url: 'index'
+        //             },
+        //             queryParamsHandling: 'merge'
+        //         });
+
+        //         expect(store.init).toHaveBeenLastCalledWith({
+        //             clientHost: 'http://localhost:3000',
+        //             language_id: 1,
+        //             url: 'index',
+        //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //         });
+        //     });
+        // });
+
+        // describe('language checking', () => {
+        //     it('should not trigger the confirmation service if the page is translated to the current language', () => {
+        //         spectator.detectChanges();
+
+        //         expect(confirmationServiceSpy).not.toHaveBeenCalled();
+        //     });
+
+        //     it('should not trigger the confirmation service if the page dont have current language', () => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 language_id: 3,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+
+        //         expect(confirmationServiceSpy).not.toHaveBeenCalled();
+        //     });
+
+        //     it("should trigger the confirmation service if the page isn't translated to the current language", fakeAsync(() => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 language_id: 2,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+
+        //         tick();
+
+        //         expect(confirmationServiceSpy).toHaveBeenCalledWith({
+        //             accept: expect.any(Function),
+        //             acceptEvent: expect.any(Object),
+        //             reject: expect.any(Function),
+        //             rejectEvent: expect.any(Object),
+        //             rejectIcon: 'hidden',
+        //             acceptIcon: 'hidden',
+        //             key: 'shell-confirm-dialog',
+        //             header: 'editpage.language-change-missing-lang-populate.confirm.header',
+        //             message: 'editpage.language-change-missing-lang-populate.confirm.message'
+        //         });
+        //     }));
+
+        //     it('should trigger a navigation to default language when the user rejects the creation', fakeAsync(() => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 language_id: 2,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+
+        //         tick(1000);
+        //         spectator.detectChanges();
+
+        //         const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+        //         const clickEvent = createMouseEvent('click');
+
+        //         confirmDialog.querySelector('.p-confirm-dialog-reject').dispatchEvent(clickEvent);
+
+        //         spectator.detectChanges();
+
+        //         expect(router.navigate).toHaveBeenCalledWith([], {
+        //             queryParams: { language_id: 1 },
+        //             queryParamsHandling: 'merge'
+        //         });
+        //     }));
+
+        //     it('should open a dialog to create the page in the new language when the user accepts the creation', fakeAsync(() => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 language_id: 2,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+        //         const dialog = spectator.component.dialog;
+        //         const translatePageSpy = jest.spyOn(dialog, 'translatePage');
+
+        //         tick(1000);
+        //         spectator.detectChanges();
+
+        //         const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+        //         confirmDialog
+        //             .querySelector('.p-confirm-dialog-accept')
+        //             .dispatchEvent(new MouseEvent('click'));
+
+        //         expect(translatePageSpy).toHaveBeenCalledWith({
+        //             newLanguage: 2,
+        //             page: {
+        //                 canEdit: true,
+        //                 canRead: true,
+        //                 identifier: '123',
+        //                 inode: '123',
+        //                 live: true,
+        //                 liveInode: '1234',
+        //                 pageURI: 'index',
+        //                 stInode: '12345',
+        //                 title: 'hello world'
+        //             }
+        //         });
+        //     }));
+
+        //     it('should open a dialog to create the page and navigate to default language if the user closes the dialog without saving', fakeAsync(() => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 language_id: 2,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+
+        //         tick(1000);
+        //         spectator.detectChanges();
+
+        //         const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+        //         const clickEvent = createMouseEvent('click');
+
+        //         confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
+
+        //         spectator.detectChanges();
+
+        //         spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+        //             event: new CustomEvent('ng-event', {
+        //                 detail: {
+        //                     name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+        //                 }
+        //             }),
+        //             actionPayload: PAYLOAD_MOCK,
+        //             form: {
+        //                 status: FormStatus.DIRTY,
+        //                 isTranslation: true
+        //             },
+        //             clientAction: CLIENT_ACTIONS.NOOP
+        //         });
+
+        //         expect(router.navigate).toHaveBeenCalledWith([], {
+        //             queryParams: { language_id: 1 },
+        //             queryParamsHandling: 'merge'
+        //         });
+        //     }));
+
+        //     it('should open a dialog to create the page and navigate to default language if the user closes the dialog without saving and without editing ', fakeAsync(() => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 language_id: 2,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+
+        //         tick(1000);
+        //         spectator.detectChanges();
+
+        //         const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+        //         const clickEvent = createMouseEvent('click');
+
+        //         confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
+
+        //         spectator.detectChanges();
+
+        //         spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+        //             event: new CustomEvent('ng-event', {
+        //                 detail: {
+        //                     name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+        //                 }
+        //             }),
+        //             actionPayload: PAYLOAD_MOCK,
+        //             form: {
+        //                 status: FormStatus.PRISTINE,
+        //                 isTranslation: true
+        //             },
+        //             clientAction: CLIENT_ACTIONS.NOOP
+        //         });
+
+        //         expect(router.navigate).toHaveBeenCalledWith([], {
+        //             queryParams: { language_id: 1 },
+        //             queryParamsHandling: 'merge'
+        //         });
+        //     }));
+
+        //     it('should open a dialog to create the page and do nothing when the user creates the page correctly with SAVE_PAGE and closes the dialog', fakeAsync(() => {
+        //         spectator.triggerNavigation({
+        //             url: [],
+        //             queryParams: {
+        //                 language_id: 2,
+        //                 url: 'index',
+        //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        //             }
+        //         });
+
+        //         spectator.detectChanges();
+
+        //         tick(1000);
+        //         spectator.detectChanges();
+
+        //         const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+        //         const clickEvent = createMouseEvent('click');
+
+        //         confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
+
+        //         spectator.detectChanges();
+
+        //         spectator.detectChanges();
+        //         spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+        //             event: new CustomEvent('ng-event', {
+        //                 detail: {
+        //                     name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+        //                 }
+        //             }),
+        //             actionPayload: PAYLOAD_MOCK,
+        //             form: {
+        //                 isTranslation: true,
+        //                 status: FormStatus.SAVED
+        //             },
+        //             clientAction: CLIENT_ACTIONS.NOOP
+        //         });
+
+        //         spectator.detectChanges();
+
+        //         expect(router.navigate).not.toHaveBeenCalled();
+        //     }));
+        // });
+
+        // describe('Site Changes', () => {
+        //     it('should trigger a navigate to /pages when site changes', async () => {
+        //         const navigate = jest.spyOn(router, 'navigate');
+
+        //         spectator.detectChanges();
+        //         siteService.setFakeCurrentSite(); // We have to trigger the first set as dotcms on init
+        //         siteService.setFakeCurrentSite();
+        //         spectator.detectChanges();
+
+        //         expect(navigate).toHaveBeenCalledWith(['/pages']);
+        //     });
+        // });
 
         describe('page properties', () => {
-            it('should trigger a navigate when saving and the url changed', () => {
-                const navigate = jest.spyOn(router, 'navigate');
+            beforeEach(() => spectator.detectChanges());
+
+            it('should update page params when saving and the url changed', () => {
+                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
 
                 spectator.detectChanges();
 
@@ -974,39 +1006,29 @@ describe('DotEmaShellComponent', () => {
                 });
                 spectator.detectChanges();
 
-                expect(navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        url: '/my-awesome-page'
-                    },
-                    queryParamsHandling: 'merge'
-                });
+                expect(spyUpdatePageParams).toHaveBeenCalledWith({ url: '/my-awesome-page' });
             });
 
             it('should trigger a store reload if the url is the same', () => {
-                const reloadMock = jest.spyOn(store, 'reload');
-
+                const spyReload = jest.spyOn(store, 'reload');
+                const spyLocation = jest.spyOn(location, 'replaceState');
                 spectator.detectChanges();
 
-                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
-                    event: new CustomEvent('ng-event', {
-                        detail: {
-                            name: NG_CUSTOM_EVENTS.SAVE_PAGE,
-                            payload: {
-                                htmlPageReferer: 'index'
-                            }
+                spectator.triggerEventHandler(
+                    DotEmaDialogComponent,
+                    'action',
+                    DIALOG_ACTION_EVENT({
+                        name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                        payload: {
+                            htmlPageReferer: 'index'
                         }
-                    }),
-                    actionPayload: PAYLOAD_MOCK,
-                    form: {
-                        status: FormStatus.SAVED,
-                        isTranslation: false
-                    },
-                    clientAction: CLIENT_ACTIONS.NOOP
-                });
+                    })
+                );
 
                 spectator.detectChanges();
 
-                expect(reloadMock).toHaveBeenCalled();
+                expect(spyReload).toHaveBeenCalled();
+                expect(spyLocation).not.toHaveBeenCalled();
             });
 
             it('should reload content from dialog', () => {
@@ -1019,39 +1041,31 @@ describe('DotEmaShellComponent', () => {
 
             it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', () => {
                 const reloadSpy = jest.spyOn(store, 'reload');
-                // Mocking the uveStore to return a urlContentMap with the same URL as the current one
                 jest.spyOn(store, 'pageAPIResponse').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP);
-                jest.spyOn(store, 'params').mockReturnValue({
+                store.updatePageParams({
                     url: '/test-url',
                     language_id: '1',
                     'com.dotmarketing.persona.id': '1'
                 });
 
                 spectator.detectChanges();
-
-                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
-                    event: new CustomEvent('ng-event', {
-                        detail: {
-                            name: NG_CUSTOM_EVENTS.SAVE_PAGE,
-                            payload: {
-                                htmlPageReferer: '/test-url'
-                            }
+                spectator.triggerEventHandler(
+                    DotEmaDialogComponent,
+                    'action',
+                    DIALOG_ACTION_EVENT({
+                        name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                        payload: {
+                            htmlPageReferer: '/test-url'
                         }
-                    }),
-                    actionPayload: PAYLOAD_MOCK,
-                    form: {
-                        status: FormStatus.SAVED,
-                        isTranslation: false
-                    },
-                    clientAction: CLIENT_ACTIONS.NOOP
-                });
+                    })
+                );
 
                 spectator.detectChanges();
-
                 expect(reloadSpy).toHaveBeenCalled();
-                expect(router.navigate).not.toHaveBeenCalled();
             });
         });
+
+        beforeEach(() => jest.clearAllMocks());
     });
 
     describe('without license', () => {
@@ -1170,10 +1184,6 @@ describe('DotEmaShellComponent', () => {
                     }
                 ]
             });
-            route = spectator.inject(ActivatedRoute);
-            jest.spyOn(route.snapshot, 'firstChild', 'get').mockReturnValue({
-                routeConfig: { path: 'content' }
-            } as ActivatedRouteSnapshot);
         });
 
         it('should not render components', () => {

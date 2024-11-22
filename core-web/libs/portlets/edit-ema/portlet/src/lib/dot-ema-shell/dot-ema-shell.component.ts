@@ -277,6 +277,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             delete params.clientHost;
         }
 
+        // Should this fo inside the updatePageParams method?
+        // Ask Jal, he implemented this
         if (!params.variantName) {
             params.variantName = DEFAULT_VARIANT_ID;
         }
@@ -292,9 +294,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @param {Params} queryParams
      * @memberof DotEmaShellComponent
      */
-    #updateLocation(queryParams: Params): void {
+    #updateLocation(queryParams: Params = {}): void {
         const urlTree = this.#router.createUrlTree([], { queryParams });
-        this.#location.go(urlTree.toString());
+
+        this.#location.replaceState(urlTree.toString());
     }
 
     /**
