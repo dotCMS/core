@@ -1,10 +1,7 @@
 package com.dotcms.jobs.business.api;
 
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.jobs.business.api.events.EventProducer;
 import com.dotcms.jobs.business.api.events.JobCancelRequestEvent;
 import com.dotcms.jobs.business.api.events.JobCanceledEvent;
 import com.dotcms.jobs.business.api.events.JobCancellingEvent;
@@ -15,10 +12,12 @@ import com.dotcms.jobs.business.api.events.JobProgressUpdatedEvent;
 import com.dotcms.jobs.business.api.events.JobRemovedFromQueueEvent;
 import com.dotcms.jobs.business.api.events.JobStartedEvent;
 import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
+import com.dotcms.jobs.business.detector.AbandonedJobDetector;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
+import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.error.RetryPolicyProcessor;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
@@ -30,10 +29,12 @@ import com.dotcms.jobs.business.processor.DefaultProgressTracker;
 import com.dotcms.jobs.business.processor.DefaultRetryStrategy;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
+import com.dotcms.jobs.business.processor.Validator;
 import com.dotcms.jobs.business.queue.JobQueue;
 import com.dotcms.jobs.business.queue.error.JobNotFoundException;
 import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotcms.jobs.business.queue.error.JobQueueException;
+import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -41,11 +42,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
-import io.vavr.control.Try;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -110,6 +109,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     private final CircuitBreaker circuitBreaker;
     private final JobQueue jobQueue;
+    private final AbandonedJobDetector abandonedJobDetector;
     private final Map<String, Class<? extends JobProcessor>> processors;
     private final Map<String, JobProcessor> processorInstancesByJobId;
     private final int threadPoolSize;
@@ -118,11 +118,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private final RetryStrategy defaultRetryStrategy;
     private final RetryPolicyProcessor retryPolicyProcessor;
 
-    private final ScheduledExecutorService pollJobUpdatesScheduler;
-    private LocalDateTime lastPollJobUpdateTime = LocalDateTime.now();
-
     private final RealTimeJobMonitor realTimeJobMonitor;
-    private final EventProducer eventProducer;
+
     private final JobProcessorFactory jobProcessorFactory;
 
     // Cap to prevent overflow
@@ -139,14 +136,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param circuitBreaker       The CircuitBreaker implementation for fault tolerance.
      * @param defaultRetryStrategy The default retry strategy to use for failed jobs.
      * @param realTimeJobMonitor   The RealTimeJobMonitor for handling real-time job updates.
-     * @param eventProducer        The EventProducer for firing job-related events.
-     * <p>
-     * This constructor performs the following initializations:
-     * - Sets up the job queue and related configurations.
-     * - Initializes thread pool and job processors.
-     * - Sets up the circuit breaker and retry strategies.
-     * - Configures the job update polling mechanism.
-     * - Initializes event handlers for various job state changes.
+     * @param jobProcessorFactory  The JobProcessorFactory for creating job processors instances.
+     * @param retryPolicyProcessor The RetryPolicyProcessor for processing retry policies.
+     * @param abandonedJobDetector The AbandonedJobDetector for detecting abandoned jobs.
      */
     @Inject
     public JobQueueManagerAPIImpl(@Named("queueProducer") JobQueue jobQueue,
@@ -154,9 +146,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             CircuitBreaker circuitBreaker,
             @DefaultRetryStrategy RetryStrategy defaultRetryStrategy,
             RealTimeJobMonitor realTimeJobMonitor,
-            EventProducer eventProducer,
             JobProcessorFactory jobProcessorFactory,
-            RetryPolicyProcessor retryPolicyProcessor) {
+            RetryPolicyProcessor retryPolicyProcessor,
+            AbandonedJobDetector abandonedJobDetector) {
 
         this.jobQueue = jobQueue;
         this.threadPoolSize = jobQueueConfig.getThreadPoolSize();
@@ -167,16 +159,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         this.circuitBreaker = circuitBreaker;
         this.jobProcessorFactory = jobProcessorFactory;
         this.retryPolicyProcessor = retryPolicyProcessor;
-
-        this.pollJobUpdatesScheduler = Executors.newSingleThreadScheduledExecutor();
-        pollJobUpdatesScheduler.scheduleAtFixedRate(
-                this::pollJobUpdates, 0,
-                jobQueueConfig.getPollJobUpdatesIntervalMilliseconds(), TimeUnit.MILLISECONDS
-        );
-
-        // Events
+        this.abandonedJobDetector = abandonedJobDetector;
         this.realTimeJobMonitor = realTimeJobMonitor;
-        this.eventProducer = eventProducer;
 
         APILocator.getLocalSystemEventsAPI().subscribe(
                 JobCancelRequestEvent.class,
@@ -218,7 +202,11 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 });
             }
 
-            Logger.info(this, "JobQueue has been successfully started.");
+            // Start the abandoned job detector
+            abandonedJobDetector.start();
+
+            Logger.info(this,
+                    "JobQueue and abandoned job detector have been successfully started.");
         } else {
             Logger.warn(this,
                     "Attempt to start JobQueue that is already running. Ignoring."
@@ -239,8 +227,11 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             isShuttingDown = true;
             Logger.info(this, "Closing JobQueue and stopping all job processing.");
 
+            // Stop the abandoned job detector
+            abandonedJobDetector.close();
+
+            // Close existing services
             closeExecutorService(executorService);
-            closeExecutorService(pollJobUpdatesScheduler);
 
             isShuttingDown = false;
             isClosed = true;
@@ -278,6 +269,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     @Override
     public String createJob(final String queueName, final Map<String, Object> parameters)
             throws JobProcessorNotFoundException, DotDataException {
+
+        // Validate a processor is registered for the queue
         final Class<? extends JobProcessor> clazz = processors.get(queueName);
         if (null == clazz) {
             final var error = new JobProcessorNotFoundException(queueName);
@@ -287,14 +280,27 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         //first attempt instantiating the processor, cuz if we cant no use to create an entry in the db
         final var processor = newProcessorInstance(queueName);
-        // now that we know we can instantiate the processor, we can add it to the map of instances
-        // But first we need the job id
+
+        // Validate job parameters if processor implements Validator
+        if (processor instanceof Validator) {
+            try {
+                ((Validator) processor).validate(parameters);
+            } catch (JobValidationException e) {
+                Logger.error(this, "Job validation failed: " + e.getMessage(), e);
+                throw e;
+            }
+        }
+
         try {
+
+            // now that we know we can instantiate the processor, we can add it to the map of instances
+            // But first we need the job id
             final String jobId = jobQueue.createJob(queueName, parameters);
             addInstanceRef(jobId, processor);
-            eventProducer.getEvent(JobCreatedEvent.class).fire(
-                    new JobCreatedEvent(jobId, queueName, LocalDateTime.now(), parameters)
-            );
+
+            // Send the job created events
+            JobUtil.sendEvents(
+                    new JobCreatedEvent(jobId, queueName, LocalDateTime.now(), parameters));
             return jobId;
         } catch (JobQueueException e) {
             throw new DotDataException("Error creating job", e);
@@ -374,7 +380,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         }
     }
 
-    @WrapInTransaction
     @Override
     public void cancelJob(final String jobId) throws DotDataException {
 
@@ -398,7 +403,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param event The event that triggers the job cancellation request.
      */
     @VisibleForTesting
-    @WrapInTransaction
     void onCancelRequestJob(final JobCancelRequestEvent event) {
 
         try {
@@ -475,28 +479,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     }
 
     /**
-     * Polls the job queue for updates to watched jobs and notifies their watchers.
-     */
-    @CloseDBIfOpened
-    private void pollJobUpdates() {
-        try {
-            final var watchedJobIds = realTimeJobMonitor.getWatchedJobIds();
-            if (watchedJobIds.isEmpty()) {
-                return; // No jobs are being watched, skip polling
-            }
-
-            final var currentPollTime = LocalDateTime.now();
-            List<Job> updatedJobs = jobQueue.getUpdatedJobsSince(
-                    watchedJobIds, lastPollJobUpdateTime
-            );
-            realTimeJobMonitor.updateWatchers(updatedJobs);
-            lastPollJobUpdateTime = currentPollTime;
-        } catch (Exception e) {
-            Logger.error(this, "Error polling job updates: " + e.getMessage(), e);//
-        }
-    }
-
-    /**
      * Fetches the state of a job from the job queue using the provided job ID.
      *
      * @param jobId the unique identifier of the job whose state is to be fetched
@@ -521,7 +503,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param progressTracker The processor progress tracker
      * @param previousProgress The previous progress value
      */
-    @WrapInTransaction
     private float updateJobProgress(final Job job, final ProgressTracker progressTracker,
             final float previousProgress) throws DotDataException {
 
@@ -540,9 +521,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                     Job updatedJob = job.withProgress(progress).withState(latestState);
 
                     jobQueue.updateJobProgress(job.id(), updatedJob.progress());
-                    eventProducer.getEvent(JobProgressUpdatedEvent.class).fire(
-                            new JobProgressUpdatedEvent(updatedJob, LocalDateTime.now())
-                    );
+
+                    // Send the update job progress events
+                    JobUtil.sendEvents(updatedJob, JobProgressUpdatedEvent::new);
 
                     return progress;
                 }
@@ -665,7 +646,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      */
     private void processJobWithRetry(final Job job) throws DotDataException {
 
-        if (job.state() == JobState.FAILED) {
+        if (job.state() == JobState.FAILED || job.state() == JobState.ABANDONED) {
 
             if (canRetry(job)) {
 
@@ -718,9 +699,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         try {
             jobQueue.removeJobFromQueue(job.id());
-            eventProducer.getEvent(JobRemovedFromQueueEvent.class).fire(
-                    new JobRemovedFromQueueEvent(job, LocalDateTime.now())
-            );
+            // Send the job removed from queue events
+            JobUtil.sendEvents(job, JobRemovedFromQueueEvent::new);
         } catch (JobQueueDataException e) {
             throw new DotDataException("Error removing failed job", e);
         }
@@ -740,9 +720,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             final ProgressTracker progressTracker = new DefaultProgressTracker();
             Job runningJob = job.markAsRunning().withProgressTracker(progressTracker);
             updateJobStatus(runningJob);
-            eventProducer.getEvent(JobStartedEvent.class).fire(
-                    new JobStartedEvent(runningJob, LocalDateTime.now())
-            );
+            // Send the job started events
+            JobUtil.sendEvents(runningJob, JobStartedEvent::new);
 
             try (final CloseableScheduledExecutor closeableExecutor = new CloseableScheduledExecutor()) {
 
@@ -761,7 +740,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                             } catch (DotDataException e) {
                                 throw new DotRuntimeException("Error updating job progress", e);
                             }
-                        }, 0, 2, TimeUnit.SECONDS
+                        }, 0, 3, TimeUnit.SECONDS
                 );
 
                 // Process the job
@@ -863,15 +842,13 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             if (jobQueue.hasJobBeenInState(job.id(), JobState.CANCEL_REQUESTED, JobState.CANCELLING)) {
                 Job canceledJob = job.markAsCanceled(jobResult).withProgress(progress);
                 updateJobStatus(canceledJob);
-                eventProducer.getEvent(JobCanceledEvent.class).fire(
-                        new JobCanceledEvent(canceledJob, LocalDateTime.now())
-                );
+                // Send the job canceled events
+                JobUtil.sendEvents(canceledJob, JobCanceledEvent::new);
             } else {
                 final Job completedJob = job.markAsCompleted(jobResult).withProgress(progress);
                 updateJobStatus(completedJob);
-                eventProducer.getEvent(JobCompletedEvent.class).fire(
-                        new JobCompletedEvent(completedJob, LocalDateTime.now())
-                );
+                // Send the job completed events
+                JobUtil.sendEvents(completedJob, JobCompletedEvent::new);
             }
         } catch (JobQueueDataException e) {
             final var errorMessage = "Error updating job status";
@@ -885,29 +862,13 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      *
      * @param job The job to cancel.
      */
-    @WrapInTransaction
     private void handleJobCancelRequest(final Job job) throws DotDataException {
 
         Job cancelJob = job.withState(JobState.CANCEL_REQUESTED);
         updateJobStatus(cancelJob);
 
-        // Prepare the cancel request events
-        final JobCancelRequestEvent cancelRequestEvent = new JobCancelRequestEvent(
-                cancelJob, LocalDateTime.now()
-        );
-
-        // LOCAL event
-        APILocator.getLocalSystemEventsAPI().notify(cancelRequestEvent);
-
-        // CLUSTER WIDE event
-        Try.run(() -> APILocator.getSystemEventsAPI()
-                        .push(SystemEventType.CLUSTER_WIDE_EVENT, new Payload(cancelRequestEvent)))
-                .onFailure(e -> Logger.error(JobQueueManagerAPIImpl.this, e.getMessage()));
-
-        // CDI event
-        eventProducer.getEvent(JobCancelRequestEvent.class).fire(
-                cancelRequestEvent
-        );
+        // Send the cancel request events
+        JobUtil.sendEvents(cancelJob, JobCancelRequestEvent::new);
     }
 
     /**
@@ -916,7 +877,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param job       The job that was canceled.
      * @param processor The processor that handled the job.
      */
-    @WrapInTransaction
     private void handleJobCancelling(final Job job, final JobProcessor processor) {
 
         try {
@@ -925,9 +885,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
             Job cancelJob = job.withState(JobState.CANCELLING);
             updateJobStatus(cancelJob);
-            eventProducer.getEvent(JobCancellingEvent.class).fire(
-                    new JobCancellingEvent(cancelJob, LocalDateTime.now())
-            );
+            // Send the job cancelling events
+            JobUtil.sendEvents(cancelJob, JobCancellingEvent::new);
         } catch (DotDataException e) {
             final var error = new JobCancellationException(job.id(), e);
             Logger.error(this, error);
@@ -997,9 +956,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         final Job failedJob = job.markAsFailed(jobResult).withProgress(progress);
         updateJobStatus(failedJob);
-        eventProducer.getEvent(JobFailedEvent.class).fire(
-                new JobFailedEvent(failedJob, LocalDateTime.now())
-        );
+        // Send the job failed events
+        JobUtil.sendEvents(failedJob, JobFailedEvent::new);
 
         try {
             // Put the job back in the queue for later retry
@@ -1018,7 +976,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param job The job to update.
      * @throws DotDataException if there's an error updating the job status.
      */
-    @WrapInTransaction
     private void updateJobStatus(final Job job) throws DotDataException {
         try {
             jobQueue.updateJobStatus(job);

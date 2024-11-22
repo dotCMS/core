@@ -11,6 +11,7 @@ import com.dotcms.jobs.business.processor.ExponentialBackoffRetryPolicy;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.NoRetryPolicy;
 import com.dotcms.jobs.business.processor.Queue;
+import com.dotcms.jobs.business.processor.Validator;
 import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
@@ -51,9 +52,10 @@ import java.util.function.LongConsumer;
  * functionality to import content from CSV files, with support for both preview and publish
  * operations, as well as multilingual content handling.
  *
- * <p>The processor implements both {@link JobProcessor} and {@link Cancellable} interfaces to
- * provide job processing and cancellation capabilities. It's annotated with {@link Queue} to
- * specify the queue name and {@link ExponentialBackoffRetryPolicy} to define retry behavior.</p>
+ * <p>The processor implements both {@link JobProcessor} {@link Cancellable} and {@link Validator}
+ * interfaces to provide job processing and cancellation capabilities. It's annotated with
+ * {@link Queue} to specify the queue name and {@link ExponentialBackoffRetryPolicy} to define
+ * retry behavior.</p>
  *
  * <p>Key features:</p>
  * <ul>
@@ -66,12 +68,13 @@ import java.util.function.LongConsumer;
  *
  * @see JobProcessor
  * @see Cancellable
+ * @see Validator
  * @see Queue
  * @see ExponentialBackoffRetryPolicy
  */
 @Queue("importContentlets")
 @NoRetryPolicy
-public class ImportContentletsProcessor implements JobProcessor, Cancellable {
+public class ImportContentletsProcessor implements JobProcessor, Validator, Cancellable {
 
     private static final String PARAMETER_LANGUAGE = "language";
     private static final String PARAMETER_FIELDS = "fields";
@@ -120,7 +123,7 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
 
         final User user;
         try {
-            user = getUser(job);
+            user = getUser(job.parameters());
         } catch (Exception e) {
             Logger.error(this, "Error retrieving user", e);
             throw new JobProcessingException(job.id(), "Error retrieving user", e);
@@ -135,9 +138,6 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
             Logger.error(this.getClass(), "Unable to retrieve the import file. Quitting the job.");
             throw new JobValidationException(job.id(), "Unable to retrieve the import file.");
         }
-
-        // Validate the job has the required data
-        validate(job);
 
         final var fileToImport = tempFile.get().file;
         final long totalLines = totalLines(job, fileToImport);
@@ -160,6 +160,55 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
         if (!cancellationRequested.get()) {
             // Ensure the progress is at 100% when the job is done
             progressTracker.updateProgress(1.0f);
+        }
+    }
+
+    /**
+     * Validates the job parameters and content type. Performs security checks to prevent
+     * unauthorized host imports.
+     *
+     * @param parameters The parameters to validate
+     * @throws JobValidationException if validation fails
+     */
+    @Override
+    public void validate(final Map<String, Object> parameters) throws JobValidationException {
+
+        // Validating the language (will throw an exception if it doesn't)
+        final Language language = findLanguage(parameters);
+
+        if (getContentType(parameters) != null && getContentType(parameters).isEmpty()) {
+            final var errorMessage = "A Content Type id or variable is required";
+            Logger.error(this.getClass(), errorMessage);
+            throw new JobValidationException(errorMessage);
+        } else if (getWorkflowActionId(parameters) != null
+                && getWorkflowActionId(parameters).isEmpty()) {
+            final var errorMessage = "A Workflow Action id is required";
+            Logger.error(this.getClass(), errorMessage);
+            throw new JobValidationException(errorMessage);
+        } else if (language == null && getFields(parameters).length == 0) {
+            final var errorMessage =
+                    "A key identifying the different Language versions of the same "
+                            + "content must be defined when importing multilingual files.";
+            Logger.error(this, errorMessage);
+            throw new JobValidationException(errorMessage);
+        }
+
+        try {
+
+            // Make sure the content type exist (will throw an exception if it doesn't)
+            final var contentTypeFound = findContentType(parameters);
+
+            // Security measure to prevent invalid attempts to import a host.
+            final ContentType hostContentType = APILocator.getContentTypeAPI(
+                    APILocator.systemUser()).find(Host.HOST_VELOCITY_VAR_NAME);
+            final boolean isHost = (hostContentType.id().equals(contentTypeFound.id()));
+            if (isHost) {
+                final var errorMessage = "Invalid attempt to import a host.";
+                Logger.error(this, errorMessage);
+                throw new JobValidationException(errorMessage);
+            }
+        } catch (DotSecurityException | DotDataException e) {
+            throw new JobProcessingException("Error validating content type", e);
         }
     }
 
@@ -262,10 +311,10 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
 
         final var currentSiteId = getSiteIdentifier(job);
         final var currentSiteName = getSiteName(job);
-        final var contentType = findContentType(job);
-        final var fields = getFields(job);
-        final var language = findLanguage(job);
-        final var workflowActionId = getWorkflowActionId(job);
+        final var contentType = findContentType(job.parameters());
+        final var fields = getFields(job.parameters());
+        final var language = findLanguage(job.parameters());
+        final var workflowActionId = getWorkflowActionId(job.parameters());
         final var httpReq = JobUtil.generateMockRequest(user, currentSiteName);
         final var importId = jobIdToLong(job.id());
 
@@ -300,13 +349,14 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
     /**
      * Retrieve the user from the job parameters
      *
-     * @param job input job
+     * @param parameters job parameters
      * @return the user from the job parameters
      * @throws DotDataException     if an error occurs during the user retrieval
      * @throws DotSecurityException if we don't have the necessary permissions to retrieve the user
      */
-    private User getUser(final Job job) throws DotDataException, DotSecurityException {
-        final var userId = (String) job.parameters().get(PARAMETER_USER_ID);
+    private User getUser(final Map<String, Object> parameters)
+            throws DotDataException, DotSecurityException {
+        final var userId = (String) parameters.get(PARAMETER_USER_ID);
         return APILocator.getUserAPI().loadUserById(userId);
     }
 
@@ -333,106 +383,58 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
     /**
      * Retrieves the content type from the job parameters.
      *
-     * @param job The job containing the parameters
+     * @param parameters job parameters
      * @return The content type string, or null if not present in parameters
      */
-    private String getContentType(final Job job) {
-        return (String) job.parameters().get(PARAMETER_CONTENT_TYPE);
+    private String getContentType(final Map<String, Object> parameters) {
+        return (String) parameters.get(PARAMETER_CONTENT_TYPE);
     }
 
     /**
      * Retrieves the workflow action ID from the job parameters.
      *
-     * @param job The job containing the parameters
+     * @param parameters job parameters
      * @return The workflow action ID string, or null if not present in parameters
      */
-    private String getWorkflowActionId(final Job job) {
-        return (String) job.parameters().get(PARAMETER_WORKFLOW_ACTION_ID);
+    private String getWorkflowActionId(final Map<String, Object> parameters) {
+        return (String) parameters.get(PARAMETER_WORKFLOW_ACTION_ID);
     }
 
     /**
      * Retrieves the language from the job parameters.
      *
-     * @param job The job containing the parameters
+     * @param parameters job parameters
      * @return An optional containing the language string, or an empty optional if not present
      */
-    private Optional<String> getLanguage(final Job job) {
+    private Optional<String> getLanguage(final Map<String, Object> parameters) {
 
-        if (!job.parameters().containsKey(PARAMETER_LANGUAGE)
-                || job.parameters().get(PARAMETER_LANGUAGE) == null) {
+        if (!parameters.containsKey(PARAMETER_LANGUAGE)
+                || parameters.get(PARAMETER_LANGUAGE) == null) {
             return Optional.empty();
         }
 
-        return Optional.of((String) job.parameters().get(PARAMETER_LANGUAGE));
+        return Optional.of((String) parameters.get(PARAMETER_LANGUAGE));
     }
 
     /**
      * Retrieves the fields array from the job parameters.
      *
-     * @param job The job containing the parameters
+     * @param parameters job parameters
      * @return An array of field strings, or an empty array if no fields are specified
      */
-    public String[] getFields(final Job job) {
+    public String[] getFields(final Map<String, Object> parameters) {
 
-        if (!job.parameters().containsKey(PARAMETER_FIELDS)
-                || job.parameters().get(PARAMETER_FIELDS) == null) {
+        if (!parameters.containsKey(PARAMETER_FIELDS)
+                || parameters.get(PARAMETER_FIELDS) == null) {
             return new String[0];
         }
 
-        final var fields = job.parameters().get(PARAMETER_FIELDS);
+        final var fields = parameters.get(PARAMETER_FIELDS);
         if (fields instanceof List) {
             return ((List<String>) fields).toArray(new String[0]);
         }
 
         return (String[]) fields;
-    }
-
-    /**
-     * Validates the job parameters and content type. Performs security checks to prevent
-     * unauthorized host imports.
-     *
-     * @param job The job to validate
-     * @throws JobValidationException if validation fails
-     * @throws JobProcessingException if an error occurs during content type validation
-     */
-    private void validate(final Job job) {
-
-        // Validating the language (will throw an exception if it doesn't)
-        final Language language = findLanguage(job);
-
-        if (getContentType(job) != null && getContentType(job).isEmpty()) {
-            final var errorMessage = "A Content Type id or variable is required";
-            Logger.error(this.getClass(), errorMessage);
-            throw new JobValidationException(job.id(), errorMessage);
-        } else if (getWorkflowActionId(job) != null && getWorkflowActionId(job).isEmpty()) {
-            final var errorMessage = "A Workflow Action id is required";
-            Logger.error(this.getClass(), errorMessage);
-            throw new JobValidationException(job.id(), errorMessage);
-        } else if (language == null && getFields(job).length == 0) {
-            final var errorMessage =
-                    "A key identifying the different Language versions of the same "
-                            + "content must be defined when importing multilingual files.";
-            Logger.error(this, errorMessage);
-            throw new JobValidationException(job.id(), errorMessage);
-        }
-
-        try {
-
-            // Make sure the content type exist (will throw an exception if it doesn't)
-            final var contentTypeFound = findContentType(job);
-
-            // Security measure to prevent invalid attempts to import a host.
-            final ContentType hostContentType = APILocator.getContentTypeAPI(
-                    APILocator.systemUser()).find(Host.HOST_VELOCITY_VAR_NAME);
-            final boolean isHost = (hostContentType.id().equals(contentTypeFound.id()));
-            if (isHost) {
-                final var errorMessage = "Invalid attempt to import a host.";
-                Logger.error(this, errorMessage);
-                throw new JobValidationException(job.id(), errorMessage);
-            }
-        } catch (DotSecurityException | DotDataException e) {
-            throw new JobProcessingException(job.id(), "Error validating content type", e);
-        }
     }
 
     /**
@@ -579,23 +581,23 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
     /**
      * Retrieves the existing content type based on an id or variable.
      *
-     * @param job The current import job.
+     * @param parameters job parameters
      * @return The existing content type if found, otherwise fails with an exception.
      * @throws DotSecurityException If there are security restrictions preventing the evaluation.
      */
-    private ContentType findContentType(final Job job)
+    private ContentType findContentType(final Map<String, Object> parameters)
             throws DotSecurityException {
 
-        final var contentTypeIdOrVar = getContentType(job);
+        final var contentTypeIdOrVar = getContentType(parameters);
         final User user;
 
         // Retrieving the user requesting the import
         try {
-            user = getUser(job);
+            user = getUser(parameters);
         } catch (DotDataException e) {
             final var errorMessage = "Error retrieving user.";
             Logger.error(this.getClass(), errorMessage);
-            throw new JobProcessingException(job.id(), errorMessage, e);
+            throw new JobProcessingException(errorMessage, e);
         }
 
         try {
@@ -606,26 +608,26 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
                     "Content Type [%s] not found.", contentTypeIdOrVar
             );
             Logger.error(this.getClass(), errorMessage);
-            throw new JobValidationException(job.id(), errorMessage);
+            throw new JobValidationException(errorMessage);
         } catch (DotDataException e) {
             final var errorMessage = String.format(
                     "Error finding Content Type [%s].", contentTypeIdOrVar
             );
             Logger.error(this.getClass(), errorMessage);
-            throw new JobProcessingException(job.id(), errorMessage, e);
+            throw new JobProcessingException(errorMessage, e);
         }
     }
 
     /**
      * Retrieves the existing language based on an id or ISO code.
      *
-     * @param job The current import job.
+     * @param parameters job parameters
      * @return The existing language if found, otherwise fails with an exception.
      */
-    private Language findLanguage(final Job job) {
+    private Language findLanguage(final Map<String, Object> parameters) {
 
         // Read the language from the job parameters
-        final var languageIsoOrIdOptional = getLanguage(job);
+        final var languageIsoOrIdOptional = getLanguage(parameters);
         if (languageIsoOrIdOptional.isEmpty()) {
             return null;
         }
@@ -652,7 +654,7 @@ public class ImportContentletsProcessor implements JobProcessor, Cancellable {
                 "Language [%s] not found.", languageIsoOrId
         );
         Logger.error(this.getClass(), errorMessage);
-        throw new JobValidationException(job.id(), errorMessage);
+        throw new JobValidationException(errorMessage);
     }
 
     /**

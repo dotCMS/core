@@ -321,4 +321,4 @@ runs:
         name: "build-reports-test-${{ inputs.stage-name }}"
         path: |
           **/target/jacoco-report/*.exec
-          **/target/*-reports/TEST-*.xml
+          **/target/*-reports/*.xml

@@ -12,9 +12,13 @@ on:
       old-assets:
         description: 'Include old assets'
         required: true
-        type: boolean          
+        type: boolean
       changelog:
         description: 'Changes description'
+        required: true
+        type: string
+      issue-number:
+        description: 'Related issue number. Required to create Empty Starter PR.'
         required: true
         type: string
       dry-run:
@@ -96,6 +100,7 @@ jobs:
     outputs:
       filename: ${{ steps.deploy-artifacts.outputs.filename }}
       url: ${{ steps.deploy-artifacts.outputs.url }}
+      pr_created: ${{ steps.create-pull-request.outcome == 'success' }}      
     steps:
       - uses: jfrog/setup-jfrog-cli@v4
         env:
@@ -156,41 +161,27 @@ jobs:
           echo "::notice::Changelog: ${{ github.event.inputs.changelog }}"
           echo "::endgroup::"
 
-  update-pom:
-    if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == 'false' }}
-    needs: [ deploy-artifacts ]
-    runs-on: ubuntu-20.04
-    environment: starter
-    outputs:
-      pull-request-url: ${{ steps.create-pull-request.outputs.pull-request-url }}
-    steps:
-      - uses: actions/checkout@v4
-      
       - name: 'Update pom.xml'
+        if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == 'false' }}
         id: update-pom
         working-directory: ${{ github.workspace }}/parent
         env:
-          FILENAME: ${{ needs.deploy-artifacts.outputs.filename }}
+          FILENAME: ${{ steps.deploy-artifacts.outputs.filename }}
         run: |
           echo "::group::Update pom.xml"
           echo "Updating pom.xml"
-        
           VERSION="${FILENAME%.*}"
-          
-          # Create an auxiliary branch for versioning updates
-          AUXILIARY_BRANCH=update-starter-version-${VERSION}-${{ github.run_id }}
-
+          AUXILIARY_BRANCH=${{ inputs.issue-number }}-update-starter-version-${VERSION}-${{ github.run_id }}
           sed -i "s/<starter.deploy.version>.*<\/starter.deploy.version>/<starter.deploy.version>${VERSION}<\/starter.deploy.version>/" pom.xml
-
           POM=$(cat pom.xml)
           echo "POM file: ${POM}"
-
           echo auxiliary-branch=${AUXILIARY_BRANCH} >> $GITHUB_OUTPUT
           echo starter-version=${VERSION} >> $GITHUB_OUTPUT
           echo "::notice::Auxiliary Branch: ${AUXILIARY_BRANCH}"
-          echo "::endgroup::"      
+          echo "::endgroup::"
 
       - name: 'Create Pull Request'
+        if: ${{ steps.update-pom.outcome == 'success' }}
         id: create-pull-request
         uses: peter-evans/create-pull-request@v6
         with:
@@ -202,8 +193,8 @@ jobs:
             This PR was created automatically to update the **starter.deploy.version** in pom.xml to [**${{ steps.update-pom.outputs.starter-version }}**].
           labels: |
             empty-starter
-            automated pr          
-        
+            automated pr            
+       
   send-notification:
     needs: [ deploy-artifacts ]
     runs-on: ubuntu-20.04

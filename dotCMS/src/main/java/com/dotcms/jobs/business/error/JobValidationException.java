@@ -8,6 +8,25 @@ package com.dotcms.jobs.business.error;
 public class JobValidationException extends RuntimeException {
 
     /**
+     * Constructs a new JobValidationException with the specified message and cause.
+     *
+     * @param message A description of the validation failure
+     * @param cause   The underlying cause of the validation failure (can be null)
+     */
+    public JobValidationException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    /**
+     * Constructs a new JobValidationException with the specified message
+     *
+     * @param message A description of the validation failure
+     */
+    public JobValidationException(String message) {
+        super(message);
+    }
+
+    /**
      * Constructs a new JobValidationException with the specified job ID, reason, and cause.
      *
      * @param jobId  The ID of the job that failed validation

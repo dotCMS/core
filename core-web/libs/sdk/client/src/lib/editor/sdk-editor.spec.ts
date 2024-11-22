@@ -8,6 +8,7 @@ import { postMessageToEditor, CLIENT_ACTIONS } from './models/client.model';
 import {
     addClassToEmptyContentlets,
     initEditor,
+    initInlineEditing,
     isInsideEditor,
     updateNavigation
 } from './sdk-editor';
@@ -27,6 +28,7 @@ jest.mock('./models/client.model', () => {
         },
         INITIAL_DOT_UVE: {
             editContentlet: jest.fn(),
+            reorderMenu: jest.fn(),
             lastScrollYPosition: 0
         }
     };
@@ -102,6 +104,7 @@ describe('DotCMSPageEditor', () => {
             expect(scrollHandler).toHaveBeenCalled();
             expect(window.dotUVE).toEqual({
                 editContentlet: expect.any(Function),
+                reorderMenu: expect.any(Function),
                 lastScrollYPosition: 0
             });
         });
@@ -122,6 +125,43 @@ describe('DotCMSPageEditor', () => {
 
             expect(emptyContentlet.classList.contains('empty-contentlet')).toBe(true);
             expect(contentlet.classList.contains('empty-contentlet')).toBe(false);
+        });
+    });
+
+    describe('initInlineEditing', () => {
+        it('should send the correct message to the editor to edit `block-editor`', () => {
+            const type = 'BLOCK_EDITOR';
+            const data = {
+                inode: '123',
+                language: 1,
+                contentType: 'text',
+                fieldName: 'body',
+                content: {}
+            };
+
+            initInlineEditing(type, data);
+
+            expect(postMessageToEditor).toHaveBeenCalledWith({
+                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                payload: {
+                    type,
+                    data
+                }
+            });
+        });
+
+        it('should send the correct message to the editor to edit `WYSIWYG`', () => {
+            const type = 'WYSIWYG';
+
+            initInlineEditing(type);
+
+            expect(postMessageToEditor).toHaveBeenCalledWith({
+                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                payload: {
+                    type,
+                    data: undefined
+                }
+            });
         });
     });
 });

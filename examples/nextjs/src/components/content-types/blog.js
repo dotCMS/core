@@ -1,3 +1,4 @@
+import { isInsideEditor } from "@dotcms/client";
 import { BlockEditorRenderer } from "@dotcms/react";
 
 const CustomParagraph = ({ content }) => {
@@ -5,28 +6,38 @@ const CustomParagraph = ({ content }) => {
         return null;
     }
     const [{ text }] = content;
-    return <h1 style={{color: 'red'}}>{text}</h1>
-}
+    return <p style={{ color: "#333" }}>{text}</p>;
+};
 
 const ActivityBlock = (props) => {
     const { title, description } = props.attrs.data;
 
-    return (<div>
-        <h1>{title}</h1>
-        <p>{description}</p>
-        </div>)
-}
+    return (
+        <div>
+            <h1>{title}</h1>
+            <p>{description}</p>
+        </div>
+    );
+};
 
+function Blog({ blogContent, ...contentlet }) {
+    const twActives = isInsideEditor()
+        ? "border-2 border-solid border-cyan-400 cursor-pointer"
+        : "";
 
-function BlogWithBlockEditor({blockEditorItem}){
-    return <BlockEditorRenderer 
-        blocks={blockEditorItem} 
-        customRenderers={{
-            'Activity': ActivityBlock, 
-            'paragraph': CustomParagraph 
-        }} 
-        style={{ backgroundColor: 'lightblue', padding: '10px', fontSize: '40px' }} 
-        className="blocks"
-    />
+    return (
+        <BlockEditorRenderer
+            editable={true}
+            contentlet={contentlet}
+            blocks={blogContent}
+            fieldName="blogContent"
+            customRenderers={{
+                Activity: ActivityBlock,
+                paragraph: CustomParagraph,
+            }}
+            style={{ padding: "10px" }}
+            className={`blog-styles ${twActives}`}
+        />
+    );
 }
-export default BlogWithBlockEditor;
+export default Blog;

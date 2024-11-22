@@ -936,6 +936,25 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
+	public Contentlet findContentletByIdentifier(String identifier, long languageId, String variantId,
+			Date timeMachineDate, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException{
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.findContentletByIdentifier(identifier, languageId, variantId, user, timeMachineDate, respectFrontendRoles);
+			if(!preResult){
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		Contentlet c = conAPI.findContentletByIdentifier(identifier, languageId, variantId,
+				timeMachineDate, user, respectFrontendRoles);
+		for(ContentletAPIPostHook post : postHooks){
+			post.findContentletByIdentifier(identifier, languageId, variantId, user, timeMachineDate, respectFrontendRoles);
+		}
+		return c;
+	}
+
     @Override
     public Contentlet findContentletByIdentifierAnyLanguage(String identifier, final boolean includeDeleted) throws DotDataException {
         for(ContentletAPIPreHook pre : preHooks){
@@ -3218,6 +3237,31 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
         return savedContentlet;
     }
+
+	@Override
+	public Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, long incomingLangId,
+			String variantId, Date timeMachine, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.findContentletByIdentifierOrFallback(identifier, incomingLangId,
+					variantId, timeMachine, user, respectFrontendRoles);
+			if (!preResult) {
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		final Optional<Contentlet> found =
+				conAPI.findContentletByIdentifierOrFallback(identifier, incomingLangId, variantId,
+						timeMachine, user, respectFrontendRoles);
+		for (ContentletAPIPostHook post : postHooks) {
+			post.findContentletByIdentifierOrFallback(identifier, incomingLangId, variantId,
+					timeMachine, user, respectFrontendRoles);
+		}
+
+		return found;
+	}
+
+
     @Override
     public Optional<Contentlet> findInDb(String inode) {
         for (ContentletAPIPreHook pre : preHooks) {

@@ -24,10 +24,12 @@ const initialState: UVEState = {
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
     canEditPage: false,
-    pageIsLocked: true
+    pageIsLocked: true,
+    isClientReady: false
 };
 
 export const UVEStore = signalStore(
+    { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
     withComputed(
         ({

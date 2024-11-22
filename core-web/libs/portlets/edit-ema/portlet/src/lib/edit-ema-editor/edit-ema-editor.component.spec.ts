@@ -696,8 +696,11 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING,
-                                payload: {}
+                                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                                payload: {
+                                    type: 'BLOCK_EDITOR',
+                                    data: {}
+                                }
                             }
                         })
                     );
@@ -727,7 +730,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING,
+                                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
                                 payload: {}
                             }
                         })
@@ -750,7 +753,8 @@ describe('EditEmaEditorComponent', () => {
                                 data: {
                                     action: CLIENT_ACTIONS.REORDER_MENU,
                                     payload: {
-                                        reorderUrl: 'http://localhost:3000/reorder-menu'
+                                        startLevel: 1,
+                                        depth: 2
                                     }
                                 }
                             })
@@ -825,7 +829,8 @@ describe('EditEmaEditorComponent', () => {
                                 data: {
                                     action: CLIENT_ACTIONS.REORDER_MENU,
                                     payload: {
-                                        reorderUrl: 'http://localhost:3000/reorder-menu'
+                                        startLevel: 1,
+                                        depth: 2
                                     }
                                 }
                             })
