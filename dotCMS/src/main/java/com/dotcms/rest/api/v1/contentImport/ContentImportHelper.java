@@ -19,51 +19,75 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Helper class for managing content import operations in the dotCMS application.
+ * <p>
+ * This class provides methods to create and manage jobs for importing content
+ * from external sources, such as CSV files, into the system. It handles the
+ * validation of import parameters, processes file uploads, and constructs
+ * the necessary job parameters to enqueue content import tasks in the job queue.
+ */
 @ApplicationScoped
 public class ContentImportHelper {
 
     private JobQueueManagerAPI jobQueueManagerAPI;
     private JobQueueManagerHelper jobQueueManagerHelper;
 
+    /**
+     * Constructor for dependency injection.
+     *
+     * @param jobQueueManagerAPI The API for managing job queues.
+     * @param jobQueueManagerHelper Helper for job queue management.
+     */
     @Inject
     public ContentImportHelper(final JobQueueManagerAPI jobQueueManagerAPI, final JobQueueManagerHelper jobQueueManagerHelper) {
         this.jobQueueManagerAPI = jobQueueManagerAPI;
         this.jobQueueManagerHelper = jobQueueManagerHelper;
     }
 
+    /**
+     * Default constructor required for CDI.
+     */
     public ContentImportHelper() {
-        //default constructor Mandatory for CDI
+        // Default constructor mandatory for CDI
     }
 
+    /**
+     * Initializes the helper by registering job processors during application startup.
+     */
     @PostConstruct
     public void onInit() {
         jobQueueManagerHelper.registerProcessors();
     }
 
+    /**
+     * Cleans up resources and shuts down the helper during application shutdown.
+     */
     @PreDestroy
     public void onDestroy() {
         jobQueueManagerHelper.shutdown();
     }
 
     /**
-     * Creates a content import job with the provided parameters
+     * Creates a content import job with the provided parameters and submits it to the job queue.
      *
-     * @param command Whether this is a preview job
-     * @param queueName The name of the queue to submit the job to
-     * @param params The import parameters
-     * @param user The user initiating the import
-     * @param request The HTTP request
-     * @return The ID of the created job
+     * @param command   The command indicating the type of operation (e.g., "preview" or "import").
+     * @param queueName The name of the queue to which the job should be submitted.
+     * @param params    The content import parameters containing the details of the import operation.
+     * @param user      The user initiating the import.
+     * @param request   The HTTP request associated with the import operation.
+     * @return The ID of the created job.
+     * @throws DotDataException         If there is an error creating the job.
+     * @throws JsonProcessingException If there is an error processing JSON data.
      */
     public String createJob(
             final String command,
-            final String queueName, 
+            final String queueName,
             final ContentImportParams params,
             final User user,
             final HttpServletRequest request) throws DotDataException, JsonProcessingException {
 
         params.checkValid();
-
         final Map<String, Object> jobParameters = createJobParameters(command, params, user, request);
         processFileUpload(params, jobParameters, request);
 
@@ -71,7 +95,14 @@ public class ContentImportHelper {
     }
 
     /**
-     * Creates the job parameters map from the provided inputs
+     * Constructs a map of job parameters based on the provided inputs.
+     *
+     * @param command   The command indicating the type of operation.
+     * @param params    The content import parameters.
+     * @param user      The user initiating the import.
+     * @param request   The HTTP request associated with the operation.
+     * @return A map containing the job parameters.
+     * @throws JsonProcessingException If there is an error processing JSON data.
      */
     private Map<String, Object> createJobParameters(
             final String command,
@@ -80,7 +111,7 @@ public class ContentImportHelper {
             final HttpServletRequest request) throws JsonProcessingException {
 
         final Map<String, Object> jobParameters = new HashMap<>();
-        
+
         // Add required parameters
         jobParameters.put("cmd", command);
         jobParameters.put("userId", user.getUserId());
@@ -89,7 +120,7 @@ public class ContentImportHelper {
 
         // Add optional parameters
         addOptionalParameters(params, jobParameters);
-        
+
         // Add site information
         addSiteInformation(request, jobParameters);
 
@@ -97,12 +128,16 @@ public class ContentImportHelper {
     }
 
     /**
-     * Adds optional parameters to the job parameters map if they are present
+     * Adds optional parameters to the job parameter map if they are present in the form.
+     *
+     * @param params        The content import parameters.
+     * @param jobParameters The map of job parameters to which optional parameters are added.
+     * @throws JsonProcessingException If there is an error processing JSON data.
      */
     private void addOptionalParameters(
             final com.dotcms.rest.api.v1.contentImport.ContentImportParams params,
             final Map<String, Object> jobParameters) throws JsonProcessingException {
-        
+
         final ContentImportForm form = params.getForm();
 
         if (form.getLanguage() != null && !form.getLanguage().isEmpty()) {
@@ -114,19 +149,27 @@ public class ContentImportHelper {
     }
 
     /**
-     * Adds current site information to the job parameters
+     * Adds the current site information to the job parameters.
+     *
+     * @param request       The HTTP request associated with the operation.
+     * @param jobParameters The map of job parameters to which site information is added.
      */
     private void addSiteInformation(
-            final HttpServletRequest request, 
+            final HttpServletRequest request,
             final Map<String, Object> jobParameters){
-        
+
         final var currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         jobParameters.put("siteName", currentHost.getHostname());
         jobParameters.put("siteIdentifier", currentHost.getIdentifier());
     }
 
     /**
-     * Processes the file upload and adds the necessary parameters to the job
+     * Processes the file upload and adds the file-related parameters to the job.
+     *
+     * @param params        The content import parameters.
+     * @param jobParameters The map of job parameters.
+     * @param request       The HTTP request containing the uploaded file.
+     * @throws DotDataException If there is an error processing the file upload.
      */
     private void processFileUpload(
             final ContentImportParams params,
