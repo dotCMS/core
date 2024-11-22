@@ -20,7 +20,6 @@ import { withContent } from './content.feature';
 import { workflowInitialState } from './workflow.feature';
 
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
-
 import { CONTENT_TYPE_MOCK } from '../../../../utils/mocks';
 import { parseWorkflows } from '../../../../utils/workflows.utils';
 import { initialRootState } from '../edit-content.store';
