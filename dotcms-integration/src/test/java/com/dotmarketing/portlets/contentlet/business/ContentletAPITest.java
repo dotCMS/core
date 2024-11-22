@@ -14,6 +14,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
@@ -149,7 +150,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -180,6 +180,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.FileUtils;
@@ -202,7 +203,8 @@ import org.mockito.Mockito;
  * Created by Jonathan Gamba. Date: 3/20/12 Time: 12:12 PM
  */
 
-@RunWith(DataProviderRunner.class)
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
 public class ContentletAPITest extends ContentletBaseTest {
 
     @Test
@@ -4888,7 +4890,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             binaryField2 = fieldAPI.save(binaryField2, user);
 
             //Creating a temporary File to use in the binary fields.
-            File imageFile = temporaryFolder.newFile("ImageFile.png");
+            File imageFile = getTemporaryFolder().newFile("ImageFile.png");
             writeTextIntoFile(imageFile, "This is the same image");
 
             contentlet = new Contentlet();
@@ -4992,7 +4994,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             binaryField = fieldAPI.save(binaryField, user);
 
             //Creating a temporary binary file
-            imageFile = temporaryFolder.newFile("BinaryFile.txt");
+            imageFile = getTemporaryFolder().newFile("BinaryFile.txt");
             writeTextIntoFile(imageFile, "This is the same file");
 
             initialContent = new Contentlet();
@@ -7572,7 +7574,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     private File createTempFileWithText(String name, String text) throws IOException {
-        File tempFile = temporaryFolder.newFile(name);
+        File tempFile = getTemporaryFolder().newFile(name);
         writeTextIntoFile(tempFile, text);
         return tempFile;
     }

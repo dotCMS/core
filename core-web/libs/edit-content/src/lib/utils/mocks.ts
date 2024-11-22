@@ -1602,6 +1602,17 @@ export const EXISTING_WORKFLOW_MOCK: DotCMSWorkflowStatus = {
         status: 'd95caaa6-1ece-42b2-8663-fb01e804a149',
         title: '5 Snow Sports to Try This Winter',
         webasset: '0edfee78-2a75-4f3d-bf20-813aae15d4e9'
+    },
+    firstStep: {
+        creationDate: 1731595862064,
+        enableEscalation: false,
+        escalationAction: null,
+        escalationTime: 0,
+        id: '6cb7e3bd-1710-4eed-8838-d3db60f78f19',
+        myOrder: 0,
+        name: 'New',
+        resolved: false,
+        schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2'
     }
 };
 
@@ -1623,5 +1634,16 @@ export const NEW_WORKFLOW_MOCK: DotCMSWorkflowStatus = {
         variableName: 'Blogs'
     },
     step: null,
-    task: null
+    task: null,
+    firstStep: {
+        creationDate: 1731595862064,
+        enableEscalation: false,
+        escalationAction: null,
+        escalationTime: 0,
+        id: '6cb7e3bd-1710-4eed-8838-d3db60f78f19',
+        myOrder: 0,
+        name: 'New',
+        resolved: false,
+        schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2'
+    }
 };

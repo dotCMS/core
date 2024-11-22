@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 /**
  * Event fired when a job is removed from the queue because failed and is not retryable.
  */
-public class JobRemovedFromQueueEvent {
+public class JobRemovedFromQueueEvent implements JobEvent {
 
     private final Job job;
     private final LocalDateTime removedAt;

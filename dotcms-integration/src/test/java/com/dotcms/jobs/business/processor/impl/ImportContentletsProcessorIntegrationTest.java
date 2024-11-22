@@ -159,7 +159,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
 
         try {
             // Process the job in preview mode
-            processor.process(testJob);
+            processor.validate(testJob.parameters());
             Assertions.fail("A JobValidationException should have been thrown here.");
         } catch (Exception e) {
             Assertions.assertInstanceOf(JobValidationException.class, e);
@@ -249,8 +249,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
         );
 
         try {
-            // Process the job in preview mode
-            processor.process(testJob);
+            processor.validate(testJob.parameters());
             Assertions.fail("A JobValidationException should have been thrown here.");
         } catch (Exception e) {
             Assertions.assertInstanceOf(JobValidationException.class, e);

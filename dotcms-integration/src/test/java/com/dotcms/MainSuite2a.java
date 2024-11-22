@@ -79,6 +79,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.contentlet.model.ContentletIntegrationTest.class,
         com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformerTest.class,
         com.dotmarketing.portlets.contentlet.transform.ContentletTransformerTest.class,
+        com.dotmarketing.portlets.contentlet.transform.WidgetViewStrategyTest.class,
         com.dotmarketing.portlets.contentlet.ajax.ContentletAjaxTest.class,
         com.dotmarketing.portlets.workflows.business.SaveContentDraftActionletTest.class,
         com.dotmarketing.portlets.workflows.business.WorkflowFactoryTest.class,

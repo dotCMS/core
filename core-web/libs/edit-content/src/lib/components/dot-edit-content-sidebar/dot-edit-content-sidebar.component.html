@@ -1,10 +1,16 @@
 @let contentlet = store.contentlet();
 @let contentType = store.contentType();
+@let isNew = store.isNew();
+<!-- Information Component -->
 @let isLoadingInformation = store.isLoadingInformation();
 @let referencePagesCount = store.information.relatedContent();
-<!-- Workflow -->
-@let workflow = store.workflow;
-@let isLoadingWorkflow = store.isLoadingWorkflow;
+<!-- Workflow Component -->
+@let workflowOptions = store.workflowSchemeOptions();
+@let scheme = store.getScheme();
+@let task = store.lastTask();
+@let isLoadingWorkflow = store.isLoadingWorkflow();
+@let showSelectWorkflowWarning = store.showSelectWorkflowWarning();
+@let currentStep = store.getCurrentStep();
 
 <aside class="content-sidebar">
     <p-tabView>
@@ -13,13 +19,13 @@
 
         <p-tabPanel [header]="'Info' | dm">
             <!-- Information section -->
-            <dot-edit-content-sidebar-section [title]="'Information' | dm">
+            <dot-edit-content-sidebar-section [title]="'General' | dm">
                 <ng-template #sectionAction>
-                    @if (contentlet?.identifier) {
+                    @if (!isNew) {
                         <dot-copy-button
                             [copy]="contentlet.identifier"
                             [label]="contentlet.shortyId"
-                            [tooltipText]="contentlet.identifier"></dot-copy-button>
+                            [tooltipText]="'Identifier' | dm"></dot-copy-button>
                     }
                 </ng-template>
 
@@ -34,10 +40,20 @@
             </dot-edit-content-sidebar-section>
 
             <!-- Workflow section -->
+
             <dot-edit-content-sidebar-section [title]="'Workflow' | dm">
                 <dot-edit-content-sidebar-workflow
-                    [workflow]="workflow()"
-                    [isLoading]="isLoadingWorkflow()"
+                    [isNew]="isNew"
+                    [workflowSchemeOptions]="workflowOptions"
+                    [(showDialog)]="$showDialog"
+                    (onSelectWorkflow)="store.setSelectedWorkflow($event)"
+                    [workflow]="{
+                        scheme,
+                        step: currentStep,
+                        task
+                    }"
+                    [isLoading]="isLoadingWorkflow"
+                    [noWorkflowSelectedYet]="showSelectWorkflowWarning"
                     data-testId="workflow" />
             </dot-edit-content-sidebar-section>
         </p-tabPanel>

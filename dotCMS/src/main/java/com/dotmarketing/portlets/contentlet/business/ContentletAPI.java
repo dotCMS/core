@@ -223,6 +223,25 @@ public interface ContentletAPI {
 	 */
 	public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, String variantId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
+
+	/**
+	 * Retrieves a contentlet directly from the database based on its identifier, languageId and variantId and future time machine date.
+	 * If the contentlet has been created passing an expire-date this method will try to match the timeMachineDate within the publish-date and the expire-date
+	 * If the contentlet isn't found or permissions are not granted it will return null
+	 * @param identifier The contentlet's identifier
+	 * @param languageId The languageId of the contentlet
+	 * @param variantId The variantId of the contentlet
+	 * @param timeMachineDate The date to retrieve the contentlet from
+	 * @param user The user requesting the contentlet
+	 * @param respectFrontendRoles A flag to indicate whether front-end roles are respected
+	 * @return if the contentlet is found it will return the contentlet, if not it will return null
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws DotContentletStateException
+	 */
+	Contentlet findContentletByIdentifier(String identifier, long languageId, String variantId,
+			Date timeMachineDate, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+
 	/**
      * Retrieves a contentlet from the database by its identifier and the working version.
      * It includes archive content if includeDeleted is true
@@ -2428,6 +2447,24 @@ public interface ContentletAPI {
 	 */
     Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
             boolean respectFrontendRoles);
+
+	/**
+	 * This will find the live/working version of a piece of content for the language passed in.  If
+	 * the content is not found in the language passed in
+	 *
+	 * @param identifier
+	 * @param incomingLangId
+	 * @param variantId
+	 * @param timeMachine
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	Optional<Contentlet> findContentletByIdentifierOrFallback(final String identifier,
+			final long incomingLangId, String variantId, final Date timeMachine, final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
     /**
      * System function for finding a contentlet by inode via the database

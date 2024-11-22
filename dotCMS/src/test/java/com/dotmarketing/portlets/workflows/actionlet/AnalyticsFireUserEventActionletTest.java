@@ -53,7 +53,8 @@ public class AnalyticsFireUserEventActionletTest {
             }
 
             @Override
-            public void fireCollectorsAndEmitEvent(HttpServletRequest request, HttpServletResponse response, RequestMatcher requestMatcher, Map<String, Serializable> userEventPayload) {
+            public void fireCollectorsAndEmitEvent(HttpServletRequest request, HttpServletResponse response, RequestMatcher requestMatcher,
+                                                   Map<String, Serializable> userEventPayload, Map<String, Object> baseContext) {
 
                 Assert.assertNotNull(userEventPayload);
                 Assert.assertEquals(EventSource.WORKFLOW.getName(), userEventPayload.get(Collector.EVENT_SOURCE));
