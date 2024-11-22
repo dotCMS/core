@@ -12,10 +12,15 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { INPUT_TYPES } from '@dotcms/edit-content/models/dot-edit-content-file.model';
+import { INPUT_TYPE, INPUT_TYPES } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import { DotMessagePipe, DotFieldValidationMessageComponent, DotValidators } from '@dotcms/ui';
 
 import { FormImportUrlStore } from './store/form-import-url.store';
+
+type DialogData = {
+    inputType: INPUT_TYPE;
+    acceptedFiles: string[];
+};
 
 @Component({
     selector: 'dot-form-import-url',
@@ -36,9 +41,7 @@ export class DotFormImportUrlComponent implements OnInit {
     readonly store = inject(FormImportUrlStore);
     readonly #formBuilder = inject(FormBuilder);
     readonly #dialogRef = inject(DynamicDialogRef);
-    readonly #dialogConfig = inject(
-        DynamicDialogConfig<{ inputType: INPUT_TYPES; acceptedFiles: string[] }>
-    );
+    readonly #dialogConfig = inject(DynamicDialogConfig<DialogData>);
     #abortController: AbortController | null = null;
 
     readonly form = this.#formBuilder.nonNullable.group({
@@ -83,10 +86,10 @@ export class DotFormImportUrlComponent implements OnInit {
      * If the input type is 'Binary', the upload type is set to 'temp', otherwise it's set to 'dotasset'.
      */
     ngOnInit(): void {
-        const data = this.#dialogConfig?.data;
+        const data = this.#dialogConfig?.data as DialogData;
 
         this.store.initSetup({
-            uploadType: data?.inputType === 'Binary' ? 'temp' : 'dotasset',
+            uploadType: data?.inputType === INPUT_TYPES.Binary ? 'temp' : 'dotasset',
             acceptedFiles: data?.acceptedFiles ?? []
         });
     }

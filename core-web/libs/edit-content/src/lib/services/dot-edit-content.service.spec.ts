@@ -7,7 +7,11 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotSiteService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 
 import { DotEditContentService } from './dot-edit-content.service';
 
@@ -20,10 +24,12 @@ describe('DotEditContentService', () => {
     let spectator: SpectatorHttp<DotEditContentService>;
     let dotContentTypeService: SpyObject<DotContentTypeService>;
     let dotWorkflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
+    let dotSiteService: SpyObject<DotSiteService>;
 
     const createHttp = createHttpFactory({
         service: DotEditContentService,
         providers: [
+            mockProvider(DotSiteService),
             mockProvider(DotContentTypeService),
             mockProvider(DotWorkflowActionsFireService)
         ]
@@ -32,6 +38,7 @@ describe('DotEditContentService', () => {
         spectator = createHttp();
         dotContentTypeService = spectator.inject(DotContentTypeService);
         dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
+        dotSiteService = spectator.inject(DotSiteService);
     });
 
     describe('Endpoints', () => {
@@ -66,6 +73,26 @@ describe('DotEditContentService', () => {
             spectator.service.saveContentlet(DATA).subscribe(() => {
                 expect(dotWorkflowActionsFireService.saveContentlet).toHaveBeenCalledWith(DATA);
                 done();
+            });
+        });
+    });
+
+    describe('getContentByFolder', () => {
+        it('should call siteService with correct params when only folderId is provided', () => {
+            dotSiteService.getContentByFolder.mockReturnValue(of([]));
+            spectator.service.getContentByFolder({ folderId: '123' });
+
+            expect(dotSiteService.getContentByFolder).toHaveBeenCalledWith({
+                mimeTypes: [],
+                hostFolderId: '123',
+                showLinks: false,
+                showDotAssets: true,
+                showPages: false,
+                showFiles: true,
+                showFolders: false,
+                showWorking: true,
+                sortByDesc: true,
+                showArchived: false
             });
         });
     });
