@@ -603,7 +603,7 @@ export function filterPageParams(params: Params): DotPageApiParams {
     ];
 
     return Object.keys(params)
-        .filter((key) => allowedParams.includes(key as DotPageApiKeys))
+        .filter((key) => key && allowedParams.includes(key as DotPageApiKeys))
         .reduce((obj, key) => {
             obj[key] = params[key];
 

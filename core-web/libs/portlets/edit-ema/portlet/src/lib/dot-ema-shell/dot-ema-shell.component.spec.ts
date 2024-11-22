@@ -56,13 +56,6 @@ import {
 } from '../shared/mocks';
 import { UVEStore } from '../store/dot-uve.store';
 
-const INITIAL_PAGE_PARAMS = {
-    language_id: 1,
-    url: 'index',
-    variantName: 'DEFAULT',
-    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
-};
-
 const DIALOG_ACTION_EVENT = (detail) => {
     return {
         event: new CustomEvent('ng-event', { detail }),
@@ -117,20 +110,32 @@ const NAV_ITEMS = [
     }
 ];
 
-const BASIC_OPTIONS = {
-    allowedDevURLs: ['http://localhost:3000/']
+const INITIAL_PAGE_PARAMS = {
+    language_id: 1,
+    url: 'index',
+    variantName: 'DEFAULT',
+    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
 };
 
-const SNAPSHOT_MOCK = (queryParams = INITIAL_PAGE_PARAMS, options = BASIC_OPTIONS) => {
+const BASIC_OPTIONS = {
+    allowedDevURLs: ['http://localhost:3000']
+};
+
+const UVE_CONFIG_MOCK = (options) => {
+    return {
+        uveConfig: {
+            options
+        }
+    };
+};
+
+const SNAPSHOT_MOCK = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    { queryParams, data }: any
+) => {
     return {
         queryParams,
-        data: {
-            data: {
-                uveConfig: {
-                    options
-                }
-            }
-        }
+        data
     };
 };
 
@@ -144,7 +149,10 @@ const SNAPSHOT_MOCK = (queryParams = INITIAL_PAGE_PARAMS, options = BASIC_OPTION
  * @param {*} mock
  */
 const overrideRouteSnashot = (activatedRoute, mock) => {
-    Object.defineProperty(activatedRoute, 'snapshot', mock);
+    Object.defineProperty(activatedRoute, 'snapshot', {
+        value: mock,
+        writable: true // Allows mocking changes
+    });
 };
 
 describe('DotEmaShellComponent', () => {
@@ -166,7 +174,10 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: ActivatedRoute,
                 useValue: {
-                    snapshot: SNAPSHOT_MOCK()
+                    snapshot: SNAPSHOT_MOCK({
+                        queryParams: INITIAL_PAGE_PARAMS,
+                        data: UVE_CONFIG_MOCK(BASIC_OPTIONS)
+                    })
                 }
             },
             { provide: SiteService, useClass: SiteServiceMock },
@@ -238,10 +249,10 @@ describe('DotEmaShellComponent', () => {
                 provide: DotPageApiService,
                 useValue: {
                     get({ language_id }) {
-                        return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id];
+                        return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id] || of({});
                     },
                     getClientPage({ language_id }, _clientConfig) {
-                        return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id];
+                        return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id] || of({});
                     },
                     save() {
                         return of({});
@@ -377,227 +388,150 @@ describe('DotEmaShellComponent', () => {
                 // Check this one
                 it('should trigger init the store without the clientHost queryParam when it is not allowed', () => {
                     const spyStoreInit = jest.spyOn(store, 'init');
-                    const expectedParams = {
-                        language_id: 1,
-                        url: 'index',
-                        variantName: 'DEFAULT',
-                        'com.dotmarketing.persona.id': 'modes.persona.no.persona'
-                    };
                     const paramWithNotAllowedHost = {
-                        ...expectedParams,
-                        clientHost: 'http://localhost4200'
+                        ...INITIAL_PAGE_PARAMS,
+                        clientHost: 'http://localhost:4200'
                     };
 
-                    overrideRouteSnashot(activatedRoute, SNAPSHOT_MOCK(paramWithNotAllowedHost));
+                    const data = UVE_CONFIG_MOCK({
+                        allowedDevURLs: ['http://localhost:3000']
+                    });
+
+                    overrideRouteSnashot(
+                        activatedRoute,
+                        SNAPSHOT_MOCK({ queryParams: paramWithNotAllowedHost, data })
+                    );
 
                     spectator.detectChanges();
-                    expect(spyStoreInit).toHaveBeenCalledWith(expectedParams);
+                    expect(spyStoreInit).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
+                    expect(spyStoreInit).not.toHaveBeenCalledWith(paramWithNotAllowedHost);
                 });
 
-                // fit('should trigger a load when changing the clientHost and it is on the allowedDevURLs', () => {
-                //     const spyStoreInit = jest.spyOn(store, 'init');
-                //     const paramsWithAllowedHost = {
-                //         clientHost: 'http://localhost:3000',
-                //         language_id: 1,
-                //         url: 'index',
-                //         variantName: 'DEFAULT',
-                //         'com.dotmarketing.persona.id': 'modes.persona.no.persona'
-                //     };
-                //     overrideRouteSnashot(activatedRoute, SNAPSHOT_MOCK(paramsWithAllowedHost));
+                it('should trigger a load when changing the clientHost and it is on the allowedDevURLs', () => {
+                    const spyStoreInit = jest.spyOn(store, 'init');
+                    const paramsWithAllowedHost = {
+                        ...INITIAL_PAGE_PARAMS,
+                        clientHost: 'http://localhost:3000'
+                    };
+                    overrideRouteSnashot(
+                        activatedRoute,
+                        SNAPSHOT_MOCK({
+                            queryParams: paramsWithAllowedHost,
+                            data: UVE_CONFIG_MOCK(BASIC_OPTIONS)
+                        })
+                    );
 
-                //     spectator.detectChanges();
-                //     expect(spyStoreInit).toHaveBeenCalledWith(paramsWithAllowedHost);
-                // });
+                    spectator.detectChanges();
+                    expect(spyStoreInit).toHaveBeenCalledWith(paramsWithAllowedHost);
+                });
+
+                it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is empty', () => {
+                    const spyStoreInit = jest.spyOn(store, 'init');
+                    const paramWithNotAllowedHost = {
+                        ...INITIAL_PAGE_PARAMS,
+                        clientHost: 'http://localhost:3000'
+                    };
+
+                    overrideRouteSnashot(
+                        activatedRoute,
+                        SNAPSHOT_MOCK({
+                            queryParams: paramWithNotAllowedHost,
+                            data: UVE_CONFIG_MOCK({ allowedDevURLs: [] })
+                        })
+                    );
+                    spectator.detectChanges();
+                    expect(spyStoreInit).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
+                });
+
+                it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is has a wrong data type', () => {
+                    const spyStoreInit = jest.spyOn(store, 'init');
+                    const paramWithNotAllowedHost = {
+                        ...INITIAL_PAGE_PARAMS,
+                        clientHost: 'http://localhost:1111'
+                    };
+
+                    overrideRouteSnashot(
+                        activatedRoute,
+                        SNAPSHOT_MOCK({
+                            queryParams: paramWithNotAllowedHost,
+                            data: UVE_CONFIG_MOCK({ allowedDevURLs: 'http://localhost:3000' })
+                        })
+                    );
+
+                    spectator.detectChanges();
+                    expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+                });
+
+                it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is is not present', () => {
+                    const spyStoreInit = jest.spyOn(store, 'init');
+                    const paramWithNotAllowedHost = {
+                        ...INITIAL_PAGE_PARAMS,
+                        clientHost: 'http://localhost:1111'
+                    };
+
+                    overrideRouteSnashot(
+                        activatedRoute,
+                        SNAPSHOT_MOCK({
+                            queryParams: paramWithNotAllowedHost,
+                            data: UVE_CONFIG_MOCK({})
+                        })
+                    );
+
+                    spectator.detectChanges();
+                    expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+                });
+
+                it('should trigger a navigate without the clientHost queryParam when the options are not present', () => {
+                    const spyStoreInit = jest.spyOn(store, 'init');
+                    const paramWithNotAllowedHost = {
+                        ...INITIAL_PAGE_PARAMS,
+                        clientHost: 'http://localhost:1111'
+                    };
+
+                    overrideRouteSnashot(
+                        activatedRoute,
+                        SNAPSHOT_MOCK({
+                            queryParams: paramWithNotAllowedHost,
+                            data: {
+                                uveConfig: {}
+                            }
+                        })
+                    );
+
+                    spectator.detectChanges();
+                    expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+                });
+
+                it('should trigger a navigate without the clientHost queryParam when the uveConfig is not present', () => {
+                    const spyStoreInit = jest.spyOn(store, 'init');
+                    const paramWithNotAllowedHost = {
+                        ...INITIAL_PAGE_PARAMS,
+                        clientHost: 'http://localhost:1111'
+                    };
+
+                    overrideRouteSnashot(
+                        activatedRoute,
+                        SNAPSHOT_MOCK({
+                            queryParams: paramWithNotAllowedHost,
+                            data: {}
+                        })
+                    );
+
+                    spectator.detectChanges();
+                    expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+                });
             });
 
-            // it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is empty', () => {
-            //     const spyStoreInit = jest.spyOn(store, 'init');
-            //     const newParams = {
-            //         clientHost: 'http://localhost:3000',
-            //         language_id: 1,
-            //         url: 'index',
-            //         variantName: 'DEFAULT',
-            //         'com.dotmarketing.persona.id': 'modes.persona.no.persona'
-            //     };
-            //     store.updatePageParams(newParams);
-            //     spectator.detectChanges();
-            //     expect(spyStoreInit).toHaveBeenCalledWith(newParams);
-            // });
-
-            //     it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is has a wrong data type', () => {
-            //         spectator.triggerNavigation({
-            //             url: [],
-            //             queryParams: {
-            //                 clientHost: 'http://localhost:1111',
-            //                 language_id: 1,
-            //                 url: 'index',
-            //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-            //             },
-            //             data: {
-            //                 data: {
-            //                     options: {
-            //                         allowedDevURLs: "I'm not an array"
-            //                     }
-            //                 }
-            //             }
-            //         });
-
-            //         spectator.detectChanges();
-
-            //         expect(router.navigate).toHaveBeenCalledWith([], {
-            //             queryParams: {
-            //                 clientHost: null,
-            //                 'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-            //                 language_id: 1,
-            //                 url: 'index'
-            //             },
-            //             queryParamsHandling: 'merge'
-            //         });
-
-            //         expect(store.init).toHaveBeenLastCalledWith({
-            //             clientHost: 'http://localhost:3000',
-            //             language_id: 1,
-            //             url: 'index',
-            //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-            //         });
-            //     });
-
-            //     it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is is not present', () => {
-            //         spectator.triggerNavigation({
-            //             url: [],
-            //             queryParams: {
-            //                 clientHost: 'http://localhost:1111',
-            //                 language_id: 1,
-            //                 url: 'index',
-            //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-            //             },
-            //             data: {
-            //                 data: {
-            //                     options: {
-            //                         someRandomOption: 'Hello from the other side'
-            //                     }
-            //                 }
-            //             }
-            //         });
-
-            //         spectator.detectChanges();
-
-            //         expect(router.navigate).toHaveBeenCalledWith([], {
-            //             queryParams: {
-            //                 clientHost: null,
-            //                 'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-            //                 language_id: 1,
-            //                 url: 'index'
-            //             },
-            //             queryParamsHandling: 'merge'
-            //         });
-
-            //         expect(store.init).toHaveBeenLastCalledWith({
-            //             clientHost: 'http://localhost:3000',
-            //             language_id: 1,
-            //             url: 'index',
-            //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-            //         });
-            //     });
-
-            //     it('should trigger a navigate without the clientHost queryParam when the options are not present', () => {
-            //         spectator.triggerNavigation({
-            //             url: [],
-            //             queryParams: {
-            //                 clientHost: 'http://localhost:1111',
-            //                 language_id: 1,
-            //                 url: 'index',
-            //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-            //             },
-            //             data: {
-            //                 data: {
-            //                     url: 'http://localhost:3000',
-            //                     pattern: '.*'
-            //                 }
-            //             }
-            //         });
-
-            //         spectator.detectChanges();
-
-            //         expect(router.navigate).toHaveBeenCalledWith([], {
-            //             queryParams: {
-            //                 clientHost: null,
-            //                 'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-            //                 language_id: 1,
-            //                 url: 'index'
-            //             },
-            //             queryParamsHandling: 'merge'
-            //         });
-
-            //         expect(store.init).toHaveBeenLastCalledWith({
-            //             clientHost: 'http://localhost:3000',
-            //             language_id: 1,
-            //             url: 'index',
-            //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-            //         });
-            //     });
-            //     it('should trigger a navigate without the clientHost queryParam when the data is not present', () => {
-            //         spectator.triggerNavigation({
-            //             url: [],
-            //             queryParams: {
-            //                 clientHost: 'http://localhost:1111',
-            //                 language_id: 1,
-            //                 url: 'index',
-            //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-            //             },
-            //             data: {}
-            //         });
-
-            //         spectator.detectChanges();
-
-            //         expect(router.navigate).toHaveBeenCalledWith([], {
-            //             queryParams: {
-            //                 clientHost: null,
-            //                 'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-            //                 language_id: 1,
-            //                 url: 'index'
-            //             },
-            //             queryParamsHandling: 'merge'
-            //         });
-
-            //         expect(store.init).toHaveBeenLastCalledWith({
-            //             clientHost: 'http://localhost:3000',
-            //             language_id: 1,
-            //             url: 'index',
-            //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-            //         });
-            //     });
-
-            //     it('should trigger a navigate without the clientHost queryParam when there is no data in activated route', () => {
-            //         spectator.triggerNavigation({
-            //             url: [],
-            //             queryParams: {
-            //                 clientHost: 'http://localhost:1111',
-            //                 language_id: 1,
-            //                 url: 'index',
-            //                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-            //             }
-            //         });
-
-            //         spectator.detectChanges();
-
-            //         expect(router.navigate).toHaveBeenCalledWith([], {
-            //             queryParams: {
-            //                 clientHost: null,
-            //                 'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-            //                 language_id: 1,
-            //                 url: 'index'
-            //             },
-            //             queryParamsHandling: 'merge'
-            //         });
-
-            //         expect(store.init).toHaveBeenLastCalledWith({
-            //             clientHost: 'http://localhost:3000',
-            //             language_id: 1,
-            //             url: 'index',
-            //             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-            //         });
-            //     });
+            afterEach(() => {
+                // Restoring the snapshot to the default
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({
+                        queryParams: INITIAL_PAGE_PARAMS,
+                        data: UVE_CONFIG_MOCK(BASIC_OPTIONS)
+                    })
+                );
+            });
         });
 
         // describe('language checking', () => {
