@@ -561,7 +561,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                               .build(),
                       APILocator.systemUser());
           }
-      } catch (DotDataException | DotSecurityException e) {
+      } catch (final DotDataException | UniqueFieldValueDuplicatedException | DotSecurityException e) {
           throw new DotStateException(e);
       }
   }

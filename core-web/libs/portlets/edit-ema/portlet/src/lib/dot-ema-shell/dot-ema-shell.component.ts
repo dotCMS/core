@@ -189,23 +189,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
         if (this.shouldNavigate(url.pathname)) {
             // Navigate to the new URL if it's different from the current one
-            this.navigate({ url: url.pathname });
+            this.navigate({ url: this.getTargetUrl(url.pathname) });
 
             return;
         }
 
         this.uveStore.reload();
     }
-    /**
-     * Extracts the htmlPageReferer url from the event payload.
-     *
-     * @param {CustomEvent} event - The event object containing the payload with the URL.
-     * @return {string | undefined} - The extracted URL or undefined if not found.
-     */
-    private extractPageRefererUrl(event: CustomEvent): string | undefined {
-        return event.detail.payload?.htmlPageReferer;
-    }
-
     /**
      * Determines the target URL for navigation.
      *

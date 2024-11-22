@@ -5,17 +5,14 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * 
@@ -185,7 +182,7 @@ public interface FieldAPI {
 	 * @param fieldVar Field Variable that wants to be deleted.
 	 * @throws DotDataException Error occurred when performing the action.
 	 */
-    void delete(FieldVariable fieldVar) throws DotDataException;
+    void delete(FieldVariable fieldVar) throws DotDataException, UniqueFieldValueDuplicatedException;
 
     /**
      * Returns the dataType and the number of the column of that field. e.g bool1

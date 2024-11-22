@@ -148,6 +148,19 @@ public abstract class ContentletFactory {
 	protected abstract Contentlet findContentletByIdentifier(final String identifier,
 			final Boolean live, final Long languageId, final String variantId) throws DotDataException, DotSecurityException;
 
+
+	/**
+	 * Retrieves a contentlet from the database based on its identifier language and variant, and time machine date (meaning when the contentlet will be published)
+	 * @param identifier
+	 * @param languageId
+	 * @param variantId
+	 * @param timeMachineDate
+	 * @return
+	 * @throws DotDataException
+	 */
+	protected abstract Contentlet findContentletByIdentifier(final String identifier, final long languageId, final String variantId, final Date timeMachineDate)
+			throws DotDataException;
+
 	/**
 	 * Retrieves a contentlet from the database based on its identifier and the working version
 	 * @param identifier
