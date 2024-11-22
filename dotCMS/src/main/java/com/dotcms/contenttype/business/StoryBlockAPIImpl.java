@@ -52,9 +52,16 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         if (!inTransaction && null != contentlet && null != contentlet.getContentType() &&
                 contentlet.getContentType().hasStoryBlockFields()) {
 
-            if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(), "refreshReferences", MAX_RECURSION_LEVEL)) {
-                Logger.debug(this, () -> "This method has been called more than " + MAX_RECURSION_LEVEL +
-                        " times in the same thread. This could be a sign of circular reference in the Story Block field. Data will NOT be refreshed.");
+            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            final boolean setBefore =  request.getAttribute("CURRENT_DEPTH") != null;
+
+            if (setBefore) {
+
+                final Integer currentDepth = decreaseDepthValue((Integer) request.getAttribute("CURRENT_DEPTH"));
+
+                request.setAttribute("CURRENT_DEPTH", currentDepth);
+                request.setAttribute("DEPTH", currentDepth);
+
                 return new StoryBlockReferenceResult(false, contentlet);
             }
 
@@ -331,12 +338,29 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      */
     private void refreshBlockEditorDataMap(final Map<String, Object> dataMap, final String inode) {
         try {
-            final Contentlet fattyContentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+
+            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            final boolean notSetBefore =  request.getAttribute("CURRENT_DEPTH") == null;
+            Integer currentDepth = notSetBefore ? getInitialDepthValue() :
+                    decreaseDepthValue((Integer) request.getAttribute("CURRENT_DEPTH"));
+
+            request.setAttribute("CURRENT_DEPTH", currentDepth);
+            request.setAttribute("DEPTH", currentDepth);
+
+            final Contentlet fattyContentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false, true);
+
+            //currentDepth =  (Integer) request.getAttribute("CURRENT_DEPTH");
+            //request.setAttribute("DEPTH", currentDepth);
+
             if (null != fattyContentlet) {
-                this.addContentletRelationships(fattyContentlet);
+                this.addContentletRelationships(fattyContentlet, currentDepth);
                 final Map<String, Object> updatedDataMap = this.refreshContentlet(fattyContentlet);
                 this.excludeNonExistingProperties(dataMap, updatedDataMap);
                 dataMap.putAll(updatedDataMap);
+            }
+
+            if (notSetBefore) {
+                request.removeAttribute("CURRENT_DEPTH");
             }
         } catch (final JsonProcessingException e) {
             Logger.error(this, String.format("An error occurred when transforming JSON data in contentlet with Inode " +
@@ -352,15 +376,9 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      *
      * @param contentlet The Contentlet that may contain Relationship fields.
      */
-    private void addContentletRelationships(final Contentlet contentlet) {
+    private void addContentletRelationships(final Contentlet contentlet, final int depth) {
         final HttpServletRequest httpRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final PageMode currentPageMode = PageMode.get(httpRequest);
-
-        int depth = getInitialDepthValue();
-
-        if (isInsideAnotherBlockEditorAndRelatedContent()) {
-            depth = decreaseDepthValue(depth);
-        }
 
         ContentUtils.addRelationships(contentlet, APILocator.systemUser(), currentPageMode, contentlet.getLanguageId(), depth);
     }

@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
@@ -98,6 +99,7 @@ import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.jetbrains.annotations.NotNull;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -830,9 +832,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 	}
 
-
     @Override
     public Optional<Contentlet> findInDb(final String inode) {
+        return findInDb(inode, false);
+    }
+
+
+    public Optional<Contentlet> findInDb(final String inode, final boolean ignoreStoryBlock) {
         try {
             if (inode != null) {
                 final DotConnect dotConnect = new DotConnect();
@@ -843,7 +849,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
                 if (UtilMethods.isSet(result)) {
                     return Optional.ofNullable(
-                            TransformerLocator.createContentletTransformer(result).asList().get(0));
+                            TransformerLocator.createContentletTransformer(result, ignoreStoryBlock).asList().get(0));
                 }
             }
         } catch (DotDataException e) {
@@ -856,15 +862,21 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     }
 
-
     @Override
     protected Contentlet find(final String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
+        return find(inode, false);
+    }
+
+    protected Contentlet find(final String inode, final boolean ignoreStoryBlock) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
         Contentlet contentlet = contentletCache.get(inode);
         if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
                 return null;
             }
-            return processCachedContentlet(contentlet);
+
+            if (!ignoreStoryBlock) {
+                return processCachedContentlet(contentlet);
+            }
         }
 
         final Optional<Contentlet> dbContentlet = this.findInDb(inode);
@@ -914,6 +926,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      */
     private Contentlet processCachedContentlet(final Contentlet cachedContentlet) {
         if (REFRESH_BLOCK_EDITOR_REFERENCES) {
+
             final StoryBlockReferenceResult storyBlockRefreshedResult =
                     APILocator.getStoryBlockAPI().refreshReferences(cachedContentlet);
             if (storyBlockRefreshedResult.isRefreshed()) {
@@ -924,7 +937,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 contentletCache.add(refreshedContentlet.getInode(), refreshedContentlet);
                 return refreshedContentlet;
             }
-
         }
         return cachedContentlet;
     }

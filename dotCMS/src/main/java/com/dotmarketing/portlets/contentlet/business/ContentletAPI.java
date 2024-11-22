@@ -99,7 +99,9 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-	
+
+	public Contentlet find(String inode, User user, boolean respectFrontendRoles, boolean ignoreBlockEditor) throws DotDataException, DotSecurityException;
+
 	/**
 	 * Move the contentlet to a host path for instance //demo.dotcms.com/application
 	 * Indexing will be based on the {@link Contentlet#getIndexPolicy()}
