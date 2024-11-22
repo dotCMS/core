@@ -3,7 +3,6 @@ package com.dotcms.rest.api.v1.content._import;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
-import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.Junit5WeldBaseTest;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.TestDataUtils;
@@ -27,9 +26,8 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.jboss.weld.junit5.EnableWeld;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
@@ -43,9 +41,7 @@ import java.util.List;
  * Integration test suite for content import functionality.
  * Tests the ContentImportResource API endpoints for various scenarios.
  */
-@ApplicationScoped
 @EnableWeld
-@RunWith(JUnit4WeldRunner.class)
 public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
     private static User adminUser;
