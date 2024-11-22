@@ -50,12 +50,13 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
         });
 
         it('should render new workflow state', () => {
+            const EMPTY_TEXT = '';
             spectator.setInput('isLoading', false);
             spectator.setInput('workflow', NEW_WORKFLOW_MOCK);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('workflow-name')).textContent.trim()).toBe('Blogs');
-            expect(spectator.query(byTestId('workflow-step')).textContent.trim()).toBe('New');
+            expect(spectator.query(byTestId('workflow-step')).textContent.trim()).toBe(EMPTY_TEXT);
             expect(spectator.query(byTestId('workflow-assigned'))).toBeFalsy();
         });
     });
