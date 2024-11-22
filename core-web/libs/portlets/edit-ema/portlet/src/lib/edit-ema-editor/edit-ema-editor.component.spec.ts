@@ -352,7 +352,6 @@ describe('EditEmaEditorComponent', () => {
         let dotHttpErrorManagerService: DotHttpErrorManagerService;
         let dotTempFileUploadService: DotTempFileUploadService;
         let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
-        let router: Router;
         let dotPageApiService: DotPageApiService;
 
         const createComponent = createRouting();
@@ -386,7 +385,6 @@ describe('EditEmaEditorComponent', () => {
             dotAlertConfirmService = spectator.inject(DotAlertConfirmService, true);
             dotTempFileUploadService = spectator.inject(DotTempFileUploadService, true);
             dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
-            router = spectator.inject(Router, true);
             dotPageApiService = spectator.inject(DotPageApiService, true);
             addMessageSpy = jest.spyOn(messageService, 'add');
             jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
@@ -496,14 +494,6 @@ describe('EditEmaEditorComponent', () => {
                         spectator.debugElement.query(By.css(`[data-testId="${testId}"]`))
                     ).not.toBeNull();
                 });
-            });
-
-            it('should set the client is ready to false when the component is destroyed', () => {
-                store.setIsClientReady(true);
-
-                spectator.component.ngOnDestroy();
-
-                expect(store.isClientReady()).toBe(false);
             });
 
             it('should relaod when Block editor is saved', () => {
@@ -2671,8 +2661,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('should navigate to new url and change persona when postMessage SET_URL', () => {
-                    const router = spectator.inject(Router);
-                    jest.spyOn(router, 'navigate');
+                    const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
 
                     spectator.detectChanges();
 
@@ -2688,12 +2677,9 @@ describe('EditEmaEditorComponent', () => {
                         })
                     );
 
-                    expect(router.navigate).toHaveBeenCalledWith([], {
-                        queryParams: {
-                            url: '/some',
-                            'com.dotmarketing.persona.id': 'modes.persona.no.persona'
-                        },
-                        queryParamsHandling: 'merge'
+                    expect(spyUpdatePageParams).toHaveBeenCalledWith({
+                        url: '/some',
+                        'com.dotmarketing.persona.id': 'modes.persona.no.persona'
                     });
                 });
 
@@ -2719,7 +2705,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('set url to a different route should set the editor state to loading', () => {
-                    const navigateSpy = jest.spyOn(router, 'navigate');
+                    const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
 
                     spectator.detectChanges();
 
@@ -2735,12 +2721,9 @@ describe('EditEmaEditorComponent', () => {
                         })
                     );
 
-                    expect(navigateSpy).toHaveBeenCalledWith([], {
-                        queryParams: {
-                            'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                            url: '/some'
-                        },
-                        queryParamsHandling: 'merge'
+                    expect(spyUpdatePageParams).toHaveBeenCalledWith({
+                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                        url: '/some'
                     });
                 });
 
@@ -2749,7 +2732,7 @@ describe('EditEmaEditorComponent', () => {
 
                     const url = "/ultra-cool-url-that-doesn't-exist";
 
-                    store.init({
+                    store.updatePageParams({
                         url,
                         language_id: '5',
                         'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier

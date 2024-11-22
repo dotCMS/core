@@ -17,7 +17,6 @@ import {
     signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -128,8 +127,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
 
     protected readonly uveStore = inject(UVEStore);
-
-    private readonly router = inject(Router);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly messageService = inject(MessageService);

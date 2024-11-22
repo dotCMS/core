@@ -43,9 +43,9 @@ export function withLoad() {
                         tap(() => {
                             patchState(store, { status: UVE_STATUS.LOADING, isClientReady: false });
                         }),
-                        switchMap((params) => {
+                        switchMap((pageParams) => {
                             return forkJoin({
-                                pageAPIResponse: dotPageApiService.get(params).pipe(
+                                pageAPIResponse: dotPageApiService.get(pageParams).pipe(
                                     // This logic should be handled in the Shell component using an effect
                                     switchMap((pageAPIResponse) => {
                                         const { vanityUrl } = pageAPIResponse;
@@ -55,12 +55,12 @@ export function withLoad() {
                                             return of(pageAPIResponse);
                                         }
 
-                                        const pageParams = {
-                                            ...params,
+                                        const params = {
+                                            ...pageParams,
                                             url: vanityUrl.forwardTo.replace('/', '')
                                         };
 
-                                        patchState(store, { pageParams });
+                                        patchState(store, { pageParams: params });
 
                                         // EMPTY is a simple Observable that only emits the complete notification.
                                         return EMPTY;
@@ -82,7 +82,7 @@ export function withLoad() {
                                 switchMap(({ pageAPIResponse, isEnterprise, currentUser }) =>
                                     forkJoin({
                                         experiment: dotExperimentsService.getById(
-                                            params.experimentId
+                                            pageParams.experimentId
                                         ),
                                         languages: dotLanguagesService.getLanguagesUsedPage(
                                             pageAPIResponse.page.identifier
@@ -101,9 +101,11 @@ export function withLoad() {
                                                     currentUser
                                                 );
 
-                                                const isTraditionalPage = !params.clientHost; // If we don't send the clientHost we are using as VTL page
+                                                const isTraditionalPage = !pageParams.clientHost; // If we don't send the clientHost we are using as VTL page
 
                                                 patchState(store, {
+                                                    // If params are passed, set them, otherwise keep the current ones
+                                                    pageParams: pageParams,
                                                     pageAPIResponse,
                                                     isEnterprise,
                                                     currentUser,

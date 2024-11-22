@@ -100,11 +100,17 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         }
     });
 
+    /**
+     * Handle the update of the page params
+     * When the page params change, we need to initiate the UVE again and update the location
+     *
+     * @memberof DotEmaShellComponent
+     */
     readonly $handlePageParamsEffect = effect(() => {
-        const params = this.uveStore.pageParams();
-        this.#updateLocation(params);
+        const pageParams = this.uveStore.pageParams();
+        this.#updateLocation(pageParams);
         // We don't want to track this because it's a side effect
-        untracked(() => this.uveStore.init(params));
+        untracked(() => this.uveStore.init(pageParams));
     });
 
     ngOnInit(): void {
