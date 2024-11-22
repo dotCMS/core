@@ -33,8 +33,8 @@ public class ContentImportResource {
     private static final String IMPORT_QUEUE_NAME = "importContentlets";
     
     // Constants for commands
-    private static final String CMD_PUBLISH = "publish";
-
+    private static final String CMD_PUBLISH = com.dotmarketing.util.Constants.PUBLISH;
+    
     /**
      * Constructor for ContentImportResource.
      *

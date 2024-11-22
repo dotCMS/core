@@ -60,7 +60,7 @@ public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
     private static ContentImportResource importResource;
 
     private final static String IMPORT_QUEUE_NAME = "importContentlets";
-    private final static String CMD_PUBLISH = "publish";
+    private static final String CMD_PUBLISH = com.dotmarketing.util.Constants.PUBLISH;
 
     @BeforeAll
     static void setUp() throws Exception {
