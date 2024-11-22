@@ -226,7 +226,7 @@ export class DotEditContentService {
             .get<{ entity: { count: number } }>(`/api/v1/content/${identifier}/references/count`)
             .pipe(map((response) => response.entity.count));
     }
-    
+
     /**
      * Get content by folder
      *

@@ -7,7 +7,11 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { DotContentTypeService, DotSiteService, DotWorkflowActionsFireService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotSiteService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 
 import { DotEditContentService } from './dot-edit-content.service';
 
@@ -25,7 +29,7 @@ describe('DotEditContentService', () => {
     const createHttp = createHttpFactory({
         service: DotEditContentService,
         providers: [
-            mockProvider(DotSiteService),   
+            mockProvider(DotSiteService),
             mockProvider(DotContentTypeService),
             mockProvider(DotWorkflowActionsFireService)
         ]
