@@ -20,7 +20,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import static com.dotcms.util.DotPreconditions.checkNotNull;
 
 /**
  * REST resource for handling content import operations, including creating and enqueuing content import jobs.
@@ -31,12 +30,9 @@ public class ContentImportResource {
 
     private final WebResource webResource;
     private final ContentImportHelper importHelper;
-    private final String IMPORT_QUEUE_NAME = "importContentlets";
-
-    //TODO move to a common place
-
+    private static final String IMPORT_QUEUE_NAME = "importContentlets";
+    
     // Constants for commands
-    private static final String CMD_PREVIEW = "preview";
     private static final String CMD_PUBLISH = "publish";
 
     /**
@@ -113,7 +109,6 @@ public class ContentImportResource {
             @BeanParam final ContentImportParams params)
             throws DotDataException, JsonProcessingException {
 
-        checkNotNull(params, "Form data is required");
         // Initialize the WebResource and set required user information
         final var initDataObject = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -122,8 +117,7 @@ public class ContentImportResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        Logger.debug(this, ()->String.format("Importing content: %s", params));
-
+        Logger.debug(this, ()->String.format(" user %s is importing content: %s", initDataObject.getUser().getUserId(), params));
 
         try {
             // Create the import job

@@ -60,6 +60,7 @@ public class JobQueueManagerHelper {
                 if (!testInstantiation(processor)) {
                     return;
                 }
+                Logger.info(this.getClass(), "Registering JobProcessor: " + processor.getName());
                 registerProcessor(processor);
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Unable to register JobProcessor ", e);
