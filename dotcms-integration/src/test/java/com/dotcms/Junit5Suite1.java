@@ -15,7 +15,7 @@ import org.junit.platform.suite.api.Suite;
         PostgresJobQueueIntegrationTest.class,
         JobQueueManagerAPIIntegrationTest.class,
         JobQueueHelperIntegrationTest.class,
-        ImportContentletsProcessorIntegrationTest.class
+        ImportContentletsProcessorIntegrationTest.class,
         ContentImportResourceIntegrationTest.class
 })
 public class Junit5Suite1 {
