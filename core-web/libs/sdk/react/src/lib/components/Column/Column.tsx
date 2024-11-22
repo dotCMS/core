@@ -6,6 +6,8 @@ import { PageContext } from '../../contexts/PageContext';
 import { DotCMSPageContext } from '../../models';
 import { combineClasses, getPositionStyleClasses } from '../../utils/utils';
 import { Container } from '../Container/Container';
+import { DotError, DotErrorCodes } from '../DotErrorBoundary/DotError';
+import DotErrorBoundary from '../DotErrorBoundary/DotErrorBoundary';
 
 /**
  * Props for Column component to render a column with its containers.
@@ -15,6 +17,8 @@ import { Container } from '../Container/Container';
  */
 export interface ColumnProps {
     readonly column: DotCMSPageContext['pageAsset']['layout']['body']['rows'][0]['columns'][0];
+    colIndex: number;
+    rowIndex: number;
 }
 
 /**
@@ -25,7 +29,7 @@ export interface ColumnProps {
  * @param {ColumnProps} { column }
  * @return {JSX.Element} Rendered column with containers
  */
-export function Column({ column }: ColumnProps) {
+export function Column({ column, rowIndex, colIndex }: ColumnProps) {
     const { isInsideEditor } = useContext(PageContext) as DotCMSPageContext;
 
     const { startClass, endClass } = getPositionStyleClasses(
@@ -42,14 +46,20 @@ export function Column({ column }: ColumnProps) {
           }
         : {};
 
+    // RANDOMLY THROW AN ERROR BUT WE CAN MAKE INTEGRITY CHECKS OF THE COLUMNS
+    if (Math.random() > 0.7)
+        throw new DotError(DotErrorCodes.COL001, {
+            row: rowIndex,
+            column: colIndex
+        });
+
     return (
         <div {...columnProps} className={combinedClasses}>
             <div className={column.styleClass}>
                 {column.containers.map((container) => (
-                    <Container
-                        key={`${container.identifier}-${container.uuid}`}
-                        containerRef={container}
-                    />
+                    <DotErrorBoundary key={`${container.identifier}-${container.uuid}`}>
+                        <Container containerRef={container} col={colIndex} row={rowIndex} />
+                    </DotErrorBoundary>
                 ))}
             </div>
         </div>

@@ -4,6 +4,8 @@ import { PageContext } from '../../contexts/PageContext';
 import { useCheckHaveContent } from '../../hooks/useCheckHaveContent';
 import { DotCMSPageContext } from '../../models';
 import { getContainersData } from '../../utils/utils';
+import { DotError, DotErrorCodes } from '../DotErrorBoundary/DotError';
+import DotErrorBoundary from '../DotErrorBoundary/DotErrorBoundary';
 
 /**
  * Component to render when there is no component for the content type.
@@ -32,6 +34,8 @@ function EmptyContent() {
  */
 export interface ContainerProps {
     readonly containerRef: DotCMSPageContext['pageAsset']['layout']['body']['rows'][0]['columns'][0]['containers'][0];
+    row: number;
+    col: number;
 }
 
 /**
@@ -42,7 +46,7 @@ export interface ContainerProps {
  * @param {ContainerProps} { containerRef }
  * @return {JSX.Element} Rendered container with content
  */
-export function Container({ containerRef }: ContainerProps) {
+export function Container({ containerRef, row, col }: ContainerProps) {
     const { isInsideEditor } = useContext(PageContext) as DotCMSPageContext;
 
     const { identifier, uuid } = containerRef;
@@ -80,6 +84,16 @@ export function Container({ containerRef }: ContainerProps) {
               height: '10rem'
           };
 
+    // RANDOMLY THROWING ERRORS BUT WE CAN MAKE INTEGRITY CHECKS OF THE CONTAINERS
+    // OR THROW THIS ERROR IN THE UTILITIES FUNCTION WE USE HERE
+    if (Math.random() > 0.6)
+        throw new DotError(DotErrorCodes.CON001, {
+            row: row,
+            column: col,
+            uuid: container.uuid,
+            identifier: container.identifier
+        });
+
     const ContainerChildren = contentlets.map((contentlet) => {
         const ContentTypeComponent = components[contentlet.contentType];
         const DefaultComponent = components['CustomNoComponent'] || NoComponent;
@@ -87,6 +101,17 @@ export function Container({ containerRef }: ContainerProps) {
         const Component = isInsideEditor
             ? ContentTypeComponent || DefaultComponent
             : ContentTypeComponent || EmptyContent;
+
+        // RANDOMLY THROWING ERRORS BUT WE CAN MAKE INTEGRITY CHECKS OF THE CONTENTLETS
+        if (Math.random() > 0.4)
+            throw new DotError(DotErrorCodes.CON002, {
+                identifier: contentlet.identifier,
+                inode: contentlet.inode,
+                uuid: container.uuid,
+                row: row,
+                column: col,
+                contentType: contentlet.contentType
+            });
 
         return isInsideEditor ? (
             <div
@@ -109,19 +134,23 @@ export function Container({ containerRef }: ContainerProps) {
         );
     });
 
-    return isInsideEditor ? (
-        <div
-            data-testid="dot-container"
-            data-dot-object="container"
-            data-dot-accept-types={acceptTypes}
-            data-dot-identifier={path ?? identifier}
-            data-max-contentlets={maxContentlets}
-            data-dot-uuid={uuid}
-            style={containerStyles}>
-            {ContainerChildren.length ? ContainerChildren : 'This container is empty.'}
-        </div>
-    ) : (
-        // eslint-disable-next-line react/jsx-no-useless-fragment
-        <>{ContainerChildren}</>
+    return (
+        <DotErrorBoundary>
+            {isInsideEditor ? (
+                <div
+                    data-testid="dot-container"
+                    data-dot-object="container"
+                    data-dot-accept-types={acceptTypes}
+                    data-dot-identifier={path ?? identifier}
+                    data-max-contentlets={maxContentlets}
+                    data-dot-uuid={uuid}
+                    style={containerStyles}>
+                    {ContainerChildren.length ? ContainerChildren : 'This container is empty.'}
+                </div>
+            ) : (
+                // eslint-disable-next-line react/jsx-no-useless-fragment
+                <>{ContainerChildren}</>
+            )}
+        </DotErrorBoundary>
     );
 }

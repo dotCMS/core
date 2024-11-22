@@ -2,6 +2,7 @@ import { DotCMSPageEditorConfig } from '@dotcms/client';
 
 import { useDotcmsEditor } from '../../hooks/useDotcmsEditor';
 import { DotCMSPageContext } from '../../models';
+import DotErrorBoundary from '../DotErrorBoundary/DotErrorBoundary';
 import { PageProvider } from '../PageProvider/PageProvider';
 import { Row } from '../Row/Row';
 
@@ -43,7 +44,9 @@ export function DotcmsLayout(dotPageProps: DotcmsPageProps): JSX.Element {
     return (
         <PageProvider pageContext={pageContext}>
             {pageContext.pageAsset?.layout?.body.rows.map((row, index) => (
-                <Row key={index} row={row} />
+                <DotErrorBoundary key={index}>
+                    <Row row={row} index={index} />
+                </DotErrorBoundary>
             ))}
         </PageProvider>
     );
