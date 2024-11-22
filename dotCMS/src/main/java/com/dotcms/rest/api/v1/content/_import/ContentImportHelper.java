@@ -30,8 +30,8 @@ import java.util.Map;
 @ApplicationScoped
 public class ContentImportHelper {
 
-    private JobQueueManagerAPI jobQueueManagerAPI;
-    private JobQueueManagerHelper jobQueueManagerHelper;
+    private final JobQueueManagerAPI jobQueueManagerAPI;
+    private final JobQueueManagerHelper jobQueueManagerHelper;
 
     /**
      * Constructor for dependency injection.
@@ -49,7 +49,8 @@ public class ContentImportHelper {
      * Default constructor required for CDI.
      */
     public ContentImportHelper() {
-        // Default constructor mandatory for CDI
+        this.jobQueueManagerAPI = null;
+        this.jobQueueManagerHelper = null;
     }
 
     /**

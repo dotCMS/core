@@ -22,8 +22,8 @@ import java.util.Objects;
 @ApplicationScoped
 public class JobQueueManagerHelper {
 
-    private JobQueueManagerAPI jobQueueManagerAPI;
-    private JobProcessorScanner scanner;
+    private final JobQueueManagerAPI jobQueueManagerAPI;
+    private final JobProcessorScanner scanner;
 
     /**
      * Constructor that injects the {@link JobProcessorScanner} and {@link JobQueueManagerAPI}.
@@ -41,7 +41,8 @@ public class JobQueueManagerHelper {
      * Default constructor required by CDI.
      */
     public JobQueueManagerHelper() {
-        // Default constructor required by CDI
+        this.scanner = null;
+        this.jobQueueManagerAPI = null;
     }
 
     /**
