@@ -89,6 +89,7 @@ import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.asset.AssetPathResolverImplIntegrationTest;
 import com.dotcms.rest.api.v1.asset.WebAssetHelperIntegrationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
+import com.dotcms.rest.api.v1.content._import.ContentImportResourceIntegrationTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
@@ -414,7 +415,8 @@ import org.junit.runners.Suite.SuiteClasses;
         FilesCollectorTest.class,
         SyncVanitiesCollectorTest.class,
         AsyncVanitiesCollectorTest.class,
-        HttpServletRequestImpersonatorTest.class
+        HttpServletRequestImpersonatorTest.class,
+        ContentImportResourceIntegrationTest.class,
 })
 
 public class MainSuite2b {
