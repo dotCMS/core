@@ -15,6 +15,7 @@ import java.util.Objects;
 
 /**
  * Helper class for managing job queue processors in the JobQueueManagerAPI.
+ * <p>
  * This class is responsible for discovering job processors, registering them with
  * the JobQueueManagerAPI, and shutting down the JobQueueManagerAPI when needed.
  */
