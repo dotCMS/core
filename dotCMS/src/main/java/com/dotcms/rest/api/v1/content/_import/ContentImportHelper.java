@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.contentImport;
+package com.dotcms.rest.api.v1.content._import;
 
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.rest.api.v1.JobQueueManagerHelper;
@@ -106,7 +106,7 @@ public class ContentImportHelper {
      */
     private Map<String, Object> createJobParameters(
             final String command,
-            final com.dotcms.rest.api.v1.contentImport.ContentImportParams params,
+            final ContentImportParams params,
             final User user,
             final HttpServletRequest request) throws JsonProcessingException {
 
@@ -135,7 +135,7 @@ public class ContentImportHelper {
      * @throws JsonProcessingException If there is an error processing JSON data.
      */
     private void addOptionalParameters(
-            final com.dotcms.rest.api.v1.contentImport.ContentImportParams params,
+            final ContentImportParams params,
             final Map<String, Object> jobParameters) throws JsonProcessingException {
 
         final ContentImportForm form = params.getForm();

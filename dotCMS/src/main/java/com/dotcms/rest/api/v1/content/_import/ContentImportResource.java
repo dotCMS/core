@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.contentImport;
+package com.dotcms.rest.api.v1.content._import;
 
 import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.rest.ResponseEntityView;

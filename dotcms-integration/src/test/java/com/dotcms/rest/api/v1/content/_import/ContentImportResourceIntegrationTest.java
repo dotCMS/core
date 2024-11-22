@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.content.upload;
+package com.dotcms.rest.api.v1.content._import;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -15,10 +15,6 @@ import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.JobQueueManagerHelper;
-import com.dotcms.rest.api.v1.contentImport.ContentImportForm;
-import com.dotcms.rest.api.v1.contentImport.ContentImportHelper;
-import com.dotcms.rest.api.v1.contentImport.ContentImportParams;
-import com.dotcms.rest.api.v1.contentImport.ContentImportResource;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -50,7 +46,7 @@ import java.util.List;
 @ApplicationScoped
 @EnableWeld
 @RunWith(JUnit4WeldRunner.class)
-public class ContentUploadResourceIntegrationTest extends Junit5WeldBaseTest {
+public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
     private static User adminUser;
     private static HttpServletRequest request;
