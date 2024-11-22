@@ -226,7 +226,14 @@ export class DotEditContentService {
             .get<{ entity: { count: number } }>(`/api/v1/content/${identifier}/references/count`)
             .pipe(map((response) => response.entity.count));
     }
-
+    
+    /**
+     * Get content by folder
+     *
+     * @param {{ folderId: string; mimeTypes?: string[] }} { folderId, mimeTypes }
+     * @return {*}
+     * @memberof DotEditContentService
+     */
     getContentByFolder({ folderId, mimeTypes }: { folderId: string; mimeTypes?: string[] }) {
         const params = {
             hostFolderId: folderId,
@@ -238,7 +245,7 @@ export class DotEditContentService {
             showWorking: true,
             showArchived: false,
             sortByDesc: true,
-            mimeTypes
+            mimeTypes: mimeTypes || []
         };
 
         return this.#siteService.getContentByFolder(params);

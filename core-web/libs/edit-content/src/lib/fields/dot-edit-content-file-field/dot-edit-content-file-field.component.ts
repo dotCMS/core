@@ -47,11 +47,9 @@ import { getUiMessage } from './utils/messages';
         ButtonModule,
         DotMessagePipe,
         DotDropZoneComponent,
-        DotAIImagePromptComponent,
         DotSpinnerModule,
         DotFileFieldUiMessageComponent,
         DotFileFieldPreviewComponent,
-        DotFormImportUrlComponent,
         TooltipModule
     ],
     providers: [
@@ -389,7 +387,17 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
                 this.store.setPreviewFile(file);
             });
     }
-
+    /**
+     * Shows the select existing file dialog.
+     *
+     * Opens the dialog with the `DotSelectExistingFileComponent` component
+     * and passes the field type and accepted files as data to the component.
+     *
+     * When the dialog is closed, gets the uploaded file from the component
+     * and sets it as the preview file in the store.
+     *
+     * @memberof DotEditContentFileFieldComponent
+     */
     showSelectExistingFileDialog() {
         const header = this.#dotMessageService.get(
             'dot.file.field.dialog.select.existing.file.header'
