@@ -30,7 +30,7 @@ export class DotError extends Error {
     context: DotErrorContext;
 
     constructor(message: DotErrorCodes, context: DotErrorContext) {
-        super(message);
+        super(ERROR_MAP[message](context));
         this.name = 'DotError';
 
         this.context = context;

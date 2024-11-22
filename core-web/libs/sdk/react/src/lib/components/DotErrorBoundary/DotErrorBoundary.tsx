@@ -1,6 +1,6 @@
 import { Component, ReactNode } from 'react';
 
-import { DotError, DotErrorCodes, ERROR_MAP } from './DotError';
+import { DotError } from './DotError';
 
 interface Props {
     children?: ReactNode;
@@ -18,14 +18,6 @@ class DotErrorBoundary extends Component<Props, State> {
         return { error };
     }
 
-    componentDidCatch(error: DotError) {
-        // COLXXX: Column error
-        // ROWXXX: Row error
-        // CONXXX: Container error
-
-        console.error(ERROR_MAP[error.message as DotErrorCodes](error.context));
-    }
-
     render() {
         if (this.state.error) {
             return (
@@ -37,9 +29,7 @@ class DotErrorBoundary extends Component<Props, State> {
                         color: 'red'
                     }}>
                     {
-                        ERROR_MAP[this.state.error.message as DotErrorCodes](
-                            this.state.error.context
-                        ) // Probably will not show anything Im just testing
+                        this.state.error.message // Probably will not show anything Im just testing
                     }
                 </div>
             );
