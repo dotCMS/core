@@ -109,7 +109,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         const params = this.#getPageParams();
-        this.uveStore.updatePageParams(params);
+        this.uveStore.setPageParams(params);
 
         // We need to skip one because it's the initial value
         this.#siteService.switchSite$

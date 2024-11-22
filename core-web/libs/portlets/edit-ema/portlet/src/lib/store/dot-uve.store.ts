@@ -146,6 +146,11 @@ export const UVEStore = signalStore(
                     pageAPIResponse
                 });
             },
+            setPageParams(pageParams: DotPageApiParams) {
+                patchState(store, {
+                    pageParams
+                });
+            },
             updatePageParams(pageParams: Partial<DotPageApiParams>) {
                 patchState(store, {
                     pageParams: {
