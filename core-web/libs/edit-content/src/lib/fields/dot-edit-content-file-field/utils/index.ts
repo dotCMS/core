@@ -28,7 +28,7 @@ export const getFileMetadata = (contentlet: DotCMSContentlet): DotFileMetadata =
  * @returns The version of the file associated with the contentlet, or null.
  */
 export const getFileVersion = (contentlet: DotCMSContentlet) => {
-    return contentlet['assetVersion'] || null;
+    return contentlet['assetVersion'] || contentlet['fileAssetVersion'] || null;
 };
 
 /**
