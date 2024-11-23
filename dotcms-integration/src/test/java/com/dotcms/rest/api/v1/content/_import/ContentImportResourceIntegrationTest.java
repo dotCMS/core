@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.content._import;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
 
 import com.dotcms.Junit5WeldBaseTest;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -9,11 +8,9 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.job.Job;
-import com.dotcms.jobs.business.processor.impl.ImportContentletsProcessor;
 import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.api.v1.JobQueueManagerHelper;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -25,6 +22,7 @@ import com.liferay.portal.model.User;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.jboss.weld.junit5.EnableWeld;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -54,6 +52,12 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     private final static String IMPORT_QUEUE_NAME = "importContentlets";
     private static final String CMD_PUBLISH = com.dotmarketing.util.Constants.PUBLISH;
 
+    @Inject
+    ContentImportHelper contentImportHelper;
+
+    @Inject
+    JobQueueManagerAPI jobQueueManagerAPI;
+
     @BeforeAll
     static void setUp() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -63,13 +67,11 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         request = JobUtil.generateMockRequest(adminUser, defaultSite.getHostname());
         response = new MockHttpResponse();
         mapper = new ObjectMapper();
+    }
 
-        JobQueueManagerHelper jobQueueManagerHelper = mock(JobQueueManagerHelper.class);
-        JobQueueManagerAPI jobQueueManagerAPI = APILocator.getJobQueueManagerAPI();
-        jobQueueManagerAPI.registerProcessor(IMPORT_QUEUE_NAME, ImportContentletsProcessor.class);
-
-        ContentImportHelper helper = new ContentImportHelper(jobQueueManagerAPI, jobQueueManagerHelper);
-        importResource = new ContentImportResource(helper);
+    @BeforeEach
+    void prepare() {
+        importResource = new ContentImportResource(contentImportHelper);
     }
 
     /**
@@ -132,7 +134,6 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
         // Assert that the response status is BAD_REQUEST (400)
         assertBadRequestResponse(importResource.importContent(request, response, params));
-
     }
 
     /**
@@ -278,7 +279,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         assertFalse(responseEntityView.getEntity().isEmpty(), "Job ID should be a non-empty string");
 
         // Retrieve and validate job exists in the queue
-        Job job = APILocator.getJobQueueManagerAPI().getJob(responseEntityView.getEntity());
+        Job job = jobQueueManagerAPI.getJob(responseEntityView.getEntity());
         assertNotNull(job, "Job should exist in queue");
 
         // Validate core import parameters
