@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.dotcms.Junit5WeldBaseTest;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
@@ -16,14 +17,13 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.jboss.weld.junit5.EnableWeld;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -48,9 +48,13 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     private static Host defaultSite;
     private static ObjectMapper mapper;
     private static ContentImportResource importResource;
+    private static Language defaultLanguage;
 
     private final static String IMPORT_QUEUE_NAME = "importContentlets";
     private static final String CMD_PUBLISH = com.dotmarketing.util.Constants.PUBLISH;
+
+    private static File csvFile;
+    private static ContentType contentType;
 
     @Inject
     ContentImportHelper contentImportHelper;
@@ -67,11 +71,25 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         request = JobUtil.generateMockRequest(adminUser, defaultSite.getHostname());
         response = new MockHttpResponse();
         mapper = new ObjectMapper();
+
+        defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        contentType = TestDataUtils.getRichTextLikeContentType();
+        csvFile = createTestCsvFile();
     }
 
     @BeforeEach
     void prepare() {
         importResource = new ContentImportResource(contentImportHelper);
+    }
+
+    @AfterAll
+    static void cleanup() {
+        // Clean up the test file
+        if (csvFile != null && csvFile.exists()) {
+            csvFile.delete();
+        }
+        // Clean up the test content type
+        ContentTypeDataGen.remove(contentType);
     }
 
     /**
@@ -84,14 +102,11 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_with_valid_params() throws IOException, DotDataException {
-        ContentType contentType = TestDataUtils.getRichTextLikeContentType();
-        File csvFile = createTestCsvFile();
-
-        ContentImportForm form = createContentImportForm(contentType.name(), "1", "workflow-action-id", List.of("title"));
+        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), "workflow-action-id", List.of("title"));
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         Response importContentResponse = importResource.importContent(request, response, params);
-        validateSuccessfulResponse(importContentResponse, contentType.name(), "1", List.of("title"), "workflow-action-id", CMD_PUBLISH);
+        validateSuccessfulResponse(importContentResponse, contentType.name(), String.valueOf(defaultLanguage.getId()), List.of("title"), "workflow-action-id", CMD_PUBLISH);
     }
 
     /**
@@ -104,14 +119,11 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_with_language_iso_code() throws IOException, DotDataException {
-        ContentType contentType = TestDataUtils.getRichTextLikeContentType();
-        File csvFile = createTestCsvFile();
-
-        ContentImportForm form = createContentImportForm(contentType.name(), "en-us", "workflow-action-id", List.of("title"));
+        ContentImportForm form = createContentImportForm(contentType.name(), defaultLanguage.getIsoCode(), "workflow-action-id", List.of("title"));
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         Response importContentResponse = importResource.importContent(request, response, params);
-        validateSuccessfulResponse(importContentResponse, contentType.name(), "en-us", List.of("title"), "workflow-action-id", CMD_PUBLISH);
+        validateSuccessfulResponse(importContentResponse, contentType.name(), defaultLanguage.getIsoCode(), List.of("title"), "workflow-action-id", CMD_PUBLISH);
     }
 
     /**
@@ -126,9 +138,6 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_without_language_and_field_params() throws IOException, DotDataException {
-        ContentType contentType = TestDataUtils.getRichTextLikeContentType();
-        File csvFile = createTestCsvFile();
-
         ContentImportForm form = createContentImportForm(contentType.name(), null, "workflow-action-id-2", null);
         ContentImportParams params = createContentImportParams(csvFile, form);
 
@@ -146,10 +155,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_with_invalid_language() throws IOException, DotDataException {
-        ContentType contentType = TestDataUtils.getRichTextLikeContentType();
-        File csvFile = createTestCsvFile();
-
-        ContentImportForm form = createContentImportForm(contentType.name(), "123", "workflow-action-id-2", null);
+        ContentImportForm form = createContentImportForm(contentType.name(), "12345", "workflow-action-id-2", null);
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         assertBadRequestResponse(importResource.importContent(request, response, params));
@@ -165,8 +171,6 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_with_invalid_content_type() throws IOException, DotDataException {
-        File csvFile = createTestCsvFile();
-
         ContentImportForm form = createContentImportForm("doesNotExist", "12345", "workflow-action-id-2", null);
         ContentImportParams params = createContentImportParams(csvFile, form);
 
@@ -197,7 +201,6 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_without_workflow_action_in_form() {
-        ContentType contentType = TestDataUtils.getRichTextLikeContentType();
         assertThrows(ValidationException.class, () -> createContentImportForm(contentType.name(), null, null, null));
     }
 
@@ -212,8 +215,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_missing_file() throws JsonProcessingException {
-        ContentType contentType = TestDataUtils.getRichTextLikeContentType();
-        ContentImportForm form = createContentImportForm(contentType.name(), "1", "workflow-action-id", null);
+        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), "workflow-action-id", null);
 
         ContentImportParams params = new ContentImportParams();
         params.setJsonForm(mapper.writeValueAsString(form));
@@ -232,8 +234,6 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_missing_form() throws IOException {
-        File csvFile = createTestCsvFile();
-
         ContentImportParams params = new ContentImportParams();
         params.setFileInputStream(new FileInputStream(csvFile));
         params.setContentDisposition(createContentDisposition(csvFile.getName()));
@@ -309,7 +309,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @return A temporary File object containing test CSV data
      * @throws IOException if there's an error creating or writing to the temporary file
      */
-    private File createTestCsvFile() throws IOException {
+    private static File createTestCsvFile() throws IOException {
         String csv = "title,body\nTest Title 1,Test Body 1\nTest Title 2,Test Body 2\n";
         File csvFile = File.createTempFile("test", ".csv");
         Files.write(csvFile.toPath(), csv.getBytes());
