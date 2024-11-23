@@ -7,6 +7,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
+import com.dotcms.rest.RESTParams;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
@@ -19,7 +20,6 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,7 +30,12 @@ import io.vavr.control.Try;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Implementation class for the {@link StoryBlockAPI}.
@@ -40,9 +45,10 @@ import java.util.*;
  */
 public class StoryBlockAPIImpl implements StoryBlockAPI {
 
-    private static final int MAX_RECURSION_LEVEL = 2;
+    private static final String DEFAULT_MAX_RECURSION_LEVEL = "2";
+    private static final String CURRENT_DEPTH_ATTR = "CURRENT_DEPTH";
     private static final Lazy<String> MAX_RELATIONSHIP_DEPTH = Lazy.of(() -> Config.getStringProperty(
-            "STORY_BLOCK_MAX_RELATIONSHIP_DEPTH", "2"));
+            "STORY_BLOCK_MAX_RELATIONSHIP_DEPTH", DEFAULT_MAX_RECURSION_LEVEL));
 
     @Override
     @CloseDBIfOpened
@@ -53,15 +59,16 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 contentlet.getContentType().hasStoryBlockFields()) {
 
             final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-            final boolean setBefore =  request.getAttribute("CURRENT_DEPTH") != null;
-
+            final boolean setBefore = null == request || request.getAttribute(CURRENT_DEPTH_ATTR) != null;
+            final int initialDepthValue = null != request && null != request.getAttribute(CURRENT_DEPTH_ATTR)
+                    ? (Integer) request.getAttribute(CURRENT_DEPTH_ATTR)
+                    : Integer.parseInt(MAX_RELATIONSHIP_DEPTH.get());
             if (setBefore) {
-
-                final Integer currentDepth = decreaseDepthValue((Integer) request.getAttribute("CURRENT_DEPTH"));
-
-                request.setAttribute("CURRENT_DEPTH", currentDepth);
-                request.setAttribute("DEPTH", currentDepth);
-
+                final Integer currentDepth = this.decreaseDepthValue(initialDepthValue);
+                if (null != request) {
+                    request.setAttribute(CURRENT_DEPTH_ATTR, currentDepth);
+                    request.setAttribute(RESTParams.DEPTH.name(), currentDepth);
+                }
                 return new StoryBlockReferenceResult(false, contentlet);
             }
 
@@ -88,7 +95,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @Override
     @SuppressWarnings("unchecked")
     public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier) {
-        boolean refreshed = false;
+        boolean refreshed;
         if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
             try {
                 final LinkedHashMap<String, Object> blockEditorMap = this.toMap(storyBlockValue);
@@ -303,6 +310,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * @param contentletIdList The list of Contentlet Identifiers referenced by the Story Block field.
      * @param contentMap       The Story Block data map.
      */
+    @SuppressWarnings("unchecked")
     private static void addDependencies(final ImmutableList.Builder<String> contentletIdList,
                                         final Map contentMap) {
         final Map<String, Map<String, Object>> attrsMap = (Map) contentMap.get(ATTRS_KEY);
@@ -316,6 +324,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public LinkedHashMap<String, Object> toMap(final Object blockEditorValue) throws JsonProcessingException {
         return ContentletJsonHelper.INSTANCE.get().objectMapper()
                        .readValue(Try.of(blockEditorValue::toString)
@@ -323,7 +332,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     }
 
     @Override
-    public String toJson (final Map<String, Object> blockEditorMap) throws JsonProcessingException {
+    public String toJson(final Map<String, Object> blockEditorMap) throws JsonProcessingException {
         return ContentletJsonHelper.INSTANCE.get().objectMapper()
                        .writeValueAsString(blockEditorMap);
     }
@@ -340,17 +349,14 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         try {
 
             final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-            final boolean notSetBefore =  request.getAttribute("CURRENT_DEPTH") == null;
-            Integer currentDepth = notSetBefore ? getInitialDepthValue() :
-                    decreaseDepthValue((Integer) request.getAttribute("CURRENT_DEPTH"));
+            final boolean notSetBefore = request.getAttribute(CURRENT_DEPTH_ATTR) == null;
+            final Integer currentDepth = notSetBefore ? this.getInitialDepthValue() :
+                    this.decreaseDepthValue((Integer) request.getAttribute(CURRENT_DEPTH_ATTR));
 
-            request.setAttribute("CURRENT_DEPTH", currentDepth);
-            request.setAttribute("DEPTH", currentDepth);
+            request.setAttribute(CURRENT_DEPTH_ATTR, currentDepth);
+            request.setAttribute(RESTParams.DEPTH.name(), currentDepth);
 
             final Contentlet fattyContentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false, true);
-
-            //currentDepth =  (Integer) request.getAttribute("CURRENT_DEPTH");
-            //request.setAttribute("DEPTH", currentDepth);
 
             if (null != fattyContentlet) {
                 this.addContentletRelationships(fattyContentlet, currentDepth);
@@ -360,7 +366,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             }
 
             if (notSetBefore) {
-                request.removeAttribute("CURRENT_DEPTH");
+                request.removeAttribute(CURRENT_DEPTH_ATTR);
             }
         } catch (final JsonProcessingException e) {
             Logger.error(this, String.format("An error occurred when transforming JSON data in contentlet with Inode " +
@@ -403,9 +409,9 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         return depthValue;
     }
 
-    public int getInitialDepthValue(){
+    private int getInitialDepthValue() {
         final HttpServletRequest httpRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        String value = null;
+        String value;
 
         if (null != httpRequest && null != httpRequest.getAttribute(WebKeys.HTMLPAGE_DEPTH))  {
             value = (String) httpRequest.getAttribute(WebKeys.HTMLPAGE_DEPTH);
@@ -415,16 +421,6 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
         int depth = ConversionUtils.toInt(value, 0);
         return depth < 0 || depth > 3 ? 0 : depth;
-    }
-
-    private boolean isInsideAnotherBlockEditorAndRelatedContent(){
-        boolean insideAnotherBlockEditor =
-                ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(), "refreshReferences", 2);
-
-        boolean insideContentRelated =
-                ThreadUtils.isMethodCallCountEqualThan(Contentlet.class.getName(), "getRelated", 1);
-
-        return insideAnotherBlockEditor && insideContentRelated;
     }
 
     /**
