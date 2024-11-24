@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { CommonModule, Location } from '@angular/common';
-import { Component, effect, inject, OnDestroy, OnInit, untracked, ViewChild } from '@angular/core';
+import { Component, effect, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -23,7 +23,7 @@ import {
     DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID, DotLanguage } from '@dotcms/dotcms-models';
+import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotInfoPageComponent, DotNotLicenseComponent } from '@dotcms/ui';
 
@@ -110,22 +110,19 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      *
      * @memberof DotEmaShellComponent
      */
-    readonly $handlePageParamsEffect = effect(() => {
-        const pageParams = this.uveStore.pageParams();
-
-        if (!pageParams) {
-            return;
-        }
-
-        this.#updateLocation(pageParams);
-        // We don't want to track this because it's a side effect
-        // fetchPageAsset (?)
-        untracked(() => this.uveStore.init(pageParams));
+    readonly $updateQueryParamsEffect = effect(() => {
+        const pageParams = this.uveStore.pageParams() || {};
+        const viewParams = this.uveStore.viewParams() || {};
+        const queryParams = {
+            ...pageParams,
+            ...viewParams
+        };
+        this.#updateLocation(queryParams);
     });
 
     ngOnInit(): void {
         const params = this.#getPageParams();
-        this.uveStore.updatePageParams(params);
+        this.uveStore.loadPageAsset(params);
 
         // We need to skip one because it's the initial value
         this.#siteService.switchSite$
@@ -170,12 +167,12 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const targetUrl = this.getTargetUrl(url);
 
         if (this.shouldNavigate(targetUrl)) {
-            this.uveStore.updatePageParams({ url: targetUrl });
+            this.uveStore.loadPageAsset({ url: targetUrl });
 
             return;
         }
 
-        this.uveStore.reload();
+        this.uveStore.reloadCurrentPage();
     }
 
     /**
@@ -242,7 +239,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * Reloads the component from the dialog.
      */
     reloadFromDialog() {
-        this.uveStore.reload();
+        this.uveStore.reloadCurrentPage();
     }
 
     /**
@@ -293,12 +290,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             delete params.clientHost;
         }
 
-        // Should this fo inside the updatePageParams method?
-        // Ask Jal, he implemented this
-        if (!params.variantName) {
-            params.variantName = DEFAULT_VARIANT_ID;
-        }
-
         return params;
     }
 
@@ -322,7 +313,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @memberof DotEmaShellComponent
      */
     #goBackToCurrentLanguage(): void {
-        // Check how to get previous language id
-        this.uveStore.updatePageParams({ language_id: '1' });
+        this.uveStore.loadPageAsset({ language_id: '1' });
     }
 }

@@ -246,7 +246,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 return;
             }
 
-            this.uveStore.updatePageParams({
+            this.uveStore.loadPageAsset({
                 url: url.pathname
             });
         }
@@ -557,7 +557,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     onLanguageSelected(language_id: string) {
-        this.uveStore.updatePageParams({
+        this.uveStore.loadPageAsset({
             language_id
         });
     }
@@ -727,7 +727,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
 
                 if (!actionPayload) {
-                    this.uveStore.reload();
+                    this.uveStore.reloadCurrentPage();
 
                     return;
                 }
@@ -792,7 +792,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     life: 2000
                 });
 
-                this.uveStore.reload();
+                this.uveStore.reloadCurrentPage();
                 this.dialog.resetDialog();
 
                 // This is a temporary solution to "reload" the content by reloading the window
@@ -842,7 +842,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 if (isSameUrl) {
                     this.uveStore.setEditorState(EDITOR_STATE.IDLE);
                 } else {
-                    this.uveStore.updatePageParams({
+                    this.uveStore.loadPageAsset({
                         url: payload.url,
                         'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                     });
@@ -899,7 +899,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
 
                             if (res) {
-                                this.uveStore.reload();
+                                this.uveStore.reloadCurrentPage();
                             }
                         })
                     )
@@ -972,7 +972,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             }
                         )
                     )
-                    .subscribe(() => this.uveStore.reload());
+                    .subscribe(() => this.uveStore.reloadCurrentPage());
             },
             [CLIENT_ACTIONS.CLIENT_READY]: (clientConfig: ClientRequestProps) => {
                 const { query, params } = clientConfig || {};
@@ -992,7 +992,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
 
                 this.uveStore.setClientConfiguration({ query, params });
-                this.uveStore.reload();
+                this.uveStore.reloadCurrentPage();
             },
             [CLIENT_ACTIONS.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
                 this.dialog.editContentlet({ ...contentlet, clientAction: action });
@@ -1186,13 +1186,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe(({ URL_MAP_FOR_CONTENT }) => {
                 if (URL_MAP_FOR_CONTENT != this.uveStore.pageParams().url) {
                     // If the URL is different, we need to navigate to the new URL
-                    this.uveStore.updatePageParams({ url: URL_MAP_FOR_CONTENT });
+                    this.uveStore.loadPageAsset({ url: URL_MAP_FOR_CONTENT });
 
                     return;
                 }
 
                 // If the URL is the same, we need to fetch the new page data
-                this.uveStore.reload();
+                this.uveStore.reloadCurrentPage();
             });
     }
 
@@ -1251,7 +1251,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * Reloads the component from the dialog/sidebar.
      */
     reloadPage() {
-        this.uveStore.reload();
+        this.uveStore.reloadCurrentPage();
     }
 
     /**

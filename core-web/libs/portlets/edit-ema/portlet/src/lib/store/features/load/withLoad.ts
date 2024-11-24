@@ -5,11 +5,13 @@ import { EMPTY, forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
@@ -30,37 +32,54 @@ export function withLoad() {
         },
         withClient(),
         withMethods((store) => {
+            const router = inject(Router);
             const dotPageApiService = inject(DotPageApiService);
             const dotLanguagesService = inject(DotLanguagesService);
             const dotLicenseService = inject(DotLicenseService);
-            const loginService = inject(LoginService);
             const dotExperimentsService = inject(DotExperimentsService);
+            const loginService = inject(LoginService);
 
             return {
-                init: rxMethod<DotPageApiParams>(
+                /**
+                 * Fetches the page asset based on the provided page parameters.
+                 * This method updates the user permissions, pageAsset, and pageParams.
+                 *
+                 * @param {DotPageApiParams} pageParams - The parameters used to fetch the page asset.
+                 * @memberof DotEmaShellComponent
+                 */
+                loadPageAsset: rxMethod<Partial<DotPageApiParams>>(
                     pipe(
                         tap(() => store.resetClientConfiguration()),
                         tap(() => {
                             patchState(store, { status: UVE_STATUS.LOADING, isClientReady: false });
                         }),
-                        switchMap((pageParams) => {
+                        switchMap((params) => {
+                            const pageParams = {
+                                ...(store.pageParams() ?? {}),
+                                ...params
+                            } as DotPageApiParams;
+
                             return forkJoin({
-                                pageAPIResponse: dotPageApiService.get(pageParams).pipe(
+                                pageAsset: dotPageApiService.get(pageParams).pipe(
                                     // This logic should be handled in the Shell component using an effect
-                                    switchMap((pageAPIResponse) => {
-                                        const { vanityUrl } = pageAPIResponse;
+                                    switchMap((pageAsset) => {
+                                        const { vanityUrl } = pageAsset;
 
                                         // If there is no vanity and is not a redirect we just return the pageAPI response
                                         if (isForwardOrPage(vanityUrl)) {
-                                            return of(pageAPIResponse);
+                                            return of(pageAsset);
                                         }
 
-                                        const params = {
+                                        const queryParams = {
                                             ...pageParams,
                                             url: vanityUrl.forwardTo.replace('/', '')
                                         };
 
-                                        patchState(store, { pageParams: params });
+                                        // Will trigger full editor page Reload
+                                        router.navigate([], {
+                                            queryParams,
+                                            queryParamsHandling: 'merge'
+                                        });
 
                                         // EMPTY is a simple Observable that only emits the complete notification.
                                         return EMPTY;
@@ -79,34 +98,33 @@ export function withLoad() {
                                         });
                                     }
                                 }),
-                                switchMap(({ pageAPIResponse, isEnterprise, currentUser }) =>
+                                switchMap(({ pageAsset, isEnterprise, currentUser }) =>
                                     forkJoin({
                                         experiment: dotExperimentsService.getById(
-                                            pageParams.experimentId
+                                            pageParams?.experimentId || DEFAULT_VARIANT_ID
                                         ),
                                         languages: dotLanguagesService.getLanguagesUsedPage(
-                                            pageAPIResponse.page.identifier
+                                            pageAsset.page.identifier
                                         )
                                     }).pipe(
                                         tap({
                                             next: ({ experiment, languages }) => {
                                                 const canEditPage = computeCanEditPage(
-                                                    pageAPIResponse?.page,
+                                                    pageAsset?.page,
                                                     currentUser,
                                                     experiment
                                                 );
 
                                                 const pageIsLocked = computePageIsLocked(
-                                                    pageAPIResponse?.page,
+                                                    pageAsset?.page,
                                                     currentUser
                                                 );
 
                                                 const isTraditionalPage = !pageParams.clientHost; // If we don't send the clientHost we are using as VTL page
 
                                                 patchState(store, {
-                                                    // If params are passed, set them, otherwise keep the current ones
-                                                    pageParams: pageParams,
-                                                    pageAPIResponse,
+                                                    pageParams,
+                                                    pageAPIResponse: pageAsset,
                                                     isEnterprise,
                                                     currentUser,
                                                     experiment,
@@ -131,7 +149,14 @@ export function withLoad() {
                         })
                     )
                 ),
-                reload: rxMethod<void>(
+                /**
+                 * Reloads the current page to bring the latest content.
+                 * Called this method when after changes, updates, or saves.
+                 *
+                 * @param {Partial<DotPageApiParams>} params - The parameters used to fetch the page asset.
+                 * @memberof DotEmaShellComponent
+                 */
+                reloadCurrentPage: rxMethod<void>(
                     pipe(
                         tap(() => {
                             patchState(store, {

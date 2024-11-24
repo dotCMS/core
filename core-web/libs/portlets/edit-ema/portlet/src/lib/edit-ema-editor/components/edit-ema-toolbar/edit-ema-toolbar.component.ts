@@ -114,7 +114,7 @@ export class EditEmaToolbarComponent {
      */
     onLanguageSelected(language: number) {
         const language_id = language.toString();
-        this.uveStore.updatePageParams({ language_id });
+        this.uveStore.loadPageAsset({ language_id });
     }
 
     /**
@@ -125,7 +125,7 @@ export class EditEmaToolbarComponent {
      */
     onPersonaSelected(persona: DotPersona & { pageId: string }) {
         if (persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized) {
-            this.uveStore.updatePageParams({
+            this.uveStore.loadPageAsset({
                 'com.dotmarketing.persona.id': persona.identifier
             });
         } else {
@@ -141,7 +141,7 @@ export class EditEmaToolbarComponent {
                     this.#personalizeService
                         .personalized(persona.pageId, persona.keyTag)
                         .subscribe(() => {
-                            this.uveStore.updatePageParams({
+                            this.uveStore.loadPageAsset({
                                 'com.dotmarketing.persona.id': persona.identifier
                             });
 
@@ -177,7 +177,7 @@ export class EditEmaToolbarComponent {
                         this.personaSelector.fetchPersonas();
 
                         if (persona.selected) {
-                            this.uveStore.updatePageParams({
+                            this.uveStore.loadPageAsset({
                                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                             });
                         }
@@ -201,12 +201,12 @@ export class EditEmaToolbarComponent {
         };
 
         if (this.shouldNavigateToNewPage(params)) {
-            this.uveStore.updatePageParams(params);
+            this.uveStore.loadPageAsset(params);
 
             return;
         }
 
-        this.uveStore.reload();
+        this.uveStore.reloadCurrentPage();
     }
 
     /**
@@ -242,7 +242,7 @@ export class EditEmaToolbarComponent {
                     }
                 })
             )
-            .subscribe(() => this.uveStore.reload());
+            .subscribe(() => this.uveStore.reloadCurrentPage());
     }
 
     /**
