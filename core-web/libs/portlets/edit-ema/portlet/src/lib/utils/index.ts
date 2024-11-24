@@ -428,8 +428,8 @@ export const mapContainerStructureToArrayOfContainers = (containers: DotPageCont
  * @param {DotPageApiParams} params
  * @return {*}  {string}
  */
-export const getRequestHostName = (isTraditionalPage: boolean, params: DotPageApiParams) => {
-    return !isTraditionalPage ? params.clientHost : window.location.origin;
+export const getRequestHostName = (params: DotPageApiParams) => {
+    return params?.clientHost || window.location.origin;
 };
 
 /**

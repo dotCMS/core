@@ -104,18 +104,28 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * Handle the update of the page params
      * When the page params change, we need to initiate the UVE again and update the location
      *
+     * Should we just trigger the `init` whenever the page params change?
+     * I mean, trigger the `init` instead of the `updatePageParams`?
+     * That makes more sense to me
+     *
      * @memberof DotEmaShellComponent
      */
     readonly $handlePageParamsEffect = effect(() => {
         const pageParams = this.uveStore.pageParams();
+
+        if (!pageParams) {
+            return;
+        }
+
         this.#updateLocation(pageParams);
         // We don't want to track this because it's a side effect
+        // fetchPageAsset (?)
         untracked(() => this.uveStore.init(pageParams));
     });
 
     ngOnInit(): void {
         const params = this.#getPageParams();
-        this.uveStore.setPageParams(params);
+        this.uveStore.updatePageParams(params);
 
         // We need to skip one because it's the initial value
         this.#siteService.switchSite$

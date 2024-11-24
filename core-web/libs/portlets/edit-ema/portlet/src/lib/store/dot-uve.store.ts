@@ -23,24 +23,21 @@ const initialState: UVEState = {
     pageParams: null,
     viewParams: null, // This should be called `viewSettings`/`editorViewSettings`?
     status: UVE_STATUS.LOADING,
-    isTraditionalPage: true, // This should be a computed property
-    canEditPage: false, // This should be a computed property
-    pageIsLocked: true // This should be a computed property
+    // TODO: Create a Task to check if these properties are needed
+    // This properties depends on `pageAPIResponse`, so they look like computed rather an a store property
+    // Check if we implemented the `SignalStore` pattern well:
+    // https://ngrx.io/guide/signals/signal-store/custom-store-features
+    // https://github.com/ngrx/signal-store-workshop/blob/main/src/app/albums/album-search/album-search.store.ts
+    isTraditionalPage: true,
+    canEditPage: false,
+    pageIsLocked: true
 };
 
 export const UVEStore = signalStore(
     { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
     withComputed(
-        ({
-            pageAPIResponse,
-            isTraditionalPage,
-            pageParams,
-            languages,
-            errorCode: error,
-            status,
-            isEnterprise
-        }) => {
+        ({ pageAPIResponse, pageParams, languages, errorCode: error, status, isEnterprise }) => {
             return {
                 $translateProps: computed<TranslateProps>(() => {
                     const response = pageAPIResponse();
@@ -60,7 +57,7 @@ export const UVEStore = signalStore(
 
                     const currentUrl = '/' + sanitizeURL(response?.page.pageURI);
 
-                    const requestHostName = getRequestHostName(isTraditionalPage(), pageParams());
+                    const requestHostName = getRequestHostName(pageParams());
 
                     const page = response?.page;
                     const templateDrawed = response?.template.drawed;
