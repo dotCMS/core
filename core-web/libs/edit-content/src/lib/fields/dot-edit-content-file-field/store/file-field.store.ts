@@ -8,7 +8,7 @@ import { computed, inject } from '@angular/core';
 import { filter, switchMap, tap } from 'rxjs/operators';
 
 import {
-    INPUT_TYPES,
+    INPUT_TYPE,
     FILE_STATUS,
     UIMessage,
     UploadedFile
@@ -20,7 +20,7 @@ import { getUiMessage } from '../utils/messages';
 
 export interface FileFieldState {
     value: string;
-    inputType: INPUT_TYPES | null;
+    inputType: INPUT_TYPE | null;
     fileStatus: FILE_STATUS;
     dropZoneActive: boolean;
     isEnterprise: boolean;
@@ -83,7 +83,7 @@ export const FileFieldStore = signalStore(
              * @param initState
              */
             initLoad: (initState: {
-                inputType: INPUT_TYPES;
+                inputType: INPUT_TYPE;
                 fieldVariable: FileFieldState['fieldVariable'];
                 isAIPluginInstalled?: boolean;
             }) => {
