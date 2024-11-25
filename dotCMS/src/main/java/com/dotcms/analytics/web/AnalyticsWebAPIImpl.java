@@ -8,6 +8,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -130,7 +131,7 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
 
             return builder.toString();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new DotRuntimeException(e);
         }
     }
 

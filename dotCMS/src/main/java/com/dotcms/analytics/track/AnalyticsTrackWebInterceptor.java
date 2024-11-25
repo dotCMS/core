@@ -40,7 +40,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
     private static final  String[] DEFAULT_BLACKLISTED_PROPS = new String[]{StringPool.BLANK};
     private static final  String ANALYTICS_TURNED_ON_KEY = "FEATURE_FLAG_CONTENT_ANALYTICS";
     private static final  Map<String, RequestMatcher> requestMatchersMap = new ConcurrentHashMap<>();
-    private final AnalyticsWebAPI analyticsWebAPI;
+    private transient final AnalyticsWebAPI analyticsWebAPI;
     private final WhiteBlackList whiteBlackList;
     private final AtomicBoolean isTurnedOn;
 
