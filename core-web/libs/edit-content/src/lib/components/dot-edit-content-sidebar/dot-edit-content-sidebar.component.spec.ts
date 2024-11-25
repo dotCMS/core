@@ -67,7 +67,9 @@ describe('DotEditContentSidebarComponent', () => {
     beforeEach(() => {
         window.ResizeObserver = MockResizeObserver;
         spectator = createComponent({ detectChanges: false });
+
         dotEditContentService = spectator.inject(DotEditContentService);
+
         dotEditContentService.getReferencePages.mockReturnValue(of(1));
 
         spectator.detectChanges();

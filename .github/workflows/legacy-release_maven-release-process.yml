@@ -34,8 +34,6 @@ on:
         default: true
         required: false
 env:
-  JAVA_VERSION: 11
-  JAVA_DISTRO: temurin
   JVM_TEST_MAVEN_OPTS: '-e -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
   DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
 jobs:
@@ -126,10 +124,8 @@ jobs:
           echo "release_commit=${release_commit}" >> $GITHUB_OUTPUT
 
       - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRO }}
+        id: setup-java
+        uses: ./.github/actions/core-cicd/setup-java
 
       - name: Build Core
         run: |
@@ -265,10 +261,8 @@ jobs:
           key: npm-${{ hashFiles('core-web/package-lock.json') }}
 
       - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRO }}
+        id: setup-java
+        uses: ./.github/actions/core-cicd/setup-java
 
       - name: maven-settings-xml-action
         uses: whelk-io/maven-settings-xml-action@v20
@@ -377,16 +371,23 @@ jobs:
           else
             echo "SBOM artifact not found."
           fi
-          echo "::endgroup::"   
+          echo "::endgroup::"
+
+  release-labeling:
+    name: Release Labeling
+    needs: [prepare-release, release-process, build-push-image]
+    if: success() && github.event.inputs.update_github_labels == 'true'
+    uses: ./.github/workflows/issue_comp_release-labeling.yml
+    with:
+      new_label: 'Release ${{ github.event.inputs.release_version }}'
+    secrets:
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
 
   finish-release:
     name: Finish Release
     runs-on: ubuntu-latest
     needs: [prepare-release, release-process, build-push-image]
     if: success()
-    env:
-      NEXT_VERSION: '1.0.0-SNAPSHOT'
-      FETCH_VALUE: 'Next Release'
     steps:
       - name: Checkout core
         uses: actions/checkout@v4
@@ -394,14 +395,6 @@ jobs:
           ref: main
 
       - uses: ./.github/actions/core-cicd/cleanup-runner
-
-      - name: Release Labeling
-        if: success() && github.event.inputs.update_github_labels == 'true'
-        uses: ./.github/workflows/issue_comp_release-labeling.yml
-        with:
-          new_label: 'Release ${{ github.event.inputs.release_version }}'
-        secrets:
-          CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
 
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2

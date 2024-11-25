@@ -24,7 +24,7 @@ import { ButtonModule } from 'primeng/button';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
+import { DotWorkflowActionsComponent } from '@dotcms/ui';
 
 import { resolutionValue } from './utils';
 
@@ -71,7 +71,6 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         ReactiveFormsModule,
         DotEditContentFieldComponent,
         ButtonModule,
-        DotMessagePipe,
         TabViewModule,
         DotWorkflowActionsComponent,
         TabViewInsertDirective,
