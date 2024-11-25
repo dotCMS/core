@@ -21,7 +21,7 @@ import { filter, map } from 'rxjs/operators';
 
 import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotGeneratedAIImage } from '@dotcms/dotcms-models';
-import { INPUT_TYPES, UploadedFile } from '@dotcms/edit-content/models/dot-edit-content-file.model';
+import { INPUT_TYPE, UploadedFile } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import {
     DotDropZoneComponent,
     DotMessagePipe,
@@ -47,11 +47,9 @@ import { getUiMessage } from './utils/messages';
         ButtonModule,
         DotMessagePipe,
         DotDropZoneComponent,
-        DotAIImagePromptComponent,
         DotSpinnerModule,
         DotFileFieldUiMessageComponent,
         DotFileFieldPreviewComponent,
-        DotFormImportUrlComponent,
         TooltipModule
     ],
     providers: [
@@ -162,7 +160,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
 
         this.store.initLoad({
             fieldVariable: field.variable,
-            inputType: field.fieldType as INPUT_TYPES
+            inputType: field.fieldType as INPUT_TYPE
         });
     }
 
@@ -389,7 +387,17 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
                 this.store.setPreviewFile(file);
             });
     }
-
+    /**
+     * Shows the select existing file dialog.
+     *
+     * Opens the dialog with the `DotSelectExistingFileComponent` component
+     * and passes the field type and accepted files as data to the component.
+     *
+     * When the dialog is closed, gets the uploaded file from the component
+     * and sets it as the preview file in the store.
+     *
+     * @memberof DotEditContentFileFieldComponent
+     */
     showSelectExistingFileDialog() {
         const header = this.#dotMessageService.get(
             'dot.file.field.dialog.select.existing.file.header'
@@ -406,7 +414,10 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             modal: true,
             width: '90%',
             style: { 'max-width': '1040px' },
-            data: {}
+            data: {
+                inputType: this.$field().fieldType,
+                acceptedFiles: this.store.acceptedFiles()
+            }
         });
 
         this.#dialogRef.onClose

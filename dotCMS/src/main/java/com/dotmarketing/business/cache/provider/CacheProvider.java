@@ -1,5 +1,6 @@
 package com.dotmarketing.business.cache.provider;
 
+import com.dotmarketing.util.Logger;
 import java.io.Serializable;
 import java.util.Set;
 
@@ -66,6 +67,11 @@ public abstract class CacheProvider implements Serializable {
      * @throws Exception
      */
     public abstract boolean isInitialized () throws Exception;
+
+    public void put(String group, String key, Object content, long ttlMillis){
+        Logger.warn(this.getClass(), "This cache implementation does not support per object TTL, ignoring it.");
+        put(group, key, content);
+    }
 
     /**
      * Adds the given content to the given region and for the given key
