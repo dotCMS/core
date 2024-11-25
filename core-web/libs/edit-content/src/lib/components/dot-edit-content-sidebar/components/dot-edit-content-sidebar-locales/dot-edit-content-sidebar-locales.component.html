@@ -5,10 +5,10 @@
 @for (locale of locales; track locale.id) {
     <p-chip
         [label]="locale.isoCode"
-        styleClass="p-chip-sm"
-        [ngClass]="{
-            translated: locale.translated,
-            current: contentlet.languageId === locale.id,
-            default: defaultLocale.id === locale.id
-        }" />
+        [styleClass]="
+            'p-chip-sm ' +
+            (locale.translated ? 'p-chip-primary' : 'p-chip-gray p-chip-dashed') +
+            (contentlet.languageId === locale.id ? ' p-chip-filled' : '') +
+            (defaultLocale.id === locale.id ? ' default' : '')
+        " />
 }

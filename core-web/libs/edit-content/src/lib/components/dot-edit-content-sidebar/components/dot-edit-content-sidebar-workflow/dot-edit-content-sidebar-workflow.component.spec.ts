@@ -2,7 +2,7 @@ import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngne
 
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContentletService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/utils-testing';
 
 import { DotEditContentSidebarWorkflowComponent } from './dot-edit-content-sidebar-workflow.component';
@@ -16,6 +16,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
         component: DotEditContentSidebarWorkflowComponent,
         imports: [DotMessagePipe, SkeletonModule],
         providers: [
+            mockProvider(DotContentletService),
             mockProvider(DotMessageService, {
                 get: (key: string) => key
             })

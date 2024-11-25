@@ -1,7 +1,5 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { By } from '@angular/platform-browser';
-
 import { Chip, ChipModule } from 'primeng/chip';
 
 import { DotCMSContentlet } from '@dotcms/angular';
@@ -49,32 +47,15 @@ describe('DotEditContentSidebarLocalesComponent', () => {
     });
 
     it('should display the list of locales', () => {
-        //spectator.detectChanges();
-
         const chipElements = spectator.queryAll(Chip);
         expect(chipElements.length).toBe(3);
 
         expect(chipElements[0].label).toBe('en-us');
         expect(chipElements[1].label).toBe('es-es');
         expect(chipElements[2].label).toBe('it-it');
-    });
 
-    it('should display the classes correctly', () => {
-        const chipElements = spectator.queryAll(Chip);
-        expect(chipElements.length).toBe(3);
-
-        const chipDebugElements = spectator.debugElement.queryAll(By.css('p-chip'));
-
-        expect(chipDebugElements[0].nativeElement.classList).toContain('translated');
-        expect(chipDebugElements[0].nativeElement.classList).toContain('current');
-        expect(chipDebugElements[0].nativeElement.classList).toContain('default');
-
-        expect(chipDebugElements[1].nativeElement.classList).toContain('translated');
-        expect(chipDebugElements[1].nativeElement.classList).not.toContain('current');
-        expect(chipDebugElements[1].nativeElement.classList).not.toContain('default');
-
-        expect(chipDebugElements[2].nativeElement.classList).not.toContain('translated');
-        expect(chipDebugElements[2].nativeElement.classList).not.toContain('current');
-        expect(chipDebugElements[2].nativeElement.classList).not.toContain('default');
+        expect(chipElements[0].styleClass).toBe('p-chip-sm p-chip-primary p-chip-filled default');
+        expect(chipElements[1].styleClass).toBe('p-chip-sm p-chip-primary');
+        expect(chipElements[2].styleClass).toBe('p-chip-sm p-chip-gray p-chip-dashed');
     });
 });
