@@ -14,11 +14,7 @@ export interface UVEState {
     currentUser?: CurrentUser;
     experiment?: DotExperiment;
     errorCode?: number;
-    viewParams?: {
-        preview: false;
-        orientation: 'landscape';
-        device: 'desktop';
-    };
+    viewParams?: DotUveViewParams;
     status: UVE_STATUS;
     isTraditionalPage: boolean;
     canEditPage: boolean;
@@ -39,4 +35,11 @@ export interface ShellProps {
 export interface TranslateProps {
     page: DotPage;
     currentLanguage: DotLanguage;
+}
+
+export interface DotUveViewParams {
+    preview: false;
+    orientation: string;
+    device: string;
+    SEO: string;
 }
