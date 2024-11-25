@@ -38,6 +38,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.LinkedHashMap;
@@ -54,6 +55,7 @@ import static org.mockito.Mockito.when;
  * Test for {@link StoryBlockAPI}
  * @author jsanca
  */
+@ApplicationScoped
 @RunWith(DataProviderWeldRunner.class)
 public class StoryBlockAPITest extends IntegrationTestBase {
 
