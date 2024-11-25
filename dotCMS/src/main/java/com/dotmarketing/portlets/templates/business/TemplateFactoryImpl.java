@@ -734,12 +734,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			throws DotDataException, DotSecurityException {
 
 		final DotConnect dotConnect = new DotConnect();
-
-
-		dotConnect.setSQL("SELECT identifier,inode,language_id,variant_id as variant "
-				+ "FROM contentlet "
-				+ "WHERE contentlet_as_json->'fields'->'template'->>'value' =  ?");
-
+		dotConnect.setSQL(TemplateSQL.GET_PAGES_BY_TEMPLATE_ID);
 		dotConnect.addParam(templateId);
 
 		return ((List<Map<String, String>>) dotConnect.loadResults()).stream()
