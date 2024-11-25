@@ -30,17 +30,17 @@ Examples:
 
 ```html
 <!-- Basic usage with defaults -->
-<script src="analytics.iife.js"></script>
+<script src="ca.min.js"></script>
 
 <!-- With custom server and API key -->
 <script
-    src="analytics.iife.js"
+    src="ca.min.js"
     data-analytics-server="http://your-server:8080"
     data-analytics-key="your-api-key"></script>
 
 <!-- With all options -->
 <script
-    src="analytics.iife.js"
+    src="ca.min.js"
     data-analytics-server="http://your-server:8080"
     data-analytics-key="your-api-key"
     data-analytics-debug
@@ -56,16 +56,13 @@ When `data-analytics-auto-page-view` is enabled, the library will automatically 
 ```html
 <!-- Automatic page view tracking enabled -->
 <script
-    src="analytics.iife.js"
+    src="ca.min.js"
     data-analytics-server="http://localhost:8080"
     data-analytics-auto-page-view
     data-analytics-debug></script>
 
 <!-- Without automatic tracking - events must be sent manually -->
-<script
-    src="analytics.iife.js"
-    data-analytics-server="http://localhost:8080"
-    data-analytics-debug></script>
+<script src="ca.min.js" data-analytics-server="http://localhost:8080" data-analytics-debug></script>
 ```
 
 ### Manual Event Tracking (WIP)
