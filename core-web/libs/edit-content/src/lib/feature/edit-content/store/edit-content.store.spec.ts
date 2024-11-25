@@ -5,8 +5,10 @@ import { ActivatedRoute } from '@angular/router';
 import { MessageService } from 'primeng/api';
 
 import {
+    DotContentletService,
     DotContentTypeService,
     DotHttpErrorManagerService,
+    DotLanguagesService,
     DotMessageService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -40,7 +42,9 @@ describe('DotEditContentStore', () => {
             mockProvider(DotWorkflowService),
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(MessageService),
-            mockProvider(DotMessageService)
+            mockProvider(DotMessageService),
+            mockProvider(DotContentletService),
+            mockProvider(DotLanguagesService)
         ]
     });
 
@@ -61,5 +65,7 @@ describe('DotEditContentStore', () => {
         expect(store.showSidebar).toBeDefined();
         expect(store.showWorkflowActions).toBeDefined();
         expect(store.information).toBeDefined();
+        expect(store.locales).toBeDefined();
+        expect(store.defaultLocale).toBeDefined();
     });
 });
