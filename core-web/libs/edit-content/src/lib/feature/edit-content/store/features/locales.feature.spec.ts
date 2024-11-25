@@ -11,7 +11,7 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService
 } from '@dotcms/data-access';
-import { DotLanguage } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotLanguage } from '@dotcms/dotcms-models';
 import { contentInitialState } from '@dotcms/edit-content/feature/edit-content/store/features/content.feature';
 import { withLocales } from '@dotcms/edit-content/feature/edit-content/store/features/locales.feature';
 
@@ -52,10 +52,15 @@ describe('LocalesFeature', () => {
     it('should load locales when a new contentlet is loaded', fakeAsync(() => {
         dotContentletService.getLanguages.mockReturnValue(of(MOCK_LANGUAGES));
         dotLanguagesService.getDefault.mockReturnValue(of(MOCK_LANGUAGES[1]));
+
+        expect(store.localesStatus().status).toEqual(ComponentStatus.INIT);
+
         store.updateContent();
         tick();
 
         expect(dotContentletService.getLanguages).toHaveBeenCalledWith('123');
         expect(dotLanguagesService.getDefault).toHaveBeenCalledTimes(1);
+        expect(store.localesStatus().status).toEqual(ComponentStatus.LOADED);
+        expect(store.locales()).toEqual(MOCK_LANGUAGES);
     }));
 });

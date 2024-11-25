@@ -36,7 +36,7 @@ export class DotEditContentSidebarLocalesComponent {
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
     /**
-     * Whether teh data is loading.
+     * Whether the data is loading.
      */
     $isLoading = input.required<boolean>({ alias: 'isLoading' });
 }
