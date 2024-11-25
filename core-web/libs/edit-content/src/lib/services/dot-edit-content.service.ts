@@ -227,17 +227,25 @@ export class DotEditContentService {
             .pipe(map((response) => response.entity.count));
     }
 
-    getContentByFolder(folderId: string) {
+    /**
+     * Get content by folder
+     *
+     * @param {{ folderId: string; mimeTypes?: string[] }} { folderId, mimeTypes }
+     * @return {*}
+     * @memberof DotEditContentService
+     */
+    getContentByFolder({ folderId, mimeTypes }: { folderId: string; mimeTypes?: string[] }) {
         const params = {
             hostFolderId: folderId,
             showLinks: false,
             showDotAssets: true,
-            showPages: true,
+            showPages: false,
             showFiles: true,
             showFolders: false,
             showWorking: true,
-            showArchived: true,
-            sortByDesc: true
+            showArchived: false,
+            sortByDesc: true,
+            mimeTypes: mimeTypes || []
         };
 
         return this.#siteService.getContentByFolder(params);

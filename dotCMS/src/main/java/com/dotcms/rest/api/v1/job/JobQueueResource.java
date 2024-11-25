@@ -1,9 +1,11 @@
 package com.dotcms.rest.api.v1.job;
 
+import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -25,6 +27,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.glassfish.jersey.media.sse.SseFeature;
@@ -54,37 +57,50 @@ public class JobQueueResource {
     @Path("/{queueName}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<String> createJob(
+    public Response createJob(
             @Context HttpServletRequest request,
             @PathParam("queueName") String queueName,
             @BeanParam JobParams form) throws JsonProcessingException, DotDataException {
+
         final var initDataObject = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
                 .init();
-        final String jobId = helper.createJob(queueName, form, initDataObject.getUser(), request);
-        return new ResponseEntityView<>(jobId);
+
+        try {
+            final String jobId = helper.createJob(
+                    queueName, form, initDataObject.getUser(), request);
+            return Response.ok(new ResponseEntityView<>(jobId)).build();
+        } catch (JobValidationException e) {
+            return ExceptionMapperUtil.createResponse(null, e.getMessage());
+        }
     }
 
     @POST
     @Path("/{queueName}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<String> createJob(
+    public Response createJob(
             @Context HttpServletRequest request,
             @PathParam("queueName") String queueName,
             Map<String, Object> parameters) throws DotDataException {
+
         final var initDataObject = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
                 .init();
-        final String jobId = helper.createJob(
-                queueName, parameters, initDataObject.getUser(), request);
-        return new ResponseEntityView<>(jobId);
+
+        try {
+            final String jobId = helper.createJob(
+                    queueName, parameters, initDataObject.getUser(), request);
+            return Response.ok(new ResponseEntityView<>(jobId)).build();
+        } catch (JobValidationException e) {
+            return ExceptionMapperUtil.createResponse(null, e.getMessage());
+        }
     }
 
     @GET

@@ -1,11 +1,18 @@
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withMethods,
+    withState,
+    withHooks
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { exhaustMap, switchMap, tap } from 'rxjs/operators';
+import { exhaustMap, switchMap, tap, filter, map } from 'rxjs/operators';
 
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
@@ -35,11 +42,12 @@ export interface SelectExisingFileState {
     content: {
         data: DotCMSContentlet[];
         status: ComponentStatus;
+        error: string | null;
     };
-    currentSite: TreeNodeItem | null;
     selectedContent: DotCMSContentlet | null;
     searchQuery: string;
     viewMode: 'list' | 'grid';
+    mimeTypes: string[];
 }
 
 const initialState: SelectExisingFileState = {
@@ -50,12 +58,13 @@ const initialState: SelectExisingFileState = {
     },
     content: {
         data: [],
-        status: ComponentStatus.INIT
+        status: ComponentStatus.INIT,
+        error: null
     },
-    currentSite: null,
     selectedContent: null,
     searchQuery: '',
-    viewMode: 'list'
+    viewMode: 'list',
+    mimeTypes: []
 };
 
 export const SelectExisingFileStore = signalStore(
@@ -68,6 +77,11 @@ export const SelectExisingFileStore = signalStore(
         const dotEditContentService = inject(DotEditContentService);
 
         return {
+            setMimeTypes: (mimeTypes: string[]) => {
+                patchState(store, {
+                    mimeTypes
+                });
+            },
             setSelectedContent: (selectedContent: DotCMSContentlet) => {
                 patchState(store, {
                     selectedContent
@@ -80,28 +94,49 @@ export const SelectExisingFileStore = signalStore(
                             content: { ...store.content(), status: ComponentStatus.LOADING }
                         })
                     ),
-                    switchMap((event) => {
-                        const content = store.content();
+                    map((event) => (event ? event?.node?.data?.identifier : SYSTEM_HOST_ID)),
+                    filter((identifier) => {
+                        const hasIdentifier = !!identifier;
 
-                        let identifier = SYSTEM_HOST_ID;
-
-                        if (event) {
-                            identifier = event.node.data.identifier;
+                        if (!hasIdentifier) {
+                            patchState(store, {
+                                content: {
+                                    data: [],
+                                    status: ComponentStatus.ERROR,
+                                    error: 'dot.file.field.dialog.select.existing.file.table.error.id'
+                                }
+                            });
                         }
 
-                        return dotEditContentService.getContentByFolder(identifier).pipe(
-                            tapResponse({
-                                next: (data) => {
-                                    patchState(store, {
-                                        content: { data, status: ComponentStatus.LOADED }
-                                    });
-                                },
-                                error: () =>
-                                    patchState(store, {
-                                        content: { ...content, status: ComponentStatus.ERROR }
-                                    })
+                        return hasIdentifier;
+                    }),
+                    switchMap((identifier) => {
+                        return dotEditContentService
+                            .getContentByFolder({
+                                folderId: identifier,
+                                mimeTypes: store.mimeTypes()
                             })
-                        );
+                            .pipe(
+                                tapResponse({
+                                    next: (data) => {
+                                        patchState(store, {
+                                            content: {
+                                                data,
+                                                status: ComponentStatus.LOADED,
+                                                error: null
+                                            }
+                                        });
+                                    },
+                                    error: () =>
+                                        patchState(store, {
+                                            content: {
+                                                data: [],
+                                                status: ComponentStatus.ERROR,
+                                                error: 'dot.file.field.dialog.select.existing.file.table.error.content'
+                                            }
+                                        })
+                                })
+                            );
                     })
                 )
             ),
@@ -168,5 +203,11 @@ export const SelectExisingFileStore = signalStore(
                 )
             )
         };
-    })
+    }),
+    withHooks((store) => ({
+        onInit: () => {
+            store.loadFolders();
+            store.loadContent();
+        }
+    }))
 );

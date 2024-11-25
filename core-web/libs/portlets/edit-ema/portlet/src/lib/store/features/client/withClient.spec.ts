@@ -23,7 +23,8 @@ const initialState: UVEState = {
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
     canEditPage: false,
-    pageIsLocked: true
+    pageIsLocked: true,
+    isClientReady: false
 };
 
 export const uveStoreMock = signalStore(withState<UVEState>(initialState), withClient());

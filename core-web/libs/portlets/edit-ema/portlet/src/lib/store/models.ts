@@ -23,6 +23,7 @@ export interface UVEState {
     isTraditionalPage: boolean;
     canEditPage: boolean;
     pageIsLocked: boolean;
+    isClientReady: boolean;
 }
 
 export interface ShellProps {

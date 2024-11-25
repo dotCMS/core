@@ -17,6 +17,7 @@ import com.dotcms.analytics.track.collectors.PageDetailCollectorTest;
 import com.dotcms.analytics.track.collectors.PagesCollectorTest;
 import com.dotcms.analytics.track.collectors.SyncVanitiesCollectorTest;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceImplTest;
+import com.dotcms.api.web.HttpServletRequestImpersonatorTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.bayesian.BayesianAPIImplIT;
@@ -412,7 +413,8 @@ import org.junit.runners.Suite.SuiteClasses;
         PageDetailCollectorTest.class,
         FilesCollectorTest.class,
         SyncVanitiesCollectorTest.class,
-        AsyncVanitiesCollectorTest.class
+        AsyncVanitiesCollectorTest.class,
+        HttpServletRequestImpersonatorTest.class
 })
 
 public class MainSuite2b {

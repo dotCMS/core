@@ -686,8 +686,11 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING,
-                                payload: {}
+                                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                                payload: {
+                                    type: 'BLOCK_EDITOR',
+                                    data: {}
+                                }
                             }
                         })
                     );
@@ -717,7 +720,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.INIT_BLOCK_EDITOR_INLINE_EDITING,
+                                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
                                 payload: {}
                             }
                         })

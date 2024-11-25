@@ -70,7 +70,8 @@ const initialState: UVEState = {
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
     canEditPage: false,
-    pageIsLocked: true
+    pageIsLocked: true,
+    isClientReady: false
 };
 
 export const uveStoreMock = signalStore(withState<UVEState>(initialState), withLoad());
@@ -236,6 +237,12 @@ describe('withLoad', () => {
 
                 expect(getPageSpy).toHaveBeenCalledWith(pageParams, { params: null, query: '' });
             });
+        });
+
+        it('should reload the store with a specific property value', () => {
+            store.reloadCurrentPage({ isClientReady: false });
+
+            expect(store.isClientReady()).toBe(false);
         });
     });
 

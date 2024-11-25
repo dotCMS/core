@@ -13,15 +13,23 @@ import { TREE_SELECT_MOCK, TREE_SELECT_SITES_MOCK } from '../../../../../utils/m
 
 describe('SelectExisingFileStore', () => {
     let store: InstanceType<typeof SelectExisingFileStore>;
-    let service: SpyObject<DotEditContentService>;
+    let editContentService: SpyObject<DotEditContentService>;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [SelectExisingFileStore, mockProvider(DotEditContentService)]
+            providers: [
+                SelectExisingFileStore,
+                mockProvider(DotEditContentService, {
+                    getSitesTreePath: jest.fn().mockReturnValue(of(TREE_SELECT_SITES_MOCK)),
+                    getContentByFolder: jest.fn().mockReturnValue(of([]))
+                })
+            ]
         });
 
         store = TestBed.inject(SelectExisingFileStore);
-        service = TestBed.inject(DotEditContentService) as SpyObject<DotEditContentService>;
+        editContentService = TestBed.inject(
+            DotEditContentService
+        ) as SpyObject<DotEditContentService>;
     });
 
     it('should be created', () => {
@@ -30,7 +38,7 @@ describe('SelectExisingFileStore', () => {
 
     describe('Method: loadFolders', () => {
         it('should set folders status to LOADING and then to LOADED with data', fakeAsync(() => {
-            service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+            editContentService.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
 
             store.loadFolders();
 
@@ -41,7 +49,7 @@ describe('SelectExisingFileStore', () => {
         }));
 
         it('should set folders status to ERROR on service error', fakeAsync(() => {
-            service.getSitesTreePath.mockReturnValue(throwError('error'));
+            editContentService.getSitesTreePath.mockReturnValue(throwError('error'));
 
             store.loadFolders();
 
@@ -56,7 +64,7 @@ describe('SelectExisingFileStore', () => {
         it('should load children for a node', fakeAsync(() => {
             const mockChildren = [...TREE_SELECT_SITES_MOCK];
 
-            service.getFoldersTreeNode.mockReturnValue(of(mockChildren));
+            editContentService.getFoldersTreeNode.mockReturnValue(of(mockChildren));
 
             const node = { ...TREE_SELECT_MOCK[0] };
 
@@ -76,7 +84,7 @@ describe('SelectExisingFileStore', () => {
         }));
 
         it('should handle error when loading children', fakeAsync(() => {
-            service.getFoldersTreeNode.mockReturnValue(throwError('error'));
+            editContentService.getFoldersTreeNode.mockReturnValue(throwError('error'));
 
             const node = { ...TREE_SELECT_MOCK[0], children: [] };
 

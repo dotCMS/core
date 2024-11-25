@@ -158,14 +158,14 @@ export function withLoad() {
                  * @param {Partial<DotPageApiParams>} params - The parameters used to fetch the page asset.
                  * @memberof DotEmaShellComponent
                  */
-                reloadCurrentPage: rxMethod<void>(
+                reloadCurrentPage: rxMethod<Pick<UVEState, 'isClientReady'> | void>(
                     pipe(
                         tap(() => {
                             patchState(store, {
                                 status: UVE_STATUS.LOADING
                             });
                         }),
-                        switchMap(() => {
+                        switchMap((partialState: Pick<UVEState, 'isClientReady'>) => {
                             return dotPageApiService
                                 .getClientPage(store.pageParams(), store.clientRequestProps())
                                 .pipe(
@@ -198,8 +198,7 @@ export function withLoad() {
                                                 canEditPage,
                                                 pageIsLocked,
                                                 status: UVE_STATUS.LOADED,
-                                                isClientReady: true,
-                                                isTraditionalPage: !store.pageParams().clientHost // If we don't send the clientHost we are using as VTL page
+                                                isClientReady: partialState?.isClientReady ?? true
                                             });
                                         },
                                         error: ({ status: errorStatus }: HttpErrorResponse) => {

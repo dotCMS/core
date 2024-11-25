@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, model } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessagesModule } from 'primeng/messages';
@@ -20,6 +19,12 @@ import { DotEditContentFormComponent } from '../../components/dot-edit-content-f
 import { DotEditContentSidebarComponent } from '../../components/dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 
+/**
+ * Component that displays the edit content layout.
+ *
+ * @export
+ * @class EditContentLayoutComponent
+ */
 @Component({
     selector: 'dot-edit-content-form-layout',
     standalone: true,
@@ -37,7 +42,6 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         DotWorkflowsActionsService,
         DotWorkflowActionsFireService,
         DotEditContentService,
-        MessageService,
         DotWorkflowService,
         DotEditContentStore
     ],
@@ -50,5 +54,28 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditContentLayoutComponent {
+    /**
+     * Whether the select workflow dialog should be shown.
+     *
+     * @type {boolean}
+     * @memberof EditContentLayoutComponent
+     */
+    readonly $showDialog = model<boolean>(false);
+
+    /**
+     * Emits an event to show the select workflow dialog.
+     *
+     * @memberof EditContentLayoutComponent
+     */
+    selectWorkflow() {
+        this.$showDialog.set(true);
+    }
+
+    /**
+     * The store instance.
+     *
+     * @type {InstanceType<typeof DotEditContentStore>}
+     * @memberof EditContentLayoutComponent
+     */
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
 }

@@ -88,6 +88,21 @@ public interface AbstractJob {
     }
 
     /**
+     * Creates a new Job marked as abandoned with the result details.
+     *
+     * @param result The result details of the abandoned job.
+     * @return A new Job instance marked as abandoned.
+     */
+    default Job markAsAbandoned(final JobResult result) {
+        return Job.builder().from(this)
+                .state(JobState.ABANDONED)
+                .result(result)
+                .completedAt(Optional.of(LocalDateTime.now()))
+                .updatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    /**
      * Creates a new Job marked as running.
      *
      * @return A new Job instance marked as running.

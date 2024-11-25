@@ -150,6 +150,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 break;
             }
 
+            case NG_CUSTOM_EVENTS.URL_IS_CHANGED: {
+                this.handleSavePageEvent(event);
+                break;
+            }
+
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
                 this.handleSavePageEvent(event);
                 break;
@@ -164,26 +169,18 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @return {void}
      */
     private handleSavePageEvent(event: CustomEvent): void {
-        const url = this.extractPageRefererUrl(event);
-        const targetUrl = this.getTargetUrl(url);
+        const htmlPageReferer = event.detail.payload?.htmlPageReferer;
+        const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
+        const targetUrl = this.getTargetUrl(url.pathname);
 
         if (this.shouldNavigate(targetUrl)) {
+            // Navigate to the new URL if it's different from the current one
             this.uveStore.loadPageAsset({ url: targetUrl });
 
             return;
         }
 
         this.uveStore.reloadCurrentPage();
-    }
-
-    /**
-     * Extracts the htmlPageReferer url from the event payload.
-     *
-     * @param {CustomEvent} event - The event object containing the payload with the URL.
-     * @return {string | undefined} - The extracted URL or undefined if not found.
-     */
-    private extractPageRefererUrl(event: CustomEvent): string | undefined {
-        return event.detail.payload?.htmlPageReferer;
     }
 
     /**
