@@ -50,6 +50,7 @@ import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.VersionableAPI;
@@ -101,11 +102,16 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -115,6 +121,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import org.elasticsearch.action.search.SearchResponse;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -1263,7 +1270,7 @@ public class PageResourceTest {
      * @throws DotSecurityException
      */
     @Test
-    public void testRenderWithTimeMachine()
+    public void testRenderWithTimeMachineUsingDotContentViewTool()
             throws DotDataException, DotSecurityException, WebAssetException, JsonProcessingException {
 
         final TimeZone defaultZone = TimeZone.getDefault();
@@ -1420,7 +1427,7 @@ public class PageResourceTest {
 
         // Create a widget to show the blog
         //The widget hold the code that calls the $dotcontent.pullPerPage view tool which takes into consideration the tm date
-        //in a nutshell, the widget will show the blog if the tm date is greater than the publish date
+        //in a nutshell, the widget will show the blog if the tm date is greater than the publish-date
         //This is how we accomplish the time machine feature
         final ContentType widgetLikeContentType = TestDataUtils.getWidgetLikeContentType(()-> widgetCode(host, blogLikeContentType));
         final Contentlet myWidget = new ContentletDataGen(widgetLikeContentType)
@@ -1478,11 +1485,220 @@ public class PageResourceTest {
     }
 
     /**
-     * Utility method to find a node in a JSON tree
-     * @param currentNode
-     * @param nodeName
-     * @return
+     * Given scenario: A page with a container and a contentlet is created. The contentlet is published in a future date.
+     * Expected result:  The contentlet should be rendered in the page once we pass the future date as a parameter.
+     * When no future date is passed, the contentlet should not be rendered. we should get the last published version
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
      */
+    @Test
+    public void TestRenderWithTimeMachineUsingContainers()
+            throws WebAssetException, DotDataException, DotSecurityException {
+        final User systemUser = APILocator.systemUser();
+        final TimeZone defaultZone = TimeZone.getDefault();
+        try {
+            final TimeZone utc = TimeZone.getTimeZone("UTC");
+            TimeZone.setDefault(utc);
+            final Instant instant = LocalDateTime.now().plusDays(4).atZone(utc.toZoneId()).toInstant();
+            final String matchingFutureIso8601 = instant.toString();
+            final Date publishDate = Date.from(instant);
+            final PageInfo pageInfo = createTestPage(List.of("Blog 1", "Blog 2", "Blog 3"), publishDate);
+
+            final List<Contentlet> versions = APILocator.getContentletAPI()
+                    .findAllVersions(new Identifier(pageInfo.identifier), systemUser,
+                            false);
+            //sort in ascending order given that the first version is the oldest
+            versions.sort(Comparator.comparing(Contentlet::getModDate));
+            // This remains an old working version
+            assertFalse(versions.get(0).isLive());
+            assertEquals("Blog 1", versions.get(0).getTitle());
+            // This is published right away
+            assertTrue(versions.get(1).isLive());
+            assertEquals("Blog 2", versions.get(1).getTitle());
+            // This remains unpublished as it's set to be published in the future
+            assertFalse(versions.get(2).isLive());
+            assertEquals("Blog 3", versions.get(2).getTitle());
+
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+
+            //This param is required to be live to behave correctly when building the query
+            when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE);
+            when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+
+            validatePageContents(pageInfo.pageUri, matchingFutureIso8601, "Blog 3", false);
+            validatePageContents(pageInfo.pageUri, null, "Blog 2", true);
+
+
+        } finally {
+            TimeZone.setDefault(defaultZone);
+        }
+    }
+
+    /**
+     * Validate the page contents
+     * @param pageUri the page URI to render
+     * @param futureTimeMachineIso8601 the future time machine date
+     * @param expectedTitle the expected title of the contentlet
+     * @param live true if the contentlet is expected to be live, false otherwise
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private void validatePageContents(final String pageUri, final String futureTimeMachineIso8601, final String expectedTitle, final boolean live)
+            throws DotDataException, DotSecurityException {
+        final Response endpointResponse = pageResource
+                .loadJson(this.request, this.response, pageUri, PageMode.LIVE.name(), null,
+                        "1", null, futureTimeMachineIso8601);
+
+        RestUtilTest.verifySuccessResponse(endpointResponse);
+        final PageView pageView = (PageView) ((ResponseEntityView<?>) endpointResponse.getEntity()).getEntity();
+        final List<? extends ContainerRaw> containers = (List<? extends ContainerRaw>)pageView.getContainers();
+        assertEquals(1, containers.size());
+        assertEquals(1, containers.get(0).getContentlets().size());
+        final Contentlet contentlet = containers.get(0).getContentlets().get("uuid-1").get(0);
+        assertEquals(expectedTitle, contentlet.getTitle());
+        assertEquals(live, contentlet.isLive());
+    }
+
+
+    /**
+     * Page information containing the page URI, the identifier of the last blog and the inodes of all the blogs
+     */
+    static class PageInfo {
+
+        final String pageUri;
+        final String identifier;
+        final Set<String> inodes;
+
+        PageInfo(String pageUri, final String identifier, Set<String> inodes) {
+            this.pageUri = pageUri;
+            this.identifier = identifier;
+            this.inodes = inodes;
+        }
+    }
+
+    /**
+     * Create a test page with a container and a blog contentlet
+     * Only the last blog will be published in the future. The rest of them will be published right away
+     * @param titles the titles of the blogs to be created
+     * @param publishDate the date will be set on the last blog to be published in the future
+     * @return the page information containing the page URI, the identifier of the last blog and the inodes of all the blogs
+     * @throws DotDataException if there is an error creating the page
+     * @throws DotSecurityException if there is an error creating the page
+     * @throws WebAssetException if there is an error creating the page
+     */
+    PageInfo createTestPage(final List<String> titles, final Date publishDate)
+            throws DotDataException, DotSecurityException, WebAssetException {
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final long languageId = 1L;
+        final ContentType blogLikeContentType = TestDataUtils.getBlogLikeContentType();
+
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container myContainer = new ContainerDataGen()
+                .withStructure(structure, "")
+                .friendlyName("container-friendly-name" + System.currentTimeMillis())
+                .title("container-title")
+                .site(host)
+                .nextPersisted();
+
+        ContainerDataGen.publish(myContainer);
+
+        final TemplateLayout templateLayout = TemplateLayoutDataGen.get()
+                .withContainer(myContainer.getIdentifier())
+                .next();
+
+        final Template newTemplate = new TemplateDataGen()
+                .drawedBody(templateLayout)
+                .withContainer(myContainer.getIdentifier())
+                .nextPersisted();
+
+        final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+        versionableAPI.setWorking(newTemplate);
+        versionableAPI.setLive(newTemplate);
+
+        final String myFolderName = "folder-" + System.currentTimeMillis();
+        final Folder myFolder = new FolderDataGen().name(myFolderName).site(host).nextPersisted();
+        final String myPageName = "my-future-tm-test-page-" + System.currentTimeMillis();
+        final HTMLPageAsset myPage = new HTMLPageDataGen(myFolder, newTemplate)
+                .languageId(languageId)
+                .pageURL(myPageName)
+                .title(myPageName)
+                .nextPersisted();
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        contentletAPI.publish(myPage, systemUser, false);
+        //  These are the blogs that will be shown in the widget
+        // if it's published then it'll show immediately otherwise it'll show in the future
+        // if it's set to show then we need to pass the time machine date to show it
+        //Our blog content type has to have a publishDate field set otherwise it will never make it properly into the index
+        assertNotNull(blogLikeContentType.publishDateVar());
+        final Set<String> inodes = new HashSet<>();
+        String identifier = null;
+        Contentlet blog = null;
+        final ListIterator<String> iterator = titles.listIterator();
+        while (iterator.hasNext()) {
+            final String title = iterator.next();
+            final boolean isLast = !iterator.hasNext();
+            if (null == blog) {
+                final ContentletDataGen blogsDataGen = new ContentletDataGen(blogLikeContentType.id())
+                        .languageId(languageId)
+                        .host(host)
+                        .setProperty("title", title)
+                        .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                        .setPolicy(IndexPolicy.WAIT_FOR)
+                        .languageId(languageId)
+                        .setProperty(Contentlet.IS_TEST_MODE, true);
+                // only the last element we push should have a publish-date
+                if (isLast && null != publishDate) {
+                    blogsDataGen.setProperty("publishDate", publishDate);  // Set the publish-date in the future
+                    blog = blogsDataGen.nextPersisted();
+                } else {
+                    blog = blogsDataGen.nextPersistedAndPublish();
+                }
+            } else {
+                final Map <String, Object> newProps = new HashMap<>();
+                newProps.put("title", title);
+                if (isLast && null != publishDate) {
+                    newProps.put("publishDate", publishDate);  // Set the publish-date in the future
+                }
+                blog = ContentletDataGen.createNewVersion(blog, VariantAPI.DEFAULT_VARIANT, newProps);
+                // This should take care of publishing in the future given that we have provided a publish-date
+                ContentletDataGen.publish(blog);
+            }
+
+            inodes.add(blog.getInode());
+
+            assertNotNull(blog.getIdentifier());
+
+            if(null != identifier){
+                //This should never fail all versions should share the same identifier just making sure
+               assertEquals(identifier, blog.getIdentifier());
+            }
+
+            identifier = blog.getIdentifier();
+
+            if (isLast){
+                //finally we add the blog to the container and the container to the page
+                final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+                final MultiTree multiTree = new MultiTree(myPage.getIdentifier(),
+                        myContainer.getIdentifier(), blog.getIdentifier(), "1", 1);
+                multiTreeAPI.saveMultiTree(multiTree);
+            }
+        }
+        assertEquals(titles.size(), inodes.size());
+        final String myPagePath = String.format("/%s/%s", myFolderName, myPageName);
+        Logger.info(this, "Page Path: " + myPagePath);
+        return new PageInfo(myPagePath, identifier, inodes);
+
+    }
+
+        /**
+         * Utility method to find a node in a JSON tree
+         * @param currentNode
+         * @param nodeName
+         * @return
+         */
     public static Optional<JsonNode> findNode(final JsonNode currentNode, final String nodeName) {
         if (currentNode.has(nodeName)) {
             return Optional.of(currentNode.get(nodeName));  // Node found in the current level

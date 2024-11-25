@@ -14,8 +14,10 @@ import { MessageService } from 'primeng/api';
 import { TabView } from 'primeng/tabview';
 
 import {
+    DotContentletService,
     DotContentTypeService,
     DotHttpErrorManagerService,
+    DotLanguagesService,
     DotMessageService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -51,6 +53,8 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(Router),
             mockProvider(DotWorkflowService),
             mockProvider(MessageService),
+            mockProvider(DotContentletService),
+            mockProvider(DotLanguagesService),
             {
                 provide: ActivatedRoute,
                 useValue: {
@@ -67,7 +71,9 @@ describe('DotEditContentSidebarComponent', () => {
     beforeEach(() => {
         window.ResizeObserver = MockResizeObserver;
         spectator = createComponent({ detectChanges: false });
+
         dotEditContentService = spectator.inject(DotEditContentService);
+
         dotEditContentService.getReferencePages.mockReturnValue(of(1));
 
         spectator.detectChanges();
