@@ -366,9 +366,9 @@ describe('DotEmaShellComponent', () => {
         });
 
         describe('Page Params', () => {
-            it('should trigger a load when changing the queryParams', () => {
-                spectator.detectChanges();
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+            beforeEach(() => spectator.detectChanges());
+
+            it('should update parms when loadPage is triggered', () => {
                 const newParams = {
                     language_id: 2,
                     url: 'my-awesome-page',
@@ -376,9 +376,17 @@ describe('DotEmaShellComponent', () => {
                     'com.dotmarketing.persona.id': 'SomeCoolDude'
                 };
 
+                const url = router.createUrlTree([], { queryParams: newParams });
+
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const spyUrlTree = jest.spyOn(router, 'createUrlTree');
+                const spyLocation = jest.spyOn(location, 'replaceState');
+
                 store.loadPageAsset(newParams);
                 spectator.detectChanges();
                 expect(spyStoreLoadPage).toHaveBeenCalledWith(newParams);
+                expect(spyUrlTree).toHaveBeenCalledWith([], { queryParams: newParams });
+                expect(spyLocation).toHaveBeenCalledWith(url.toString());
             });
         });
 
@@ -517,18 +525,6 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(spyStoreLoadPage).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
             });
-        });
-
-        afterEach(() => {
-            // Restoring the snapshot to the default
-            overrideRouteSnashot(
-                activatedRoute,
-                SNAPSHOT_MOCK({
-                    queryParams: INITIAL_PAGE_PARAMS,
-                    data: UVE_CONFIG_MOCK(BASIC_OPTIONS)
-                })
-            );
-            jest.clearAllMocks();
         });
 
         describe('language checking', () => {
@@ -938,5 +934,17 @@ describe('DotEmaShellComponent', () => {
             expect(spectator.query(ToastModule)).toBeNull();
             expect(spectator.query(DotPageToolsSeoComponent)).toBeNull();
         });
+    });
+
+    afterEach(() => {
+        // Restoring the snapshot to the default
+        overrideRouteSnashot(
+            activatedRoute,
+            SNAPSHOT_MOCK({
+                queryParams: INITIAL_PAGE_PARAMS,
+                data: UVE_CONFIG_MOCK(BASIC_OPTIONS)
+            })
+        );
+        jest.clearAllMocks();
     });
 });
