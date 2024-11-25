@@ -21,6 +21,7 @@ import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.google.common.annotations.VisibleForTesting;
@@ -45,6 +46,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+
+import io.vavr.Lazy;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.analytics.track.collectors.EventType;
 
@@ -64,6 +67,7 @@ import com.dotcms.analytics.track.collectors.EventType;
 public class ContentAnalyticsResource {
 
     private static final UserCustomDefinedRequestMatcher USER_CUSTOM_DEFINED_REQUEST_MATCHER =  new UserCustomDefinedRequestMatcher();
+    private final Lazy<Boolean> ANALYTICS_ALLOW_EVENTS_ON_ANONYMOUS_WITH_VALID_KEY = Lazy.of(() -> Config.getBooleanProperty("ANALYTICS_ALLOW_EVENTS_ON_ANONYMOUS_WITH_VALID_KEY", true));
 
     private static final Map<String, Supplier<RequestMatcher>> MATCHER_MAP = Map.of(
             EventType.FILE_REQUEST.getType(), FilesRequestMatcher::new,
@@ -259,9 +263,14 @@ public class ContentAnalyticsResource {
                 .requiredAnonAccess(AnonymousAccess.READ)
                 .rejectWhenNoUser(false)
                 .init().getUser();
-
-        if (user.isAnonymousUser() && isNotValidKey(userEventPayload, WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request))) {
-            throw new DotSecurityException("The user is not allowed to fire an event");
+        if (ANALYTICS_ALLOW_EVENTS_ON_ANONYMOUS_WITH_VALID_KEY.get()) {
+            if (user.isAnonymousUser() && isNotValidKey(userEventPayload, WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request))) {
+                throw new DotSecurityException("The user is not allowed to fire an event");
+            }
+        } else {
+            if (user.isAnonymousUser()) {
+                throw new DotSecurityException("The user is not allowed to fire an event");
+            }
         }
 
         Logger.debug(this,  ()->"Creating an user custom event with the payload: " + userEventPayload);
