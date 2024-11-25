@@ -278,7 +278,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      */
     #getPageParams(): DotPageApiParams {
         const { queryParams, data } = this.#activatedRoute.snapshot;
-        const allowedDevURLs = data?.uveConfig?.options?.allowedDevURLs;
+        const uveConfig = data?.uveConfig;
+        const allowedDevURLs = uveConfig?.options?.allowedDevURLs;
 
         // Clone queryParams to avoid mutation errors
         const params = filterPageParams(queryParams);
@@ -286,6 +287,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
         if (!validHost) {
             delete params.clientHost;
+        }
+
+        if (uveConfig.url && !validHost) {
+            params.clientHost = uveConfig.url;
         }
 
         return params;
