@@ -63,12 +63,13 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             final int initialDepthValue = null != request && null != request.getAttribute(CURRENT_DEPTH_ATTR)
                     ? (Integer) request.getAttribute(CURRENT_DEPTH_ATTR)
                     : Integer.parseInt(MAX_RELATIONSHIP_DEPTH.get());
+
             if (setBefore) {
                 final Integer currentDepth = this.decreaseDepthValue(initialDepthValue);
                 if (null != request) {
                     request.setAttribute(CURRENT_DEPTH_ATTR, currentDepth);
-                    request.setAttribute(RESTParams.DEPTH.name(), currentDepth);
                 }
+
                 return new StoryBlockReferenceResult(false, contentlet);
             }
 
@@ -354,7 +355,6 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                     this.decreaseDepthValue((Integer) request.getAttribute(CURRENT_DEPTH_ATTR));
 
             request.setAttribute(CURRENT_DEPTH_ATTR, currentDepth);
-            request.setAttribute(RESTParams.DEPTH.name(), currentDepth);
 
             final Contentlet fattyContentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false, true);
 
