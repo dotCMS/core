@@ -55,6 +55,14 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 })
 export class EditContentLayoutComponent {
     /**
+     * The store instance.
+     *
+     * @type {InstanceType<typeof DotEditContentStore>}
+     * @memberof EditContentLayoutComponent
+     */
+    readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+
+    /**
      * Whether the select workflow dialog should be shown.
      *
      * @type {boolean}
@@ -72,10 +80,12 @@ export class EditContentLayoutComponent {
     }
 
     /**
-     * The store instance.
+     * Handles the form change event.
      *
-     * @type {InstanceType<typeof DotEditContentStore>}
+     * @param {Record<string, string>} value
      * @memberof EditContentLayoutComponent
      */
-    readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+    onFormChange(value: Record<string, string>) {
+        this.$store.onFormChange(value);
+    }
 }

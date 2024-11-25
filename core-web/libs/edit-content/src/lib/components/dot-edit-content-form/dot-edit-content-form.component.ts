@@ -110,6 +110,10 @@ export class DotEditContentFormComponent implements OnInit {
         () => this.$store.contentType()?.fields?.filter(isFilteredType) ?? []
     );
 
+    $formFields = computed(
+        () => this.$store.contentType()?.fields?.filter((field) => !isFilteredType(field)) ?? []
+    );
+
     /**
      * FormGroup instance that contains the form controls for the fields in the content type
      *
@@ -158,40 +162,26 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
+     * Handles form value changes and emits the processed value.
+     *
+     * @param {Record<string, any>} value The raw form value
+     * @memberof DotEditContentFormComponent
+     */
+    onFormChange(value: Record<string, any>) {
+        const processedValue = this.processFormValue(value);
+        this.changeValue.emit(processedValue);
+    }
+
+    /**
      * Initializes a listener for form value changes.
-     * When the form value changes, it calls the onFormChange method with the new value.
-     * The listener is automatically unsubscribed when the component is destroyed.
      *
      * @private
      * @memberof DotEditContentFormComponent
      */
     private initializeFormListener() {
         this.form.valueChanges.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((value) => {
-            const processedValue = this.processFormValue(value);
-            this.changeValue.emit(processedValue);
+            this.onFormChange(value);
         });
-    }
-
-    /**
-     * Emits the form value through the `formSubmit` event.
-     *
-     * @param {*} value
-     * @memberof DotEditContentFormComponent
-     */
-    onFormChange(value) {
-        this.$filteredFields().forEach(({ variable, fieldType }) => {
-            if (FLATTENED_FIELD_TYPES.includes(fieldType as FIELD_TYPES)) {
-                value[variable] = value[variable]?.join(',');
-            }
-
-            if (CALENDAR_FIELD_TYPES.includes(fieldType as FIELD_TYPES)) {
-                value[variable] = value[variable]
-                    ?.toISOString()
-                    .replace(/T|\.\d{3}Z/g, (match: string) => (match === 'T' ? ' ' : '')); // To remove the T and .000Z from the date)
-            }
-        });
-
-        this.changeValue.emit(value);
     }
 
     /**
@@ -199,31 +189,35 @@ export class DotEditContentFormComponent implements OnInit {
      *
      * @private
      * @param {Record<string, any>} value The raw form value
-     * @returns {Record<string, string>} The processed form value
+     * @returns {Record<string, any>} The processed form value
      * @memberof DotEditContentFormComponent
      */
     private processFormValue(
         value: Record<string, string | string[] | Date | null | undefined>
-    ): Record<string, string> {
+    ): Record<string, any> {
         return Object.fromEntries(
-            this.$filteredFields().map(({ variable, fieldType }) => {
-                let fieldValue = value[variable];
+            Object.entries(value).map(([key, fieldValue]) => {
+                const field = this.$formFields().find((f) => f.variable === key);
+
+                if (!field) {
+                    return [key, fieldValue];
+                }
 
                 if (
                     Array.isArray(fieldValue) &&
-                    FLATTENED_FIELD_TYPES.includes(fieldType as FIELD_TYPES)
+                    FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
                 ) {
                     fieldValue = fieldValue.join(',');
                 } else if (
                     fieldValue instanceof Date &&
-                    CALENDAR_FIELD_TYPES.includes(fieldType as FIELD_TYPES)
+                    CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
                 ) {
                     fieldValue = fieldValue
                         .toISOString()
                         .replace(/T|\.\d{3}Z/g, (match) => (match === 'T' ? ' ' : ''));
                 }
 
-                return [variable, fieldValue?.toString() ?? ''];
+                return [key, fieldValue ?? ''];
             })
         );
     }
@@ -237,11 +231,9 @@ export class DotEditContentFormComponent implements OnInit {
      */
     private initializeForm() {
         this.form = this.#fb.group({});
-        this.$store.contentType().fields.forEach((field) => {
-            if (!isFilteredType(field)) {
-                const control = this.createFormControl(field);
-                this.form.addControl(field.variable, control);
-            }
+        this.$formFields().forEach((field) => {
+            const control = this.createFormControl(field);
+            this.form.addControl(field.variable, control);
         });
     }
 

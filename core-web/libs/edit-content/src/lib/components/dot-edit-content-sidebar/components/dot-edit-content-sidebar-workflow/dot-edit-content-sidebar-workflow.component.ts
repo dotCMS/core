@@ -7,7 +7,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
+import { DotCMSWorkflowAction, DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 /**
@@ -58,7 +58,15 @@ export class DotEditContentSidebarWorkflowComponent {
      * @type {Output<string>}
      * @memberof DotEditContentSidebarWorkflowComponent
      */
-    readonly onSelectWorkflow = output<string>();
+    readonly onSelectWorkflow = output<DotCMSWorkflowAction>();
+
+    /**
+     * Output event to reset the workflow.
+     *
+     * @type {Output<DotCMSWorkflowAction>}
+     * @memberof DotEditContentSidebarWorkflowComponent
+     */
+    readonly onResetWorkflow = output<void>();
 
     /**
      * The selected workflow.
@@ -96,6 +104,16 @@ export class DotEditContentSidebarWorkflowComponent {
      */
     $noWorkflowSelectedYet = input<boolean>(false, {
         alias: 'noWorkflowSelectedYet'
+    });
+
+    /**
+     * Whether the reset action should be shown.
+     *
+     * @type {boolean}
+     * @memberof DotEditContentSidebarWorkflowComponent
+     */
+    $showResetAction = input<boolean>(false, {
+        alias: 'showResetAction'
     });
 
     /**

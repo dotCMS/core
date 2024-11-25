@@ -120,6 +120,13 @@ export function withWorkflow() {
             }),
 
             /**
+             * Computed property that determines if the reset action should be shown.
+             *
+             * @returns {boolean} True if the reset action should be shown, false otherwise.
+             */
+            resetActionState: computed(() => !store.currentStep()),
+
+            /**
              * Computed property that determines if the workflow selection warning should be shown.
              * Shows warning when content is new AND no workflow scheme has been selected yet.
              *
@@ -272,29 +279,51 @@ export function withWorkflow() {
                     DotFireActionOptions<{ [key: string]: string | object }>
                 >(
                     pipe(
-                        tap(() => patchState(store, { state: ComponentStatus.SAVING })),
+                        tap(() => {
+                            patchState(store, { state: ComponentStatus.SAVING });
+                            messageService.add({
+                                severity: 'info',
+                                icon: 'pi pi-spin pi-spinner',
+                                summary: dotMessageService.get(
+                                    'edit.content.processing.workflow.message.title'
+                                ),
+                                detail: dotMessageService.get(
+                                    'edit.content.processing.workflow.message'
+                                )
+                            });
+                        }),
                         switchMap((options) => {
+                            const isNewContent = !store.contentlet();
+                            const currentContentlet = store.contentlet();
+
                             return workflowActionsFireService.fireTo(options).pipe(
-                                tap((contentlet) => {
-                                    if (!contentlet.inode) {
-                                        router.navigate(['/c/content']);
+                                switchMap((response) => {
+                                    if (isNewContent) {
+                                        return forkJoin({
+                                            currentContentActions: workflowActionService.getByInode(
+                                                response.inode,
+                                                DotRenderMode.EDITING
+                                            ),
+                                            contentlet: of(response)
+                                        });
                                     }
-                                }),
-                                switchMap((contentlet) => {
+
                                     return forkJoin({
                                         currentContentActions: workflowActionService.getByInode(
-                                            contentlet.inode,
+                                            currentContentlet.inode,
                                             DotRenderMode.EDITING
                                         ),
-                                        contentlet: of(contentlet)
+                                        contentlet: of(currentContentlet)
                                     });
                                 }),
                                 tapResponse({
                                     next: ({ contentlet, currentContentActions }) => {
-                                        router.navigate(['/content', contentlet.inode], {
-                                            replaceUrl: true,
-                                            queryParamsHandling: 'preserve'
-                                        });
+                                        if (isNewContent) {
+                                            router.navigate(['/content', contentlet.inode], {
+                                                replaceUrl: true,
+                                                queryParamsHandling: 'preserve'
+                                            });
+                                        }
 
                                         patchState(store, {
                                             contentlet,
@@ -303,6 +332,7 @@ export function withWorkflow() {
                                             error: null
                                         });
 
+                                        messageService.clear();
                                         messageService.add({
                                             severity: 'success',
                                             summary: dotMessageService.get('success'),

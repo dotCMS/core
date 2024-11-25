@@ -11,6 +11,7 @@
 @let isLoadingWorkflow = store.isLoadingWorkflow();
 @let showSelectWorkflowWarning = store.showSelectWorkflowWarning();
 @let currentStep = store.getCurrentStep();
+@let resetActionState = store.resetActionState();
 <!-- Locales Component -->
 @let locales = store.locales();
 @let defaultLocale = store.defaultLocale();
@@ -59,7 +60,9 @@
                     [isNew]="isNew"
                     [workflowSchemeOptions]="workflowOptions"
                     [(showDialog)]="$showDialog"
-                    (onSelectWorkflow)="store.setSelectedWorkflow($event)"
+                    (onSelectWorkflow)="store.setSelectedWorkflow($event.id)"
+                    [showResetAction]="resetActionState"
+                    (onResetWorkflow)="fireWorkflowAction($event)"
                     [workflow]="{
                         scheme,
                         step: currentStep,

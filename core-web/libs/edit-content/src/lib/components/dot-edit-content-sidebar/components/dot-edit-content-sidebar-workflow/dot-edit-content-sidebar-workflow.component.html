@@ -31,6 +31,15 @@
                     (click)="showDialog()"
                     pButton
                     styleClass="p-button-link"
+                    icon="pi pi-pencil"></p-button>
+            }
+
+            <!-- While not step, is consider as New contentlet -->
+            @if ($showWorkflowDialogIcon()) {
+                <p-button
+                    (click)="showDialog()"
+                    pButton
+                    styleClass="p-button-link"
                     icon="pi pi-replay"></p-button>
             }
         }
