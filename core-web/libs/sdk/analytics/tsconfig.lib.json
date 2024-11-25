@@ -1,0 +1,16 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "module": "ES2015",
+        "target": "es2015",
+        "declaration": true,
+        "outDir": "../../../dist/out-tsc",
+        "types": ["node"],
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true
+    },
+    "include": ["src/**/*.ts"],
+    "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]
+}
