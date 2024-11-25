@@ -3,10 +3,13 @@ import {Page, Locator} from '@playwright/test';
 export class GroupEntriesLocators {
     readonly SITE: Locator;
     readonly CONTENT: Locator;
+    readonly SCHEMA: Locator;
 
     constructor(page: Page) {
         this.SITE = page.getByText('Site', {exact: true});
         this.CONTENT = page.getByRole('complementary').getByText('Content', {exact: true});
+        this.SCHEMA = page.getByText('Schema');
+
     }
 }
 
@@ -15,19 +18,14 @@ export class GroupEntriesLocators {
  */
 export class ToolEntriesLocators {
     readonly SEARCH_ALL: Locator;
-    readonly CONTENT_ACTIVITIES: Locator;
-    readonly CONTENT_BANNERS: Locator;
-    readonly CONTENT_BLOGS: Locator;
-    readonly CONTENT_CALL_TO_ACTIONS: Locator;
-    readonly CONTENT_DESTINATIONS: Locator
+    readonly CONTENT_TYPES: Locator;
+    readonly CATEGORIES: Locator;
+
 
     constructor(page: Page) {
-        this.SEARCH_ALL = page.getByRole('link', { name: 'Search All' });
-        this.CONTENT_ACTIVITIES = page.getByRole('link', {name: 'Activities'});
-        this.CONTENT_BANNERS = page.getByRole('link', {name: 'Banners'});
-        this.CONTENT_BLOGS = page.getByRole('link', {name: 'Blogs'});
-        this.CONTENT_CALL_TO_ACTIONS = page.getByRole('link', {name: 'Call to Actions'});
-        this.CONTENT_DESTINATIONS = page.getByRole('link', {name: 'Destinations'});
+        this.SEARCH_ALL = page.getByRole('link', {name: 'Search All'});
+        this.CONTENT_TYPES = page.getByRole('link', {name: 'Content Types'});
+        this.CATEGORIES = page.getByRole('link', { name: 'Categories' });
     }
 }
 
@@ -39,7 +37,7 @@ export class MenuEntriesLocators {
     readonly COLLAPSE: Locator;
 
     constructor(page: Page) {
-        this.EXPAND = page.locator('button[ng-reflect-ng-class="[object Object]"]').first();
+        this.EXPAND =   page.getByRole('button', { name: '' });
         this.COLLAPSE =  page.locator('button[ng-reflect-ng-class="[object Object]"]').first();
 
     }
