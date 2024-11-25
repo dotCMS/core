@@ -846,8 +846,8 @@ describe('DotEmaShellComponent', () => {
                 expect(reloadSpy).toHaveBeenCalled();
             });
 
-            it('should trigger a navigate when url path property is changed', () => {
-                const navigate = jest.spyOn(router, 'navigate');
+            it('should trigger a spyStoreLoadPage when url path property is changed', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
 
                 spectator.detectChanges();
 
@@ -869,18 +869,15 @@ describe('DotEmaShellComponent', () => {
                 });
                 spectator.detectChanges();
 
-                expect(navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        url: '/a-new-url'
-                    },
-                    queryParamsHandling: 'merge'
+                expect(spyStoreLoadPage).toHaveBeenCalledWith({
+                    url: '/a-new-url'
                 });
             });
 
             it('should mantain the current URL as queryParam when the URL property is changed and is a URLContentMap', () => {
                 jest.spyOn(store, 'pageAPIResponse').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP);
 
-                const navigate = jest.spyOn(router, 'navigate');
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
 
                 spectator.detectChanges();
 
@@ -902,11 +899,8 @@ describe('DotEmaShellComponent', () => {
                 });
                 spectator.detectChanges();
 
-                expect(navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        url: '/test-url'
-                    },
-                    queryParamsHandling: 'merge'
+                expect(spyStoreLoadPage).toHaveBeenCalledWith({
+                    url: '/test-url'
                 });
             });
         });
