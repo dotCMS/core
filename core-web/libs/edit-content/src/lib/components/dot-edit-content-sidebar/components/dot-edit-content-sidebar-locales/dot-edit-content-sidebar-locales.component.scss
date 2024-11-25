@@ -5,6 +5,10 @@
     gap: $spacing-1;
     padding-top: 0.15rem;
 
+    p-skeleton {
+        width: 100%;
+    }
+
     ::ng-deep {
         p-chip {
             position: relative;

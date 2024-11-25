@@ -3,6 +3,7 @@ import {
     patchState,
     signalStoreFeature,
     type,
+    withComputed,
     withHooks,
     withMethods,
     withState
@@ -11,7 +12,7 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { forkJoin, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { effect, inject } from '@angular/core';
+import { computed, effect, inject, untracked } from '@angular/core';
 
 import { switchMap, take } from 'rxjs/operators';
 
@@ -20,23 +21,42 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService
 } from '@dotcms/data-access';
-import { DotLanguage } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotLanguage } from '@dotcms/dotcms-models';
 import { ContentState } from '@dotcms/edit-content/feature/edit-content/store/features/content.feature';
 
 export interface LocalesState {
     locales: DotLanguage[] | null;
     defaultLocale: DotLanguage | null;
+    localesStatus: {
+        status: ComponentStatus;
+        error: string;
+    };
 }
 
 export const localesInitialState: LocalesState = {
     locales: null,
-    defaultLocale: null
+    defaultLocale: null,
+    localesStatus: {
+        status: ComponentStatus.INIT,
+        error: ''
+    }
 };
 
 export function withLocales() {
     return signalStoreFeature(
         { state: type<ContentState>() },
         withState(localesInitialState),
+        withComputed((store) => ({
+            /**
+             * Computed property that indicates whether the locales are currently being loaded.
+             *
+             * @param state The current state of the locales feature.
+             * @returns `true` if the locales are being loaded, `false` otherwise.
+             */
+            isLoadingLocales: computed(
+                () => store.localesStatus().status === ComponentStatus.LOADING
+            )
+        })),
         withMethods(
             (
                 store,
@@ -47,6 +67,10 @@ export function withLocales() {
                 loadLocales: rxMethod<string>(
                     pipe(
                         switchMap((identifier) => {
+                            patchState(store, {
+                                localesStatus: { status: ComponentStatus.LOADING, error: '' }
+                            });
+
                             return forkJoin({
                                 locales: dotContentletService.getLanguages(identifier),
                                 defaultLocale: dotLanguagesService.getDefault()
@@ -54,10 +78,23 @@ export function withLocales() {
                                 take(1),
                                 tapResponse({
                                     next: ({ locales, defaultLocale }) => {
-                                        patchState(store, { locales, defaultLocale });
+                                        patchState(store, {
+                                            locales,
+                                            defaultLocale,
+                                            localesStatus: {
+                                                status: ComponentStatus.LOADED,
+                                                error: ''
+                                            }
+                                        });
                                     },
                                     error: (error: HttpErrorResponse) => {
                                         dotHttpErrorManagerService.handle(error);
+                                        patchState(store, {
+                                            localesStatus: {
+                                                status: ComponentStatus.ERROR,
+                                                error: error.message
+                                            }
+                                        });
                                     }
                                 })
                             );
@@ -71,9 +108,11 @@ export function withLocales() {
                 effect(() => {
                     const contentlet = store.contentlet();
 
-                    if (contentlet) {
-                        store.loadLocales(contentlet.identifier);
-                    }
+                    untracked(() => {
+                        if (contentlet) {
+                            store.loadLocales(contentlet.identifier);
+                        }
+                    });
                 });
             }
         })

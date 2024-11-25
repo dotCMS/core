@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { ChipModule } from 'primeng/chip';
+import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
 
@@ -13,7 +14,7 @@ import { DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-edit-content-sidebar-locales',
     standalone: true,
-    imports: [CommonModule, ChipModule],
+    imports: [CommonModule, ChipModule, SkeletonModule],
     templateUrl: './dot-edit-content-sidebar-locales.component.html',
     styleUrl: './dot-edit-content-sidebar-locales.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -33,4 +34,9 @@ export class DotEditContentSidebarLocalesComponent {
      * Current contentlet.
      */
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+
+    /**
+     * Whether teh data is loading.
+     */
+    $isLoading = input.required<boolean>({ alias: 'isLoading' });
 }

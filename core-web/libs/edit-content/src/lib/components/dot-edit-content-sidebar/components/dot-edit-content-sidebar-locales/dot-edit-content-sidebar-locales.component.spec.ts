@@ -40,7 +40,8 @@ describe('DotEditContentSidebarLocalesComponent', () => {
             props: {
                 locales: locales,
                 defaultLocale: defaultLocale,
-                contentlet: contentlet
+                contentlet: contentlet,
+                isLoading: false
             } as unknown
         });
         spectator.detectChanges();
@@ -57,5 +58,13 @@ describe('DotEditContentSidebarLocalesComponent', () => {
         expect(chipElements[0].styleClass).toBe('p-chip-sm p-chip-primary p-chip-filled default');
         expect(chipElements[1].styleClass).toBe('p-chip-sm p-chip-primary');
         expect(chipElements[2].styleClass).toBe('p-chip-sm p-chip-gray p-chip-dashed');
+    });
+
+    it('should show the skeleton on loading', () => {
+        spectator.setInput('isLoading', true);
+        spectator.detectChanges();
+
+        const skeleton = spectator.queryAll('p-skeleton');
+        expect(skeleton).toExist();
     });
 });

@@ -1,14 +1,19 @@
 @let locales = $locales();
 @let defaultLocale = $defaultLocale();
 @let contentlet = $contentlet();
+@let isLoading = $isLoading();
 
-@for (locale of locales; track locale.id) {
-    <p-chip
-        [label]="locale.isoCode"
-        [styleClass]="
-            'p-chip-sm ' +
-            (locale.translated ? 'p-chip-primary' : 'p-chip-gray p-chip-dashed') +
-            (contentlet.languageId === locale.id ? ' p-chip-filled' : '') +
-            (defaultLocale.id === locale.id ? ' default' : '')
-        " />
+@if (isLoading) {
+    <p-skeleton />
+} @else {
+    @for (locale of locales; track locale.id) {
+        <p-chip
+            [label]="locale.isoCode"
+            [styleClass]="
+                'p-chip-sm ' +
+                (locale.translated ? 'p-chip-primary' : 'p-chip-gray p-chip-dashed') +
+                (contentlet.languageId === locale.id ? ' p-chip-filled' : '') +
+                (defaultLocale.id === locale.id ? ' default' : '')
+            " />
+    }
 }
