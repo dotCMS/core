@@ -24,6 +24,7 @@ The script can be configured using data attributes:
 -   **data-analytics-server**: URL of the server where events will be sent. If not provided, it defaults to the current location (window.location.href)
 -   **data-analytics-debug**: Presence of this attribute enables debug logging (no value needed)
 -   **data-analytics-auto-page-view**: Presence of this attribute enables automatic page view tracking (no value needed)
+-   **data-analytics-key**: API key for authentication with the analytics server
 
 Examples:
 
@@ -31,29 +32,47 @@ Examples:
 <!-- Basic usage with defaults -->
 <script src="analytics.iife.js"></script>
 
-<!-- With custom server -->
-<script src="analytics.iife.js" data-analytics-server="http://your-server:8080"></script>
+<!-- With custom server and API key -->
+<script
+    src="analytics.iife.js"
+    data-analytics-server="http://your-server:8080"
+    data-analytics-key="your-api-key"></script>
 
-<!-- With debug and auto page view enabled -->
-<script src="analytics.iife.js" data-analytics-debug data-analytics-auto-page-view></script>
+<!-- With all options -->
+<script
+    src="analytics.iife.js"
+    data-analytics-server="http://your-server:8080"
+    data-analytics-key="your-api-key"
+    data-analytics-debug
+    data-analytics-auto-page-view></script>
 ```
 
 ## Usage
 
 ### Automatic PageView Tracking
 
-To enable automatic page view tracking, simply include the script:
+When `data-analytics-auto-page-view` is enabled, the library will automatically send a page view event to dotCMS when the page loads. If this attribute is not present, you'll need to manually track page views and other events using the tracking API.
 
 ```html
+<!-- Automatic page view tracking enabled -->
 <script
     src="analytics.iife.js"
     data-analytics-server="http://localhost:8080"
-    data-analytics-debug="true"></script>
+    data-analytics-auto-page-view
+    data-analytics-debug></script>
+
+<!-- Without automatic tracking - events must be sent manually -->
+<script
+    src="analytics.iife.js"
+    data-analytics-server="http://localhost:8080"
+    data-analytics-debug></script>
 ```
 
-### Manual Event Tracking
+### Manual Event Tracking (WIP)
 
-To track events manually:
+> ⚠️ **Work in Progress**: This feature is currently under development.
+
+To track events manually (coming soon):
 
 ```html
 <script>
