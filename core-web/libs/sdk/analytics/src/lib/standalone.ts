@@ -7,7 +7,7 @@ import { getDataAnalyticsAttributes } from './shared/analytics.utils';
  */
 declare global {
     interface Window {
-        dotAnalytics: DotAnalytics;
+        [ANALYTICS_WINDOWS_KEY]: DotAnalytics;
     }
 }
 
