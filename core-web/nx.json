@@ -162,19 +162,8 @@
                 "serveTargetName": "serve",
                 "serveStaticTargetName": "serve-static"
             }
-        },
-        {
-            "plugin": "@nx/rollup/plugin",
-            "options": {
-                "buildTargetName": "build"
-            }
         }
     ],
     "defaultBase": "main",
-    "ignorePatterns": ["**/node_modules"],
-    "release": {
-        "version": {
-            "preVersionCommand": "yarn nx run-many -t build"
-        }
-    }
+    "ignorePatterns": ["**/node_modules"]
 }
