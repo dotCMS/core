@@ -111,11 +111,16 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @memberof DotEmaShellComponent
      */
     readonly $updateQueryParamsEffect = effect(() => {
-        const pageParams = this.uveStore.pageParams() || {};
-        const viewParams = this.uveStore.viewParams() || {};
+        const pageParams = this.uveStore.pageParams();
+        const viewParams = this.uveStore.viewParams();
+
+        if (!pageParams && !viewParams) {
+            return;
+        }
+
         const queryParams = {
-            ...pageParams,
-            ...viewParams
+            ...(pageParams ?? {}),
+            ...(viewParams ?? {})
         };
         this.#updateLocation(queryParams);
     });

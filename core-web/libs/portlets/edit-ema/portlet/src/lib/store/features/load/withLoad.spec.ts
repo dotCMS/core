@@ -79,6 +79,7 @@ describe('withLoad', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
     let store: InstanceType<typeof uveStoreMock>;
     let dotPageApiService: SpyObject<DotPageApiService>;
+    let router: Router;
 
     const createService = createServiceFactory({
         service: uveStoreMock,
@@ -139,6 +140,7 @@ describe('withLoad', () => {
         spectator = createService();
         store = spectator.service;
 
+        router = spectator.inject(Router);
         dotPageApiService = spectator.inject(DotPageApiService);
         jest.spyOn(dotPageApiService, 'get').mockImplementation(
             buildPageAPIResponseFromMock(MOCK_RESPONSE_HEADLESS)
@@ -148,11 +150,11 @@ describe('withLoad', () => {
     describe('withMethods', () => {
         describe('load', () => {
             it('should load the store with the base data', () => {
-                store.init(HEADLESS_BASE_QUERY_PARAMS);
+                store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS);
                 expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_HEADLESS);
                 expect(store.isEnterprise()).toBe(true);
                 expect(store.currentUser()).toEqual(CurrentUserDataMock);
-                expect(store.experiment()).toBe(undefined);
+                expect(store.experiment()).toBe(getDraftExperimentMock());
                 expect(store.languages()).toBe(mockLanguageArray);
                 expect(store.canEditPage()).toBe(true);
                 expect(store.pageIsLocked()).toBe(false);
@@ -166,12 +168,12 @@ describe('withLoad', () => {
                     buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
                 );
 
-                store.init(VTL_BASE_QUERY_PARAMS);
+                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
 
                 expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
                 expect(store.isEnterprise()).toBe(true);
                 expect(store.currentUser()).toEqual(CurrentUserDataMock);
-                expect(store.experiment()).toBe(undefined);
+                expect(store.experiment()).toBe(getDraftExperimentMock());
                 expect(store.languages()).toBe(mockLanguageArray);
                 expect(store.canEditPage()).toBe(true);
                 expect(store.pageIsLocked()).toBe(false);
@@ -192,9 +194,15 @@ describe('withLoad', () => {
                     of(permanentRedirect)
                 );
 
-                store.init(VTL_BASE_QUERY_PARAMS);
+                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
 
-                expect(store.pageParams().url).toBe(forwardTo);
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        ...VTL_BASE_QUERY_PARAMS,
+                        url: forwardTo
+                    },
+                    queryParamsHandling: 'merge'
+                });
             });
 
             it('should update the pageParams with the vanity URL on temporary redirect', () => {
@@ -209,16 +217,22 @@ describe('withLoad', () => {
                     of(temporaryRedirect)
                 );
 
-                store.init(VTL_BASE_QUERY_PARAMS);
+                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
 
-                expect(store.pageParams().url).toBe(forwardTo);
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        ...VTL_BASE_QUERY_PARAMS,
+                        url: forwardTo
+                    },
+                    queryParamsHandling: 'merge'
+                });
             });
         });
 
-        describe('reload', () => {
+        describe('reloadCurrentPage', () => {
             it('should reload with the pageParams from the store', () => {
                 const getPageSpy = jest.spyOn(dotPageApiService, 'getClientPage');
-                store.reload();
+                store.reloadCurrentPage();
 
                 expect(getPageSpy).toHaveBeenCalledWith(pageParams, { params: null, query: '' });
             });

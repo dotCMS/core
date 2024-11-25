@@ -183,8 +183,8 @@ describe('EditEmaToolbarComponent', () => {
                         setSocialMedia: jest.fn(),
                         pageParams: signal(params),
                         pageAPIResponse: signal(MOCK_RESPONSE_VTL),
-                        reload: jest.fn(),
-                        updatePageParams: jest.fn()
+                        reloadCurrentPage: jest.fn(),
+                        loadPageAsset: jest.fn()
                     })
                 ]
             });
@@ -315,11 +315,11 @@ describe('EditEmaToolbarComponent', () => {
             });
 
             it('should set language', () => {
-                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
+                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
                 spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
                 spectator.detectChanges();
 
-                expect(spyUpdatePageParams).toHaveBeenCalledWith({ language_id: '2' });
+                expect(spyloadPageAsset).toHaveBeenCalledWith({ language_id: '2' });
             });
         });
 
@@ -360,7 +360,7 @@ describe('EditEmaToolbarComponent', () => {
             });
 
             it('should personalize - no confirmation', () => {
-                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
+                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     identifier: '123',
                     pageId: '123',
@@ -369,7 +369,7 @@ describe('EditEmaToolbarComponent', () => {
                 } as any);
                 spectator.detectChanges();
 
-                expect(spyUpdatePageParams).toHaveBeenCalledWith({
+                expect(spyloadPageAsset).toHaveBeenCalledWith({
                     'com.dotmarketing.persona.id': '123'
                 });
             });
@@ -429,7 +429,7 @@ describe('EditEmaToolbarComponent', () => {
             });
 
             it('should update page', () => {
-                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
+                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
                 spectator.triggerEventHandler(DotEditEmaWorkflowActionsComponent, 'newPage', {
                     pageURI: '/path-and-stuff',
                     url: 'path',
@@ -439,7 +439,7 @@ describe('EditEmaToolbarComponent', () => {
 
                 spectator.detectChanges();
 
-                expect(spyUpdatePageParams).toHaveBeenCalledWith({
+                expect(spyloadPageAsset).toHaveBeenCalledWith({
                     url: '/path-and-stuff',
                     language_id: '1'
                 });
@@ -456,7 +456,7 @@ describe('EditEmaToolbarComponent', () => {
                 } as any);
 
                 spectator.detectChanges();
-                expect(store.reload).toHaveBeenCalled();
+                expect(store.reloadCurrentPage).toHaveBeenCalled();
                 expect(router.navigate).not.toHaveBeenCalled();
             });
         });

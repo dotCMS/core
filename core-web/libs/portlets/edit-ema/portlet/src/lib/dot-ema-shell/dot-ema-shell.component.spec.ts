@@ -303,19 +303,19 @@ describe('DotEmaShellComponent', () => {
 
     describe('with queryParams', () => {
         it('should trigger an store load with default values', () => {
-            const spyStoreInit = jest.spyOn(store, 'init');
+            const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
             spectator.detectChanges();
-            expect(spyStoreInit).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
+            expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
         });
 
-        it('should call store.init when the `setPageParams` is called', () => {
-            const spySetPageParams = jest.spyOn(store, 'setPageParams');
-            const spyStoreInit = jest.spyOn(store, 'init');
+        it('should call store.loadPageAsset when the `loadPageAsset` is called', () => {
+            const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+            const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
             const spyLocation = jest.spyOn(location, 'replaceState');
 
             spectator.detectChanges();
-            expect(spySetPageParams).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
-            expect(spyStoreInit).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
+            expect(spyloadPageAsset).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
+            expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             expect(spyLocation).toHaveBeenCalledWith(
                 '/?language_id=1&url=index&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona'
             );
@@ -368,7 +368,7 @@ describe('DotEmaShellComponent', () => {
         describe('Page Params', () => {
             it('should trigger a load when changing the queryParams', () => {
                 spectator.detectChanges();
-                const spyStoreInit = jest.spyOn(store, 'init');
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const newParams = {
                     language_id: 2,
                     url: 'my-awesome-page',
@@ -376,22 +376,15 @@ describe('DotEmaShellComponent', () => {
                     'com.dotmarketing.persona.id': 'SomeCoolDude'
                 };
 
-                store.updatePageParams(newParams);
+                store.loadPageAsset(newParams);
                 spectator.detectChanges();
-                expect(spyStoreInit).toHaveBeenCalledWith(newParams);
+                expect(spyStoreLoadPage).toHaveBeenCalledWith(newParams);
             });
-            // Check this one
-            // it("should not trigger a load when the queryParams didn't change", () => {
-            //     const spyStoreInit = jest.spyOn(store, 'init');
-            //     store.updatePageParams(INITIAL_PAGE_PARAMS);
-            //     spectator.detectChanges();
-            //     expect(spyStoreInit).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
-            // });
         });
 
         describe('ClientHost', () => {
             it('should trigger init the store without the clientHost queryParam when it is not allowed', () => {
-                const spyStoreInit = jest.spyOn(store, 'init');
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:4200'
@@ -407,12 +400,12 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 spectator.detectChanges();
-                expect(spyStoreInit).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
-                expect(spyStoreInit).not.toHaveBeenCalledWith(paramWithNotAllowedHost);
+                expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
+                expect(spyStoreLoadPage).not.toHaveBeenCalledWith(paramWithNotAllowedHost);
             });
 
             it('should trigger a load when changing the clientHost and it is on the allowedDevURLs', () => {
-                const spyStoreInit = jest.spyOn(store, 'init');
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const paramsWithAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:3000'
@@ -426,11 +419,11 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 spectator.detectChanges();
-                expect(spyStoreInit).toHaveBeenCalledWith(paramsWithAllowedHost);
+                expect(spyStoreLoadPage).toHaveBeenCalledWith(paramsWithAllowedHost);
             });
 
             it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is empty', () => {
-                const spyStoreInit = jest.spyOn(store, 'init');
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:3000'
@@ -444,11 +437,11 @@ describe('DotEmaShellComponent', () => {
                     })
                 );
                 spectator.detectChanges();
-                expect(spyStoreInit).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
+                expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             });
 
             it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is has a wrong data type', () => {
-                const spyStoreInit = jest.spyOn(store, 'init');
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -463,11 +456,11 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 spectator.detectChanges();
-                expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+                expect(spyStoreLoadPage).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
             });
 
             it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is is not present', () => {
-                const spyStoreInit = jest.spyOn(store, 'init');
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -482,11 +475,11 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 spectator.detectChanges();
-                expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+                expect(spyStoreLoadPage).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
             });
 
             it('should trigger a navigate without the clientHost queryParam when the options are not present', () => {
-                const spyStoreInit = jest.spyOn(store, 'init');
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -503,11 +496,11 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 spectator.detectChanges();
-                expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+                expect(spyStoreLoadPage).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
             });
 
             it('should trigger a navigate without the clientHost queryParam when the uveConfig is not present', () => {
-                const spyStoreInit = jest.spyOn(store, 'init');
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -522,7 +515,7 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 spectator.detectChanges();
-                expect(spyStoreInit).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+                expect(spyStoreLoadPage).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
             });
         });
 
@@ -535,6 +528,7 @@ describe('DotEmaShellComponent', () => {
                     data: UVE_CONFIG_MOCK(BASIC_OPTIONS)
                 })
             );
+            jest.clearAllMocks();
         });
 
         describe('language checking', () => {
@@ -544,14 +538,13 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 confirmationServiceSpy = jest.spyOn(confirmationService, 'confirm');
             });
-            afterEach(() => jest.clearAllMocks());
 
             it('should not trigger the confirmation service if the page is translated to the current language', () => {
                 expect(confirmationServiceSpy).not.toHaveBeenCalled();
             });
 
             it('should not trigger the confirmation service if the page dont have current language', () => {
-                store.updatePageParams({
+                store.loadPageAsset({
                     language_id: 3,
                     url: 'index',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -563,7 +556,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it("should trigger the confirmation service if the page isn't translated to the current language", fakeAsync(() => {
-                store.updatePageParams({
+                store.loadPageAsset({
                     language_id: 2,
                     url: 'index',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -584,9 +577,9 @@ describe('DotEmaShellComponent', () => {
             }));
 
             it('should trigger a navigation to default language when the user rejects the creation', fakeAsync(() => {
-                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
+                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
 
-                store.setPageParams({
+                store.loadPageAsset({
                     language_id: 2,
                     url: 'index',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -605,11 +598,11 @@ describe('DotEmaShellComponent', () => {
 
                 spectator.detectChanges();
 
-                expect(spyUpdatePageParams).toHaveBeenCalledWith({ language_id: '1' });
+                expect(spyloadPageAsset).toHaveBeenCalledWith({ language_id: '1' });
             }));
 
             it('should open a dialog to create the page in the new language when the user accepts the creation', fakeAsync(() => {
-                store.setPageParams({
+                store.loadPageAsset({
                     language_id: 2,
                     url: 'index',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -645,8 +638,8 @@ describe('DotEmaShellComponent', () => {
             }));
 
             it('should open a dialog to create the page and navigate to default language if the user closes the dialog without saving', fakeAsync(() => {
-                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
-                store.setPageParams({
+                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                store.loadPageAsset({
                     language_id: 2,
                     url: 'index',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -679,12 +672,12 @@ describe('DotEmaShellComponent', () => {
                     clientAction: CLIENT_ACTIONS.NOOP
                 });
 
-                expect(spyUpdatePageParams).toHaveBeenCalledWith({ language_id: '1' });
+                expect(spyloadPageAsset).toHaveBeenCalledWith({ language_id: '1' });
             }));
 
             it('should open a dialog to create the page and navigate to default language if the user closes the dialog without saving and without editing ', fakeAsync(() => {
-                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
-                store.setPageParams({
+                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                store.loadPageAsset({
                     language_id: 2,
                     url: 'index',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -717,17 +710,18 @@ describe('DotEmaShellComponent', () => {
                     clientAction: CLIENT_ACTIONS.NOOP
                 });
 
-                expect(spyUpdatePageParams).toHaveBeenCalledWith({ language_id: '1' });
+                expect(spyloadPageAsset).toHaveBeenCalledWith({ language_id: '1' });
             }));
 
             it('should open a dialog to create the page and do nothing when the user creates the page correctly with SAVE_PAGE and closes the dialog', fakeAsync(() => {
-                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
-                store.setPageParams({
+                const pageParams = {
                     language_id: 2,
                     url: 'index',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
+                };
 
+                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                store.loadPageAsset(pageParams);
                 spectator.detectChanges();
 
                 tick(1000);
@@ -741,7 +735,6 @@ describe('DotEmaShellComponent', () => {
 
                 spectator.detectChanges();
 
-                spectator.detectChanges();
                 spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
                     event: new CustomEvent('ng-event', {
                         detail: {
@@ -758,7 +751,7 @@ describe('DotEmaShellComponent', () => {
 
                 spectator.detectChanges();
 
-                expect(spyUpdatePageParams).not.toHaveBeenCalled();
+                expect(spyloadPageAsset).toHaveBeenNthCalledWith(1, pageParams);
             }));
         });
 
@@ -779,7 +772,7 @@ describe('DotEmaShellComponent', () => {
             beforeEach(() => spectator.detectChanges());
 
             it('should update page params when saving and the url changed', () => {
-                const spyUpdatePageParams = jest.spyOn(store, 'updatePageParams');
+                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
 
                 spectator.detectChanges();
 
@@ -795,11 +788,11 @@ describe('DotEmaShellComponent', () => {
                 );
                 spectator.detectChanges();
 
-                expect(spyUpdatePageParams).toHaveBeenCalledWith({ url: '/my-awesome-page' });
+                expect(spyloadPageAsset).toHaveBeenCalledWith({ url: '/my-awesome-page' });
             });
 
             it('should trigger a store reload if the url is the same', () => {
-                const spyReload = jest.spyOn(store, 'reload');
+                const spyReload = jest.spyOn(store, 'reloadCurrentPage');
                 const spyLocation = jest.spyOn(location, 'replaceState');
                 spectator.detectChanges();
 
@@ -821,7 +814,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should reload content from dialog', () => {
-                const reloadSpy = jest.spyOn(store, 'reload');
+                const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
 
                 spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
 
@@ -829,9 +822,9 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', () => {
-                const reloadSpy = jest.spyOn(store, 'reload');
+                const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
                 jest.spyOn(store, 'pageAPIResponse').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP);
-                store.updatePageParams({
+                store.loadPageAsset({
                     url: '/test-url',
                     language_id: '1',
                     'com.dotmarketing.persona.id': '1'
@@ -853,8 +846,6 @@ describe('DotEmaShellComponent', () => {
                 expect(reloadSpy).toHaveBeenCalled();
             });
         });
-
-        beforeEach(() => jest.clearAllMocks());
     });
 
     describe('without license', () => {
