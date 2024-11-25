@@ -1,6 +1,6 @@
 import { forkJoin, Observable, of, throwError } from 'rxjs';
 
-import { HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
@@ -12,7 +12,7 @@ import {
     DotRouterService,
     DotSessionStorageService
 } from '@dotcms/data-access';
-import { DotCMSResponse, HttpCode, Site, SiteService } from '@dotcms/dotcms-js';
+import { HttpCode, Site, SiteService } from '@dotcms/dotcms-js';
 import { DotPageRenderOptions, DotPageRenderState } from '@dotcms/dotcms-models';
 
 /**
@@ -50,16 +50,14 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState | null> {
     ): Observable<DotPageRenderState> {
         if (!dotRenderedPageState.page.canEdit) {
             return throwError(
-                new HttpResponse<DotCMSResponse<DotPageRenderState>>({
-                    body: null,
+                new HttpErrorResponse({
                     status: HttpCode.FORBIDDEN,
                     url: ''
                 })
             );
         } else if (!dotRenderedPageState.layout) {
             return throwError(
-                new HttpResponse<DotCMSResponse<DotPageRenderState>>({
-                    body: null,
+                new HttpErrorResponse({
                     status: HttpCode.FORBIDDEN,
                     headers: new HttpHeaders({
                         'error-key': 'dotcms.api.error.license.required'

@@ -592,14 +592,14 @@ export const checkClientHostAccess = (
  */
 export function filterPageParams(params: Params): DotPageApiParams {
     const allowedParams: DotPageApiKeys[] = [
-        'url',
-        'mode',
-        'depth',
-        'clientHost',
-        'variantName',
-        'language_id',
-        'experimentId',
-        'com.dotmarketing.persona.id'
+        DotPageApiKeys.URL,
+        DotPageApiKeys.MODE,
+        DotPageApiKeys.DEPTH,
+        DotPageApiKeys.CLIENT_HOST,
+        DotPageApiKeys.VARIANT_NAME,
+        DotPageApiKeys.LANGUAGE_ID,
+        DotPageApiKeys.EXPERIMENT_ID,
+        DotPageApiKeys.PERSONA_ID
     ];
 
     return Object.keys(params)
