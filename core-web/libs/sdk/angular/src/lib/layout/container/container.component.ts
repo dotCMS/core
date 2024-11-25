@@ -10,6 +10,12 @@ import {
     signal
 } from '@angular/core';
 
+import { DotErrorBoundaryComponent } from '../../components/dot-error-boundary/dot-error-boundary.component';
+import {
+    DotError,
+    DotErrorCodes,
+    DotErrorHandler
+} from '../../components/dot-error-boundary/dot-error-handler.service';
 import { NoComponent } from '../../components/no-component/no-component.component';
 import { DynamicComponentEntity } from '../../models';
 import { DotCMSContainer, DotCMSContentlet } from '../../models/dotcms.model';
@@ -35,7 +41,13 @@ interface DotContainer {
 @Component({
     selector: 'dotcms-container',
     standalone: true,
-    imports: [AsyncPipe, NgComponentOutlet, NoComponent, ContentletComponent],
+    imports: [
+        AsyncPipe,
+        NgComponentOutlet,
+        NoComponent,
+        ContentletComponent,
+        DotErrorBoundaryComponent
+    ],
     templateUrl: './container.component.html',
     styleUrl: './container.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -48,6 +60,8 @@ export class ContainerComponent implements OnChanges {
      * @memberof ContainerComponent
      */
     @Input({ required: true }) container!: DotCMSContainer;
+    @Input() row!: number;
+    @Input() col!: number;
 
     private readonly pageContextService: PageContextService = inject(PageContextService);
     protected readonly NoComponent = NoComponent;
@@ -108,6 +122,8 @@ export class ContainerComponent implements OnChanges {
      */
     @HostBinding('attr.data-testid') testId = 'dot-container';
 
+    errorHandler = inject(DotErrorHandler);
+
     ngOnChanges() {
         const { pageAsset, components, isInsideEditor } = this.pageContextService.context;
         const { acceptTypes, maxContentlets, variantId, path, contentlets } = getContainersData(
@@ -135,6 +151,18 @@ export class ContainerComponent implements OnChanges {
             this.uuid = uuid;
             this.class = this.$contentlets().length ? null : 'empty-container';
             this.dotObject = 'container';
+        }
+
+        try {
+            if (Math.random() > 0.6)
+                throw new DotError(DotErrorCodes.CON001, {
+                    row: this.row,
+                    column: this.col,
+                    uuid: this.container.uuid,
+                    identifier: this.container.identifier
+                });
+        } catch (error) {
+            this.errorHandler.handleError(error);
         }
     }
 }

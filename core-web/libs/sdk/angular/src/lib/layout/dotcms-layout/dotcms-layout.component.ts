@@ -20,6 +20,7 @@ import {
     updateNavigation
 } from '@dotcms/client';
 
+import { DotErrorBoundaryComponent } from '../../components/dot-error-boundary/dot-error-boundary.component';
 import { DotCMSPageComponent } from '../../models';
 import { DotCMSPageAsset } from '../../models/dotcms.model';
 import { PageContextService } from '../../services/dotcms-context/page-context.service';
@@ -35,11 +36,13 @@ import { RowComponent } from '../row/row.component';
 @Component({
     selector: 'dotcms-layout',
     standalone: true,
-    imports: [RowComponent, AsyncPipe],
+    imports: [RowComponent, AsyncPipe, DotErrorBoundaryComponent],
     template: `
         @if (pageAsset$ | async; as page) {
             @for (row of page?.layout?.body?.rows; track $index) {
-                <dotcms-row [row]="row" />
+                <dot-error-boundary>
+                    <dotcms-row [row]="row" [index]="$index" />
+                </dot-error-boundary>
             }
         }
     `,
