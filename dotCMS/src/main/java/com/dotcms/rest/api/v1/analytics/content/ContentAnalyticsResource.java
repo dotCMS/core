@@ -67,7 +67,7 @@ import com.dotcms.analytics.track.collectors.EventType;
 public class ContentAnalyticsResource {
 
     private static final UserCustomDefinedRequestMatcher USER_CUSTOM_DEFINED_REQUEST_MATCHER =  new UserCustomDefinedRequestMatcher();
-    private final Lazy<Boolean> ANALYTICS_ALLOW_EVENTS_ON_ANONYMOUS_WITH_VALID_KEY = Lazy.of(() -> Config.getBooleanProperty("ANALYTICS_ALLOW_EVENTS_ON_ANONYMOUS_WITH_VALID_KEY", true));
+    private final Lazy<Boolean> ANALYTICS_EVENTS_REQUIRE_AUTHENTICATION = Lazy.of(() -> Config.getBooleanProperty("ANALYTICS_EVENTS_REQUIRE_AUTHENTICATION", true));
 
     private static final Map<String, Supplier<RequestMatcher>> MATCHER_MAP = Map.of(
             EventType.FILE_REQUEST.getType(), FilesRequestMatcher::new,
@@ -263,12 +263,14 @@ public class ContentAnalyticsResource {
                 .requiredAnonAccess(AnonymousAccess.READ)
                 .rejectWhenNoUser(false)
                 .init().getUser();
-        if (ANALYTICS_ALLOW_EVENTS_ON_ANONYMOUS_WITH_VALID_KEY.get()) {
-            if (user.isAnonymousUser() && isNotValidKey(userEventPayload, WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request))) {
-                throw new DotSecurityException("The user is not allowed to fire an event");
+        if (ANALYTICS_EVENTS_REQUIRE_AUTHENTICATION.get()) {
+
+            if (user.isAnonymousUser()) {
+                throw new DotSecurityException("Anonymous user is not allowed to fire an event");
             }
         } else {
-            if (user.isAnonymousUser()) {
+
+            if (user.isAnonymousUser() && isNotValidKey(userEventPayload, WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request))) {
                 throw new DotSecurityException("The user is not allowed to fire an event");
             }
         }
