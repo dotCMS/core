@@ -38,5 +38,6 @@
                 "jestConfig": "libs/sdk/analytics/jest.config.ts"
             }
         }
-    }
+    },
+    "tags": ["type:lib", "scope:sdk", "feature:analytics"]
 }
