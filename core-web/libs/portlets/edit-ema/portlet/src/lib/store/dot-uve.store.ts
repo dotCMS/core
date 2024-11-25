@@ -13,21 +13,18 @@ import { UVE_FEATURE_FLAGS } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import { getErrorPayload, getRequestHostName, sanitizeURL } from '../utils';
 
+// Some properties can be computed
+// Ticket: https://github.com/dotCMS/core/issues/30760
 const initialState: UVEState = {
     isEnterprise: false,
     languages: [],
-    pageAPIResponse: null, // This should be called `pageAsset`
+    pageAPIResponse: null,
     currentUser: null,
     experiment: null,
     errorCode: null,
     pageParams: null,
-    viewParams: null, // This should be called `viewSettings`/`editorViewSettings`?
+    viewParams: null,
     status: UVE_STATUS.LOADING,
-    // TODO: Create a Task to check if these properties are needed
-    // This properties depends on `pageAPIResponse`, so they look like computed rather an a store property
-    // Check if we implemented the `SignalStore` pattern well:
-    // https://ngrx.io/guide/signals/signal-store/custom-store-features
-    // https://github.com/ngrx/signal-store-workshop/blob/main/src/app/albums/album-search/album-search.store.ts
     isTraditionalPage: true,
     canEditPage: false,
     pageIsLocked: true

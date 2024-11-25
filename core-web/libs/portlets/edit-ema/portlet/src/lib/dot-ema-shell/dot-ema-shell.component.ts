@@ -102,11 +102,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     /**
      * Handle the update of the page params
-     * When the page params change, we need to initiate the UVE again and update the location
-     *
-     * Should we just trigger the `init` whenever the page params change?
-     * I mean, trigger the `init` instead of the `updatePageParams`?
-     * That makes more sense to me
+     * When the page params change, we update the location
      *
      * @memberof DotEmaShellComponent
      */

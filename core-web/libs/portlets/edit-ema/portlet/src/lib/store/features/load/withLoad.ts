@@ -85,6 +85,8 @@ export function withLoad() {
                                         return EMPTY;
                                     })
                                 ),
+                                // This can be done in the Withhook: onInit if this ticket is done: https://github.com/dotCMS/core/issues/30760
+                                // Reference: https://ngrx.io/guide/signals/signal-store/lifecycle-hooks
                                 isEnterprise: dotLicenseService
                                     .isEnterprise()
                                     .pipe(take(1), shareReplay()),
