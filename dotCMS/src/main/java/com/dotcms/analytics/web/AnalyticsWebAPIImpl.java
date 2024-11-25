@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -35,20 +36,24 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
     private final AppsAPI appsAPI;
     private final Supplier<User> systemUserSupplier;
     private final Lazy<String> jsCode;
+    private final Function<Host,String> analyticsKeyFunction;
 
     public AnalyticsWebAPIImpl() {
         this(new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, true)),
-                WebAPILocator.getHostWebAPI(), APILocator.getAppsAPI(), APILocator::systemUser);
+                WebAPILocator.getHostWebAPI(), APILocator.getAppsAPI(),
+                APILocator::systemUser, currentHost->ConfigExperimentUtil.INSTANCE.getAnalyticsKey(currentHost));
     }
 
     public AnalyticsWebAPIImpl(final AtomicBoolean isAutoInjectTurnedOn,
                                final HostWebAPI hostWebAPI,
                                final AppsAPI appsAPI,
-                               final Supplier<User> systemUserSupplier) {
+                               final Supplier<User> systemUserSupplier,
+                               final Function<Host,String> analyticsKeyFunction) {
         this.isAutoInjectTurnedOn = isAutoInjectTurnedOn;
         this.hostWebAPI = hostWebAPI;
         this.appsAPI = appsAPI;
         this.systemUserSupplier = systemUserSupplier;
+        this.analyticsKeyFunction = analyticsKeyFunction;
         this.jsCode = Lazy.of(() -> FileUtil.toStringFromResourceAsStreamNoThrown(ANALYTICS_JS_CODE_CLASS_PATH));
     }
 
@@ -113,7 +118,7 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
 
             final StringBuilder builder = new StringBuilder(this.jsCode.get());
 
-            Map.of("${jitsu_key}", ConfigExperimentUtil.INSTANCE.getAnalyticsKey(currentHost),
+            Map.of("${jitsu_key}", this.analyticsKeyFunction.apply(currentHost),
                     "${site}", request.getScheme() + "://" + request.getLocalName() + ":" + request.getLocalPort())
                     .forEach((key, value) -> {
 
