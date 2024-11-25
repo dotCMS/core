@@ -1,6 +1,7 @@
 
 package com.dotcms.contenttype.business;
 
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
@@ -53,7 +54,7 @@ import static org.mockito.Mockito.when;
  * Test for {@link StoryBlockAPI}
  * @author jsanca
  */
-@RunWith(DataProviderRunner.class)
+@RunWith(DataProviderWeldRunner.class)
 public class StoryBlockAPITest extends IntegrationTestBase {
 
     @DataProvider
