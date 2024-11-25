@@ -19,10 +19,10 @@
         "url": "https://github.com/dotCMS/core/issues"
     },
     "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/analytics/README.md",
-    "dependencies": {
-        "analytics": "0.8.14",
-    "vite": "~5.0.0"
+    "peerDependencies": {
+        "analytics": "^0.8.14",
+        "vite": "^5.0.0"
     },
-    "main": "./index.cjs",
-    "module": "./index.js"
+    "main": "./index.cjs.js",
+    "module": "./index.esm.js"
 }
