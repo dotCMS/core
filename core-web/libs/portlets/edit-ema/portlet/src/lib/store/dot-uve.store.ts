@@ -60,7 +60,6 @@ export const UVEStore = signalStore(
                     const page = response?.page;
                     const templateDrawed = response?.template.drawed;
 
-                    // Expose this
                     const isLayoutDisabled = !page?.canEdit || !templateDrawed;
                     const errorCode = error();
 

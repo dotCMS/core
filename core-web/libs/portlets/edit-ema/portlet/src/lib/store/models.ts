@@ -41,5 +41,5 @@ export interface DotUveViewParams {
     preview: false;
     orientation: string;
     device: string;
-    SEO: string;
+    seo: string;
 }
