@@ -56,7 +56,8 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.example.com',
                 debug: false,
-                autoPageView: false
+                autoPageView: false,
+                key: ''
             });
         });
 
@@ -69,7 +70,8 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.example.com',
                 debug: true,
-                autoPageView: false
+                autoPageView: false,
+                key: ''
             });
         });
 
@@ -82,7 +84,8 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.example.com',
                 debug: false,
-                autoPageView: true
+                autoPageView: true,
+                key: ''
             });
         });
 
@@ -90,13 +93,29 @@ describe('Analytics Utils', () => {
             const script = document.querySelector('script[data-analytics-server]');
             script?.setAttribute('data-analytics-debug', '');
             script?.setAttribute('data-analytics-auto-page-view', '');
+            script?.setAttribute('data-analytics-key', 'test-key');
 
             const result = getDataAnalyticsAttributes(mockLocation);
 
             expect(result).toEqual({
                 server: 'https://analytics.example.com',
                 debug: true,
-                autoPageView: true
+                autoPageView: true,
+                key: 'test-key'
+            });
+        });
+
+        it('should handle key attribute', () => {
+            const script = document.querySelector('script[data-analytics-server]');
+            script?.setAttribute('data-analytics-key', 'test-key');
+
+            const result = getDataAnalyticsAttributes(mockLocation);
+
+            expect(result).toEqual({
+                server: 'https://analytics.example.com',
+                debug: false,
+                autoPageView: false,
+                key: 'test-key'
             });
         });
     });
