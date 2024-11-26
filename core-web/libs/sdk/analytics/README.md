@@ -49,27 +49,21 @@ When `data-analytics-auto-page-view` is enabled, the library will automatically 
     data-analytics-key="dev-key-123"></script>
 ```
 
-### Manual Event Tracking (WIP)
+## Roadmap
 
-> ⚠️ **Work in Progress**: This feature is currently under development.
+The following features are planned for future releases:
 
-To track events manually (coming soon):
+1. **Manual Event Tracking**
 
-```html
-<script>
-    dotAnalytics.ready().then(() => {
-        // Track a simple event
-        dotAnalytics.track('PAGE_REQUEST');
+    - Manual track events support for IIFE implementation
 
-        // Track an event with additional properties
-        dotAnalytics.track('USER_ACTION', {
-            action: 'click',
-            element: 'button',
-            id: 'submit-form'
-        });
-    });
-</script>
-```
+2. **Headless Support**
+
+    - React integration for event tracking
+    - Next.js integration for event tracking
+
+3. **Angular Support**
+    - Angular integration for event tracking
 
 ## Contributing
 
@@ -97,19 +91,3 @@ Always refer to the official [DotCMS documentation](https://www.dotcms.com/docs/
 | Forums/Listserv | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
 | Twitter         | @dotCMS                                                             |
 | Main Site       | [dotCMS.com](https://dotcms.com/)                                   |
-
-## Roadmap
-
-The following features are planned for future releases:
-
-1. **Manual Event Tracking**
-
-    - Manual track events support for IIFE implementation
-
-2. **Headless Support**
-
-    - React integration for event tracking
-    - Next.js integration for event tracking
-
-3. **Angular Support**
-    - Angular integration for event tracking
