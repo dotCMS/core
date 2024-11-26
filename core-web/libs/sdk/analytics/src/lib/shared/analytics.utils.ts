@@ -83,12 +83,14 @@ export const createAnalyticsPageViewData = (
  */
 export const extractUTMParameters = (location: Location): Record<string, string> => {
     const urlParams = new URLSearchParams(location.search);
+
     return EXPECTED_UTM_KEYS.reduce(
         (acc, key) => {
             const value = urlParams.get(key);
             if (value !== null) {
                 acc[key.replace('utm_', '')] = value;
             }
+
             return acc;
         },
         {} as Record<string, string>
