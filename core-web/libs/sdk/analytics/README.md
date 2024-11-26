@@ -1,6 +1,6 @@
 # @dotcms/analytics
 
-`@dotcms/analytics` is the official dotCMS JavaScript library that helps track events and analytics in your webapps. Currently available as an IIFE (Immediately Invoked Function Expression) module for direct browser usage, with planned future support for React and Next.js applications.
+`@dotcms/analytics` is the official dotCMS JavaScript library for Content Analytics that helps track events and analytics in your webapps. Currently available as an IIFE (Immediately Invoked Function Expression) module for direct browser usage.
 
 ## Features
 
@@ -21,31 +21,10 @@ Include the script in your HTML page:
 
 The script can be configured using data attributes:
 
--   **data-analytics-server**: URL of the server where events will be sent. If not provided, it defaults to the current location (window.location.href)
+-   **data-analytics-server**: URL of the server where events will be sent. If not provided, it defaults to the current location (window.location.href).
 -   **data-analytics-debug**: Presence of this attribute enables debug logging (no value needed)
 -   **data-analytics-auto-page-view**: Presence of this attribute enables automatic page view tracking (no value needed)
--   **data-analytics-key**: API key for authentication with the analytics server
-
-Examples:
-
-```html
-<!-- Basic usage with defaults -->
-<script src="ca.min.js"></script>
-
-<!-- With custom server and API key -->
-<script
-    src="ca.min.js"
-    data-analytics-server="http://your-server:8080"
-    data-analytics-key="your-api-key"></script>
-
-<!-- With all options -->
-<script
-    src="ca.min.js"
-    data-analytics-server="http://your-server:8080"
-    data-analytics-key="your-api-key"
-    data-analytics-debug
-    data-analytics-auto-page-view></script>
-```
+-   **data-analytics-key**: Required. API key for authentication with the analytics server. This key is provided by the DotCMS Analytics app.
 
 ## Usage
 
@@ -54,15 +33,20 @@ Examples:
 When `data-analytics-auto-page-view` is enabled, the library will automatically send a page view event to dotCMS when the page loads. If this attribute is not present, you'll need to manually track page views and other events using the tracking API.
 
 ```html
-<!-- Automatic page view tracking enabled -->
+<!-- Automatic page view tracking enabled & debug logging enabled -->
 <script
     src="ca.min.js"
     data-analytics-server="http://localhost:8080"
+    data-analytics-key="dev-key-123"
     data-analytics-auto-page-view
     data-analytics-debug></script>
 
 <!-- Without automatic tracking - events must be sent manually -->
-<script src="ca.min.js" data-analytics-server="http://localhost:8080" data-analytics-debug></script>
+<script
+    src="ca.min.js"
+    data-analytics-server="http://localhost:8080"
+    data-analytics-debug
+    data-analytics-key="dev-key-123"></script>
 ```
 
 ### Manual Event Tracking (WIP)
@@ -113,3 +97,19 @@ Always refer to the official [DotCMS documentation](https://www.dotcms.com/docs/
 | Forums/Listserv | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
 | Twitter         | @dotCMS                                                             |
 | Main Site       | [dotCMS.com](https://dotcms.com/)                                   |
+
+## Roadmap
+
+The following features are planned for future releases:
+
+1. **Manual Event Tracking**
+
+    - Manual track events support for IIFE implementation
+
+2. **Headless Support**
+
+    - React integration for event tracking
+    - Next.js integration for event tracking
+
+3. **Angular Support**
+    - Angular integration for event tracking

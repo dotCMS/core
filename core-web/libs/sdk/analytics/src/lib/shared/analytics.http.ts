@@ -17,7 +17,7 @@ export const sendAnalyticsEventToServer = async (
     };
 
     if (options.debug) {
-        console.warn('DotAnalytics: Sending event:', eventData);
+        console.warn('DotAnalytics: Event sent:', eventData);
     }
 
     try {
