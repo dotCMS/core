@@ -7,7 +7,6 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.rest.RESTParams;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
@@ -24,18 +23,22 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableList;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 
 /**
  * Implementation class for the {@link StoryBlockAPI}.
@@ -46,49 +49,62 @@ import java.util.Set;
 public class StoryBlockAPIImpl implements StoryBlockAPI {
 
     private static final String DEFAULT_MAX_RECURSION_LEVEL = "2";
+    /**
+     * This request attribute keeps track of the current level of related content that is being
+     * processed. This is the main flag that keeps contents from loading infinite levels of
+     * associated contentlets.
+     */
     private static final String CURRENT_DEPTH_ATTR = "CURRENT_DEPTH";
     private static final Lazy<String> MAX_RELATIONSHIP_DEPTH = Lazy.of(() -> Config.getStringProperty(
             "STORY_BLOCK_MAX_RELATIONSHIP_DEPTH", DEFAULT_MAX_RECURSION_LEVEL));
 
     /**
-     * This method hydrates StoryBlocks within a specified {@code contentlet}, adhering to the following rules:
+     * This method hydrates all the Story Block -- a.k.a. Block Editor -- fields within the
+     * specified contentlet, adhering to the following rules:
      *
-     * Relationship Loading:
+     * <h5>Relationship Loading:</h5>
+     * Relationships within the {@code contentlet} are loaded based on the DEPTH parameter specified
+     * in the request, just like it works in the Content REST Endpoint. If no depth is set, the
+     * default value is null.
      *
-     * Any relationships within the {@code contentlet} are loaded based on the DEPTH specified in the request.
-     * If no depth is set, the default value is null.
+     * <h5>Story Block Hydration:</h5>
+     * All first-level {@link Contentlet}s with Story Block fields within the specified
+     * {@code contentlet} are fully hydrated. However, nested Story Blocks within those Story Blocks
+     * are not hydrated, only their IDs are loaded.
      *
-     * Story Block Hydration:
+     * <h5>Depth Reduction for Relationships:</h5>
+     * For relationships in Story Blocks at any level, the depth is reduced by 1 at each nested
+     * level. For example, if the depth at the current level is 2, it becomes 0 for the nested
+     * level. Similarly, a depth of 3 at the current level becomes 1 at the next level. This
+     * calculation is based on what the Content REST Endpoint does when handling relationships. For
+     * more details on how this specific logic currently works, please refer to
+     * {@link com.dotcms.rest.ContentResource#addRelatedContentToJsonArray(HttpServletRequest,
+     * HttpServletResponse, String, User, int, boolean, Contentlet, Set, long, boolean, Field,
+     * boolean, boolean, boolean)}
      *
-     * Story Block {@link Contentlet}s within the {@code contentlet} are fully hydrated.
-     * However, nested Story Blocks within those Story Blocks are not hydrated—only their IDs are loaded.
-     *
-     * Depth Reduction for Relationships:
-     * For relationships in Story Blocks at any level, the depth is reduced by 1 at each nested level:
-     *
-     * For example, if the depth at the current level is 2, it becomes 0 for the nested level.
-     * Similarly, a depth of 3 at the current level becomes 1 at the next level.
-     *
-     * Example Scenario
-     * Consider the following setup:
-     *
-     * A ContentType has: A relationship field that relates it to itself and a Story Block field.
-     * You have several contentlets:
-     *
-     * A: Related to B, with C in the Story Block field.
-     * B: Related to D, with E in the Story Block field.
-     * C: Related to F.
-     *
-     * If you call this method with contentlet A and set a depth of 3 in the current request:
-     *
-     * B: Loaded as a related contentlet of A with a depth of 3.
-     * C: Loaded as a Story Block contentlet of A with a depth of 1. This means F (related to C) will not be loaded.
-     * D: Loaded as a related contentlet of B with a depth of 1. This means any further content related to D will not be loaded.
-     * E: Not hydrated; only its ID will be loaded.
+     * <h5>Example Scenario:</h5>
+     * Consider the following setup: A Content Type has a Relationship field that relates to itself
+     * and to another Contentlet with a Story Block field. You have 6 contentlets: A, B, C, D, E,
+     * and F, related like this:
+     * <ul>
+     *     <li>Content A: Related to Content B, with Content C added to the Block Editor field.</li>
+     *     <li>Content B: Related to Content D, with Content E added to the Block Editor field.</li>
+     *     <li>Content C: Related to Content F.</li>
+     * </ul>
+     * If you call this method with Content A, and set a depth of 3 in the current request:
+     * <ul>
+     *     <li>Content B: Will be loaded as a related contentlet of A with a depth of 3.</li>
+     *     <li>Content C: Will be loaded as a Story Block contentlet of A with a depth of 1. This
+     *     means F (related to C) will not be loaded.</li>
+     *     <li>Content D: Will be loaded as a related contentlet of B with a depth of 1. This
+     *     means that any further content related to D will not be loaded.</li>
+     *     <li>Content E: Will not be hydrated; only its ID will be returned.</li>
+     * </ul>
      *
      * @param contentlet The Contentlet containing the Story Block field(s).
      *
-     * @return
+     * @return The {@link StoryBlockReferenceResult} object containing the refreshed
+     * {@link Contentlet} with the appropriate hydrated data.
      */
     @Override
     @CloseDBIfOpened
@@ -99,17 +115,16 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 contentlet.getContentType().hasStoryBlockFields()) {
 
             final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-            final boolean setBefore = null == request || request.getAttribute(CURRENT_DEPTH_ATTR) != null;
-            final int initialDepthValue = null != request && null != request.getAttribute(CURRENT_DEPTH_ATTR)
-                    ? (Integer) request.getAttribute(CURRENT_DEPTH_ATTR)
-                    : Integer.parseInt(MAX_RELATIONSHIP_DEPTH.get());
+            final int initialDepthValue = this.getCurrentDepthValue(request);
+            // The current depth level must ALWAYS be handled and set at the very beginning, even
+            // when the current HTTP Request object is null; i.e., hasn't been set yet
+            final boolean setCurrentDepthValue = null == request || request.getAttribute(CURRENT_DEPTH_ATTR) != null;
 
-            if (setBefore) {
+            if (setCurrentDepthValue) {
                 final Integer currentDepth = this.decreaseDepthValue(initialDepthValue);
                 if (null != request) {
                     request.setAttribute(CURRENT_DEPTH_ATTR, currentDepth);
                 }
-
                 return new StoryBlockReferenceResult(false, contentlet);
             }
 
@@ -130,6 +145,25 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                     });
         }
         return new StoryBlockReferenceResult(refreshed.booleanValue(), contentlet);
+    }
+
+    /**
+     * Returns the current level of related content being handled by the API. At the very beginning,
+     * the initial depth value is determined by the {@link #MAX_RELATIONSHIP_DEPTH} variable. After
+     * that, it represents the depth level of potential Block Editor fields that might have been
+     * added to a parent Block Editor.
+     * <p>The value of the {@link #DEFAULT_MAX_RECURSION_LEVEL} will determine the maximum number
+     * of levels of related/associated content that will be processed. DO NOT increase this value
+     * without taking into consideration the potential consequences in terms of performance.</p>
+     *
+     * @param request The current instance of the {@link HttpServletRequest} object.
+     *
+     * @return The current depth level.
+     */
+    private int getCurrentDepthValue(final HttpServletRequest request) {
+        return null != request && null != request.getAttribute(CURRENT_DEPTH_ATTR)
+                ? (Integer) request.getAttribute(CURRENT_DEPTH_ATTR)
+                : Integer.parseInt(MAX_RELATIONSHIP_DEPTH.get());
     }
 
     @CloseDBIfOpened
@@ -242,6 +276,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         return contentletIdList.build();
     }
 
+    @SuppressWarnings("unchecked")
     @CloseDBIfOpened
     @Override
     public List<String> getDependencies(final Object storyBlockValue) {
@@ -390,13 +425,21 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         try {
 
             final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-            final boolean notSetBefore = request.getAttribute(CURRENT_DEPTH_ATTR) == null;
-            final Integer currentDepth = notSetBefore ? this.getInitialDepthValue() :
+            // If 'true', it means that the parent Block Editor is being processed, and not its
+            // potential child contents
+            final boolean isCurrentDepthEmpty = request.getAttribute(CURRENT_DEPTH_ATTR) == null;
+            // If the current depth parameter is set, then it must be decreased in order to
+            // account for the number of levels that will be processed for related contents,
+            // including both associated Block Editor fields and Relationship fields
+            final Integer currentDepth = isCurrentDepthEmpty ? this.getInitialDepthValue() :
                     this.decreaseDepthValue((Integer) request.getAttribute(CURRENT_DEPTH_ATTR));
 
             request.setAttribute(CURRENT_DEPTH_ATTR, currentDepth);
 
-            final Contentlet fattyContentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false, true);
+            // In this API, Block Editor fields must NEVER be automatically hydrated in order to
+            // prevent infinite loops. Their specific hydration will be handled manually in
+            // subsequent methods in this class
+            final Contentlet fattyContentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES, true);
 
             if (null != fattyContentlet) {
                 this.addContentletRelationships(fattyContentlet, currentDepth);
@@ -405,7 +448,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 dataMap.putAll(updatedDataMap);
             }
 
-            if (notSetBefore) {
+            if (isCurrentDepthEmpty) {
                 request.removeAttribute(CURRENT_DEPTH_ATTR);
             }
         } catch (final JsonProcessingException e) {
@@ -430,14 +473,19 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     }
 
     /**
-     * Decrease the DEPTH value:
-     * If the current value is 2, reduce it to 0.
-     * If the current value is 3, reduce it to 1.
+     * Decreases the DEPTH value base on the following rule:
+     * <ul>
+     *     <li>If the current value is 2, reduce it to 0.</li>
+     *     <li>If the current value is 3, reduce it to 1.</li>
+     * </ul>
+     * This calculation is extremely important as it's part of the approach that keeps the Block
+     * Editor and/or Relationship fields from loading infinite levels of nested Contentlets.
      *
-     * @param depthValue current depth value
-     * @return
+     * @param depthValue The current depth value
+     *
+     * @return The new depth value.
      */
-    private int decreaseDepthValue(int depthValue) {
+    private int decreaseDepthValue(final int depthValue) {
         if (depthValue == 2) {
             return 0;
         }
@@ -449,6 +497,14 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         return depthValue;
     }
 
+    /**
+     * Checks the current {@link HttpServletRequest} object for the existence of the initial depth
+     * value specified via the {@link WebKeys#HTMLPAGE_DEPTH} attribute. If it's not found, then the
+     * default {@link #MAX_RELATIONSHIP_DEPTH} value is used. A value lower than 0 o greater than 3
+     * is NOT valid, so it will fall back to 0.
+     *
+     * @return The initial depth value.
+     */
     private int getInitialDepthValue() {
         final HttpServletRequest httpRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         String value;
