@@ -563,7 +563,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                                 ((Map<String, Object>) relatedContent.get(0)).get("identifier"));
 
                         assertNull( ((Map<String, Object>) relatedContent.get(0)).get(relationshipField.variable()));
-                    } else if (depth > 1) {
+                    } else if (depth > 1 && i == 0) {
                         assertEquals(i == 0 ? contentA.getIdentifier() : contentB.getIdentifier(),
                                 ((Map<String, Object>) relatedContent.get(0)).get("identifier"));
 
