@@ -73,7 +73,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * Consider the following setup:
      *
      * A ContentType has: A relationship field that relates it to itself and a Story Block field.
-     * You have three contentlets:
+     * You have several contentlets:
      *
      * A: Related to B, with C in the Story Block field.
      * B: Related to D, with E in the Story Block field.
