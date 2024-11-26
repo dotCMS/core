@@ -145,7 +145,6 @@ describe('Analytics Utils', () => {
             expect(result).toEqual(
                 expect.objectContaining({
                     event_type: 'page_view',
-                    url: 'https://example.com/page?param=1',
                     page_title: 'Test Page',
                     doc_path: '/page',
                     doc_host: 'example.com',

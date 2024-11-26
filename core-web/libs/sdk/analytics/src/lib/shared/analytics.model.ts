@@ -34,7 +34,6 @@ export interface PageViewEvent {
     utc_time: string;
     local_tz_offset: number;
     referer: string;
-    url: string;
     page_title: string;
     doc_path: string;
     doc_host: string;

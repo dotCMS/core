@@ -58,7 +58,6 @@ export const createAnalyticsPageViewData = (
         utc_time: new Date().toISOString(),
         local_tz_offset: new Date().getTimezoneOffset(),
         referer: document.referrer,
-        url: location.href,
         page_title: document.title,
         doc_path: location.pathname,
         doc_host: location.hostname,
