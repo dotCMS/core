@@ -50,6 +50,46 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     private static final Lazy<String> MAX_RELATIONSHIP_DEPTH = Lazy.of(() -> Config.getStringProperty(
             "STORY_BLOCK_MAX_RELATIONSHIP_DEPTH", DEFAULT_MAX_RECURSION_LEVEL));
 
+    /**
+     * This method hydrates StoryBlocks within a specified {@code contentlet}, adhering to the following rules:
+     *
+     * Relationship Loading:
+     *
+     * Any relationships within the {@code contentlet} are loaded based on the DEPTH specified in the request.
+     * If no depth is set, the default value is null.
+     *
+     * Story Block Hydration:
+     *
+     * Story Block {@link Contentlet}s within the {@code contentlet} are fully hydrated.
+     * However, nested Story Blocks within those Story Blocks are not hydrated—only their IDs are loaded.
+     *
+     * Depth Reduction for Relationships:
+     * For relationships in Story Blocks at any level, the depth is reduced by 1 at each nested level:
+     *
+     * For example, if the depth at the current level is 2, it becomes 0 for the nested level.
+     * Similarly, a depth of 3 at the current level becomes 1 at the next level.
+     *
+     * Example Scenario
+     * Consider the following setup:
+     *
+     * A ContentType has: A relationship field that relates it to itself and a Story Block field.
+     * You have three contentlets:
+     *
+     * A: Related to B, with C in the Story Block field.
+     * B: Related to D, with E in the Story Block field.
+     * C: Related to F.
+     *
+     * If you call this method with contentlet A and set a depth of 3 in the current request:
+     *
+     * B: Loaded as a related contentlet of A with a depth of 3.
+     * C: Loaded as a Story Block contentlet of A with a depth of 1. This means F (related to C) will not be loaded.
+     * D: Loaded as a related contentlet of B with a depth of 1. This means any further content related to D will not be loaded.
+     * E: Not hydrated; only its ID will be loaded.
+     *
+     * @param contentlet The Contentlet containing the Story Block field(s).
+     *
+     * @return
+     */
     @Override
     @CloseDBIfOpened
     public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {

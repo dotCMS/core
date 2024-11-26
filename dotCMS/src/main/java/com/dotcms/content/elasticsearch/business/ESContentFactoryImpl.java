@@ -838,6 +838,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 
+    /**
+     * Find in DB a {@link Contentlet}
+     *
+     * @param inode {@link Contentlet}'s inode
+     * @param ignoreStoryBlock if it is true then the StoryBlock are not hydrated
+     * @return
+     */
     public Optional<Contentlet> findInDb(final String inode, final boolean ignoreStoryBlock) {
         try {
             if (inode != null) {
@@ -867,6 +874,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return find(inode, false);
     }
 
+    /**
+     * Find a {@link Contentlet}, first look for the  {@link Contentlet} is cache is it is not there then
+     * hit the Database
+     *
+     * @param inode {@link Contentlet}'s inode
+     * @param ignoreStoryBlock if it is true, then if the {@link Contentlet} is loaded from cache then the StoryBlock are not refresh
+     *                         if the {@link Contentlet} is loaded from Database then the SToryBlocks are not hydrated
+     * @return
+     * @throws ElasticsearchException
+     * @throws DotStateException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     protected Contentlet find(final String inode, final boolean ignoreStoryBlock) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
         Contentlet contentlet = contentletCache.get(inode);
         if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {

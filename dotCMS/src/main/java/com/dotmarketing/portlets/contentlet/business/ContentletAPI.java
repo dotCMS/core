@@ -100,6 +100,18 @@ public interface ContentletAPI {
 	 */
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Finds a {@link Contentlet} Object given the inode
+	 *
+	 * @param inode {@link Contentlet}'s inode
+	 * @param user to check permission
+	 * @param respectFrontendRoles if it is true then Frontend permission are checked
+	 * @param ignoreBlockEditor if it is true then the StoryBlock must not be hydrated
+	 *
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles, boolean ignoreBlockEditor) throws DotDataException, DotSecurityException;
 
 	/**
