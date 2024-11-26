@@ -61,8 +61,6 @@ The following features are planned for future releases:
 
     - React integration for event tracking
     - Next.js integration for event tracking
-
-3. **Angular Support**
     - Angular integration for event tracking
 
 ## Contributing

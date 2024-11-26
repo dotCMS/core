@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from '@jest/globals';
 import { ANALYTICS_SOURCE_TYPE } from './analytics.constants';
 import {
     createAnalyticsPageViewData,
+    extractUTMParameters,
     getAnalyticsScriptTag,
     getDataAnalyticsAttributes
 } from './analytics.utils';
@@ -39,7 +40,7 @@ describe('Analytics Utils', () => {
         });
 
         it('should throw error when analytics script tag is not found', () => {
-            expect(() => getAnalyticsScriptTag()).toThrow('Analytics script not found');
+            expect(() => getAnalyticsScriptTag()).toThrow('Dot Analytics: Script not found');
         });
     });
 
@@ -173,6 +174,61 @@ describe('Analytics Utils', () => {
                 medium: 'email',
                 campaign: 'welcome',
                 id: '123'
+            });
+        });
+    });
+
+    describe('extractUTMParameters', () => {
+        const mockLocation = (search: string): Location => ({
+            ...window.location,
+            search
+        });
+
+        it('should return an empty object when no UTM parameters are present', () => {
+            const location = mockLocation('');
+            const result = extractUTMParameters(location);
+            expect(result).toEqual({});
+        });
+
+        it('should extract UTM parameters correctly', () => {
+            const location = mockLocation(
+                '?utm_source=google&utm_medium=cpc&utm_campaign=spring_sale'
+            );
+            const result = extractUTMParameters(location);
+            expect(result).toEqual({
+                source: 'google',
+                medium: 'cpc',
+                campaign: 'spring_sale'
+            });
+        });
+
+        it('should ignore non-UTM parameters', () => {
+            const location = mockLocation('?utm_source=google&non_utm_param=value');
+            const result = extractUTMParameters(location);
+            expect(result).toEqual({
+                source: 'google'
+            });
+        });
+
+        it('should handle missing UTM parameters gracefully', () => {
+            const location = mockLocation('?utm_source=google&utm_campaign=spring_sale');
+            const result = extractUTMParameters(location);
+            expect(result).toEqual({
+                source: 'google',
+                campaign: 'spring_sale'
+            });
+        });
+
+        it('should handle all expected UTM parameters', () => {
+            const location = mockLocation(
+                '?utm_source=google&utm_medium=cpc&utm_campaign=spring_sale&utm_id=12345'
+            );
+            const result = extractUTMParameters(location);
+            expect(result).toEqual({
+                source: 'google',
+                medium: 'cpc',
+                campaign: 'spring_sale',
+                id: '12345'
             });
         });
     });

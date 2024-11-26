@@ -1,3 +1,5 @@
+import { EXPECTED_UTM_KEYS } from './analytics.constants';
+
 export interface DotAnalyticsConfig {
     // Analytics server
     server: string;
@@ -10,9 +12,25 @@ export interface DotAnalyticsConfig {
 }
 
 /**
+ * The type of event.
+ */
+export enum EventType {
+    Track = 'track'
+}
+
+// UTM parameters generated from the expected UTM keys
+type UTMParams = {
+    [key in (typeof EXPECTED_UTM_KEYS)[number] as key extends `utm_${infer U}`
+        ? U
+        : never]?: string;
+};
+
+/**
  * The data for a page view event.
  */
 export interface PageViewEvent {
+    type: EventType;
+    key: string;
     utc_time: string;
     local_tz_offset: number;
     referer: string;
@@ -28,12 +46,8 @@ export interface PageViewEvent {
     doc_encoding: string;
     doc_protocol: string;
     doc_hash: string;
-    utm: {
-        source?: string;
-        medium?: string;
-        campaign?: string;
-        id?: string;
-    };
+    utm: UTMParams;
     src: string;
     event_type: string;
+    timestamp?: string;
 }

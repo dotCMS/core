@@ -1,6 +1,6 @@
 import { ANALYTICS_PAGEVIEW_EVENT } from '../shared/analytics.constants';
 import { sendAnalyticsEventToServer } from '../shared/analytics.http';
-import { DotAnalyticsConfig } from '../shared/analytics.model';
+import { DotAnalyticsConfig, EventType, PageViewEvent } from '../shared/analytics.model';
 import { createAnalyticsPageViewData } from '../shared/analytics.utils';
 
 /**
@@ -28,10 +28,10 @@ export const dotAnalyticsPlugin = (config: DotAnalyticsConfig) => {
             isInitialized = true;
 
             if (config.autoPageView) {
-                const body = {
-                    type: 'track',
-                    key: config.key,
-                    ...createAnalyticsPageViewData(ANALYTICS_PAGEVIEW_EVENT, window.location)
+                const body: PageViewEvent = {
+                    ...createAnalyticsPageViewData(ANALYTICS_PAGEVIEW_EVENT, window.location),
+                    type: EventType.Track,
+                    key: config.key
                 };
 
                 return sendAnalyticsEventToServer(body, config);

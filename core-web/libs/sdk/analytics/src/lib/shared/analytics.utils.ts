@@ -1,4 +1,4 @@
-import { ANALYTICS_SOURCE_TYPE } from './analytics.constants';
+import { ANALYTICS_SOURCE_TYPE, EXPECTED_UTM_KEYS } from './analytics.constants';
 import { DotAnalyticsConfig, PageViewEvent } from './analytics.model';
 
 /**
@@ -28,7 +28,7 @@ export const getAnalyticsScriptTag = (): HTMLScriptElement => {
     const scripts = document.querySelector('script[data-analytics-server]');
 
     if (!scripts) {
-        throw new Error('Analytics script not found');
+        throw new Error('Dot Analytics: Script not found');
     }
 
     return scripts as HTMLScriptElement;
@@ -41,14 +41,11 @@ export const getAnalyticsScriptTag = (): HTMLScriptElement => {
  * @param {Location} location - The location object.
  * @returns {PageViewEvent} - The data for the page view event.
  */
-export function createAnalyticsPageViewData(event_type: string, location: Location): PageViewEvent {
-    const urlParams = new URLSearchParams(location.search);
-    const utmParams = {
-        source: urlParams.get('utm_source') || undefined,
-        medium: urlParams.get('utm_medium') || undefined,
-        campaign: urlParams.get('utm_campaign') || undefined,
-        id: urlParams.get('utm_id') || undefined
-    };
+export const createAnalyticsPageViewData = (
+    event_type: string,
+    location: Location
+): Omit<PageViewEvent, 'type' | 'key'> => {
+    const utmParams = extractUTMParameters(location);
 
     const vpWidth = window.innerWidth;
     const vpHeight = window.innerHeight;
@@ -76,4 +73,24 @@ export function createAnalyticsPageViewData(event_type: string, location: Locati
         utm: utmParams,
         src: ANALYTICS_SOURCE_TYPE
     };
-}
+};
+
+/**
+ * Extracts UTM parameters from a given URL location.
+ *
+ * @param {Location} location - The location object containing the URL.
+ * @returns {Record<string, string>} - An object containing the extracted UTM parameters.
+ */
+export const extractUTMParameters = (location: Location): Record<string, string> => {
+    const urlParams = new URLSearchParams(location.search);
+    return EXPECTED_UTM_KEYS.reduce(
+        (acc, key) => {
+            const value = urlParams.get(key);
+            if (value !== null) {
+                acc[key.replace('utm_', '')] = value;
+            }
+            return acc;
+        },
+        {} as Record<string, string>
+    );
+};
