@@ -2334,7 +2334,7 @@ create table publishing_bundle(
   publish_date TIMESTAMP,
   expire_date TIMESTAMP,
   owner varchar(100),
-  filter_key VARCHAR(100);
+  filter_key VARCHAR(100)
 );
 
 ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);
