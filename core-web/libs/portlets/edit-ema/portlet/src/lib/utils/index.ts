@@ -590,7 +590,7 @@ export const checkClientHostAccess = (
  * @param {Params} params
  * @return {*}  {DotPageApiParams}
  */
-export function filterPageParams(params: Params): DotPageApiParams {
+export function getAllowedPageParams(params: Params): DotPageApiParams {
     const allowedParams: DotPageApiKeys[] = [
         DotPageApiKeys.URL,
         DotPageApiKeys.MODE,

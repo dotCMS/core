@@ -127,7 +127,7 @@ describe('DotEditPageResolver', () => {
         const mock = new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));
         dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
-        dotEditPageResolver.resolve(route).subscribe((state) => {
+        dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState | null) => {
             expect(state).toEqual(mock);
         });
 
@@ -153,7 +153,7 @@ describe('DotEditPageResolver', () => {
         const mock = new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));
         dotPageStateService.setInternalNavigationState(mock);
 
-        dotEditPageResolver.resolve(route).subscribe((state) => {
+        dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState | null) => {
             expect(state).toEqual(mock);
         });
 
@@ -218,7 +218,7 @@ describe('DotEditPageResolver', () => {
             );
             dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
-            dotEditPageResolver.resolve(route).subscribe((state) => {
+            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState | null) => {
                 expect(state).toEqual(mock);
             });
             expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
@@ -237,7 +237,7 @@ describe('DotEditPageResolver', () => {
             );
             dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
-            dotEditPageResolver.resolve(route).subscribe((state) => {
+            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState | null) => {
                 expect(state).toBeNull();
             });
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
@@ -264,7 +264,7 @@ describe('DotEditPageResolver', () => {
             );
             dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
-            dotEditPageResolver.resolve(route).subscribe((state) => {
+            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState | null) => {
                 expect(state).toBeNull();
             });
 
@@ -287,7 +287,7 @@ describe('DotEditPageResolver', () => {
             );
             dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
-            dotEditPageResolver.resolve(route).subscribe((state) => {
+            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState | null) => {
                 expect(state).toBeNull();
             });
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();

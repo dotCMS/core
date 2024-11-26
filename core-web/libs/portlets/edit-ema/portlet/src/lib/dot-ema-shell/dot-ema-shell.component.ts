@@ -36,7 +36,7 @@ import { WINDOW } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction, DotPage } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { checkClientHostAccess, compareUrlPaths, filterPageParams } from '../utils';
+import { checkClientHostAccess, compareUrlPaths, getAllowedPageParams } from '../utils';
 
 @Component({
     selector: 'dot-ema-shell',
@@ -282,7 +282,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const allowedDevURLs = uveConfig?.options?.allowedDevURLs;
 
         // Clone queryParams to avoid mutation errors
-        const params = filterPageParams(queryParams);
+        const params = getAllowedPageParams(queryParams);
         const validHost = checkClientHostAccess(params.clientHost, allowedDevURLs);
 
         if (!validHost) {

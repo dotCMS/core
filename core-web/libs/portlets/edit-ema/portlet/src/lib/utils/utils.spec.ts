@@ -19,7 +19,7 @@ import {
     createFullURL,
     getDragItemData,
     createReorderMenuURL,
-    filterPageParams
+    getAllowedPageParams
 } from '.';
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
@@ -730,7 +730,7 @@ describe('utils functions', () => {
         });
     });
 
-    describe('filterPageParams', () => {
+    describe('getAllowedPageParams', () => {
         it('should filter and return only allowed page params', () => {
             const expected = {
                 url: 'some-url',
@@ -748,7 +748,7 @@ describe('utils functions', () => {
                 invalidParam: 'invalid'
             };
 
-            const result = filterPageParams(params);
+            const result = getAllowedPageParams(params);
 
             expect(result).toEqual(expected);
         });
@@ -761,7 +761,7 @@ describe('utils functions', () => {
 
             const expected = {} as DotPageApiParams;
 
-            const result = filterPageParams(params);
+            const result = getAllowedPageParams(params);
 
             expect(result).toEqual(expected);
         });
@@ -771,7 +771,7 @@ describe('utils functions', () => {
 
             const expected = {} as DotPageApiParams;
 
-            const result = filterPageParams(params);
+            const result = getAllowedPageParams(params);
 
             expect(result).toEqual(expected);
         });
