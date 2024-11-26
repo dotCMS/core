@@ -57,14 +57,18 @@ public class FilesCollector implements Collector {
                 fileObject.put(ID, fileAsset.getIdentifier());
                 fileObject.put(TITLE, fileAsset.getTitle());
                 fileObject.put(URL, uri);
+                fileObject.put(CONTENT_TYPE_ID, fileAsset.getContentType().id());
+                fileObject.put(CONTENT_TYPE_NAME, fileAsset.getContentType().name());
+                fileObject.put(CONTENT_TYPE_VAR_NAME, fileAsset.getContentType().variable());
+                fileObject.put(BASE_TYPE, fileAsset.getContentType().baseType().name());
             });
         }
 
         collectorPayloadBean.put(OBJECT,  fileObject);
         collectorPayloadBean.put(URL, uri);
-        collectorPayloadBean.put(HOST, Objects.nonNull(site)?site.getHostname():host);
+        collectorPayloadBean.put(SITE_NAME, Objects.nonNull(site)?site.getHostname():host);
         collectorPayloadBean.put(LANGUAGE, language);
-        collectorPayloadBean.put(SITE, null != site?site.getIdentifier():StringPool.UNKNOWN);
+        collectorPayloadBean.put(SITE_ID, null != site?site.getIdentifier():StringPool.UNKNOWN);
         collectorPayloadBean.put(EVENT_TYPE, EventType.FILE_REQUEST.getType());
 
         return collectorPayloadBean;
