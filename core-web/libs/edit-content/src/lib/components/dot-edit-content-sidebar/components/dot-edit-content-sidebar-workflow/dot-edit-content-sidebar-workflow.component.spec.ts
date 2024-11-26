@@ -2,7 +2,7 @@ import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngne
 
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContentletService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/utils-testing';
 
 import { DotEditContentSidebarWorkflowComponent } from './dot-edit-content-sidebar-workflow.component';
@@ -16,6 +16,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
         component: DotEditContentSidebarWorkflowComponent,
         imports: [DotMessagePipe, SkeletonModule],
         providers: [
+            mockProvider(DotContentletService),
             mockProvider(DotMessageService, {
                 get: (key: string) => key
             })
@@ -50,12 +51,13 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
         });
 
         it('should render new workflow state', () => {
+            const EMPTY_TEXT = '';
             spectator.setInput('isLoading', false);
             spectator.setInput('workflow', NEW_WORKFLOW_MOCK);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('workflow-name')).textContent.trim()).toBe('Blogs');
-            expect(spectator.query(byTestId('workflow-step')).textContent.trim()).toBe('New');
+            expect(spectator.query(byTestId('workflow-step')).textContent.trim()).toBe(EMPTY_TEXT);
             expect(spectator.query(byTestId('workflow-assigned'))).toBeFalsy();
         });
     });

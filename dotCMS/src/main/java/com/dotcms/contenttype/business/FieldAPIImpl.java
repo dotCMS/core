@@ -56,7 +56,6 @@ import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.ErrorEntity;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.APILocator;
@@ -933,7 +932,7 @@ public class FieldAPIImpl implements FieldAPI {
 
   @WrapInTransaction
   @Override
-  public void delete(final FieldVariable fieldVar) throws DotDataException {
+  public void delete(final FieldVariable fieldVar) throws DotDataException, UniqueFieldValueDuplicatedException {
     fieldFactory.delete(fieldVar);
     final Field field = this.find(fieldVar.fieldId());
     final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(this.userAPI.getSystemUser());
@@ -943,24 +942,23 @@ public class FieldAPIImpl implements FieldAPI {
 		 //update Content Type mod_date to detect the changes done on the field variable
 		contentTypeAPI.updateModDate(type);
     } catch (final DotSecurityException e) {
-        final String errorMsg = String.format("Error updating Content Type mode_date containing " +
-                "Field Variable '%s': %s", fieldVar.key(), ExceptionUtil.getErrorMessage(e));
+        final String errorMsg = String.format("Error updating Content Type mode_date containing Field Variable " +
+                "'%s': %s", fieldVar.key(), ExceptionUtil.getErrorMessage(e));
         throw new DotDataException(errorMsg);
     }
     if (fieldVar.key().equals(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)) {
         final UniqueFieldValidationStrategyResolver resolver =
               CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
-        final User loggedInUser =
-                Try.of(() -> WebAPILocator.getUserWebAPI().getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
+        final User user = Try.of(() -> WebAPILocator.getUserWebAPI()
+                        .getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
                         .getOrElse(APILocator.systemUser());
         try {
-            this.sendStartRecalculationNotification(loggedInUser, field);
+            this.sendStartRecalculationNotification(user, field);
             resolver.get().recalculate(field, false);
-            this.sendEndRecalculationNotification(loggedInUser, field);
+            this.sendEndRecalculationNotification(user, field);
         } catch (final UniqueFieldValueDuplicatedException e) {
-            this.sendFailedRecalculationNotification(loggedInUser, field);
-            Logger.error(this, ExceptionUtil.getErrorMessage(e), e);
-            throw new DotDataException(e);
+            this.sendFailedRecalculationNotification(user, field);
+            throw e;
         }
 	}
   }
@@ -1113,8 +1111,7 @@ public class FieldAPIImpl implements FieldAPI {
      * @param field The unique {@link Field} that the notification is associated with.
      */
     private void sendStartRecalculationNotification(final User user, final Field field) {
-        this.sendNotification("message.contentlet.unique.start.recalculation", field, user,
-                NotificationLevel.INFO);
+        this.sendNotification("message.contentlet.unique.start.recalculation", field, user);
     }
 
     /**
@@ -1124,8 +1121,7 @@ public class FieldAPIImpl implements FieldAPI {
      * @param field The unique {@link Field} that the notification is associated with.
      */
     private void sendEndRecalculationNotification(final User user, final Field field) {
-        this.sendNotification("message.contentlet.unique.finish.recalculation", field, user,
-                NotificationLevel.INFO);
+        this.sendNotification("message.contentlet.unique.finish.recalculation", field, user);
     }
 
     /**
@@ -1135,8 +1131,7 @@ public class FieldAPIImpl implements FieldAPI {
      * @param field The unique {@link Field} that the notification is associated with.
      */
     private void sendFailedRecalculationNotification(final User user, final Field field) {
-        this.sendNotification("message.contentlet.unique.failed.recalculation", field, user,
-                NotificationLevel.ERROR);
+        this.sendNotification("message.contentlet.unique.failed.recalculation", field, user);
     }
 
     /**
@@ -1145,33 +1140,41 @@ public class FieldAPIImpl implements FieldAPI {
      * @param messageKey The message to be sent to the logged-in user.
      * @param field      The unique {@link Field} that the notification is associated with.
      * @param user       The {@link User} that will receive the notification.
-     * @param level      The Notification Level of the message: {@link NotificationLevel#INFO},
-     *                   {@link NotificationLevel#WARNING}, or {@link NotificationLevel#ERROR}.
      */
-    private void sendNotification(final String messageKey, Field field, final User user,
-                                  final NotificationLevel level) {
+    private void sendNotification(final String messageKey, Field field, final User user) {
         final SystemMessageEventUtil messageEventUtil = SystemMessageEventUtil.getInstance();
         final String notificationTitle = Try.of(() -> LanguageUtil.get(user,
                 "message.contentlet.unique.notification.title")).getOrElse(BLANK);
         String message = Try.of(() -> LanguageUtil.get(user, messageKey)).getOrElse(BLANK);
         message = message.replace("{0}", field.name());
 
-        if (NotificationLevel.ERROR.equals(level)) {
-            messageEventUtil.pushSimpleErrorEvent(new ErrorEntity(BLANK, message));
-        } else {
-            messageEventUtil.pushSimpleTextEvent(message, user.getUserId());
-        }
+        sendLegacyNotification(user, messageEventUtil, message);
+        sendToast(user, notificationTitle, message);
+    }
+
+    private static void sendToast(final User user, final String notificationTitle,
+                                  final String message) {
         try {
             APILocator.getNotificationAPI().generateNotification(
                     new I18NMessage(notificationTitle),
                     new I18NMessage(message),
                     null,
-                    level,
+                    NotificationLevel.INFO,
                     NotificationType.GENERIC,
                     user.getUserId(),
                     user.getLocale()
             );
         } catch (final DotDataException e) {
+            // Notification could not be sent. Just move on
+        }
+    }
+
+    private static void sendLegacyNotification(final User user,
+                                        final SystemMessageEventUtil messageEventUtil,
+                                        final String message) {
+        try {
+            messageEventUtil.pushSimpleTextEvent(message, user.getUserId());
+        } catch (final Exception e) {
             // Notification could not be sent. Just move on
         }
     }

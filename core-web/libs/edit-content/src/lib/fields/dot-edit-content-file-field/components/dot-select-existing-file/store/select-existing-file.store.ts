@@ -1,5 +1,12 @@
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withMethods,
+    withState,
+    withHooks
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
@@ -37,10 +44,10 @@ export interface SelectExisingFileState {
         status: ComponentStatus;
         error: string | null;
     };
-    currentSite: TreeNodeItem | null;
     selectedContent: DotCMSContentlet | null;
     searchQuery: string;
     viewMode: 'list' | 'grid';
+    mimeTypes: string[];
 }
 
 const initialState: SelectExisingFileState = {
@@ -54,10 +61,10 @@ const initialState: SelectExisingFileState = {
         status: ComponentStatus.INIT,
         error: null
     },
-    currentSite: null,
     selectedContent: null,
     searchQuery: '',
-    viewMode: 'list'
+    viewMode: 'list',
+    mimeTypes: []
 };
 
 export const SelectExisingFileStore = signalStore(
@@ -70,6 +77,11 @@ export const SelectExisingFileStore = signalStore(
         const dotEditContentService = inject(DotEditContentService);
 
         return {
+            setMimeTypes: (mimeTypes: string[]) => {
+                patchState(store, {
+                    mimeTypes
+                });
+            },
             setSelectedContent: (selectedContent: DotCMSContentlet) => {
                 patchState(store, {
                     selectedContent
@@ -99,27 +111,32 @@ export const SelectExisingFileStore = signalStore(
                         return hasIdentifier;
                     }),
                     switchMap((identifier) => {
-                        return dotEditContentService.getContentByFolder(identifier).pipe(
-                            tapResponse({
-                                next: (data) => {
-                                    patchState(store, {
-                                        content: {
-                                            data,
-                                            status: ComponentStatus.LOADED,
-                                            error: null
-                                        }
-                                    });
-                                },
-                                error: () =>
-                                    patchState(store, {
-                                        content: {
-                                            data: [],
-                                            status: ComponentStatus.ERROR,
-                                            error: 'dot.file.field.dialog.select.existing.file.table.error.content'
-                                        }
-                                    })
+                        return dotEditContentService
+                            .getContentByFolder({
+                                folderId: identifier,
+                                mimeTypes: store.mimeTypes()
                             })
-                        );
+                            .pipe(
+                                tapResponse({
+                                    next: (data) => {
+                                        patchState(store, {
+                                            content: {
+                                                data,
+                                                status: ComponentStatus.LOADED,
+                                                error: null
+                                            }
+                                        });
+                                    },
+                                    error: () =>
+                                        patchState(store, {
+                                            content: {
+                                                data: [],
+                                                status: ComponentStatus.ERROR,
+                                                error: 'dot.file.field.dialog.select.existing.file.table.error.content'
+                                            }
+                                        })
+                                })
+                            );
                     })
                 )
             ),
@@ -186,5 +203,11 @@ export const SelectExisingFileStore = signalStore(
                 )
             )
         };
-    })
+    }),
+    withHooks((store) => ({
+        onInit: () => {
+            store.loadFolders();
+            store.loadContent();
+        }
+    }))
 );

@@ -414,7 +414,7 @@ import org.junit.runners.Suite.SuiteClasses;
         FilesCollectorTest.class,
         SyncVanitiesCollectorTest.class,
         AsyncVanitiesCollectorTest.class,
-        HttpServletRequestImpersonatorTest.class
+        HttpServletRequestImpersonatorTest.class,
 })
 
 public class MainSuite2b {
