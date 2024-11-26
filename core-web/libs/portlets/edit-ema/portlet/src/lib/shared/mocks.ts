@@ -505,12 +505,13 @@ export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
     })
 };
 
-export const getVanityUrl = (url, mock) => ({
-    vanityUrl: {
-        ...mock,
-        url
-    }
-});
+export const getVanityUrl = (url, mock) =>
+    ({
+        vanityUrl: {
+            ...mock,
+            url
+        }
+    }) as unknown as DotPageApiResponse;
 
 export const FORWARD_VANITY_URL = {
     pattern: '',

@@ -105,7 +105,7 @@ export function withEditor() {
                     const canEditPage = store.canEditPage();
                     const isEnterprise = store.isEnterprise();
                     const state = store.state();
-                    const params = store.params();
+                    const params = store.pageParams();
                     const isTraditionalPage = store.isTraditionalPage();
                     const isClientReady = store.isClientReady();
                     const contentletArea = store.contentletArea();

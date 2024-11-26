@@ -21,7 +21,7 @@ const initialState: UVEState = {
     currentUser: null,
     experiment: null,
     errorCode: null,
-    params: emptyParams,
+    pageParams: emptyParams,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
     canEditPage: false,
