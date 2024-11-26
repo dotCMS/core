@@ -55,7 +55,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.control.Option;
 import io.vavr.control.Try;
 import java.io.Serializable;
 import java.io.StringWriter;
