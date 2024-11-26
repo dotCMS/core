@@ -18,6 +18,7 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { MessagesModule } from 'primeng/messages';
 
 import {
+    DotContentletService,
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotWorkflowActionsFireService,
@@ -60,7 +61,8 @@ describe('EditContentLayoutComponent', () => {
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(DotEditContentService),
             mockProvider(DotContentTypeService),
-            mockProvider(DotWorkflowService)
+            mockProvider(DotWorkflowService),
+            mockProvider(DotContentletService)
         ],
         providers: [
             mockProvider(DotHttpErrorManagerService),
