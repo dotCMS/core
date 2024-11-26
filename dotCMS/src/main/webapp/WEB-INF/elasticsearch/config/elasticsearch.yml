@@ -99,8 +99,8 @@ http.port: ${ES_HTTP_PORT:9200}
 http.host: ${ES_HTTP_HOST:localhost}
 http.enabled: ${ES_HTTP_ENABLE:false}
 http.cors.enabled: false
-node.master: ${ES_NODE_MASTER:true}
-node.data: ${ES_NODE_DATA:true}
+node.master: ${ES_NODE_MASTER:false}
+node.data: ${ES_NODE_DATA:false}
 network.host: ${ES_NODE_BOUND_ADDRESS:0.0.0.0}
 #network.publish_host: ${ES_NETWORK_PUBLISH_HOST:}'
 
