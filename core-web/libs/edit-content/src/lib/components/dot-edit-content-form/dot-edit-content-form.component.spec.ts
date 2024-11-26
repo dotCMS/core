@@ -15,6 +15,7 @@ import { MessageService } from 'primeng/api';
 import { TabPanel, TabView } from 'primeng/tabview';
 
 import {
+    DotContentletService,
     DotContentTypeService,
     DotFormatDateService,
     DotHttpErrorManagerService,
@@ -69,6 +70,7 @@ describe('DotFormComponent', () => {
             mockProvider(Router),
             mockProvider(DotWorkflowService),
             mockProvider(MessageService),
+            mockProvider(DotContentletService),
             {
                 provide: ActivatedRoute,
                 useValue: {

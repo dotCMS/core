@@ -4,6 +4,7 @@ import { inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { withLocales } from '@dotcms/edit-content/feature/edit-content/store/features/locales.feature';
 
 import { withContent } from './features/content.feature';
 import { withInformation } from './features/information.feature';
@@ -31,6 +32,7 @@ export const DotEditContentStore = signalStore(
     withSidebar(),
     withInformation(),
     withWorkflow(),
+    withLocales(),
     withHooks({
         onInit(store) {
             const activatedRoute = inject(ActivatedRoute);
