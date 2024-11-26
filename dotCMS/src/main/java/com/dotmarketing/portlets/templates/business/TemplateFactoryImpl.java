@@ -5,7 +5,11 @@ import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode.Type;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -14,16 +18,34 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.templates.design.bean.*;
+import com.dotmarketing.portlets.templates.design.bean.Body;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.Sidebar;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.io.LineReader;
 import com.liferay.portal.model.User;
 import org.apache.commons.beanutils.BeanUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -174,7 +196,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 		List<Object> paramValues =null;
 		if(params!=null && params.size()>0){
-			conditionBuffer.append(" and ( false ");
+			conditionBuffer.append(" and (" + DbConnectionFactory.getDBFalse() + " ");
 			paramValues = new ArrayList<>();
 			for (Map.Entry<String, Object> entry : params.entrySet()) {
 				if(entry.getValue() instanceof String){
