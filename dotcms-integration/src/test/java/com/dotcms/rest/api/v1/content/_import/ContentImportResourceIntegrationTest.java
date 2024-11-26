@@ -18,6 +18,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Constants;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
@@ -51,7 +52,8 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     private static Language defaultLanguage;
 
     private final static String IMPORT_QUEUE_NAME = "importContentlets";
-    private static final String CMD_PUBLISH = com.dotmarketing.util.Constants.PUBLISH;
+    private static final String CMD_PUBLISH = Constants.PUBLISH;
+    private static final String CMD_PREVIEW = Constants.PREVIEW;
 
     private static File csvFile;
     private static ContentType contentType;
@@ -107,6 +109,24 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
         Response importContentResponse = importResource.importContent(request, response, params);
         validateSuccessfulResponse(importContentResponse, contentType.name(), String.valueOf(defaultLanguage.getId()), List.of("title"), "workflow-action-id", CMD_PUBLISH);
+    }
+
+
+    /**
+     * Scenario: Validate content Import with all parameters being passed (csv file, content type, language, workflow action, and fields).
+     * <p>
+     * Expected: A new validate content import job should be created successfully with all parameters properly set.
+     *
+     * @throws IOException if there's an error with file operations
+     * @throws DotDataException if there's an error with dotCMS data operations
+     */
+    @Test
+    public void test_import_content_validate_with_valid_params() throws IOException, DotDataException {
+        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), "workflow-action-id", List.of("title"));
+        ContentImportParams params = createContentImportParams(csvFile, form);
+
+        Response importContentResponse = importResource.validateContentImport(request, response, params);
+        validateSuccessfulResponse(importContentResponse, contentType.name(), String.valueOf(defaultLanguage.getId()), List.of("title"), "workflow-action-id", CMD_PREVIEW);
     }
 
     /**
@@ -289,7 +309,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
         // Validate job configuration and metadata
         assertEquals(IMPORT_QUEUE_NAME, job.queueName(), "Job should be in the correct queue");
-        assertEquals(expectedCommand, job.parameters().get("cmd").toString(), "Job command should be 'publish'");
+        assertEquals(expectedCommand, job.parameters().get("cmd").toString(), "Job command should be correct");
         assertEquals(defaultSite.getIdentifier(), job.parameters().get("siteIdentifier"), "Job should contain correct site identifier");
         assertEquals(adminUser.getUserId(), job.parameters().get("userId"), "Job should contain correct user ID");
 
