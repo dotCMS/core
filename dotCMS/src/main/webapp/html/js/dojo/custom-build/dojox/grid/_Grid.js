@@ -651,14 +651,13 @@ define("dojox/grid/_Grid", [
 		},
 		
 		showMessage: function(message){
-			if (typeof messagesNode !== undefined) {
-				if (message) {
-					this.messagesNode.innerHTML = message;
-					this.messagesNode.style.display = "";
-				} else {
-					this.messagesNode.innerHTML = "";
-					this.messagesNode.style.display = "none";
-				}
+			if (!this.messagesNode) return;
+			if (message) {
+				this.messagesNode.innerHTML = message;
+				this.messagesNode.style.display = "";
+			} else {
+				this.messagesNode.innerHTML = "";
+				this.messagesNode.style.display = "none";
 			}
 		},
 
