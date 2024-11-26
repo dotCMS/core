@@ -57,12 +57,12 @@ public interface Collector {
     String DETAIL_PAGE_URL = "detail_page_url";
     String IS_EXPERIMENT_PAGE = "isexperimentpage";
     String IS_TARGET_PAGE = "istargetpage";
-
-
     String VANITY_QUERY_STRING = "vanity_query_string";
-
     String VANITY_URL_KEY = "vanity_url";
     String FORWARD_TO = "forwardTo";
+
+    String EMAIL = "email";
+    String USER_OBJECT = "user";
     /**
      * Test if the collector should run
      * @param collectorContextMap
