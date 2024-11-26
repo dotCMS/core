@@ -95,5 +95,5 @@ discovery.zen.minimum_master_nodes: ${ES_MIN_MASTER_NODES:1}
 # Require explicit names when deleting indices:
 #
 #action.destructive_requires_name: true
-node.master: ${ES_NODE_MASTER:true}
-node.data:  ${ES_NODE_DATA:true}
+node.master: ${ES_NODE_MASTER:false}
+node.data: ${ES_NODE_DATA:false}
