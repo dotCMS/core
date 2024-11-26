@@ -207,7 +207,6 @@ export const SelectExisingFileStore = signalStore(
     withHooks((store) => ({
         onInit: () => {
             store.loadFolders();
-            store.loadContent();
         }
     }))
 );
