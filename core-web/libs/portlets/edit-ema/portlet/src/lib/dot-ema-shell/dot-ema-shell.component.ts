@@ -289,7 +289,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             delete params.clientHost;
         }
 
-        if (uveConfig.url && !validHost) {
+        if (uveConfig?.url && !validHost) {
             params.clientHost = uveConfig.url;
         }
 
