@@ -40,7 +40,7 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
     private final Function<Host,String> analyticsKeyFunction;
 
     public AnalyticsWebAPIImpl() {
-        this(new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, true)),
+        this(new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, false)), // injection turn off by default
                 WebAPILocator.getHostWebAPI(), APILocator.getAppsAPI(),
                 APILocator::systemUser, currentHost->ConfigExperimentUtil.INSTANCE.getAnalyticsKey(currentHost));
     }
