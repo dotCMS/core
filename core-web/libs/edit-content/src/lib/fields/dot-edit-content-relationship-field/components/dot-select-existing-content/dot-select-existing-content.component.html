@@ -4,7 +4,6 @@
 <p-dialog
     [header]="'dot.file.field.dialog.import.from.url.header' | dm"
     [modal]="true"
-    
     [(visible)]="$visible"
     dataKey="id"
     appendTo="body">
@@ -12,7 +11,7 @@
         #datatable
         [value]="data"
         selectionMode="multiple"
-    [(selection)]="$selectedItems"
+        [(selection)]="$selectedItems"
         [loading]="store.isLoading()"
         [paginator]="false"
         [rows]="rowsPerPage"
@@ -75,7 +74,7 @@
                 <td class="max-w-12rem">
                     <p class="truncate-text">{{ item.description }}</p>
                 </td>
-                <td>{{ item.lastUpdate }}</td>
+                <td>{{ item.lastUpdate | date }}</td>
                 <td>
                     <i class="pi pi-ellipsis-v"></i>
                 </td>

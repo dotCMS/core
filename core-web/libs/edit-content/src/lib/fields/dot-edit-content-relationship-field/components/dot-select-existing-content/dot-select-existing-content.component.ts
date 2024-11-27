@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, model } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -23,7 +24,8 @@ import { Content, ExistingContentStore } from './store/existing-content.store';
         DialogModule,
         IconFieldModule,
         InputIconModule,
-        InputTextModule
+        InputTextModule,
+        DatePipe
     ],
     templateUrl: './dot-select-existing-content.component.html',
     styleUrls: ['./dot-select-existing-content.component.scss'],
