@@ -2,6 +2,13 @@ package com.dotcms.rest.api.v1.content.dotimport;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+/**
+ * Represents the schema for content import parameters used in Swagger documentation.
+ * <p>
+ * This class defines the structure and metadata for the parameters required
+ * to validate or perform content import operations.
+ * </p>
+ */
 @Schema(description = "Schema for content import parameters.")
 public class ContentImportParamsSchema {
 

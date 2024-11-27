@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.content.dotimport;
 
 import com.dotcms.jobs.business.error.JobValidationException;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -101,7 +102,9 @@ public class ContentImportResource {
                     @ApiResponse(
                             responseCode = "200",
                             description = "Content import job created successfully",
-                            content = @Content(mediaType = "application/json",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityStringView.class),
                                     examples = @ExampleObject(value = "{\n" +
                                             "  \"entity\": \"3930f815-7aa4-4649-94c2-3f37fd21136d\",\n" +
                                             "  \"errors\": [],\n" +
@@ -136,7 +139,7 @@ public class ContentImportResource {
         Logger.debug(this, ()->String.format(" user %s is importing content: %s", initDataObject.getUser().getUserId(), params));
 
         try {
-            // Create the import job
+            // Create the content import job
             final String jobId = importHelper.createJob(CMD_PUBLISH, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
             return Response.ok(new ResponseEntityView<>(jobId)).build();
         } catch (JobValidationException e) {
@@ -187,7 +190,9 @@ public class ContentImportResource {
                     @ApiResponse(
                             responseCode = "200",
                             description = "Content import job in preview mode created successfully",
-                            content = @Content(mediaType = "application/json",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityStringView.class),
                                     examples = @ExampleObject(value = "{\n" +
                                             "  \"entity\": \"3930f815-7aa4-4649-94c2-3f37fd21136d\",\n" +
                                             "  \"errors\": [],\n" +
@@ -222,7 +227,7 @@ public class ContentImportResource {
         Logger.debug(this, ()->String.format(" user %s is importing content in preview mode: %s", initDataObject.getUser().getUserId(), params));
 
         try {
-            // Create the import job
+            // Create the content import job in preview mode
             final String jobId = importHelper.createJob(CMD_PREVIEW, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
             return Response.ok(new ResponseEntityView<>(jobId)).build();
         } catch (JobValidationException e) {
