@@ -62,12 +62,3 @@ export const CATEGORY_FIELD_EMPTY_MESSAGES: Record<
  * This constant is used for navigation to the content listing page,
  */
 export const CONTENT_SEARCH_ROUTE = '/c/content';
-
-export enum WORKFLOW_CONTENT_STATE {
-    /** Content is new, no contentlet exists yet */
-    NEW = 'NEW',
-    /** Content exists but has been reset (no workflow state) */
-    RESET = 'RESET',
-    /** Content exists with normal workflow state */
-    EXISTING = 'EXISTING'
-}
