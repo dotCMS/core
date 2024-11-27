@@ -1,6 +1,5 @@
 package com.dotcms.experiments.business;
 
-import static com.dotcms.experiments.business.ExperimentsAPI.EXPERIMENT_LOOKBACK_WINDOW;
 
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
@@ -8,16 +7,14 @@ import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.RunningIds;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TrafficProportion;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBColumnToJSONConverter;
 import com.dotcms.util.transform.DBTransformer;
-import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotmarketing.business.APILocator;
 import io.vavr.control.Try;
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,9 +24,6 @@ import java.util.Optional;
  */
 public class ExperimentTransformer implements DBTransformer<Experiment> {
     final List<Experiment> list;
-
-    final static ObjectMapper mapper = DotObjectMapperProvider.getInstance()
-            .getDefaultObjectMapper();
 
 
     public ExperimentTransformer(List<Map<String, Object>> initList){
@@ -71,7 +65,10 @@ public class ExperimentTransformer implements DBTransformer<Experiment> {
                 .lastModifiedBy((String) map.get("last_modified_by"))
                 .goals(Optional.ofNullable(DBColumnToJSONConverter
                         .getObjectFromDBJson(map.get("goals"), Goals.class)))
-                .lookBackWindowExpireTime(ConversionUtils.toInt(map.get("lookback_window"), EXPERIMENT_LOOKBACK_WINDOW))
+                .lookBackWindowExpireTime(
+                        ConversionUtils.toInt(
+                                map.get("lookback_window"),
+                                APILocator.getExperimentsAPI().getExperimentsLookbackWindow()))
                 .runningIds(runningIds)
                 .build();
     }
