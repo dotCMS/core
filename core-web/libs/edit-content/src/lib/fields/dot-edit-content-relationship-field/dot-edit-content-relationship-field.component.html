@@ -1,0 +1,35 @@
+<p-table [value]="store.data()" styleClass="p-datatable-lg">
+    <ng-template pTemplate="header" styleClass="relative">
+        <p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" />
+        <p-button
+            (onClick)="menu.toggle($event)"
+            class="add-item-btn"
+            [size]="'small'"
+            icon="pi pi-plus"
+            [text]="true" />
+        <tr class="relationship-field__table_header">
+            <th>Title</th>
+            <th>Language</th>
+            <th>State</th>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+        <tr>
+            <td colspan="3">
+                <div class="flex p-2 gap-2 justify-content-center">
+                    <i class="pi pi-folder-open"></i>
+                    <p class="text-500">Relate content by clicking on the Plus Button</p>
+                </div>
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-item>
+        <tr>
+            <td>{{ item.title }}</td>
+            <td>{{ item.language }}</td>
+            <td>{{ item.state }}</td>
+        </tr>
+    </ng-template>
+</p-table>
+
+<dot-select-existing-content [(visible)]="$showExistingContentDialog" />
