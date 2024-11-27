@@ -1354,7 +1354,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
                 key: 'demo.dotcms.comlevel1',
                 label: 'demo.dotcms.com/level1/',
                 data: {
-                        id: 'demo.dotcms.comlevel1',
+                    id: 'demo.dotcms.comlevel1',
                     hostname: 'demo.dotcms.com',
                     path: '/level1/',
                     type: 'folder'
@@ -1366,7 +1366,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
                         key: 'demo.dotcms.comlevel1child1',
                         label: 'demo.dotcms.com/level1/child1/',
                         data: {
-                                id: 'demo.dotcms.comlevel1child1',
+                            id: 'demo.dotcms.comlevel1child1',
                             hostname: 'demo.dotcms.com',
                             path: '/level1/child1/',
                             type: 'folder'
