@@ -1,0 +1,43 @@
+{
+    "name": "analytics",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/sdk/analytics/src",
+    "projectType": "library",
+    "targets": {
+        "build": {
+            "executor": "@nx/rollup:rollup",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/libs/sdk/analytics",
+                "main": "libs/sdk/analytics/src/index.ts",
+                "tsConfig": "libs/sdk/analytics/tsconfig.lib.json",
+                "project": "libs/sdk/analytics/package.json",
+                "compiler": "swc",
+                "format": ["esm", "cjs"]
+            }
+        },
+        "build:standalone": {
+            "executor": "@nx/vite:build",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "../../core/dotCMS/src/main/resources/ca/html",
+                "main": "libs/sdk/analytics/src/lib/standalone.ts",
+                "tsConfig": "libs/sdk/analytics/tsconfig.lib.json",
+                "project": "libs/sdk/analytics/package.json"
+            }
+        },
+        "nx-release-publish": {
+            "options": {
+                "packageRoot": "dist/{projectRoot}"
+            }
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "libs/sdk/analytics/jest.config.ts"
+            }
+        }
+    },
+    "tags": ["type:lib", "scope:sdk", "feature:analytics"]
+}
