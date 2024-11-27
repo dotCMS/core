@@ -54,5 +54,5 @@ export const DotEditContentStore = signalStore(
             }
         }
     }),
-    withDebug()
+    withDebug() // TODO: remove this
 );
