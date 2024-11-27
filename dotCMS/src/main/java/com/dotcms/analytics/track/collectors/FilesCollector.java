@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -61,6 +62,8 @@ public class FilesCollector implements Collector {
                 fileObject.put(CONTENT_TYPE_NAME, fileAsset.getContentType().name());
                 fileObject.put(CONTENT_TYPE_VAR_NAME, fileAsset.getContentType().variable());
                 fileObject.put(BASE_TYPE, fileAsset.getContentType().baseType().name());
+                fileObject.put(LIVE,    String.valueOf(Try.of(()->fileAsset.isLive()).getOrElse(false)));
+                fileObject.put(WORKING, String.valueOf(Try.of(()->fileAsset.isWorking()).getOrElse(false)));
             });
         }
 

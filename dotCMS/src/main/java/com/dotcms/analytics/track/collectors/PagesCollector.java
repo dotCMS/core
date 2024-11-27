@@ -76,6 +76,8 @@ public class PagesCollector implements Collector {
                     pageObject.put(CONTENT_TYPE_NAME, urlMapContentType.name());
                     pageObject.put(CONTENT_TYPE_VAR_NAME, urlMapContentType.variable());
                     pageObject.put(BASE_TYPE, urlMapContentType.baseType().name());
+                    pageObject.put(LIVE,    String.valueOf(Try.of(()->urlMapContentlet.isLive()).getOrElse(false)));
+                    pageObject.put(WORKING, String.valueOf(Try.of(()->urlMapContentlet.isWorking()).getOrElse(false)));
                     collectorPayloadBean.put(EVENT_TYPE, EventType.URL_MAP.getType());
                 }
             } else {
