@@ -1,7 +1,7 @@
 package com.dotcms.config;
 
-import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.api.EmbeddingsInitializer;
+import com.dotcms.analytics.init.AnalyticsInitializer;
 import com.dotcms.api.system.event.PayloadVerifierFactoryInitializer;
 import com.dotcms.api.system.event.SystemEventProcessorFactoryInitializer;
 import com.dotcms.business.SystemTableInitializer;
@@ -131,7 +131,8 @@ public class DotInitializationService implements Serializable {
                 new ContentTypeInitializer(),
                 new DefaultVariantInitializer(),
                 new SystemTableInitializer(),
-                new EmbeddingsInitializer()
+                new EmbeddingsInitializer(),
+                new AnalyticsInitializer()
         );
     } // getInternalInitializers.
 

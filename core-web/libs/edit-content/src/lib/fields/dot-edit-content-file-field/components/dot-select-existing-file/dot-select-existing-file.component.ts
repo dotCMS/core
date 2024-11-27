@@ -76,6 +76,7 @@ export class DotSelectExistingFileComponent implements OnInit {
         const data = this.#dialogConfig?.data as DialogData;
         const inputType = data?.inputType === INPUT_TYPES.Image ? ['image'] : [];
         this.store.setMimeTypes(inputType);
+        this.store.loadContent();
     }
 
     /**

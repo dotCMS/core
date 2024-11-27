@@ -726,6 +726,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 	@Override
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		return find(inode, user, respectFrontendRoles, false);
+	}
+
+	@Override
+	public Contentlet find(String inode, User user, boolean respectFrontendRoles, boolean ignoreStoryBlock) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.find(inode, user, respectFrontendRoles);
 			if(!preResult){
@@ -734,7 +739,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 				throw new DotRuntimeException(errorMessage);
 			}
 		}
-		Contentlet c = conAPI.find(inode, user, respectFrontendRoles);
+		Contentlet c = conAPI.find(inode, user, respectFrontendRoles, ignoreStoryBlock);
 		for(ContentletAPIPostHook post : postHooks){
 			post.find(inode, user, respectFrontendRoles,c);
 		}
