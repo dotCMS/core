@@ -18,22 +18,18 @@ import static com.dotmarketing.util.DateUtil.isTimeReach;
 import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.model.BayesianInput;
 import com.dotcms.analytics.bayesian.model.BayesianResult;
-import com.dotcms.analytics.helper.AnalyticsHelper;
 
 import com.dotcms.analytics.helper.BayesianHelper;
-import com.dotcms.analytics.metrics.EventType;
-import com.dotcms.analytics.metrics.Metric;
-import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSClientFactory;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
-import com.dotcms.cube.filters.SimpleFilter;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.experiments.business.result.*;
 import com.dotcms.exception.NotAllowedException;
@@ -41,9 +37,7 @@ import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
-import com.dotcms.experiments.model.Experiment.Builder;
 import com.dotcms.experiments.model.ExperimentVariant;
-import com.dotcms.experiments.model.GoalFactory;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.RunningIds;
 import com.dotcms.experiments.model.RunningIds.RunningId;
@@ -51,7 +45,6 @@ import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
 
-import com.dotcms.metrics.timing.TimeMetric;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
@@ -70,7 +63,6 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -81,7 +73,6 @@ import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Condition;
@@ -90,28 +81,29 @@ import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import graphql.VisibleForTesting;
 import io.vavr.control.Try;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
-public class ExperimentsAPIImpl implements ExperimentsAPI {
+public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<SystemTableUpdatedKeyEvent> {
 
     private static final int VARIANTS_NUMBER_MAX = 3;
     private static final List<Status> RESULTS_QUERY_VALID_STATUSES = List.of(RUNNING, ENDED);
+    private static final Supplier<String> INVALID_LICENSE_MESSAGE_SUPPLIER = () -> "Valid License is required";
 
     final ExperimentsFactory factory;
     final ExperimentsCache experimentsCache = CacheLocator.getExperimentsCache();
@@ -121,37 +113,50 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
     final RulesAPI rulesAPI = APILocator.getRulesAPI();
     final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
-    final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
     final HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
     final BayesianAPI bayesianAPI = APILocator.getBayesianAPI();
     final CubeJSClientFactory cubeJSClientFactory = FactoryLocator.getCubeJSClientFactory();
 
-    private final LicenseValiditySupplier licenseValiditySupplierSupplier =
-            new LicenseValiditySupplier() {};
-
-    private final Supplier<String> invalidLicenseMessageSupplier =
-            ()->"Valid License is required";
-
-    private final AnalyticsHelper analyticsHelper;
+    private final AtomicInteger maxDuration = new AtomicInteger(resolveMaxDuration());
+    private final AtomicInteger defaultDuration = new AtomicInteger(resolveDefaultDuration());
+    private final AtomicInteger minDuration = new AtomicInteger(resolveMinDuration());
+    private final AtomicInteger experimentsLookbackWindow = new AtomicInteger(resolveLookbackWindow());
+    private final LicenseValiditySupplier licenseValiditySupplierSupplier = new LicenseValiditySupplier() {};
 
     @VisibleForTesting
-    public ExperimentsAPIImpl(final AnalyticsHelper analyticsHelper) {
-        this(analyticsHelper, FactoryLocator.getExperimentsFactory());
+    public ExperimentsAPIImpl() {
+        this(FactoryLocator.getExperimentsFactory());
     }
 
     @VisibleForTesting
-    public ExperimentsAPIImpl(final AnalyticsHelper analyticsHelper, final ExperimentsFactory experimentsFactory) {
-        this.analyticsHelper = analyticsHelper;
+    public ExperimentsAPIImpl(final ExperimentsFactory experimentsFactory) {
 
         APILocator.getLocalSystemEventsAPI().subscribe(ContentletDeletedEvent.class,
                 (EventSubscriber<ContentletDeletedEvent>) event ->
                         checkAndDeleteExperiment(event.getContentlet(), event.getUser()));
-
         this.factory = experimentsFactory;
+        APILocator.getLocalSystemEventsAPI().subscribe(SystemTableUpdatedKeyEvent.class, this);
     }
 
-    public ExperimentsAPIImpl() {
-        this(AnalyticsHelper.get(), FactoryLocator.getExperimentsFactory());
+    private static int resolveMaxDuration() {
+        return Config.getIntProperty(EXPERIMENTS_MAX_DURATION_KEY, 90);
+    }
+
+    private static int resolveDefaultDuration() {
+        return Config.getIntProperty(EXPERIMENTS_DEFAULT_DURATION_KEY, 14);
+    }
+
+    private static int resolveMinDuration() {
+        return Config.getIntProperty(EXPERIMENTS_MIN_DURATION_KEY, 7);
+    }
+
+    private static int resolveLookbackWindow() {
+        return Config.getIntProperty(ExperimentsAPI.EXPERIMENTS_LOOKBACK_WINDOW_KEY, 14);
+    }
+
+    @Override
+    public int getExperimentsLookbackWindow() {
+        return experimentsLookbackWindow.get();
     }
 
     @Override
@@ -159,7 +164,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     public Experiment save(final Experiment experiment, final User user) throws
             DotSecurityException, DotDataException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
-                invalidLicenseMessageSupplier);
+                INVALID_LICENSE_MESSAGE_SUPPLIER);
 
         final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(experiment);
 
@@ -177,7 +182,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         builder.modDate(Instant.now());
         builder.lastModifiedBy(user.getUserId());
-        
+
         if(experiment.goals().isPresent()) {
             final Goals goals = experiment.goals().orElseThrow();
             MetricsUtil.INSTANCE.validateGoals(goals);
@@ -221,6 +226,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 " ID '%s'", toReturn.name(), toReturn.id(), user.getUserId()));
 
         return toReturn;
+    }
+
+    @Override
+    public void notify(final SystemTableUpdatedKeyEvent event) {
+        if (event.getKey().contains(EXPERIMENTS_MAX_DURATION_KEY)) {
+            maxDuration.set(resolveMaxDuration());
+        } else if (event.getKey().contains(EXPERIMENTS_DEFAULT_DURATION_KEY)) {
+            defaultDuration.set(resolveDefaultDuration());
+        } else if (event.getKey().contains(EXPERIMENTS_MIN_DURATION_KEY)) {
+            minDuration.set(resolveMinDuration());
+        } else if (event.getKey().contains(EXPERIMENTS_LOOKBACK_WINDOW_KEY)) {
+            experimentsLookbackWindow.set(resolveLookbackWindow());
+        }
     }
 
     private void validatePermissionToEdit(Experiment experiment, User user, Contentlet pageAsContent)
@@ -318,7 +336,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     public Optional<Experiment> find(final String id, final User user)
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
-                invalidLicenseMessageSupplier);
+                INVALID_LICENSE_MESSAGE_SUPPLIER);
         DotPreconditions.checkArgument(UtilMethods.isSet(id), "Experiment Id is required");
 
         Optional<Experiment> experiment =  factory.find(id);
@@ -362,7 +380,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     public Experiment archive(final String id, final User user)
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
-                invalidLicenseMessageSupplier);
+                INVALID_LICENSE_MESSAGE_SUPPLIER);
         DotPreconditions.checkArgument(UtilMethods.isSet(id), "id must be provided.");
 
         final Optional<Experiment> persistedExperiment =  find(id, user);
@@ -415,7 +433,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private void innerDelete(final String id, final User user, final Consumer<Experiment> extraValidation)
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
-                invalidLicenseMessageSupplier);
+                INVALID_LICENSE_MESSAGE_SUPPLIER);
         DotPreconditions.checkArgument(UtilMethods.isSet(id), "id must be provided.");
 
         final Optional<Experiment> persistedExperimentOptional =  find(id, user);
@@ -456,7 +474,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @CloseDBIfOpened
     public List<Experiment> list(ExperimentFilter filter, User user) throws DotDataException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
-                invalidLicenseMessageSupplier);
+                INVALID_LICENSE_MESSAGE_SUPPLIER);
         return factory.list(filter);
     }
 
@@ -467,7 +485,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         try {
             DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
-                    invalidLicenseMessageSupplier);
+                    INVALID_LICENSE_MESSAGE_SUPPLIER);
             DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
 
             final Experiment persistedExperiment = find(experimentId, user).orElseThrow(
@@ -550,7 +568,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     public Experiment forceStart(String experimentId, User user, Scheduling scheduling)
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
-                invalidLicenseMessageSupplier);
+                INVALID_LICENSE_MESSAGE_SUPPLIER);
         DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
 
         final Experiment persistedExperiment =  find(experimentId, user).orElseThrow(
@@ -592,7 +610,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     public Experiment forceScheduled(final String experimentId, final User user, final Scheduling scheduling)
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
-                invalidLicenseMessageSupplier);
+                INVALID_LICENSE_MESSAGE_SUPPLIER);
         DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
 
         final Experiment persistedExperiment =  find(experimentId, user).orElseThrow(
@@ -743,7 +761,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     public Experiment startScheduled(String experimentId, User user)
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
-                invalidLicenseMessageSupplier);
+                INVALID_LICENSE_MESSAGE_SUPPLIER);
         DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
 
         final Experiment persistedExperiment =  find(experimentId, user).orElseThrow(
@@ -820,7 +838,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             throws DotDataException, DotSecurityException {
         try {
             DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
-                    invalidLicenseMessageSupplier);
+                    INVALID_LICENSE_MESSAGE_SUPPLIER);
             DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
 
             final Optional<Experiment> persistedExperimentOpt =  find(experimentId, user);
@@ -923,7 +941,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             throws DotDataException {
 
         final String experimentId = experiment.getIdentifier();
-        String variantName = null;
+        final String variantName ;
 
         if(variantDescription.equals(ORIGINAL_VARIANT)) {
             DotPreconditions.isTrue(
@@ -946,52 +964,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .description(variantDescription).weight(0)
                 .url(page.getURI()+"?variantName="+variantName)
                 .build();
-    }
-
-    private void copyPageAndItsContentForVariant(final Experiment experiment,
-            final String variantDescription, final User user,
-            final String variantName, final Contentlet pageContentlet) throws DotDataException {
-        if(variantDescription.equals(ORIGINAL_VARIANT)) {
-            saveContentOnVariant(pageContentlet,
-                    variantName, user);
-
-            multiTreeAPI.getMultiTrees(experiment.pageId()).forEach(
-                    (multiTree -> {
-                        final Contentlet contentlet = Try.of(()->contentletAPI.
-                                findContentletByIdentifierAnyLanguage(multiTree.getContentlet()))
-                                .getOrElseThrow(()->new DotStateException("Unable to find content. Id:"
-                                        + multiTree.getContentlet()));
-
-                        saveContentOnVariant(contentlet, variantName, user);
-                    })
-            );
-        }
-    }
-
-    private void saveContentOnVariant(final Contentlet contentlet, final String variantName,
-            final User user) {
-
-        final Optional<ContentletVersionInfo> versionInfo = Try.of(
-                        ()->versionableAPI.getContentletVersionInfo(contentlet.getIdentifier(),
-                                contentlet.getLanguageId()))
-                .getOrElseThrow((e->new DotStateException("Unable to get the live version of the page", e)));
-
-        final ContentletVersionInfo contentletVersionInfo = versionInfo.orElseThrow();
-
-        final String inode = UtilMethods.isSet(contentletVersionInfo.getLiveInode())
-                ? contentletVersionInfo.getLiveInode()
-                : contentletVersionInfo.getWorkingInode();
-
-        final Contentlet checkedoutContentlet = Try.of(() -> contentletAPI
-                        .checkout(inode, user, false))
-                .getOrElseThrow(
-                        (e) -> new DotStateException("Unable to checkout Experiment's content. Inode:" + inode, e));
-
-        checkedoutContentlet.setVariantId(variantName);
-        Try.of(() -> contentletAPI.checkin(checkedoutContentlet, user, false))
-                .getOrElseThrow(
-                        (e) -> new DotStateException("Unable to checkin Experiment's content. Inode:" + inode, e));
-
     }
 
     private String getVariantName(final String experimentId) throws DotDataException {
@@ -1023,7 +995,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Variant toDelete = variantAPI.get(variantName)
                 .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
 
-        final String variantDescription = toDelete.description()
+        toDelete.description()
                 .orElseThrow(()->new DotStateException("Variant without description. Variant name: "
                                 + toDelete.name()));
 
@@ -1532,7 +1504,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         // Setting "now" with an additional minute to avoid failing validation
         final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
         return Scheduling.builder().startDate(now)
-                .endDate(now.plus(EXPERIMENTS_DEFAULT_DURATION.get(), ChronoUnit.DAYS))
+                .endDate(now.plus(defaultDuration.get(), ChronoUnit.DAYS))
                 .build();
     }
 
@@ -1551,7 +1523,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private void validatePageEditPermissions(final User user, final Experiment persistedExperiment,
             final String errorMessage)
             throws DotDataException, DotSecurityException {
-        
+
         try {
             validateExperimentPagePermissions(user, persistedExperiment, PermissionLevel.EDIT,
                     errorMessage);
@@ -1583,41 +1555,47 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         Scheduling toReturn = scheduling;
-        final Instant NOW = Instant.now().minus(1, ChronoUnit.MINUTES);
+        final Instant now = Instant.now().minus(1, ChronoUnit.MINUTES);
 
-        if(scheduling.startDate().isPresent() && scheduling.endDate().isEmpty()) {
-            DotPreconditions.checkState(scheduling.startDate().get().isAfter(NOW),
-                    "Invalid Scheduling. Start date is in the past");
+        if (scheduling.startDate().isPresent() && scheduling.endDate().isEmpty()) {
+            final Instant startDate = scheduling
+                    .startDate()
+                    .orElseThrow(() -> new IllegalStateException("Invalid Scheduling. Start date is missing"));
+            DotPreconditions.checkState(startDate.isAfter(now), "Invalid Scheduling. Start date is in the past");
 
-            toReturn = scheduling.withEndDate(scheduling.startDate().get()
-                    .plus(EXPERIMENTS_DEFAULT_DURATION.get(), ChronoUnit.DAYS));
-        } else if(scheduling.startDate().isEmpty() && scheduling.endDate().isPresent()) {
-            DotPreconditions.checkState(scheduling.endDate().get().isAfter(NOW),
-                    "Invalid Scheduling. End date is in the past");
+            toReturn = scheduling.withEndDate(startDate.plus(defaultDuration.get(), ChronoUnit.DAYS));
+        } else if (scheduling.startDate().isEmpty() && scheduling.endDate().isPresent()) {
+            final Instant endDate = scheduling
+                    .endDate()
+                    .orElseThrow(() -> new IllegalStateException("Invalid Scheduling. End date is missing"));
 
-            final Instant startDate = scheduling.endDate().get().minus(EXPERIMENTS_DEFAULT_DURATION.get(),
-                    ChronoUnit.DAYS);
+            DotPreconditions.checkState(endDate.isAfter(now), "Invalid Scheduling. End date is in the past");
+
+            final Instant startDate = endDate.minus(defaultDuration.get(), ChronoUnit.DAYS);
 
             toReturn = scheduling.withStartDate(startDate);
         } else {
-            DotPreconditions.checkState(scheduling.startDate().get().isAfter(NOW),
-                    "Invalid Scheduling. Start date is in the past");
+            final Instant startDate = scheduling
+                    .startDate()
+                    .orElseThrow(() -> new IllegalStateException("Invalid Scheduling. Start date is missing"));
+            final Instant endDate = scheduling
+                    .endDate()
+                    .orElseThrow(() -> new IllegalStateException("Invalid Scheduling. End date is missing"));
 
-            DotPreconditions.checkState(scheduling.endDate().get().isAfter(NOW),
-                    "Invalid Scheduling. End date is in the past");
+            DotPreconditions.checkState(startDate.isAfter(now), "Invalid Scheduling. Start date is in the past");
+            DotPreconditions.checkState(endDate.isAfter(now), "Invalid Scheduling. End date is in the past");
 
-            DotPreconditions.checkState(scheduling.endDate().get().isAfter(scheduling.startDate().get()),
+            DotPreconditions.checkState(
+                    endDate.isAfter(startDate),
                     "Invalid Scheduling. End date must be after the start date");
 
-            DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
-                            scheduling.endDate().get()).toDays() >= EXPERIMENTS_MIN_DURATION.get(),
-                    "Experiment duration must be at least "
-                            + EXPERIMENTS_MIN_DURATION.get() +" days. ");
+            DotPreconditions.checkState(
+                    Duration.between(startDate, endDate).toDays() >= minDuration.get(),
+                    "Experiment duration must be at least " + minDuration.get() + " days. ");
 
-            DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
-                            scheduling.endDate().get()).toDays() <= EXPERIMENTS_MAX_DURATION.get(),
-                    "Experiment duration must be less than "
-                            + EXPERIMENTS_MAX_DURATION.get() +" days. ");
+            DotPreconditions.checkState(
+                    Duration.between(startDate, endDate).toDays() <= maxDuration.get(),
+                    "Experiment duration must be less than " + maxDuration.get() + " days. ");
         }
         return toReturn;
     }
