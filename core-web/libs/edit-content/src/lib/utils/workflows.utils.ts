@@ -51,12 +51,19 @@ export const parseWorkflows = (
 export const shouldShowWorkflowActions = ({
     schemes,
     contentlet,
-    currentSchemeId
+    currentSchemeId,
+    step
 }: {
     schemes: ContentState['schemes'];
     contentlet: ContentState['contentlet'];
     currentSchemeId: string | null;
+    step: WorkflowStep | null;
 }): boolean => {
+    // No step means no workflow actions
+    if (!step) {
+        return false;
+    }
+
     const hasOneScheme = Object.keys(schemes).length === 1;
     const isExisting = !!contentlet;
     const hasSelectedScheme = !!currentSchemeId;

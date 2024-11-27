@@ -1,9 +1,6 @@
-@let scheme = $workflow().scheme;
-@let task = $workflow().task;
-
+@let workflow = $workflow();
 @let isLoading = $isLoading();
-@let noWorkflowSelectedYet = $noWorkflowSelectedYet();
-@let currentStep = $workflow().step;
+@let workflowSelection = $workflowSelection();
 
 <dl class="workflow-list">
     <dt class="workflow-column__title" id="workflow-title">{{ 'Workflow' | dm }}</dt>
@@ -13,7 +10,7 @@
         data-testId="workflow-name">
         @if (isLoading) {
             <p-skeleton />
-        } @else if (noWorkflowSelectedYet) {
+        } @else if (workflowSelection.noWorkflowSelectedYet) {
             <a
                 href="#"
                 class="select-workflow-link"
@@ -23,10 +20,9 @@
                 {{ 'edit.content.sidebar.workflow.select.workflow' | dm }}
             </a>
         } @else {
-            {{ scheme?.name }}
+            {{ workflow.scheme?.name }}
 
-            <!-- While not step, is consider as New contentlet -->
-            @if ($showWorkflowDialogIcon()) {
+            @if ($showWorkflowSelection()) {
                 <p-button
                     (click)="showDialog()"
                     pButton
@@ -34,10 +30,9 @@
                     icon="pi pi-pencil"></p-button>
             }
 
-            <!-- While not step, is consider as New contentlet -->
-            @if ($showWorkflowDialogIcon()) {
+            @if (workflow.resetAction) {
                 <p-button
-                    (click)="showDialog()"
+                    (click)="onResetWorkflow.emit(workflow.resetAction.id.toString())"
                     pButton
                     styleClass="p-button-link"
                     icon="pi pi-replay"></p-button>
@@ -45,7 +40,7 @@
         }
     </dd>
 
-    @if (!noWorkflowSelectedYet) {
+    @if (!workflowSelection.noWorkflowSelectedYet) {
         <dt class="workflow-column__title" id="step-title">{{ 'Step' | dm }}</dt>
         <dd
             class="workflow-column__description"
@@ -54,11 +49,11 @@
             @if (isLoading) {
                 <p-skeleton />
             } @else {
-                {{ currentStep?.name }}
+                {{ workflow.step?.name }}
             }
         </dd>
 
-        @if (task) {
+        @if (workflow.task) {
             <dt class="workflow-column__title" id="assignee-title">{{ 'Assignee' | dm }}</dt>
             <dd
                 class="workflow-column__description"
@@ -67,7 +62,7 @@
                 @if (isLoading) {
                     <p-skeleton />
                 } @else {
-                    {{ task.assignedTo }}
+                    {{ workflow.task.assignedTo }}
                 }
             </dd>
         }
@@ -90,7 +85,7 @@
                 <p-dropdown
                     id="workflow"
                     appendTo="body"
-                    [options]="$workflowSchemeOptions()"
+                    [options]="workflowSelection.schemeOptions"
                     optionLabel="label"
                     [(ngModel)]="$selectedWorkflow"
                     placeholder="{{

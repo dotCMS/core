@@ -19,7 +19,6 @@ import { DotEditContentSidebarInformationComponent } from './components/dot-edit
 import { DotEditContentSidebarSectionComponent } from './components/dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 
-import { DotCMSWorkflowAction } from '../../../../../dotcms-models/src/lib/dot-workflow-action.model';
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
 import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 
@@ -88,12 +87,10 @@ export class DotEditContentSidebarComponent {
         });
     });
 
-    fireWorkflowAction($event: DotCMSWorkflowAction): void {
-        const { id: actionId } = $event;
-
+    fireWorkflowAction(actionId: string): void {
         this.store.fireWorkflowAction({
             actionId,
-            inode: this.$contentlet()?.inode,
+            inode: this.$contentlet().inode,
             data: {
                 contentlet: {
                     ...this.$formValues(),

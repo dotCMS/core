@@ -52,12 +52,14 @@ export interface ContentState {
             firstStep: WorkflowStep;
         };
     };
+    initialContentletState: 'new' | 'existing' | 'reset';
 }
 
 export const contentInitialState: ContentState = {
     contentType: null,
     contentlet: null,
-    schemes: {}
+    schemes: {},
+    initialContentletState: 'new'
 };
 
 export function withContent() {

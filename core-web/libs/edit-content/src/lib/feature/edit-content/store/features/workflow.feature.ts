@@ -37,11 +37,7 @@ import {
 
 import { ContentState } from './content.feature';
 
-import {
-    getWorkflowActions,
-    shouldShowWorkflowActions,
-    shouldShowWorkflowWarning
-} from '../../../../utils/workflows.utils';
+import { getWorkflowActions, shouldShowWorkflowActions } from '../../../../utils/workflows.utils';
 import { EditContentRootState } from '../edit-content.store';
 
 export interface WorkflowState {
@@ -111,11 +107,13 @@ export function withWorkflow() {
                 const schemes = store.schemes();
                 const contentlet = store.contentlet();
                 const currentSchemeId = store.currentSchemeId();
+                const step = store.currentStep();
 
                 return shouldShowWorkflowActions({
                     schemes,
                     contentlet,
-                    currentSchemeId
+                    currentSchemeId,
+                    step
                 });
             }),
 
@@ -133,15 +131,26 @@ export function withWorkflow() {
              * @returns {boolean} True if warning should be shown, false otherwise
              */
             showSelectWorkflowWarning: computed(() => {
-                const schemes = store.schemes();
-                const contentlet = store.contentlet();
                 const currentSchemeId = store.currentSchemeId();
 
-                return shouldShowWorkflowWarning({
-                    schemes,
-                    contentlet,
-                    currentSchemeId
-                });
+                return !currentSchemeId;
+            }),
+
+            /**
+             * Gets the first workflow action that has reset capability and is shown on EDITING.
+             *
+             * @returns {DotCMSWorkflowAction | undefined} First workflow action with reset capability shown on EDITING
+             */
+            getResetWorkflowAction: computed(() => {
+                const currentActions = store.currentContentActions() || [];
+
+                return (
+                    currentActions.find(
+                        (action) =>
+                            action.hasResetActionlet &&
+                            action.showOn?.includes(DotRenderMode.EDITING)
+                    ) || undefined
+                );
             }),
 
             /**
@@ -216,7 +225,6 @@ export function withWorkflow() {
                         tap(() =>
                             patchState(store, {
                                 workflow: {
-                                    ...store.workflow(),
                                     status: ComponentStatus.LOADING,
                                     error: null
                                 }
@@ -225,23 +233,25 @@ export function withWorkflow() {
                         switchMap((inode: string) => {
                             return dotWorkflowService.getWorkflowStatus(inode).pipe(
                                 tapResponse({
-                                    next: (response) => {
-                                        const { scheme, step, task } = response;
+                                    next: ({ scheme, step, task }) => {
                                         patchState(store, {
-                                            currentSchemeId: scheme?.id,
-                                            currentStep: step,
+                                            currentSchemeId: scheme?.id || null,
+                                            currentStep: step || null,
                                             lastTask: task,
                                             workflow: {
-                                                ...store.workflow(),
-                                                status: ComponentStatus.LOADED
-                                            }
+                                                status: ComponentStatus.LOADED,
+                                                error: null
+                                            },
+                                            currentContentActions: scheme
+                                                ? store.currentContentActions()
+                                                : [],
+                                            initialContentletState:
+                                                scheme && step && task ? 'existing' : 'reset'
                                         });
                                     },
-
                                     error: (error: HttpErrorResponse) => {
                                         patchState(store, {
                                             workflow: {
-                                                ...store.workflow(),
                                                 status: ComponentStatus.ERROR,
                                                 error: 'Error getting workflow status'
                                             }
@@ -259,9 +269,15 @@ export function withWorkflow() {
                  *
                  * @param {string} schemeId - The ID of the workflow scheme to be selected.
                  */
-                setSelectedWorkflow: (schemeId: string) => {
+                setSelectedWorkflow: (currentSchemeId: string) => {
+                    const schemes = store.schemes();
+                    const currentScheme = schemes[currentSchemeId];
+                    const currentContentActions = currentScheme.actions || [];
+
                     patchState(store, {
-                        currentSchemeId: schemeId
+                        currentSchemeId,
+                        currentContentActions,
+                        currentStep: currentScheme.firstStep
                     });
                 },
 
@@ -293,32 +309,33 @@ export function withWorkflow() {
                             });
                         }),
                         switchMap((options) => {
-                            const isNewContent = !store.contentlet();
                             const currentContentlet = store.contentlet();
 
                             return workflowActionsFireService.fireTo(options).pipe(
-                                switchMap((response) => {
-                                    if (isNewContent) {
-                                        return forkJoin({
-                                            currentContentActions: workflowActionService.getByInode(
-                                                response.inode,
-                                                DotRenderMode.EDITING
-                                            ),
-                                            contentlet: of(response)
-                                        });
-                                    }
+                                switchMap((updatedContentlet) => {
+                                    // Use current contentlet if response is empty (reset action)
+                                    // otherwise use the updated contentlet from response
+                                    const contentlet =
+                                        Object.keys(updatedContentlet).length === 0
+                                            ? currentContentlet
+                                            : updatedContentlet;
+
+                                    const inode = contentlet.inode;
+                                    const isReset = Object.keys(updatedContentlet).length === 0;
 
                                     return forkJoin({
                                         currentContentActions: workflowActionService.getByInode(
-                                            currentContentlet.inode,
+                                            inode,
                                             DotRenderMode.EDITING
                                         ),
-                                        contentlet: of(currentContentlet)
+                                        contentlet: of(contentlet),
+                                        isReset: of(isReset)
                                     });
                                 }),
                                 tapResponse({
-                                    next: ({ contentlet, currentContentActions }) => {
-                                        if (isNewContent) {
+                                    next: ({ contentlet, currentContentActions, isReset }) => {
+                                        // Always navigate if the inode has changed
+                                        if (contentlet.inode !== currentContentlet?.inode) {
                                             router.navigate(['/content', contentlet.inode], {
                                                 replaceUrl: true,
                                                 queryParamsHandling: 'preserve'
@@ -327,8 +344,18 @@ export function withWorkflow() {
 
                                         patchState(store, {
                                             contentlet,
-                                            currentContentActions,
+                                            currentContentActions: isReset
+                                                ? []
+                                                : currentContentActions,
+                                            currentSchemeId: isReset
+                                                ? null
+                                                : store.currentSchemeId(),
+                                            initialContentletState: isReset
+                                                ? 'reset'
+                                                : store.initialContentletState(),
                                             state: ComponentStatus.LOADED,
+                                            currentStep: isReset ? null : store.currentStep(),
+
                                             error: null
                                         });
 

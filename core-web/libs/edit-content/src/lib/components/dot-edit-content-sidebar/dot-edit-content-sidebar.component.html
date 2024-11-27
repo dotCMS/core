@@ -8,10 +8,10 @@
 @let workflowOptions = store.workflowSchemeOptions();
 @let scheme = store.getScheme();
 @let task = store.lastTask();
-@let isLoadingWorkflow = store.isLoadingWorkflow();
+
 @let showSelectWorkflowWarning = store.showSelectWorkflowWarning();
 @let currentStep = store.getCurrentStep();
-@let resetActionState = store.resetActionState();
+
 <!-- Locales Component -->
 @let locales = store.locales();
 @let defaultLocale = store.defaultLocale();
@@ -57,19 +57,22 @@
 
             <dot-edit-content-sidebar-section [title]="'Workflow' | dm">
                 <dot-edit-content-sidebar-workflow
-                    [isNew]="isNew"
-                    [workflowSchemeOptions]="workflowOptions"
+                    [workflowSelection]="{
+                        schemeOptions: workflowOptions,
+                        noWorkflowSelectedYet: showSelectWorkflowWarning
+                    }"
                     [(showDialog)]="$showDialog"
-                    (onSelectWorkflow)="store.setSelectedWorkflow($event.id)"
-                    [showResetAction]="resetActionState"
+                    (onSelectWorkflow)="store.setSelectedWorkflow($event)"
+                    [resetWorkflowAction]="store.getResetWorkflowAction()"
                     (onResetWorkflow)="fireWorkflowAction($event)"
                     [workflow]="{
                         scheme,
                         step: currentStep,
-                        task
+                        task,
+                        contentState: store.initialContentletState(),
+                        resetAction: store.getResetWorkflowAction()
                     }"
-                    [isLoading]="isLoadingWorkflow"
-                    [noWorkflowSelectedYet]="showSelectWorkflowWarning"
+                    [isLoading]="store.isLoadingWorkflow()"
                     data-testId="workflow" />
             </dot-edit-content-sidebar-section>
         </p-tabPanel>
