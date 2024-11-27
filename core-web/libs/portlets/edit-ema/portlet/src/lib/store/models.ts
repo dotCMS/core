@@ -7,13 +7,14 @@ import { UVE_STATUS } from '../shared/enums';
 import { DotPage, NavigationBarItem } from '../shared/models';
 
 export interface UVEState {
+    languages: DotLanguage[];
     isEnterprise: boolean;
     pageAPIResponse?: DotPageApiResponse;
-    languages: DotLanguage[];
+    pageParams?: DotPageApiParams;
     currentUser?: CurrentUser;
     experiment?: DotExperiment;
     errorCode?: number;
-    params?: DotPageApiParams;
+    viewParams?: DotUveViewParams;
     status: UVE_STATUS;
     isTraditionalPage: boolean;
     canEditPage: boolean;
@@ -34,4 +35,11 @@ export interface ShellProps {
 export interface TranslateProps {
     page: DotPage;
     currentLanguage: DotLanguage;
+}
+
+export interface DotUveViewParams {
+    preview: false;
+    orientation: string;
+    device: string;
+    seo: string;
 }

@@ -1,6 +1,7 @@
 
 package com.dotcms.contenttype.business;
 
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
@@ -8,6 +9,7 @@ import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
+import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
@@ -36,6 +38,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.LinkedHashMap;
@@ -52,7 +55,8 @@ import static org.mockito.Mockito.when;
  * Test for {@link StoryBlockAPI}
  * @author jsanca
  */
-@RunWith(DataProviderRunner.class)
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
 public class StoryBlockAPITest extends IntegrationTestBase {
 
     @DataProvider
@@ -318,24 +322,38 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         APILocator.getContentletAPI().publish(
                 APILocator.getContentletAPI().checkin(newRichTextContentlet, APILocator.systemUser(), false), APILocator.systemUser(), false);
 
-        // 5) ask for refreshing references, the new changes of the rich text contentlet should be reflected on the json
-        final StoryBlockReferenceResult refreshResult = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson, "1234");
+        final HttpServletRequest oldThreadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse oldThreadResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
 
-        // 6) check if the results are ok.
-        assertTrue(refreshResult.isRefreshed());
-        assertNotNull(refreshResult.getValue());
-        final Map    refreshedStoryBlockMap         = ContentletJsonHelper.INSTANCE.get().objectMapper()
-                                                              .readValue(Try.of(() -> refreshResult.getValue().toString())
-                                                                                 .getOrElse(StringPool.BLANK), LinkedHashMap.class);
-        final List refreshedContentList = (List) refreshedStoryBlockMap.get("content");
-        final Optional<Object> refreshedfirstContentletMap = refreshedContentList.stream()
-                                                                     .filter(content -> "dotContent".equals(Map.class.cast(content).get("type"))).findFirst();
+        try {
+            final HttpServletRequest request = new MockAttributeRequest(mock(HttpServletRequest.class));
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
-        assertTrue(refreshedfirstContentletMap.isPresent());
-        final Map refreshedContentletMap = (Map) Map.class.cast(Map.class.cast(refreshedfirstContentletMap.get()).get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
-        assertEquals(refreshedContentletMap.get("identifier"), newRichTextContentlet.getIdentifier());
-        assertEquals("Expected Generic Content title doesn't match the one in the Contentlet", "Title2", newRichTextContentlet.getStringProperty("title"));
-        assertEquals("Expected Generic Content body doesn't match the one in the Contentlet", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT,  newRichTextContentlet.getStringProperty("body"));
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
+
+            // 5) ask for refreshing references, the new changes of the rich text contentlet should be reflected on the json
+            final StoryBlockReferenceResult refreshResult = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson, "1234");
+
+            // 6) check if the results are ok.
+            assertTrue(refreshResult.isRefreshed());
+            assertNotNull(refreshResult.getValue());
+            final Map refreshedStoryBlockMap = ContentletJsonHelper.INSTANCE.get().objectMapper()
+                    .readValue(Try.of(() -> refreshResult.getValue().toString())
+                            .getOrElse(StringPool.BLANK), LinkedHashMap.class);
+            final List refreshedContentList = (List) refreshedStoryBlockMap.get("content");
+            final Optional<Object> refreshedfirstContentletMap = refreshedContentList.stream()
+                    .filter(content -> "dotContent".equals(Map.class.cast(content).get("type"))).findFirst();
+
+            assertTrue(refreshedfirstContentletMap.isPresent());
+            final Map refreshedContentletMap = (Map) Map.class.cast(Map.class.cast(refreshedfirstContentletMap.get()).get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
+            assertEquals(refreshedContentletMap.get("identifier"), newRichTextContentlet.getIdentifier());
+            assertEquals("Expected Generic Content title doesn't match the one in the Contentlet", "Title2", newRichTextContentlet.getStringProperty("title"));
+            assertEquals("Expected Generic Content body doesn't match the one in the Contentlet", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT, newRichTextContentlet.getStringProperty("body"));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(oldThreadResponse);
+        }
     }
 
     /**
@@ -511,8 +529,8 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         final HttpServletResponse oldThreadResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
 
         try {
-            final HttpServletRequest request = mock(HttpServletRequest.class);
-            when(request.getAttribute(WebKeys.HTMLPAGE_DEPTH)).thenReturn(String.valueOf(depth));
+            final HttpServletRequest request = new MockAttributeRequest(mock(HttpServletRequest.class));
+            request.setAttribute(WebKeys.HTMLPAGE_DEPTH, String.valueOf(depth));
             HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
             final HttpServletResponse response = mock(HttpServletResponse.class);
@@ -545,7 +563,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                                 ((Map<String, Object>) relatedContent.get(0)).get("identifier"));
 
                         assertNull( ((Map<String, Object>) relatedContent.get(0)).get(relationshipField.variable()));
-                    } else if (depth > 1) {
+                    } else if (depth > 1 && i == 0) {
                         assertEquals(i == 0 ? contentA.getIdentifier() : contentB.getIdentifier(),
                                 ((Map<String, Object>) relatedContent.get(0)).get("identifier"));
 

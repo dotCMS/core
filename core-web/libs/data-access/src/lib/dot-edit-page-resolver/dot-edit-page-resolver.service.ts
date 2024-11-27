@@ -1,6 +1,6 @@
 import { forkJoin, Observable, of, throwError } from 'rxjs';
 
-import { HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
@@ -12,7 +12,7 @@ import {
     DotRouterService,
     DotSessionStorageService
 } from '@dotcms/data-access';
-import { DotCMSResponse, HttpCode, Site, SiteService } from '@dotcms/dotcms-js';
+import { HttpCode, Site, SiteService } from '@dotcms/dotcms-js';
 import { DotPageRenderOptions, DotPageRenderState } from '@dotcms/dotcms-models';
 
 /**
@@ -23,7 +23,7 @@ import { DotPageRenderOptions, DotPageRenderState } from '@dotcms/dotcms-models'
  * @implements {Resolve<DotRenderedPageState>}
  */
 @Injectable()
-export class DotEditPageResolver implements Resolve<DotPageRenderState> {
+export class DotEditPageResolver implements Resolve<DotPageRenderState | null> {
     private dotSessionStorageService: DotSessionStorageService = inject(DotSessionStorageService);
     constructor(
         private dotPageStateService: DotPageStateService,
@@ -32,12 +32,12 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
         private siteService: SiteService
     ) {}
 
-    resolve(route: ActivatedRouteSnapshot): Observable<DotPageRenderState> {
+    resolve(route: ActivatedRouteSnapshot): Observable<DotPageRenderState | null> {
         const data = this.dotPageStateService.getInternalNavigationState();
         const renderOptions = this.getDotPageRenderOptions(route);
         const currentSection = route.children[0].url[0].path;
         const isLayout = currentSection === 'layout';
-        const hostId = route.queryParams?.host_id;
+        const hostId = route.queryParams['host_id'];
 
         // If we have data, we don't need to request the page again
         const data$ = data ? of(data) : this.getPageRenderState(renderOptions, isLayout);
@@ -50,27 +50,20 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
     ): Observable<DotPageRenderState> {
         if (!dotRenderedPageState.page.canEdit) {
             return throwError(
-                new HttpErrorResponse(
-                    new HttpResponse<DotCMSResponse<DotPageRenderState>>({
-                        body: null,
-                        status: HttpCode.FORBIDDEN,
-                        headers: null,
-                        url: ''
-                    })
-                )
+                new HttpErrorResponse({
+                    status: HttpCode.FORBIDDEN,
+                    url: ''
+                })
             );
         } else if (!dotRenderedPageState.layout) {
             return throwError(
-                new HttpErrorResponse(
-                    new HttpResponse<DotCMSResponse<DotPageRenderState>>({
-                        body: null,
-                        status: HttpCode.FORBIDDEN,
-                        headers: new HttpHeaders({
-                            'error-key': 'dotcms.api.error.license.required'
-                        }),
-                        url: ''
-                    })
-                )
+                new HttpErrorResponse({
+                    status: HttpCode.FORBIDDEN,
+                    headers: new HttpHeaders({
+                        'error-key': 'dotcms.api.error.license.required'
+                    }),
+                    url: ''
+                })
             );
         } else {
             return of(dotRenderedPageState);
@@ -79,20 +72,20 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
 
     private getDotPageRenderOptions(route: ActivatedRouteSnapshot): DotPageRenderOptions {
         const queryParams = route.queryParams;
-        const renderOptions: DotPageRenderOptions = { url: queryParams.url };
+        const renderOptions: DotPageRenderOptions = { url: queryParams['url'] };
 
-        if (queryParams.mode) {
-            renderOptions.mode = queryParams.mode;
+        if (queryParams['mode']) {
+            renderOptions.mode = queryParams['mode'];
         }
 
-        if (queryParams.language_id) {
-            renderOptions.viewAs = { language: queryParams.language_id };
+        if (queryParams['language_id']) {
+            renderOptions.viewAs = { language: queryParams['language_id'] };
         }
 
         return renderOptions;
     }
 
-    private setSite(id: string): Observable<Site> {
+    private setSite(id: string): Observable<Site | null> {
         const currentSiteId = this.siteService.currentSite?.identifier;
         const shouldSwitchSite = id && id !== currentSiteId;
 
@@ -109,7 +102,7 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
     private getPageRenderState(
         renderOptions: DotPageRenderOptions,
         isLayout: boolean
-    ): Observable<DotPageRenderState> {
+    ): Observable<DotPageRenderState | null> {
         return this.dotPageStateService.requestPage(renderOptions).pipe(
             filter((state: DotPageRenderState) => {
                 if (!state) this.dotRouterService.goToSiteBrowser();

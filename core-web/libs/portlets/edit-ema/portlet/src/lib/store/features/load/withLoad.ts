@@ -5,7 +5,7 @@ import { EMPTY, forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
@@ -32,68 +32,61 @@ export function withLoad() {
         },
         withClient(),
         withMethods((store) => {
+            const router = inject(Router);
             const dotPageApiService = inject(DotPageApiService);
             const dotLanguagesService = inject(DotLanguagesService);
             const dotLicenseService = inject(DotLicenseService);
-            const loginService = inject(LoginService);
             const dotExperimentsService = inject(DotExperimentsService);
-            const router = inject(Router);
-            const activatedRoute = inject(ActivatedRoute);
+            const loginService = inject(LoginService);
 
             return {
-                init: rxMethod<DotPageApiParams>(
+                /**
+                 * Fetches the page asset based on the provided page parameters.
+                 * This method updates the user permissions, pageAsset, and pageParams.
+                 *
+                 * @param {DotPageApiParams} pageParams - The parameters used to fetch the page asset.
+                 * @memberof DotEmaShellComponent
+                 */
+                loadPageAsset: rxMethod<Partial<DotPageApiParams>>(
                     pipe(
                         tap(() => store.resetClientConfiguration()),
                         tap(() => {
                             patchState(store, { status: UVE_STATUS.LOADING, isClientReady: false });
                         }),
                         switchMap((params) => {
+                            const pageParams = {
+                                ...(store.pageParams() ?? {}),
+                                ...params
+                            } as DotPageApiParams;
+
                             return forkJoin({
-                                pageAPIResponse: dotPageApiService.get(params).pipe(
-                                    switchMap((pageAPIResponse) => {
-                                        const { vanityUrl } = pageAPIResponse;
+                                pageAsset: dotPageApiService.get(pageParams).pipe(
+                                    // This logic should be handled in the Shell component using an effect
+                                    switchMap((pageAsset) => {
+                                        const { vanityUrl } = pageAsset;
 
                                         // If there is no vanity and is not a redirect we just return the pageAPI response
                                         if (isForwardOrPage(vanityUrl)) {
-                                            return of(pageAPIResponse);
+                                            return of(pageAsset);
                                         }
 
                                         const queryParams = {
-                                            ...params,
+                                            ...pageParams,
                                             url: vanityUrl.forwardTo.replace('/', '')
                                         };
 
-                                        // We navigate to the new url and return undefined
+                                        // Will trigger full editor page Reload
                                         router.navigate([], {
                                             queryParams,
                                             queryParamsHandling: 'merge'
                                         });
 
+                                        // EMPTY is a simple Observable that only emits the complete notification.
                                         return EMPTY;
-                                    }),
-                                    tap({
-                                        next: (pageAPIResponse) => {
-                                            if (!pageAPIResponse) {
-                                                return;
-                                            }
-
-                                            const { page, template } = pageAPIResponse;
-
-                                            const isLayoutDisabled =
-                                                !page?.canEdit || !template?.drawed;
-                                            const pathIsLayout =
-                                                activatedRoute?.firstChild?.snapshot?.url?.[0]
-                                                    .path === 'layout';
-
-                                            if (isLayoutDisabled && pathIsLayout) {
-                                                // If the user can't edit the page or the template is not drawed we navigate to the content page
-                                                router.navigate(['edit-page/content'], {
-                                                    queryParamsHandling: 'merge'
-                                                });
-                                            }
-                                        }
                                     })
                                 ),
+                                // This can be done in the Withhook: onInit if this ticket is done: https://github.com/dotCMS/core/issues/30760
+                                // Reference: https://ngrx.io/guide/signals/signal-store/lifecycle-hooks
                                 isEnterprise: dotLicenseService
                                     .isEnterprise()
                                     .pipe(take(1), shareReplay()),
@@ -107,41 +100,37 @@ export function withLoad() {
                                         });
                                     }
                                 }),
-                                switchMap(({ pageAPIResponse, isEnterprise, currentUser }) =>
+                                switchMap(({ pageAsset, isEnterprise, currentUser }) =>
                                     forkJoin({
                                         experiment: dotExperimentsService.getById(
-                                            params.experimentId
+                                            pageParams?.experimentId || DEFAULT_VARIANT_ID
                                         ),
                                         languages: dotLanguagesService.getLanguagesUsedPage(
-                                            pageAPIResponse.page.identifier
+                                            pageAsset.page.identifier
                                         )
                                     }).pipe(
                                         tap({
                                             next: ({ experiment, languages }) => {
                                                 const canEditPage = computeCanEditPage(
-                                                    pageAPIResponse?.page,
+                                                    pageAsset?.page,
                                                     currentUser,
                                                     experiment
                                                 );
 
                                                 const pageIsLocked = computePageIsLocked(
-                                                    pageAPIResponse?.page,
+                                                    pageAsset?.page,
                                                     currentUser
                                                 );
 
-                                                const isTraditionalPage = !params.clientHost; // If we don't send the clientHost we are using as VTL page
+                                                const isTraditionalPage = !pageParams.clientHost; // If we don't send the clientHost we are using as VTL page
 
                                                 patchState(store, {
-                                                    pageAPIResponse,
+                                                    pageParams,
+                                                    pageAPIResponse: pageAsset,
                                                     isEnterprise,
                                                     currentUser,
                                                     experiment,
                                                     languages,
-                                                    params: {
-                                                        ...params,
-                                                        variantName:
-                                                            params.variantName || DEFAULT_VARIANT_ID
-                                                    },
                                                     canEditPage,
                                                     pageIsLocked,
                                                     isTraditionalPage,
@@ -163,14 +152,13 @@ export function withLoad() {
                     )
                 ),
                 /**
-                 *  When the state is "reloaded" outside the editor component, we need to set `isClientReady` to `false`.
-                 *  This is particularly relevant for Single Page Applications (SPA) or client-side applications,
-                 *  as these apps do not have access to the PREVIEW or EDIT modes.
-                 *  If the store updates without resetting `isClientReady` to `false`,
-                 *  returning to the editor component will not trigger a data re-fetch,
-                 *  causing outdated data to persist.
+                 * Reloads the current page to bring the latest content.
+                 * Called this method when after changes, updates, or saves.
+                 *
+                 * @param {Partial<DotPageApiParams>} params - The parameters used to fetch the page asset.
+                 * @memberof DotEmaShellComponent
                  */
-                reload: rxMethod<Pick<UVEState, 'isClientReady'> | void>(
+                reloadCurrentPage: rxMethod<Pick<UVEState, 'isClientReady'> | void>(
                     pipe(
                         tap(() => {
                             patchState(store, {
@@ -179,7 +167,7 @@ export function withLoad() {
                         }),
                         switchMap((partialState: Pick<UVEState, 'isClientReady'>) => {
                             return dotPageApiService
-                                .getClientPage(store.params(), store.clientRequestProps())
+                                .getClientPage(store.pageParams(), store.clientRequestProps())
                                 .pipe(
                                     switchMap((pageAPIResponse) =>
                                         dotLanguagesService
@@ -210,8 +198,7 @@ export function withLoad() {
                                                 canEditPage,
                                                 pageIsLocked,
                                                 status: UVE_STATUS.LOADED,
-                                                isClientReady: partialState?.isClientReady ?? true,
-                                                isTraditionalPage: !store.params().clientHost // If we don't send the clientHost we are using as VTL page
+                                                isClientReady: partialState?.isClientReady ?? true
                                             });
                                         },
                                         error: ({ status: errorStatus }: HttpErrorResponse) => {
