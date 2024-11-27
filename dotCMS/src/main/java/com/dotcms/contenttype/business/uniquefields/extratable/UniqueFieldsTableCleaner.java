@@ -15,6 +15,22 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+/**
+ * Responsible for maintaining the unique_fields table, which is used for database unique field validation.
+ * This table must be cleaned up under the following circumstances:
+ *
+ * - Contentlet or its variant deletion: Remove all related {@link Contentlet} entries.
+ * - Host deletion with cascading Contentlet removal: Remove all related {@link Contentlet} entries.
+ * - Push Remove process: When a Contentlet is sent to a receiver, remove all associated {@link Contentlet} entries.
+ * - Contentlet unpublish:
+ *     - If the LIVE and WORKING versions differ, remove the LIVE entry.
+ *     - If the LIVE and WORKING versions are the same, retain the entry.
+ * - ContentType with unique fields deletion: Remove all related entries.
+ * - Unique field deletion: Clean up entries for the deleted field.
+ *
+ *
+ * @see DBUniqueFieldValidationStrategy
+ */
 @ApplicationScoped
 public class UniqueFieldsTableCleaner {
 
@@ -25,6 +41,23 @@ public class UniqueFieldsTableCleaner {
         this.uniqueFieldValidationStrategyResolver = uniqueFieldValidationStrategyResolver;
     }
 
+    /**
+     /**
+     * Listens for the deletion of a {@link Contentlet} and performs the following actions:
+     *
+     * - If {@link DeleteContentletVersionInfoEvent#isDeleteAllVariant()} is true:
+     *   Delete all records associated with the {@link Contentlet}'s
+     *   {@link com.dotmarketing.portlets.languagesmanager.model.Language}
+     *   and {@link com.dotcms.variant.model.Variant}.
+     *
+     * - If {@link DeleteContentletVersionInfoEvent#isDeleteAllVariant()} is false:
+     *   Delete all records associated with the {@link Contentlet}'s
+     *   {@link com.dotmarketing.portlets.languagesmanager.model.Language}
+     *   across all {@link com.dotcms.variant.model.Variant} instances.
+     *
+     * @param event
+     * @throws DotDataException
+     */
     @Subscriber
     public void cleanUpAfterDeleteContentlet(final DeleteContentletVersionInfoEvent event) throws DotDataException {
 
@@ -44,6 +77,14 @@ public class UniqueFieldsTableCleaner {
         }
     }
 
+    /**
+     * Listen when a Field is deleted and if this ia a Unique Field then delete all the register in
+     * unique_fields table for this Field
+     *
+     * @param event
+     *
+     * @throws DotDataException
+     */
     @Subscriber
     public void cleanUpAfterDeleteUniqueField(final FieldDeletedEvent event) throws DotDataException {
         final Field deletedField = event.getField();

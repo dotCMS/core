@@ -224,6 +224,14 @@ public class UniqueFieldDataBaseUtil {
                 .loadObjectResults();
     }
 
+    /**
+     * Find Unique Field Values by {@link Contentlet} and {@link  com.dotcms.variant.model.Variant}
+     *
+     * @param contentId
+     * @param variantId
+     * @return
+     * @throws DotDataException
+     */
     public List<Map<String, Object>> get(final String contentId, final String variantId) throws DotDataException {
         return new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_VARIANT)
                 .addParam("\"" + contentId + "\"")
@@ -231,18 +239,37 @@ public class UniqueFieldDataBaseUtil {
                 .loadObjectResults();
     }
 
+    /**
+     * Delete a Unique Field Value by hash
+     *
+     * @param hash
+     * @throws DotDataException
+     */
     public void delete(final String hash) throws DotDataException {
         new DotConnect().setSQL(DELETE_UNIQUE_FIELDS)
                 .addParam(hash)
                 .loadObjectResults();
     }
 
+    /**
+     * Delete all the unique values for a Field
+     *
+     * @param field
+     * @throws DotDataException
+     */
     public void delete(final Field field) throws DotDataException {
         new DotConnect().setSQL(DELETE_UNIQUE_FIELDS_BY_FIELD)
                 .addParam(field.variable())
                 .loadObjectResults();
     }
 
+    /**
+     * Set the supporting_value->live attribute to true to any register with the same Content's id, variant and language
+     *
+     * @param contentlet
+     * @param liveValue
+     * @throws DotDataException
+     */
     public void setLive(Contentlet contentlet, final boolean liveValue) throws DotDataException {
 
          new DotConnect().setSQL(SET_LIVE_BY_CONTENTLET)
@@ -254,6 +281,13 @@ public class UniqueFieldDataBaseUtil {
 
     }
 
+    /**
+     * Remove any register with supporting_value->live set to true and the same Content's id, variant and language
+     *
+     * @param contentlet
+     * 
+     * @throws DotDataException
+     */
     public void removeLive(Contentlet contentlet) throws DotDataException {
 
         new DotConnect().setSQL(DELETE_UNIQUE_FIELDS_BY_CONTENTLET)
