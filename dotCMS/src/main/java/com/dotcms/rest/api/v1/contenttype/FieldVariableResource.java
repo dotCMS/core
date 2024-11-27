@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.contenttype;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -429,7 +430,7 @@ public class FieldVariableResource implements Serializable {
 												 @PathParam("fieldId") final String fieldId,
 												 @PathParam("fieldVarId") final String fieldVarId,
 												 @Context final HttpServletRequest req,
-												 @Context final HttpServletResponse res) throws DotDataException {
+												 @Context final HttpServletResponse res) throws DotDataException, UniqueFieldValueDuplicatedException {
 		new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(req, res)
 				.requiredBackendUser(true)
@@ -469,7 +470,7 @@ public class FieldVariableResource implements Serializable {
 												  @PathParam("fieldVar") final String fieldVar,
 												  @PathParam("fieldVarId") final String fieldVarId,
 												  @Context final HttpServletRequest req,
-												  @Context final HttpServletResponse res) throws DotDataException {
+												  @Context final HttpServletResponse res) throws DotDataException, UniqueFieldValueDuplicatedException {
 		new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(req, res)
 				.requiredBackendUser(true)
@@ -485,13 +486,12 @@ public class FieldVariableResource implements Serializable {
 	 *
 	 * @param field      The {@link Field} that the Field Variable is associated with.
 	 * @param fieldVarId The ID of the Field Variable that will be deleted.
-	 * @param user       The {@link User} performing the action.
 	 *
 	 * @throws DotDataException An error occurred when deleting the Field Variable from the
 	 *                          database.
 	 */
 	@WrapInTransaction
-	private void deleteFieldVariable(final Field field, final String fieldVarId) throws DotDataException {
+	private void deleteFieldVariable(final Field field, final String fieldVarId) throws DotDataException, UniqueFieldValueDuplicatedException {
 		final FieldVariable fieldVariable = this.getFieldVariable(field, fieldVarId);
 		this.fieldAPI.delete(fieldVariable);
 	}

@@ -1,6 +1,6 @@
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 
-import { computed } from '@angular/core';
+import { computed, untracked } from '@angular/core';
 
 import { withEditor } from './features/editor/withEditor';
 import { withFlags } from './features/flags/withFlags';
@@ -13,6 +13,8 @@ import { UVE_FEATURE_FLAGS } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import { getErrorPayload, getRequestHostName, sanitizeURL } from '../utils';
 
+// Some properties can be computed
+// Ticket: https://github.com/dotCMS/core/issues/30760
 const initialState: UVEState = {
     isEnterprise: false,
     languages: [],
@@ -20,7 +22,8 @@ const initialState: UVEState = {
     currentUser: null,
     experiment: null,
     errorCode: null,
-    params: null,
+    pageParams: null,
+    viewParams: null,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
     canEditPage: false,
@@ -32,20 +35,12 @@ export const UVEStore = signalStore(
     { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
     withComputed(
-        ({
-            pageAPIResponse,
-            isTraditionalPage,
-            params,
-            languages,
-            errorCode: error,
-            status,
-            isEnterprise
-        }) => {
+        ({ pageAPIResponse, pageParams, languages, errorCode: error, status, isEnterprise }) => {
             return {
                 $translateProps: computed<TranslateProps>(() => {
                     const response = pageAPIResponse();
                     const languageId = response?.viewAs.language?.id;
-                    const translatedLanguages = languages();
+                    const translatedLanguages = untracked(() => languages());
                     const currentLanguage = translatedLanguages.find(
                         (lang) => lang.id === languageId
                     );
@@ -60,7 +55,7 @@ export const UVEStore = signalStore(
 
                     const currentUrl = '/' + sanitizeURL(response?.page.pageURI);
 
-                    const requestHostName = getRequestHostName(isTraditionalPage(), params());
+                    const requestHostName = getRequestHostName(pageParams());
 
                     const page = response?.page;
                     const templateDrawed = response?.template.drawed;

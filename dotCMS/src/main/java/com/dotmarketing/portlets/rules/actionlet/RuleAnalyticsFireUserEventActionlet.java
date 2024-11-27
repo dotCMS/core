@@ -75,7 +75,7 @@ public class RuleAnalyticsFireUserEventActionlet extends RuleActionlet<RuleAnaly
         userEventPayload.put(Collector.OBJECT, objectDetail);
         userEventPayload.put(Collector.EVENT_TYPE, instance.eventType);
         userEventPayload.put(Collector.EVENT_SOURCE, EventSource.RULE.getName());
-        webEventsCollectorService.fireCollectorsAndEmitEvent(request, response, USER_CUSTOM_DEFINED_REQUEST_MATCHER, userEventPayload);
+        webEventsCollectorService.fireCollectorsAndEmitEvent(request, response, USER_CUSTOM_DEFINED_REQUEST_MATCHER, userEventPayload, Map.of());
 
         return true;
     }

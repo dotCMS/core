@@ -40,13 +40,16 @@ export function withSave() {
                             const payload = {
                                 pageContainers,
                                 pageId: store.pageAPIResponse().page.identifier,
-                                params: store.params()
+                                params: store.pageParams()
                             };
 
                             return dotPageApiService.save(payload).pipe(
                                 switchMap(() =>
                                     dotPageApiService
-                                        .getClientPage(store.params(), store.clientRequestProps())
+                                        .getClientPage(
+                                            store.pageParams(),
+                                            store.clientRequestProps()
+                                        )
                                         .pipe(
                                             tapResponse(
                                                 (pageAPIResponse: DotPageApiResponse) => {

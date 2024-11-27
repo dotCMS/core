@@ -1,5 +1,9 @@
 package com.dotcms.rest;
 
+import static com.dotmarketing.util.NumberUtil.toInt;
+import static com.dotmarketing.util.NumberUtil.toLong;
+
+import com.dotcms.api.web.HttpServletRequestImpersonator;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
@@ -63,28 +67,6 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.glassfish.jersey.media.multipart.BodyPart;
-import org.glassfish.jersey.media.multipart.ContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -108,9 +90,27 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotmarketing.util.NumberUtil.toInt;
-import static com.dotmarketing.util.NumberUtil.toLong;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.glassfish.jersey.media.multipart.BodyPart;
+import org.glassfish.jersey.media.multipart.ContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 /**
  * This REST Endpoint provides access to Contentlet data, fields, and different actions that can be
@@ -576,7 +576,10 @@ public class ContentResource {
         final ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         final Map<String, String> paramsMap = initData.getParamsMap();
         final User user = initData.getUser();
-        final String render = paramsMap.get(RESTParams.RENDER.getValue());
+        //Try the render url parameter first, then the query parameter
+        final String render = UtilMethods.isSet(paramsMap.get(RESTParams.RENDER.getValue())) ?
+                paramsMap.get(RESTParams.RENDER.getValue()) :
+                request.getParameter(RESTParams.RENDER.getValue());
         final String query = paramsMap.get(RESTParams.QUERY.getValue());
         final String related = paramsMap.get(RESTParams.RELATED.getValue());
         final String id = paramsMap.get(RESTParams.ID.getValue());
@@ -835,8 +838,9 @@ public class ContentResource {
         final Map<String, Object> m = new HashMap<>();
         final ContentType type = contentlet.getContentType();
 
-        m.putAll(ContentletUtil.getContentPrintableMap(user, contentlet, allCategoriesInfo));
-
+        final boolean doRender = (BaseContentType.WIDGET.equals(type.baseType()) && "true".equalsIgnoreCase(render));
+        //Render code
+        m.putAll(ContentletUtil.getContentPrintableMap(user, contentlet, allCategoriesInfo, doRender));
         if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
                 .equalsIgnoreCase(render)) {
             m.put("parsedCode", WidgetResource.parseWidget(request, response, contentlet));
@@ -1426,7 +1430,11 @@ public class ContentResource {
             contentlet = myTransformer.hydrate().get(0);
         }
 
-        final Map<String, Object> map = ContentletUtil.getContentPrintableMap(user, contentlet, allCategoriesInfo);
+        final boolean doRender = (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.TRUE.toString().equalsIgnoreCase(render));
+        //By default, all underlying transformer strategies that are triggered by the Widget ContentType or the option RENDER_FIELDS are enabled
+        //Therefore, we need to disable them in case the render option is not enabled to avoid undesired rendering when no explicitly requested
+        // Render field "code"
+        final Map<String, Object> map = ContentletUtil.getContentPrintableMap(user, contentlet, allCategoriesInfo, doRender);
         final Set<String> jsonFields = getJSONFields(type);
 
         for (final String key : map.keySet()) {
@@ -1458,10 +1466,9 @@ public class ContentResource {
                 }
             }
         }
-
-        if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
-                .equalsIgnoreCase(render)) {
-            jsonObject.put("parsedCode", WidgetResource.parseWidget(request, response, contentlet));
+        if (BaseContentType.WIDGET.equals(type.baseType()) && "true".equalsIgnoreCase(render)) {
+            final HttpServletRequestImpersonator impersonator = HttpServletRequestImpersonator.newInstance();
+            jsonObject.put("parsedCode", WidgetResource.parseWidget(impersonator.request(), response, contentlet));
         }
 
         if (BaseContentType.HTMLPAGE.equals(type.baseType())) {

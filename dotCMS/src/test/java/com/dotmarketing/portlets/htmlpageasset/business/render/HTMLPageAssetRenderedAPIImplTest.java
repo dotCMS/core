@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import com.dotcms.analytics.web.AnalyticsWebAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.PermissionAPI;
@@ -58,6 +59,7 @@ public class HTMLPageAssetRenderedAPIImplTest {
     public void init() throws DotDataException, DotSecurityException {
         permissionAPI = mock(PermissionAPI.class);
 
+
         userAPI = mock(UserAPI.class);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
 
@@ -71,7 +73,7 @@ public class HTMLPageAssetRenderedAPIImplTest {
 
         hTMLPageAssetRenderedAPIImpl = new HTMLPageAssetRenderedAPIImpl(
                 permissionAPI, userAPI, hostWebAPI, languageAPI, htmlPageAssetAPI,
-                urlMapAPIImpl, languageWebAPI);
+                urlMapAPIImpl, languageWebAPI, mock(AnalyticsWebAPI.class));
     }
 
     @Test

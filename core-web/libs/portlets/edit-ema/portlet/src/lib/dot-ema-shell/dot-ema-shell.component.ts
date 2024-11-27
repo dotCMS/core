@@ -1,15 +1,15 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Component, effect, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { skip, takeUntil } from 'rxjs/operators';
+import { skip } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -26,7 +26,6 @@ import { SiteService } from '@dotcms/dotcms-js';
 import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotInfoPageComponent, DotNotLicenseComponent } from '@dotcms/ui';
-import { isEqual } from '@dotcms/utils/lib/shared/lodash/functions';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
@@ -37,7 +36,7 @@ import { WINDOW } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction, DotPage } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { compareUrlPaths } from '../utils';
+import { checkClientHostAccess, compareUrlPaths, getAllowedPageParams } from '../utils';
 
 @Component({
     selector: 'dot-ema-shell',
@@ -87,12 +86,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly #siteService = inject(SiteService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #confirmationService = inject(ConfirmationService);
+    readonly #location = inject(Location);
 
     protected readonly $shellProps = this.uveStore.$shellProps;
 
     readonly #destroy$ = new Subject<boolean>();
 
-    readonly translatePageEffect = effect(() => {
+    readonly $translatePageEffect = effect(() => {
         const { page, currentLanguage } = this.uveStore.$translateProps();
 
         if (currentLanguage && !currentLanguage?.translated) {
@@ -100,47 +100,35 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         }
     });
 
+    /**
+     * Handle the update of the page params
+     * When the page params change, we update the location
+     *
+     * @memberof DotEmaShellComponent
+     */
+    readonly $updateQueryParamsEffect = effect(() => {
+        const pageParams = this.uveStore.pageParams();
+        const viewParams = this.uveStore.viewParams();
+
+        if (!pageParams && !viewParams) {
+            return;
+        }
+
+        const queryParams = {
+            ...(pageParams ?? {}),
+            ...(viewParams ?? {})
+        };
+        this.#updateLocation(queryParams);
+    });
+
     ngOnInit(): void {
-        this.#activatedRoute.queryParams
-            .pipe(takeUntil(this.#destroy$))
-            .subscribe((queryParams) => {
-                const { data } = this.#activatedRoute.snapshot.data;
-
-                // If we have a clientHost we need to check if it's in the whitelist
-                if (queryParams.clientHost) {
-                    const canAccessClientHost = this.checkClientHostAccess(
-                        queryParams.clientHost,
-                        data?.options?.allowedDevURLs
-                    ); // If we don't have a whitelist we can't access the clientHost;
-
-                    // If we can't access the clientHost we need to navigate to the default page
-                    if (!canAccessClientHost) {
-                        this.navigate({
-                            ...queryParams,
-                            clientHost: null // Clean the queryParam so the editor behaves as expected
-                        });
-
-                        return; // We need to return here, to avoid the editor to load with a non desirable clientHost
-                    }
-                }
-
-                const currentParams = {
-                    ...(queryParams as DotPageApiParams),
-                    clientHost: queryParams.clientHost ?? data?.url
-                };
-
-                // We don't need to load if the params are the same
-                if (isEqual(this.uveStore.params(), currentParams)) {
-                    return;
-                }
-
-                this.uveStore.init(currentParams);
-            });
+        const params = this.#getPageParams();
+        this.uveStore.loadPageAsset(params);
 
         // We need to skip one because it's the initial value
-        this.#siteService.switchSite$.pipe(skip(1)).subscribe(() => {
-            this.#router.navigate(['/pages']);
-        });
+        this.#siteService.switchSite$
+            .pipe(skip(1))
+            .subscribe(() => this.#router.navigate(['/pages']));
     }
 
     ngOnDestroy(): void {
@@ -156,10 +144,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
                 if (!isSaved && isTranslation) {
-                    // At this point we are in the language of the translation, if the user didn't save we need to navigate to the default language
-                    this.navigate({
-                        language_id: 1
-                    });
+                    this.#goBackToCurrentLanguage();
                 }
 
                 break;
@@ -186,24 +171,16 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     private handleSavePageEvent(event: CustomEvent): void {
         const htmlPageReferer = event.detail.payload?.htmlPageReferer;
         const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
+        const targetUrl = this.getTargetUrl(url.pathname);
 
-        if (this.shouldNavigate(url.pathname)) {
+        if (this.shouldNavigate(targetUrl)) {
             // Navigate to the new URL if it's different from the current one
-            this.navigate({ url: url.pathname });
+            this.uveStore.loadPageAsset({ url: targetUrl });
 
             return;
         }
 
-        this.uveStore.reload();
-    }
-    /**
-     * Extracts the htmlPageReferer url from the event payload.
-     *
-     * @param {CustomEvent} event - The event object containing the payload with the URL.
-     * @return {string | undefined} - The extracted URL or undefined if not found.
-     */
-    private extractPageRefererUrl(event: CustomEvent): string | undefined {
-        return event.detail.payload?.htmlPageReferer;
+        this.uveStore.reloadCurrentPage();
     }
 
     /**
@@ -229,7 +206,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @returns {boolean} - True if the current URL differs from the target URL and navigation is required.
      */
     private shouldNavigate(targetUrl: string | undefined): boolean {
-        const currentUrl = this.uveStore.params().url;
+        const currentUrl = this.uveStore.pageParams().url;
 
         // Navigate if the target URL is defined and different from the current URL
         return targetUrl !== undefined && !compareUrlPaths(targetUrl, currentUrl);
@@ -260,41 +237,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * Reloads the component from the dialog.
      */
     reloadFromDialog() {
-        this.uveStore.reload();
-    }
-
-    private navigate(queryParams) {
-        this.#router.navigate([], {
-            queryParams,
-            queryParamsHandling: 'merge'
-        });
-    }
-
-    /**
-     * Check if the clientHost is in the whitelist provided by the app
-     *
-     * @private
-     * @param {string} clientHost
-     * @param {*} [allowedDevURLs=[]]
-     * @return {*}
-     * @memberof DotEmaShellComponent
-     */
-    private checkClientHostAccess(clientHost: string, allowedDevURLs: string[] = []): boolean {
-        // If we don't have a whitelist or a clientHost we can't access it
-        if (!clientHost || !Array.isArray(allowedDevURLs) || !allowedDevURLs.length) {
-            return false;
-        }
-
-        // Most IDEs and terminals add a / at the end of the URL, so we need to sanitize it
-        const sanitizedClientHost = clientHost.endsWith('/') ? clientHost.slice(0, -1) : clientHost;
-
-        // We need to sanitize the whitelist as well
-        const sanitizedAllowedDevURLs = allowedDevURLs.map((url) =>
-            url.endsWith('/') ? url.slice(0, -1) : url
-        );
-
-        // If the clientHost is in the whitelist we can access it
-        return sanitizedAllowedDevURLs.includes(sanitizedClientHost);
+        this.uveStore.reloadCurrentPage();
     }
 
     /**
@@ -323,11 +266,56 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     newLanguage: language.id
                 });
             },
-            reject: () => {
-                this.navigate({
-                    language_id: 1
-                });
-            }
+            reject: () => this.#goBackToCurrentLanguage()
         });
+    }
+
+    /**
+     * Get the query params from the Router
+     *
+     * @return {*}  {DotPageApiParams}
+     * @memberof DotEmaShellComponent
+     */
+    #getPageParams(): DotPageApiParams {
+        const { queryParams, data } = this.#activatedRoute.snapshot;
+        const uveConfig = data?.uveConfig;
+        const allowedDevURLs = uveConfig?.options?.allowedDevURLs;
+
+        // Clone queryParams to avoid mutation errors
+        const params = getAllowedPageParams(queryParams);
+        const validHost = checkClientHostAccess(params.clientHost, allowedDevURLs);
+
+        if (!validHost) {
+            delete params.clientHost;
+        }
+
+        if (uveConfig?.url && !validHost) {
+            params.clientHost = uveConfig.url;
+        }
+
+        return params;
+    }
+
+    /**
+     * Update the location with the new query params
+     *
+     * Note: This method does not trigger a navigation event
+     *
+     * @param {Params} queryParams
+     * @memberof DotEmaShellComponent
+     */
+    #updateLocation(queryParams: Params = {}): void {
+        const urlTree = this.#router.createUrlTree([], { queryParams });
+
+        this.#location.replaceState(urlTree.toString());
+    }
+
+    /**
+     * Use the Page Language to navigate back to the current language
+     *
+     * @memberof DotEmaShellComponent
+     */
+    #goBackToCurrentLanguage(): void {
+        this.uveStore.loadPageAsset({ language_id: '1' });
     }
 }

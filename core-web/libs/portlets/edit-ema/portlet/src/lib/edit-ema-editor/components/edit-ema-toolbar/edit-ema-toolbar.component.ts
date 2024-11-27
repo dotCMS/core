@@ -9,7 +9,7 @@ import {
     ViewChild,
     inject
 } from '@angular/core';
-import { Params, Router } from '@angular/router';
+import { Params } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -65,7 +65,6 @@ export class EditEmaToolbarComponent {
 
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
-    readonly #router = inject(Router);
     readonly #dotContentletLockerService = inject(DotContentletLockerService);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #personalizeService = inject(DotPersonalizeService);
@@ -110,13 +109,12 @@ export class EditEmaToolbarComponent {
     /**
      * Handle the language selection
      *
-     * @param {number} language_id
+     * @param {number} language
      * @memberof DotEmaComponent
      */
-    onLanguageSelected(language_id: number) {
-        this.updateQueryParams({
-            language_id
-        });
+    onLanguageSelected(language: number) {
+        const language_id = language.toString();
+        this.uveStore.loadPageAsset({ language_id });
     }
 
     /**
@@ -127,7 +125,7 @@ export class EditEmaToolbarComponent {
      */
     onPersonaSelected(persona: DotPersona & { pageId: string }) {
         if (persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized) {
-            this.updateQueryParams({
+            this.uveStore.loadPageAsset({
                 'com.dotmarketing.persona.id': persona.identifier
             });
         } else {
@@ -143,7 +141,7 @@ export class EditEmaToolbarComponent {
                     this.#personalizeService
                         .personalized(persona.pageId, persona.keyTag)
                         .subscribe(() => {
-                            this.updateQueryParams({
+                            this.uveStore.loadPageAsset({
                                 'com.dotmarketing.persona.id': persona.identifier
                             });
 
@@ -179,7 +177,7 @@ export class EditEmaToolbarComponent {
                         this.personaSelector.fetchPersonas();
 
                         if (persona.selected) {
-                            this.updateQueryParams({
+                            this.uveStore.loadPageAsset({
                                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                             });
                         }
@@ -198,16 +196,17 @@ export class EditEmaToolbarComponent {
     handleNewPage(page: DotCMSContentlet): void {
         const { pageURI, url, languageId } = page;
         const params = {
-            ...this.uveStore.params(),
             url: pageURI ?? url,
             language_id: languageId?.toString()
         };
 
         if (this.shouldNavigateToNewPage(params)) {
-            this.updateQueryParams(params);
-        } else {
-            this.uveStore.reload();
+            this.uveStore.loadPageAsset(params);
+
+            return;
         }
+
+        this.uveStore.reloadCurrentPage();
     }
 
     /**
@@ -243,14 +242,7 @@ export class EditEmaToolbarComponent {
                     }
                 })
             )
-            .subscribe(() => this.uveStore.reload());
-    }
-
-    private updateQueryParams(params: Params) {
-        this.#router.navigate([], {
-            queryParams: params,
-            queryParamsHandling: 'merge'
-        });
+            .subscribe(() => this.uveStore.reloadCurrentPage());
     }
 
     /**
@@ -261,7 +253,7 @@ export class EditEmaToolbarComponent {
      */
     private shouldNavigateToNewPage(params: Params): boolean {
         const { url: newUrl, language_id: newLanguageId } = params;
-        const { url: currentUrl, language_id: currentLanguageId } = this.uveStore.params();
+        const { url: currentUrl, language_id: currentLanguageId } = this.uveStore.pageParams();
 
         // Determine the target URL, prioritizing the content map URL if available
         const urlContentMap = this.uveStore.pageAPIResponse().urlContentMap;

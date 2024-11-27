@@ -352,7 +352,6 @@ describe('EditEmaEditorComponent', () => {
         let dotHttpErrorManagerService: DotHttpErrorManagerService;
         let dotTempFileUploadService: DotTempFileUploadService;
         let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
-        let router: Router;
         let dotPageApiService: DotPageApiService;
 
         const createComponent = createRouting();
@@ -386,12 +385,11 @@ describe('EditEmaEditorComponent', () => {
             dotAlertConfirmService = spectator.inject(DotAlertConfirmService, true);
             dotTempFileUploadService = spectator.inject(DotTempFileUploadService, true);
             dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
-            router = spectator.inject(Router, true);
             dotPageApiService = spectator.inject(DotPageApiService, true);
             addMessageSpy = jest.spyOn(messageService, 'add');
             jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
 
-            store.init({
+            store.loadPageAsset({
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
@@ -461,7 +459,7 @@ describe('EditEmaEditorComponent', () => {
                 spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
 
                 spectator.detectChanges();
-                store.init({
+                store.loadPageAsset({
                     url: 'index',
                     language_id: '5',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
@@ -483,7 +481,7 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectChanges();
 
-                store.init({
+                store.loadPageAsset({
                     url: 'index',
                     language_id: '5',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -498,17 +496,9 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should set the client is ready to false when the component is destroyed', () => {
-                store.setIsClientReady(true);
-
-                spectator.component.ngOnDestroy();
-
-                expect(store.isClientReady()).toBe(false);
-            });
-
             it('should relaod when Block editor is saved', () => {
                 const blockEditorSidebar = spectator.query(DotBlockEditorSidebarComponent);
-                const spy = jest.spyOn(store, 'reload');
+                const spy = jest.spyOn(store, 'reloadCurrentPage');
                 blockEditorSidebar.onSaved.emit();
                 expect(spy).toHaveBeenCalled();
             });
@@ -717,7 +707,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectChanges();
 
-                    store.init({
+                    store.loadPageAsset({
                         clientHost: 'http://localhost:3000',
                         url: 'index',
                         language_id: '1',
@@ -772,7 +762,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should reload the page after saving the new navigation order', () => {
-                        const reloadSpy = jest.spyOn(store, 'reload');
+                        const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
                         const messageSpy = jest.spyOn(messageService, 'add');
                         const dialog = spectator.debugElement.query(
                             By.css("[data-testId='ema-dialog']")
@@ -904,7 +894,7 @@ describe('EditEmaEditorComponent', () => {
                         spyDialog = jest.spyOn(dialog, 'editUrlContentMapContentlet');
                         spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframeContent');
                         spyUpdateQueryParams = jest.spyOn(router, 'navigate');
-                        spyStoreReload = jest.spyOn(store, 'reload');
+                        spyStoreReload = jest.spyOn(store, 'reloadCurrentPage');
 
                         spectator.detectChanges();
                     });
@@ -2612,15 +2602,12 @@ describe('EditEmaEditorComponent', () => {
                         jest.useFakeTimers(); // Mock the timers
                         spectator.detectChanges();
 
-                        store.init({
+                        store.loadPageAsset({
                             url: 'index',
                             language_id: '3',
-                            'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                            'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                            clientHost: ''
                         });
-                    });
-
-                    afterEach(() => {
-                        jest.useRealTimers(); // Restore the real timers after each test
                     });
 
                     it('iframe should have the correct content when is VTL', () => {
@@ -2652,7 +2639,7 @@ describe('EditEmaEditorComponent', () => {
 
                         iframe.nativeElement.contentWindow.scrollTo(0, 100); //Scroll down
 
-                        store.init({
+                        store.loadPageAsset({
                             url: 'index',
                             language_id: '4',
                             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -2674,8 +2661,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('should navigate to new url and change persona when postMessage SET_URL', () => {
-                    const router = spectator.inject(Router);
-                    jest.spyOn(router, 'navigate');
+                    const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
 
                     spectator.detectChanges();
 
@@ -2691,12 +2677,9 @@ describe('EditEmaEditorComponent', () => {
                         })
                     );
 
-                    expect(router.navigate).toHaveBeenCalledWith([], {
-                        queryParams: {
-                            url: '/some',
-                            'com.dotmarketing.persona.id': 'modes.persona.no.persona'
-                        },
-                        queryParamsHandling: 'merge'
+                    expect(spyloadPageAsset).toHaveBeenCalledWith({
+                        url: '/some',
+                        'com.dotmarketing.persona.id': 'modes.persona.no.persona'
                     });
                 });
 
@@ -2722,7 +2705,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('set url to a different route should set the editor state to loading', () => {
-                    const navigateSpy = jest.spyOn(router, 'navigate');
+                    const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
 
                     spectator.detectChanges();
 
@@ -2738,12 +2721,9 @@ describe('EditEmaEditorComponent', () => {
                         })
                     );
 
-                    expect(navigateSpy).toHaveBeenCalledWith([], {
-                        queryParams: {
-                            'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                            url: '/some'
-                        },
-                        queryParamsHandling: 'merge'
+                    expect(spyloadPageAsset).toHaveBeenCalledWith({
+                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                        url: '/some'
                     });
                 });
 
@@ -2752,7 +2732,7 @@ describe('EditEmaEditorComponent', () => {
 
                     const url = "/ultra-cool-url-that-doesn't-exist";
 
-                    store.init({
+                    store.loadPageAsset({
                         url,
                         language_id: '5',
                         'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -2791,7 +2771,7 @@ describe('EditEmaEditorComponent', () => {
                     spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
 
                     spectator.detectChanges();
-                    store.init({
+                    store.loadPageAsset({
                         url: 'index',
                         language_id: '5',
                         'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
@@ -2937,7 +2917,7 @@ describe('EditEmaEditorComponent', () => {
                             store,
                             'setClientConfiguration'
                         );
-                        const reloadSpy = jest.spyOn(store, 'reload');
+                        const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
 
                         const config = {
                             params: {},
@@ -2963,7 +2943,7 @@ describe('EditEmaEditorComponent', () => {
                             store,
                             'setClientConfiguration'
                         );
-                        const reloadSpy = jest.spyOn(store, 'reload');
+                        const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
 
                         const config = {
                             params: {
@@ -2990,5 +2970,8 @@ describe('EditEmaEditorComponent', () => {
         });
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => {
+        jest.clearAllMocks();
+        jest.useRealTimers(); // Restore the real timers after each test
+    });
 });

@@ -83,8 +83,6 @@ public class PagesCollector implements Collector {
                 pageObject.put(ID, page.getIdentifier());
                 pageObject.put(TITLE, page.getTitle());
                 collectorPayloadBean.put(EVENT_TYPE, EventType.PAGE_REQUEST.getType());
-                pageObject.put("id", page.getIdentifier());
-                pageObject.put("title", page.getTitle());
             }
             pageObject.put(URL, uri);
         }

@@ -45,12 +45,12 @@ describe('ContentletStatusPipe', () => {
         expect(result.classes).toBe('p-chip-gray');
     });
 
-    it('should transform contentlet status to "Revision"', () => {
+    it('should transform contentlet status to "Changed"', () => {
         const contentlet = { live: true, working: true, archived: false } as DotCMSContentlet;
 
         const result = pipe.transform(contentlet);
 
-        expect(result.label).toBe('Revision');
+        expect(result.label).toBe('Changed');
         expect(result.classes).toBe('p-chip-pink');
     });
 
