@@ -1,18 +1,15 @@
-@if(variant === 'new-uve-toolbar') {
+@if (variant === TOOLBAR_VARIANTS.NEW_UVE) {
     <p-button
-    [icon]="bookmarked() ? 'pi pi-star-fill' : 'pi pi-star'"
-    [loading]="loading()"
-    (click)="toggleBookmark()" 
-    styleClass="p-button-text" /> 
-}
-@else {
+        [icon]="bookmarked() ? 'pi pi-star-fill' : 'pi pi-star'"
+        [loading]="loading()"
+        (click)="toggleBookmark()"
+        styleClass="p-button-text" />
+} @else {
     <p-button
-    (onClick)="toggleBookmark()"
-    [loading]="loading()"
-    [icon]="bookmarked() ? 'pi pi-star-fill' : 'pi pi-star'"
-    [label]="'editpage.toolbar.bookmark' | dm "
-    styleClass="p-button-text p-button-sm"
-    data-testId="bookmark-button" />
+        (onClick)="toggleBookmark()"
+        [loading]="loading()"
+        [icon]="bookmarked() ? 'pi pi-star-fill' : 'pi pi-star'"
+        [label]="'editpage.toolbar.bookmark' | dm"
+        styleClass="p-button-text p-button-sm"
+        data-testId="bookmark-button" />
 }
-
-

@@ -108,3 +108,36 @@ export interface ToolbarProps {
         hideSocialMedia: boolean;
     };
 }
+
+/**
+ * This is used for model the props of
+ * the New UVE Toolbar with Preview Mode and Future Time Machine
+ *
+ * @export
+ * @interface UVEToolbarProps
+ */
+export interface UVEToolbarProps {
+    editor: {
+        bookmarksUrl: string;
+        copyUrl: string;
+        apiUrl: string;
+    };
+    preview?: {
+        deviceSelector: {
+            apiLink: string;
+            hideSocialMedia: boolean;
+        };
+    };
+    personaSelector: {
+        pageId: string;
+        value: DotPersona;
+    };
+    runningExperiment?: DotExperiment;
+    currentLanguage: DotLanguage;
+    workflowActionsInode?: string;
+    unlockButton?: {
+        inode: string;
+        loading: boolean;
+    };
+    showInfoDisplay?: boolean;
+}

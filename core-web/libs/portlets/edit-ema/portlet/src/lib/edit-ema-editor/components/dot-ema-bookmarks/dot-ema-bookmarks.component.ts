@@ -11,6 +11,8 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { TOOLBAR_VARIANTS } from '../../../shared/enums';
+
 @Component({
     selector: 'dot-ema-bookmarks',
     standalone: true,
@@ -20,7 +22,9 @@ import { DotMessagePipe } from '@dotcms/ui';
 })
 export class DotEmaBookmarksComponent implements OnInit {
     @Input() url = '';
-    @Input() variant: 'new-uve-toolbar' | 'old-toolbar' = 'old-toolbar';
+    @Input() variant: TOOLBAR_VARIANTS = TOOLBAR_VARIANTS.TRADITIONAL;
+
+    TOOLBAR_VARIANTS = TOOLBAR_VARIANTS;
 
     private readonly loginService = inject(LoginService);
     private readonly dotFavoritePageService = inject(DotFavoritePageService);

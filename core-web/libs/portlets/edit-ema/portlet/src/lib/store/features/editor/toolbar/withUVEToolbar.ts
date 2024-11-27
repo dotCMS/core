@@ -1,47 +1,44 @@
-import { signalStoreFeature, withMethods, withComputed, withState, type, patchState } from "@ngrx/signals";
+import {
+    signalStoreFeature,
+    withMethods,
+    withComputed,
+    withState,
+    type,
+    patchState
+} from '@ngrx/signals';
 
-import { computed } from "@angular/core";
+import { computed } from '@angular/core';
 
-import { DotExperiment, DotPersona, DotLanguage, DotExperimentStatus } from "@dotcms/dotcms-models";
+import { DotExperimentStatus } from '@dotcms/dotcms-models';
 
-import { DEFAULT_PERSONA } from "../../../../shared/consts";
-import { UVE_STATUS } from "../../../../shared/enums";
-import { computePageIsLocked, createFavoritePagesURL, createFullURL, createPageApiUrlWithQueryParams, getIsDefaultVariant, sanitizeURL } from "../../../../utils";
-import { UVEState } from "../../../models";
-import { EditorToolbarState } from "../models";
+import { DEFAULT_PERSONA } from '../../../../shared/consts';
+import { UVE_STATUS } from '../../../../shared/enums';
+import {
+    computePageIsLocked,
+    createFavoritePagesURL,
+    createFullURL,
+    createPageApiUrlWithQueryParams,
+    getIsDefaultVariant,
+    sanitizeURL
+} from '../../../../utils';
+import { UVEState } from '../../../models';
+import { EditorToolbarState, UVEToolbarProps } from '../models';
 
+/**
+ * The initial state for the editor toolbar.
+ *
+ * @property {EditorToolbarState} initialState - The initial state object for the editor toolbar.
+ * @property {string | null} initialState.device - The current device being used, or null if not set.
+ * @property {string | null} initialState.socialMedia - The current social media platform being used, or null if not set.
+ * @property {boolean} initialState.isEditState - Flag indicating whether the editor is in edit mode.
+ * @property {boolean} initialState.isPreviewModeActive - Flag indicating whether the preview mode is active.
+ */
 const initialState: EditorToolbarState = {
-        device: null,
-        socialMedia: null,
-        isEditState: true,
-        isPreviewModeActive: false
-}
-
-export interface UVEToolbarProps {
-    editor: {
-        bookmarksUrl: string;
-        copyUrl: string;
-        apiUrl: string;
-    };
-    preview?: {
-        deviceSelector: {
-            apiLink: string;
-            hideSocialMedia: boolean;
-        };
-    };
-    personaSelector: {
-        pageId: string;
-        value: DotPersona;
-    };
-    runningExperiment?: DotExperiment ;
-    currentLanguage: DotLanguage;
-    workflowActionsInode?: string ;
-    unlockButton?: {
-        inode: string;
-        loading: boolean;
-    };
-    showInfoDisplay?: boolean;
-}
+    device: null,
+    socialMedia: null,
+    isEditState: true,
+    isPreviewModeActive: false
+};
 
 export function withUVEToolbar() {
     return signalStoreFeature(
@@ -50,7 +47,7 @@ export function withUVEToolbar() {
         },
         withState<EditorToolbarState>(initialState),
         withComputed((store) => ({
-            $toolbar: computed<UVEToolbarProps>(() => {
+            $uveToolbar: computed<UVEToolbarProps>(() => {
                 const params = store.pageParams();
                 const url = sanitizeURL(params?.url);
 
@@ -90,17 +87,21 @@ export function withUVEToolbar() {
                 const siteId = pageAPIResponse?.site?.identifier;
 
                 return {
-                    editor: store.isPreviewModeActive() ? null : {                        
-                        bookmarksUrl,
-                        copyUrl: createFullURL(params, siteId),
-                        apiUrl: pageAPI,
-                    },
-                    preview: store.isPreviewModeActive() ? {
-                        deviceSelector: {
-                            apiLink: `${clientHost}${pageAPI}`,
-                            hideSocialMedia: !store.isTraditionalPage()
-                        },
-                    } : null,
+                    editor: store.isPreviewModeActive()
+                        ? null
+                        : {
+                              bookmarksUrl,
+                              copyUrl: createFullURL(params, siteId),
+                              apiUrl: pageAPI
+                          },
+                    preview: store.isPreviewModeActive()
+                        ? {
+                              deviceSelector: {
+                                  apiLink: `${clientHost}${pageAPI}`,
+                                  hideSocialMedia: !store.isTraditionalPage()
+                              }
+                          }
+                        : null,
                     currentLanguage: pageAPIResponse?.viewAs.language,
                     urlContentMap: store.isEditState()
                         ? (pageAPIResponse?.urlContentMap ?? null)
@@ -112,9 +113,9 @@ export function withUVEToolbar() {
                         value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
                     },
                     unlockButton: shouldShowUnlock ? unlockButton : null,
-                    showInfoDisplay: shouldShowInfoDisplay,
+                    showInfoDisplay: shouldShowInfoDisplay
                 };
-            }),
+            })
         })),
         withMethods((store) => ({
             // Fake method to toggle preview mode
@@ -122,8 +123,8 @@ export function withUVEToolbar() {
             togglePreviewMode: (preview) => {
                 patchState(store, {
                     isPreviewModeActive: preview
-                })
+                });
             }
         }))
-    )
+    );
 }

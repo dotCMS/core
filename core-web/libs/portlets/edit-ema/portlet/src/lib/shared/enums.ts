@@ -53,3 +53,9 @@ export enum FormStatus {
     SAVED = 'SAVED',
     PRISTINE = 'PRISTINE'
 }
+
+// TODO: Doc this
+export enum TOOLBAR_VARIANTS {
+    NEW_UVE = 'NEW_UVE',
+    TRADITIONAL = 'TRADITIONAL'
+}
