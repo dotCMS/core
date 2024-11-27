@@ -21,7 +21,11 @@ import { filter, map } from 'rxjs/operators';
 
 import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotGeneratedAIImage } from '@dotcms/dotcms-models';
-import { INPUT_TYPE, UploadedFile } from '@dotcms/edit-content/models/dot-edit-content-file.model';
+import {
+    INPUT_TYPE,
+    INPUT_TYPES,
+    UploadedFile
+} from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import {
     DotDropZoneComponent,
     DotMessagePipe,
@@ -282,7 +286,6 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
-            maskStyleClass: 'p-dialog-mask-transparent',
             modal: true,
             resizable: false,
             position: 'center',
@@ -323,7 +326,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
-            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            maskStyleClass: 'p-dialog-mask-dynamic',
             resizable: false,
             modal: true,
             width: '90%',
@@ -367,7 +370,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
-            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            maskStyleClass: 'p-dialog-mask-dynamic',
             resizable: false,
             modal: true,
             width: '90%',
@@ -399,9 +402,14 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
      * @memberof DotEditContentFileFieldComponent
      */
     showSelectExistingFileDialog() {
-        const header = this.#dotMessageService.get(
-            'dot.file.field.dialog.select.existing.file.header'
-        );
+        const fieldType = this.$field().fieldType;
+        const title =
+            fieldType === INPUT_TYPES.Image
+                ? 'dot.file.field.dialog.select.existing.image.header'
+                : 'dot.file.field.dialog.select.existing.file.header';
+        const mimeTypes = fieldType === INPUT_TYPES.Image ? ['image'] : [];
+
+        const header = this.#dotMessageService.get(title);
 
         this.#dialogRef = this.#dialogService.open(DotSelectExistingFileComponent, {
             header,
@@ -409,14 +417,13 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
-            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            maskStyleClass: 'p-dialog-mask-dynamic',
             resizable: false,
             modal: true,
             width: '90%',
             style: { 'max-width': '1040px' },
             data: {
-                inputType: this.$field().fieldType,
-                acceptedFiles: this.store.acceptedFiles()
+                mimeTypes
             }
         });
 
