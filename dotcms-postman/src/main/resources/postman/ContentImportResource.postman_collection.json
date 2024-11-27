@@ -102,7 +102,7 @@
 								"v1",
 								"content",
 								"_import",
-								"validate"
+								"_validate"
 							]
 						},
 						"description": "Creates a new job in the specified queue."
@@ -242,7 +242,7 @@
 								"v1",
 								"content",
 								"_import",
-								"validate"
+								"_validate"
 							]
 						},
 						"description": "Creates a new job in the specified queue."
@@ -306,7 +306,7 @@
 								"v1",
 								"content",
 								"_import",
-								"validate"
+								"_validate"
 							]
 						},
 						"description": "Creates a new job in the specified queue."
@@ -370,7 +370,7 @@
 								"v1",
 								"content",
 								"_import",
-								"validate"
+								"_validate"
 							]
 						},
 						"description": "Creates a new job in the specified queue."
@@ -436,7 +436,7 @@
 								"v1",
 								"content",
 								"_import",
-								"validate"
+								"_validate"
 							]
 						},
 						"description": "Creates a new job in the specified queue."
@@ -502,7 +502,7 @@
 								"v1",
 								"content",
 								"_import",
-								"validate"
+								"_validate"
 							]
 						},
 						"description": "Creates a new job in the specified queue."
@@ -567,7 +567,7 @@
 								"v1",
 								"content",
 								"_import",
-								"validate"
+								"_validate"
 							]
 						},
 						"description": "Creates a new job in the specified queue."
@@ -625,7 +625,7 @@
 								"v1",
 								"content",
 								"_import",
-								"validate"
+								"_validate"
 							]
 						},
 						"description": "Creates a new job in the specified queue."
@@ -683,7 +683,7 @@
 								"v1",
 								"content",
 								"_import",
-								"validate"
+								"_validate"
 							]
 						},
 						"description": "Creates a new job in the specified queue."
