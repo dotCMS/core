@@ -2,6 +2,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -151,7 +152,7 @@ import static org.mockito.Mockito.when;
  * @author nollymar
  */
 @ApplicationScoped
-@RunWith(DataProviderWeldRunner.class)
+@RunWith(JUnit4WeldRunner.class)
 public class ESContentletAPIImplTest extends IntegrationTestBase {
 
     private static ContentTypeAPI contentTypeAPI;
@@ -4007,17 +4008,139 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
 
             if (enabledDataBaseValidation) {
-                checkUniqueFieldsTable(true, contentType, uniqueTextField, contentlet_1WorkingVersion, contentlet_2);
+                checkUniqueFieldsTable(false, contentType, uniqueTextField, contentlet_1WorkingVersion, contentlet_2);
             }
         } finally {
             ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
 
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
+     * When:
+     * - Create a unique {@link TextField}, with the {@link ESContentletAPIImpl#UNIQUE_PER_SITE_FIELD_VARIABLE_NAME}
+     * {@link com.dotcms.contenttype.model.field.FieldVariable} set to false
+     * - Create a ContentType and add the previous created field to it
+     * - Create a {@link Contentlet} with unique-live as value to the Unique Fields, and publish it
+     * - Remove the LIVE Version.
+     * - Create a second Content using the unique-live
+     *
+     * Should: Throw Unique Value Exception because the working version still exists
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     @UseDataProvider("enabledUniqueFieldDatabaseValidation")
-    public void throwUniqueErrorWhenUnPublishWhenWorkingAndLiveVersionAreSame(final Boolean enabledDataBaseValidation){
-        //reuse the value when create Working then Publish and delete the LIVE
-        throw new RuntimeException("Not implemented");
+    public void throwUniqueErrorWhenUnPublishWhenWorkingAndLiveVersionAreSame(final Boolean enabledDataBaseValidation) throws DotDataException, DotSecurityException {
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
+
+        try {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(enabledDataBaseValidation);
+            final ContentType contentType = new ContentTypeDataGen()
+                    .nextPersisted();
+
+            final Language language = new LanguageDataGen().nextPersisted();
+
+            final Field uniqueTextField = new FieldDataGen()
+                    .contentTypeId(contentType.id())
+                    .unique(true)
+                    .type(TextField.class)
+                    .nextPersisted();
+
+            final Host host = new SiteDataGen().nextPersisted();
+
+            final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                    .host(host)
+                    .languageId(language.getId())
+                    .setProperty(uniqueTextField.variable(), "unique-live")
+                    .nextPersistedAndPublish();
+
+            final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                    .host(host)
+                    .languageId(language.getId())
+                    .setProperty(uniqueTextField.variable(), "unique-live")
+                    .next();
+
+            try {
+                APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
+                throw new AssertionError("DotRuntimeException Expected");
+            } catch (final DotRuntimeException e) {
+                final String expectedMessage = String.format("Contentlet with ID 'Unknown/New' [''] has invalid/missing field(s)."
+                        + " - Fields: [UNIQUE]: %s (%s)", uniqueTextField.name(), uniqueTextField.variable());
+
+                assertEquals(expectedMessage, e.getMessage());
+            }
+
+            ContentletDataGen.unpublish(contentlet_1);
+
+            try {
+                APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
+                throw new AssertionError("DotRuntimeException Expected");
+            } catch (final DotRuntimeException e) {
+                final String expectedMessage = String.format("Contentlet with ID 'Unknown/New' [''] has invalid/missing field(s)."
+                        + " - Fields: [UNIQUE]: %s (%s)", uniqueTextField.name(), uniqueTextField.variable());
+
+                assertEquals(expectedMessage, e.getMessage());
+            }
+
+            if (enabledDataBaseValidation) {
+                checkUniqueFieldsTable(false, contentType, uniqueTextField, contentlet_1);
+            }
+        } finally {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
+     * When:
+     * - Create a unique {@link TextField}, with the {@link ESContentletAPIImpl#UNIQUE_PER_SITE_FIELD_VARIABLE_NAME}
+     * {@link com.dotcms.contenttype.model.field.FieldVariable} set to false
+     * - Create a ContentType and add the previous created field to it
+     * - Create a {@link Contentlet} with unique-live as value to the Unique Fields, and publish it
+     * - Delete the {@link ContentType}
+     *
+     * Should: remove all the register of this {@link ContentType} from the Unique Field extra table.
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void cleanUpExtraTableAfterDeleteContentType() throws DotDataException, DotSecurityException {
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
+
+        try {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(true);
+            final ContentType contentType = new ContentTypeDataGen()
+                    .nextPersisted();
+
+            final Language language = new LanguageDataGen().nextPersisted();
+
+            final Field uniqueTextField = new FieldDataGen()
+                    .contentTypeId(contentType.id())
+                    .unique(true)
+                    .type(TextField.class)
+                    .nextPersisted();
+
+            final Host host = new SiteDataGen().nextPersisted();
+
+            final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                    .host(host)
+                    .languageId(language.getId())
+                    .setProperty(uniqueTextField.variable(), "unique-live")
+                    .nextPersistedAndPublish();
+
+            checkUniqueFieldsTable(false, contentType, uniqueTextField, contentlet_1);
+
+            APILocator.getContentTypeAPI(APILocator.systemUser()).deleteSync(contentType);
+
+            final List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE supporting_values->>'" + CONTENT_TYPE_ID_ATTR + "' = ?")
+                    .addParam(contentType.id())
+                    .loadObjectResults();
+
+            assertTrue(results.isEmpty());
+        } finally {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
+        }
     }
 }

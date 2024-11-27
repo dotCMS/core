@@ -2,6 +2,7 @@ package com.dotcms.contenttype.business.uniquefields.extratable;
 
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.event.FieldDeletedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotmarketing.business.APILocator;
@@ -40,6 +41,15 @@ public class UniqueFieldsTableCleaner {
             }
         } catch (DotSecurityException e) {
             throw new DotRuntimeException(e);
+        }
+    }
+
+    @Subscriber
+    public void cleanUpAfterDeleteUniqueField(final FieldDeletedEvent event) throws DotDataException {
+        final Field deletedField = event.getField();
+
+        if (deletedField.unique()) {
+            uniqueFieldValidationStrategyResolver.get().cleanUp(deletedField);
         }
     }
 }

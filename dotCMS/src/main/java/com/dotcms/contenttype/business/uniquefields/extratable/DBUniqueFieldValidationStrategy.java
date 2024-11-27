@@ -9,6 +9,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -139,7 +140,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
 
     @Override
     public void afterSaved(final Contentlet contentlet, final boolean isNew) throws DotDataException, DotSecurityException {
-        if (isNew) {
+        if (hasUniqueField(contentlet.getContentType()) && isNew) {
             final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                     .find(contentlet.getContentTypeId());
 
@@ -265,4 +266,44 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
 
     }
 
+    @Override
+    public void cleanUp(final Field field) throws DotDataException {
+        uniqueFieldDataBaseUtil.delete(field);
+    }
+
+    @Override
+    public void afterPublish(final String inode) {
+        try {
+            final Contentlet contentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+
+            if (hasUniqueField(contentlet.getContentType())) {
+                uniqueFieldDataBaseUtil.setLive(contentlet, true);
+            }
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void afterUnPublish(final VersionInfo versionInfo){
+        try {
+            final Contentlet liveContentlet = APILocator.getContentletAPI().find(versionInfo.getLiveInode(),
+                    APILocator.systemUser(), false);
+
+            if (hasUniqueField(liveContentlet.getContentType())) {
+                if (versionInfo.getWorkingInode().equals(versionInfo.getLiveInode())) {
+                    uniqueFieldDataBaseUtil.setLive(liveContentlet, false);
+                } else {
+                    uniqueFieldDataBaseUtil.removeLive(liveContentlet);
+                }
+            }
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    private static boolean hasUniqueField(ContentType contentType) {
+        return contentType.fields().stream().anyMatch(field -> field.unique());
+    }
 }

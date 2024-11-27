@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business.uniquefields.extratable;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -54,6 +55,18 @@ public class UniqueFieldDataBaseUtil {
             "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::INTEGER = ? " +
             "AND (supporting_values->>'" + LIVE_ATTR + "')::BOOLEAN = ?";
 
+    private final static String DELETE_UNIQUE_FIELDS_BY_CONTENTLET = "DELETE FROM unique_fields " +
+            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
+            "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::INTEGER = ? " +
+            "AND (supporting_values->>'" + LIVE_ATTR + "')::BOOLEAN = ?";
+
+    private final static String SET_LIVE_BY_CONTENTLET = "UPDATE unique_fields " +
+            "SET supporting_values = jsonb_set(supporting_values, '{" + LIVE_ATTR +  "}', ?::jsonb) " +
+            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb " +
+                "AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
+                "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::INTEGER = ? " +
+                "AND (supporting_values->>'" + LIVE_ATTR + "')::BOOLEAN = false";
+
 
     private final static String GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_LANGUAGE = "SELECT * FROM unique_fields " +
             "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND (supporting_values->>'" + LANGUAGE_ID_ATTR +"')::INTEGER = ?";
@@ -62,6 +75,9 @@ public class UniqueFieldDataBaseUtil {
             "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND supporting_values->>'variant' = ?";
 
     private final String DELETE_UNIQUE_FIELDS = "DELETE FROM unique_fields WHERE unique_key_val = ?";
+
+    private final static String DELETE_UNIQUE_FIELDS_BY_FIELD = "DELETE FROM unique_fields " +
+            "WHERE supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
 
 
     /**
@@ -221,4 +237,30 @@ public class UniqueFieldDataBaseUtil {
                 .loadObjectResults();
     }
 
+    public void delete(final Field field) throws DotDataException {
+        new DotConnect().setSQL(DELETE_UNIQUE_FIELDS_BY_FIELD)
+                .addParam(field.variable())
+                .loadObjectResults();
+    }
+
+    public void setLive(Contentlet contentlet, final boolean liveValue) throws DotDataException {
+
+         new DotConnect().setSQL(SET_LIVE_BY_CONTENTLET)
+                 .addParam(String.valueOf(liveValue))
+                .addParam("\"" + contentlet.getIdentifier() + "\"")
+                .addParam(contentlet.getVariantId())
+                .addParam(contentlet.getLanguageId())
+                .loadObjectResults();
+
+    }
+
+    public void removeLive(Contentlet contentlet) throws DotDataException {
+
+        new DotConnect().setSQL(DELETE_UNIQUE_FIELDS_BY_CONTENTLET)
+                .addParam("\"" + contentlet.getIdentifier() + "\"")
+                .addParam(contentlet.getVariantId())
+                .addParam(contentlet.getLanguageId())
+                .addParam(true)
+                .loadObjectResults();
+    }
 }

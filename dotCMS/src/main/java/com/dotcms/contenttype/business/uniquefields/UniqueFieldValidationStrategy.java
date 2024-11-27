@@ -4,6 +4,8 @@ import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -129,4 +131,36 @@ public interface  UniqueFieldValidationStrategy {
     default void cleanUp(final Contentlet contentlet, final boolean deleteAllVariant) throws DotDataException {
         //Default implementation do nothing
     }
+
+    /**
+     * Method call after publish a {@link Contentlet} it allow thw {@link UniqueFieldValidationStrategy} do any extra
+     * work that it need it.
+     *
+     * @param inode Published {@link Contentlet}'s inode
+     */
+    default void afterPublish(final String inode) {
+        //Default implementation do nothing
+    }
+
+    /**
+     * Method call after un publish a {@link Contentlet} it allow thw {@link UniqueFieldValidationStrategy} do any extra
+     * work that it need it.
+     *
+     * @param versionInfo {@link Contentlet}'s {@link VersionInfo} before un publish
+     */
+    default void afterUnPublish(final VersionInfo versionInfo){
+        //Default implementation do nothing
+    }
+
+    /**
+     * Method called after delete a Unique {@link Field}, to allow the {@link UniqueFieldValidationStrategy} do any extra
+     * work that it need it.
+     *
+     * @param field deleted field
+     * @throws DotDataException
+     */
+    default void cleanUp(final Field field) throws DotDataException {
+        //Default implementation do nothing
+    }
+
 }
