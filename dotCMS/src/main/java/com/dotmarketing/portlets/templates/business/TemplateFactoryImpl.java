@@ -196,7 +196,11 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 		List<Object> paramValues =null;
 		if(params!=null && params.size()>0){
-			conditionBuffer.append(" and (" + DbConnectionFactory.getDBFalse() + " ");
+			if (DbConnectionFactory.isMsSql()) {
+				conditionBuffer.append(" and (1 = 0 ");
+			} else {
+				conditionBuffer.append(" and (false ");
+			}
 			paramValues = new ArrayList<>();
 			for (Map.Entry<String, Object> entry : params.entrySet()) {
 				if(entry.getValue() instanceof String){
