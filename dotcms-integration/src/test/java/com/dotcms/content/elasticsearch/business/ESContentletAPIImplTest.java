@@ -152,7 +152,7 @@ import static org.mockito.Mockito.when;
  * @author nollymar
  */
 @ApplicationScoped
-@RunWith(JUnit4WeldRunner.class)
+@RunWith(DataProviderWeldRunner.class)
 public class ESContentletAPIImplTest extends IntegrationTestBase {
 
     private static ContentTypeAPI contentTypeAPI;

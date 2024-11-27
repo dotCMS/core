@@ -72,7 +72,7 @@ public class UniqueFieldDataBaseUtil {
             "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND (supporting_values->>'" + LANGUAGE_ID_ATTR +"')::INTEGER = ?";
 
     private final static String GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_VARIANT= "SELECT * FROM unique_fields " +
-            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND supporting_values->>'variant' = ?";
+            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND supporting_values->>'" + VARIANT_ATTR + "' = ?";
 
     private final String DELETE_UNIQUE_FIELDS = "DELETE FROM unique_fields WHERE unique_key_val = ?";
 
@@ -285,7 +285,7 @@ public class UniqueFieldDataBaseUtil {
      * Remove any register with supporting_value->live set to true and the same Content's id, variant and language
      *
      * @param contentlet
-     * 
+     *
      * @throws DotDataException
      */
     public void removeLive(Contentlet contentlet) throws DotDataException {
