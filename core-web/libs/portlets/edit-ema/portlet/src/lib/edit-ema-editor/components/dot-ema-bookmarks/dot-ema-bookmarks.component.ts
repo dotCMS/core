@@ -20,6 +20,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 })
 export class DotEmaBookmarksComponent implements OnInit {
     @Input() url = '';
+    @Input() variant: 'new-uve-toolbar' | 'old-toolbar' = 'old-toolbar';
 
     private readonly loginService = inject(LoginService);
     private readonly dotFavoritePageService = inject(DotFavoritePageService);

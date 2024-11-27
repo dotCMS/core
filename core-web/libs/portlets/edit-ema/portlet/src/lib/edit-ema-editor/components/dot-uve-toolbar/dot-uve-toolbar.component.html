@@ -1,8 +1,14 @@
 <p-toolbar>
     <div class="p-toolbar-group-start">
-        <p-button icon="pi pi-eye" styleClass="p-button-text" data-testId="uve-toolbar-preview" />
 
-        <p-button icon="pi pi-star" styleClass="p-button-text" data-testId="uve-toolbar-bookmark" />
+    @if ($toolbarProps().editor) {
+        <p-button
+            icon="pi pi-eye"
+            styleClass="p-button-text"
+            data-testId="uve-toolbar-preview"
+            (click)="togglePreviewMode(true)" />
+
+        <dot-ema-bookmarks [url]="$toolbarProps().editor.bookmarksUrl" [variant]="'new-uve-toolbar'"/>
 
         <p-button
             icon="pi pi-external-link"
@@ -13,6 +19,13 @@
             label="API"
             styleClass="p-button-text p-button-sm"
             data-testId="uve-toolbar-api-link" />
+    }
+    @else if ($toolbarProps().preview) {
+        <div>PREVIEW MODE ACTIVATED</div>
+        <button (click)="togglePreviewMode(false)">Back</button>
+    }
+
+
     </div>
 
     <div class="p-toolbar-group-end">

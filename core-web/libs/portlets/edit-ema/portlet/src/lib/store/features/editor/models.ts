@@ -27,6 +27,7 @@ export interface EditorToolbarState {
     device?: DotDeviceWithIcon;
     socialMedia?: string;
     isEditState: boolean;
+    isPreviewModeActive?: boolean;
 }
 
 export interface PageDataContainer {
