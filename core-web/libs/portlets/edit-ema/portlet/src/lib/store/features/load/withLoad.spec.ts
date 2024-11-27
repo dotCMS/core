@@ -8,7 +8,7 @@ import {
 import { signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
-import { ActivatedRoute, ActivatedRouteSnapshot, ParamMap, Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import {
     DotExperimentsService,
@@ -29,11 +29,7 @@ import {
 
 import { withLoad } from './withLoad';
 
-import {
-    DotPageApiParams,
-    DotPageApiResponse,
-    DotPageApiService
-} from '../../../services/dot-page-api.service';
+import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import {
     getVanityUrl,
@@ -56,7 +52,12 @@ const buildPageAPIResponseFromMock =
                 pageURI: url
             }
         });
-const emptyParams = {} as DotPageApiParams;
+
+const pageParams: DotPageApiParams = {
+    url: 'new-url',
+    language_id: '1',
+    'com.dotmarketing.persona.id': '2'
+};
 
 const initialState: UVEState = {
     isEnterprise: false,
@@ -65,11 +66,12 @@ const initialState: UVEState = {
     currentUser: null,
     experiment: null,
     errorCode: null,
-    params: emptyParams,
+    pageParams,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
     canEditPage: false,
-    pageIsLocked: true
+    pageIsLocked: true,
+    isClientReady: false
 };
 
 export const uveStoreMock = signalStore(withState<UVEState>(initialState), withLoad());
@@ -78,8 +80,7 @@ describe('withLoad', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
     let store: InstanceType<typeof uveStoreMock>;
     let dotPageApiService: SpyObject<DotPageApiService>;
-    let activatedRoute: SpyObject<ActivatedRoute>;
-    let router: SpyObject<Router>;
+    let router: Router;
 
     const createService = createServiceFactory({
         service: uveStoreMock,
@@ -140,215 +141,110 @@ describe('withLoad', () => {
         spectator = createService();
         store = spectator.service;
 
-        dotPageApiService = spectator.inject(DotPageApiService);
         router = spectator.inject(Router);
-        activatedRoute = spectator.inject(ActivatedRoute);
+        dotPageApiService = spectator.inject(DotPageApiService);
         jest.spyOn(dotPageApiService, 'get').mockImplementation(
             buildPageAPIResponseFromMock(MOCK_RESPONSE_HEADLESS)
         );
-
-        store.init(HEADLESS_BASE_QUERY_PARAMS);
     });
 
     describe('withMethods', () => {
-        it('should load the store with the base data', () => {
-            expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_HEADLESS);
-            expect(store.isEnterprise()).toBe(true);
-            expect(store.currentUser()).toEqual(CurrentUserDataMock);
-            expect(store.experiment()).toBe(undefined);
-            expect(store.languages()).toBe(mockLanguageArray);
-            expect(store.params()).toEqual(HEADLESS_BASE_QUERY_PARAMS);
-            expect(store.canEditPage()).toBe(true);
-            expect(store.pageIsLocked()).toBe(false);
-            expect(store.status()).toBe(UVE_STATUS.LOADED);
-            expect(store.isTraditionalPage()).toBe(false);
+        describe('load', () => {
+            it('should load the store with the base data', () => {
+                store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS);
+                expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_HEADLESS);
+                expect(store.isEnterprise()).toBe(true);
+                expect(store.currentUser()).toEqual(CurrentUserDataMock);
+                expect(store.experiment()).toBe(getDraftExperimentMock());
+                expect(store.languages()).toBe(mockLanguageArray);
+                expect(store.canEditPage()).toBe(true);
+                expect(store.pageIsLocked()).toBe(false);
+                expect(store.status()).toBe(UVE_STATUS.LOADED);
+                expect(store.isTraditionalPage()).toBe(false);
+                expect(store.isClientReady()).toBe(false);
+            });
+
+            it('should load the store with the base data for traditional page', () => {
+                jest.spyOn(dotPageApiService, 'get').mockImplementation(
+                    buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
+                );
+
+                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+
+                expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
+                expect(store.isEnterprise()).toBe(true);
+                expect(store.currentUser()).toEqual(CurrentUserDataMock);
+                expect(store.experiment()).toBe(getDraftExperimentMock());
+                expect(store.languages()).toBe(mockLanguageArray);
+                expect(store.canEditPage()).toBe(true);
+                expect(store.pageIsLocked()).toBe(false);
+                expect(store.status()).toBe(UVE_STATUS.LOADED);
+                expect(store.isTraditionalPage()).toBe(true);
+                expect(store.isClientReady()).toBe(true);
+            });
+
+            it('should update the pageParams with the vanity URL on permanent redirect', () => {
+                const permanentRedirect = getVanityUrl(
+                    VTL_BASE_QUERY_PARAMS.url,
+                    PERMANENT_REDIRECT_VANITY_URL
+                );
+
+                const forwardTo = PERMANENT_REDIRECT_VANITY_URL.forwardTo;
+
+                jest.spyOn(dotPageApiService, 'get').mockImplementation(() =>
+                    of(permanentRedirect)
+                );
+
+                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        ...VTL_BASE_QUERY_PARAMS,
+                        url: forwardTo
+                    },
+                    queryParamsHandling: 'merge'
+                });
+            });
+
+            it('should update the pageParams with the vanity URL on temporary redirect', () => {
+                const temporaryRedirect = getVanityUrl(
+                    VTL_BASE_QUERY_PARAMS.url,
+                    TEMPORARY_REDIRECT_VANITY_URL
+                );
+
+                const forwardTo = TEMPORARY_REDIRECT_VANITY_URL.forwardTo;
+
+                jest.spyOn(dotPageApiService, 'get').mockImplementation(() =>
+                    of(temporaryRedirect)
+                );
+
+                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        ...VTL_BASE_QUERY_PARAMS,
+                        url: forwardTo
+                    },
+                    queryParamsHandling: 'merge'
+                });
+            });
+        });
+
+        describe('reloadCurrentPage', () => {
+            it('should reload with the pageParams from the store', () => {
+                const getPageSpy = jest.spyOn(dotPageApiService, 'getClientPage');
+                store.reloadCurrentPage();
+
+                expect(getPageSpy).toHaveBeenCalledWith(pageParams, { params: null, query: '' });
+            });
+        });
+
+        it('should reload the store with a specific property value', () => {
+            store.reloadCurrentPage({ isClientReady: false });
+
             expect(store.isClientReady()).toBe(false);
         });
-
-        it('should load the store with the base data for traditional page', () => {
-            jest.spyOn(dotPageApiService, 'get').mockImplementation(
-                buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
-            );
-
-            store.init(VTL_BASE_QUERY_PARAMS);
-
-            expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
-            expect(store.isEnterprise()).toBe(true);
-            expect(store.currentUser()).toEqual(CurrentUserDataMock);
-            expect(store.experiment()).toBe(undefined);
-            expect(store.languages()).toBe(mockLanguageArray);
-            expect(store.params()).toEqual(VTL_BASE_QUERY_PARAMS);
-            expect(store.canEditPage()).toBe(true);
-            expect(store.pageIsLocked()).toBe(false);
-            expect(store.status()).toBe(UVE_STATUS.LOADED);
-            expect(store.isTraditionalPage()).toBe(true);
-            expect(store.isClientReady()).toBe(true);
-        });
-
-        it('should navigate when the page is a vanityUrl permanent redirect', () => {
-            const permanentRedirect = getVanityUrl(
-                VTL_BASE_QUERY_PARAMS.url,
-                PERMANENT_REDIRECT_VANITY_URL
-            ) as unknown as DotPageApiResponse;
-
-            const forwardTo = PERMANENT_REDIRECT_VANITY_URL.forwardTo;
-
-            jest.spyOn(dotPageApiService, 'get').mockImplementation(() => of(permanentRedirect));
-
-            store.init(VTL_BASE_QUERY_PARAMS);
-
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                queryParams: {
-                    ...VTL_BASE_QUERY_PARAMS,
-                    url: forwardTo
-                },
-                queryParamsHandling: 'merge'
-            });
-        });
-
-        it('should navigate when the page is a vanityUrl temporary redirect', () => {
-            const temporaryRedirect = getVanityUrl(
-                VTL_BASE_QUERY_PARAMS.url,
-                TEMPORARY_REDIRECT_VANITY_URL
-            ) as unknown as DotPageApiResponse;
-
-            const forwardTo = TEMPORARY_REDIRECT_VANITY_URL.forwardTo;
-
-            jest.spyOn(dotPageApiService, 'get').mockImplementation(() => of(temporaryRedirect));
-
-            store.init(VTL_BASE_QUERY_PARAMS);
-
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                queryParams: {
-                    ...VTL_BASE_QUERY_PARAMS,
-                    url: forwardTo
-                },
-                queryParamsHandling: 'merge'
-            });
-        });
-
-        it('should navigate to content when the layout is disable by page.canEdit and current route is layout', () => {
-            jest.spyOn(dotPageApiService, 'get').mockImplementation(() =>
-                of({
-                    ...MOCK_RESPONSE_VTL,
-                    page: {
-                        ...MOCK_RESPONSE_VTL.page,
-                        canEdit: false
-                    }
-                })
-            );
-
-            jest.spyOn(activatedRoute, 'firstChild', 'get').mockReturnValue({
-                snapshot: {
-                    url: [
-                        {
-                            path: 'layout',
-                            parameters: {},
-                            parameterMap: {} as unknown as ParamMap
-                        }
-                    ]
-                } as unknown as ActivatedRouteSnapshot
-            } as unknown as ActivatedRoute);
-
-            store.init(VTL_BASE_QUERY_PARAMS);
-
-            expect(router.navigate).toHaveBeenCalledWith(['edit-page/content'], {
-                queryParamsHandling: 'merge'
-            });
-        });
-
-        it('should navigate to content when the layout is disable by template.drawed and current route is layout', () => {
-            jest.spyOn(dotPageApiService, 'get').mockImplementation(() =>
-                of({
-                    ...MOCK_RESPONSE_VTL,
-                    template: {
-                        ...MOCK_RESPONSE_VTL.template,
-                        drawed: false
-                    }
-                })
-            );
-
-            jest.spyOn(activatedRoute, 'firstChild', 'get').mockReturnValue({
-                snapshot: {
-                    url: [
-                        {
-                            path: 'layout',
-                            parameters: {},
-                            parameterMap: {} as unknown as ParamMap
-                        }
-                    ]
-                } as unknown as ActivatedRouteSnapshot
-            } as unknown as ActivatedRoute);
-
-            store.init(VTL_BASE_QUERY_PARAMS);
-
-            expect(router.navigate).toHaveBeenCalledWith(['edit-page/content'], {
-                queryParamsHandling: 'merge'
-            });
-        });
-
-        it('should not navigate to content when the layout is disable by template.drawed and current route is not layout', () => {
-            jest.spyOn(dotPageApiService, 'get').mockImplementation(() =>
-                of({
-                    ...MOCK_RESPONSE_VTL,
-                    template: {
-                        ...MOCK_RESPONSE_VTL.template,
-                        drawed: false
-                    }
-                })
-            );
-
-            jest.spyOn(activatedRoute, 'firstChild', 'get').mockReturnValue({
-                snapshot: {
-                    url: [
-                        {
-                            path: 'rules',
-                            parameters: {},
-                            parameterMap: {} as unknown as ParamMap
-                        }
-                    ]
-                } as unknown as ActivatedRouteSnapshot
-            } as unknown as ActivatedRoute);
-
-            store.init(VTL_BASE_QUERY_PARAMS);
-
-            expect(router.navigate).not.toHaveBeenCalled();
-        });
-
-        it('should not navigate to content when the layout is disable by page.canEdit and current route is not layout', () => {
-            jest.spyOn(dotPageApiService, 'get').mockImplementation(() =>
-                of({
-                    ...MOCK_RESPONSE_VTL,
-                    page: {
-                        ...MOCK_RESPONSE_VTL.page,
-                        canEdit: false
-                    }
-                })
-            );
-
-            jest.spyOn(activatedRoute, 'firstChild', 'get').mockReturnValue({
-                snapshot: {
-                    url: [
-                        {
-                            path: 'rules',
-                            parameters: {},
-                            parameterMap: {} as unknown as ParamMap
-                        }
-                    ]
-                } as unknown as ActivatedRouteSnapshot
-            } as unknown as ActivatedRoute);
-
-            store.init(VTL_BASE_QUERY_PARAMS);
-
-            expect(router.navigate).not.toHaveBeenCalled();
-        });
-
-        it('should reload the store with the same queryParams', () => {
-            const getPageSpy = jest.spyOn(dotPageApiService, 'get');
-
-            store.reload();
-
-            expect(getPageSpy).toHaveBeenCalledWith(store.params());
-        });
     });
+
+    afterEach(() => jest.clearAllMocks());
 });

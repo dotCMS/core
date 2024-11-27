@@ -499,7 +499,20 @@ public class ShortyServlet extends HttpServlet {
     return true;
   }
 
-
+  
+  /**
+   * Resolves and builds the appropriate file path for a contentlet's field.
+   * This method handles both regular fields and special cases for image/file fields,
+   * including language fallback logic when necessary.
+   *
+   * @param contentlet The contentlet whose field path needs to be resolved
+   * @param tryField The name of the field to try to resolve
+   * @param live Whether to use the live version (true) or working version (false)
+   * @return A string representing the path to the field's content
+   * @throws DotStateException If there's an issue with the contentlet's state
+   * @throws DotDataException If there's an error accessing the data
+   * @throws DotSecurityException If there's a security violation
+   */
   protected final String inodePath(final Contentlet contentlet,
                                    final String tryField,
                                    final boolean live)
@@ -508,35 +521,64 @@ public class ShortyServlet extends HttpServlet {
         final Optional<Field> fieldOpt = resolveField(contentlet, tryField);
 
         if (fieldOpt.isEmpty()) {
-            return "/" + contentlet.getInode() + "/" + FILE_ASSET_DEFAULT;
+            return buildFieldPath(contentlet, FILE_ASSET_DEFAULT);
         }
 
         final Field field = fieldOpt.get();
         if (field instanceof ImageField || field instanceof FileField) {
 
             final String relatedImageId = contentlet.getStringProperty(field.variable());
-            final Optional<ContentletVersionInfo> contentletVersionInfo =
+            Optional<ContentletVersionInfo> contentletVersionInfo =
                     this.versionableAPI.getContentletVersionInfo(relatedImageId, contentlet.getLanguageId());
 
-            if (contentletVersionInfo.isPresent()) {
-                final String inode = live ? contentletVersionInfo.get().getLiveInode()
-                        : contentletVersionInfo.get().getWorkingInode();
-
-                final Contentlet imageContentlet = APILocator.getContentletAPI()
-                        .find(inode, APILocator.systemUser(), false);
-
-                validateContentlet(imageContentlet, live, inode);
-
-                final String fieldVar = imageContentlet.isDotAsset() ?
-                        DotAssetContentType.ASSET_FIELD_VAR : FILE_ASSET_DEFAULT;
-
-                return new StringBuilder(StringPool.FORWARD_SLASH).append(inode)
-                    .append(StringPool.FORWARD_SLASH).append(fieldVar).toString();
+            if (contentletVersionInfo.isEmpty() && shouldFallbackToDefaultLanguage(contentlet)) {
+                // Try finding the contentlet version with the default language ID
+                Logger.info(this, "No contentlet version found for identifier " + relatedImageId + " in language " + contentlet.getLanguageId() + ", trying default language.");
+                contentletVersionInfo = this.versionableAPI.getContentletVersionInfo(relatedImageId,APILocator.getLanguageAPI().getDefaultLanguage().getId());
             }
-        }
 
-        return new StringBuilder(StringPool.FORWARD_SLASH).append(contentlet.getInode())
-                .append(StringPool.FORWARD_SLASH).append(field.variable()).toString();
+            if (contentletVersionInfo.isPresent()) {
+                Logger.debug(this, "Contentlet version found for identifier: " + relatedImageId);
+                final String inode = live
+                        ? contentletVersionInfo.get().getLiveInode()
+                        : contentletVersionInfo.get().getWorkingInode();
+                try{
+                    final Contentlet imageContentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+                    validateContentlet(imageContentlet, live, inode);
+                    final String fieldVar = imageContentlet.isDotAsset() ? DotAssetContentType.ASSET_FIELD_VAR : FILE_ASSET_DEFAULT;
+                    return buildFieldPath(imageContentlet, fieldVar);
+                }catch (DotDataException e){
+                    Logger.debug(this.getClass(), e.getMessage());
+                }
+            }
+            Logger.debug(this, "No contentlet version found for identifier: " + relatedImageId + ", returning path based on original contentlet inode: " + contentlet.getInode());
+        }
+        return buildFieldPath(contentlet, field.variable());
+    }
+
+    /**
+     * Determines whether the system should attempt to fallback to the default language
+     * for the given contentlet. This is used when content is not found in the
+     * contentlet's original language.
+     *
+     * @param contentlet The contentlet to check for language fallback eligibility
+     * @return true if the system should attempt to use the default language, false otherwise
+     */
+    private boolean shouldFallbackToDefaultLanguage(final Contentlet contentlet) {
+        return APILocator.getLanguageAPI().canDefaultFileToDefaultLanguage() &&
+                APILocator.getLanguageAPI().getDefaultLanguage().getId() != contentlet.getLanguageId();
+    }
+
+    /**
+     * Constructs a standardized field path for a contentlet and field variable.
+     * The path format is: /[contentlet-inode]/[field-variable]
+     *
+     * @param contentlet The contentlet for which to build the path
+     * @param fieldVar The field variable to append to the path
+     * @return A formatted path string
+     */
+    private String buildFieldPath(final Contentlet contentlet, final String fieldVar) {
+        return StringPool.FORWARD_SLASH + contentlet.getInode() + StringPool.FORWARD_SLASH + fieldVar;
     }
 
     private void validateContentlet(final Contentlet contentlet, final boolean live, final String inode) throws DotDataException {

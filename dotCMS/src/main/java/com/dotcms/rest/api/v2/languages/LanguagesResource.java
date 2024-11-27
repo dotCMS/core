@@ -637,4 +637,26 @@ public class LanguagesResource {
         ).build();
     }
 
+    /**
+     * Returns the current default {@link Language} in the dotCMS instance.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     *
+     * @return A {@link Response} object containing the default {@link Language} in the dotCMS
+     * instance.
+     *
+     * @throws DotDataException An error occurred when retrieving the default {@link Language}.
+     */
+    @GET
+    @Path("/_getdefault")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityView<Language> getDefaultLanguage(@Context final HttpServletRequest request,
+                                       @Context final HttpServletResponse response) throws DotDataException {
+        Logger.debug(this, () -> "Retrieving the current default Language");
+        return new ResponseEntityView<>(this.languageAPI.getDefaultLanguage());
+    }
+
 }

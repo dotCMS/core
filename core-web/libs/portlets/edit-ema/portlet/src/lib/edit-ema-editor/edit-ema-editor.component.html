@@ -1,4 +1,9 @@
-<dot-edit-ema-toolbar (editUrlContentMap)="editContentMap($event)" />
+@if ($previewMode()) {
+    <dot-uve-toolbar />
+} @else {
+    <dot-edit-ema-toolbar (editUrlContentMap)="editContentMap($event)" />
+}
+
 @if ($editorProps().seoResults && ogTagsResults$) {
     <dot-results-seo-tool
         [seoMedia]="$editorProps().seoResults.socialMedia"
@@ -34,7 +39,7 @@
                     [ngStyle]="{ position: 'absolute', top: '0', left: '0', width: '100%' }"
                     [style]="{ height: '6px' }"
                     data-testId="progress-bar"
-                    mode="indeterminate"></p-progressBar>
+                    mode="indeterminate" />
             }
             @if ($editorProps().contentletTools; as contentletTools) {
                 <dot-ema-contentlet-tools
@@ -68,9 +73,9 @@
 @if ($editorProps().showDialogs) {
     <dot-edit-ema-dialog
         (action)="onCustomEvent($event)"
-        (reloadFromDialog)="reloadFromDialog()"
+        (reloadFromDialog)="reloadPage()"
         #dialog
-        data-testId="ema-dialog"></dot-edit-ema-dialog>
+        data-testId="ema-dialog" />
     <p-confirmDialog
         [style]="{
             width: '400px'
@@ -78,5 +83,9 @@
         rejectIcon="hidden"
         acceptIcon="hidden"
         rejectButtonStyleClass="p-button-outlined"
-        data-testId="confirm-dialog"></p-confirmDialog>
+        data-testId="confirm-dialog" />
+}
+
+@if ($editorProps().showBlockEditorSidebar) {
+    <dot-block-editor-sidebar #blockSidebar (onSaved)="reloadPage()" />
 }

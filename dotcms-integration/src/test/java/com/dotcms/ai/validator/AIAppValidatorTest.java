@@ -1,5 +1,6 @@
 package com.dotcms.ai.validator;
 
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.ai.AiTest;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
@@ -7,18 +8,19 @@ import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.github.tomakehurst.wiremock.WireMockServer;
-import com.liferay.portal.model.User;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import javax.enterprise.context.ApplicationScoped;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -38,10 +40,11 @@ import static org.mockito.Mockito.verify;
  *
  * @author vico
  */
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
 public class AIAppValidatorTest {
 
     private static WireMockServer wireMockServer;
-    private static User user;
     private static SystemMessageEventUtil systemMessageEventUtil;
     private Host host;
     private AppConfig appConfig;
@@ -54,7 +57,6 @@ public class AIAppValidatorTest {
         final Host systemHost = APILocator.systemHost();
         AiTest.aiAppSecrets(systemHost);
         ConfigService.INSTANCE.config(systemHost);
-        user = new UserDataGen().nextPersisted();
         systemMessageEventUtil = mock(SystemMessageEventUtil.class);
     }
 
@@ -76,7 +78,8 @@ public class AIAppValidatorTest {
         AiTest.removeAiAppSecrets(host);
     }
 
-    @Test/**
+    @Test
+    /**
      * Scenario: Validating AI configuration with unsupported models
      * Given an AI configuration with unsupported models
      * When the configuration is validated

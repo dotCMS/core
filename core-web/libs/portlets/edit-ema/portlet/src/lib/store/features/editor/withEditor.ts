@@ -105,7 +105,7 @@ export function withEditor() {
                     const canEditPage = store.canEditPage();
                     const isEnterprise = store.isEnterprise();
                     const state = store.state();
-                    const params = store.params();
+                    const params = store.pageParams();
                     const isTraditionalPage = store.isTraditionalPage();
                     const isClientReady = store.isClientReady();
                     const contentletArea = store.contentletArea();
@@ -123,6 +123,7 @@ export function withEditor() {
                     const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
 
                     const showDialogs = canEditPage && isEditState;
+                    const showBlockEditorSidebar = canEditPage && isEditState && isEnterprise;
 
                     const canUserHaveContentletTools =
                         !!contentletArea && canEditPage && isEditState && !isScrolling;
@@ -138,7 +139,8 @@ export function withEditor() {
                     const iframeURL = new URL(pageAPIQueryParams, origin);
 
                     return {
-                        showDialogs: showDialogs,
+                        showDialogs,
+                        showBlockEditorSidebar,
                         showEditorContent: !socialMedia,
                         iframe: {
                             opacity: iframeOpacity,

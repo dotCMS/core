@@ -1,18 +1,19 @@
 package com.dotcms.rest.api.v1.job;
 
+import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotmarketing.exception.DoesNotExistException;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import graphql.VisibleForTesting;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BeanParam;
@@ -26,6 +27,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.glassfish.jersey.media.sse.SseFeature;
@@ -34,55 +36,71 @@ import org.glassfish.jersey.media.sse.SseFeature;
 public class JobQueueResource {
 
     private final WebResource webResource;
-
     private final JobQueueHelper helper;
+    private final SSEConnectionManager sseConnectionManager;
 
     @Inject
-    public JobQueueResource(final JobQueueHelper helper) {
-        this(new WebResource(), helper);
+    public JobQueueResource(final JobQueueHelper helper,
+            final SSEConnectionManager sseConnectionManager) {
+        this(new WebResource(), helper, sseConnectionManager);
     }
 
     @VisibleForTesting
-    public JobQueueResource(WebResource webResource, JobQueueHelper helper) {
+    public JobQueueResource(WebResource webResource, JobQueueHelper helper,
+            SSEConnectionManager sseConnectionManager) {
         this.webResource = webResource;
         this.helper = helper;
+        this.sseConnectionManager = sseConnectionManager;
     }
 
     @POST
     @Path("/{queueName}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<String> createJob(
+    public Response createJob(
             @Context HttpServletRequest request,
             @PathParam("queueName") String queueName,
             @BeanParam JobParams form) throws JsonProcessingException, DotDataException {
+
         final var initDataObject = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
                 .init();
-        final String jobId = helper.createJob(queueName, form, initDataObject.getUser(), request);
-        return new ResponseEntityView<>(jobId);
+
+        try {
+            final String jobId = helper.createJob(
+                    queueName, form, initDataObject.getUser(), request);
+            return Response.ok(new ResponseEntityView<>(jobId)).build();
+        } catch (JobValidationException e) {
+            return ExceptionMapperUtil.createResponse(null, e.getMessage());
+        }
     }
 
     @POST
     @Path("/{queueName}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<String> createJob(
+    public Response createJob(
             @Context HttpServletRequest request,
             @PathParam("queueName") String queueName,
             Map<String, Object> parameters) throws DotDataException {
+
         final var initDataObject = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
                 .init();
-        final String jobId = helper.createJob(
-                queueName, parameters, initDataObject.getUser(), request);
-        return new ResponseEntityView<>(jobId);
+
+        try {
+            final String jobId = helper.createJob(
+                    queueName, parameters, initDataObject.getUser(), request);
+            return Response.ok(new ResponseEntityView<>(jobId)).build();
+        } catch (JobValidationException e) {
+            return ExceptionMapperUtil.createResponse(null, e.getMessage());
+        }
     }
 
     @GET
@@ -162,30 +180,29 @@ public class JobQueueResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        Job job = null;
-        try {
-            job = helper.getJob(jobId);
-        } catch (DotDataException | DoesNotExistException e) {
-            // ignore
-        }
-
         final EventOutput eventOutput = new EventOutput();
 
-        if (job == null || helper.isNotWatchable(job)) {
-            try {
-                OutboundEvent event = new OutboundEvent.Builder()
-                        .mediaType(MediaType.TEXT_HTML_TYPE)
-                        .name("job-not-found")
-                        .data(String.class, "404")
-                        .build();
-                eventOutput.write(event);
-                eventOutput.close();
-            } catch (IOException e) {
-                Logger.error(this, "Error closing SSE connection", e);
+        try {
+            Job job = helper.getJobForSSE(jobId);
+
+            if (job == null) {
+                helper.sendErrorAndClose("job-not-found", "404", eventOutput);
+                return eventOutput;
             }
-        } else {
+
+            if (helper.isNotWatchable(job)) {
+                helper.sendErrorAndClose(String.format("job-not-watchable [%s]",
+                        job.state()), "400", eventOutput);
+                return eventOutput;
+            }
+
+            if (!sseConnectionManager.canAcceptNewConnection(jobId)) {
+                helper.sendErrorAndClose("too-many-connections", "429", eventOutput);
+                return eventOutput;
+            }
+
             // Callback for watching job updates and sending them to the client
-            helper.watchJob(job.id(), watched -> {
+            Consumer<Job> jobWatcher = watched -> {
                 if (!eventOutput.isClosed()) {
                     try {
                         OutboundEvent event = new OutboundEvent.Builder()
@@ -194,13 +211,30 @@ public class JobQueueResource {
                                 .data(Map.class, helper.getJobStatusInfo(watched))
                                 .build();
                         eventOutput.write(event);
+
+                        // If job is complete/failed/cancelled, close the connection
+                        if (helper.isTerminalState(watched.state())) {
+                            sseConnectionManager.closeJobConnections(jobId);
+                        }
+
                     } catch (IOException e) {
                         Logger.error(this, "Error writing SSE event", e);
-                        throw new DotRuntimeException(e);
+                        sseConnectionManager.closeJobConnections(jobId);
                     }
                 }
-            });
+            };
+
+            // Register the connection and watcher
+            sseConnectionManager.addConnection(jobId, eventOutput);
+
+            // Start watching the job
+            helper.watchJob(job.id(), jobWatcher);
+
+        } catch (DotDataException e) {
+            Logger.error(this, "Error setting up job monitor", e);
+            helper.closeSSEConnection(eventOutput);
         }
+
         return eventOutput;
     }
 

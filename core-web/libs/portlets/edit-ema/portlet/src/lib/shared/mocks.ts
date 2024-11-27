@@ -3,7 +3,8 @@ import { of } from 'rxjs';
 import {
     DEFAULT_VARIANT_ID,
     DotPageContainerStructure,
-    CONTAINER_SOURCE
+    CONTAINER_SOURCE,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import {
     mockSites,
@@ -504,12 +505,13 @@ export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
     })
 };
 
-export const getVanityUrl = (url, mock) => ({
-    vanityUrl: {
-        ...mock,
-        url
-    }
-});
+export const getVanityUrl = (url, mock) =>
+    ({
+        vanityUrl: {
+            ...mock,
+            url
+        }
+    }) as unknown as DotPageApiResponse;
 
 export const FORWARD_VANITY_URL = {
     pattern: '',
@@ -955,4 +957,11 @@ export const UVE_PAGE_RESPONSE_MAP = {
         urlContentMap: URL_CONTENT_MAP_MOCK,
         containers: dotPageContainerStructureMock
     })
+};
+
+export const dotPropertiesServiceMock = {
+    getFeatureFlags: () =>
+        of({
+            [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]: false
+        })
 };

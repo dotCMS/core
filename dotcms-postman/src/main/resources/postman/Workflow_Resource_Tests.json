@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "ab29610c-81bb-4366-94c3-ed154b1e9ec9",
+		"_postman_id": "769562e3-1639-4158-b011-3a6e3d68cf06",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -4109,34 +4109,29 @@
 									"",
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Save\");",
+									"});",
+									"",
+									"",
+									"pm.test(\"Response has expected properties\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity[0]).to.have.property(\"action\");",
+									"    pm.expect(jsonData.entity[0]).to.have.property(\"firstStep\");",
+									"    pm.expect(jsonData.entity[0]).to.have.property(\"scheme\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -4183,32 +4178,19 @@
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -17769,6 +17751,476 @@
 								"history",
 								"comments",
 								"{{identifier}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateComment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// Test to check that the response has a 200 OK status",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test to check that the JSON response has the main properties",
+									"pm.test(\"Response has expected properties\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property(\"entity\");",
+									"    pm.expect(jsonData).to.have.property(\"errors\");",
+									"    pm.expect(jsonData).to.have.property(\"i18nMessagesMap\");",
+									"    pm.expect(jsonData).to.have.property(\"messages\");",
+									"    pm.expect(jsonData).to.have.property(\"pagination\");",
+									"    pm.expect(jsonData).to.have.property(\"permissions\");",
+									"});",
+									"",
+									"// Test to check that \"entity\" has the expected properties",
+									"pm.test(\"Entity has expected properties\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity).to.have.property(\"commentDescription\").that.is.a(\"string\");",
+									"    pm.expect(entity).to.have.property(\"createdDate\").that.is.a(\"number\");",
+									"    pm.expect(entity).to.have.property(\"postedBy\").that.is.a(\"string\");",
+									"    pm.expect(entity).to.have.property(\"roleId\").that.is.a(\"string\");",
+									"    pm.expect(entity).to.have.property(\"taskId\").that.is.a(\"string\");",
+									"    pm.expect(entity).to.have.property(\"type\").that.is.a(\"string\");",
+									"",
+									"    // Check specific values",
+									"    pm.expect(entity.type).to.equal(\"WorkflowComment\");",
+									"    pm.expect(entity.postedBy).to.equal(\"Admin User\");",
+									"});",
+									"",
+									"// Test to check that \"errors\" is an empty array",
+									"pm.test(\"Errors array is empty\", function () {",
+									"    const errors = pm.response.json().errors;",
+									"    pm.expect(errors).to.be.an(\"array\").that.is.empty;",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"comment\":\"This is a postman test\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/{{identifier}}/comments",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"{{identifier}}",
+								"comments"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Resetable",
+			"item": [
+				{
+					"name": "CreateContentPreconditions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"packages": {},
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"webPageContent\",\n        \"title\": \"Test Title\",\n        \"body\": \"Test Body\",\n        \"contentHost\": \"default\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "CheckResetable",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test para verificar que la respuesta tiene el estado 200 OK",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test para verificar que el JSON de respuesta tiene las propiedades principales",
+									"pm.test(\"Response has expected properties\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property(\"entity\");",
+									"    pm.expect(jsonData).to.have.property(\"errors\");",
+									"    pm.expect(jsonData).to.have.property(\"i18nMessagesMap\");",
+									"    pm.expect(jsonData).to.have.property(\"messages\");",
+									"    pm.expect(jsonData).to.have.property(\"pagination\");",
+									"    pm.expect(jsonData).to.have.property(\"permissions\");",
+									"});",
+									"",
+									"// Test para verificar que \"entity\" es un array y tiene al menos un elemento",
+									"pm.test(\"Entity is an array and contains items\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity).to.be.an(\"array\").that.is.not.empty;",
+									"});",
+									"",
+									"// Test para verificar las propiedades de los objetos dentro de \"entity\"",
+									"pm.test(\"Each entity item has expected properties\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    entity.forEach(item => {",
+									"        pm.expect(item).to.have.property(\"actionInputs\").that.is.an(\"array\");",
+									"        pm.expect(item).to.have.property(\"assignable\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"commentable\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"condition\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"hasArchiveActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasDeleteActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasDestroyActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasMoveActionletActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasMoveActionletHasPathActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasOnlyBatchActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasPublishActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasPushPublishActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasSaveActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasUnarchiveActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasUnpublishActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"icon\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"id\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"name\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"nextAssign\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"nextStep\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"nextStepCurrentStep\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"order\").that.is.a(\"number\");",
+									"        pm.expect(item).to.have.property(\"owner\").that.is.null;",
+									"        pm.expect(item).to.have.property(\"hasResetActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"roleHierarchyForAssign\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"schemeId\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"showOn\").that.is.an(\"array\");",
+									"        ",
+									"        // Verificación adicional: que \"showOn\" contiene valores específicos esperados",
+									"        const allowedShowOnValues = [\"NEW\", \"LISTING\", \"PUBLISHED\", \"UNLOCKED\", \"ARCHIVED\", \"UNPUBLISHED\", \"EDITING\", \"LOCKED\"];",
+									"        item.showOn.forEach(status => {",
+									"            pm.expect(allowedShowOnValues).to.include(status);",
+									"        });",
+									"    });",
+									"});",
+									"",
+									"// Test para verificar que \"errors\" es un array vacío",
+									"pm.test(\"Errors array is empty\", function () {",
+									"    const errors = pm.response.json().errors;",
+									"    pm.expect(errors).to.be.an(\"array\").that.is.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/contentlet/{{contentletInode}}/actions?renderMode=EDITING",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"contentlet",
+								"{{contentletInode}}",
+								"actions"
+							],
+							"query": [
+								{
+									"key": "renderMode",
+									"value": "EDITING"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Resetable",
+			"item": [
+				{
+					"name": "CreateContentPreconditions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"packages": {},
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"webPageContent\",\n        \"title\": \"Test Title\",\n        \"body\": \"Test Body\",\n        \"contentHost\": \"default\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "CheckResetable",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has expected properties\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property(\"entity\");",
+									"    pm.expect(jsonData).to.have.property(\"errors\");",
+									"    pm.expect(jsonData).to.have.property(\"i18nMessagesMap\");",
+									"    pm.expect(jsonData).to.have.property(\"messages\");",
+									"    pm.expect(jsonData).to.have.property(\"pagination\");",
+									"    pm.expect(jsonData).to.have.property(\"permissions\");",
+									"});",
+									"",
+									"pm.test(\"Entity is an array and contains items\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity).to.be.an(\"array\").that.is.not.empty;",
+									"});",
+									"",
+									"pm.test(\"Each entity item has expected properties\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    entity.forEach(item => {",
+									"        pm.expect(item).to.have.property(\"actionInputs\").that.is.an(\"array\");",
+									"        pm.expect(item).to.have.property(\"assignable\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"commentable\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"condition\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"hasArchiveActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasDeleteActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasDestroyActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasMoveActionletActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasMoveActionletHasPathActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasOnlyBatchActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasPublishActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasPushPublishActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasSaveActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasUnarchiveActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasUnpublishActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"icon\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"id\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"name\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"nextAssign\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"nextStep\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"nextStepCurrentStep\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"order\").that.is.a(\"number\");",
+									"        pm.expect(item).to.have.property(\"owner\").that.is.null;",
+									"        pm.expect(item).to.have.property(\"hasResetActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"roleHierarchyForAssign\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"schemeId\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"showOn\").that.is.an(\"array\");",
+									"        ",
+									"        const allowedShowOnValues = [\"NEW\", \"LISTING\", \"PUBLISHED\", \"UNLOCKED\", \"ARCHIVED\", \"UNPUBLISHED\", \"EDITING\", \"LOCKED\"];",
+									"        item.showOn.forEach(status => {",
+									"            pm.expect(allowedShowOnValues).to.include(status);",
+									"        });",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Errors array is empty\", function () {",
+									"    const errors = pm.response.json().errors;",
+									"    pm.expect(errors).to.be.an(\"array\").that.is.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/contentlet/{{contentletInode}}/actions?renderMode=EDITING",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"contentlet",
+								"{{contentletInode}}",
+								"actions"
+							],
+							"query": [
+								{
+									"key": "renderMode",
+									"value": "EDITING"
+								}
 							]
 						}
 					},

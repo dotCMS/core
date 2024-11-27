@@ -2,19 +2,20 @@ package com.dotcms.jobs.business.api.events;
 
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobState;
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
 
 /**
  * Manages real-time monitoring of jobs in the system. This class provides functionality to register
@@ -68,6 +69,60 @@ public class RealTimeJobMonitor {
 
     private final Map<String, List<JobWatcher>> jobWatchers = new ConcurrentHashMap<>();
 
+    public RealTimeJobMonitor() {
+        // Default constructor required for CDI
+    }
+
+    @PostConstruct
+    protected void init() {
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobProgressUpdatedEvent.class,
+                (EventSubscriber<JobProgressUpdatedEvent>) this::onJobProgressUpdated
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobFailedEvent.class,
+                (EventSubscriber<JobFailedEvent>) this::onJobFailed
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobRemovedFromQueueEvent.class,
+                (EventSubscriber<JobRemovedFromQueueEvent>) this::onJobRemovedFromQueueEvent
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobCompletedEvent.class,
+                (EventSubscriber<JobCompletedEvent>) this::onJobCompleted
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobCanceledEvent.class,
+                (EventSubscriber<JobCanceledEvent>) this::onJobCanceled
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobCancellingEvent.class,
+                (EventSubscriber<JobCancellingEvent>) this::onJobCancelling
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobCancelRequestEvent.class,
+                (EventSubscriber<JobCancelRequestEvent>) this::onJobCancelRequest
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobStartedEvent.class,
+                (EventSubscriber<JobStartedEvent>) this::onJobStarted
+        );
+
+        APILocator.getLocalSystemEventsAPI().subscribe(
+                JobAbandonedEvent.class,
+                (EventSubscriber<JobAbandonedEvent>) this::onAbandonedJob
+        );
+
+    }
+
     /**
      * Registers a watcher for a specific job with optional filtering of updates. The watcher will
      * be notified of job updates that match the provided filter predicate. If no filter is provided
@@ -77,35 +132,90 @@ public class RealTimeJobMonitor {
      * its own filter predicate. Watchers are automatically removed when a job reaches a final state
      * (completed, cancelled, or removed).</p>
      *
+     * <p>Thread Safety:</p>
+     * <ul>
+     *   <li>This method is thread-safe and can be called concurrently from multiple threads.</li>
+     *   <li>Internally uses {@link CopyOnWriteArrayList} to store watchers, which provides:
+     *     <ul>
+     *       <li>Thread-safe reads without synchronization - all iteration operations use an immutable snapshot</li>
+     *       <li>Thread-safe modifications - each modification creates a new internal copy</li>
+     *       <li>Memory consistency effects - actions in a thread prior to placing an object into a
+     *           CopyOnWriteArrayList happen-before actions subsequent to the access or removal
+     *           of that element from the CopyOnWriteArrayList in another thread</li>
+     *     </ul>
+     *   </li>
+     *   <li>The trade-off is that modifications (adding/removing watchers) are more expensive as they
+     *       create a new copy of the internal array, but this is acceptable since:
+     *     <ul>
+     *       <li>Reads (notifications) are much more frequent than writes (registering/removing watchers)</li>
+     *       <li>The number of watchers per job is typically small</li>
+     *       <li>Registration/removal of watchers is not in the critical path</li>
+     *     </ul>
+     *   </li>
+     * </ul>
+     *
      * @param jobId   The ID of the job to watch
      * @param watcher The consumer to be notified of job updates
      * @param filter  Optional predicate to filter job updates (null means receive all updates)
-     * @throws IllegalArgumentException if jobId or watcher is null
+     * @throws NullPointerException if jobId or watcher is null
      * @see Predicates for common filter predicates
+     * @see CopyOnWriteArrayList for more details about the thread-safety guarantees
      */
     public void registerWatcher(String jobId, Consumer<Job> watcher, Predicate<Job> filter) {
+
+        Objects.requireNonNull(jobId, "jobId cannot be null");
+        Objects.requireNonNull(watcher, "watcher cannot be null");
+
         jobWatchers.compute(jobId, (key, existingWatchers) -> {
             List<JobWatcher> watchers = Objects.requireNonNullElseGet(
                     existingWatchers,
-                    () -> Collections.synchronizedList(new ArrayList<>())
+                    CopyOnWriteArrayList::new
             );
 
-            final var jobWatcher = JobWatcher.builder()
+            watchers.add(JobWatcher.builder()
                     .watcher(watcher)
-                    .filter(filter != null ? filter : job -> true).build();
+                    .filter(filter != null ? filter : job -> true)
+                    .build());
 
-            watchers.add(jobWatcher);
+            Logger.debug(this, String.format(
+                    "Added watcher for job %s. Total watchers: %d", jobId, watchers.size()));
+
             return watchers;
         });
     }
 
     /**
-     * Registers a watcher for a specific job that receives all updates.
-     * This is a convenience method equivalent to calling {@code registerWatcher(jobId, watcher, null)}.
+     * Registers a watcher for a specific job. The watcher receives all updates for the job.
+     *
+     * <p>Multiple watchers can be registered for the same job. Watchers are automatically removed
+     * when a job reaches a final state (completed, cancelled, or removed).</p>
+     *
+     * <p>Thread Safety:</p>
+     * <ul>
+     *   <li>This method is thread-safe and can be called concurrently from multiple threads.</li>
+     *   <li>Internally uses {@link CopyOnWriteArrayList} to store watchers, which provides:
+     *     <ul>
+     *       <li>Thread-safe reads without synchronization - all iteration operations use an immutable snapshot</li>
+     *       <li>Thread-safe modifications - each modification creates a new internal copy</li>
+     *       <li>Memory consistency effects - actions in a thread prior to placing an object into a
+     *           CopyOnWriteArrayList happen-before actions subsequent to the access or removal
+     *           of that element from the CopyOnWriteArrayList in another thread</li>
+     *     </ul>
+     *   </li>
+     *   <li>The trade-off is that modifications (adding/removing watchers) are more expensive as they
+     *       create a new copy of the internal array, but this is acceptable since:
+     *     <ul>
+     *       <li>Reads (notifications) are much more frequent than writes (registering/removing watchers)</li>
+     *       <li>The number of watchers per job is typically small</li>
+     *       <li>Registration/removal of watchers is not in the critical path</li>
+     *     </ul>
+     *   </li>
+     * </ul>
      *
      * @param jobId   The ID of the job to watch
      * @param watcher The consumer to be notified of job updates
-     * @throws IllegalArgumentException if jobId or watcher is null
+     * @throws NullPointerException if jobId or watcher is null
+     * @see CopyOnWriteArrayList for more details about the thread-safety guarantees
      */
     public void registerWatcher(String jobId, Consumer<Job> watcher) {
         registerWatcher(jobId, watcher, null);
@@ -150,7 +260,14 @@ public class RealTimeJobMonitor {
                     }
                 } catch (Exception e) {
                     Logger.error(this, "Error notifying job watcher for job " + job.id(), e);
+
+                    // Direct remove is thread-safe with CopyOnWriteArrayList
                     watchers.remove(jobWatcher);
+
+                    // If this was the last watcher, clean up the map entry
+                    if (watchers.isEmpty()) {
+                        jobWatchers.remove(job.id());
+                    }
                 }
             });
         }
@@ -162,7 +279,13 @@ public class RealTimeJobMonitor {
      * @param jobId The ID of the job whose watcher is to be removed.
      */
     private void removeWatcher(String jobId) {
-        jobWatchers.remove(jobId);
+
+        List<JobWatcher> removed = jobWatchers.remove(jobId);
+        if (removed != null) {
+            Logger.debug(this,
+                    String.format("Removed all watchers for job %s. Watchers removed: %d",
+                            jobId, removed.size()));
+        }
     }
 
     /**
@@ -170,7 +293,25 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobStartedEvent.
      */
-    public void onJobStarted(@Observes JobStartedEvent event) {
+    public void onJobStarted(JobStartedEvent event) {
+        updateWatchers(event.getJob());
+    }
+
+    /**
+     * Handles the job cancel request event.
+     *
+     * @param event The JobCancelRequestEvent.
+     */
+    public void onJobCancelRequest(JobCancelRequestEvent event) {
+        updateWatchers(event.getJob());
+    }
+
+    /**
+     * Handles the abandoned job event.
+     *
+     * @param event The JobAbandonedEvent.
+     */
+    public void onAbandonedJob(JobAbandonedEvent event) {
         updateWatchers(event.getJob());
     }
 
@@ -179,7 +320,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobCancellingEvent.
      */
-    public void onJobCancelling(@Observes JobCancellingEvent event) {
+    public void onJobCancelling(JobCancellingEvent event) {
         updateWatchers(event.getJob());
     }
 
@@ -188,7 +329,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobCanceledEvent.
      */
-    public void onJobCanceled(@Observes JobCanceledEvent event) {
+    public void onJobCanceled(JobCanceledEvent event) {
         updateWatchers(event.getJob());
         removeWatcher(event.getJob().id());
     }
@@ -198,7 +339,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobCompletedEvent.
      */
-    public void onJobCompleted(@Observes JobCompletedEvent event) {
+    public void onJobCompleted(JobCompletedEvent event) {
         updateWatchers(event.getJob());
         removeWatcher(event.getJob().id());
     }
@@ -208,7 +349,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobRemovedFromQueueEvent.
      */
-    public void onJobRemovedFromQueueEvent(@Observes JobRemovedFromQueueEvent event) {
+    public void onJobRemovedFromQueueEvent(JobRemovedFromQueueEvent event) {
         removeWatcher(event.getJob().id());
     }
 
@@ -217,7 +358,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobFailedEvent.
      */
-    public void onJobFailed(@Observes JobFailedEvent event) {
+    public void onJobFailed(JobFailedEvent event) {
         updateWatchers(event.getJob());
     }
 
@@ -226,7 +367,7 @@ public class RealTimeJobMonitor {
      *
      * @param event The JobProgressUpdatedEvent.
      */
-    public void onJobProgressUpdated(@Observes JobProgressUpdatedEvent event) {
+    public void onJobProgressUpdated(JobProgressUpdatedEvent event) {
         updateWatchers(event.getJob());
     }
 

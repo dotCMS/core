@@ -9,7 +9,7 @@ import { switchMap, tap } from 'rxjs/operators';
 
 import { ComponentStatus, DotHttpErrorResponse } from '@dotcms/dotcms-models';
 
-import { UploadedFile, UPLOAD_TYPE } from '../../../models';
+import { UPLOAD_TYPE, UploadedFile } from '../../../../../models/dot-edit-content-file.model';
 import { DotFileFieldUploadService } from '../../../services/upload-file/upload-file.service';
 
 export interface FormImportUrlState {
@@ -29,6 +29,7 @@ const initialState: FormImportUrlState = {
 };
 
 export const FormImportUrlStore = signalStore(
+    { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState(initialState),
     withComputed((state) => ({
         isLoading: computed(() => state.status() === ComponentStatus.LOADING),

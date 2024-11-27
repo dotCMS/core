@@ -253,7 +253,7 @@ public class VariantWebAPIImpl implements VariantWebAPI{
     }
 
     private static boolean isFileFallback(ContentType type) {
-        return type.baseType() == BaseContentType.FILEASSET
+        return (type.baseType() == BaseContentType.FILEASSET || type.baseType() == BaseContentType.DOTASSET)
                 && APILocator.getLanguageAPI().canDefaultFileToDefaultLanguage();
     }
 

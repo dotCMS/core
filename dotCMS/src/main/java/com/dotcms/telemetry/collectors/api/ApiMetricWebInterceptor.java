@@ -1,5 +1,6 @@
 package com.dotcms.telemetry.collectors.api;
 
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.liferay.util.servlet.ServletInputStreamWrapper;
@@ -16,7 +17,7 @@ import java.io.IOException;
  */
 public class ApiMetricWebInterceptor implements WebInterceptor {
 
-    public static final ApiMetricAPI apiStatAPI = new ApiMetricAPI();
+    public static final ApiMetricAPI apiStatAPI = CDIUtils.getBeanThrows(ApiMetricAPI.class);
 
     public ApiMetricWebInterceptor() {
         ApiMetricFactorySubmitter.INSTANCE.start();
@@ -27,7 +28,6 @@ public class ApiMetricWebInterceptor implements WebInterceptor {
         return ApiMetricTypes.INSTANCE.get().stream()
                 .map(ApiMetricType::getAPIUrl)
                 .toArray(String[]::new);
-
     }
 
     @Override
@@ -39,8 +39,7 @@ public class ApiMetricWebInterceptor implements WebInterceptor {
 
     @Override
     public boolean afterIntercept(final HttpServletRequest req, final HttpServletResponse res) {
-        if (res.getStatus() == 200) {
-
+        if (res.getStatus() == HttpServletResponse.SC_OK) {
             ApiMetricTypes.INSTANCE.interceptBy(req)
                     .stream()
                     .filter(apiMetricType -> apiMetricType.shouldCount(req, res))
@@ -48,7 +47,6 @@ public class ApiMetricWebInterceptor implements WebInterceptor {
                             apiStatAPI.save(apiMetricType, (RereadInputStreamRequest) req)
                     );
         }
-
         return true;
     }
 

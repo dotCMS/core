@@ -1,7 +1,6 @@
 @use "variables" as *;
 
 $notification-padding: $spacing-3;
-$notification-dot-badge-size: 0.625rem;
 
 :host {
     display: flex;

@@ -1,30 +1,27 @@
 package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
@@ -36,6 +33,8 @@ import static org.mockito.Mockito.mock;
  * @author Jose Castro
  * @since Oct 16th, 2024
  */
+@ApplicationScoped
+@RunWith(JUnit4WeldRunner.class)
 public class FilesCollectorTest extends IntegrationTestBase {
 
     private static final String PARENT_FOLDER_1_NAME = "parent-folder";
@@ -71,7 +70,7 @@ public class FilesCollectorTest extends IntegrationTestBase {
                 APILocator.getUserAPI().getAnonymousUser());
 
         final Map<String, Object> expectedDataMap = Map.of(
-                "host", "localhost:8080",
+                "host", testSite.getHostname(),
                 "site", testSite.getIdentifier(),
                 "language", APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
                 "event_type", EventType.FILE_REQUEST.getType(),

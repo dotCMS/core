@@ -16,11 +16,6 @@ public enum JobState {
     RUNNING,
 
     /**
-     * The job is currently being canceled.
-     */
-    CANCELLING,
-
-    /**
      * The job has finished executing successfully.
      */
     COMPLETED,
@@ -29,6 +24,21 @@ public enum JobState {
      * The job encountered an error and could not complete successfully.
      */
     FAILED,
+
+    /**
+     * The job was abandoned before it could complete.
+     */
+    ABANDONED,
+
+    /**
+     * The job is waiting to be canceled.
+     */
+    CANCEL_REQUESTED,
+
+    /**
+     * The job is currently being canceled.
+     */
+    CANCELLING,
 
     /**
      * The job was canceled before it could complete.

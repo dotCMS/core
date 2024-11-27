@@ -3,12 +3,12 @@ package com.dotcms.telemetry.collectors.theme;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
-import com.dotmarketing.util.Logger;
 
 /**
  * Collects the total of Number of LIVE/WORKING files in themes
  */
 public class TotalFilesInThemeMetricType implements DBMetricType {
+
     @Override
     public String getName() {
         return "TOTAL_FILES_IN_THEMES";
@@ -38,4 +38,5 @@ public class TotalFilesInThemeMetricType implements DBMetricType {
                                             "FROM contentlet_version_info cvi INNER JOIN identifier id ON cvi.identifier = id.id " +
                                             "WHERE id.parent_path LIKE '/application/themes/%' AND id.asset_name = 'template.vtl')";
     }
+
 }

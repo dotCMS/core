@@ -13,6 +13,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
     DotCMSTempFile,
+    DotCMSWorkflowStatus,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -1302,6 +1303,7 @@ export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
         key: 'demo.dotcms.com',
         label: 'demo.dotcms.com',
         data: {
+            identifier: 'demo.dotcms.com',
             hostname: 'demo.dotcms.com',
             path: '',
             type: 'site'
@@ -1313,6 +1315,7 @@ export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
         key: 'nico.dotcms.com',
         label: 'nico.dotcms.com',
         data: {
+            identifier: 'nico.dotcms.com',
             hostname: 'nico.dotcms.com',
             path: '',
             type: 'site'
@@ -1324,6 +1327,7 @@ export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
         key: 'System Host',
         label: 'System Host',
         data: {
+            identifier: 'System Host',
             hostname: 'System Host',
             path: '',
             type: 'site'
@@ -1338,6 +1342,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
         key: 'demo.dotcms.com',
         label: 'demo.dotcms.com',
         data: {
+            identifier: 'demo.dotcms.com',
             hostname: 'demo.dotcms.com',
             path: '',
             type: 'site'
@@ -1349,6 +1354,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
                 key: 'demo.dotcms.comlevel1',
                 label: 'demo.dotcms.com/level1/',
                 data: {
+                    identifier: 'demo.dotcms.comlevel1',
                     hostname: 'demo.dotcms.com',
                     path: '/level1/',
                     type: 'folder'
@@ -1360,6 +1366,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
                         key: 'demo.dotcms.comlevel1child1',
                         label: 'demo.dotcms.com/level1/child1/',
                         data: {
+                            identifier: 'demo.dotcms.comlevel1child1',
                             hostname: 'demo.dotcms.com',
                             path: '/level1/child1/',
                             type: 'folder'
@@ -1373,6 +1380,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
                 key: 'demo.dotcms.comlevel2',
                 label: 'demo.dotcms.com/level2/',
                 data: {
+                    identifier: 'demo.dotcms.comlevel2',
                     hostname: 'demo.dotcms.com',
                     path: '/level2/',
                     type: 'folder'
@@ -1386,6 +1394,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
         key: 'nico.dotcms.com',
         label: 'nico.dotcms.com',
         data: {
+            identifier: 'nico.dotcms.com',
             hostname: 'nico.dotcms.com',
             path: '',
             type: 'site'
@@ -1548,4 +1557,93 @@ export const TEMP_FILE_MOCK: DotCMSTempFile = {
     referenceUrl: '/dA/temp_1e8021f973/tmp/enterprise-angular.pdf',
     thumbnailUrl:
         '/contentAsset/image/temp_1e8021f973/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/enterprise-angular.pdf'
+};
+
+/**
+ * Mock for existing workflow
+ */
+export const EXISTING_WORKFLOW_MOCK: DotCMSWorkflowStatus = {
+    step: {
+        creationDate: 1730740464988,
+        enableEscalation: false,
+        escalationAction: null,
+        escalationTime: 0,
+        id: 'd95caaa6-1ece-42b2-8663-fb01e804a149',
+        myOrder: 1,
+        name: 'QA',
+        resolved: false,
+        schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'
+    },
+    scheme: {
+        archived: false,
+        creationDate: new Date(1730734538827),
+        defaultScheme: false,
+        description: '',
+        entryActionId: null,
+        id: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+        mandatory: false,
+        modDate: new Date(1730233225948),
+        name: 'Blogs',
+        system: false,
+        variableName: 'Blogs'
+    },
+    task: {
+        assignedTo: 'Admin User',
+        belongsTo: null,
+        createdBy: 'e7d4e34e-5127-45fc-8123-d48b62d510e3',
+        creationDate: 1562955598469,
+        description: '',
+        dueDate: null,
+        id: 'b6bca0fe-1b79-4071-84e9-b5c222fe4aef',
+        inode: 'b6bca0fe-1b79-4071-84e9-b5c222fe4aef',
+        languageId: 1,
+        modDate: 1730740522231,
+        new: false,
+        status: 'd95caaa6-1ece-42b2-8663-fb01e804a149',
+        title: '5 Snow Sports to Try This Winter',
+        webasset: '0edfee78-2a75-4f3d-bf20-813aae15d4e9'
+    },
+    firstStep: {
+        creationDate: 1731595862064,
+        enableEscalation: false,
+        escalationAction: null,
+        escalationTime: 0,
+        id: '6cb7e3bd-1710-4eed-8838-d3db60f78f19',
+        myOrder: 0,
+        name: 'New',
+        resolved: false,
+        schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2'
+    }
+};
+
+/**
+ * Mock for new workflow
+ */
+export const NEW_WORKFLOW_MOCK: DotCMSWorkflowStatus = {
+    scheme: {
+        archived: false,
+        creationDate: new Date(1730822086263),
+        defaultScheme: false,
+        description: '',
+        entryActionId: null,
+        id: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+        mandatory: false,
+        modDate: new Date(1730233225948),
+        name: 'Blogs',
+        system: false,
+        variableName: 'Blogs'
+    },
+    step: null,
+    task: null,
+    firstStep: {
+        creationDate: 1731595862064,
+        enableEscalation: false,
+        escalationAction: null,
+        escalationTime: 0,
+        id: '6cb7e3bd-1710-4eed-8838-d3db60f78f19',
+        myOrder: 0,
+        name: 'New',
+        resolved: false,
+        schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2'
+    }
 };

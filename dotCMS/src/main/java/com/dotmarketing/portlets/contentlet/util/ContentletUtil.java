@@ -138,14 +138,33 @@ public class ContentletUtil {
 	 *
 	 * @return Contentlet with the values in place.
 	 *
-	 * @throws DotDataException
-	 * @throws IOException
-	 */
+     */
 	public static Map<String, Object> getContentPrintableMap(
-			final User user, final Contentlet sourceContentlet, final boolean allCategoriesInfo)
-			throws DotDataException, IOException {
+			final User user, final Contentlet sourceContentlet, final boolean allCategoriesInfo) {
+		return getContentPrintableMap(user, sourceContentlet, allCategoriesInfo, false);
+	}
+
+	/**
+	 * Returns a {@link Map} that includes original content's map entries and also special entries for string
+	 * representation of the values of binary and category field. It also set the tags to the contentlet's map for them
+	 * to be included in the resulting map. This map can be used to return a string representation of the given content
+	 * (e.g. REST, ES portlet)
+	 *
+	 * @param user User from Front End with permission to read Special Fields.
+	 * @param sourceContentlet the contentlet to generate the printable map from
+	 * @param allCategoriesInfo {@code "true"} to return all fields for
+	 * the categories associated to the content (key, name, description),{@code "false"}
+	 * to return only categories names.
+	 * @param renderFields {@code "true"} to render the fields, {@code "false"} to not render the fields.
+	 * @return Contentlet with the values in place.
+	 *
+     */
+	public static Map<String, Object> getContentPrintableMap(
+			final User user, final Contentlet sourceContentlet, final boolean allCategoriesInfo, final boolean renderFields) {
 		return new DotTransformerBuilder().contentResourceOptions(allCategoriesInfo)
 				.siteToMapTransformer(false)
+				.renderFields(renderFields)
+				.forUser(user)
 				.content(sourceContentlet).build().toMaps().get(0);
 	}
 

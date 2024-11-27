@@ -49,6 +49,17 @@ export interface DotPageApiParams {
     depth?: string;
 }
 
+export enum DotPageApiKeys {
+    URL = 'url',
+    MODE = 'mode',
+    DEPTH = 'depth',
+    CLIENT_HOST = 'clientHost',
+    VARIANT_NAME = 'variantName',
+    LANGUAGE_ID = 'language_id',
+    EXPERIMENT_ID = 'experimentId',
+    PERSONA_ID = 'com.dotmarketing.persona.id'
+}
+
 export interface GetPersonasParams {
     pageId: string;
     filter?: string;

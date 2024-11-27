@@ -10,20 +10,22 @@ import java.util.Collection;
 
 /**
  * Total of containers used in Working pages.
- *
- * This class count the amount of containers used in WORKING pages, it means all these pages that don’t have LIVE Version,
- * this class extends from {@link TotalContainersInTemplateDatabaseMetricType} because it is a counter
- * of the containers used in templates is this case we want to take account just the WORKING version of each one,
- * so it override the follow behavior:
- *
- * - Searching Templates: Override the getTemplatesIds method to return only the Template IDs for
- * the templates used on a WORKING page.This is achieved using a SQL UNION query.
- * The first part of the query retrieves standard templates from the template_version_info table,
- * identifying those that have only a working version.
- * The second part of the query retrieves file templates from the contenlet_version_info table,
- * also focusing on those with just a working version.
- *
- * - Retrieve the Template Version: Override the getTemplate method to get the last WORKING version of the Template.
+ * <p>
+ * This class count the amount of containers used in WORKING pages, it means all these pages that
+ * don’t have LIVE Version. This class extends from
+ * {@link TotalContainersInTemplateDatabaseMetricType} because it is a counter of the containers
+ * used in templates is this case we want to take account just the WORKING version of each one, so
+ * it override the follow behavior:
+ * <ul>
+ *     <li>Searching Templates: Override the {@code getTemplatesIds} method to return only the
+ *     Template IDs for the templates used on a WORKING page.This is achieved using a SQL UNION
+ *     query. The first part of the query retrieves standard templates from the
+ *     {@code template_version_info} table, identifying those that have only a working version. The
+ *     second part of the query retrieves file templates from the {@code contenlet_version_info}
+ *     table, also focusing on those with just a working version.</li>
+ *     <li>Retrieve the Template Version: Override the getTemplate method to get the last WORKING
+ *     version of the Template.</li>
+ * </ul>
  */
 public abstract class TotalContainersInWorkingPageDatabaseMetricType extends TotalContainersInTemplateDatabaseMetricType {
 
@@ -70,8 +72,10 @@ public abstract class TotalContainersInWorkingPageDatabaseMetricType extends Tot
                     "OR page.live_inode IS NULL " +
                 ")";
 
+    protected MetricsAPI metricsAPI;
+
     private Collection<String> getWorkingUsedTemplatesInodes() {
-        return MetricsAPI.INSTANCE.getList(WORKING_USED_TEMPLATES_INODES_QUERY + " UNION " +
+        return metricsAPI.getList(WORKING_USED_TEMPLATES_INODES_QUERY + " UNION " +
                 WORKING_USED_FILE_TEMPLATES_INODES_QUERY);
     }
 
@@ -85,5 +89,6 @@ public abstract class TotalContainersInWorkingPageDatabaseMetricType extends Tot
         return APILocator.getTemplateAPI()
                 .findWorkingTemplate(id, APILocator.systemUser(), false);
     }
+
 }
 

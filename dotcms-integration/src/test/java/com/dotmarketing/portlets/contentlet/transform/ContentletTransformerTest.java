@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
+import com.dotcms.DataProviderWeldRunner;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.APIProvider;
 import com.dotcms.api.APIProvider.Builder;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -56,6 +58,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.control.Try;
+import javax.enterprise.context.ApplicationScoped;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -101,8 +104,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(DataProviderRunner.class)
-public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
+public class ContentletTransformerTest extends IntegrationTestBase {
 
     static String serializePath;
     static long langId;

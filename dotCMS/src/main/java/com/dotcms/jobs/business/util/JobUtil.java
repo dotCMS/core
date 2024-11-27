@@ -1,6 +1,9 @@
 package com.dotcms.jobs.business.util;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.jobs.business.api.events.JobEvent;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -12,9 +15,14 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -100,6 +108,56 @@ public class JobUtil {
                 UtilMethods.extractUserIdOrNull(user));
 
         return requestProxy;
+    }
+
+    /**
+     * Helper method to round the progress to 3 decimal places.
+     *
+     * @param progress The progress value to round
+     * @return The rounded progress value
+     */
+    public static float roundedProgress(final float progress) {
+
+        // Round the progress to 3 decimal places
+        final var roundedProgress = BigDecimal.valueOf(progress)
+                .setScale(3, RoundingMode.HALF_UP)
+                .floatValue();
+
+        return Math.round(roundedProgress * 1000f) / 1000f;
+    }
+
+    /**
+     * Helper method to send both local and cluster-wide events for a job state change
+     *
+     * @param job          The job that triggered the event
+     * @param eventFactory Factory function to create the specific event type
+     * @param <T>          The type of event being created (must extend JobEvent)
+     */
+    public static <T extends JobEvent> void sendEvents(
+            final Job job,
+            final BiFunction<Job, LocalDateTime, T> eventFactory) {
+
+        // Create the event
+        final T event = eventFactory.apply(job, LocalDateTime.now());
+
+        // Send the event notifications
+        sendEvents(event);
+    }
+
+    /**
+     * Helper method to send both local and cluster-wide notifications for a job event.
+     *
+     * @param event The event to send (must implement the JobEvent interface)
+     */
+    public static <T extends JobEvent> void sendEvents(final T event) {
+
+        // LOCAL event
+        APILocator.getLocalSystemEventsAPI().notify(event);
+
+        // CLUSTER WIDE event
+        Try.run(() -> APILocator.getSystemEventsAPI()
+                        .push(SystemEventType.CLUSTER_WIDE_EVENT, new Payload(event)))
+                .onFailure(e -> Logger.error(JobUtil.class, e.getMessage()));
     }
 
 }

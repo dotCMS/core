@@ -133,6 +133,9 @@ import org.glassfish.jersey.server.JSONP;
 
 public class PageResource {
 
+    // publishDate is an alias for the timeMachine query parameter
+    public static final String PUBLISH_DATE = "publishDate";
+    //Time Machine, Request and session attributes
     public static final String TM_DATE = "tm_date";
     public static final String TM_LANG = "tm_lang";
     public static final String TM_HOST = "tm_host";
@@ -219,7 +222,7 @@ public class PageResource {
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
             @QueryParam("language_id") final String languageId,
             @QueryParam("device_inode") final String deviceInode,
-            @QueryParam(TM_DATE) final String timeMachineDateAsISO8601
+            @QueryParam(PUBLISH_DATE) final String timeMachineDateAsISO8601
             ) throws DotDataException, DotSecurityException {
         Logger.debug(this, () -> String.format(
                 "Rendering page as JSON: uri -> %s , mode -> %s , language -> %s , persona -> %s , device_inode -> %s, timeMachineDate -> %s",
@@ -296,7 +299,8 @@ public class PageResource {
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
             @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
             @QueryParam("device_inode") final String deviceInode,
-            @QueryParam(TM_DATE) final String timeMachineDateAsISO8601    ) throws DotSecurityException, DotDataException {
+            @QueryParam(PUBLISH_DATE) final String timeMachineDateAsISO8601
+    ) throws DotSecurityException, DotDataException {
         if (Boolean.TRUE.equals(HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, false))
                 && !this.includeRenderedAttrFromEMA(originalRequest, uri)) {
             final String depth = HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.DEPTH_PARAM, null);
@@ -430,12 +434,6 @@ public class PageResource {
                         request, response
                 );
             } else {
-                final HttpSession session = request.getSession(false);
-                if (null != session) {
-                    // Time Machine-Date affects the logic on the VTLs that conform parts of the
-                    // rendered pages. So, we better get rid of it
-                    session.removeAttribute(TM_DATE);
-                }
                 pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
                         pageContextBuilder.build(), request, response
                 );
@@ -1385,12 +1383,16 @@ public class PageResource {
      * whether the page is available in such a language or not.
      *
      * @throws DotDataException An error occurred when interacting with the database.
+     * @deprecated This method is deprecated and will be removed in future versions. Please use the
+     * more generic REST Endpoint
+     * {@link com.dotcms.rest.api.v1.content.ContentResource#getExistingLanguagesForContent(String, User)} instead.
      */
     @GET
     @Path("/{pageId}/languages")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Deprecated(since = "Nov 7th, 24", forRemoval = true)
     public Response checkPageLanguageVersions(@Context final HttpServletRequest request,
                                               @Context final HttpServletResponse response,
                                               @PathParam("pageId") final String pageId) throws DotDataException {

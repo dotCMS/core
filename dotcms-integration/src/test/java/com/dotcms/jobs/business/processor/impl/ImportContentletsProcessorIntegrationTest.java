@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.processor.DefaultProgressTracker;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import org.jboss.weld.junit5.EnableWeld;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -84,6 +86,187 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
      * </ul>
      *
      * <p>The test ensures that preview mode properly validates the content
+     * without actually creating it in the system using the content type variable instead of the ID.
+     *
+     * @throws Exception if there's an error during the test execution
+     */
+    @Test
+    void test_process_preview_using_content_type_variable() throws Exception {
+
+        ContentType testContentType = null;
+
+        try {
+            // Initialize processor
+            final var processor = new ImportContentletsProcessor();
+
+            // Create test content type
+            testContentType = createTestContentType();
+
+            // Create test CSV file
+            File csvFile = createTestCsvFile();
+
+            // Create test job
+            final var testJob = createTestJob(
+                    csvFile, "preview", "1", testContentType.variable(),
+                    "b9d89c80-3d88-4311-8365-187323c96436"
+            );
+
+            // Process the job in preview mode
+            processor.process(testJob);
+
+            // Verify preview results
+            Map<String, Object> metadata = processor.getResultMetadata(testJob);
+            assertNotNull(metadata, "Preview metadata should not be null");
+            assertNotNull(metadata.get("errors"), "Preview metadata errors should not be null");
+            assertNotNull(metadata.get("results"), "Preview metadata results should not be null");
+            assertEquals(0, ((ArrayList) metadata.get("errors")).size(),
+                    "Preview metadata errors should be empty");
+
+            // Verify no content was created
+            final var importedContent = findImportedContent(testContentType.id());
+            assertNotNull(importedContent, "Imported content should not be null");
+            assertEquals(0, importedContent.size(), "Imported content should have no items");
+
+        } finally {
+            if (testContentType != null) {
+                // Clean up test content type
+                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+            }
+        }
+    }
+
+    /**
+     * Scenario: Test the preview mode of the content import process with an invalid content type.
+     * <p>
+     * Expected: A JobValidationException should be thrown.
+     *
+     * @throws Exception if there's an error during the test execution
+     */
+    @Test
+    void test_process_preview_invalid_content_type_variable() throws Exception {
+
+        // Initialize processor
+        final var processor = new ImportContentletsProcessor();
+
+        // Create test CSV file
+        File csvFile = createTestCsvFile();
+
+        // Create test job
+        final var testJob = createTestJob(
+                csvFile, "preview", "1", "doesNotExist",
+                "b9d89c80-3d88-4311-8365-187323c96436"
+        );
+
+        try {
+            // Process the job in preview mode
+            processor.validate(testJob.parameters());
+            Assertions.fail("A JobValidationException should have been thrown here.");
+        } catch (Exception e) {
+            Assertions.assertInstanceOf(JobValidationException.class, e);
+        }
+    }
+
+    /**
+     * Tests the preview mode of the content import process. This test:
+     * <ul>
+     *   <li>Creates a test content type</li>
+     *   <li>Generates a test CSV file with sample content</li>
+     *   <li>Processes the import in preview mode</li>
+     *   <li>Verifies the preview results and metadata</li>
+     *   <li>Verifies there is no content creation in the database</li>
+     * </ul>
+     *
+     * <p>The test ensures that preview mode properly validates the content
+     * without actually creating it in the system using the language ISO code instead of the ID.
+     *
+     * @throws Exception if there's an error during the test execution
+     */
+    @Test
+    void test_process_preview_using_language_iso_code() throws Exception {
+
+        ContentType testContentType = null;
+
+        try {
+            // Initialize processor
+            final var processor = new ImportContentletsProcessor();
+
+            // Create test content type
+            testContentType = createTestContentType();
+
+            // Create test CSV file
+            File csvFile = createTestCsvFile();
+
+            // Create test job
+            final var testJob = createTestJob(
+                    csvFile, "preview", "en-us", testContentType.variable(),
+                    "b9d89c80-3d88-4311-8365-187323c96436"
+            );
+
+            // Process the job in preview mode
+            processor.process(testJob);
+
+            // Verify preview results
+            Map<String, Object> metadata = processor.getResultMetadata(testJob);
+            assertNotNull(metadata, "Preview metadata should not be null");
+            assertNotNull(metadata.get("errors"), "Preview metadata errors should not be null");
+            assertNotNull(metadata.get("results"), "Preview metadata results should not be null");
+            assertEquals(0, ((ArrayList) metadata.get("errors")).size(),
+                    "Preview metadata errors should be empty");
+
+            // Verify no content was created
+            final var importedContent = findImportedContent(testContentType.id());
+            assertNotNull(importedContent, "Imported content should not be null");
+            assertEquals(0, importedContent.size(), "Imported content should have no items");
+
+        } finally {
+            if (testContentType != null) {
+                // Clean up test content type
+                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+            }
+        }
+    }
+
+    /**
+     * Scenario: Test the preview mode of the content import process with an invalid language.
+     * <p>
+     * Expected: A JobValidationException should be thrown.
+     *
+     * @throws Exception if there's an error during the test execution
+     */
+    @Test
+    void test_process_preview_invalid_language() throws Exception {
+
+        // Initialize processor
+        final var processor = new ImportContentletsProcessor();
+
+        // Create test CSV file
+        File csvFile = createTestCsvFile();
+
+        // Create test job
+        final var testJob = createTestJob(
+                csvFile, "preview", "12345", "doesNotExist",
+                "b9d89c80-3d88-4311-8365-187323c96436"
+        );
+
+        try {
+            processor.validate(testJob.parameters());
+            Assertions.fail("A JobValidationException should have been thrown here.");
+        } catch (Exception e) {
+            Assertions.assertInstanceOf(JobValidationException.class, e);
+        }
+    }
+
+    /**
+     * Tests the preview mode of the content import process. This test:
+     * <ul>
+     *   <li>Creates a test content type</li>
+     *   <li>Generates a test CSV file with sample content</li>
+     *   <li>Processes the import in preview mode</li>
+     *   <li>Verifies the preview results and metadata</li>
+     *   <li>Verifies there is no content creation in the database</li>
+     * </ul>
+     *
+     * <p>The test ensures that preview mode properly validates the content
      * without actually creating it in the system.
      *
      * @throws Exception if there's an error during the test execution
@@ -105,7 +288,8 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
 
             // Create test job
             final var testJob = createTestJob(
-                    csvFile, "preview", testContentType.id(), "b9d89c80-3d88-4311-8365-187323c96436"
+                    csvFile, "preview", "1", testContentType.id(),
+                    "b9d89c80-3d88-4311-8365-187323c96436"
             );
 
             // Process the job in preview mode
@@ -163,7 +347,8 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
 
             // Create test job
             final var testJob = createTestJob(
-                    csvFile, "publish", testContentType.id(), "b9d89c80-3d88-4311-8365-187323c96436"
+                    csvFile, "publish", "1", testContentType.id(),
+                    "b9d89c80-3d88-4311-8365-187323c96436"
             );
 
             // Process the job in preview mode
@@ -205,14 +390,16 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
      *
      * @param csvFile          The CSV file containing the content to be imported
      * @param cmd              The command to execute ('preview' or 'publish')
-     * @param contentTypeId    The ID of the content type for the imported content
+     * @param contentType      The content type for the imported content
+     * @param language         The language of the imported content
      * @param workflowActionId The ID of the workflow action to be applied
      * @return A configured {@link Job} instance ready for processing
      * @throws IOException          if there's an error reading the CSV file
      * @throws DotSecurityException if there's a security violation during job creation
      */
-    private Job createTestJob(final File csvFile, final String cmd, final String contentTypeId,
-            final String workflowActionId) throws IOException, DotSecurityException {
+    private Job createTestJob(final File csvFile, final String cmd, final String language,
+            final String contentType, final String workflowActionId)
+            throws IOException, DotSecurityException {
 
         final Map<String, Object> jobParameters = new HashMap<>();
 
@@ -221,9 +408,11 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
         jobParameters.put("userId", systemUser.getUserId());
         jobParameters.put("siteName", defaultSite.getHostname());
         jobParameters.put("siteIdentifier", defaultSite.getIdentifier());
-        jobParameters.put("contentType", contentTypeId);
+        jobParameters.put("contentType", contentType);
         jobParameters.put("workflowActionId", workflowActionId);
-        jobParameters.put("language", "1");
+        if (language != null) {
+            jobParameters.put("language", language);
+        }
 
         final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
         try (final var fileInputStream = new FileInputStream(csvFile)) {

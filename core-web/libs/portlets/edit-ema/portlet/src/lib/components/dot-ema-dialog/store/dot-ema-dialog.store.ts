@@ -1,4 +1,5 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
@@ -20,6 +21,7 @@ import {
     EditContentletPayload,
     EditEmaDialogState
 } from '../../../shared/models';
+import { UVEStore } from '../../../store/dot-uve.store';
 
 @Injectable()
 export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
@@ -40,6 +42,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     private dotActionUrlService = inject(DotActionUrlService);
 
     private dotMessageService = inject(DotMessageService);
+
+    private uveStore = inject(UVEStore);
 
     readonly dialogState$ = this.select((state) => state);
 
@@ -97,9 +101,13 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      */
     readonly createContentlet = this.updater(
         (state, { url, contentType, actionPayload }: CreateContentletAction) => {
+            const completeURL = new URL(url, window.location.origin);
+
+            completeURL.searchParams.set('variantName', this.uveStore.pageParams().variantName);
+
             return {
                 ...state,
-                url,
+                url: completeURL.toString(),
                 actionPayload,
                 header: this.dotMessageService.get(
                     'contenttypes.content.create.contenttype',
@@ -295,7 +303,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             p_p_mode: 'view',
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
-            inode: inode
+            inode: inode,
+            variantName: this.uveStore.pageParams().variantName
         });
 
         return `${LAYOUT_URL}?${queryParams.toString()}`;
@@ -322,7 +331,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             ng: 'true',
             container_id: containerId,
             add: acceptTypes,
-            language_id
+            language_id,
+            variantName: this.uveStore.pageParams().variantName
         });
 
         return `${CONTENTLET_SELECTOR_URL}?${queryParams.toString()}`;
@@ -344,7 +354,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             inode: '',
             lang: newLanguage.toString(),
             populateaccept: 'true',
-            reuseLastLang: 'true'
+            reuseLastLang: 'true',
+            variantName: this.uveStore.pageParams().variantName
         });
 
         return `${LAYOUT_URL}?${queryParams.toString()}`;

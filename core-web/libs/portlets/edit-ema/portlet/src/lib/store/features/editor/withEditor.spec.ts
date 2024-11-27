@@ -1,7 +1,7 @@
 import { describe, expect } from '@jest/globals';
 import { SpyObject } from '@ngneat/spectator';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { signalStore, withState, patchState } from '@ngrx/signals';
+import { patchState, signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
@@ -54,7 +54,7 @@ const initialState: UVEState = {
     currentUser: null,
     experiment: null,
     errorCode: null,
-    params: {
+    pageParams: {
         ...emptyParams,
         url: 'test-url',
         language_id: '1',
@@ -65,10 +65,15 @@ const initialState: UVEState = {
     status: UVE_STATUS.LOADED,
     isTraditionalPage: false,
     canEditPage: true,
-    pageIsLocked: true
+    pageIsLocked: true,
+    isClientReady: false
 };
 
-export const uveStoreMock = signalStore(withState<UVEState>(initialState), withEditor());
+export const uveStoreMock = signalStore(
+    { protectedState: false },
+    withState<UVEState>(initialState),
+    withEditor()
+);
 
 describe('withEditor', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
@@ -537,7 +542,7 @@ describe('withEditor', () => {
                     const payload = {
                         pageContainers: ACTION_PAYLOAD_MOCK.pageContainers,
                         pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
-                        params: store.params()
+                        params: store.pageParams()
                     };
 
                     store.savePage(ACTION_PAYLOAD_MOCK.pageContainers);
@@ -545,7 +550,7 @@ describe('withEditor', () => {
                     expect(saveSpy).toHaveBeenCalledWith(payload);
 
                     expect(getClientPageSpy).toHaveBeenCalledWith(
-                        store.params(),
+                        store.pageParams(),
                         store.clientRequestProps()
                     );
 
@@ -618,6 +623,7 @@ describe('withEditor', () => {
                 expect(store.$editorProps()).toEqual({
                     showDialogs: true,
                     showEditorContent: true,
+                    showBlockEditorSidebar: true,
                     iframe: {
                         opacity: '0.5',
                         pointerEvents: 'auto',
