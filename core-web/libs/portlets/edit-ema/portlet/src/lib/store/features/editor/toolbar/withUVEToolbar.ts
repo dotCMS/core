@@ -51,20 +51,26 @@ export function withUVEToolbar() {
                 const params = store.pageParams();
                 const url = sanitizeURL(params?.url);
 
-                const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
-                const pageAPIResponse = store.pageAPIResponse();
                 const experiment = store.experiment?.();
+                const pageAPIResponse = store.pageAPIResponse();
+                const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
 
                 const pageAPI = `/api/v1/page/${
                     store.isTraditionalPage() ? 'render' : 'json'
                 }/${pageAPIQueryParams}`;
 
-                const isExperimentRunning = experiment?.status === DotExperimentStatus.RUNNING;
+                const bookmarksUrl = createFavoritePagesURL({
+                    languageId: Number(params?.language_id),
+                    pageURI: url,
+                    siteId: pageAPIResponse?.site?.identifier
+                });
+
                 const isPageLocked = computePageIsLocked(
                     pageAPIResponse?.page,
                     store.currentUser()
                 );
                 const shouldShowUnlock = isPageLocked && pageAPIResponse?.page.canLock;
+                const isExperimentRunning = experiment?.status === DotExperimentStatus.RUNNING;
 
                 const unlockButton = {
                     inode: pageAPIResponse?.page.inode,
@@ -78,13 +84,8 @@ export function withUVEToolbar() {
                     !!store.device() ||
                     !!store.socialMedia();
 
-                const bookmarksUrl = createFavoritePagesURL({
-                    languageId: Number(params?.language_id),
-                    pageURI: url,
-                    siteId: pageAPIResponse?.site?.identifier
-                });
-                const clientHost = `${params?.clientHost ?? window.location.origin}`;
                 const siteId = pageAPIResponse?.site?.identifier;
+                const clientHost = `${params?.clientHost ?? window.location.origin}`;
 
                 return {
                     editor: store.isPreviewModeActive()
