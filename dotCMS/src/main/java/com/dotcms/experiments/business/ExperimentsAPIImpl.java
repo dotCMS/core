@@ -87,6 +87,7 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import graphql.VisibleForTesting;
 import io.vavr.control.Try;
 import java.time.Duration;
@@ -404,8 +405,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                 () -> EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE,
                 DoesNotExistException.class);
 
-        validatePageEditPermissions(user, persistedExperiment.get(),
-                "You don't have permission to archive the Experiment. Experiment Id: " + persistedExperiment.get().id());
+        validatePageEditPermissions(
+                user,
+                persistedExperiment.orElse(null),
+                String.format(
+                        "You don't have permission to archive the Experiment. Experiment Id: [%s]",
+                        persistedExperiment.flatMap(Experiment::id).orElse(StringPool.BLANK)));
 
         if(persistedExperiment.get().status()==ARCHIVED) {
             return persistedExperiment.get();
@@ -702,7 +707,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             return;
         }
 
-        final List relatedNotPublished = PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, new ArrayList(),
+        final List<?> relatedNotPublished = PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, new ArrayList<>(),
                 true, user, false);
         relatedNotPublished.stream().filter(Contentlet.class::isInstance).forEach(
                 asset -> Contentlet.class.cast(asset)
@@ -837,7 +842,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         final RunningIds runningIds = persistedExperiment.runningIds();
 
         final Optional<RunningId> currentRunningId = runningIds.getAll().stream()
-                .filter((id) -> id.endDate() == null)
+                .filter(id -> id.endDate() == null)
                 .limit(1)
                 .findFirst();
 
@@ -857,7 +862,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         final List<Contentlet> contentByVariants = contentletAPI.getAllContentByVariants(user, false,
                 runningExperiment.trafficProportion().variants().stream()
-                        .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
+                        .map(ExperimentVariant::id).filter(id -> !id.equals(DEFAULT_VARIANT.name()))
                         .toArray(String[]::new)).stream()
                         .filter((contentlet -> Try.of(contentlet::isWorking)
                                 .getOrElse(false))).collect(Collectors.toList());
@@ -937,7 +942,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                 .orElseThrow(()->new DoesNotExistException(EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE));
 
         ExperimentVariant experimentVariant = createExperimentVariant(
-                persistedExperiment, variantDescription, user);
+                persistedExperiment, variantDescription);
 
         final TrafficProportion trafficProportion = persistedExperiment.trafficProportion();
 
@@ -975,7 +980,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
     }
 
     private ExperimentVariant createExperimentVariant(final Experiment experiment,
-            final String variantDescription, final User user)
+            final String variantDescription)
             throws DotDataException {
 
         final String experimentId = experiment.getIdentifier();
@@ -983,7 +988,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         if(variantDescription.equals(ORIGINAL_VARIANT)) {
             DotPreconditions.isTrue(
-                    experiment.trafficProportion().variants().stream().noneMatch((variant) ->
+                    experiment.trafficProportion().variants().stream().noneMatch(variant ->
                             variant.description().equals(ORIGINAL_VARIANT)),
                     "Original Variant already created");
             variantName = DEFAULT_VARIANT.name();
@@ -1011,8 +1016,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         final int nextAvailableIndex = getNextAvailableIndex(variantNameBase);
 
-        final String variantName = variantNameBase + nextAvailableIndex;
-        return variantName;
+        return variantNameBase + nextAvailableIndex;
     }
 
     @Override
@@ -1026,7 +1030,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         final Experiment persistedExperiment = find(experimentId, user)
                 .orElseThrow(()->new DoesNotExistException(EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE));
 
-        DotPreconditions.isTrue(variantName!= null &&
+        DotPreconditions.isTrue(
                 variantName.contains(shortyIdAPI.shortify(experimentId)), ()-> INVALID_VARIANT_PROVIDED_MESSAGE,
                 IllegalArgumentException.class);
 
@@ -1343,7 +1347,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                 .collect(Collectors.toList());
 
         finalizedExperiments.forEach((experiment ->
-                Try.of(()->end(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
+                Try.of(()->end(experiment.id().orElseThrow(), user)).getOrElseThrow(e ->
                         new DotStateException("Unable to end Experiment. Cause:" + e))));
     }
 
@@ -1370,7 +1374,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             final Variant variantToPromote = variantAPI.get(variantName)
                     .orElseThrow(()->new DoesNotExistException(PROVIDED_VARIANT_NOT_FOUND_MESSAGE));
 
-            final Experiment withUpdatedVariants = getUpdatedVariants(user, persistedExperiment,
+            final Experiment withUpdatedVariants = getUpdatedVariants(persistedExperiment,
                     variantToPromote);
 
             Experiment savedExperiment = save(withUpdatedVariants, user);
@@ -1427,12 +1431,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         final Contentlet pageAsContent = contentletAPI
                 .findContentletByIdentifierAnyLanguage(experiment.pageId(), DEFAULT_VARIANT.name(), true);
 
-        final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI()
-                .fromContentlet(pageAsContent);
-        return htmlPageAsset;
+        return  APILocator.getHTMLPageAssetAPI().fromContentlet(pageAsContent);
     }
 
-    private Experiment getUpdatedVariants(final User user, final Experiment persistedExperiment,
+    private Experiment getUpdatedVariants(final Experiment persistedExperiment,
             final Variant variantToPromote) {
 
         final String variantName = variantToPromote.name();
