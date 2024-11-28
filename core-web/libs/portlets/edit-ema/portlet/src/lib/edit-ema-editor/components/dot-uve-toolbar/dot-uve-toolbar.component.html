@@ -7,9 +7,7 @@
                 data-testId="uve-toolbar-preview"
                 (click)="togglePreviewMode(true)" />
 
-            <dot-ema-bookmarks
-                [url]="$toolbar().editor.bookmarksUrl"
-                [variant]="TOOLBAR_VARIANTS.NEW_UVE" />
+            <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
 
             <p-button
                 icon="pi pi-external-link"

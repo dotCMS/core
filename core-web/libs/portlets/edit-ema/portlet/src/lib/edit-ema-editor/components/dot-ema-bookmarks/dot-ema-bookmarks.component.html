@@ -1,9 +1,10 @@
-@if (variant === TOOLBAR_VARIANTS.NEW_UVE) {
+@if (store.$previewMode()) {
     <p-button
+        (click)="toggleBookmark()"
         [icon]="bookmarked() ? 'pi pi-star-fill' : 'pi pi-star'"
         [loading]="loading()"
-        (click)="toggleBookmark()"
-        styleClass="p-button-text" />
+        styleClass="p-button-text"
+        data-testId="bookmark-button" />
 } @else {
     <p-button
         (onClick)="toggleBookmark()"

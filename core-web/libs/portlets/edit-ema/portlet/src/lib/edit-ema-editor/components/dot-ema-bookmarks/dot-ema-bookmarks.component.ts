@@ -11,7 +11,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { TOOLBAR_VARIANTS } from '../../../shared/enums';
+import { UVEStore } from '../../../store/dot-uve.store';
 
 @Component({
     selector: 'dot-ema-bookmarks',
@@ -22,14 +22,12 @@ import { TOOLBAR_VARIANTS } from '../../../shared/enums';
 })
 export class DotEmaBookmarksComponent implements OnInit {
     @Input() url = '';
-    @Input() variant: TOOLBAR_VARIANTS = TOOLBAR_VARIANTS.TRADITIONAL;
-
-    TOOLBAR_VARIANTS = TOOLBAR_VARIANTS;
 
     private readonly loginService = inject(LoginService);
     private readonly dotFavoritePageService = inject(DotFavoritePageService);
     private readonly dialogService = inject(DialogService);
     private readonly dotMessageService = inject(DotMessageService);
+    protected readonly store = inject(UVEStore);
 
     favoritePage: DotCMSContentlet;
 

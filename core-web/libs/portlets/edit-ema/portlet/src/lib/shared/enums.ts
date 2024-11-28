@@ -53,23 +53,3 @@ export enum FormStatus {
     SAVED = 'SAVED',
     PRISTINE = 'PRISTINE'
 }
-
-/**
- * Defines the available toolbar variants for the UVE interface.
- *
- * @description
- * This enum represents different toolbar styles and configurations used in the
- * Universal Visual Editor, providing flexibility in user interface design and
- * feature implementation.
- *
- * - TRADITIONAL: Represents the current, existing toolbar configuration in UVE.
- *   This is the established toolbar design that users are familiar with and
- *   represents the standard editing experience prior to recent updates.
- *
- * - NEW_UVE: Represents the next-generation toolbar with an updated design and
- *   advanced features, including the new Preview mode with Future Time Machine.
- */
-export enum TOOLBAR_VARIANTS {
-    NEW_UVE = 'NEW_UVE',
-    TRADITIONAL = 'TRADITIONAL'
-}
