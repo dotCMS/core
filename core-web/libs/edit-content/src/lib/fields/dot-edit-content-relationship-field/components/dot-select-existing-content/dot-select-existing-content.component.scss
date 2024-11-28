@@ -2,19 +2,27 @@
 
 ::ng-deep {
     p-table {
-        .p-datatable {
-            border: 1px solid $color-palette-gray-300;
-            border-radius: $border-radius-md;
+        .p-datatable-sm.p-datatable-existing-content {
             .p-datatable-header {
-                background-color: $color-palette-gray-100;
+                background-color: $white;
+                border: 0px;
+                padding-left: 0px;
+                padding-right: 0px;
+            }
+            .p-datatable-table {
+                border: 1px solid $color-palette-gray-300;
+                border-radius: $border-radius-md;
+                overflow: hidden;
+            }
+            .p-datatable-thead {
+                th {
+                    font-weight: $font-weight-bold;
+                    background-color: $color-palette-gray-100;
+                }
+            }
+            .p-inputtext {
+                height: auto;
             }
         }
-    }
-}
-
-.existing-content__table_header {
-    th {
-        font-weight: $font-weight-bold;
-        background-color: $color-palette-gray-100;
     }
 }

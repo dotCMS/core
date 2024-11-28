@@ -1,4 +1,4 @@
-<p-table [value]="store.data()" styleClass="p-datatable-lg">
+<p-table [value]="store.data()" styleClass="p-datatable-lg p-datatable-relationship">
     <ng-template pTemplate="header" styleClass="relative">
         <p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" />
         <p-button
@@ -8,9 +8,9 @@
             icon="pi pi-plus"
             [text]="true" />
         <tr class="relationship-field__table_header">
-            <th>Title</th>
-            <th>Language</th>
-            <th>State</th>
+            <th>{{ 'dot.file.relationship.field.table.title' | dm }}</th>
+            <th>{{ 'dot.file.relationship.field.table.language' | dm }}</th>
+            <th>{{ 'dot.file.relationship.field.table.state' | dm }}</th>
         </tr>
     </ng-template>
     <ng-template pTemplate="emptymessage">
@@ -18,7 +18,7 @@
             <td colspan="3">
                 <div class="flex p-2 gap-2 justify-content-center">
                     <i class="pi pi-folder-open"></i>
-                    <p class="text-500">Relate content by clicking on the Plus Button</p>
+                    <p class="text-500">{{ 'dot.file.relationship.field.empty.message' | dm }}</p>
                 </div>
             </td>
         </tr>

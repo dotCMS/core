@@ -1,7 +1,6 @@
 import {
     ChangeDetectionStrategy,
     Component,
-    DestroyRef,
     forwardRef,
     inject,
     input,
@@ -11,20 +10,27 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 import { TableModule } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotSelectExistingContentComponent } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/components/dot-select-existing-content/dot-select-existing-content.component';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { RelationshipFieldStore } from './store/relationship-field.store';
 
 @Component({
     selector: 'dot-edit-content-relationship-field',
     standalone: true,
-    imports: [TableModule, ButtonModule, MenuModule, DotSelectExistingContentComponent],
+    imports: [
+        TableModule,
+        ButtonModule,
+        MenuModule,
+        DotSelectExistingContentComponent,
+        DotMessagePipe
+    ],
     providers: [
         RelationshipFieldStore,
         DialogService,
@@ -44,38 +50,29 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * This service is used for handling message-related functionalities within the component.
      */
     readonly #dotMessageService = inject(DotMessageService);
-    /**
-     * A readonly private field that holds a reference to the `DestroyRef` service.
-     * This service is injected into the component to manage the destruction lifecycle.
-     */
-    readonly #destroyRef = inject(DestroyRef);
-    /**
-     * A readonly private field that holds an instance of the DialogService.
-     * This service is injected using Angular's dependency injection mechanism.
-     * It is used to manage dialog interactions within the component.
-     */
-    readonly #dialogService = inject(DialogService);
-    /**
-     * Reference to the dynamic dialog. It can be null if no dialog is currently open.
-     *
-     * @type {DynamicDialogRef | null}
-     */
-    #dialogRef: DynamicDialogRef | null = null;
 
+    /**
+     * A signal that controls the visibility of the existing content dialog.
+     * When true, the dialog is shown allowing users to select existing content.
+     * When false, the dialog is hidden.
+     */
     $showExistingContentDialog = signal(false);
 
-    private onChange: ((value: string) => void) | null = null;
-    private onTouched: (() => void) | null = null;
-
+    /**
+     * A signal that holds the menu items for the relationship field.
+     * These items control the visibility of the existing content dialog and the creation of new content.
+     */
     $menuItems = signal<MenuItem[]>([
         {
-            label: 'Existing Content',
+            label: this.#dotMessageService.get(
+                'dot.file.relationship.field.table.existing.content'
+            ),
             command: () => {
                 this.$showExistingContentDialog.update((value) => !value);
             }
         },
         {
-            label: 'New Content',
+            label: this.#dotMessageService.get('dot.file.relationship.field.table.new.content'),
             command: () => {
                 // TODO: Implement new content
             }
@@ -126,4 +123,15 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     registerOnTouched(fn: () => void) {
         this.onTouched = fn;
     }
+
+    /**
+     * A callback function that is called when the value of the field changes.
+     * It is used to update the value of the field in the parent component.
+     */
+    private onChange: ((value: string) => void) | null = null;
+
+    /**
+     * A callback function that is called when the field is touched.
+     */
+    private onTouched: (() => void) | null = null;
 }
